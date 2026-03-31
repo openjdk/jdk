@@ -163,7 +163,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
 
   // Load adress
-   __ z_lay(scratch, src);
+   __ z_lgr(scratch, src.base());
 
   // Load oop at address
   __ z_lg(dst, Address(scratch, 0));
@@ -173,12 +173,18 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
       (decorators & ON_PHANTOM_OOP_REF) != 0;
 
   // Test Address bad mask
-  if (on_non_strong) {
-    __ z_ltg(dst, mark_bad_mask_from_thread(Z_thread));
-  } else {
-    __ z_ltg(dst, load_bad_mask_from_thread(Z_thread));
+  Register scratch2 = temp1;
+  if (temp1 == noreg) {
+    scratch2 = Z_tmp_2;
   }
 
+  if (on_non_strong) {
+    __ z_lg(scratch2, mark_bad_mask_from_thread(Z_thread));
+  } else {
+    __ z_lg(scratch2, load_bad_mask_from_thread(Z_thread));
+  }
+
+  __ z_ngr(scratch2, dst);
   __ z_brz(uncolor);
 
   //
@@ -291,6 +297,9 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
                                      Register temp1,
                                      Register temp2,
                                      Label& slow_path) {
+
+  __ stop("store barrier buffer add");
+
   Address buffer(Z_thread, ZThreadLocalData::store_barrier_buffer_offset());
   assert_different_registers(ref_addr.base(), ref_addr.index(), temp1, temp2);
 
@@ -335,6 +344,8 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Label& slow_path,
                                                 Label& slow_path_continuation) const {
   assert_different_registers(ref_addr.base(), temp1, temp2);
+
+  __ stop("store barrier medium");
 
   // The reason to end up in the medium path is that the pre-value was not 'good'.
 
@@ -458,6 +469,8 @@ void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
                                              Register load_bad_mask,
                                              Label& slow_path,
                                              Label& continuation) const {
+  __ stop("copy load at fast");
+
   __ z_lg(zpointer, Address(addr, 0));
   __ z_cgr(zpointer, load_bad_mask);
   __ z_brne(slow_path);
@@ -473,6 +486,8 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
                                              // Register temp,
                                              Label& slow_path,
                                              Label& continuation) const {
+  __ stop("copy load at slow");
+
   __ align(32);
   __ bind(slow_path);
   {
@@ -496,6 +511,8 @@ void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
                                               Label& medium_path,
                                               Label& continuation,
                                               bool dest_uninitialized) const {
+
+  __ stop("copy store at fast");
   if (!dest_uninitialized) {
     __ z_lg(Z_R0, Address(ref_addr, 0));
     __ z_cgr(Z_R0, store_bad_mask);
@@ -514,6 +531,8 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
                                               Label& medium_path,
                                               Label& continuation,
                                               bool dest_unintialized) const {
+  __ stop("copy store at slow");
+
   if (!dest_unintialized) {
     Label slow_path;
     __ align(32);
@@ -542,6 +561,8 @@ const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask =
 //      count: Z_ARG3 (int >= 0)
 // TODO: Use vector instructions
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
+  __ stop("generate disjoint oop copy");
+
   const Register zpointer = Z_R1;
   // RuntimeTODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;
@@ -570,6 +591,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
+  __ stop("conjoint oop copy");
   const Register zpointer = Z_R1;
   // TODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;
@@ -603,6 +625,7 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
                                               Register src,
                                               Register dst,
                                               Register count) {
+  __ stop("arraycopy prologue");
   bool is_checkcast_copy = (decorators & ARRAYCOPY_CHECKCAST)    != 0,
        dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
@@ -622,6 +645,7 @@ void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
                                            Register store_bad_mask,
                                            Register store_good_mask,
                                            bool dest_uninitialized) const {
+  __ stop("load copy masks");
   __ z_lg(load_bad_mask, Address(Z_thread, ZThreadLocalData::load_bad_mask_offset()));
   __ z_lg(store_good_mask, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   if (dest_uninitialized) {
@@ -636,6 +660,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Register robj,
                                                          Register temp,
                                                          Label& slowpath) {
+  __ stop("try resolve jobject in native");
   BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
 
   Label done, tagged, weak_tagged, uncolor;
@@ -683,10 +708,12 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 #define __ ce->masm()->
 
 static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
+  __ stop("z uncolor");
   __ z_srlg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
+  __ stop("z color");
   __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
   __ z_oill(ref->as_register(), barrier_Relocation::unpatched);
@@ -706,6 +733,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     LIR_Opr ref,
                                                     ZLoadBarrierStubC1* stub,
                                                     bool on_non_strong) const {
+  __ stop("generate c1 load barrier");
   if (on_non_strong) {
     // Test against MarkBad mask
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
@@ -731,6 +759,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
 // purpose: this is the slow path, it just set ups the arguments and call the runtime stub
 void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
+  __ stop("generate c1 load barrier stub");
   // Stub entry
   __ bind(*stub->entry());
 
@@ -771,6 +800,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                                                      LIR_Opr new_zaddress,
                                                      LIR_Opr new_zpointer,
                                                      ZStoreBarrierStubC1* stub) const {
+  __ stop("generate c1 store barrier");
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
@@ -788,6 +818,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
 // Purpose: This is the medium path and the slow path for the c1 store barrier
 void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                                                           ZStoreBarrierStubC1* stub) const {
+  __ stop("generate c1 store barrier stub");
   // Stub entry
   __ bind(*stub->entry());
 
@@ -824,6 +855,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 // Purpose: We are just calling the VM here
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
+  __ stop("generate c1 load barrier runtime stub");
   const int stack_parameters = 2;
   const int volatile_regs = 13;
   const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
@@ -854,6 +886,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 // Purpose: We are pushing all the volatile registers except Z_R0 onto the stack and calling the VM
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
+  __ stop("generate c1 store barrier runtime stub");
   const int stack_parameters = 2;
   const int volatile_regs = 13;
   const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
@@ -906,6 +939,7 @@ public:
     // _ref_addr: Z_ARG2
 
     // '_ref_addr' can be unspecified. In that case, the barrier will not heal the reference.
+    __ stop("Z Setup Arguments");
     if (_ref_addr.base() == noreg) {
       // TODO: Check the usage of this assert?
       assert_different_registers(_ref, noreg, Z_R0);
@@ -944,6 +978,7 @@ public:
 // Runtime TODO: Check the path from where we are calling these functions
 // Purpose: We are just setting up the arguments and calling the runtime
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  __ stop("generate c2 load barrier stub");
   // TODO: ppc, x86 and aarch64 all have slightly different implementations fot this, I am following x86
 
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
@@ -967,6 +1002,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 // Purpose: We are also here just calling the runtime but we are also trying it is_atomic null condition and
 // trying to put it in the buffer
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
+  __ stop("generate c2 store barrier stub");
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZStoreBarrierStubC2");
 
@@ -1014,6 +1050,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 // Verify a colored pointer
 // TODO: I am following the implementation of ppc because the implementation of verify_oop of s390 matches ppc and the call for verify_oop in the above implementations are also defined just like ppc
 void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
+  __ stop("check oop");
   if (!VerifyOops) {
     return;
   }

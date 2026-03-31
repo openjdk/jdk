@@ -35,6 +35,7 @@ source %{
 #include "gc/z/zBarrierSetAssembler.hpp"
 
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
+  __ stop(".ad  color");
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_lghi(dst, barrier_Relocation::unpatched);
@@ -43,11 +44,13 @@ static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Re
 }
 
 static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+  __ stop(".ad z uncolor");
   __ z_srlg(ref, ref, ZPointerLoadShift);
 }
 
 // Purpose: Compare the reference with the mask and jump to the runtime if not equal, else just uncolor it
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  __ stop("z keep alive load barrier");
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
   __ z_cghi(ref, barrier_Relocation::unpatched);
 
@@ -61,6 +64,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
 
 // Purpose: Check is pointer is good if it is just uncolor it else call the runtime
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  __ stop("z load barrier");
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
@@ -90,6 +94,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
 
 //Purpose: Check if oop is initialized if it not just color it else call store_barrier_fast
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
+  __ stop("z store barrier");
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
     z_color(masm, node, rnew_zpointer, rnew_zaddress);
@@ -116,6 +121,7 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   format %{ "LG      $dst,$mem\t # ptr" %}
 
   ins_encode %{
+    __ stop("zLoadP");
     __ z_lg($dst$$Register, $mem$$Address);
     z_load_barrier(masm, this, $mem$$Address, $dst$$Register);
   %}
@@ -135,6 +141,7 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem, $src\t # ptr" %}
   ins_encode %{
+    __ stop("zStoreP");
     z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
     __ z_stg($temp$$Register, $mem$$Address);
   %}
@@ -150,6 +157,7 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem, null\t # ptr" %}
   ins_encode %{
+    __ stop("zStorePNull");
     z_store_barrier(masm, this, $mem$$Address, noreg, $temp$$Register, false /* is_atomic */);
     __ z_stg($temp$$Register, $mem$$Address);
   %}
@@ -164,6 +172,7 @@ instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iR
 
   format %{ "CompareAndSwapP $oldval, $newval, $mem" %}
   ins_encode %{
+    __ stop("zCompareAndExchangeP");
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
@@ -187,6 +196,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
             " srl $res, 28"  %}
 
   ins_encode %{
+    __ stop("zCompareAndSwap");
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
@@ -209,6 +219,7 @@ instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
   format %{ "XCHGP $newval, $mem" %}
 
   ins_encode %{
+    __ stop("zGetAndSetP");
     Label retry;
     const Address mem_addr = Address($mem$$Register, 0);
 
