@@ -823,7 +823,7 @@ import java.util.Arrays;
  * produces a <em>logical result</em> that is too large for the
  * required physical output {@code VSHAPE}, so a part of the logical
  * output must be <em>selected</em> to deliver into the physical output.
- * In such cases is it an open question of which part to select.
+ * In such cases it is an open question of which part to select.
  * In other cases, when a logical
  * result is smaller than the capacity of the output {@code VSHAPE},
  * the whole logical result must be <em>inserted</em> into a part
@@ -890,7 +890,7 @@ import java.util.Arrays;
  * of a bitwise reinterpretation method, it is the only ratio of
  * interest.
  *
- * </li><li><em>Insertion</em> occurs when when the output container
+ * </li><li><em>Insertion</em> occurs when the output container
  * {@code Y} is larger than the logical result {@code f(X)}.
  * The insertion position in {@code Y} is always an integral multiple
  * of the bit-size of the logical result {@code f(X)}.
@@ -923,7 +923,7 @@ import java.util.Arrays;
  * positions where {@code f(X)} might be inserted (with padding) into
  * {@code Y}.  The positions are multiples of the logical result size
  * ({@code |f(X)|}), starting with zero.  The selection or truncation
- * required when {@code MO>1} is covered by the next definition.
+ * required when {@code MO<1} is covered by the next definition.
  *
  * </li><li>The <em>output selection ratio</em> {@code MS} is the
  * reciprocal of the output expansion ratio {@code ML/MP=1/MO}.  Like
@@ -962,9 +962,9 @@ import java.util.Arrays;
  * or both may happen in one operation, as when a vector of doubles is
  * logically contracted to a vector of floats ({@code ML=1/2}), and
  * then is stored into a shape with room for twice the original number
- * of lanes ({@code MP=2}).  In that case, the whole output must be
- * inserted into one out of four quarters of the roomy output shape,
- * and the rest of the shape is padded with zero bits.
+ * of lanes ({@code MP=2}).  In that case, the whole logical result
+ * output must be inserted into one out of four quarters of the roomy
+ * output shape, and the rest of the shape is padded with zero bits.
  *
  * <p> If the user needs a fully populated output shape, the operation may
  * be repeated systematically on additional inputs, with distinct
@@ -4072,7 +4072,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * <p> A group of such output vectors, with logical result parts
      * steered to {@code MO} disjoint blocks, can be (manually) reassembled
-     * using the {@linkplain VectorOperators#OR bitwise or} or (for floating
+     * using the {@linkplain VectorOperators#XOR bitwise XOR} or (for floating
      * point) the {@link VectorOperators#FIRST_NONZERO FIRST_NONZERO}
      * operator.
      * </ul>
