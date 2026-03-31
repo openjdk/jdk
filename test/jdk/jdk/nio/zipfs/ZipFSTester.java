@@ -619,13 +619,13 @@ public class ZipFSTester {
             OutputStream out = Files.newOutputStream(fs.getPath("/foo"));
             out.write("hello".getBytes());
             out.close();
-            out.close();
+            out.close(); // Intentional second `close` invocation
         }
         try (FileSystem fs = FileSystems.newFileSystem(fsPath, Map.of())) {
             assertArrayEquals("hello".getBytes(), Files.readAllBytes(fs.getPath("/foo")),
-                    "entry close() failed");
+                    "Second `close` on entry output stream corrupted /foo");
         } catch (Exception x) {
-            fail("entry close() failed", x);
+            fail("Second `close` on entry output stream causes unexpected error", x);
         } finally {
             Files.delete(fsPath);
         }
