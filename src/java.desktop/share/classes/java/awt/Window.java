@@ -258,7 +258,7 @@ public class Window extends Container implements Accessible {
     /**
      * Contains all the windows that have a peer object associated,
      * i. e. between addNotify() and removeNotify() calls. The list
-     * of all Window instances can be obtained from {@code Vector windowList}
+     * of all Window instances can be obtained from {@link #getWindows()}
      *
      * @since 1.6
      */
@@ -1501,7 +1501,7 @@ public class Window extends Container implements Accessible {
      */
     public static Window[] getWindows() {
         synchronized (Window.class) {
-            Window[] realCopy; 
+            Window[] realCopy;
             int fullSize = windowList.size();
             int realSize = 0;
             Window[] fullCopy = new Window[fullSize];
@@ -1509,13 +1509,13 @@ public class Window extends Container implements Accessible {
                 Window w = windowList.get(i).get();
                 if (w != null) {
                     fullCopy[realSize++] = w;
-                }   
-            }   
+                }
+            }
             if (fullSize != realSize) {
                 realCopy = Arrays.copyOf(fullCopy, realSize);
             } else {
                 realCopy = fullCopy;
-            }   
+            }
             return realCopy;
         }
     }
