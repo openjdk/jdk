@@ -30,7 +30,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
-#include "utilities/integerCast.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciExceptions.hpp"
 #endif
