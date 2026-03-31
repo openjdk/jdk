@@ -1470,7 +1470,7 @@ public final class Class<T> implements java.io.Serializable,
                 }
             }
 
-            throw new NoSuchMethodError(enclosingCandidate.getName() + "." + enclosingInfo.getName() + enclosingInfo.getDescriptor());
+            throw enclosingInfo.newResolutionError();
         }
     }
 
@@ -1541,6 +1541,11 @@ public final class Class<T> implements java.io.Serializable,
             }
             return descriptor;
         }
+
+        NoSuchMethodError newResolutionError() {
+            // Call getDescriptor to ensure we throw format error before resolution error
+            throw new NoSuchMethodError(enclosingClass.getName() + "." + name + getDescriptor());
+        }
     }
 
     /**
@@ -1586,7 +1591,7 @@ public final class Class<T> implements java.io.Serializable,
                 }
             }
 
-            throw new NoSuchMethodError(enclosingCandidate.getName() + "." + enclosingInfo.getName() + enclosingInfo.getDescriptor());
+            throw enclosingInfo.newResolutionError();
         }
     }
 
