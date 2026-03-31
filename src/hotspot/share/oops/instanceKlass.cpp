@@ -1121,6 +1121,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       }
     }
   }
+
+  if (log_is_enabled(Info, class, link))  {
+    ResourceMark rm(THREAD);
+    log_info(class, link)("Linked class %s", external_name());
+  }
+
   return true;
 }
 

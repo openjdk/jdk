@@ -4,8 +4,12 @@
     "threadDump": {
       "type": "object",
       "properties": {
+        "formatVersion": {
+          "type": "integer",
+          "description": "Format version (2)."
+        },
         "processId": {
-          "type": "string",
+          "type": "integer",
           "description": "The native process id of the Java virtual machine."
         },
         "time": {
@@ -28,18 +32,12 @@
                   "description": "The container name. The container name is unique."
                 },
                 "parent": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": [ "string", "null" ],
                   "description": "The parent container name or null for the root container."
                 },
                 "owner": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "The thread identifier of the owner thread if owned."
+                  "type": [ "integer", "null" ],
+                  "description": "The thread identifier of the owner thread or null if no owner."
                 },
                 "threads": {
                   "type": "array",
@@ -49,7 +47,7 @@
                       "type": "object",
                       "properties": {
                         "tid": {
-                          "type": "string",
+                          "type": "integer",
                           "description": "The thread identifier."
                         },
                         "time": {
@@ -69,9 +67,7 @@
                           "description": "true for a virtual thread."
                         },
                         "parkBlocker": {
-                          "type": [
-                            "object"
-                          ],
+                          "type": "object",
                           "properties": {
                             "object": {
                               "type": "string",
@@ -79,7 +75,7 @@
                             }
                           },
                           "owner": {
-                            "type": "string",
+                            "type": "integer",
                             "description": "The thread identifier of the owner when the parkBlocker is an AbstractOwnableSynchronizer."
                           },
                           "required": [
@@ -117,10 +113,7 @@
                               "locks": {
                                 "type": "array",
                                 "items": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": [ "string", "null" ],
                                   "description": "The object for which the monitor is owned by the thread, null if eliminated."
                                 }
                               }
@@ -132,7 +125,7 @@
                           }
                         },
                         "carrier":  {
-                          "type": "string",
+                          "type": "integer",
                           "description": "The thread identifier of the carrier thread if mounted."
                         }
                       },
@@ -147,7 +140,7 @@
                   ]
                 },
                 "threadCount": {
-                  "type": "string",
+                  "type": "integer",
                   "description": "The number of threads in the thread container."
                 }
               },
@@ -162,6 +155,7 @@
         }
       },
       "required": [
+        "formatVersion",
         "processId",
         "time",
         "runtimeVersion",
