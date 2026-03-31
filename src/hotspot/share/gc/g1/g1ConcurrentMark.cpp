@@ -416,7 +416,8 @@ bool G1CMRootMemRegions::work_completed() const {
 
 uint G1CMRootMemRegions::num_remaining_regions() const {
   uint total = num_regions();
-  if (num_claimed_regions() >= total) {
+  uint claimed = num_claimed_regions();
+  if (claimed >= total) {
     return 0;
   } else {
     return total - claimed;
