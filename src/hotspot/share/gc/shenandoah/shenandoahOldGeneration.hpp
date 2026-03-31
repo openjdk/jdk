@@ -222,14 +222,13 @@ public:
   template<typename LambdaT>
   void for_each_region(LambdaT lambda) {
     ShenandoahHeapRegionLambda l(lambda);
-    parallel_heap_region_iterate(&l);
+    heap_region_iterator(&l);
   }
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
-
   void parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
-
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+  void heap_region_iterator(ShenandoahHeapRegionClosure* cl);
 
   bool contains(ShenandoahAffiliation affiliation) const override;
   bool contains(ShenandoahHeapRegion* region) const override;

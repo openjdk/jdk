@@ -318,6 +318,11 @@ void ShenandoahOldGeneration::heap_region_iterate(ShenandoahHeapRegionClosure* c
   ShenandoahHeap::heap()->heap_region_iterate(&old_regions_cl);
 }
 
+void ShenandoahOldGeneration::heap_region_iterator(ShenandoahHeapRegionClosure* cl) {
+  ShenandoahIncludeRegionClosure<OLD_GENERATION> old_regions_cl(cl);
+  ShenandoahHeap::heap()->heap_region_iterator(&old_regions_cl);
+}
+
 void ShenandoahOldGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap::heap()->set_concurrent_old_mark_in_progress(in_progress);
 }
