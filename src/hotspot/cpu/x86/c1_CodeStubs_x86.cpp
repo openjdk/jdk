@@ -292,7 +292,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
       __ emit_int8(a_byte);
-      *ptr = 0x90; // make the site look like a nop
+      *ptr = NativeInstruction::nop_instruction_code; // make the site look like a nop
     }
   }
 
@@ -341,22 +341,13 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
-  bool seen_the_thing = false;
-  if (*_pc_start == 0x48 && *(_pc_start + 1) == 0xba && UseNewCode) {
-    tty->print_cr("B %p: %02x %02x%02x%02x%02x%02x%02x%02x%02x%02x", _pc_start, *(_pc_start), *(_pc_start+1), *(_pc_start+2), *(_pc_start+3), *(_pc_start+4), *(_pc_start+5), *(_pc_start+6), *(_pc_start+7), *(_pc_start+8), *(_pc_start+9));
-    seen_the_thing = true;
-  }
-  if (*_pc_start == 0x48 && *(_pc_start + 1) == 0xba) {
-    assert(*(long long int*)(_pc_start+2) == 0, "");
+  if (*_pc_start == 0x48 && 0xb8 <= *(_pc_start + 1) && *(_pc_start + 1) <= 0xbf) {
+    assert(*(long long int*)(_pc_start+2) == 0, "imm64 must be 0 in mov r64, imm64");
     for (int i = 0; i < 8; ++i) {
       *(_pc_start + i + 2) = NativeInstruction::nop_instruction_code;
     }
   }
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  if (seen_the_thing) {
-    tty->print_cr("C %p: %02x %02x%02x%02x%02x%02x%02x%02x%02x%02x", _pc_start, *(_pc_start), *(_pc_start+1), *(_pc_start+2), *(_pc_start+3), *(_pc_start+4), *(_pc_start+5), *(_pc_start+6), *(_pc_start+7), *(_pc_start+8), *(_pc_start+9));
-    tty->print_cr("");
-  }
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
