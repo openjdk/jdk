@@ -947,7 +947,7 @@ void G1ConcurrentMark::start_undo_concurrent_cycle() {
   // At this time this GC is not a concurrent start gc any more, can only check for young only gc/phase.
   assert(_g1h->collector_state()->is_in_young_only_phase(), "must be");
 
-  _root_region_scan_aborted.store_relaxed(true);
+  abort_root_region_scan_at_safepoint();
 
   // Signal the thread to start work.
   cm_thread()->start_undo_cycle();
@@ -1128,13 +1128,14 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   // We first check whether there is any work to do as we might have already aborted
   // the concurrent cycle, or ran into a GC that did the actual work when we reach here.
   // We want to avoid spinning up the worker threads if that happened.
+  // (Note that due to races reading the abort-flag, we might spin up the threads anyway).
   //
   // Abort happens if a Full GC occurs right after starting the concurrent cycle or
   // a young gc doing the work.
   //
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
   // continue after that safepoint.
-  bool do_scan = !root_regions()->work_completed();
+  bool do_scan = !(root_regions()->work_completed() || has_root_region_scan_aborted());
   if (do_scan) {
     // Assign one worker to each root-region but subject to the max constraint.
     // The constraint is also important to avoid accesses beyond the allocated per-worker
@@ -1176,6 +1177,12 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
 
 void G1ConcurrentMark::abort_root_region_scan() {
   assert_not_at_safepoint();
+
+  _root_region_scan_aborted.store_relaxed(true);
+}
+
+void G1ConcurrentMark::abort_root_region_scan_at_safepoint() {
+  assert_at_safepoint_on_vm_thread();
 
   _root_region_scan_aborted.store_relaxed(true);
 }
@@ -1962,7 +1969,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // be moving objects / updating references. Since the root region
   // scan synchronized with the safepoint, just tell it to abort.
   // It will notice when the threads start up again later.
-  _root_region_scan_aborted.store_relaxed(true);
+  abort_root_region_scan_at_safepoint();
 
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking

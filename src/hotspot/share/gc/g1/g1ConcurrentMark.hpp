@@ -640,12 +640,15 @@ public:
   // Complete root region scan work in the safepoint, return if we did some work.
   bool complete_root_regions_scan_in_safepoint();
 
-  // Abort an active concurrent root region scan.
+  // Abort an active concurrent root region scan outside safepoint.
   void abort_root_region_scan();
 
   bool has_root_region_scan_aborted() const;
 
 private:
+  // Abort an active concurrent root region scan during safepoint.
+  void abort_root_region_scan_at_safepoint();
+
   void assert_root_region_scan_completed_or_aborted() PRODUCT_RETURN;
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
