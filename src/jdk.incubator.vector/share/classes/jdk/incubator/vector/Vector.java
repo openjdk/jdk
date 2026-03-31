@@ -999,43 +999,60 @@ import java.util.Arrays;
  *
  * <p> The various resizing operations of this API contract or expand
  * their data as follows:
- * <ul>
  *
+ * <ul>
+ * <li> Lanewise Conversion:
+ * Lanewise convert {@code X} with element type {@code ETYPE} to
+ * {@code f(X)} with element type {@code FTYPE}, according to the
+ * indicated {@linkplain VectorOperators.Conversion conversion}.
+ * The logical expansion ratio of the vector corresponds to the
+ * expansion ratio of the individual elements ({@code ML = |FTYPE| / |ETYPE|}).
+ * A lanewise conversion operator may be classified as (respectively)
+ * in-place, expanding, or contracting, depending on whether the bit-size
+ * of {@code ETYPE} is (respectively) equal to, less than, or greater
+ * than the bit-size of {@code FTYPE}.
+ *
+ * <ul>
  * <li>
  * {@link Vector#convert(VectorOperators.Conversion,int) Vector.convert()}
- * has a logical result containing all the lane-wise converted elements.
- * The logical expansion ratio {@code ML} of the vector corresponds to
- * the expansion ratio of the individual elements.
+ * is shape-invariant, and thus preferred for portable code.
  * Since there is no shape change {@code MP=1}, {@code MO=1/ML}, and {@code MS=ML}.
- * If the {@linkplain #elementSize() element sizes} of input and output
- * are the same ({@code ML=1}), then {@code convert()} is an in-place operation.
- * If the element sizes of the output are larger, we have selection.
- * If the element sizes of the output are smaller, we have insertion.
- *
+ * Lanewise expansion leads to corresponding selection and
+ * lanewise contraction to corresponsing insertion.
  * <li>
  * {@link Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int) Vector.convertShape()}
- * again has a logical result containing all the converted input elements,
- * with a logical result size change measured by {@code ML}.
- * The shape can change as well, so the ratio {@code MP} need not be unity.
- * In any case, the net output expansion ratio {@code MO=MP/ML}
- * determines whether insertion (with padding) or selection is required.
- * It is an in-place operation if {@code MO=1}, that is {@code ML=MP}.
- *
+ * allows for a change in shape. One can freely combine lanewise
+ * expansion or contraction with output insertion or selection.
+ * If the lanewise expansion and shape expansion are balanced,
+ * the operation is always in-place ({@code ML=MP} and {@code MO=1}).
+ * Some platforms may not be able to implement all combinations
+ * efficiently, especially when shape sizes are limited.
  * <li>
- * Since {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
- * is a convenience method for {@code convertShape()}, its requirement
- * for truncation or insertion (with padding) is similar to {@code convertShape()}.
+ * {@link Vector#castShape(VectorSpecies,int) Vector.castShape()}
+ * is a convenience method for {@code convertShape()} and can also
+ * freely combine lanewise expansion or contraction with output
+ * insertion or selection.
+ * </ul>
  *
- * <li>
- * {@link Vector#reinterpretShape(VectorSpecies,int) Vector.reinterpretShape()}
- * has a logical result which is simply the bitwise image of its input,
- * regardless of lane types and lane boundaries.
+ * <li> Bitwise Reinterpretation:
+ * {@code f(X)} is the bitwise image of {@code X} of the same vector
+ * bit size, only the lane boundaries are redrawn from {@code ETYPE}
+ * to {@code FTYPE}.
  * Therefore the logical expansion ratio is always unity {@code ML=1}.
  * If the shape changes, the ratio {@code MP} may vary from unity.
  *
+ * <ul>
+ * <li>
+ * {@link Vector#reinterpretAsBytes() Vector.reinterpretAsBytes()}
+ * and related are shape-invariant ({@code MP=1}). Hence the operation
+ * is always in-place ({@code MO=MS=1}), implicitly {@code part=0}.
+ * <li>
+ * {@link Vector#reinterpretShape(VectorSpecies,int) Vector.reinterpretShape()}
+ * allows for change in shape.
  * The net output expansion ratio {@code MO=MP} determines whether
  * the operation is in-place {@code MO=MP=1} or whether insertion (with padding)
  * or selection are required.
+ * </ul>
  *
  * <li>
  * The {@link #unslice(int,Vector,int) unslice()} methods expand
