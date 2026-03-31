@@ -60,14 +60,43 @@ void G1FullGCMarker::process_partial_array(PartialArrayState* state, bool stolen
   process_array_chunk(obj_array, claim._start, claim._end);
 }
 
+static size_t adjust_stride(size_t array_len, uint num_threads, uint min_stride) {
+  const size_t max_stride = ObjArrayMarkingStride;
+
+  if (array_len <= min_stride) {
+    return min_stride;
+  }
+
+  // If max_stride already gives at least one chunk per thread, use it
+  if (num_threads == 1 || (array_len / max_stride) >= num_threads) {
+    return max_stride;
+  }
+
+  size_t stride = (array_len + num_threads - 1) / num_threads;
+
+  // Aligned up to a multiple of min_stride
+  stride = ((stride + min_stride - 1) / min_stride) * min_stride;
+
+  return MIN2(stride, max_stride);
+}
+
 void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
   mark_closure()->do_klass(obj->klass());
   // Don't push empty arrays to avoid unnecessary work.
-  size_t array_length = obj->length();
-  if (array_length > 0) {
-    size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length);
-    process_array_chunk(obj, 0, initial_chunk_size);
+  const size_t array_length = obj->length();
+
+  if (array_length == 0) {
+    return;
   }
+  size_t initial_chunk_size = array_length;
+
+  const uintx min_stride = MIN2((uintx)ParGCArrayScanChunk, ObjArrayMarkingStride);
+
+  if (array_length > min_stride) {
+    const size_t stride = adjust_stride(array_length, _collector->workers(), min_stride);
+    initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length, stride);
+  }
+  process_array_chunk(obj, 0, initial_chunk_size);
 }
 
 void G1FullGCMarker::complete_marking(G1ScannerTasksQueueSet* task_queues,

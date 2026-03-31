@@ -35,10 +35,12 @@
 
 PartialArrayState::PartialArrayState(oop src, oop dst,
                                      size_t index, size_t length,
+                                     size_t chunk_size,
                                      size_t initial_refcount)
   : _source(src),
     _destination(dst),
     _length(length),
+    _chunk_size(chunk_size),
     _index(index),
     _refcount(initial_refcount)
 {
@@ -77,6 +79,7 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
 PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
                                                         size_t index,
                                                         size_t length,
+                                                        size_t chunk_size,
                                                         size_t initial_refcount) {
   void* p;
   FreeListEntry* head = _free_list;
@@ -87,7 +90,7 @@ PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, initial_refcount);
+  return ::new (p) PartialArrayState(src, dst, index, length, chunk_size, initial_refcount);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {

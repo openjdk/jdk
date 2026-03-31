@@ -78,6 +78,13 @@ public:
                objArrayOop to_array,
                size_t length);
 
+  template<typename Queue>
+  size_t start(Queue* queue,
+               objArrayOop from_array,
+               objArrayOop to_array,
+               size_t length,
+               size_t chunk_size);
+
   // Result type for claim(), carrying multiple values.  Provides the claimed
   // chunk's start and end array indices.
   struct Claim {

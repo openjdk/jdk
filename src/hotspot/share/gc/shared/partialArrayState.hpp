@@ -61,6 +61,7 @@ class PartialArrayState {
   oop _source;
   oop _destination;
   size_t _length;
+  size_t _chunk_size;
   Atomic<size_t> _index;
   Atomic<size_t> _refcount;
 
@@ -68,7 +69,7 @@ class PartialArrayState {
 
   PartialArrayState(oop src, oop dst,
                     size_t index, size_t length,
-                    size_t initial_refcount);
+                    size_t stride, size_t initial_refcount);
 
 public:
   // Deleted to require management by allocator object.
@@ -88,6 +89,8 @@ public:
 
   // The length of the array oop.
   size_t length() const { return _length; }
+
+  size_t chunk_size() const { return _chunk_size; }
 
   // A pointer to the start index for the next segment to process, for atomic
   // update.
@@ -130,6 +133,7 @@ public:
   // from the associated manager.
   PartialArrayState* allocate(oop src, oop dst,
                               size_t index, size_t length,
+                              size_t chunk_size,
                               size_t initial_refcount);
 
   // Decrement the state's refcount.  If the new refcount is zero, add the

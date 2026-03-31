@@ -54,6 +54,8 @@ public:
   // array.  If _ncreate is zero then _index will be length.
   inline Step start(size_t length) const;
 
+  inline Step start(size_t length, size_t chunk_size) const;
+
   // Atomically increment state's index by chunk_size() to claim the next
   // chunk.  Returns a Step with _index being the starting index of the
   // claimed chunk and _ncreate being the number of additional partial tasks
@@ -74,7 +76,7 @@ private:
   uint _task_fanout;
 
   // For unit tests.
-  inline Step next_impl(size_t length, Atomic<size_t>* index_addr) const;
+  inline Step next_impl(size_t length, size_t chunk_size, Atomic<size_t>* index_addr) const;
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_HPP
