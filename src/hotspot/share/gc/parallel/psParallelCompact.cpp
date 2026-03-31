@@ -228,7 +228,7 @@ bool ParallelCompactData::initialize(MemRegion reserved_heap)
 {
   _heap_start = reserved_heap.start();
   assert(region_align_down(_heap_start) == _heap_start,
-       "region start not aligned");
+         "region start not aligned");
 
   const size_t heap_size = reserved_heap.word_size();
   assert(is_aligned(heap_size, RegionSize), "precondition");
