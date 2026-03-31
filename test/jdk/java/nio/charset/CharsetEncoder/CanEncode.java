@@ -105,7 +105,7 @@ public class CanEncode {
         ck(ce, "X\udfffX", false);
 
         if (errors > 0) {
-            throw new RuntimeException(errors + " errors for character set " + csn);
+            throw new RuntimeException(errors + " errors for Charset " + csn);
         }
     }
 
