@@ -832,7 +832,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
   assert((*ctrl)->is_Proj(), "MemBar control projection");
   assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
-  (*ctrl)->in(0)->isa_MemBar()->set_trailing_array_copy();
+  (*ctrl)->in(0)->isa_MemBar()->set_trailing_expanded_array_copy();
 
   _igvn.replace_node(_callprojs.fallthrough_memproj, out_mem);
   if (_callprojs.fallthrough_ioproj != nullptr) {
@@ -1248,6 +1248,25 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = nullptr;
 
   if (ac->is_clonebasic()) {
+    // Flag the trailing MemBar so that optimize_simple_memory_chain knows it guards
+    // an expanded clone. clone_at_expansion virtual function may replace the ArrayCopyNode
+    // but does not set this flag.
+    CallProjections callprojs;
+    ac->extract_projections(&callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+    // The MemBar sits after the Catch chain if one exists, otherwise directly after the
+    // call projection. Either may be null if not yet wired or if the control output has no uses.
+    Node* ctrl_out = callprojs.fallthrough_catchproj;
+    if (ctrl_out == nullptr) ctrl_out = callprojs.fallthrough_proj;
+    if (ctrl_out != nullptr) {
+      for (DUIterator_Fast imax, i = ctrl_out->fast_outs(imax); i < imax; i++) {
+        Node* use = ctrl_out->fast_out(i);
+        if (use->is_MemBar()) {
+          use->as_MemBar()->set_trailing_expanded_array_copy();
+          break;
+        }
+      }
+    }
+
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
     return;
