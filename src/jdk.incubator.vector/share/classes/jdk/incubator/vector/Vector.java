@@ -367,7 +367,7 @@ import java.util.Arrays;
  * <p> Unlike other lane-wise operations, conversions can change lane
  * type, from the input (domain) type to the output (range) type.  The
  * lane size may change along with the type.  In order to manage the
- * size changes, lane-wise conversion methods can product <em>partial
+ * size changes, lane-wise conversion methods can produce <em>partial
  * results</em>, under the control of a {@code part} parameter, which
  * is <a href="Vector.html#expansion">explained elsewhere</a>.
  * (Following the example above, the second group of converted lane
