@@ -677,8 +677,8 @@ public class TestVisibleMembers extends JavadocTester {
                 .write(srcDir);
 
         new ClassBuilder(tb, "p.C2")
-                .setExtends("C1")
                 .setModifiers("public", "abstract", "class")
+                .setExtends("C1")
                 .addMembers(
                         FieldBuilder.parse("public int field;"),
                         MethodBuilder.parse("public void method(){}"),

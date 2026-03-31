@@ -204,7 +204,10 @@ public abstract class AbstractBuilder {
         }
 
         boolean isInterface() {
-            return !modifiers.isEmpty() && modifiers.getLast().endsWith("interface");
+            if (modifiers.isEmpty()) {
+                throw new IllegalStateException("modifiers not initialized");
+            }
+            return modifiers.getLast().endsWith("interface");
         }
 
         @Override
