@@ -293,10 +293,6 @@ class G1CMRootMemRegions {
   Atomic<uint> _num_regions;  // Actual number of root regions.
   Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
 
-  Atomic<bool> _should_abort;
-
-  bool should_abort() const { return _should_abort.load_relaxed(); }
-
   uint num_regions() const { return _num_regions.load_relaxed(); }
 
 public:
@@ -316,16 +312,11 @@ public:
   uint num_remaining_regions() const;
 
   // Returns whether all root regions have been processed or the processing been aborted.
-  bool work_completed_or_aborted() const;
-
-  void assert_work_completed_or_aborted() PRODUCT_RETURN;
+  bool work_completed() const;
 
   // Is the given memregion contained in the root regions; the MemRegion must
   // match exactly.
   bool contains(const MemRegion mr) const;
-
-  // Cancel not-yet started root region scan.
-  void cancel_scan();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
@@ -354,6 +345,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Root region tracking and claiming
   G1CMRootMemRegions      _root_regions;
+  Atomic<bool>            _root_region_scan_aborted;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
@@ -650,7 +642,10 @@ public:
   // Abort an active concurrent root region scan and wait for it to return.
   void root_region_scan_abort_and_wait();
 
+  bool has_root_region_scan_aborted() const;
+
 private:
+  void assert_root_region_scan_completed_or_aborted() PRODUCT_RETURN;
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   // Perform root region scan until all root regions have been processed, or
