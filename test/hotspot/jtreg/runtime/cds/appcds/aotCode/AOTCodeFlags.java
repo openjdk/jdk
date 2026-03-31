@@ -39,7 +39,7 @@
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver AOTCodeFlags
+ * @run driver/timeout=1500 AOTCodeFlags
  */
 /**
  * @test id=Z
@@ -58,7 +58,7 @@
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver AOTCodeFlags Z
+ * @run driver/timeout=1500 AOTCodeFlags Z
  */
 /**
  * @test id=shenandoah
@@ -77,7 +77,7 @@
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver AOTCodeFlags Shenandoah
+ * @run driver/timeout=1500 AOTCodeFlags Shenandoah
  */
 /**
  * @test id=parallel
@@ -96,7 +96,7 @@
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver AOTCodeFlags Parallel
+ * @run driver/timeout=1500 AOTCodeFlags Parallel
  */
 
 import java.util.ArrayList;
