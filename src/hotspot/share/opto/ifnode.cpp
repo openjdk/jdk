@@ -921,716 +921,946 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
   return false;
 }
 
-// Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
-// TODO: what about other case where we constant fold without CmpU?
-bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
-  Node* this_cmp = in(1)->in(1);
-  BoolNode* this_bool = in(1)->as_Bool();
-  IfNode* dom_iff = proj->in(0)->as_If();
-  BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
-  Node* lo = dom_iff->in(1)->in(1)->in(2);
-  Node* hi = this_cmp->in(2);
-  Node* n = this_cmp->in(1);
-  IfProjNode* otherproj = proj->other_if_proj();
+// We are given the following code shape with two CmpI:
+//
+//               n  v1
+//               |  |
+//               cmp1
+//                |
+//       entry  bool1(test1)
+//           |  |
+//           iff1
+//           |   \
+//        middle  fail1-------------+
+//           |                      |
+//           |   n  v2              |
+//           |   |  |               |
+//       maybe   cmp2               |
+//  null-check    |                 |
+//           |  bool2(test2)        |
+//           |  |                   |
+//           iff2                   |
+//           |   \                  v
+//          succ  fail2----> go to same region
+//                           or uncommon trap
+//
+// 1. In some cases, we can prove that succ cannot be reached,
+//    and we can fold away the iff2. Example:
+//
+//      if (n < -1 && n > 1) { succ } else { fail }
+//      // 1st condition: n in [min_int .. -2]
+//      // 2nd condition: n in [2 ..  max_int]
+//      // -> no overlap -> constant fold iff2 towards fail2
+//      //
+//      // Equivalent, if we flip everything:
+//      if (n >= -1 || n <= 1) { fail } else { succ }
+//
+// 2. In other cases, we can replace the two CmpI with
+//    a single CmpU. We fold iff1 towards middle, and
+//    replace the iff2 condition with the CmpU. Example:
+//
+//      if (n >= 0 && n < 10) { succ } else { fail }
+//      // transformed to:
+//      if (n <u 10) { succ } else { fail }
+//
+//      if (n < 0 || n >= arr.length) { throw ArrayOutOfBoundsException }
+//      // transformed to:
+//      if (n >=u arr.length) { throw ArrayOutOfBoundsException }
+//
+// Note1: we assume that the CmpI nodes are canonicalized to the
+// point where n is always on the lhs. This is a limitation,
+// but as long as v1 and v2 are constants they will eventually
+// be canonicalized to the rhs. For variables, this may not always
+// happen.
+//
+// Note2: We are flexible about the IfProj nodes: middle and succ
+// could both be either IfTrue or IfFalse.
+//
+// Return true iff we could perform one of the optimizations.
+bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjNode* succ, PhaseIterGVN* igvn) {
+  assert(fail2->in(0) == this, "link iff2->fail2");
+  assert(succ->in(0) == this,  "link iff2->succ");
 
-  const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
-  const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
+  IfNode* iff1 = middle->in(0)->as_If();
+  IfNode* iff2 = this;
+  BoolNode* bool1 = iff1->in(1)->as_Bool();
+  BoolNode* bool2 = iff2->in(1)->as_Bool();
+  CmpNode* cmp1 = bool1->in(1)->as_Cmp();
+  CmpNode* cmp2 = bool2->in(1)->as_Cmp();
 
-  BoolTest::mask lo_test = dom_bool->_test._test;
-  BoolTest::mask hi_test = this_bool->_test._test;
-  BoolTest::mask cond = hi_test;
+  IfProjNode* fail1 = middle->other_if_proj();
 
-  // Second test guaranteed canonicalized, first one may not have
-  // been canonicalized yet
-  assert(lo_test == BoolTest::lt ||
-         lo_test == BoolTest::le ||
-         lo_test == BoolTest::gt ||
-         lo_test == BoolTest::ge ||
-         lo_test == BoolTest::ne, "lo test options: %d", lo_test);
-  assert(hi_test == BoolTest::lt ||
-         hi_test == BoolTest::le, "hi test options: %d", hi_test);
+  Node* v1 = cmp1->in(2);
+  Node* v2 = cmp2->in(2);
+  Node* n = cmp1->in(1);
+  assert(cmp2->in(1) == n, "n must be lhs in both CmpI");
 
-  // -------------------------------------------------------------------
-  // In some cases, we can fold two CmpI into a single CmpI:
-  // convert:
+  // Optimization 1: try to prove that succ is not reachable.
+  // Which values of n can pass iff1 to middle AND iff2 to succ?
+  const TypeInt* type_middle = filtered_int_type(igvn, n, middle);
+  if (type_middle != nullptr) {
+    const TypeInt* type_succ = filtered_int_type(igvn, n, succ);
+    if (type_succ != nullptr) {
+      if (type_middle->filter(type_succ) == Type::TOP) {
+        // The intersection is empty -> succ is not reachable.
+        // Fold iff2 towards fail2 (and away from succ).
+        igvn->replace_input_of(iff2, 1, igvn->intcon(fail2->_con));
+        return true;
+      }
+    }
+  }
+
+  // Optimization 2: try to replace the two CmpI with one CmpU
+  // We can handle the following 4 cases:
+  //     Input: two CmpI            Output: one CmpU           Assumption
+  //     --------------------       -------------------------  -------------------
+  // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u hi - lo - 1  (assuming lo <  hi) TODO: consider assumption?
+  //     (n >  2  && n <  5 )       n - 3      <u 2
+  //     range: [3, 4]
   //
-  //          dom_bool = n {<,<=,>,>=} a
-  //                           / \
-  //     proj = {True,False}  /   \ otherproj = {False,True} -> n in lo_type
-  //                         /
-  //        this_bool = n {<,<=} b
-  //                       / \
-  //  fail = {True,False} /   \ success = {False,True} -> n in hi_type
-  //                     /
+  // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u hi - a       (assuming lo <= hi)
+  //     (n >  2  && n <= 5 )       n - 3      <u 3
+  //     range: [3, 4, 5]
   //
-  //   Example:
-  //     if n < 0:   otherproj (lo_type: min_int..-1)
-  //     // proj
-  //     if n > 10:  success   (hi_type: 11..max_int)
-  //     // fail
+  // c)  (n >= lo && n <  hi)  ->   n - lo     <u hi - a       (assuming lo <= hi)
+  //     (n >= 2  && n <  5 )       n - 2      <u 3
+  //     range: [2, 3, 4]
   //
-  //   Note: otherproj and success both lead to the same Region, or
-  //         some uncommon trap.
+  // d)  (n >= lo && n <= hi)  ->   TODO: problem case
+  //     (n >= 2  && n <= 5 )
+  //     range: [2, 3, 4, 5]
   //
-  //   Note: I'm not happy with the names of "success", "otherproj"
-  //         and "fail". Most of the time, both "success" and
-  //         "otherproj" lead to an out-of-bounds Exception, and the
-  //         "fail" path leads to the in-bounds data access.
-  //         We can consider renaming this in the future.
+  // Below, we will prove and implement each of these cases. But first,
+  // we must handle the combinations of IfTrue/IfFalse projections for
+  // middle and succ, and extract which one is the lower bound (lo) and
+  // which one the upper bound (hi).
   //
-  //   We formulate the condition for reaching the "fail" path, so we
-  //   have to pass both of the CmpI:
-  //       n >= 0  &&   n <= 10
-  //   We can also get alternative formulations by flipping the tests,
-  //   and the projections:
-  //     !(n <  0) && !(n >  10)
-  //
-  // into:
-  //
-  // cond = (n - lo) {<u,<=u,>u,>=u} adjusted_lim
-  //                       / \
-  //                 fail /   \ success (subsumes otherproj)
-  //                     /
-  //
-  //   In our Example, we hack the first condition to "false", replace
-  //   the second condition with the CmpU:
-  //     if false:   otherproj <- folds away
-  //     // proj
-  //     if n u> 10: success   <- takes on both paths
-  //     // fail
-  //
-  //   Formulating the condition for reaching the "fail" path:
-  //     n <=u 10
-  //
-  // For this to work, the 3 branches must split the int-range into 3 regions. Example:
-  //
-  // <----- otherproj ------> <----------- fail -------------> <------ success ------->
+  // <---- lower bound -----> <----------- succ -------------> <---- upper bound ----->
   // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
-  // [min_int ..          -1] [0             ..            10] [11          .. max_int]
   //                         ^                                ^
-  //                         |                                |
-  //                dom_bool / lo_test              this_bool / hi_test
+  //                     n {>/>=} lo                      n {</<=} hi
   //
-  // Since we know that otherproj and success go to the sampe place,
-  // we want to "shift" the ranges, such that we only need a single check:
+  // The trick is then to "shift down" the succ range, to create only
+  // a single transition point.
   //
-  // <----------- fail -------------> <------ success -------> <----- otherproj ------>
-  // [0            ..   adjusted_lim] [adjusted_lim + 1      ...              max_uint]
-  // [0            ..             10] [11                    ...              max_uint]
-  //                                 ^
-  //                                 |
-  //                                CmpU
+  // <----------- succ -------------> <------------ unsigned upper bound ------------->
+  // [0           ..                ] [                      ..               max_uint]
   //
-  // The complexity in this optimization comes from the different
-  // combinations of comparison operators, and the permutations
-  // of lower and upper bounds. We must carefully analyze every
-  // individual case, and avoid off-by-one errors that can easily
-  // lead to int-range overflow or underflow.
   //
-  // -------------------------------------------------------------------
-  // In the proofs below, we need some basic Lemmas to deal with integer
-  // signed and unsigned arithmetic.
-  //
-  // Lemma1:
-  //   Let a and b be in [min_int .. max_int].
-  //   If a >=s b, then:
-  //     U(a - b) = a - b
-  //
-  //   Proof:
-  //     a >= b
-  //     -> a - b >= 0
-  //
-  //     a <= max_int
-  //     b >= min_int
-  //     -> a - b <= max_int - min_int = 2^32-1
-  //
-  //     0 <= a - b <= 2^32-1
-  //     -> cast to unsigned has no overflow
-  //     -> U(a - b) = a - b
-  //
-  // Lemma2:
-  //   Let a and b be in [min_int .. max_int].
-  //   If a <s b, then:
-  //     U(a - b) = a - b + 2^32
-  //
-  //   Proof:
-  //     a < b
-  //     -> a - b < 0
-  //
-  //     a >= min_int
-  //     b <= max_int
-  //     -> a - b >= min_int - max_int = 2^32-1
-  //
-  //     2^32-1 <= a - b < 0
-  //     -> cast to unsigned leads to exactly one overflow
-  //     -> U(a - b) = a - b + 2^32
-  //
-  // Lemma3:
-  //   Let a and b be in [min_int .. max_int].
-  //     a + 2^32 > b
-  //
-  //   Proof:
-  //     Using a >= min_int, and b <= max_int:
-  //     a + 2^32 <= min_int + 2^32
-  //               = max_int + 1
-  //              <= b       + 1
-  //              <  b
-  // -------------------------------------------------------------------
+  // To establish the Assumption for each case, we need to know that lo
+  // is sufficiently smaller than hi. For this, we TODO: continue
+  // Additionally, we see how the value of n would be constrained
+  // if the lower bound fails (lo_type) or the upper bound fails (hi_type).
+  BoolTest::mask test1 = bool1->_test._test;
+  BoolTest::mask test2 = bool2->_test._test;
+  if (middle->Opcode() == Op_IfFalse) { test1 = BoolTest::negate_mask(test1); }
+  if (succ->Opcode()   == Op_IfFalse) { test2 = BoolTest::negate_mask(test2); }
 
-  // Figure out which of the two tests sets the upper bound and which
-  // sets the lower bound if any.
-  Node* adjusted_lim = nullptr;
-  if (lo_type != nullptr && hi_type != nullptr && hi_type->_lo > lo_type->_hi &&
-      hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
-    assert((dom_bool->_test.is_less() && !proj->_con) ||
-           (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
-    // We have:
-    // <----- otherproj ------> <----------- fail -------------> <------ success ------->
-    // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
-
-    if (hi_test == BoolTest::lt) {
-      if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
-        // (CASE *1a)
-        // lo_test=le, hi_test=lt:   !(n <= a) &&   n < b
-        // lo_test=gt, hi_test=lt:     n >  a  &&   n < b
-        //
-        // Simplified version:
-        //   n > a && n < b                            (BEFORE)
-        //
-        // Transformed to:
-        //   n - a - 1  <u b - a - 1                   (AFTER)
-        // Equivalent to:
-        //   n - lo <cond> adjusted_lim
-        // Where:
-        //   lo   = a + 1
-        //   hi   = b
-        //   cond = "<u"
-        //   adjusted_lim = hi - lo
-        //
-        // Proof:
-        //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. a->_hi]
-        //     -> lo_type->_hi = a->_hi
-        //     hi_type = [b->_lo .. max_int]
-        //     -> hi_type->_lo = b->_lo
-        //   Given check from above:
-        //     lo_type->_hi < hi_type->_lo
-        //     -> a->_hi < b->_lo
-        //     -> a      < b                           (A-B)
-        //
-        //   Case n <= a:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     Since a < b (A-B), S(a+1) = a+1 (no overflow):
-        //     -> a+1 <= b
-        //     -> n < a+1
-        //     U(n - (a + 1))           <  U(b - (a + 1))
-        //     -- Lemma2 (n < a+1) --      -- Lemma1 (a+1 <= b) --
-        //       n - (a + 1) + 2^32     <    b - (a + 1)
-        //       n           + 2^32     <    b
-        //     Always false by Lemma3.
-        //
-        //   Case a < n < b:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
-        //     -> a+1 <= b
-        //     -> n >= a+1
-        //     U(n - (a + 1))           <  U(b - (a + 1))
-        //     -- Lemma1 (n >= a+1) --    -- Lemma1 (a+1 <= b) --
-        //       n - (a + 1)            <    b - (a + 1)
-        //       n                      <    b
-        //     Corresponds to case assumption, so always true.
-        //
-        //   Case n >= b:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
-        //     -> a+1 <= b
-        //     U(n - (a + 1))           <  U(b - (a + 1))
-        //     -- Lemma1 (n >= a+1) --     -- Lemma1 (a+1 <= b) --
-        //       n - (a + 1)            <    b - (a + 1)
-        //       n                      <    b
-        //     Contradicts case assumption, so always false.
-        // QED.
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        assert(cond == BoolTest::lt, "");
-      } else {
-        assert(lo_test == BoolTest::lt || lo_test == BoolTest::ge, "lo_test = %d", lo_test);
-        // (CASE *2a)
-        // lo=lt,hi=lt  !(n <  a) && n < b
-        // lo=ge,hi=lt    n >= a  && n < b
-        //
-        // Simplified version:
-        //   n >= a && n < b                     (BEFORE)
-        //
-        // Transformed to:
-        //   n - a <u b - a                      (AFTER)
-        // Equivalent to:
-        //   n - lo <cond> adjusted_lim
-        // Where:
-        //   lo   = a
-        //   hi   = b
-        //   cond = "<u"
-        //   adjusted_lim = hi - lo
-        //
-        // Proof:
-        //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. max(min_int, a->_hi - 1)]
-        //     -> lo_type->_hi >= a->_hi - 1
-        //     hi_type = [b->_lo .. max_int]
-        //     -> hi_type->_lo = b->_lo
-        //   Given check from above:
-        //     lo_type->_hi < hi_type->_lo
-        //     -> a->_hi - 1 <  b->_lo
-        //     -> a->_hi     <= b->_lo
-        //     -> a <= b                             (A-B)
-        //
-        //   Case n < a:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - a)               < U(b - a)
-        //     -- Lemma2 (n < a) --     -- Lemma1 (a <= b) --
-        //       n - a + 2^32         <   b - a
-        //       n      + 2^32        <   b
-        //     Always false by Lemma3.
-        //
-        //   Case a <=s n <s b:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - a)               < U(b - a)
-        //     -- Lemma1 (n >=a) --      -- Lemma1 (a <= b) --
-        //       n - a                <   b - a
-        //       n                    <   b
-        //     Follows from case assumption, so always true.
-        //
-        //   Case n >=s b:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - a)               < U(b - a)
-        //     -- Lemma1 (n >= a) --     -- Lemma1 (a <= b) --
-        //       n - a                <   b - a
-        //       n                    <   b
-        //     Contradicts case assumption, so always false.
-        // QED.
-        assert(cond == BoolTest::lt, "");
-      }
-    } else if (hi_test == BoolTest::le) {
-      if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
-        // (CASE *3a)
-        // lo=lt,hi=le:  !(n <  a) && n <= b
-        // lo=ge,hi=le:    n >= a  && n <= b
-        //
-        // Simplified version:
-        //   n >= a && n <= b                 (BEFORE)
-        //
-        // TODO: fix things up here!
-        //
-        // Transformed to:
-        //   n - a >=u b - a + 1              (AFTER)
-        //
-        // This is a problematic case.
-        // Example:
-        //   a = min_int, b = max_int, n = 1
-        //   (BEFORE): 1 < min_int || 1 > max_int
-        //             -> false
-        //   (After)   U(1 - min_int) >= U(max_int - min_int + 1)
-        //             U(2^31 - 1)    >= U(2^32)
-        //               2^31 - 1     >=   0  (unexpected overflow!)
-        //             -> true
-        //
-        // But a = min_int, b = max_int is also the only problematic
-        // case. If we exclude this case, we know that b - a + 1
-        // cannot overflow:
-        //   a > min_int || b < max_int
-        //   0 <  b - a     < 2^32 - 1
-        //   1 <  b - a + 1 < 2^32
-        // And so it follows:
-        //   U(b - a + 1) = b - a + 1        (RHS-NO-OVERFLOW)
-        //
-        // Proof:
-        //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. max(min_int, a->_hi-1)]
-        //     -> lo_type->_hi >= a->_hi - 1
-        //     hi_type = [min(b->_lo+1, max_int) .. max_int]
-        //     -> hi_type->_lo <= b->_lo + 1
-        //   Given check from above:
-        //     lo_type->_hi < hi_type->_lo
-        //     -> a->_hi - 1 < b->_lo + 1
-        //     -> a - 1 <  b + 1
-        //     -> a     <= b + 1                        (A-B)
-        //   Note: this is a substantially weaker condition than elsewhere!
-        //         And it is the reason why we chose rhs = b - a + 1,
-        //         so that this can not underflow the unsigned computation.
-        //         We did this in JDK-8135069, before it was b - a, which
-        //         could have underflowed for a = b + 1. But now, we just
-        //         traded the underflow problem with an overflow problem,
-        //         as we saw above with the problematic case.
-        //
-        //   Case n <s a:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - a)               >=  U(b - a + 1)
-        //     -- Lemma2 (n < a) --       -- (RHS-NO-OVERFLOW) --
-        //       n - a + 2^32         >=    b - a + 1
-        //       n      + 2^32         >=    b      + 1
-        //       n      + 2^32         >     b
-        //     Always true by Lemma3.
-        //
-        //   Case a <=s n <=s b:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - a)               >=  U(b - a + 1)
-        //     -- Lemma1 (n >= a) --      -- (RHS-NO-OVERFLOW) --
-        //       n - a                >=    b - a + 1
-        //       n                     >=    b      + 1
-        //       n                     >     b
-        //     Contradicts our case assumption n <=s b, so always false.
-        //
-        //   Case n >s b:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - a)               >=  U(b - a + 1)
-        //     -- Lemma1 (n > a) --       -- (RHS-NO-OVERFLOW) --
-        //       n - a                >=    b - a + 1
-        //       n                     >=    b      + 1
-        //       n                     >     b
-        //     Equivalent to case assumption, so always true.
-        // QED.
-        //
-        // Discussion:
-        //   The fundamental issue is that the test "lo_type->_hi < hi_type->_lo"
-        //   only implies "a <= b + 1", and so "b - a" can underflow, and
-        //   "b - a + 1" can overflow the unsigned range. We discovered the
-        //   underflow in JDK-8135069, and then "fixed" it and now we have a
-        //   reproducer with overflow.
-        //
-        //   A very simple solution: just do the computations in long, so we
-        //   don't have overflow/underflow issues.
-        //
-        //   Alternatively: strenghthen the check "lo_type->_hi < hi_type->_lo"
-        //   to "lo_type->_hi + 1 < hi_type->_lo" (careful with overflow here!).
-        //     a_type->_b + 1 <  hi_type->_lo
-        //     a->_hi - 1  + 1 <  b->_lo + 1
-        //     a->_hi          <= b->_lo
-        //     a               <= b
-        //   Now we can use Lemma1: U(b - a) = b - a
-        //   And that would allow us to revert the change from JDK-8135069,
-        //   and go back to the solution of transforming:
-        //     n < a || n > b
-        //   Into:
-        //     n - a >u b - a
-        //   However, that would restrict the optimization for some cases.
-        //   For example, this is currently transformed, and we would disable it:
-        //     n < 0 || n > -1
-        //   This one currently is folded, and it is actually folded to a constant!
-        //   So it would be a shame to destroy that.
-        //   However, it seems that the case
-        //     n < 0 || n > -2
-        //   is also constant folded, and replaced directly with a constant. So
-        //   probably we could figure out the same for the case in question.
-        //   Doing it with a CmpU instead of CmpUL may not matter much on 64 bit
-        //   machines. But it would also be more work to introduce long logic
-        //   here, so just strengthening the condition may be good enough.
-        //
-        // Severity of this Bug:
-        //   (CASE *3a) and (CASE *3b) are the only ones where we can not prove
-        //   correctness of the current implementation. And the cases that fail
-        //   are very limited:
-        //     a = min_int
-        //     b = max_int
-        //   For the equivalent patterns:
-        //     n < a || n > b            (CASE *3a)
-        //     n > b || n < a            (CASE *3b)
-        //
-        //   Range Checks have a different pattern:
-        //     i < 0 || i >= length
-        //   While length could in theory be max_int, a is zero or
-        //   close to zero, and not min_int.
-        //
-        //   Further, these cases are only optimized if the range for
-        //     n < a
-        //     n > b
-        //   have no overlap provably. This prevents most general cases
-        //   where a and b are completely unknown. It requires specific
-        //   restrictions on a and b. For example:
-        //     a = 0
-        //     b >= 0
-        //   which would give us ranges:
-        //     n < a  ->  n in [min_int .. -1]
-        //     n > b  ->  n in [1 .. max_int]
-        //
-        //   It would be quite strange if someone relied on a check
-        //     n < a || n > b
-        //   where a = min_int and b = max_int were legitimate range.
-        //   Also: before optimization this check should say that
-        //   we are INSIDE the range, but after the optimization we
-        //   wrongly say we lay OUTSIDE the range. So if this was
-        //   an access check to a contiguous range, we would probably
-        //   just wrongly throw a bounds exception where access would
-        //   have been safe. The converse would have been worse: if
-        //   we had accessed memory where we should have thrown.
-        //
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
-        cond = BoolTest::lt;
-      } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
-        // (CASE *4a)
-        // lo=le,hi=le:   !(n <= a) && n <= b
-        // lo=gt,hi=le:     n >  a  && n <= b
-        //
-        // Simplified version:
-        //   n > a && n <= b                    (BEFORE)
-        //
-        // Transformed to:
-        //   n - a - 1 <u b - a              (AFTER)
-        // Equivalent to:
-        //   n - lo <cond> adjusted_lim
-        // Where:
-        //   lo   = a + 1
-        //   hi   = b
-        //   cond = "<u"
-        //   adjusted_lim = a - b
-        //
-        // Proof:
-        //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. a->_hi]
-        //     -> lo_type->_hi >= a->_hi
-        //     hi_type = [min(b->_lo+1, max_int) .. max_int]
-        //     -> hi_type->_lo <= b->_lo + 1
-        //   Given check from above:
-        //     lo_type->_hi <  hi_type->_lo
-        //     -> a->_hi   <  b->_lo + 1
-        //     -> a        <  b      + 1
-        //     -> a        <= b                 (A-B)
-        //
-        //   Case A: a = b
-        //     Let y = a = b
-        //     -> n > a && n <= b     vs     n - a - 1 <u b - a
-        //     -> n > y && n <= y     vs     n - y - 1 <u y - y = 0
-        //        false                      false
-        //     Hence, (BEFORE) and (AFTER) are both always false.
-        //
-        //   Case B: a < b
-        //     Case n <= a:
-        //       (BEFORE) is always false, show (AFTER) is always false.
-        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-        //       -> n < a+1
-        //       U(n - (a + 1))          <  U(b - a)
-        //       -- Lemma2 (n < a+1) --     -- Lemma1 (a <= b) --
-        //         n - (a + 1) + 2^32    <    b - a
-        //         n -      1  + 2^32    <    b
-        //         n           + 2^32    <=   b
-        //       Always false by Lemma3.
-        //       Note: To apply Lemma2 above, we must use (Case B), we
-        //             could not have done it with (A-B) alone.
-        //
-        //     Case a < n <= b:
-        //       (BEFORE) is always true, show (AFTER) is always true.
-        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-        //       -> n >= a+1
-        //       U(n - (a + 1))          <  U(b - a)
-        //       -- Lemma1 (n >= a+1) --    -- Lemma1 (a <= b) --
-        //         n - (a + 1)           <    b - a
-        //         n -      1            <    b
-        //         n                     <=   b
-        //       Follows from case assumption, so always true.
-        //
-        //     Case n > b:
-        //       (BEFORE) is always false, show (AFTER) is always false.
-        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-        //       -> a+1 <= b
-        //       -> n > a+1
-        //       U(n - (a + 1))          <  U(b - a)
-        //       -- Lemma1 (n >  a+1) --    -- Lemma1 (a <= b) --
-        //         n - (a + 1)           <    b - a
-        //         n -      1            <    b
-        //         n                     <=   b
-        //     Contradicts case assumption, so always false.
-        // QED.
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::lt;
-      } else {
-        assert(false, "unhandled lo_test: %d", lo_test);
-        return false;
-      }
-    } else {
-      assert(false, "is this path dead?");
-      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled hi_test: %d", hi_test);
-      return false;
-    }
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
-  } else if (lo_type != nullptr && hi_type != nullptr && lo_type->_lo > hi_type->_hi &&
-             lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
-    // We have:
-    // <------- success ------> <----------- fail -------------> <----- otherproj ------>
-    // [min_int .. hi_type->hi] [hi_type->hi+1 .. lo_type->lo-1] [lo_type->lo .. max_int]
-
-    swap(lo, hi);
-    swap(lo_type, hi_type);
-    swap(lo_test, hi_test);
-
-    assert((dom_bool->_test.is_less() && proj->_con) ||
-           (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
-
-    cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
-
-    if (lo_test == BoolTest::lt) {
-      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        // (CASE *2b)
-        // lo=lt,hi=lt:    n < a && !(n <  b)
-        // lo=lt,hi=ge:    n < a &&   n >= b
-        //
-        // Simplified version:
-        //   n < a || n >= b                    (BEFORE)
-        //
-        // Transformed to:
-        //   n - b >=u a - b                    (AFTER)
-        //
-        // This is exaclty the same as (CASE *2a).
-        // TODO: why flipped?
-        cond = BoolTest::ge;
-      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
-        // TODO: not sure about this case!
-        // (CASE *3b)
-        // lo=lt,hi=le:   n < a || !(n <= b)
-        // lo=lt,hi=gt:   n < a ||   n >  b
-        //
-        // Simplified version:
-        //   n < a || n > b                     (BEFORE)
-        //
-        // Transformed to:
-        //   n - a >=u b - a + 1                (AFTER)
-        //
-        // This is exaclty the same as (CASE *3a).
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
-        cond = BoolTest::ge;
-      } else {
-        assert(false, "unhandled hi_test: %d", hi_test);
-        return false;
-      }
-    } else if (lo_test == BoolTest::le) {
-      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        // TODO: not sure about this case!
-        // (CASE *1b)
-        // lo=le,hi=lt:    n <= a  && !(n <  b)
-        // lo=le,hi=ge:    n <= a  &&   n >= b
-        //
-        // Simplified version:
-        //   n > a && n < b                     (BEFORE)
-        //
-        // Transformed to:
-        //   n - b - 1  <u a - b - 1            (AFTER)
-        //
-        // This is exaclty the same as (CASE *1a).
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::ge;
-      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
-        // (CASE *4b)
-        // lo=le,hi=le:    n <= a && !(n <= b)
-        // lo=le,hi=gt:    n <= a &&   n >  b
-        //
-        // Simplified version:
-        //   n <= a && n > b                    (BEFORE)
-        //
-        // Transformed to:
-        //   n - b - 1 <u a - b                 (AFTER)
-        //
-        // This is exactly the same as (CASE 4a*)
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        // TODO: why flipped?
-        cond = BoolTest::ge;
-      } else {
-        assert(false, "unhandled hi_test: %d", hi_test);
-        return false;
-      }
-    } else {
-      assert(false, "is this path dead?");
-      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled lo_test: %d", lo_test);
-      return false;
-    }
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
+  const TypeInt* lo_type = nullptr;
+  const TypeInt* hi_type = nullptr;
+  BoolTest::mask lo_test = BoolTest::illegal;
+  BoolTest::mask hi_test = BoolTest::illegal;
+  if (BoolTest::is_greater(test1) && BoolTest::is_less(test2)) {
+    lo_type = IfNode::filtered_int_type(igvn, n, fail1);
+    hi_type = IfNode::filtered_int_type(igvn, n, fail2);
+    lo_test = test1;
+    hi_test = test2;
+  } else if (BoolTest::is_less(test1) && BoolTest::is_greater(test2)) {
+    lo_type = IfNode::filtered_int_type(igvn, n, fail2);
+    hi_type = IfNode::filtered_int_type(igvn, n, fail1);
+    lo_test = test2;
+    hi_test = test1;
   } else {
-    // We could not do any CmpU folding. But maybe "fail" can never be
-    // reached, and we can fold away the second CmpI.
-    // Example:
-    //   if n < 5: otherproj
-    //   // proj (failtype: 5..max_int)
-    //   if n > 1: success <- can never fail
-    //   // fail (type2: min_int..1)
-    // If we take the first CmpI to proj, we restrict n to:
-    const TypeInt* failtype = filtered_int_type(igvn, n, proj);
-    if (failtype != nullptr) {
-      // And then from proj, we take the second branch to "fail",
-      // where the second CmpI restricts n to:
-      const TypeInt* type2 = filtered_int_type(igvn, n, fail);
-      if (type2 != nullptr) {
-        // Is there any intersection left for the two restrictions?
-        if (failtype->filter(type2) == Type::TOP) {
-          // No, the intersection is empty. Let us fold the second
-          // CmpI away from "fail", and towards "success".
-          igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
-          return true;
-        }
-      }
-    }
+    // Could not find upper and lower bound.
+    return false;
+  }
+  assert(BoolTest::is_greater(lo_test), "lower bound: n {>/>=} lo");
+  assert(BoolTest::is_less(hi_test),    "upper bound: n {</<=} lo");
+
+  // Check that we got lower and upper bounds as expected.
+  if (lo_type == nullptr ||
+      hi_type == nullptr ||
+      hi_type->_hi != max_jint ||
+      lo_type->_lo != min_jint) {
+    // Upper and lower bounds could not be established.
     return false;
   }
 
-  assert(lo != nullptr && hi != nullptr, "sanity");
-  Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
-  // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
-  Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
-  if (adjusted_lim == nullptr) {
-    adjusted_lim = igvn->transform(new SubINode(hi, lo));
-  }
-  hook->destruct(igvn);
-  if (lo->outcnt() == 0) {
-    // The hook kept lo alive through the transforms, but now we
-    // don't need it any more, and have to remove it.
-    // for being deleted later.
-    // Example how it can happen:
-    //   lo = lo + 1 // see (Case *4b)
-    //   hook = Node(lo)
-    //   adjusted_val = n - lo
-    //   -> gvn transformed to: (n - lo) + -1
-    //   -> the "lo = lo + 1" AddI now is only used by the hook.
-    igvn->remove_dead_node(lo);
-  }
-  lo = nullptr; // don't use it any more.
-
-  if (adjusted_val->is_top() || adjusted_lim->is_top()) {
-    return false;
-  }
-
-  if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
-      !igvn->C->post_loop_opts_phase()) {
-    // If range check elimination applies to this comparison, it includes code to protect from overflows that may
-    // cause the main loop to be skipped entirely. Delay this transformation.
-    // Example:
-    // for (int i = 0; i < limit; i++) {
-    //   if (i < max_jint && i > min_jint) {...
-    // }
-    // Comparisons folded as:
-    // i - min_jint - 1 <u -2
-    // when RC applies, main loop limit becomes:
-    // min(limit, max(-2 + min_jint + 1, min_jint))
-    // = min(limit, min_jint)
-    // = min_jint
-    if (adjusted_val->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_val);
+  // Handle the 4 cases.
+  if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
+    // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u hi - lo - 1  (assuming lo <  hi)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. lo->_hi]    for n <= lo
+    //     -> lo_type->_hi = lo->_hi
+    //     hi_type = [hi->_lo .. max_int]
+    //     -> hi_type->_lo = hi->_lo
+    //   We will need the assumption "lo < hi" below, which we can
+    //   establish with the following check:
+    //     lo_type->_hi < hi_type->_lo
+    //     -> lo->_hi < hi->_lo
+    //     -> lo      < hi                           (LO-HI)
+    //
+    //   Case n <= lo:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
+    //     -> lo+1 <= hi
+    //     -> n < lo+1
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma2 (n < lo+1) --     -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1) + 2^32     <    hi - (lo + 1)
+    //       n            + 2^32     <    hi
+    //     Always false by Lemma3.
+    //
+    //   Case lo < n < hi:
+    //     (BEFORE) is always true, show (AFTER) is always true.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overfaw):
+    //     -> lo+1 <= hi
+    //     -> n >= lo+1
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1)            <    hi - (lo + 1)
+    //       n                       <    hi
+    //     Corresponds to case assumption, so always true.
+    //
+    //   Case n >= hi:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overfaw):
+    //     -> lo+1 <= hi
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma1 (n >= lo+1) --    -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1)            <    hi - (lo + 1)
+    //       n                       <    hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    // Check assumption (LO-HI) and transform:
+    if (lo_type->_hi < hi_type->_lo) {
+      assert(false, "TODO");
+      return true;
     }
-    if (adjusted_lim->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_lim);
-    }
-    igvn->C->record_for_post_loop_opts_igvn(this);
     return false;
+  } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
+    // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u hi - a       (assuming lo <= hi)
+  } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
+    // c)  (n >= lo && n <  hi)  ->   n - lo     <u hi - a       (assuming lo <= hi)
+  } else {
+    assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
+    // d)  (n >= lo && n <= hi)  ->
   }
 
-  Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
-  Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
-
-  igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-  igvn->replace_input_of(this, 1, newbool);
-
-  return true;
+  return false; // TODO: fix me!
 }
+
+//  bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
+//    Node* this_cmp = in(1)->in(1);
+//    BoolNode* this_bool = in(1)->as_Bool();
+//    IfNode* dom_iff = proj->in(0)->as_If();
+//    BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
+//    Node* lo = dom_iff->in(1)->in(1)->in(2);
+//    Node* hi = this_cmp->in(2);
+//    Node* n = this_cmp->in(1);
+//    IfProjNode* otherproj = proj->other_if_proj();
+//
+//    const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
+//    const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
+//
+//    BoolTest::mask lo_test = dom_bool->_test._test;
+//    BoolTest::mask hi_test = this_bool->_test._test;
+//    BoolTest::mask cond = hi_test;
+//
+//    // Second test guaranteed canonicalized, first one may not have
+//    // been canonicalized yet
+//    assert(lo_test == BoolTest::lt ||
+//           lo_test == BoolTest::le ||
+//           lo_test == BoolTest::gt ||
+//           lo_test == BoolTest::ge ||
+//           lo_test == BoolTest::ne, "lo test options: %d", lo_test);
+//    assert(hi_test == BoolTest::lt ||
+//           hi_test == BoolTest::le, "hi test options: %d", hi_test);
+//
+//    // -------------------------------------------------------------------
+//    // In some cases, we can fold two CmpI into a single CmpI:
+//    // convert:
+//    //
+//    //          dom_bool = n {<,<=,>,>=} a
+//    //                           / \
+//    //     proj = {True,False}  /   \ otherproj = {False,True} -> n in lo_type
+//    //                         /
+//    //        this_bool = n {<,<=} b
+//    //                       / \
+//    //  fail = {True,False} /   \ success = {False,True} -> n in hi_type
+//    //                     /
+//    //
+//    //   Example:
+//    //     if n < 0:   otherproj (lo_type: min_int..-1)
+//    //     // proj
+//    //     if n > 10:  success   (hi_type: 11..max_int)
+//    //     // fail
+//    //
+//    //   Note: otherproj and success both lead to the same Region, or
+//    //         some uncommon trap.
+//    //
+//    //   Note: I'm not happy with the names of "success", "otherproj"
+//    //         and "fail". Most of the time, both "success" and
+//    //         "otherproj" lead to an out-of-bounds Exception, and the
+//    //         "fail" path leads to the in-bounds data access.
+//    //         We can consider renaming this in the future.
+//    //
+//    //   We formulate the condition for reaching the "fail" path, so we
+//    //   have to pass both of the CmpI:
+//    //       n >= 0  &&   n <= 10
+//    //   We can also get alternative formulations by flipping the tests,
+//    //   and the projections:
+//    //     !(n <  0) && !(n >  10)
+//    //
+//    // into:
+//    //
+//    // cond = (n - lo) {<u,<=u,>u,>=u} adjusted_lim
+//    //                       / \
+//    //                 fail /   \ success (subsumes otherproj)
+//    //                     /
+//    //
+//    //   In our Example, we hack the first condition to "false", replace
+//    //   the second condition with the CmpU:
+//    //     if false:   otherproj <- folds away
+//    //     // proj
+//    //     if n u> 10: success   <- takes on both paths
+//    //     // fail
+//    //
+//    //   Formulating the condition for reaching the "fail" path:
+//    //     n <=u 10
+//    //
+//    // For this to work, the 3 branches must split the int-range into 3 regions. Example:
+//    //
+//    // <----- otherproj ------> <----------- fail -------------> <------ success ------->
+//    // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
+//    // [min_int ..          -1] [0             ..            10] [11          .. max_int]
+//    //                         ^                                ^
+//    //                         |                                |
+//    //                dom_bool / lo_test              this_bool / hi_test
+//    //
+//    // Since we know that otherproj and success go to the sampe place,
+//    // we want to "shift" the ranges, such that we only need a single check:
+//    //
+//    // <----------- fail -------------> <------ success -------> <----- otherproj ------>
+//    // [0            ..   adjusted_lim] [adjusted_lim + 1      ...              max_uint]
+//    // [0            ..             10] [11                    ...              max_uint]
+//    //                                 ^
+//    //                                 |
+//    //                                CmpU
+//    //
+//    // The complexity in this optimization comes from the different
+//    // combinations of comparison operators, and the permutations
+//    // of lower and upper bounds. We must carefully analyze every
+//    // individual case, and avoid off-by-one errors that can easily
+//    // lead to int-range overflow or underflow.
+//    //
+//    // -------------------------------------------------------------------
+//    // In the proofs below, we need some basic Lemmas to deal with integer
+//    // signed and unsigned arithmetic.
+//    //
+//    // Lemma1:
+//    //   Let a and b be in [min_int .. max_int].
+//    //   If a >=s b, then:
+//    //     U(a - b) = a - b
+//    //
+//    //   Proof:
+//    //     a >= b
+//    //     -> a - b >= 0
+//    //
+//    //     a <= max_int
+//    //     b >= min_int
+//    //     -> a - b <= max_int - min_int = 2^32-1
+//    //
+//    //     0 <= a - b <= 2^32-1
+//    //     -> cast to unsigned has no overflow
+//    //     -> U(a - b) = a - b
+//    //
+//    // Lemma2:
+//    //   Let a and b be in [min_int .. max_int].
+//    //   If a <s b, then:
+//    //     U(a - b) = a - b + 2^32
+//    //
+//    //   Proof:
+//    //     a < b
+//    //     -> a - b < 0
+//    //
+//    //     a >= min_int
+//    //     b <= max_int
+//    //     -> a - b >= min_int - max_int = 2^32-1
+//    //
+//    //     2^32-1 <= a - b < 0
+//    //     -> cast to unsigned leads to exactly one overflow
+//    //     -> U(a - b) = a - b + 2^32
+//    //
+//    // Lemma3:
+//    //   Let a and b be in [min_int .. max_int].
+//    //     a + 2^32 > b
+//    //
+//    //   Proof:
+//    //     Using a >= min_int, and b <= max_int:
+//    //     a + 2^32 <= min_int + 2^32
+//    //               = max_int + 1
+//    //              <= b       + 1
+//    //              <  b
+//    // -------------------------------------------------------------------
+//
+//    // Figure out which of the two tests sets the upper bound and which
+//    // sets the lower bound if any.
+//    Node* adjusted_lim = nullptr;
+//    if (lo_type != nullptr && hi_type != nullptr && hi_type->_lo > lo_type->_hi &&
+//        hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
+//      assert((dom_bool->_test.is_less() && !proj->_con) ||
+//             (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
+//      // We have:
+//      // <----- otherproj ------> <----------- fail -------------> <------ success ------->
+//      // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
+//
+//      if (hi_test == BoolTest::lt) {
+//        if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
+//          // (CASE *1a)
+//          // lo_test=le, hi_test=lt:   !(n <= a) &&   n < b
+//          // lo_test=gt, hi_test=lt:     n >  a  &&   n < b
+//          //
+//          // Simplified version:
+//          //   n > a && n < b                            (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - a - 1  <u b - a - 1                   (AFTER)
+//          // Equivalent to:
+//          //   n - lo <cond> adjusted_lim
+//          // Where:
+//          //   lo   = a + 1
+//          //   hi   = b
+//          //   cond = "<u"
+//          //   adjusted_lim = hi - lo
+//          //
+//          // Proof:
+//          //   From IfNode::filtered_int_type, we get:
+//          //     lo_type = [min_int .. a->_hi]
+//          //     -> lo_type->_hi = a->_hi
+//          //     hi_type = [b->_lo .. max_int]
+//          //     -> hi_type->_lo = b->_lo
+//          //   Given check from above:
+//          //     lo_type->_hi < hi_type->_lo
+//          //     -> a->_hi < b->_lo
+//          //     -> a      < b                           (A-B)
+//          //
+//          //   Case n <= a:
+//          //     (BEFORE) is always false, show (AFTER) is always false.
+//          //     Since a < b (A-B), S(a+1) = a+1 (no overflow):
+//          //     -> a+1 <= b
+//          //     -> n < a+1
+//          //     U(n - (a + 1))           <  U(b - (a + 1))
+//          //     -- Lemma2 (n < a+1) --      -- Lemma1 (a+1 <= b) --
+//          //       n - (a + 1) + 2^32     <    b - (a + 1)
+//          //       n           + 2^32     <    b
+//          //     Always false by Lemma3.
+//          //
+//          //   Case a < n < b:
+//          //     (BEFORE) is always true, show (AFTER) is always true.
+//          //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
+//          //     -> a+1 <= b
+//          //     -> n >= a+1
+//          //     U(n - (a + 1))           <  U(b - (a + 1))
+//          //     -- Lemma1 (n >= a+1) --    -- Lemma1 (a+1 <= b) --
+//          //       n - (a + 1)            <    b - (a + 1)
+//          //       n                      <    b
+//          //     Corresponds to case assumption, so always true.
+//          //
+//          //   Case n >= b:
+//          //     (BEFORE) is always false, show (AFTER) is always false.
+//          //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
+//          //     -> a+1 <= b
+//          //     U(n - (a + 1))           <  U(b - (a + 1))
+//          //     -- Lemma1 (n >= a+1) --     -- Lemma1 (a+1 <= b) --
+//          //       n - (a + 1)            <    b - (a + 1)
+//          //       n                      <    b
+//          //     Contradicts case assumption, so always false.
+//          // QED.
+//          lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+//          assert(cond == BoolTest::lt, "");
+//        } else {
+//          assert(lo_test == BoolTest::lt || lo_test == BoolTest::ge, "lo_test = %d", lo_test);
+//          // (CASE *2a)
+//          // lo=lt,hi=lt  !(n <  a) && n < b
+//          // lo=ge,hi=lt    n >= a  && n < b
+//          //
+//          // Simplified version:
+//          //   n >= a && n < b                     (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - a <u b - a                      (AFTER)
+//          // Equivalent to:
+//          //   n - lo <cond> adjusted_lim
+//          // Where:
+//          //   lo   = a
+//          //   hi   = b
+//          //   cond = "<u"
+//          //   adjusted_lim = hi - lo
+//          //
+//          // Proof:
+//          //   From IfNode::filtered_int_type, we get:
+//          //     lo_type = [min_int .. max(min_int, a->_hi - 1)]
+//          //     -> lo_type->_hi >= a->_hi - 1
+//          //     hi_type = [b->_lo .. max_int]
+//          //     -> hi_type->_lo = b->_lo
+//          //   Given check from above:
+//          //     lo_type->_hi < hi_type->_lo
+//          //     -> a->_hi - 1 <  b->_lo
+//          //     -> a->_hi     <= b->_lo
+//          //     -> a <= b                             (A-B)
+//          //
+//          //   Case n < a:
+//          //     (BEFORE) is always false, show (AFTER) is always false.
+//          //     U(n - a)               < U(b - a)
+//          //     -- Lemma2 (n < a) --     -- Lemma1 (a <= b) --
+//          //       n - a + 2^32         <   b - a
+//          //       n      + 2^32        <   b
+//          //     Always false by Lemma3.
+//          //
+//          //   Case a <=s n <s b:
+//          //     (BEFORE) is always true, show (AFTER) is always true.
+//          //     U(n - a)               < U(b - a)
+//          //     -- Lemma1 (n >=a) --      -- Lemma1 (a <= b) --
+//          //       n - a                <   b - a
+//          //       n                    <   b
+//          //     Follows from case assumption, so always true.
+//          //
+//          //   Case n >=s b:
+//          //     (BEFORE) is always false, show (AFTER) is always false.
+//          //     U(n - a)               < U(b - a)
+//          //     -- Lemma1 (n >= a) --     -- Lemma1 (a <= b) --
+//          //       n - a                <   b - a
+//          //       n                    <   b
+//          //     Contradicts case assumption, so always false.
+//          // QED.
+//          assert(cond == BoolTest::lt, "");
+//        }
+//      } else if (hi_test == BoolTest::le) {
+//        if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
+//          // (CASE *3a)
+//          // lo=lt,hi=le:  !(n <  a) && n <= b
+//          // lo=ge,hi=le:    n >= a  && n <= b
+//          //
+//          // Simplified version:
+//          //   n >= a && n <= b                 (BEFORE)
+//          //
+//          // TODO: fix things up here!
+//          //
+//          // Transformed to:
+//          //   n - a >=u b - a + 1              (AFTER)
+//          //
+//          // This is a problematic case.
+//          // Example:
+//          //   a = min_int, b = max_int, n = 1
+//          //   (BEFORE): 1 < min_int || 1 > max_int
+//          //             -> false
+//          //   (After)   U(1 - min_int) >= U(max_int - min_int + 1)
+//          //             U(2^31 - 1)    >= U(2^32)
+//          //               2^31 - 1     >=   0  (unexpected overflow!)
+//          //             -> true
+//          //
+//          // But a = min_int, b = max_int is also the only problematic
+//          // case. If we exclude this case, we know that b - a + 1
+//          // cannot overflow:
+//          //   a > min_int || b < max_int
+//          //   0 <  b - a     < 2^32 - 1
+//          //   1 <  b - a + 1 < 2^32
+//          // And so it follows:
+//          //   U(b - a + 1) = b - a + 1        (RHS-NO-OVERFLOW)
+//          //
+//          // Proof:
+//          //   From IfNode::filtered_int_type, we get:
+//          //     lo_type = [min_int .. max(min_int, a->_hi-1)]
+//          //     -> lo_type->_hi >= a->_hi - 1
+//          //     hi_type = [min(b->_lo+1, max_int) .. max_int]
+//          //     -> hi_type->_lo <= b->_lo + 1
+//          //   Given check from above:
+//          //     lo_type->_hi < hi_type->_lo
+//          //     -> a->_hi - 1 < b->_lo + 1
+//          //     -> a - 1 <  b + 1
+//          //     -> a     <= b + 1                        (A-B)
+//          //   Note: this is a substantially weaker condition than elsewhere!
+//          //         And it is the reason why we chose rhs = b - a + 1,
+//          //         so that this can not underflow the unsigned computation.
+//          //         We did this in JDK-8135069, before it was b - a, which
+//          //         could have underflowed for a = b + 1. But now, we just
+//          //         traded the underflow problem with an overflow problem,
+//          //         as we saw above with the problematic case.
+//          //
+//          //   Case n <s a:
+//          //     (BEFORE) is always true, show (AFTER) is always true.
+//          //     U(n - a)               >=  U(b - a + 1)
+//          //     -- Lemma2 (n < a) --       -- (RHS-NO-OVERFLOW) --
+//          //       n - a + 2^32         >=    b - a + 1
+//          //       n      + 2^32         >=    b      + 1
+//          //       n      + 2^32         >     b
+//          //     Always true by Lemma3.
+//          //
+//          //   Case a <=s n <=s b:
+//          //     (BEFORE) is always false, show (AFTER) is always false.
+//          //     U(n - a)               >=  U(b - a + 1)
+//          //     -- Lemma1 (n >= a) --      -- (RHS-NO-OVERFLOW) --
+//          //       n - a                >=    b - a + 1
+//          //       n                     >=    b      + 1
+//          //       n                     >     b
+//          //     Contradicts our case assumption n <=s b, so always false.
+//          //
+//          //   Case n >s b:
+//          //     (BEFORE) is always true, show (AFTER) is always true.
+//          //     U(n - a)               >=  U(b - a + 1)
+//          //     -- Lemma1 (n > a) --       -- (RHS-NO-OVERFLOW) --
+//          //       n - a                >=    b - a + 1
+//          //       n                     >=    b      + 1
+//          //       n                     >     b
+//          //     Equivalent to case assumption, so always true.
+//          // QED.
+//          //
+//          // Discussion:
+//          //   The fundamental issue is that the test "lo_type->_hi < hi_type->_lo"
+//          //   only implies "a <= b + 1", and so "b - a" can underflow, and
+//          //   "b - a + 1" can overflow the unsigned range. We discovered the
+//          //   underflow in JDK-8135069, and then "fixed" it and now we have a
+//          //   reproducer with overflow.
+//          //
+//          //   A very simple solution: just do the computations in long, so we
+//          //   don't have overflow/underflow issues.
+//          //
+//          //   Alternatively: strenghthen the check "lo_type->_hi < hi_type->_lo"
+//          //   to "lo_type->_hi + 1 < hi_type->_lo" (careful with overflow here!).
+//          //     a_type->_b + 1 <  hi_type->_lo
+//          //     a->_hi - 1  + 1 <  b->_lo + 1
+//          //     a->_hi          <= b->_lo
+//          //     a               <= b
+//          //   Now we can use Lemma1: U(b - a) = b - a
+//          //   And that would allow us to revert the change from JDK-8135069,
+//          //   and go back to the solution of transforming:
+//          //     n < a || n > b
+//          //   Into:
+//          //     n - a >u b - a
+//          //   However, that would restrict the optimization for some cases.
+//          //   For example, this is currently transformed, and we would disable it:
+//          //     n < 0 || n > -1
+//          //   This one currently is folded, and it is actually folded to a constant!
+//          //   So it would be a shame to destroy that.
+//          //   However, it seems that the case
+//          //     n < 0 || n > -2
+//          //   is also constant folded, and replaced directly with a constant. So
+//          //   probably we could figure out the same for the case in question.
+//          //   Doing it with a CmpU instead of CmpUL may not matter much on 64 bit
+//          //   machines. But it would also be more work to introduce long logic
+//          //   here, so just strengthening the condition may be good enough.
+//          //
+//          // Severity of this Bug:
+//          //   (CASE *3a) and (CASE *3b) are the only ones where we can not prove
+//          //   correctness of the current implementation. And the cases that fail
+//          //   are very limited:
+//          //     a = min_int
+//          //     b = max_int
+//          //   For the equivalent patterns:
+//          //     n < a || n > b            (CASE *3a)
+//          //     n > b || n < a            (CASE *3b)
+//          //
+//          //   Range Checks have a different pattern:
+//          //     i < 0 || i >= length
+//          //   While length could in theory be max_int, a is zero or
+//          //   close to zero, and not min_int.
+//          //
+//          //   Further, these cases are only optimized if the range for
+//          //     n < a
+//          //     n > b
+//          //   have no overlap provably. This prevents most general cases
+//          //   where a and b are completely unknown. It requires specific
+//          //   restrictions on a and b. For example:
+//          //     a = 0
+//          //     b >= 0
+//          //   which would give us ranges:
+//          //     n < a  ->  n in [min_int .. -1]
+//          //     n > b  ->  n in [1 .. max_int]
+//          //
+//          //   It would be quite strange if someone relied on a check
+//          //     n < a || n > b
+//          //   where a = min_int and b = max_int were legitimate range.
+//          //   Also: before optimization this check should say that
+//          //   we are INSIDE the range, but after the optimization we
+//          //   wrongly say we lay OUTSIDE the range. So if this was
+//          //   an access check to a contiguous range, we would probably
+//          //   just wrongly throw a bounds exception where access would
+//          //   have been safe. The converse would have been worse: if
+//          //   we had accessed memory where we should have thrown.
+//          //
+//          adjusted_lim = igvn->transform(new SubINode(hi, lo));
+//          adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
+//          cond = BoolTest::lt;
+//        } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
+//          // (CASE *4a)
+//          // lo=le,hi=le:   !(n <= a) && n <= b
+//          // lo=gt,hi=le:     n >  a  && n <= b
+//          //
+//          // Simplified version:
+//          //   n > a && n <= b                    (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - a - 1 <u b - a              (AFTER)
+//          // Equivalent to:
+//          //   n - lo <cond> adjusted_lim
+//          // Where:
+//          //   lo   = a + 1
+//          //   hi   = b
+//          //   cond = "<u"
+//          //   adjusted_lim = a - b
+//          //
+//          // Proof:
+//          //   From IfNode::filtered_int_type, we get:
+//          //     lo_type = [min_int .. a->_hi]
+//          //     -> lo_type->_hi >= a->_hi
+//          //     hi_type = [min(b->_lo+1, max_int) .. max_int]
+//          //     -> hi_type->_lo <= b->_lo + 1
+//          //   Given check from above:
+//          //     lo_type->_hi <  hi_type->_lo
+//          //     -> a->_hi   <  b->_lo + 1
+//          //     -> a        <  b      + 1
+//          //     -> a        <= b                 (A-B)
+//          //
+//          //   Case A: a = b
+//          //     Let y = a = b
+//          //     -> n > a && n <= b     vs     n - a - 1 <u b - a
+//          //     -> n > y && n <= y     vs     n - y - 1 <u y - y = 0
+//          //        false                      false
+//          //     Hence, (BEFORE) and (AFTER) are both always false.
+//          //
+//          //   Case B: a < b
+//          //     Case n <= a:
+//          //       (BEFORE) is always false, show (AFTER) is always false.
+//          //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+//          //       -> n < a+1
+//          //       U(n - (a + 1))          <  U(b - a)
+//          //       -- Lemma2 (n < a+1) --     -- Lemma1 (a <= b) --
+//          //         n - (a + 1) + 2^32    <    b - a
+//          //         n -      1  + 2^32    <    b
+//          //         n           + 2^32    <=   b
+//          //       Always false by Lemma3.
+//          //       Note: To apply Lemma2 above, we must use (Case B), we
+//          //             could not have done it with (A-B) alone.
+//          //
+//          //     Case a < n <= b:
+//          //       (BEFORE) is always true, show (AFTER) is always true.
+//          //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+//          //       -> n >= a+1
+//          //       U(n - (a + 1))          <  U(b - a)
+//          //       -- Lemma1 (n >= a+1) --    -- Lemma1 (a <= b) --
+//          //         n - (a + 1)           <    b - a
+//          //         n -      1            <    b
+//          //         n                     <=   b
+//          //       Follows from case assumption, so always true.
+//          //
+//          //     Case n > b:
+//          //       (BEFORE) is always false, show (AFTER) is always false.
+//          //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+//          //       -> a+1 <= b
+//          //       -> n > a+1
+//          //       U(n - (a + 1))          <  U(b - a)
+//          //       -- Lemma1 (n >  a+1) --    -- Lemma1 (a <= b) --
+//          //         n - (a + 1)           <    b - a
+//          //         n -      1            <    b
+//          //         n                     <=   b
+//          //     Contradicts case assumption, so always false.
+//          // QED.
+//          adjusted_lim = igvn->transform(new SubINode(hi, lo));
+//          lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+//          cond = BoolTest::lt;
+//        } else {
+//          assert(false, "unhandled lo_test: %d", lo_test);
+//          return false;
+//        }
+//      } else {
+//        assert(false, "is this path dead?");
+//        assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled hi_test: %d", hi_test);
+//        return false;
+//      }
+//      // this test was canonicalized
+//      assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
+//    } else if (lo_type != nullptr && hi_type != nullptr && lo_type->_lo > hi_type->_hi &&
+//               lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
+//      // We have:
+//      // <------- success ------> <----------- fail -------------> <----- otherproj ------>
+//      // [min_int .. hi_type->hi] [hi_type->hi+1 .. lo_type->lo-1] [lo_type->lo .. max_int]
+//
+//      swap(lo, hi);
+//      swap(lo_type, hi_type);
+//      swap(lo_test, hi_test);
+//
+//      assert((dom_bool->_test.is_less() && proj->_con) ||
+//             (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
+//
+//      cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
+//
+//      if (lo_test == BoolTest::lt) {
+//        if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
+//          // (CASE *2b)
+//          // lo=lt,hi=lt:    n < a && !(n <  b)
+//          // lo=lt,hi=ge:    n < a &&   n >= b
+//          //
+//          // Simplified version:
+//          //   n < a || n >= b                    (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - b >=u a - b                    (AFTER)
+//          //
+//          // This is exaclty the same as (CASE *2a).
+//          // TODO: why flipped?
+//          cond = BoolTest::ge;
+//        } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
+//          // TODO: not sure about this case!
+//          // (CASE *3b)
+//          // lo=lt,hi=le:   n < a || !(n <= b)
+//          // lo=lt,hi=gt:   n < a ||   n >  b
+//          //
+//          // Simplified version:
+//          //   n < a || n > b                     (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - a >=u b - a + 1                (AFTER)
+//          //
+//          // This is exaclty the same as (CASE *3a).
+//          adjusted_lim = igvn->transform(new SubINode(hi, lo));
+//          adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
+//          cond = BoolTest::ge;
+//        } else {
+//          assert(false, "unhandled hi_test: %d", hi_test);
+//          return false;
+//        }
+//      } else if (lo_test == BoolTest::le) {
+//        if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
+//          // TODO: not sure about this case!
+//          // (CASE *1b)
+//          // lo=le,hi=lt:    n <= a  && !(n <  b)
+//          // lo=le,hi=ge:    n <= a  &&   n >= b
+//          //
+//          // Simplified version:
+//          //   n > a && n < b                     (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - b - 1  <u a - b - 1            (AFTER)
+//          //
+//          // This is exaclty the same as (CASE *1a).
+//          lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+//          cond = BoolTest::ge;
+//        } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
+//          // (CASE *4b)
+//          // lo=le,hi=le:    n <= a && !(n <= b)
+//          // lo=le,hi=gt:    n <= a &&   n >  b
+//          //
+//          // Simplified version:
+//          //   n <= a && n > b                    (BEFORE)
+//          //
+//          // Transformed to:
+//          //   n - b - 1 <u a - b                 (AFTER)
+//          //
+//          // This is exactly the same as (CASE 4a*)
+//          adjusted_lim = igvn->transform(new SubINode(hi, lo));
+//          lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+//          // TODO: why flipped?
+//          cond = BoolTest::ge;
+//        } else {
+//          assert(false, "unhandled hi_test: %d", hi_test);
+//          return false;
+//        }
+//      } else {
+//        assert(false, "is this path dead?");
+//        assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled lo_test: %d", lo_test);
+//        return false;
+//      }
+//      // this test was canonicalized
+//      assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
+//    } else {
+//      // We could not do any CmpU folding. But maybe "fail" can never be
+//      // reached, and we can fold away the second CmpI.
+//      // Example:
+//      //   if n < 5: otherproj
+//      //   // proj (failtype: 5..max_int)
+//      //   if n > 1: success <- can never fail
+//      //   // fail (type2: min_int..1)
+//      // If we take the first CmpI to proj, we restrict n to:
+//      const TypeInt* failtype = filtered_int_type(igvn, n, proj);
+//      if (failtype != nullptr) {
+//        // And then from proj, we take the second branch to "fail",
+//        // where the second CmpI restricts n to:
+//        const TypeInt* type2 = filtered_int_type(igvn, n, fail);
+//        if (type2 != nullptr) {
+//          // Is there any intersection left for the two restrictions?
+//          if (failtype->filter(type2) == Type::TOP) {
+//            // No, the intersection is empty. Let us fold the second
+//            // CmpI away from "fail", and towards "success".
+//            igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+//            return true;
+//          }
+//        }
+//      }
+//      return false;
+//    }
+//
+//    assert(lo != nullptr && hi != nullptr, "sanity");
+//    Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
+//    // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
+//    Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
+//    if (adjusted_lim == nullptr) {
+//      adjusted_lim = igvn->transform(new SubINode(hi, lo));
+//    }
+//    hook->destruct(igvn);
+//    if (lo->outcnt() == 0) {
+//      // The hook kept lo alive through the transforms, but now we
+//      // don't need it any more, and have to remove it.
+//      // for being deleted later.
+//      // Example how it can happen:
+//      //   lo = lo + 1 // see (Case *4b)
+//      //   hook = Node(lo)
+//      //   adjusted_val = n - lo
+//      //   -> gvn transformed to: (n - lo) + -1
+//      //   -> the "lo = lo + 1" AddI now is only used by the hook.
+//      igvn->remove_dead_node(lo);
+//    }
+//    lo = nullptr; // don't use it any more.
+//
+//    if (adjusted_val->is_top() || adjusted_lim->is_top()) {
+//      return false;
+//    }
+//
+//    if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
+//        !igvn->C->post_loop_opts_phase()) {
+//      // If range check elimination applies to this comparison, it includes code to protect from overflows that may
+//      // cause the main loop to be skipped entirely. Delay this transformation.
+//      // Example:
+//      // for (int i = 0; i < limit; i++) {
+//      //   if (i < max_jint && i > min_jint) {...
+//      // }
+//      // Comparisons folded as:
+//      // i - min_jint - 1 <u -2
+//      // when RC applies, main loop limit becomes:
+//      // min(limit, max(-2 + min_jint + 1, min_jint))
+//      // = min(limit, min_jint)
+//      // = min_jint
+//      if (adjusted_val->outcnt() == 0) {
+//        igvn->remove_dead_node(adjusted_val);
+//      }
+//      if (adjusted_lim->outcnt() == 0) {
+//        igvn->remove_dead_node(adjusted_lim);
+//      }
+//      igvn->C->record_for_post_loop_opts_igvn(this);
+//      return false;
+//    }
+//
+//    Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
+//    Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
+//
+//    igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
+//    igvn->replace_input_of(this, 1, newbool);
+//
+//    return true;
+//  }
 
 // Merge the branches that trap for this If and the dominating If into
 // a single region that branches to the uncommon trap for the
