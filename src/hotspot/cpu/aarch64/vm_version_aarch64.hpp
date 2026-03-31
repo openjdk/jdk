@@ -180,8 +180,8 @@ public:
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION
 
-  static bool cpu_supports_crc32()      { return _cpu_features.supports_feature(CPU_CRC32); }
-  static bool cpu_supports_sha3()       { return _cpu_features.supports_feature(CPU_SHA3); }
+  static bool cpu_supports_crc32()      { return supports_feature(_cpu_features, CPU_CRC32); }
+  static bool cpu_supports_sha3()       { return supports_feature(_cpu_features, CPU_SHA3); }
 
   static void set_feature(Feature_Flag flag) {
     _features |= BIT_MASK(flag);
