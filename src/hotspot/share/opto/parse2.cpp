@@ -254,10 +254,17 @@ public:
   }
 
   void load_from_unknown_flat_array(const TypeOopPtr* element_ptr) {
-    Node* unknown_inline_type = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+    Node* vt = nullptr;
+    if (element_ptr->is_inlinetypeptr()) {
+      ciInlineKlass* vk = element_ptr->inline_klass();
+      Node* flat_array = _parse.cast_to_flat_array(_array, vk);
+      vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+    } else {
+      vt = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+    }
 
     _region->add_req(_parse.control());
-    _res_phi->add_req(unknown_inline_type);
+    _res_phi->add_req(vt);
     _mem_phi->add_req(_parse.reset_memory());
     _io_phi->add_req(_parse.i_o());
   }
@@ -272,6 +279,16 @@ public:
     _mem_phi = new PhiNode(_region, Type::MEMORY, TypePtr::BOTTOM);
   }
 
+  void finish_merge_point() {
+    _parse.set_control(_gvn.transform(_region));
+    _parse.set_all_memory(_gvn.transform(_mem_phi));
+    _parse.set_i_o(_gvn.transform(_io_phi));
+    Node* ld = _gvn.transform(_res_phi);
+    ld = _parse.record_profile_for_speculation_at_array_load(ld);
+    pop_stack();
+    _parse.push_node(_bt, ld);
+  }
+
   bool emit() {
     emit_null_and_range_checks();
 
@@ -281,12 +298,22 @@ public:
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
     const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
 
-    if (array_type->is_flat()) {
+    if (array_type->is_not_flat()) {
       if (_elemtype == TypeInt::BOOL) {
         _bt = T_BOOLEAN;
       }
       Node* ld = emit_plain_load(_array);
       pop_stack();
+      _parse.push_node(_bt, ld);
+      return true;
+    }
+
+    if (array_type->is_flat()) {
+      pop_stack();
+      ciInlineKlass* vk = element_ptr->inline_klass();
+      Node* flat_array = _array;
+      Node* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      Node* ld = _gvn.transform(vt);
       _parse.push_node(_bt, ld);
       return true;
     }
@@ -297,9 +324,9 @@ public:
              (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()),
              "array can't be flat");
 
-      if (emit_load_if_known_flat_array(element_ptr)) {
-        return true;
-      }
+      // if (emit_load_if_known_flat_array(element_ptr)) {
+      //   return true;
+      // }
 
       ciArrayLoadData* array_load = profile_data();
       if (array_load != nullptr) {
@@ -356,25 +383,11 @@ public:
             } else {
               load_from_unknown_flat_array(element_ptr);
             }
-
           }
-          // if (profile.morphism() > 0 && not_flat_count != 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
-          //   PreserveJVMState pjvms(&_parse);
-          //   _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
-          // } else if (_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check) || profile.morphism() <= 0) {
-          //   load_from_unknown_flat_array(element_ptr);
-          // }
-          _parse.set_control(_gvn.transform(_region));
-          _parse.set_all_memory(_gvn.transform(_mem_phi));
-          _parse.set_i_o(_gvn.transform(_io_phi));
-          Node* ld = _gvn.transform(_res_phi);
-          ld = _parse.record_profile_for_speculation_at_array_load(ld);
-          pop_stack();
-          _parse.push_node(_bt, ld);
+          finish_merge_point();
           return true;
         }
-        if (flat_count == 0 && not_flat_count > 0 && !_parse.too_many_traps_or_recompiles(
-              Deoptimization::Reason_class_check)) {
+        if (flat_count == 0 && not_flat_count > 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
           {
             // Deoptimize if flat array
             BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
@@ -390,7 +403,33 @@ public:
           _parse.push_node(_bt, ld);
           return true;
         }
+        if (flat_count != 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+          {
+            // Deoptimize if not flat array
+            BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ true), PROB_MAX);
+            _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+          }
+          assert(!_parse.stopped(), "non flat array should have been caught earlier");
+          Node* ld = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+          pop_stack();
+          ld = _parse.record_profile_for_speculation_at_array_load(ld);
+          _parse.push_node(_bt, ld);
+          return true;
+        }
+        if (flat_count != 0 && not_flat_count != 0) {
+          create_merge_point();
+          float p = ((float) not_flat_count) / ((float) flat_and_not_flat_count);
+          test_non_flat_array_and_emit_reference_load(p);
+          load_from_unknown_flat_array(element_ptr);
+          finish_merge_point();
+          return true;
+        }
       }
+      create_merge_point();
+      test_non_flat_array_and_emit_reference_load(PROB_FAIR);
+      load_from_unknown_flat_array(element_ptr);
+      finish_merge_point();
+      return true;
     }
     return false;
   }
@@ -403,6 +442,7 @@ void Parse::array_load(BasicType bt) {
     return;
   }
 
+  ShouldNotReachHere();
   const Type* elemtype = Type::TOP;
   Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
   if (stopped())  return;     // guaranteed null or range check
