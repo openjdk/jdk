@@ -4885,6 +4885,7 @@ void os::set_native_thread_name(const char *name, size_t len) {
   // (e.g. "Dispatc..read21").
   if (len >= sizeof(buf)) {
     // truncate: first 7 bytes, "..", 6 bytes from the end = 7+2+6 = 15, then NUL terminator
+    // Truncating directly like this is faster than using snprintf.
     memcpy(buf, name, 7);
     buf[7] = '.';
     buf[8] = '.';
