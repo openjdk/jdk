@@ -4536,29 +4536,18 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 }
 
 //---------------------------replace_parallel_iv-------------------------------
-// Replace parallel induction variable (parallel to trip counter)
-// This optimization looks for patterns similar to:
+// Replace parallel IV phi2 (e.g. "a") in:
+//    for (iv = init; iv < limit; iv += stride) { a += inc; }
+// where inc is loop-invariant. Result: a = init2 +/- (iterations * inc)
 //
-//    int a = init2;
-//    for (int iv = init; iv < limit; iv += stride_con) {
-//      a += inc;   // or a -= inc; where inc is loop-invariant
-//    }
-//
-// and transforms it to:
-//
-//    a = init2 +/- ((iv - init) / stride_con) * inc
-//
-// The division (iv - init) / stride_con is always exact because at iteration
-// k the primary IV has value init + k * stride_con, so iv - init is always a
-// multiple of stride_con. For |stride_con| == 1 the division is elided. For
-// larger strides the division is computed in long to avoid signed overflow
-// of iv - init, and IGVN strength-reduces the constant divisor.
-// Such transformation introduces more optimization opportunities, the loop
-// can often be eliminated.
-//
-// However, if there is a mismatch between types of the loop and the parallel
-// induction variable (e.g., a long-typed IV in an int-typed loop), type
-// conversions are required.
+//   phi2 used inside loop body (not just at exit)?
+//    * no: replace with new expression (enables loop elimination)
+//      * |stride| == 1:       iterations = iv - init
+//      * |stride| power of 2: iterations = (iv - init) >>> log2
+//      * otherwise:           iterations = DivL(iv - init, stride)
+//    * yes: keep cheap ratio if possible (avoids expensive DivL per iter)
+//      * inc is constant, inc % stride == 0: a = iv * (inc / stride) + (init2 - init * (inc / stride))
+//      * otherwise: bail out, keep original a += inc, as DivL per iteration is more expensive
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -4629,6 +4618,67 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 #endif
 
+    // Check if phi2 is only used outside the loop (other than its own recurrence and
+    // uncommon traps which only need the value during deoptimization).
+    // If phi2 is used inside the loop body, bail out, as the replacement expression
+    // is more expensive per iteration than the original accumulation.
+    bool hoistable = true;
+    for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
+      Node* use = phi2->out(j);
+      if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
+        continue;
+      }
+      if (loop->is_member(get_loop(ctrl_or_self(use)))) {
+        hoistable = false;
+        break;
+      }
+    }
+    if (!hoistable) {
+      // phi2 is used inside the loop. For constant Add increments that are exact multiples
+      // of stride, use the cheap ratio approach (MulI per iteration).
+      // Otherwise bail out to avoid an expensive DivL chain per iteration.
+      if (!is_add || !inc_val->is_Con()) {
+        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (used inside loop): %d", phi2->_idx);)
+        continue;
+      }
+      jlong stride_con2 = inc_val->get_integer_as_long(bt);
+      if (stride_con2 == min_signed_integer(bt) && stride_con == -1) {
+        continue;
+      }
+      jlong ratio_con = stride_con2 / stride_con;
+      if ((ratio_con * stride_con) != stride_con2) {
+        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (no exact ratio): %d", phi2->_idx);)
+        continue;
+      }
+
+      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> exact ratio: %d", phi2->_idx);)
+      Node* ratio = integercon(ratio_con, bt);
+      Node* init_c = insert_convert_node_if_needed(bt, init);
+      Node* phi_c = insert_convert_node_if_needed(bt, phi);
+      Node* ratio_init = MulNode::make(init_c, ratio, bt);
+      _igvn.register_new_node_with_optimizer(ratio_init, init_c);
+      set_early_ctrl(ratio_init, false);
+
+      Node* diff = SubNode::make(init2, ratio_init, bt);
+      _igvn.register_new_node_with_optimizer(diff, init2);
+      set_early_ctrl(diff, false);
+
+      Node* ratio_idx = MulNode::make(phi_c, ratio, bt);
+      _igvn.register_new_node_with_optimizer(ratio_idx, phi_c);
+      set_ctrl(ratio_idx, cl);
+
+      // phi2 = result = phi * ratio + (init2 - init * ratio)
+      Node* result = AddNode::make(ratio_idx, diff, bt);
+      _igvn.register_new_node_with_optimizer(result, phi2);
+      set_ctrl(result, cl);
+      _igvn.replace_node(phi2, result);
+      if (result->outcnt() == 0) { _igvn.remove_dead_node(result); }
+      --i;
+      continue;
+    }
+
+    NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> hoistable: %d", phi2->_idx);)
+
     // Transform: phi2 = init2 +/- ((iv - init) / stride_con) * inc_val
     // Use Add for phi2 += inc_val, Sub for phi2 -= inc_val.
     Node* init_converted = insert_convert_node_if_needed(bt, init);
@@ -4643,22 +4693,37 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // since the iteration count is at most (2^32 - 1) / 2 = MAX_INT.
     Node* iterations;
     if (stride_con == 1) {
+      // iterations = iv - init
       iterations = SubNode::make(phi_converted, init_converted, bt);
     } else if (stride_con == -1) {
-      // (phi - init) / -1 == init - phi
+      // iterations = init - iv
       iterations = SubNode::make(init_converted, phi_converted, bt);
     } else {
-      // Widen to long to avoid signed overflow in the division.
-      Node* phi_long = (bt == T_LONG) ? phi_converted : insert_convert_node_if_needed(T_LONG, phi);
-      Node* init_long = (bt == T_LONG) ? init_converted : insert_convert_node_if_needed(T_LONG, init);
-      Node* diff = SubNode::make(phi_long, init_long, T_LONG);
-      _igvn.register_new_node_with_optimizer(diff);
-      set_ctrl(diff, cl);
-      Node* stride_node = integercon(stride_con, T_LONG);
-      iterations = new DivLNode(nullptr, diff, stride_node);
-      _igvn.register_new_node_with_optimizer(iterations);
-      if (bt == T_INT) {
-        iterations = new ConvL2INode(iterations);
+      jlong abs_stride = ABS(stride_con);
+      if (is_power_of_2(abs_stride)) {
+        // iterations = (iv - init) >>> log2(|stride|)
+        Node* diff = (stride_con > 0)
+            ? SubNode::make(phi_converted, init_converted, bt)
+            : SubNode::make(init_converted, phi_converted, bt);
+        _igvn.register_new_node_with_optimizer(diff);
+        set_ctrl(diff, cl);
+        int shift = exact_log2(abs_stride);
+        iterations = URShiftNode::make(diff, integercon(shift, T_INT), bt);
+      } else {
+        // Non-power-of-2: widen to long to avoid signed overflow.
+        // iterations = ((long)iv - (long)init) / stride_con
+        Node* phi_long = (bt == T_LONG) ? phi_converted : insert_convert_node_if_needed(T_LONG, phi);
+        Node* init_long = (bt == T_LONG) ? init_converted : insert_convert_node_if_needed(T_LONG, init);
+        Node* diff = SubNode::make(phi_long, init_long, T_LONG);
+        _igvn.register_new_node_with_optimizer(diff);
+        set_ctrl(diff, cl);
+        Node* stride_node = integercon(stride_con, T_LONG);
+        iterations = new DivLNode(nullptr, diff, stride_node);
+        set_ctrl(iterations, cl);
+        if (bt == T_INT) {
+          _igvn.register_new_node_with_optimizer(iterations);
+          iterations = new ConvL2INode(iterations);
+        }
       }
     }
     _igvn.register_new_node_with_optimizer(iterations);
@@ -4668,9 +4733,10 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     _igvn.register_new_node_with_optimizer(scaled);
     set_ctrl(scaled, cl);
 
+    // result = init2 +/- iterations * inc_val
     Node* result = is_add ? (Node*)AddNode::make(init2, scaled, bt)
                           : (Node*)SubNode::make(init2, scaled, bt);
-    _igvn.register_new_node_with_optimizer(result);
+    _igvn.register_new_node_with_optimizer(result, phi2);
     set_ctrl(result, cl);
 
     _igvn.replace_node(phi2, result);

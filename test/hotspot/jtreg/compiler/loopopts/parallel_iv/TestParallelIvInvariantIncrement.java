@@ -483,6 +483,134 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.LSHIFT_I, ">=1" })
+    private static int usedInsideRatioFallback(int[] arr, int stop) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            arr[i % arr.length] = a;
+            a += 9;
+        }
+        return a;
+    }
+
+    @Run(test = "usedInsideRatioFallback")
+    private static void runUsedInsideRatioFallback() {
+        int[] arr = new int[100];
+        int s = G.ints().restricted(0, 10000).next();
+        Asserts.assertEQ(Math.ceilDiv(s, 3) * 9, usedInsideRatioFallback(arr, s));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    private static int usedInsideNonConstant(int[] arr, int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            arr[i % arr.length] = a;
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "usedInsideNonConstant")
+    private static void runUsedInsideNonConstant() {
+        int[] arr = new int[100];
+        int s = G.ints().restricted(0, 10000).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 3) * inc, usedInsideNonConstant(arr, s, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    private static int usedInsideNonMultiple(int[] arr, int stop) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            arr[i % arr.length] = a;
+            a += 7;
+        }
+        return a;
+    }
+
+    @Run(test = "usedInsideNonMultiple")
+    private static void runUsedInsideNonMultiple() {
+        int[] arr = new int[100];
+        int s = G.ints().restricted(0, 10000).next();
+        Asserts.assertEQ(Math.ceilDiv(s, 3) * 7, usedInsideNonMultiple(arr, s));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    private static int usedInsideSub(int[] arr, int stop) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            arr[i % arr.length] = a;
+            a -= 9;
+        }
+        return a;
+    }
+
+    @Run(test = "usedInsideSub")
+    private static void runUsedInsideSub() {
+        int[] arr = new int[100];
+        int s = G.ints().restricted(0, 10000).next();
+        Asserts.assertEQ(-Math.ceilDiv(s, 3) * 9, usedInsideSub(arr, s));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int countDownStride3(int start, int inc) {
+        int a = 0;
+        for (int i = start; i > 0; i -= 3) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "countDownStride3")
+    private static void runCountDownStride3() {
+        int s = G.ints().restricted(1, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 3) * inc, countDownStride3(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long longStride2(int stop, long inc) {
+        long a = 0;
+        for (int i = 0; i < stop; i += 2) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "longStride2")
+    private static void runLongStride2() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 2).next();
+        long inc = G.longs().next();
+        Asserts.assertEQ((long) Math.ceilDiv(s, 2) * inc, longStride2(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int stride8(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 8) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "stride8")
+    private static void runStride8() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 8).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 8) * inc, stride8(s, inc));
+    }
+
+    @Test
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
     @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
     private static int loopVariantNotOptimized(int stop, int inc) {
