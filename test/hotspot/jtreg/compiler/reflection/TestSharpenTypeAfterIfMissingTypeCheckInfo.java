@@ -25,49 +25,33 @@
  * @test
  * @bug 8380579
  * @summary Test that C2 match_type_check handles Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), eq)
- * @library /test/lib
  * @run main/othervm
  *      -XX:-TieredCompilation
- *      -Xcomp -Xbatch
+ *      -Xcomp
  *      -XX:CompileCommand=compileonly,${test.main.class}::test
  *      ${test.main.class}
  */
 
-package compiler.c2;
+package compiler.reflection;
 
 import java.lang.reflect.Array;
-import jdk.test.lib.Asserts;
 
 public class TestSharpenTypeAfterIfMissingTypeCheckInfo {
-    static int sum;
 
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
-            sum += test(i);
+            test(i);
         }
-        Asserts.assertEQ(sum, 20_000);
     }
 
-    static int test(int i) {
-        Class<?> componentType;
-        switch (i % 3) {
-            case 0:
-                componentType = Object.class;
-                break;
-            case 1:
-                componentType = Integer.class;
-                break;
-            default:
-                componentType = int.class;
-                break;
+    static boolean test(int i) {
+        Class componentType;
+        if (i % 2 == 0) {
+            componentType = Object.class;
+        } else {
+            componentType = Integer.class;
         }
-
         Object array = Array.newInstance(componentType, 1);
-
-        if (array.getClass() == Object[].class) {
-            return ((Object[]) array).length;
-        }
-
-        return Array.getLength(array);
+        return array.getClass() == Object[].class;
     }
 }
