@@ -25,7 +25,13 @@
  * @test
  * @bug 8380158
  * @summary C2: compiler/c2/TestGVNCrash.java asserts with adr and adr_type must agree
- * @run main -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=compiler.arraycopy.TestACNonEscapingSrcBadAppBaseType::test1 -XX:+StressIGVN -XX:StressSeed=946074051 ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *                   -XX:CompileOnly=compiler.arraycopy.TestACNonEscapingSrcBadAddPBaseType::test1
+ *                   -XX:+StressIGVN -XX:StressSeed=946074051 ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *                   -XX:CompileOnly=compiler.arraycopy.TestACNonEscapingSrcBadAddPBaseType::test1
+ *                   -XX:+StressIGVN ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.arraycopy;
