@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary OCSP Stapling for TLS (ResponderId tests)
  * @modules java.base/sun.security.provider.certpath
  *          java.base/sun.security.x509
+ * @run main/othervm -Dtest.debug=true ResponderIdTests
  */
 
 import java.io.*;
@@ -47,7 +48,7 @@ import sun.security.provider.certpath.ResponderId;
  */
 public class ResponderIdTests {
 
-    private static final boolean debug = true;
+    private static final boolean debug = Boolean.getBoolean("test.debug");
 
     // Source certificate created with the following command:
     // keytool -genkeypair -alias test1 -keyalg rsa -keysize 2048 \
