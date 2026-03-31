@@ -705,7 +705,7 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(bool, UseDeepIGVNRevisit, false,                                  \
+  develop(bool, UseDeepIGVNRevisit, true,                                   \
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
                                                                             \
