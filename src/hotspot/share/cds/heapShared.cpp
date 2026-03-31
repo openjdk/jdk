@@ -689,18 +689,22 @@ public:
 };
 
 void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
-  if (CDSConfig::is_dumping_preimage_static_archive() && scratch_resolved_references(src) != nullptr) {
-    // We are in AOT training run. The class has been redefined and we are giving it a new resolved_reference.
-    // Ignore it, as this class will be excluded from the AOT config.
-    return;
-  }
   if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
+    ResourceMark rm;
+    log_debug(aot, constantpool)("add resolved reference %p %s length = %d ", src, src->pool_holder()->external_name(), dest->length());
     _scratch_objects_table->set_oop(src, dest);
   }
 }
 
 objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
   return (objArrayOop)_scratch_objects_table->get_oop(src);
+}
+
+void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
+  if (CDSConfig::is_dumping_heap()) {
+    log_debug(aot, constantpool)("remove resolved reference %p", src);
+    _scratch_objects_table->remove_oop(src);
+  }
 }
 
 void HeapShared::init_dumping() {
