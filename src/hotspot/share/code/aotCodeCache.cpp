@@ -439,7 +439,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   RECORD_FLAG(use_, useAESCTR, UseAESCTRIntrinsics);
   RECORD_FLAG(use_, useGHASH, UseGHASHIntrinsics);
   RECORD_FLAG(use_, useMD5, UseMD5Intrinsics);
-  RECORD_FLAG(use_, useSHA1, useSHA1);
+  RECORD_FLAG(use_, useSHA1, UseSHA1Intrinsics);
   RECORD_FLAG(use_, useSHA256, UseSHA256Intrinsics);
   RECORD_FLAG(use_, useSHA512, UseSHA512Intrinsics);
   RECORD_FLAG(use_, useSHA3, UseSHA3Intrinsics);
