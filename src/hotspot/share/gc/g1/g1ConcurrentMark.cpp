@@ -1135,7 +1135,7 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   //
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
   // continue after that safepoint.
-  bool do_scan = !(root_regions()->work_completed() || has_root_region_scan_aborted());
+  bool do_scan = !root_regions()->work_completed() && !has_root_region_scan_aborted());
   if (do_scan) {
     // Assign one worker to each root-region but subject to the max constraint.
     // The constraint is also important to avoid accesses beyond the allocated per-worker
