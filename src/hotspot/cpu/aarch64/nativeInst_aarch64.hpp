@@ -180,6 +180,7 @@ public:
   void set_destination(address dest) {
     int64_t offset = dest - instruction_address();
     assert((offset & 3) == 0, "should be");
+    assert(is_call(), "we should always spatch a call instruction");
     Instruction_aarch64::spatch(instruction_address(), 25, 0, offset >> 2);
   }
 
