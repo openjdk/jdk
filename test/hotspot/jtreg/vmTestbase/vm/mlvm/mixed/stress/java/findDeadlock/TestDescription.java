@@ -37,9 +37,10 @@
  *    2. Finds that deadlock using ThreadMXBean
  *    3. Unlocks one thread to let others go
  *
- * @requires vm.compMode != "Xcomp"
  * @library /vmTestbase
  *          /test/lib
+ *
+ * @requires vm.compMode != "Xcomp"
  *
  * @comment build test class and indify classes
  * @build vm.mlvm.mixed.stress.java.findDeadlock.INDIFY_Test
