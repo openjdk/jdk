@@ -1059,7 +1059,7 @@ bool G1ConcurrentMark::has_root_region_scan_aborted() const {
   return _root_region_scan_aborted.load_relaxed();
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void G1ConcurrentMark::assert_root_region_scan_completed_or_aborted() {
   assert(root_regions()->work_completed() || has_root_region_scan_aborted(), "must be");
 }
