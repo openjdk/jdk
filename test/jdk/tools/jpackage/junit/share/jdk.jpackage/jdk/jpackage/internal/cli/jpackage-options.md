@@ -29,7 +29,7 @@
 | --linux-shortcut | linux-deb, linux-rpm | x | x | x | USE_LAST |
 | --mac-app-category | mac-bundle | x | x |  | USE_LAST |
 | --mac-app-image-sign-identity | mac | x | x |  | USE_LAST |
-| --mac-app-store | mac-bundle | x | x |  | USE_LAST |
+| --mac-app-store | mac | x | x |  | USE_LAST |
 | --mac-dmg-content | mac-dmg | x | x |  | CONCATENATE |
 | --mac-entitlements | mac | x | x |  | USE_LAST |
 | --mac-installer-sign-identity | mac-pkg | x | x |  | USE_LAST |

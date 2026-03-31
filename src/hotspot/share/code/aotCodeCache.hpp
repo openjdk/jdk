@@ -177,12 +177,11 @@ protected:
       none                     = 0,
       debugVM                  = 1,
       compressedOops           = 2,
-      compressedClassPointers  = 4,
-      useTLAB                  = 8,
-      systemClassAssertions    = 16,
-      userClassAssertions      = 32,
-      enableContendedPadding   = 64,
-      restrictContendedPadding = 128
+      useTLAB                  = 4,
+      systemClassAssertions    = 8,
+      userClassAssertions      = 16,
+      enableContendedPadding   = 32,
+      restrictContendedPadding = 64
     };
     uint _flags;
     uint _cpu_features_offset; // offset in the cache where cpu features are stored
@@ -403,11 +402,13 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
-  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
-public:
-  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+  // Values used by restore(code_blob).
+  // They should be set before calling it.
+  const char*         _name;
+  address             _reloc_data;
+  ImmutableOopMapSet* _oop_maps;
 
-  CodeBlob* compile_code_blob(const char* name);
+  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
 
   ImmutableOopMapSet* read_oop_map_set();
 
@@ -416,6 +417,13 @@ public:
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
 #endif // PRODUCT
+
+public:
+  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+
+  CodeBlob* compile_code_blob(const char* name);
+
+  void restore(CodeBlob* code_blob);
 };
 
 // code cache internal runtime constants area used by AOT code
