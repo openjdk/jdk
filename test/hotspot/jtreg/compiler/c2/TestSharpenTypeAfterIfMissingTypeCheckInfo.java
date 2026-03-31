@@ -25,6 +25,7 @@
  * @test
  * @bug 8380579
  * @summary Test that C2 match_type_check handles Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), eq)
+ * @library /test/lib
  * @run main/othervm
  *      -XX:-TieredCompilation
  *      -Xcomp -Xbatch
