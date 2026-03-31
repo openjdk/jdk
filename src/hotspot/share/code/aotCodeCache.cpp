@@ -593,6 +593,13 @@ AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry) {
   _load_buffer = cache->cache_buffer();
   _read_position = 0;
   _lookup_failed = false;
+  _name          = nullptr;
+  _reloc_data    = nullptr;
+  _reloc_count   = 0;
+  _oop_maps      = nullptr;
+  _entry_kind    = AOTCodeEntry::None;
+  _stub_data     = nullptr;
+  _id            = -1;
 }
 
 void AOTCodeReader::set_read_position(uint pos) {
@@ -1032,16 +1039,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     has_oop_maps = true;
   }
 
-#ifndef PRODUCT
-  // Write asm remarks
-  if (!cache->write_asm_remarks(blob)) {
-    return false;
-  }
-  if (!cache->write_dbg_strings(blob)) {
-    return false;
-  }
-#endif /* PRODUCT */
-
   // In the case of a multi-stub blob we need to write start, end,
   // secondary entries and extras. For any other blob entry addresses
   // beyond the blob start will be stored in the blob as offsets.
@@ -1051,8 +1048,8 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     }
   }
 
-  // now we have added all the other data we can write the AOT
-  // relocations
+  // now we have added all the other data we can write details of any
+  // extra the AOT relocations
 
   bool write_ok;
   if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
@@ -1071,6 +1068,16 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     }
     return false;
   }
+
+#ifndef PRODUCT
+  // Write asm remarks after relocation info
+  if (!cache->write_asm_remarks(blob)) {
+    return false;
+  }
+  if (!cache->write_dbg_strings(blob)) {
+    return false;
+  }
+#endif /* PRODUCT */
 
   uint entry_size = cache->_write_position - entry_position;
 
@@ -1262,53 +1269,75 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind 
     set_lookup_failed(); // Skip this blob
     return nullptr;
   }
+  _name = stored_name;
 
   // Read archived code blob and related info
   uint offset = entry_position + _entry->blob_offset();
   CodeBlob* archived_blob = (CodeBlob*)addr(offset);
   offset += archived_blob->size();
 
-  int reloc_count = *(int*)addr(offset); offset += sizeof(int);
+  _reloc_count = *(int*)addr(offset); offset += sizeof(int);
   if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
     // position of relocs will have been aligned to heap word size so
     // we can install them into a code buffer
     offset = align_up(offset, DATA_ALIGNMENT);
   }
-  address reloc_data = (address)addr(offset);
-  offset += reloc_count * sizeof(relocInfo);
+  _reloc_data = (address)addr(offset);
+  offset += _reloc_count * sizeof(relocInfo);
   set_read_position(offset);
 
-  ImmutableOopMapSet* oop_maps = nullptr;
   if (_entry->has_oop_maps()) {
-    oop_maps = read_oop_map_set();
+    _oop_maps = read_oop_map_set();
   }
 
-  // Note that for a non-relocatable blob reloc_data will not be
-  // restored into the blob. We fix that later.
+  // record current context for use by that callback
+  _stub_data = stub_data;
+  _entry_kind = entry_kind;
+  _id = id;
 
-  CodeBlob* code_blob = CodeBlob::create(archived_blob,
-                                         stored_name,
-                                         reloc_data,
-                                         oop_maps);
+  // CodeBlob::restore() calls AOTCodeReader::restore()
+
+  CodeBlob* code_blob = CodeBlob::create(archived_blob, this);
+
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
 
-#ifndef PRODUCT
-  code_blob->asm_remarks().init();
-  read_asm_remarks(code_blob->asm_remarks());
-  code_blob->dbg_strings().init();
-  read_dbg_strings(code_blob->dbg_strings());
-#endif // PRODUCT
+#ifdef ASSERT
+  LogStreamHandle(Trace, aot, codecache, stubs) log;
+  if (log.is_enabled()) {
+    FlagSetting fs(PrintRelocations, true);
+    code_blob->print_on(&log);
+  }
+#endif
+  return code_blob;
+}
 
-  if (AOTCodeEntry::is_blob(entry_kind)) {
-    BlobId blob_id = static_cast<BlobId>(id);
+void AOTCodeReader::restore(CodeBlob* code_blob) {
+  precond(AOTCodeCache::is_on_for_use());
+  precond(_name != nullptr);
+  precond(_reloc_data != nullptr);
+
+  code_blob->set_name(_name);
+  // Saved relocations need restoring except for the case of a
+  // multi-stub blob which has no runtime relocations. However, we may
+  // still have saved some (re-)load time relocs that were attached to
+  // the generator's code buffer. We don't attach them to the blob but
+  // they get processed below by fix_relocations.
+  if (!AOTCodeEntry::is_multi_stub_blob(_entry_kind)) {
+    code_blob->restore_mutable_data(_reloc_data);
+  }
+  code_blob->set_oop_maps(_oop_maps);
+
+  // if this is a multi stub blob load its entries
+  if (AOTCodeEntry::is_blob(_entry_kind)) {
+    BlobId blob_id = static_cast<BlobId>(_id);
     if (StubInfo::is_stubgen(blob_id)) {
-      assert(stub_data != nullptr, "sanity");
-      read_stub_data(code_blob, stub_data);
+      assert(_stub_data != nullptr, "sanity");
+      read_stub_data(code_blob, _stub_data);
     }
     // publish entries found either in stub_data or as offsets in blob
-    AOTCodeCache::publish_stub_addresses(*code_blob, blob_id, stub_data);
+    AOTCodeCache::publish_stub_addresses(*code_blob, blob_id, _stub_data);
   }
 
   // Now that all the entry points are in the address table we can
@@ -1327,15 +1356,15 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind 
   // wrap it with a CodeBuffer and then reattach the relocs to the
   // code buffer.
 
-  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+  if (AOTCodeEntry::is_multi_stub_blob(_entry_kind)) {
     // the blob doesn't have any proper runtime relocs but we can
     // reinstate the AOT-load time relocs we saved from the code
     // buffer that generated this blob in a new code buffer and use
     // the latter to iterate over them
     CodeBuffer code_buffer(code_blob);
-    relocInfo* locs = (relocInfo*)reloc_data;
-    code_buffer.insts()->initialize_shared_locs(locs, reloc_count);
-    code_buffer.insts()->set_locs_end(locs + reloc_count);
+    relocInfo* locs = (relocInfo*)_reloc_data;
+    code_buffer.insts()->initialize_shared_locs(locs, _reloc_count);
+    code_buffer.insts()->set_locs_end(locs + _reloc_count);
     CodeSection *cs = code_buffer.code_section(CodeBuffer::SECT_INSTS);
     RelocIterator reloc_iter(cs);
     fix_relocations(code_blob, reloc_iter);
@@ -1345,17 +1374,12 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind 
     fix_relocations(code_blob, reloc_iter);
   }
 
-  // ensure that all patches are visible via both data and code cache
-  ICache::invalidate_range(code_blob->code_begin(), code_blob->code_size());
-
-#ifdef ASSERT
-  LogStreamHandle(Trace, aot, codecache, stubs) log;
-  if (log.is_enabled()) {
-    FlagSetting fs(PrintRelocations, true);
-    code_blob->print_on(&log);
-  }
-#endif
-  return code_blob;
+#ifndef PRODUCT
+  code_blob->asm_remarks().init();
+  read_asm_remarks(code_blob->asm_remarks());
+  code_blob->dbg_strings().init();
+  read_dbg_strings(code_blob->dbg_strings());
+#endif // PRODUCT
 }
 
 void AOTCodeReader::read_stub_data(CodeBlob* code_blob, AOTStubData* stub_data) {
@@ -1494,7 +1518,7 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
   }
 }
 
-  // ------------ process code and data --------------
+// ------------ process code and data --------------
 
 // Can't use -1. It is valid value for jump to iteself destination
 // used by static call stub: see NativeJump::jump_destination().

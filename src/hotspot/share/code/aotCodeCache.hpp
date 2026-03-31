@@ -556,11 +556,17 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
-  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
-public:
-  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+  // Values used by restore(code_blob).
+  // They should be set before calling it.
+  const char*         _name;
+  address             _reloc_data;
+  int                 _reloc_count;
+  ImmutableOopMapSet* _oop_maps;
+  AOTCodeEntry::Kind  _entry_kind;
+  int                 _id;
+  AOTStubData*        _stub_data;
 
-  CodeBlob* compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data = nullptr);
+  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
 
   ImmutableOopMapSet* read_oop_map_set();
   void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
@@ -572,6 +578,13 @@ public:
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
 #endif // PRODUCT
+
+public:
+  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+
+  CodeBlob* compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data = nullptr);
+
+  void restore(CodeBlob* code_blob);
 };
 
 // code cache internal runtime constants area used by AOT code
