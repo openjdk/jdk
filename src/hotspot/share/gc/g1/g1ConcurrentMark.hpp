@@ -294,6 +294,7 @@ class G1CMRootMemRegions {
   Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
 
   uint num_regions() const { return _num_regions.load_relaxed(); }
+  uint num_claimed_regions() const { return _num_claimed_regions.load_relaxed(); }
 
 public:
   G1CMRootMemRegions(uint const max_regions);
@@ -639,8 +640,8 @@ public:
   // Complete root region scan work in the safepoint, return if we did some work.
   bool complete_root_regions_scan_in_safepoint();
 
-  // Abort an active concurrent root region scan and wait for it to return.
-  void root_region_scan_abort_and_wait();
+  // Abort an active concurrent root region scan.
+  void abort_root_region_scan();
 
   bool has_root_region_scan_aborted() const;
 

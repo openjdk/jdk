@@ -398,13 +398,13 @@ void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
 }
 
 const MemRegion* G1CMRootMemRegions::claim_next() {
-  uint local_num_root_regions = num_regions();
-  if (_num_claimed_regions.load_relaxed() >= local_num_root_regions) {
+  uint local_num_regions = num_regions();
+  if (num_claimed_regions() >= local_num_regions) {
     return nullptr;
   }
 
   uint claimed_index = _num_claimed_regions.fetch_then_add(1u);
-  if (claimed_index < local_num_root_regions) {
+  if (claimed_index < local_num_regions) {
     return &_root_regions[claimed_index];
   }
   return nullptr;
@@ -416,8 +416,7 @@ bool G1CMRootMemRegions::work_completed() const {
 
 uint G1CMRootMemRegions::num_remaining_regions() const {
   uint total = num_regions();
-  uint claimed = _num_claimed_regions.load_relaxed();
-  if (claimed >= total) {
+  if (num_claimed_regions() >= total) {
     return 0;
   } else {
     return total - claimed;
@@ -1174,7 +1173,7 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
   return root_regions()->contains(MemRegion(top_at_mark_start(r), r->top()));
 }
 
-void G1ConcurrentMark::root_region_scan_abort_and_wait() {
+void G1ConcurrentMark::abort_root_region_scan() {
   assert_not_at_safepoint();
 
   _root_region_scan_aborted.store_relaxed(true);

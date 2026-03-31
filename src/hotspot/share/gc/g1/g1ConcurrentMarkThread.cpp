@@ -135,7 +135,7 @@ void G1ConcurrentMarkThread::run_service() {
 
 void G1ConcurrentMarkThread::stop_service() {
   if (is_in_progress()) {
-    _cm->root_region_scan_abort_and_wait();
+    _cm->abort_root_region_scan();
 
     _cm->abort_marking_threads();
   }
