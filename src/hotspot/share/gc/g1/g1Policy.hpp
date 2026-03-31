@@ -114,9 +114,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
-  bool should_update_surv_rate_group_predictors() {
-    return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
-  }
+  bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
 public:
@@ -160,12 +158,7 @@ public:
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
 
-  void cset_regions_freed() {
-    bool update = should_update_surv_rate_group_predictors();
-
-    _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-    _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-  }
+  void cset_regions_freed();
 
   G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;

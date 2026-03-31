@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1000,7 +1000,7 @@ public class JavaTokenizer extends UnicodeReader {
                             scanIdent();
                         } else if (digit(pos, 10) >= 0) {
                             scanNumber(pos, 10);
-                        } else if (is((char)EOI) || !isAvailable()) {
+                        } else if (is((char)EOI) && position() + 1 == length() || !isAvailable()) {
                             tk = TokenKind.EOF;
                             pos = position();
                         } else {

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /*
- * Aix' own version of dladdr().
- * This function tries to mimic dladdr(3) on Linux
- * (see http://linux.die.net/man/3/dladdr)
- * dladdr(3) is not POSIX but a GNU extension, and is not available on AIX.
- *
+ * @test
+ * @bug 8380686
+ * @summary Ensure logging works while processing jsr while linking.
+ * @library /test/lib
+ * @compile JsrLogging.jasm
+ * @run main/othervm -Xlog:generateoopmap=debug JsrLoggingTest
  */
 
-#include "dl_info.h"
-
-#ifdef __cplusplus
-extern "C"
-#endif
-int dladdr(void *addr, Dl_info *info);
+public class JsrLoggingTest {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; ++i) {
+            JsrLogging.test();
+        }
+        System.out.println("PASSED");
+    }
+}

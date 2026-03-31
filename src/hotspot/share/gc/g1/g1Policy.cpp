@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -737,15 +738,15 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_wor
     return false;
   }
 
-  size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
+  size_t marking_initiating_old_gen_threshold = _ihop_control->old_gen_threshold_for_conc_mark_start();
   size_t non_young_occupancy = _g1h->non_young_occupancy_after_allocation(allocation_word_size);
 
   bool result = false;
-  if (non_young_occupancy > marking_initiating_used_threshold) {
+  if (non_young_occupancy > marking_initiating_old_gen_threshold) {
     result = collector_state()->is_in_young_only_phase();
     log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              non_young_occupancy, allocation_word_size * HeapWordSize, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
+                              non_young_occupancy, allocation_word_size * HeapWordSize, marking_initiating_old_gen_threshold, (double) marking_initiating_old_gen_threshold / _g1h->capacity() * 100, source);
   }
   return result;
 }
@@ -971,8 +972,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     update_young_length_bounds();
 
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
-    if (update_ihop_prediction(app_time_ms / 1000.0,
-                               G1CollectorState::is_young_only_pause(this_pause))) {
+    if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
   } else {
@@ -1029,14 +1029,13 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
 
   bool report = false;
 
-  double marking_to_mixed_time = -1.0;
   if (!this_gc_was_young_only && _concurrent_start_to_mixed.has_result()) {
-    marking_to_mixed_time = _concurrent_start_to_mixed.last_marking_time();
+    double marking_to_mixed_time = _concurrent_start_to_mixed.get_and_reset_last_marking_time();
     assert(marking_to_mixed_time > 0.0,
            "Concurrent start to mixed time must be larger than zero but is %.3f",
            marking_to_mixed_time);
     if (marking_to_mixed_time > min_valid_time) {
-      _ihop_control->update_marking_length(marking_to_mixed_time);
+      _ihop_control->add_marking_start_to_mixed_length(marking_to_mixed_time);
       report = true;
     }
   }
@@ -1131,6 +1130,17 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
     *bytes_to_copy = expected_bytes;
   }
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->is_in_young_only_phase());
+}
+
+bool G1Policy::should_update_surv_rate_group_predictors() {
+  return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
+}
+
+void G1Policy::cset_regions_freed() {
+  bool update = should_update_surv_rate_group_predictors();
+
+  _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
+  _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
 }
 
 double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const {
