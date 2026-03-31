@@ -1012,7 +1012,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // to do a timed-park instead to alleviate some deadlock cases where one
   // of them is picked as the successor but cannot run due to having run out
   // of carriers. This can happen, for example, if this is a pinned virtual
-  // thread currently loading or initializing a class, and all other carriers
+  // thread currently loading or initializing a class, and all other carriers 
   // have a pinned vthread waiting for said class to be loaded/initialized.
   // Read counter *after* adding this thread to the _entry_list. Adding to
   // _entry_list uses Atomic::cmpxchg() which already provides a fence that
@@ -1886,6 +1886,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     OrderAccess::loadload();
     if (has_successor(current)) {
       clear_successor();
+      // Note that we do not need a fence here, as, regardless of the path taken,
+      // there is a fence either in ThreadBlockInVM's destructor or
+      // right after a call to post_monitor_wait_event().
     }
 
     // Reentry phase -- reacquire the monitor.
