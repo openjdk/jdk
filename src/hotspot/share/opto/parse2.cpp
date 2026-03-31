@@ -1759,7 +1759,9 @@ static bool match_type_check(PhaseGVN& gvn,
     (*obj) = extract_obj_from_klass_load(&gvn, val);
     // Some klass comparisons are not directly in the form
     // Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq]),
-    // e.g. Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), [eq])
+    // e.g. Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), [eq]).
+    // These patterns with nullable klasses arise from example from
+    // load_array_klass_from_mirror (as in the regression test).
     if (*obj == nullptr) { return false; }
     (*cast_type) = tcon->isa_klassptr()->as_instance_type();
     return true; // found

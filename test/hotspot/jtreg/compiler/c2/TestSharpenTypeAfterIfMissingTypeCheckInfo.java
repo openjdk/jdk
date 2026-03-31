@@ -27,84 +27,46 @@
  * @summary Test that C2 match_type_check handles Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), eq)
  * @run main/othervm
  *      -XX:-TieredCompilation
- *      -XX:CompileThreshold=100
+ *      -Xcomp -Xbatch
+ *      -XX:CompileCommand=compileonly,${test.main.class}::test
  *      ${test.main.class}
  */
 
 package compiler.c2;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Collections;
+import jdk.test.lib.Asserts;
 
 public class TestSharpenTypeAfterIfMissingTypeCheckInfo {
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final MethodHandle CHANGE_ARRAY_TYPE;
+    static int sum;
 
-    static {
-        try {
-            CHANGE_ARRAY_TYPE = LOOKUP.findStatic(TestSharpenTypeAfterIfMissingTypeCheckInfo.class,
-                                                  "changeArrayType",
-                                                  MethodType.methodType(Object.class, Class.class, Object[].class));
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            sum += test(i);
         }
+        Asserts.assertEQ(sum, 20_000);
     }
 
-    public static void main(String[] args) throws Throwable {
-        for (int i = 0; i < 150; i++) {
-            test();
+    static int test(int i) {
+        Class<?> componentType;
+        switch (i % 3) {
+            case 0:
+                componentType = Object.class;
+                break;
+            case 1:
+                componentType = Integer.class;
+                break;
+            default:
+                componentType = int.class;
+                break;
         }
-    }
 
-    static void test() throws Throwable {
-        for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
-            Class<?> arrayType = Array.newInstance(argType, 0).getClass();
-            for (int nargs = 0; nargs < 10; nargs++) {
-                MethodHandle target2 = varargsArray(arrayType, nargs);
-                MethodHandle target = target2.asType(target2.type().generic());
+        Object array = Array.newInstance(componentType, 1);
 
-                Object[] args = new Object[nargs];
-                for (int i = 0; i < nargs; i++) {
-                    args[i] = sample(argType, i);
-                }
-
-                for (int j = 0; j < 150; j++) {
-                    target.invokeWithArguments(args);
-                }
-            }
+        if (array.getClass() == Object[].class) {
+            return ((Object[]) array).length;
         }
-    }
 
-    static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
-        Class<?> elemType = arrayType.getComponentType();
-        MethodType vaType = MethodType.methodType(arrayType, Collections.nCopies(nargs, elemType));
-        MethodHandle mh = MethodHandles.identity(Object[].class).asCollector(Object[].class, nargs);
-        if (arrayType != Object[].class) {
-            mh = MethodHandles.filterReturnValue(mh, CHANGE_ARRAY_TYPE.bindTo(arrayType));
-        }
-        return mh.asType(vaType);
-    }
-
-    static Object changeArrayType(Class<?> arrayType, Object[] a) {
-        Class<?> elemType = arrayType.getComponentType();
-        if (!elemType.isPrimitive()) {
-            return Arrays.copyOf(a, a.length, arrayType.asSubclass(Object[].class));
-        }
-        Object b = Array.newInstance(elemType, a.length);
-        for (int i = 0; i < a.length; i++) {
-            Array.set(b, i, a[i]);
-        }
-        return b;
-    }
-
-    static Object sample(Class<?> argType, int i) {
-        if (argType == Object.class) {
-            return "x" + i;
-        }
-        return Integer.valueOf(i);
+        return Array.getLength(array);
     }
 }
