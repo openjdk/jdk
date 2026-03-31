@@ -97,6 +97,17 @@ public class CompileLevelPrintTest {
         final Set<String> testMethodExcludedAtLevel = Collections.synchronizedSet(new HashSet<>());
         volatile Set<String> testMethodPrintedAtLevel = Collections.synchronizedSet(new HashSet<>());
         volatile boolean testMethodMDOPrinted = false;
+
+        @Override
+        public String toString() {
+            return "TesteeState{" +
+                    "\n  compileCommandsReported=" + compileCommandsReported +
+                    "\n  testMethodCompiledAtLevel=" + testMethodCompiledAtLevel +
+                    "\n  testMethodExcludedAtLevel=" + testMethodExcludedAtLevel +
+                    "\n  testMethodPrintedAtLevel=" + testMethodPrintedAtLevel +
+                    "\n  testMethodMDOPrinted=" + testMethodMDOPrinted +
+                    "\n}";
+        }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
@@ -132,6 +143,14 @@ public class CompileLevelPrintTest {
                 Runner.run("exclude", "11", "4", "3", Set.of("3"), Set.of(), true, true);
                 Runner.run("exclude", "7", "8", "4", Set.of("4"), Set.of("3"), true, true);
             }
+        } else if (args.length > 1 && "parse-logs".equals(args[0])) {
+            // For test troubleshooting: if test has failed due to regexp matching,
+            // try parsing testee-<pid>.out and hotspot_pid<pid>.log and adjust the patterns
+            TesteeState testeeState = new TesteeState();
+            for (int i = 1; i < args.length; i++) {
+                Runner.matchMessagesInHotspotLog(args[i], testeeState);
+            }
+            IO.println(testeeState.toString());
         } else {
             Testee.run();
         }
@@ -151,7 +170,7 @@ public class CompileLevelPrintTest {
                 ".*made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
                 ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
-                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) \\(\\d+ bytes\\)", Pattern.DOTALL);
+                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
         private static final Pattern reEndOfLog = Pattern.compile("<hotspot_log_done .*/>");
@@ -256,7 +275,7 @@ public class CompileLevelPrintTest {
             }
         }
 
-        private static void matchMessagesInHotspotLog(String logFileName, TesteeState testeeState) throws IOException {
+        static void matchMessagesInHotspotLog(String logFileName, TesteeState testeeState) throws IOException {
             IO.println("##> Parsing " + logFileName + " to match possibly missed messages");
             try (BufferedReader reader = new BufferedReader(new FileReader(logFileName))) {
                 matchVmMessages(reader, testeeState, "Log: ", null);
@@ -264,17 +283,16 @@ public class CompileLevelPrintTest {
         }
 
         private static void matchVmMessages(BufferedReader testeeOutput, TesteeState testeeState, String logPrefix, String fileName) {
-            try (Writer outWriter = fileName != null
-                    ? new BufferedWriter(new FileWriter(fileName))
-                    : new PrintWriter(new DiscardingOutputStream())
-            ) {
+            try (Writer outWriter = fileName != null ? new BufferedWriter(new FileWriter(fileName)) : null) {
                 String line;
                 LinkedList<String> lastNLines = new LinkedList<>();
                 boolean endOfLog = false;
 
                 while (!endOfLog && (line = testeeOutput.readLine()) != null) {
-                    outWriter.write(line);
-                    outWriter.write('\n');
+                    if (outWriter != null) {
+                        outWriter.write(line);
+                        outWriter.write('\n');
+                    }
 
                     line = line.trim();
 
@@ -322,7 +340,8 @@ public class CompileLevelPrintTest {
                                     + " level=" + matcher.group(5)
                                     + " compilation#=" + matcher.group(3)
                                     + " flags=" + matcher.group(4).trim()
-                                    + " name=" + matcher.group(6);
+                                    + " name=" + matcher.group(6)
+                                    + " bci=" + (matcher.group(7) != null ? matcher.group(7).trim() : "");
                         }
                     } else if ((matcher = reExcludeCompile.matcher(line)).matches()) {
                         if (matcher.group(2).contains(TEST_METHOD_NAME_DBL_COLON)) {
@@ -348,8 +367,10 @@ public class CompileLevelPrintTest {
                     if (!msg.isEmpty()) {
                         msg = "##> " + logPrefix + msg;
                         IO.println(msg);
-                        outWriter.write(msg);
-                        outWriter.write('\n');
+                        if (outWriter != null) {
+                            outWriter.write(msg);
+                            outWriter.write('\n');
+                        }
                     }
                 }
             } catch (Exception ex) {
@@ -488,13 +509,5 @@ public class CompileLevelPrintTest {
             Thread.sleep(200);
         }
         return false;
-    }
-
-    static class DiscardingOutputStream extends OutputStream {
-        private DiscardingOutputStream() {
-        }
-
-        public void write(int b) throws IOException {
-        }
     }
 }
