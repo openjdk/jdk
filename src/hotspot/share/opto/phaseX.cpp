@@ -1160,7 +1160,9 @@ bool PhaseIterGVN::deep_revisit() {
     // we are at a fixed point. We use made_progress() rather than live_nodes because live_nodes
     // misses non-structural changes like a LoadNode dropping its control input.
     uint progress_before = made_progress();
-    if (drain_worklist()) return false;
+    if (drain_worklist()) {
+      return false;
+    }
     uint progress = made_progress() - progress_before;
 
 #ifndef PRODUCT
@@ -1193,11 +1195,15 @@ void PhaseIterGVN::optimize(bool deep) {
   }
 
   // Pull from worklist and transform the node.
-  if (drain_worklist()) return;
+  if (drain_worklist()) {
+    return;
+  }
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
-    if (C->failing()) return;
+    if (C->failing()) {
+      return;
+    }
   }
 
   NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
