@@ -377,8 +377,8 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseSHA, true);
     } else if (!UseSHA) {
       clear_feature(CPU_SHA1);
+      clear_feature(CPU_SHA2);
       clear_feature(CPU_SHA3);
-      clear_feature(CPU_SHA256);
       clear_feature(CPU_SHA512);
     }
   } else if (UseSHA) {
