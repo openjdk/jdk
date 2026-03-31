@@ -2210,6 +2210,10 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
+    if (!k->is_CFG() && t == Type::TOP) {
+      ResourceMark rm;
+      k->make_paths_from_here_dead(this, nullptr, "igvn");
+    }
     NOT_PRODUCT(set_progress();)
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);

@@ -3116,8 +3116,9 @@ uint TypeNode::ideal_reg() const {
 
 void Node::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
   Node* c = ctrl_use->in(j);
-  if (igvn->type(c) != Type::TOP) {
-    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+  Node* top = igvn->C->top();
+  if (c != top) {
+    igvn->replace_input_of(ctrl_use, j, top);
     create_halt_path(igvn, c, loop, phase_str);
   }
 }
@@ -3134,9 +3135,13 @@ void Node::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, c
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* n = wq.at(i);
+    if (n->is_CFG()) {
+      n->remove_dead_region(igvn, true);
+    }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
+        wq.push(u);
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
         make_path_dead(igvn, loop, u, 0, phase_str);
       } else if (u->is_Phi()) {
@@ -3177,14 +3182,6 @@ void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, c
 }
 
 Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    Node* top = igvn->C->top();
-    ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr, "igvn");
-    return top;
-  }
-
   return Node::Ideal(phase, can_reshape);
 }
 
