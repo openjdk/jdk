@@ -199,15 +199,12 @@ public class TestArrayLoadProfiling {
     //     trap4;
     //   }
     // } else {
-    //   if (array.klass == MyValue1[]) {
-    //      if (array[0] == null) {
+    //   if (array[0] == null) {
     //        trap3;
-    //      }
+    //   }
+    //   if (array[0].klass == MyValue1) {
     //      // inlined call
-    //   } else if (array.klass == MyValue2[]) {
-    //      if (array[0] == null) {
-    //        trap3;
-    //      }
+    //   } else if (array[0].klass == MyValue2) {
     //      // inlined call
     //   } else {
     //     trap5;
@@ -237,8 +234,36 @@ public class TestArrayLoadProfiling {
         i.m();
     }
 
+    // if (array == null) {
+    //   trap1;
+    // }
+    // if (0 not in range of array) {
+    //   trap2;
+    // }
+    // if (array.klass == MyValue1[]) {
+    //    if (array[0] == null) {
+    //      trap3;
+    //    } 
+    //    // inlined call
+    // } else {
+    //   if (array flat) {
+    //     elt = load_unknown_inline();
+    //     if (elt == null) {
+    //       trap3;
+    //     } 
+    //     if (elt.klass == MyValue1) {
+    //       // inlined call
+    //     } else if (elt.klass == MyValue2) {
+    //       // inlined call
+    //     } else {
+    //       trap4;
+    //     }
+    //   } else {
+    //     trap5;
+    //   }
+    // }
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "1", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "11" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "1", IRNode.TRAP, "5", IRNode.CALL, "6", IRNode.IF, "9" })
     @IR(failOn = IRNode.ALLOC)
     public static void test11(I[] array) {
         test11Inline(array[0]);

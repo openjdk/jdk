@@ -314,6 +314,7 @@ public:
           int limit = MAX2(profile.morphism(), 1);
           bool done = false;
           for (int i = 0; i < limit || !not_flat_checked;) {
+            assert(!_parse.stopped(), "");
             int count = i < limit ? profile.receiver_count(i) : not_flat_count;
             if (not_flat_count >= count && !not_flat_checked) {
               not_flat_checked = true;
@@ -333,6 +334,8 @@ public:
                   _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
                 }
                 _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+                load_from_unknown_flat_array(element_ptr);
+                done = true;
               } else {
                 float p = ((float) not_flat_count) / ((float) flat_and_not_flat_count);
                 test_non_flat_array_and_emit_reference_load(p / prob);
@@ -347,12 +350,13 @@ public:
             }
           }
           if (!done) {
-            if (profile.morphism() <= 0 || _parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
-              load_from_unknown_flat_array(element_ptr);
-            } else {
+            if (!_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
               PreserveJVMState pjvms(&_parse);
               _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+            } else {
+              load_from_unknown_flat_array(element_ptr);
             }
+
           }
           // if (profile.morphism() > 0 && not_flat_count != 0 && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
           //   PreserveJVMState pjvms(&_parse);
