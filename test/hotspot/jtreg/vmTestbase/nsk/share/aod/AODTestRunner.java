@@ -104,10 +104,13 @@ public class AODTestRunner {
              * Create target application id required by the Utils.findVMIdUsingJPS
              */
             String classPath = System.getProperty("test.class.path");
+            if (classPath == null) {
+                throw new RuntimeException("test.class.path is not set");
+            }
             String targetAppCmd =
                     // path to java
                     argParser.getTestedJDK() + File.separator + "bin" + File.separator + "java " +
-                            (classPath != null ? "-classpath " + classPath + " " : "") +
+                            "-classpath " + classPath + " " +
                             // VM property to identify VM running target application
                             "-D" + appIdProperty + "=" + targetAppId +  " " +
                             // VM opts
