@@ -138,7 +138,8 @@ class RedefineClassesInProfileApp {
         while (System.currentTimeMillis() - start < 400) {
             // RedefFoo will be excluded fro the AOT configuration file, so
             // any reference to RedefFoo recorded in TrainingData should be
-            // removed.
+            // also be removed. If not, we are likely to see a crash in
+            // the assembly phase or production run.
             x += RedefFoo.foo0();
         }
     }

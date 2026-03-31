@@ -23,8 +23,7 @@
  */
 
 // These are "generation 1" test classes used in redefinition tests.
-// These classes are loaded from the classpath, and will later be redefined
-// with the versions in RedefGeneration1.java
+// They are used to redefine the classes that were compiled from RedefGeneration0.java.
 
 class RedefFoo {
     static int foo0() {
