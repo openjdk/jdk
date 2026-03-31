@@ -227,13 +227,13 @@ ParallelCompactData::ParallelCompactData() :
 bool ParallelCompactData::initialize(MemRegion reserved_heap)
 {
   _heap_start = reserved_heap.start();
-  const size_t heap_size = reserved_heap.word_size();
-  DEBUG_ONLY(_heap_end = _heap_start + heap_size;)
-
   assert(region_align_down(_heap_start) == _heap_start,
-         "region start not aligned");
+       "region start not aligned");
 
+  const size_t heap_size = reserved_heap.word_size();
   assert(is_aligned(heap_size, RegionSize), "precondition");
+
+  DEBUG_ONLY(_heap_end = _heap_start + heap_size;)
 
   const size_t count = heap_size >> Log2RegionSize;
   const size_t raw_bytes = count * sizeof(RegionData);
