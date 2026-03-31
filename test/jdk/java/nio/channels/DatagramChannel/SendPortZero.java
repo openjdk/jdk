@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -39,7 +34,13 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static jdk.test.lib.net.IPSupport.hasIPv6;
-import static org.testng.Assert.assertThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -47,20 +48,20 @@ import static org.testng.Assert.assertThrows;
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  * @summary Check that DatagramChannel throws expected Exception when sending to port 0
- * @run testng/othervm SendPortZero
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SendPortZero
+ * @run junit/othervm SendPortZero
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true SendPortZero
  */
 
 public class SendPortZero {
-    private ByteBuffer buf;
-    private List<Object[]> channels;
-    private InetSocketAddress loopbackZeroAddr, wildcardZeroAddr;
-    private DatagramChannel datagramChannel, datagramChannelIPv4, datagramChannelIPv6;
+    private static ByteBuffer buf;
+    private static List<DatagramChannel> channels;
+    private static InetSocketAddress loopbackZeroAddr, wildcardZeroAddr;
+    private static DatagramChannel datagramChannel, datagramChannelIPv4, datagramChannelIPv6;
 
     private static final Class<SocketException> SE = SocketException.class;
 
-    @BeforeTest
-    public void setUp() throws IOException {
+    @BeforeAll
+    public static void setUp() throws IOException {
         buf = ByteBuffer.wrap("test".getBytes());
 
         wildcardZeroAddr = new InetSocketAddress(0);
@@ -69,32 +70,34 @@ public class SendPortZero {
         channels = new ArrayList<>();
 
         datagramChannel = DatagramChannel.open();
-        channels.add(new Object[]{datagramChannel});
+        channels.add(datagramChannel);
         if (hasIPv4()) {
             datagramChannelIPv4 = DatagramChannel.open(INET);
-            channels.add(new Object[]{datagramChannelIPv4});
+            channels.add(datagramChannelIPv4);
         }
         if (hasIPv6()) {
             datagramChannelIPv6 = DatagramChannel.open(INET6);
-            channels.add(new Object[]{datagramChannelIPv6});
+            channels.add(datagramChannelIPv6);
         }
     }
 
-    @DataProvider(name = "data")
-    public Object[][] variants() {
-        return channels.toArray(Object[][]::new);
+    @AfterAll
+    public static void tearDown() throws IOException {
+        for(DatagramChannel ch : channels) {
+            ch.close();
+        }
     }
 
-    @Test(dataProvider = "data")
+    public static List<DatagramChannel> channels() {
+        return channels;
+    }
+
+    @ParameterizedTest
+    @MethodSource("channels")
     public void testChannelSend(DatagramChannel dc) {
+        assertTrue(dc.isOpen());
         assertThrows(SE, () -> dc.send(buf, loopbackZeroAddr));
         assertThrows(SE, () -> dc.send(buf, wildcardZeroAddr));
     }
 
-    @AfterTest
-    public void tearDown() throws IOException {
-        for(Object[] ch : channels) {
-            ((DatagramChannel)ch[0]).close();
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -92,12 +92,8 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     // This assumes that all prototype bits fitr in an int32_t
     mv(tmp1, checked_cast<int32_t>(markWord::prototype().value()));
     sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    if (UseCompressedClassPointers) { // Take care not to kill klass
-      encode_klass_not_null(tmp1, klass, tmp2);
-      sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
-    } else {
-      sd(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
+    encode_klass_not_null(tmp1, klass, tmp2);
+    sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 
   if (len->is_valid()) {
@@ -108,7 +104,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       // Clear gap/first 4 bytes following the length field.
       sw(zr, Address(obj, base_offset));
     }
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (!UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
   }
 }
