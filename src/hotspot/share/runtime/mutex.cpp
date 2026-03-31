@@ -293,8 +293,12 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
-
+  // rank_name() needs a ResourceArea which may not be available yet
+  Thread* current = Thread::current_or_null();
+  if (current != nullptr) {
+    ResourceMark rm(current);
+    assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
+  }
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
   assert(_rank > nosafepoint || _allow_vm_block,
