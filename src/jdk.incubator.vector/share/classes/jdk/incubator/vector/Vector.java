@@ -890,171 +890,112 @@ import java.util.Arrays;
  * of a bitwise reinterpretation method, it is the only ratio of
  * interest.
  *
- * </li><li><em>Insertion</em> occurs when the output container
- * {@code Y} is larger than the logical result {@code f(X)}.
- * The insertion position in {@code Y} is always an integral multiple
- * of the bit-size of the logical result {@code f(X)}.
- * The rest of the output consists of zero bit padding.
- * (This makes it easy to assemble larger results with {@code XOR}.)
- *
- * </li><li><em>Selection</em> occurs when the output container
- * {@code Y} is smaller than the logical result {@code f(X)}.
- * The selection position in {@code f(X)} is always an integral multiple
- * of the bit-size of the output {@code Y}.
- * The rest of the logical result is lost.
- *
- * </li><li>An <em>in-place operation</em> occurs when the logical
- * result and the physical output shape are the same size.  When this
- * happens, the logical and output expansion ratios are also identical
- * ({@code ML=MP}).  The logical result is simply copied into the
- * physical output with no truncation or padding.  An in-place
- * lanewise operation leaves {@code VLENGTH} unchanged. An in-place
- * operation does not have to be shape-invariant, as the input shape
- * may differ from the logical and output shape.
- *
  * </li><li>The <em>output expansion ratio</em> {@code MO} is the net
- * bit-size ratio {@code MP/ML=|Y|/|f(X)|}, measuring the size of the
- * physical output shape relative to the logical result.  It
- * determines if the logical result will underflow ({@code MO>1}) or
- * overflow ({@code MO<1}) the output.
- *
- * If {@code MO>1}, the logical result must be padded to fill up the
- * output vector.  In that case there are {@code MO} distinct
- * positions where {@code f(X)} might be inserted (with padding) into
- * {@code Y}.  The positions are multiples of the logical result size
- * ({@code |f(X)|}), starting with zero.  The selection or truncation
- * required when {@code MO<1} is covered by the next definition.
+ * bit-size ratio {@code MO=MP/ML=|Y|/|f(X)|}, measuring the size of
+ * the physical output shape relative to the logical result.
  *
  * </li><li>The <em>output selection ratio</em> {@code MS} is the
- * reciprocal of the output expansion ratio {@code ML/MP=1/MO}.  Like
- * {@code MO}, it measures the size of the logical result relative to
- * the output, but in reverse.  If {@code MS>1}, then {@code f(X)}
- * overflows the size of {@code Y}, and only a part of {@code f(X)}
- * may be selected into {@code Y}.  There are {@code MS} distinct
- * positions in {@code f(X)} from which a bit-string might be copied
- * into {@code Y}.  The positions are multiples of the size of
- * {@code Y}, starting with zero.
+ * reciprocal of the output expansion ratio: {@code MS=1/MO=ML/MP}.
+ *
+ * </li><li>An <em>in-place operation</em> ({@code MO=MS=1}) occurs
+ * when the logical result and the physical output shape are the same
+ * size.  When this happens, the logical and output expansion ratios
+ * are also identical ({@code ML=MP}).  The logical result is simply
+ * copied into the physical output with no truncation or padding.
+ * An in-place lanewise operation leaves {@code VLENGTH} unchanged.
+ * An in-place operation does not have to be shape-invariant, as the
+ * input shape may differ from the logical and output shape.
+ *
+ * </li><li><em>Selection</em> ({@code MS>1}, {@code MO<1}) occurs
+ * when the output container {@code Y} is smaller than the logical
+ * result {@code f(X)}. One of {@code MS} distinct parts from
+ * {@code f(X)} is selected and copied to {@code Y}.
+ * The rest of {@code f(X)} is lost.
+ * The {@code part} number in the range {@code [0..MS-1]}
+ * selects lanes {@code [R..R+L-1]} of {@code f(X)}, where
+ * {@code L} is the {@code VLENGTH} of {@code X} divided by
+ * {@code ML} and {@code R=part*L}.
+ * If the user wants all parts of {@code f(X)}, the operation
+ * has to be repeated {@code MS} times, with a different
+ * part each time.
+ *
+ * </li><li><em>Insertion</em> ({@code MO>1}, {@code MS<1}) occurs
+ * when the output container {@code Y} is larger than the logical
+ * result {@code f(X)}. {@code f(X)} is copied to one of {@code MO}
+ * distinct parts in {@code Y}.
+ * The rest of {@code Y} is padded with zero bits.
+ * The {@code part} number in the range {@code [-MO+1..0]}
+ * chooses lanes {@code [R..R+L-1]} of {@code Y}, where
+ * {@code L} is the {@code VLENGTH} of {@code f(X)} and
+ * {@code R=|part|*L}.
+ * If the user wants a fully populated output shape, the operation
+ * has to be repeated on {@code MO} input vectors, selecting a
+ * different part of the output for insertion each time, and
+ * using {@code XOR} to combine the outputs.
  * </li></ul>
  *
- * <p> When {@code MS>1} (and {@code MO<1}), a too-large logical
- * result is being crammed into a too-small output {@code VSHAPE}.
- * This occurs because the logical result has expanded ({@code ML>1}),
- * or the physical output shape has contracted ({@code MP<1}).  Either
- * or both may happen in one operation, as when a vector of floats is
- * logically expanded to a vector of doubles ({@code ML=2}), and then
- * is stored into a shape with room for only half the original number
- * of lanes ({@code MP=1/2}).  In that case, one part out of four
- * ({@code MS=4}) must be selected from the logical result.  The other
- * three quarters are discarded.  This required selection can also be
- * viewed as a truncation of the logical result into the physical
- * output, especially when only one part is required.
+ * <p> Examples (more in the table further below):
+ * <ul>
+ * <li> Conversion {@code int[4]:128 -> float[4]:128}:
+ * invariant lane size (lanewise in-place, {@code ML=1}),
+ * shape-invariant ({@code MP=1}).
+ * No selection or insertion (in-place, {@code MO=MS=1}).
  *
- * <p> If the user needs all the output data, the operation must be
- * repeated systematically, with distinct result parts selected each
- * time.  The VM might contrive to execute the logical operation
- * {@code f(X)} just once, on platforms where one instruction can
- * somehow deliver the whole logical result.
+ * <li> Conversion {@code byte[16]:128 -> long[2]:128}:
+ * expanding lane size ({@code ML=8}),
+ * shape-invariant ({@code MP=1}).
+ * We must select one of {@code MS=ML/MP=8} parts from the
+ * logical result {@code long[16]:1024},
+ * with {@code part} in range {@code [0..7]}.
  *
- * <p> Symmetrically, when {@code MO>1} (and {@code MS<1}), a small
- * logical result is inserted into a roomy output {@code VSHAPE}.
- * This occurs because the logical result contracted ({@code ML<1}),
- * or the physical output shape has expanded ({@code MP>1}).  Either
- * or both may happen in one operation, as when a vector of doubles is
- * logically contracted to a vector of floats ({@code ML=1/2}), and
- * then is stored into a shape with room for twice the original number
- * of lanes ({@code MP=2}).  In that case, the whole logical result
- * output must be inserted into one out of four quarters of the roomy
- * output shape, and the rest of the shape is padded with zero bits.
+ * <li> Conversion {@code long[2]:128 -> byte[16]:128}:
+ * contracting lane size ({@code ML=1/8}),
+ * shape-invariant ({@code MP=1}).
+ * We must insert the logical resut {@code byte[2]:16} into
+ * one of {@code MO=MP/ML=8} parts of the output,
+ * with {@code part} in range {@code [-7..0]}.
  *
- * <p> If the user needs a fully populated output shape, the operation may
- * be repeated systematically on additional inputs, with distinct
- * placements of compacted partial results in the roomy output shape.
- * The partial results can then be combined using an {@code XOR}
- * operation to overwrite the zero padding.
+ * <li> Conversion {@code float[2]:64 -> double[2]:128}:
+ * expanding lane size ({@code ML=2}),
+ * expanding shape ({@code MP=2}).
+ * Since the expansion of lane size and shape is balanced,
+ * we have no selection or insertion (in-place, {@code MO=MS=1}).
  *
- * <p> It is also possible to combine logical expansion with
- * shape expansion, or logical contraction with shape contraction,
- * with opposing effects on truncation or padding.  If the
- * opposing effects are balanced ({@code MO=MS=1} and {@code MP=ML}),
- * then we speak of an <em>in-place operation</em>, and padding and
- * selection can be avoided completely.  For example, on a platform which
- * supports both 64-bit and 128-bit shapes, a 64-bit vector
- * of floats could be converted to a 128-bit vector of doubles,
- * where the logical expansion ratio {@code ML=2} is exactly matched
- * by the physical expansion ratio of {@code MP=2}.
+ * <li> Conversion {@code byte[32]:256 -> long[2]:128}:
+ * expanding lane size ({@code ML=8}),
+ * contracting shape ({@code MP=1/2}).
+ * We must select one of {@code MS=ML/MP=16} parts from the
+ * logical result {@code byte[256]:4096},
+ * with {@code part} in range {@code [0..15]}.
  *
- * <p> In such cases, where the logical and physical expansion ratios
- * are equal {@code ML=MP}, that number can be used to measure
- * per-lane expansion (or contraction if {@code ML<1}).  Since there
- * is less need to think about changes to {@code VLENGTH}, such code
- * tends to be easier to read.
+ * </ul>
  *
- * <p> But on platforms with only one or two shapes, the code must be
- * organized so that the physical expansion ratio does not change much
- * ({@code MP=1} or {@code MP=2} or {@code MP=1/2}).  If the shapes
- * cannot change, but lane sizes do change, then the code must perform
- * selection ({@code MP>1}) or padding ({@code MO>1}).  If a lane size
- * must quadruple ({@code ML=4}), but the largest available output
- * size is only double the input size ({@code MP=2}), the code must
- * perform a one-out-of-two selection ({@code MS=ML/MP=4/2=2}).
+ * For conversions, one might be tempted to use in-place operations
+ * where the logical and physical expansion ratios are equal {@code ML=MP},
+ * and no selection or insertion is required ({@code part=0}). Such code
+ * tends to be easier to read, since there is no changes to {@code VLENGTH}.
+ * However, some platforms only support one or two shapes
+ * (e.g. aarch64 NEON only supports 64 and 128 bit vectors),
+ * and so the code must be organized so that the physical expansion
+ * ratio does not change much. If the shapes cannot change, but lane
+ * sizes do change, then the code must perform selection or insertion
+ * (e.g. conversion {@code byte[16]:128 -> long[2]:128} and
+ * {@code long[2]:128 -> byte[16]:128}).
+ * To achieve portable code, one has to consider consistently using
+ * shape-invariant conversions, so one never leaves the preferred
+ * shape.
  *
- * <p> (With the possible exception of
- * the {@linkplain VectorShape#S_Max_BIT maximum shape}, all vector
- * sizes are powers of two, and so all the various ratios are also
- * powers of two.  In the hypothetical case of a non-integral size, the
- * selection ratio {@code MS} or the expansion ratio {@code MO} could
- * be rounded up to provide the corresponding limits on offsets.)
- *
- * <p> When a vector method can require selection ({@code MS>1},
- * {@code ML>MP}), it accepts an extra
- * {@code int} parameter called {@code part}, or the "part number".
- * The part number must be in the range {@code [0..MS-1]}.
- * The part number selects one
- * of {@code MS} contiguous disjoint equally-sized blocks of lanes
- * from the logical result and completely fills the physical output
- * with this block of lanes.
- *
- * <p> Specifically, the lanes selected from the logical result of an
- * expansion are numbered in the range {@code [R..R+L-1]}, where
- * {@code L} is the {@code VLENGTH} of the input vector divided by
- * {@code ML}. The origin of the block, {@code R}, is {@code part*L}.
- *
- * <p> A similar convention applies to any vector method that might
- * require insertion, i.e. padding ({@code MO>1}, {@code ML<MP}).
- * Such a method also accepts an extra part number
- * parameter (again called {@code part}) which steers the logical
- * output lanes into one of {@code MO} contiguous disjoint equally-sized
- * blocks of lanes in the physical output vector.  The remaining lanes
- * are filled with zero bits.
- *
- * <p> Specifically, the data is steered into the lanes numbered in the
- * range {@code [R..R+L-1]}, where {@code L} is the {@code VLENGTH} of
- * the logical result vector, and the inserted position of the block,
- * {@code R}, is {@code R=|part|*L}. {@code part} must be in range
- * {@code [-MO+1..0]}.
- *
- * <p> This convention of positive part numbers for selection
+ * <p> The convention of positive part numbers for selection
  * ({@code [0..MS-1]}) and non-positive part numbers for insertion
- * ({@code [-MO+1..0]}) is adopted
- * because some methods can perform both expansions and contractions,
- * in a data-dependent manner, and the extra sign on the part number
- * serves as an error check.  If a vector method takes a part number and
- * an invocation of it requires neither insertion (with padding) nor selection,
- * the {@code part} parameter must be exactly zero.
- *
- * <p>
+ * ({@code [-MO+1..0]}) is adopted because some methods can perform
+ * both expansions and contractions, in a data-dependent manner, and
+ * the extra sign on the part number serves as an error check.  If a
+ * vector method takes a part number and an invocation of it requires
+ * neither insertion (with padding) nor selection, the {@code part}
+ * parameter must be exactly zero.
  * Part numbers outside the allowed ranges will elicit an indexing
  * exception, with a message reporting which part numbers were legal.
- * Note that in all cases a zero part number ({@code part=0}) is valid, and
- * corresponds to an operation which preserves as many lanes as
- * possible from the beginning of the logical result, and places them
- * into the beginning of the physical output container.  This is
- * often a desirable default, so a part number of zero is safe
- * in all cases and useful in most cases.
- *
- * <p> Non-zero part numbers arise, for example, on a machine with few
- * shapes. In order to keep those shapes full of data even when lane sizes
- * change, insertion (with padding) or selection operations are necessary.
+ * A zero part number is always valid and selects or inserts the leading block.
  *
  * <p> The various resizing operations of this API contract or expand
  * their data as follows:
