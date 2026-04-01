@@ -1157,7 +1157,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     -> lo_type->_hi = lo->_hi
     //     hi_type = [hi->_lo .. max_int]    for n >= lo
     //     -> hi_type->_lo = hi->_lo
-    //   We will need the assumption "lo < hi" below, which we can
+    //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK):
     //     lo_type->_hi < hi_type->_lo               (CHECK)
     //     -> lo->_hi < hi->_lo
@@ -1212,7 +1212,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     -> lo_type->_hi = lo->_hi
     //     hi_type = [min(hi->_lo+1, max_int) .. max_int]  for n > hi
     //     -> hi_type->_lo <= lo->_lo + 1
-    //   We will need the assumption "lo <= hi" below, which we can
+    //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK):
     //        lo_type->_hi <  hi_type->_lo       (CHECK)
     //     -> lo->_hi      <  hi->_lo + 1
@@ -1232,7 +1232,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
     //       -> n < lo+1
     //       U(n - (lo + 1))         <  U(hi - lo)
-    //       -- Lemma2 (n < lo+1) --    -- Lemma1 (lo <= hi) --
+    //       -- Lemma2 (n < lo+1) --    -- Lemma1 (lo <= hi, LO-HI) --
     //         n - (lo + 1) + 2^32   <    hi - lo
     //         n -       1  + 2^32   <    hi
     //         n            + 2^32   <=   hi
@@ -1245,7 +1245,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
     //       -> n >= lo+1
     //       U(n - (lo + 1))          <  U(hi - lo)
-    //       -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo <= hi) --
+    //       -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo <= hi, LO-HI) --
     //         n - (lo + 1)           <    hi - lo
     //         n -       1            <    hi
     //         n                      <=   hi
@@ -1257,7 +1257,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //       -> lo+1 <= hi
     //       -> n > lo+1
     //       U(n - (lo + 1))          <  U(hi - lo)
-    //       -- Lemma1 (n > lo+1) --     -- Lemma1 (lo <= hi) --
+    //       -- Lemma1 (n > lo+1) --     -- Lemma1 (lo <= hi, LO-HI) --
     //         n - (lo + 1)           <    hi - lo
     //         n -       1            <    hi
     //         n                      <=   hi
@@ -1273,57 +1273,47 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
     // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
-    // TODO: fix up
-    //
-    // Simplified version:
-    //   n >= a && n < b                     (BEFORE)
-    //
-    // Transformed to:
-    //   n - a <u b - a                      (AFTER)
-    // Equivalent to:
-    //   n - lo <cond> adjusted_lim
-    // Where:
-    //   lo   = a
-    //   hi   = b
-    //   cond = "<u"
-    //   adjusted_lim = hi - lo
     //
     // Proof:
     //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. max(min_int, a->_hi - 1)]
-    //     -> lo_type->_hi >= a->_hi - 1
-    //     hi_type = [b->_lo .. max_int]
-    //     -> hi_type->_lo = b->_lo
-    //   Given check from above:
-    //     lo_type->_hi < hi_type->_lo
-    //     -> a->_hi - 1 <  b->_lo
-    //     -> a->_hi     <= b->_lo
-    //     -> a <= b                             (A-B)
+    //     lo_type = [min_int .. max(min_int, lo->_hi - 1)]  for n < lo
+    //     -> lo_type->_hi >= lo->_hi - 1
+    //     hi_type = [b->_lo .. max_int]                     for n >= hi
+    //     -> hi_type->_lo = hi->_lo
+    //   We will need the assumption (LO-HI) below, which we can
+    //   establish with the following (CHECK):
+    //        lo_type->_hi < hi_type->_lo
+    //     -> lo->_hi - 1  <  hi->_lo
+    //     -> lo->_hi      <= hi->_lo
+    //     -> lo           <= hi                         (HI-LO)
     //
-    //   Case n < a:
+    //   Case n < lo:
     //     (BEFORE) is always false, show (AFTER) is always false.
-    //     U(n - a)               < U(b - a)
-    //     -- Lemma2 (n < a) --     -- Lemma1 (a <= b) --
-    //       n - a + 2^32         <   b - a
-    //       n      + 2^32        <   b
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma2 (n < lo) --    -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo + 2^32        <   hi - lo
+    //       n      + 2^32        <   hi
     //     Always false by Lemma3.
     //
-    //   Case a <=s n <s b:
+    //   Case lo <=s n <s hi:
     //     (BEFORE) is always true, show (AFTER) is always true.
-    //     U(n - a)               < U(b - a)
-    //     -- Lemma1 (n >=a) --      -- Lemma1 (a <= b) --
-    //       n - a                <   b - a
-    //       n                    <   b
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma1 (n >= lo) --   -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo               <   hi - lo
+    //       n                    <   hi
     //     Follows from case assumption, so always true.
     //
-    //   Case n >=s b:
+    //   Case n >=s hi:
     //     (BEFORE) is always false, show (AFTER) is always false.
-    //     U(n - a)               < U(b - a)
-    //     -- Lemma1 (n >= a) --     -- Lemma1 (a <= b) --
-    //       n - a                <   b - a
-    //       n                    <   b
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma1 (n >= lo) --     -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo               <   hi - lo
+    //       n                    <   hi
     //     Contradicts case assumption, so always false.
     // QED.
+    //
+    /// Note: we cannot use anything more relaxed than the assumption
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would undeflow.
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
@@ -1339,7 +1329,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     -> lo_type->_hi >= lo->_hi - 1
     //     hi_type = [min(hi->_lo+1, max_int) .. max_int]   for n > hi
     //     -> hi_type->_lo <= hi->_lo + 1
-    //   We will need the assumption "lo <= hi" below, which we can
+    //   We will need the assumption (LO-HI) below, which we can
     //   establish with the following (CHECK), which we must compute in
     //   long to avoid underflow:
     //        lo_type->_hi     <  hi_type->_lo - 1      (CHECK)
@@ -1347,7 +1337,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     -> lo->_hi          <= hi->_lo
     //     -> lo               <= hi                    (LO-HI)
     //
-    //   Case n <s a:
+    //   Case n <s lo:
     //     (BEFORE) is always false, show (AFTER) is always false.
     //     U(n - lo)              <= U(hi - lo)
     //     -- Lemma2 (n < lo) --     -- Lemma1 (hi >= lo, LO-HI) --
