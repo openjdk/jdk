@@ -83,12 +83,12 @@ public class KAT9180 {
         var c2 = Cipher.getInstance("HPKE");
         var ts = JSONValue.parse(new String(Files.readAllBytes(archivePath), StandardCharsets.UTF_8));
         var count1 = 0;
-        for (var tg : ts.asArray()) {
-            var mode = Integer.parseInt(tg.get("mode").asString());
+        for (var tg : ts.elements()) {
+            var mode = tg.get("mode").asInt();
             System.err.print('I');
-            var kem_id = Integer.parseInt(tg.get("kem_id").asString());
-            var kdf_id = Integer.parseInt(tg.get("kdf_id").asString());
-            var aead_id = Integer.parseInt(tg.get("aead_id").asString());
+            var kem_id = tg.get("kem_id").asInt();
+            var kdf_id = tg.get("kdf_id").asInt();
+            var aead_id = tg.get("aead_id").asInt();
             var ikmR = h.parseHex(tg.get("ikmR").asString());
             var ikmE = h.parseHex(tg.get("ikmE").asString());
             var info = h.parseHex(tg.get("info").asString());
@@ -118,7 +118,7 @@ public class KAT9180 {
             if (enc != null) {
                 System.err.print('e');
                 var count2 = 0;
-                for (var p : enc.asArray()) {
+                for (var p : enc.elements()) {
                     var aad = h.parseHex(p.get("aad").asString());
                     var pt = h.parseHex(p.get("pt").asString());
                     var ct = h.parseHex(p.get("ct").asString());
@@ -136,9 +136,9 @@ public class KAT9180 {
             if (exports != null) {
                 System.err.print('x');
                 var count2 = 0;
-                for (var p : exports.asArray()) {
+                for (var p : exports.elements()) {
                     var exporter_context = h.parseHex(p.get("exporter_context").asString());
-                    var L = Integer.parseInt(p.get("L").asString());
+                    var L = p.get("L").asInt();
                     var exported_value = h.parseHex(p.get("exported_value").asString());
                     var d1 = c1.exportData(exporter_context, L);
                     var d2 = c2.exportData(exporter_context, L);

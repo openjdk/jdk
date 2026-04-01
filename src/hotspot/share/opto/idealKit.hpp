@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ class IdealKit: public StackObj {
 
   // Raw address should be transformed regardless 'delay_transform' flag
   // to produce canonical form CastX2P(offset).
-  Node* AddP(Node *base, Node *ptr, Node *off) { return _gvn.transform(new AddPNode(base, ptr, off)); }
+  Node* AddP(Node* base, Node* ptr, Node* off) { return _gvn.transform(AddPNode::make_with_base(base, ptr, off)); }
 
   Node* CmpP(Node* l, Node* r) { return transform(new CmpPNode(l, r)); }
 #ifdef _LP64
