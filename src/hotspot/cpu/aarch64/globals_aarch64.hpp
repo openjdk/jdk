@@ -129,6 +129,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Always merge DMB instructions in code emission")             \
   product(bool, NeoverseN1ICacheErratumMitigation, false, DIAGNOSTIC,   \
           "Enable workaround for Neoverse N1 erratum 1542419")          \
+  product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,         \
+          "Defer multiple ICache invalidation to single invalidation")  \
 
 // end of ARCH_FLAGS
 

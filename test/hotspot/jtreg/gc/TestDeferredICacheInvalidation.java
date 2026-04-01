@@ -31,6 +31,8 @@ package gc;
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Parallel
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
@@ -46,6 +48,8 @@ package gc;
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.G1
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
@@ -61,6 +65,8 @@ package gc;
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Shenandoah
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation fullGC C1
@@ -74,6 +80,8 @@ package gc;
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Shenandoah
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=generational -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
@@ -89,6 +97,8 @@ package gc;
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Z
+ * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-UseCodeCacheFlushing gc.TestDeferredICacheInvalidation youngGC C1
