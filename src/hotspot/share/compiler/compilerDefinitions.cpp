@@ -497,6 +497,18 @@ bool CompilerConfig::check_args_consistency(bool status) {
 #endif
   }
 
+#ifdef COMPILER2
+  if (StressDeepIGVNRevisit != nullptr && !UseDeepIGVNRevisit) {
+    if (FLAG_IS_CMDLINE(UseDeepIGVNRevisit)) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "StressDeepIGVNRevisit cannot be used with explicitly disabled UseDeepIGVNRevisit.\n");
+      status = false;
+    } else {
+      FLAG_SET_DEFAULT(UseDeepIGVNRevisit, true);
+    }
+  }
+#endif
+
   return status;
 }
 

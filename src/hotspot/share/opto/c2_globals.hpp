@@ -709,6 +709,11 @@
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
                                                                             \
+  product(ccstr, StressDeepIGVNRevisit, nullptr, DIAGNOSTIC,                \
+          "Override deep IGVN revisit for all optimize() calls: "           \
+          "all or random. Requires UseDeepIGVNRevisit=true.")               \
+          constraint(StressDeepIGVNRevisitConstraintFunc, AtParse)          \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
           "  F: verify Node::Ideal does not return nullptr if the node"     \
