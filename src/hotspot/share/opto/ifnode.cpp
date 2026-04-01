@@ -1030,8 +1030,13 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   //     (n >= 2  && n <= 5 )       n - 2      <=u 3
   //     range: [2, 3, 4, 5]
   //
-  // Note: the rhs of the CmpU indicates the cardinality of the range,
-  // allowing n to have exactly that many different values.
+  // Note1: the rhs of the CmpU indicates the cardinality of the range,
+  //        allowing n to have exactly that many different values.
+  //
+  // Note2: all 4 case have an assumption: lo must be sufficiently smaller
+  //        than hi. Below, and with the use of Lemma1 from below, we will
+  //        prove that this implies that the rhs of the CmpU never
+  //        underflows or overflows, which is critical for correctness.
   //
   // Below, we will prove and implement each of these cases. But first,
   // we must handle the combinations of IfTrue/IfFalse projections for
@@ -1050,11 +1055,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   // [0           ..                ] [                      ..               max_uint]
   //                                 ^
   //                               CmpU
-  //
-  // To establish the Assumption for each case, we need to know that lo
-  // is sufficiently smaller than hi. For this, we TODO: continue
-  // Additionally, we see how the value of n would be constrained
-  // if the lower bound fails (lo_type) or the upper bound fails (hi_type).
+
   BoolTest::mask test1 = bool1->_test._test;
   BoolTest::mask test2 = bool2->_test._test;
   if (middle->Opcode() == Op_IfFalse) { test1 = BoolTest::negate_mask(test1); }
