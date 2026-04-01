@@ -285,6 +285,7 @@ final class PeerConnIdManager {
     public List<byte[]> activeResetTokens() {
         lock.lock();
         try {
+            assert closed;
             // we only support one active connection ID at the time
             PeerConnectionId cid = peerConnectionIds.get(activeConnIdSeq);
             byte[] statelessResetToken = null;
