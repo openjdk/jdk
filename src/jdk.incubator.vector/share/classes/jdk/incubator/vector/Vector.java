@@ -822,7 +822,7 @@ import java.util.Arrays;
  * <p> Tension between the above principles arises when an operation
  * produces a <em>logical result</em> that is too large for the
  * required physical output {@code VSHAPE}, so a part of the logical
- * output must be <em>selected</em> to deliver into the physical output.
+ * result must be <em>selected</em> to deliver into the physical output.
  * In such cases it is an open question of which part to select.
  * In other cases, when a logical
  * result is smaller than the capacity of the output {@code VSHAPE},
@@ -847,15 +847,15 @@ import java.util.Arrays;
  *
  * <p> In a nutshell, we would prefer to keep both {@code VSHAPE} and
  * {@code VLENGTH} constant in a block of vector code, but size
- * changes sometimes require messy compromises.  Here are some
+ * changes sometimes require compromises.  Here are some
  * definitions to help navigate the complexity of such compromises:
  *
  * <ul><li>The <em>input shape</em> of a vector operation is the
- * shape of the vector object {@code X} which receives the method call.
+ * shape of the input vector {@code X} which receives the method call.
  * Any other vector arguments have the same input shape.
  *
  * </li><li>The <em>physical output shape</em> of a vector operation
- * is the shape of the output container, the vector {@code Y} produced
+ * is the shape of the output, the vector {@code Y} produced
  * by the method call.  It is usually the same as the input shape,
  * but may differ in the case of a shape-changing method.
  * (Note:  We are talking about the "physics" of an object-oriented
@@ -879,10 +879,10 @@ import java.util.Arrays;
  * </li><li>The <em>logical expansion ratio</em> {@code ML} of a
  * vector operation is the bit-size ratio {@code |f(X)|/|X|} of the
  * logical result to the input shape.  It may be an integer or the
- * reciprocal of an integer, depending on whether the logical
+ * reciprocal of an integer, respectively depending on whether the logical
  * operation is expanding or contracting.
  *
- * </li><li>Given an output container {@code Y} of a specific shape,
+ * </li><li>Given an output vector {@code Y},
  * the <em>physical expansion ratio</em> {@code MP} of a
  * vector operation is the bit-size ratio {@code |Y|/|X|} of physical
  * output shape to the original input shape.  It measures the net
@@ -907,7 +907,7 @@ import java.util.Arrays;
  * input shape may differ from the logical and output shape.
  *
  * </li><li><em>Selection</em> ({@code MS>1}, {@code MO<1}) occurs
- * when the output container {@code Y} is smaller than the logical
+ * when the physical output shape, the shape of vector {@code Y}, is smaller than the logical
  * result {@code f(X)}. One of {@code MS} distinct parts from
  * {@code f(X)} is selected and copied to {@code Y}.
  * The rest of {@code f(X)} is lost.
@@ -920,7 +920,7 @@ import java.util.Arrays;
  * part each time.
  *
  * </li><li><em>Insertion</em> ({@code MO>1}, {@code MS<1}) occurs
- * when the output container {@code Y} is larger than the logical
+ * when the physical output shape, the shape of vector {@code Y}, is larger than the logical
  * result {@code f(X)}. {@code f(X)} is copied to one of {@code MO}
  * distinct parts in {@code Y}.
  * The rest of {@code Y} is padded with zero bits.
@@ -928,7 +928,7 @@ import java.util.Arrays;
  * chooses lanes {@code [R..R+L-1]} of {@code Y}, where
  * {@code L} is the {@code VLENGTH} of {@code f(X)} and
  * {@code R=|part|*L}.
- * If the user wants a fully populated output shape, the operation
+ * If the user wants a fully populated output vector, the operation
  * has to be repeated on {@code MO} input vectors, selecting a
  * different part of the output for insertion each time, and
  * using {@code XOR} to combine the outputs.
@@ -965,7 +965,7 @@ import java.util.Arrays;
  * expanding lane size ({@code ML=8}),
  * contracting shape ({@code MP=1/2}).
  * We must select one of {@code MS=ML/MP=16} parts from the
- * logical result {@code byte[256]:4096},
+ * logical result {@code byte[256]:2048},
  * with {@code part} in range {@code [0..15]}.
  *
  * </ul>
@@ -1035,8 +1035,8 @@ import java.util.Arrays;
  * </ul>
  *
  * <li> Bitwise Reinterpretation:
- * {@code f(X)} is the bitwise image of {@code X} of the same vector
- * bit size, only the lane boundaries are redrawn from {@code ETYPE}
+ * {@code f(X)} is the bitwise image of {@code X} of the same shape,
+ * only the lane boundaries are redrawn from {@code ETYPE}
  * to {@code FTYPE}.
  * Therefore the logical expansion ratio is always unity {@code ML=1}.
  * If the shape changes, the ratio {@code MP} may vary from unity.
