@@ -557,10 +557,10 @@ public final class MacHelper {
 
         final var unpackedRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
 
-        // Preferably create a DMG bundle, fallback to PKG if DMG packaging is disabled.
+        // Preferably create a PKG bundle, fallback to DMG if PKG packaging is disabled.
         new PackageTest().forTypes(Stream.of(
-                PackageType.MAC_DMG,
-                PackageType.MAC_PKG
+                PackageType.MAC_PKG,
+                PackageType.MAC_DMG
         ).filter(PackageType::isEnabled).findFirst().orElseThrow(PackageType::throwSkippedExceptionIfNativePackagingUnavailable))
         .addInitializer(cmd -> {
             cmd.useToolProvider(true)
