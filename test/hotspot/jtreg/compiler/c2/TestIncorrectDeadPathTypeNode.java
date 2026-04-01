@@ -30,6 +30,7 @@
  * @run main ${test.main.class}
  */
 
+package compiler.c2;
 
 public class TestIncorrectDeadPathTypeNode {
     boolean ltIndirect(int p0, int p1) {
