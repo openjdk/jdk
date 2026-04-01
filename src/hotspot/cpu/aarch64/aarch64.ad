@@ -1980,6 +1980,10 @@ static enum RC rc_class(OptoReg::Name reg) {
 // and the execution of the instruction pair will be accelerated.
 static bool use_movprfx_for_spill_copy(const MachSpillCopyNode* copy_node,
                                        OptoReg::Name dst_reg, PhaseRegAlloc* ra_) {
+  if (UseSVE == 0) {
+    return false;
+  }
+
   // Conservatively require that MachSpillCopyNode has only one use.
   if (copy_node->outcnt() != 1) {
     return false;
@@ -2013,6 +2017,7 @@ static bool use_movprfx_for_spill_copy(const MachSpillCopyNode* copy_node,
   if (use_dst_lo != dst_reg) {
     return false;
   }
+
   return true;
 }
 
@@ -2065,14 +2070,9 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill_sve_vector(as_FloatRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
                               sve_vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        if (use_movprfx_for_spill_copy(this, dst_lo, ra_)) {
-          __ sve_movprfx(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                         as_FloatRegister(Matcher::_regEncode[src_lo]));
-        } else {
-          __ sve_orr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                     as_FloatRegister(Matcher::_regEncode[src_lo]),
-                     as_FloatRegister(Matcher::_regEncode[src_lo]));
-        }
+        __ spill_copy_register_to_register(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+                                           as_FloatRegister(Matcher::_regEncode[src_lo]),
+                                           use_movprfx_for_spill_copy(this, dst_lo, ra_));
       } else {
         ShouldNotReachHere();
       }
@@ -2089,14 +2089,10 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
           __ spill_copy128(src_offset, dst_offset);
         }
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        if (UseSVE > 0 && use_movprfx_for_spill_copy(this, dst_lo, ra_)) {
-          __ sve_movprfx(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                         as_FloatRegister(Matcher::_regEncode[src_lo]));
-        } else {
-          __ mov(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                 ireg == Op_VecD ? __ T8B : __ T16B,
-                 as_FloatRegister(Matcher::_regEncode[src_lo]));
-        }
+        __ spill_copy_register_to_register(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+                                           as_FloatRegister(Matcher::_regEncode[src_lo]),
+                                           use_movprfx_for_spill_copy(this, dst_lo, ra_),
+                                           false, ireg == Op_VecD ? __ T8B : __ T16B);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
         __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
                  ireg == Op_VecD ? __ D : __ Q,

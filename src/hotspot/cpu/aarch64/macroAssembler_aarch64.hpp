@@ -1719,6 +1719,17 @@ public:
     sve_str(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, dst_offset));
     reinitialize_ptrue();
   }
+  void spill_copy_register_to_register(FloatRegister dst, FloatRegister src,
+                                       bool use_movprfx, bool use_sve = true,
+                                       SIMD_Arrangement T = T16B) {
+    if (use_movprfx) {
+      sve_movprfx(dst, src);
+    } else if (use_sve) {
+      sve_orr(dst, src, src);
+    } else {
+      mov(dst, T, src);
+    }
+  }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
