@@ -913,8 +913,7 @@ import java.util.Arrays;
  * The rest of {@code f(X)} is lost.
  * The {@code part} number in the range {@code [0..MS-1]}
  * selects lanes {@code [R..R+L-1]} of {@code f(X)}, where
- * {@code L} is the {@code VLENGTH} of {@code X} divided by
- * {@code ML} and {@code R=part*L}.
+ * {@code L=VLENGTH(f(X))/MS=VLENGTH(Y)} and {@code R=part*L}.
  * If the user wants all parts of {@code f(X)}, the operation
  * has to be repeated {@code MS} times, with a different
  * part each time.
@@ -926,12 +925,13 @@ import java.util.Arrays;
  * The rest of {@code Y} is padded with zero bits.
  * The {@code part} number in the range {@code [-MO+1..0]}
  * chooses lanes {@code [R..R+L-1]} of {@code Y}, where
- * {@code L} is the {@code VLENGTH} of {@code f(X)} and
- * {@code R=|part|*L}.
+ * {@code L=VLENGTH(f(X))=VLENGTH(Y)/MO} and {@code R=|part|*L}.
  * If the user wants a fully populated output vector, the operation
  * has to be repeated on {@code MO} input vectors, selecting a
  * different part of the output for insertion each time, and
- * using {@code XOR} to combine the outputs.
+ * using the {@linkplain VectorOperators#XOR bitwise XOR}
+ * (or {@link VectorOperators#FIRST_NONZERO FIRST_NONZERO}
+ * for floating point) to combine the outputs.
  * </li></ul>
  *
  * <p> Examples (more in the table further below):
@@ -965,7 +965,7 @@ import java.util.Arrays;
  * expanding lane size ({@code ML=8}),
  * contracting shape ({@code MP=1/2}).
  * We must select one of {@code MS=ML/MP=16} parts from the
- * logical result {@code byte[256]:2048},
+ * logical result {@code long[32]:2048},
  * with {@code part} in range {@code [0..15]}.
  *
  * </ul>
