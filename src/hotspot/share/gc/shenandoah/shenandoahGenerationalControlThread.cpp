@@ -24,6 +24,7 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -120,10 +121,11 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
       assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
     }
   } else {
-    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
-      // This is a regulator request. It is also possible that the regulator "canceled" an old mark,
-      // so we can clear that here. This clear operation will only clear the cancellation if it is
-      // a regulator request.
+    if (request.cause == GCCause::_shenandoah_concurrent_gc || ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+      // This is a regulator request or an explicit gc request. Note that an explicit gc request is allowed to
+      // "upgrade" a regulator request. It is possible that the regulator "canceled" an old mark, so we must
+      // clear that cancellation here or the explicit gc cycle will erroneously detect it as a cancellation.
+      // This clear operation will only clear the cancellation if it was set by regulator request.
       _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     }
     request.generation = _requested_generation;
@@ -254,7 +256,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if (gc_mode() != servicing_old) {
+  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
+    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
     _heap->reset_bytes_allocated_since_gc_start();
   }
 
@@ -270,6 +273,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   {
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
+
+    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // so that all young objects are promoted to old. This ensures that tests
+    // using WB.fullGC() to promote objects to old gen will not loop forever.
+    ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
+                                                 _heap->age_census());
 
     _heap->print_before_gc();
     switch (gc_mode()) {

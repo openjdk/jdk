@@ -31,7 +31,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -70,7 +70,7 @@
 class G1YoungGCTraceTime {
   G1YoungCollector* _collector;
 
-  G1GCPauseType _pause_type;
+  G1CollectorState::Pause _pause_type;
   GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
@@ -93,7 +93,7 @@ class G1YoungGCTraceTime {
     os::snprintf_checked(_young_gc_name_data,
                          MaxYoungGCNameLength,
                          "Pause Young (%s) (%s)%s",
-                         G1GCPauseTypeHelper::to_string(_pause_type),
+                         G1CollectorState::to_string(_pause_type),
                          GCCause::to_string(_pause_cause),
                          evacuation_failed_string);
     return _young_gc_name_data;
@@ -105,7 +105,7 @@ public:
     // Take snapshot of current pause type at start as it may be modified during gc.
     // The strings for all Concurrent Start pauses are the same, so the parameter
     // does not matter here.
-    _pause_type(_collector->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
+    _pause_type(_collector->collector_state()->gc_pause_type(false /* concurrent_operation_is_full_mark */)),
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
@@ -142,7 +142,7 @@ public:
   G1YoungGCJFRTracerMark(STWGCTimer* gc_timer_stw, G1NewTracer* gc_tracer_stw, GCCause::Cause cause) :
     G1JFRTracerMark(gc_timer_stw, gc_tracer_stw), _evacuation_info() { }
 
-  void report_pause_type(G1GCPauseType type) {
+  void report_pause_type(G1CollectorState::Pause type) {
     tracer()->report_young_gc_pause(type);
   }
 
@@ -160,9 +160,9 @@ class G1YoungGCVerifierMark : public StackObj {
 
   static G1HeapVerifier::G1VerifyType young_collection_verify_type() {
     G1CollectorState* state = G1CollectedHeap::heap()->collector_state();
-    if (state->in_concurrent_start_gc()) {
+    if (state->is_in_concurrent_start_gc()) {
       return G1HeapVerifier::G1VerifyConcurrentStart;
-    } else if (state->in_young_only_phase()) {
+    } else if (state->is_in_young_only_phase()) {
       return G1HeapVerifier::G1VerifyYoungNormal;
     } else {
       return G1HeapVerifier::G1VerifyMixed;
@@ -244,19 +244,13 @@ G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injecto
   return _g1h->allocation_failure_injector();
 }
 
-
-void G1YoungCollector::wait_for_root_region_scanning() {
+void G1YoungCollector::complete_root_region_scan() {
   Ticks start = Ticks::now();
-  // We have to wait until the CM threads finish scanning the
-  // root regions as it's the only way to ensure that all the
-  // objects on them have been correctly scanned before we start
-  // moving them during the GC.
-  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
-  Tickspan wait_time;
-  if (waited) {
-    wait_time = (Ticks::now() - start);
+  // We have to complete root region scan as it's the only way to ensure that all the
+  // objects on them have been correctly scanned before we start moving them during the GC.
+  if (concurrent_mark()->complete_root_regions_scan_in_safepoint()) {
+    phase_times()->record_root_region_scan_time((Ticks::now() - start).seconds() * MILLIUNITS);
   }
-  phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
 }
 
 class G1PrintCollectionSetClosure : public G1HeapRegionClosure {
@@ -530,7 +524,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     Ticks start = Ticks::now();
     concurrent_mark()->pre_concurrent_start(_gc_cause);
     phase_times()->record_prepare_concurrent_task_time_ms((Ticks::now() - start).seconds() * 1000.0);
@@ -1037,7 +1031,7 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
 }
 
 void G1YoungCollector::enqueue_candidates_as_root_regions() {
-  assert(collector_state()->in_concurrent_start_gc(), "must be");
+  assert(collector_state()->is_in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
   candidates->iterate_regions([&] (G1HeapRegion* r) {
@@ -1077,7 +1071,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   // Regions in the collection set candidates are roots for the marking (they are
   // not marked through considering they are very likely to be reclaimed soon.
   // They need to be enqueued explicitly compared to survivor regions.
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     enqueue_candidates_as_root_regions();
   }
 
@@ -1147,7 +1141,7 @@ void G1YoungCollector::collect() {
   // Wait for root region scan here to make sure that it is done before any
   // use of the STW workers to maximize cpu use (i.e. all cores are available
   // just to do that).
-  wait_for_root_region_scanning();
+  complete_root_region_scan();
 
   G1YoungGCVerifierMark vm(this);
   {
@@ -1180,7 +1174,7 @@ void G1YoungCollector::collect() {
 
     // Need to report the collection pause now since record_collection_pause_end()
     // modifies it to the next state.
-    jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
+    jtm.report_pause_type(collector_state()->gc_pause_type(_concurrent_operation_is_full_mark));
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }

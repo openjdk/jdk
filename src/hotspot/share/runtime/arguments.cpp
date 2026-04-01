@@ -555,6 +555,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1513,10 +1515,7 @@ void Arguments::set_heap_size() {
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
                        !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
-  // Limit the available memory if client emulation mode is enabled.
-  const size_t avail_mem = CompilerConfig::should_set_client_emulation_mode_flags()
-      ? 1ULL*G
-      : os::physical_memory();
+  const size_t avail_mem = os::physical_memory();
 
   // If the maximum heap size has not been set with -Xmx, then set it as
   // fraction of the size of physical memory, respecting the maximum and
@@ -1555,7 +1554,7 @@ void Arguments::set_heap_size() {
     }
 
 #ifdef _LP64
-    if (UseCompressedOops || UseCompressedClassPointers) {
+    if (UseCompressedOops) {
       // HeapBaseMinAddress can be greater than default but not less than.
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
@@ -1568,9 +1567,7 @@ void Arguments::set_heap_size() {
           FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
-    }
 
-    if (UseCompressedOops) {
       uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
       uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
@@ -3783,10 +3780,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
-  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
-    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
-    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-  }
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
     // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
@@ -3799,9 +3792,6 @@ void Arguments::set_compact_headers_flags() {
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
-  }
-  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
 #endif
 }
@@ -3818,9 +3808,7 @@ jint Arguments::apply_ergo() {
 
   set_compact_headers_flags();
 
-  if (UseCompressedClassPointers) {
-    CompressedKlassPointers::pre_initialize();
-  }
+  CompressedKlassPointers::pre_initialize();
 
   CDSConfig::ergo_initialize();
 
@@ -3863,10 +3851,6 @@ jint Arguments::apply_ergo() {
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
     warning("PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output");
     DebugNonSafepoints = true;
-  }
-
-  if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
-    warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
   }
 
   // Treat the odd case where local verification is enabled but remote
