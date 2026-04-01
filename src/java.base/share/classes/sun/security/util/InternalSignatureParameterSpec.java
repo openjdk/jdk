@@ -44,7 +44,7 @@ import java.util.List;
  * by the message digest algorithm, and only the resulting hash is signed.
  * <li> The message can be concatenated with a context string to enable
  * (application-level) domain separation.
- * <li> More fine-tuned features, represented as case-insensitive strings, can be
+ * <li> More fine-tuned features, represented as case-sensitive strings, can be
  * specified.
  * <ul>
  * <li><code>deterministic</code>: signature generation uses constant byte
@@ -97,12 +97,12 @@ public final class InternalSignatureParameterSpec implements AlgorithmParameterS
     /**
      * Checks if a feature is turned on.
      *
-     * @param feature the feature in string, case-insensitive
+     * @param feature the feature in string, case-sensitive
      * @return {@code true} if the feature is on
      */
     public boolean hasFeature(String feature) {
         for (String f : features) {
-            if (f != null && f.equalsIgnoreCase(feature)) return true;
+            if (f != null && f.equals(feature)) return true;
         }
         return false;
     }
