@@ -1030,6 +1030,9 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   //     (n >= 2  && n <= 5 )
   //     range: [2, 3, 4, 5]
   //
+  // Note: the rhs of the CmpU indicates the cardinality of the range,
+  // allowing n to have exactly that many different values.
+  //
   // Below, we will prove and implement each of these cases. But first,
   // we must handle the combinations of IfTrue/IfFalse projections for
   // middle and succ, and extract which one is the lower bound (lo) and
@@ -1056,16 +1059,22 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   if (middle->Opcode() == Op_IfFalse) { test1 = BoolTest::negate_mask(test1); }
   if (succ->Opcode()   == Op_IfFalse) { test2 = BoolTest::negate_mask(test2); }
 
+  Node* lo = nullptr;
+  Node* hi = nullptr;
   const TypeInt* lo_type = nullptr;
   const TypeInt* hi_type = nullptr;
   BoolTest::mask lo_test = BoolTest::illegal;
   BoolTest::mask hi_test = BoolTest::illegal;
   if (BoolTest::is_greater(test1) && BoolTest::is_less(test2)) {
+    lo = v1;
+    hi = v2;
     lo_type = IfNode::filtered_int_type(igvn, n, fail1);
     hi_type = IfNode::filtered_int_type(igvn, n, fail2);
     lo_test = test1;
     hi_test = test2;
   } else if (BoolTest::is_less(test1) && BoolTest::is_greater(test2)) {
+    lo = v2;
+    hi = v1;
     lo_type = IfNode::filtered_int_type(igvn, n, fail2);
     hi_type = IfNode::filtered_int_type(igvn, n, fail1);
     lo_test = test2;
@@ -1135,12 +1144,12 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //     Contradicts case assumption, so always false.
     // QED.
     //
-    // Check assumption (LO-HI) and transform:
-    if (lo_type->_hi < hi_type->_lo) {
-      assert(false, "TODO");
-      return true;
+    // Note: we cannot use anything more relaxed than the assumption
+    //       lo < hi: with lo=hi the rhs of the CmpU would undeflow.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // Cannot establish assumption for (LO-HI)
     }
-    return false;
+    assert(false, "TODO a)");
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
     // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u hi - a       (assuming lo <= hi)
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
@@ -1150,6 +1159,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     // d)  (n >= lo && n <= hi)  ->
   }
 
+  assert(false, "TODO");
   return false; // TODO: fix me!
 }
 
