@@ -153,18 +153,40 @@ public class TestFoldComparesFuzzer {
             };
         }
 
+        public Comparator flip() {
+            return switch(this) {
+                case LT -> GT;
+                case LE -> GE;
+                case GT -> LT;
+                case GE -> LE;
+                case EQ -> EQ;
+                case NE -> NE;
+            };
+        }
+
         static Comparator random() {
             return values()[RANDOM.nextInt(values().length)];
         }
     }
 
-    record Comparison(String lhs, Comparator cmp, String rhs) {
-        public String toString() {
-            return "(" + lhs + " "+ cmp.getToken() + " " + rhs + ")";
+    record Comparison(String lhs, Comparator cmp, String rhs, boolean negated) {
+        public Comparison(String lhs, Comparator cmp, String rhs) {
+            this(lhs, cmp, rhs, false);
         }
 
+        public String toString() {
+            return (negated ? "!" : "") + "(" + lhs + " "+ cmp.getToken() + " " + rhs + ")";
+        }
+
+        // Keep the same semantics of the test, but change its form.
         Comparison permuteRandom() {
-            return RANDOM.nextBoolean() ? this : new Comparison(rhs, cmp.negate(), lhs);
+            return switch(RANDOM.nextInt(4)) {
+                case 0 -> this;
+                case 1 -> new Comparison(rhs, cmp.flip(), lhs);
+                case 2 -> new Comparison(lhs, cmp.negate(), rhs, true);
+                case 3 -> new Comparison(rhs, cmp.negate().flip(), lhs, true);
+                default -> throw new RuntimeException("impossible");
+            };
         }
     }
 

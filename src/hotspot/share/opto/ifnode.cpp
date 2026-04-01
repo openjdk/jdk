@@ -976,6 +976,14 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
 // Note2: We are flexible about the IfProj nodes: middle and succ
 // could both be either IfTrue or IfFalse.
 //
+// Note3: Surrounding code has a different naming scheme!
+// In has_only_uncommon_traps, the path towards the
+// uncommon trap (e.g. failed range check) is called
+// "success", while the path that does not go to
+// the uncommon trap (e.g. in-bounds access) is called
+// "fail". I think that is counter-intuitive, so I now
+// used a different naming scheme here.
+//
 // Return true iff we could perform one of the optimizations.
 bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjNode* succ, PhaseIterGVN* igvn) {
   assert(fail2->in(0) == this, "link iff2->fail2");
