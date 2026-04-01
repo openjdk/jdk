@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,28 @@
  * questions.
  */
 
-package gc.arguments;
-
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 
 /*
- * @test
- * @bug 8015107
- * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
- *          is used together with -XX:-UseCompressedClassPointers
+ * @test LogLinkingTest
+ * @bug 8347462
  * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @requires vm.opt.CompressedClassSpaceSize == null & vm.opt.UseCompressedClassPointers == null
- * @run driver gc.arguments.TestCompressedClassFlags
+ * @library classes
+ * @requires vm.flagless
+ * @build test.LinkageErrorApp
+ * @run driver LogLinkingTest
  */
-public class TestCompressedClassFlags {
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class LogLinkingTest {
     public static void main(String[] args) throws Exception {
-        if (Platform.is64bit()) {
-            OutputAnalyzer output = GCArguments.executeTestJava(
-                "-XX:CompressedClassSpaceSize=1g",
-                "-XX:-UseCompressedClassPointers",
-                "-version");
-            output.shouldContain("warning");
-            output.shouldNotContain("error");
-            output.shouldHaveExitValue(0);
-        }
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+load,class+link", "LinkageErrorApp");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(1);
+        output.shouldMatch("class,load.*SingleDefinition source");
+        output.shouldMatch("class,load.*DuplicateDefinition source");
+        output.shouldMatch("class,link.*Linked class.*SingleDefinition");
+        output.shouldNotMatch("class,link.*Linked class.*DuplicateDefinition");
     }
 }

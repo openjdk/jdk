@@ -163,8 +163,7 @@
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
-  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    const int)                             \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
@@ -475,6 +474,7 @@
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
+     static_field(StubRoutines,                _cont_returnBarrier,                           address)                               \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -786,6 +786,7 @@
   static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
   static_field(Mutex,                          _num_mutex,                                    int)                                   \
   volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)                               \
+  nonstatic_field(ContinuationEntry,           _parent,                                       ContinuationEntry*)                    \
   static_field(ContinuationEntry,              _return_pc,                                    address)
 
 //--------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \

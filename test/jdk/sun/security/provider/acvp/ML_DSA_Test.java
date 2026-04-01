@@ -65,12 +65,12 @@ public class ML_DSA_Test {
         var f = p == null
                 ? KeyFactory.getInstance("ML-DSA")
                 : KeyFactory.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             var np = genParams(pname);
             System.out.println(">> " + pname);
-            for (var c : t.get("tests").asArray()) {
-                System.out.print(c.get("tcId").asString() + " ");
+            for (var c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
                 var seed = toByteArray(c.get("seed").asString());
                 g.initialize(np, new FixedSecureRandom(seed));
                 var kp = g.generateKeyPair();
@@ -101,7 +101,7 @@ public class ML_DSA_Test {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " sign");
             var features = new HashSet<String>();
@@ -114,12 +114,13 @@ public class ML_DSA_Test {
             if (t.get("externalMu").asBoolean()) {
                 features.add("externalMu");
             }
-            for (var c : t.get("tests").asArray()) {
-                var cstr = c.get("context");
-                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+            for (var c : t.get("tests").elements()) {
+                var ctxt =  c.getOrAbsent("context")
+                        .map(v -> toByteArray(v.asString()))
+                        .orElse(new byte[0]);
                 var hashAlg = c.get("hashAlg").asString();
                 var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
+                System.out.print(c.get("tcId").asInt() + " ");
                 var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
@@ -147,7 +148,7 @@ public class ML_DSA_Test {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " verify");
             var features = new HashSet<String>();
@@ -157,10 +158,11 @@ public class ML_DSA_Test {
             if (t.get("externalMu").asBoolean()) {
                 features.add("externalMu");
             }
-            for (var c : t.get("tests").asArray()) {
-                System.out.print(c.get("tcId").asString() + " ");
-                var cstr = c.get("context");
-                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+            for (var c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
+                var ctxt =  c.getOrAbsent("context")
+                        .map(v -> toByteArray(v.asString()))
+                        .orElse(new byte[0]);
                 var hashAlg = c.get("hashAlg").asString();
                 var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
                 var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));

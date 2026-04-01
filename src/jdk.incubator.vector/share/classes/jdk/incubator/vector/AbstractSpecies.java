@@ -24,39 +24,31 @@
  */
 package jdk.incubator.vector;
 
-import java.lang.foreign.MemorySegment;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 import java.lang.reflect.Array;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
-abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
-                                  implements VectorSpecies<E> {
-    @Stable
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
+@TrustFinalFields
+abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
+        implements VectorSpecies<E>
+        permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
+        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies {
     final VectorShape vectorShape;
-    @Stable
     final LaneType laneType;
-    @Stable
     final int laneCount;
-    @Stable
     final int laneCountLog2P1;
-    @Stable
     final Class<? extends AbstractVector<E>> vectorType;
-    @Stable
     final Class<? extends AbstractMask<E>> maskType;
-    @Stable
     final Class<? extends AbstractShuffle<E>> shuffleType;
-    @Stable
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
-    @Stable
     final VectorShape indexShape;
-    @Stable
     final int maxScale, minScale;
-    @Stable
     final int vectorBitSize, vectorByteSize;
 
     AbstractSpecies(VectorShape vectorShape,
