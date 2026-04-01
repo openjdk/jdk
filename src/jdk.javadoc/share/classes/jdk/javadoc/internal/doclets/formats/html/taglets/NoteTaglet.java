@@ -98,27 +98,27 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var map = new LinkedHashMap<String, Content>();
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
-        HtmlId id = config.htmlIds.forNote(holder, defaultKind, false, getExistingIds());
         for (DocTree tag : tags) {
             if (tag instanceof NoteTree note) {
                 var attr = getAttributes(note);
                 var header = attr.getOrDefault("header", defaultHeader);
                 var kind = attr.getOrDefault("kind", defaultKind);
                 var body = HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
-
-                var noteId = attr.getOrDefault("id", null);
-                if (noteId != null) {
-                    body.setId(HtmlId.of(noteId));
-                }
+                var id = attr.getOrDefault("id", null);
 
                 map.compute(header, (hdr, cnt) -> {
                     if (cnt == null) {
                         return HtmlTree.DIV(HtmlStyles.blockNote)
-                                .setId(id)
+                                .setId(id != null
+                                        ? HtmlId.of(id)
+                                        : config.htmlIds.forNote(holder, defaultKind, false, getExistingIds()))
                                 .addStyle(HtmlStyles.noteTag.cssName() + "-" + kind)
                                 .add(HtmlTree.DT(RawHtml.of(hdr)))
                                 .add(body);
                     } else {
+                        if (id != null) {
+                            body.setId(HtmlId.of(id));
+                        }
                         cnt.add(body);
                         return cnt;
                     }
