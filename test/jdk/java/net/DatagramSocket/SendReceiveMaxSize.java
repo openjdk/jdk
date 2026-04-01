@@ -173,7 +173,7 @@ public class SendReceiveMaxSize {
                 var sendPkt = new DatagramPacket(testData, capacity, addr);
 
                 if (exception != null) {
-                    Exception ex = Assertions.assertThrows(IOE, () -> sender.send(sendPkt));
+                    Exception ex = Assertions.assertThrows(exception, () -> sender.send(sendPkt));
                     System.out.println(name + " got expected exception: " + ex);
                 } else {
                     sender.send(sendPkt);
