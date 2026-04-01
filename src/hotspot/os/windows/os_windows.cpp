@@ -1066,7 +1066,8 @@ static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
 void os::set_native_thread_name(const char *name, size_t len) {
   // Windows APIs require NUL-terminated strings; the name pointer
   // may not be NUL-terminated, so copy into a stringStream.
-  stringStream ss;
+  char stack_buf[256];
+  stringStream ss(stack_buf, sizeof(stack_buf));
   ss.write(name, len);
   const char* terminated = ss.base();
 
