@@ -37,7 +37,7 @@
 LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
   _next_block(nullptr),
   _prev_block(nullptr),
-  _kind(kind),
+  _block_kind(kind),
   _offset(-1),
   _alignment(1),
   _size(size),
@@ -52,7 +52,7 @@ LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
 LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment, bool is_reference) :
  _next_block(nullptr),
  _prev_block(nullptr),
- _kind(kind),
+ _block_kind(kind),
  _offset(-1),
  _alignment(alignment),
  _size(size),
@@ -148,8 +148,8 @@ void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, b
 
 LayoutRawBlock* FieldLayout::first_field_block() {
   LayoutRawBlock* block = _start;
-  while (block->kind() != LayoutRawBlock::INHERITED && block->kind() != LayoutRawBlock::REGULAR
-      && block->kind() != LayoutRawBlock::FLATTENED && block->kind() != LayoutRawBlock::PADDING) {
+  while (block->block_kind() != LayoutRawBlock::INHERITED && block->block_kind() != LayoutRawBlock::REGULAR
+      && block->block_kind() != LayoutRawBlock::FLATTENED && block->block_kind() != LayoutRawBlock::PADDING) {
     block = block->next_block();
   }
   return block;
@@ -190,7 +190,7 @@ void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* star
       assert(cursor != nullptr, "Sanity check");
       last_search_success = true;
       while (cursor != start) {
-        if (cursor->kind() == LayoutRawBlock::EMPTY && cursor->fit(b->size(), b->alignment())) {
+        if (cursor->block_kind() == LayoutRawBlock::EMPTY && cursor->fit(b->size(), b->alignment())) {
           if (candidate == nullptr || cursor->size() < candidate->size()) {
             candidate = cursor;
           }
@@ -202,7 +202,7 @@ void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* star
         last_search_success = false;
       }
       assert(candidate != nullptr, "Candidate must not be null");
-      assert(candidate->kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
+      assert(candidate->block_kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
       assert(candidate->fit(b->size(), b->alignment()), "Candidate must be able to store the block");
     }
 
@@ -221,7 +221,7 @@ void FieldLayout::add_field_at_offset(LayoutRawBlock* block, int offset, LayoutR
   while (slot != nullptr) {
     if ((slot->offset() <= block->offset() && (slot->offset() + slot->size()) > block->offset()) ||
         slot == _last){
-      assert(slot->kind() == LayoutRawBlock::EMPTY, "Matching slot must be an empty slot");
+      assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Matching slot must be an empty slot");
       assert(slot->size() >= block->offset() + block->size() ,"Matching slot must be big enough");
       if (slot->offset() < block->offset()) {
         int adjustment = block->offset() - slot->offset();
@@ -261,7 +261,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
   } else {
     LayoutRawBlock* first = list->at(0);
     candidate = last_block()->prev_block();
-    while (candidate->kind() != LayoutRawBlock::EMPTY || !candidate->fit(size, first->alignment())) {
+    while (candidate->block_kind() != LayoutRawBlock::EMPTY || !candidate->fit(size, first->alignment())) {
       if (candidate == start) {
         candidate = last_block();
         break;
@@ -269,7 +269,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
       candidate = candidate->prev_block();
     }
     assert(candidate != nullptr, "Candidate must not be null");
-    assert(candidate->kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
+    assert(candidate->block_kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
     assert(candidate->fit(size, first->alignment()), "Candidate must be able to store the whole contiguous block");
   }
 
@@ -281,7 +281,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
 }
 
 LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block) {
-  assert(slot->kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
+  assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
   if (slot->offset() % block->alignment() != 0) {
     int adjustment = block->alignment() - (slot->offset() % block->alignment());
     LayoutRawBlock* adj = new LayoutRawBlock(LayoutRawBlock::EMPTY, adjustment);
@@ -362,7 +362,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
     b = b->next_block();
   }
   assert(b->next_block() == nullptr, "Invariant at this point");
-  assert(b->kind() != LayoutRawBlock::EMPTY, "Sanity check");
+  assert(b->block_kind() != LayoutRawBlock::EMPTY, "Sanity check");
 
   // If the super class has @Contended annotation, a padding block is
   // inserted at the end to ensure that fields from the subclasses won't share
@@ -384,7 +384,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
 }
 
 LayoutRawBlock* FieldLayout::insert(LayoutRawBlock* slot, LayoutRawBlock* block) {
-  assert(slot->kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
+  assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
   assert(slot->offset() % block->alignment() == 0, "Incompatible alignment");
   block->set_offset(slot->offset());
   slot->set_offset(slot->offset() + block->size());
@@ -425,7 +425,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
   ResourceMark rm;
   LayoutRawBlock* b = _blocks;
   while(b != _last) {
-    switch(b->kind()) {
+    switch(b->block_kind()) {
       case LayoutRawBlock::REGULAR: {
         FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",

@@ -933,7 +933,7 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
         j = MIN2(j, (int)use->outcnt()-1);
       }
 
-      _igvn->remove_dead_node(use);
+      _igvn->remove_dead_node(use, PhaseIterGVN::NodeOrigin::Graph);
     }
     --i;
     i = MIN2(i, (int)curr_castpp->outcnt()-1);
