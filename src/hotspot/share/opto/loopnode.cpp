@@ -4538,16 +4538,16 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel IV phi2 (e.g. "a") in:
 //    for (iv = init; iv < limit; iv += stride) { a += inc; }
-// where inc is loop-invariant. Result: a = init2 +/- (iterations * inc)
+// where inc is loop-invariant.
 //
-//   phi2 used inside loop body (not just at exit)?
-//    * no: replace with new expression (enables loop elimination)
-//      * |stride| == 1:       iterations = iv - init
-//      * |stride| power of 2: iterations = (iv - init) >>> log2
-//      * otherwise:           iterations = DivL(iv - init, stride)
-//    * yes: keep cheap ratio if possible (avoids expensive DivL per iter)
-//      * inc is constant, inc % stride == 0: a = iv * (inc / stride) + (init2 - init * (inc / stride))
-//      * otherwise: bail out, keep original a += inc, as DivL per iteration is more expensive
+// sinkable: all uses outside the loop AND their dom_lca also outside.
+//
+// First match wins:
+//  * cheap_stride |stride| == 1:       a = init2 +/- (iv - init) * inc
+//  * cheap_stride |stride| power of 2: a = init2 +/- ((iv - init) >>> log2) * inc
+//  * sinkable:                         a = init2 +/- DivL(iv - init, stride) * inc
+//  * inc constant, inc % stride == 0:  a = iv * (inc/stride) + (init2 - init * (inc/stride))
+//  * otherwise:                        no change
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -4618,66 +4618,85 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 #endif
 
-    // Check if phi2 is only used outside the loop (other than its own recurrence and
-    // uncommon traps which only need the value during deoptimization).
-    // If phi2 is used inside the loop body, bail out, as the replacement expression
-    // is more expensive per iteration than the original accumulation.
-    bool hoistable = true;
+    // Check if the replacement expression can be sunk below the loop.
+    // All uses (except the recurrence, the counted loop node, and uncommon
+    // traps) must be outside the loop, AND their control-flow LCA must
+    // also be outside, as a loop with multiple exits can place the LCA
+    // back inside even when every individual use is outside.
+    bool sinkable = true;
+    Node* use_lca = nullptr;
     for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
       Node* use = phi2->out(j);
       if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
         continue;
       }
-      if (loop->is_member(get_loop(ctrl_or_self(use)))) {
-        hoistable = false;
+      Node* use_ctrl = ctrl_or_self(use);
+      if (loop->is_member(get_loop(use_ctrl))) {
+        sinkable = false;
         break;
       }
+      use_lca = (use_lca == nullptr) ? use_ctrl : dom_lca(use_lca, use_ctrl);
     }
-    if (!hoistable) {
-      // phi2 is used inside the loop. For constant Add increments that are exact multiples
-      // of stride, use the cheap ratio approach (MulI per iteration).
-      // Otherwise bail out to avoid an expensive DivL chain per iteration.
-      if (!is_add || !inc_val->is_Con()) {
-        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (used inside loop): %d", phi2->_idx);)
-        continue;
-      }
-      jlong stride_con2 = inc_val->get_integer_as_long(bt);
-      if (stride_con2 == min_signed_integer(bt) && stride_con == -1) {
-        continue;
-      }
-      jlong ratio_con = stride_con2 / stride_con;
-      if ((ratio_con * stride_con) != stride_con2) {
-        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (no exact ratio): %d", phi2->_idx);)
-        continue;
-      }
-
-      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> exact ratio: %d", phi2->_idx);)
-      Node* ratio = integercon(ratio_con, bt);
-      Node* init_c = insert_convert_node_if_needed(bt, init);
-      Node* phi_c = insert_convert_node_if_needed(bt, phi);
-      Node* ratio_init = MulNode::make(init_c, ratio, bt);
-      _igvn.register_new_node_with_optimizer(ratio_init, init_c);
-      set_early_ctrl(ratio_init, false);
-
-      Node* diff = SubNode::make(init2, ratio_init, bt);
-      _igvn.register_new_node_with_optimizer(diff, init2);
-      set_early_ctrl(diff, false);
-
-      Node* ratio_idx = MulNode::make(phi_c, ratio, bt);
-      _igvn.register_new_node_with_optimizer(ratio_idx, phi_c);
-      set_ctrl(ratio_idx, cl);
-
-      // phi2 = result = phi * ratio + (init2 - init * ratio)
-      Node* result = AddNode::make(ratio_idx, diff, bt);
-      _igvn.register_new_node_with_optimizer(result, phi2);
-      set_ctrl(result, cl);
-      _igvn.replace_node(phi2, result);
-      if (result->outcnt() == 0) { _igvn.remove_dead_node(result); }
-      --i;
-      continue;
+    if (sinkable && use_lca != nullptr && loop->is_member(get_loop(use_lca))) {
+      sinkable = false;
     }
+    if (!sinkable) {
+      // phi2 is not sinkable: either used inside the loop body, or uses
+      // are on different loop exits whose LCA is inside the loop.
+      // For cheap strides (|stride| == 1 or power of 2) the iterations
+      // approach is still inexpensive (Sub or Sub+Shift, no DivL), so
+      // fall through to the shared iterations code below.
+      // For expensive strides, use the ratio approach if possible,
+      // otherwise bail out.
+      jlong abs_stride = ABS(stride_con);
+      bool cheap_stride = (abs_stride == 1 || is_power_of_2(abs_stride));
 
-    NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> hoistable: %d", phi2->_idx);)
+      if (!cheap_stride) {
+        if (!is_add || !inc_val->is_Con()) {
+          NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (not sinkable): %d", phi2->_idx);)
+          continue;
+        }
+        jlong stride_con2 = inc_val->get_integer_as_long(bt);
+        if (stride_con2 == min_signed_integer(bt) && stride_con == -1) {
+          NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (min_int overflow): %d", phi2->_idx);)
+          continue;
+        }
+        jlong ratio_con = stride_con2 / stride_con;
+        if ((ratio_con * stride_con) != stride_con2) {
+          NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> bailout (no exact ratio): %d", phi2->_idx);)
+          continue;
+        }
+
+        NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> exact ratio (not sinkable): %d", phi2->_idx);)
+        Node* ratio = integercon(ratio_con, bt);
+        Node* init_c = insert_convert_node_if_needed(bt, init);
+        Node* phi_c = insert_convert_node_if_needed(bt, phi);
+        Node* ratio_init = MulNode::make(init_c, ratio, bt);
+        _igvn.register_new_node_with_optimizer(ratio_init, init_c);
+        set_early_ctrl(ratio_init, false);
+
+        Node* diff = SubNode::make(init2, ratio_init, bt);
+        _igvn.register_new_node_with_optimizer(diff, init2);
+        set_early_ctrl(diff, false);
+
+        Node* ratio_idx = MulNode::make(phi_c, ratio, bt);
+        _igvn.register_new_node_with_optimizer(ratio_idx, phi_c);
+        set_ctrl(ratio_idx, cl);
+
+        // phi2 = result = phi * ratio + (init2 - init * ratio)
+        Node* result = AddNode::make(ratio_idx, diff, bt);
+        _igvn.register_new_node_with_optimizer(result, phi2);
+        set_ctrl(result, cl);
+        _igvn.replace_node(phi2, result);
+        if (result->outcnt() == 0) { _igvn.remove_dead_node(result, PhaseIterGVN::NodeOrigin::Graph); }
+        --i;
+        continue;
+      }
+
+      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> cheap stride (not sinkable): %d", phi2->_idx);)
+    } else {
+      NOT_PRODUCT(if (TraceLoopOpts) tty->print_cr("  -> sinkable: %d", phi2->_idx);)
+    }
 
     // Transform: phi2 = init2 +/- ((iv - init) / stride_con) * inc_val
     // Use Add for phi2 += inc_val, Sub for phi2 -= inc_val.
