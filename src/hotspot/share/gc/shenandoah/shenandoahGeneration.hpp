@@ -63,7 +63,7 @@ private:
   // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
- public:
+public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
@@ -96,7 +96,6 @@ private:
   virtual size_t max_capacity() const override = 0;
 
   size_t available() const override;
-  size_t available_with_reserve() const;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger

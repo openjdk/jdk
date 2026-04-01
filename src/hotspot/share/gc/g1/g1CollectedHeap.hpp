@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"

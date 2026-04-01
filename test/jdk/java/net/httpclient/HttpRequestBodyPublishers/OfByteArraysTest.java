@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -46,15 +47,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8226303 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofByteArrays` behavior
+ *
  * @build ByteBufferUtils
  *        RecordingSubscriber
+ *        ReplayTestSupport
+ *
  * @run junit OfByteArraysTest
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
  * @run main/othervm -Xmx64m OfByteArraysTest testOOM
  */
 
-public class OfByteArraysTest {
+public class OfByteArraysTest extends ReplayTestSupport {
 
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 2, 3})
@@ -65,7 +69,7 @@ public class OfByteArraysTest {
                 .range(0, length)
                 .mapToObj(i -> new byte[]{(byte) i})
                 .toList();
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(buffers::iterator);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(buffers::iterator);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -95,7 +99,7 @@ public class OfByteArraysTest {
             case 2 -> List.of(buffer2).iterator();
             default -> throw new AssertionError();
         };
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe twice (to force two `Iterable::iterator` invocations)
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -112,14 +116,14 @@ public class OfByteArraysTest {
 
     @Test
     void testNullIterable() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArrays(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArrays(null));
     }
 
     @Test
     void testNullIterator() throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> null);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> null);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -138,7 +142,7 @@ public class OfByteArraysTest {
         // Create the publisher
         List<byte[]> iterable = new ArrayList<>();
         iterable.add(null);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -156,7 +160,7 @@ public class OfByteArraysTest {
 
         // Create the publisher
         RuntimeException exception = new RuntimeException("failure for `testIteratorCreationException`");
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> {
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> {
             throw exception;
         });
 
@@ -192,7 +196,7 @@ public class OfByteArraysTest {
         // Create the publisher
         IteratorThrowingAtEnd iterator =
                 new IteratorThrowingAtEnd(exceptionIndex, hasNextException, nextException);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> iterator);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> iterator);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -257,6 +261,14 @@ public class OfByteArraysTest {
 
     }
 
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] byteArray = ByteBufferUtils.byteArrayOfLength(9);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(byteArray);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(List.of(byteArray));
+        return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
+    }
+
     /**
      * Initiates tests that depend on a custom-configured JVM.
      */
@@ -273,7 +285,7 @@ public class OfByteArraysTest {
         // Create the publisher
         int length = ByteBufferUtils.findLengthExceedingMaxMemory();
         Iterable<byte[]> iterable = createIterableOfLength(length);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();

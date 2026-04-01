@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -1203,29 +1203,9 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
-    public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REDUCTION_REG, "maxD_reduction_reg");
-    }
-
-    public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REG, "maxD_reg");
-    }
-
     public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_F, "MaxF");
-    }
-
-    public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REDUCTION_REG, "maxF_reduction_reg");
-    }
-
-    public static final String MAX_F_REG = PREFIX + "MAX_F_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REG, "maxF_reg");
     }
 
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
@@ -1309,14 +1289,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_D, "MinD");
     }
 
-    public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_D_REDUCTION_REG = PREFIX + "MINMAX_D_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
+        machOnlyNameRegex(MINMAX_D_REDUCTION_REG, "minmaxD_reduction_reg");
     }
 
-    public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
+    public static final String MINMAX_D_REG = PREFIX + "MINMAX_D_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REG, "minD_reg");
+        machOnlyNameRegex(MINMAX_D_REG, "minmaxD_reg");
     }
 
     public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
@@ -1324,14 +1304,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
-    public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_F_REDUCTION_REG = PREFIX + "MINMAX_F_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REDUCTION_REG, "minF_reduction_reg");
+        machOnlyNameRegex(MINMAX_F_REDUCTION_REG, "minmaxF_reduction_reg");
     }
 
-    public static final String MIN_F_REG = PREFIX + "MIN_F_REG" + POSTFIX;
+    public static final String MINMAX_F_REG = PREFIX + "MINMAX_F_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REG, "minF_reg");
+        machOnlyNameRegex(MINMAX_F_REG, "minmaxF_reg");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -1794,6 +1774,11 @@ public class IRNode {
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
         trapNodes(PREDICATE_TRAP, "predicate");
+    }
+
+    public static final String RANGE_CHECK = PREFIX + "RANGE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(RANGE_CHECK, "RangeCheck");
     }
 
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
@@ -3132,6 +3117,12 @@ public class IRNode {
     static {
         String regex = START + "ModD" + MID + END;
         macroNodes(MOD_D, regex);
+    }
+
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
     }
 
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
