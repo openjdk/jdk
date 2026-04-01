@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
@@ -196,6 +197,7 @@ public class CipherTestUtils {
     static abstract class Server implements Runnable, AutoCloseable {
 
         final CipherTestUtils cipherTest;
+        final CountDownLatch serverStarted = new CountDownLatch(1);
 
         Server(CipherTestUtils cipherTest) throws Exception {
             this.cipherTest = cipherTest;

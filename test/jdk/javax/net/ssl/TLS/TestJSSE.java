@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,13 @@ public class TestJSSE {
         System.out.println("Testing protocol: " + protocol);
         System.out.println("Testing cipher  : " + cipher);
 
-        return CipherTestUtils.mainServer(
+        var server =  CipherTestUtils.mainServer(
             new JSSEFactory(null, protocol, cipher, "Server JSSE"),
             expectedExcp);
+
+        server.serverStarted.await(); // waiting for the server to start
+
+        return server;
     }
 
     private static class JSSEFactory extends CipherTestUtils.PeerFactory {
