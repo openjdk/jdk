@@ -179,8 +179,9 @@ public:
 
   void set_destination(address dest) {
     int64_t offset = dest - instruction_address();
+    jint insn = 0b100101 << 26;
     assert((offset & 3) == 0, "should be");
-    assert(is_call(), "we should always spatch a call instruction");
+    set_int_at(displacement_offset, insn);
     Instruction_aarch64::spatch(instruction_address(), 25, 0, offset >> 2);
   }
 
