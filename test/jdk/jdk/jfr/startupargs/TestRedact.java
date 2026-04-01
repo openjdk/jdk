@@ -318,9 +318,9 @@ public class TestRedact {
             "-XX:FlightRecorderOptions:redact-argument=" +
             // FILTERS
             "plain;" +
-            "--option<DELIMITER>*;" +
-            "--pass-phrase<DELIMITER>*;" +
-            "--login<DELIMITER>*<DELIMITER>*;" +
+            "--option *;" +
+            "--pass-phrase *;" +
+            "--login * *;" +
             "--colon-based:*;" +
             "https://*:*@*",
             // SENSITIVE INFORMATION

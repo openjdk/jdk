@@ -1200,11 +1200,13 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Replace command-line arguments that match a semicolon-separated list
         of glob patterns, for example, *secret*;password*. Matching is
         case-insensitive, and the supported wildcards are `*` and `?`. To redact
-        multiple arguments, use `<DELIMITER>` as a separator. For example, to
-        match the two arguments --auth username:token, use the filter
-        --auth<DELIMITER>*:*. To load patterns from a file (one per line),
-        use `@<filename>`. To add to the default patterns instead
-        of replacing them, prefix the whole list with `+`, for example,
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments --auth username:token, use the
+        filter --auth *:*. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        '-XX:FlightRecorder=redact-argument=--auth *:*'. To load patterns from a
+        file (one per line) use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`, for example,
         +*foo*;@redact.txt. Use `none` (lowercase) to disable all redaction
         filters for command-line arguments. Redacted arguments will be
         replaced with `[REDACTED]`.

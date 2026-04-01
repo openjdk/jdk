@@ -241,6 +241,9 @@ bool JfrRecorder::on_create_vm_2() {
 }
 
 bool JfrRecorder::on_create_vm_3() {
+  if (log_is_enabled(Debug, jfr, redact)) {
+    JfrRedactedEvents::log_redaction();
+  }
   JVMTI_ONLY( assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence, phase is %d", (int)JvmtiEnvBase::get_phase()); )
   return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }

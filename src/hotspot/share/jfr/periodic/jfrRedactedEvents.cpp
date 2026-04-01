@@ -45,7 +45,7 @@ using StringFlag = JfrRedactedEvents::StringFlag;
 using StringKeyValueArray = GrowableArray<JfrRedactedEvents::StringKeyValue*>*;
 
 static const char REDACTED[] = "[REDACTED]";
-static const char DELIMITER[] = "<DELIMITER>";
+static const char DELIMITER[] = " ";
 static const char REDACT_ARGUMENT_EQUAL[] = "redact-argument=";
 
 static const size_t REDACTED_LENGTH = sizeof(REDACTED) -1;
@@ -115,45 +115,42 @@ bool JfrRedactedEvents::set_key_filter(const char* filters) {
   return append_filters(_key_filters, false, filters);
 }
 
+void JfrRedactedEvents::log_redaction() {
+  //At this point JFR is not enabled so events will not be emitted
+  ensure_initialized();
+  emit_initial_environment_variables(true);
+  emit_initial_system_properties(true);
+  emit_jvm_information(true);
+  emit_string_flags(true);
+}
+
 void JfrRedactedEvents::add_default_filters(StringArray* target, bool argument) {
   if (argument) {
-    target->add("--*jaas*config<DELIMITER>*");
-    target->add("--*password<DELIMITER>*");
-    target->add("--*passwd<DELIMITER>*");
-    target->add("--*pwd<DELIMITER>*");
-    target->add("--*passphrase<DELIMITER>*");
-    target->add("--*token<DELIMITER>*");
-    target->add("--*secret<DELIMITER>*");
-    target->add("--*credential<DELIMITER>*");
-    target->add("--*api-key<DELIMITER>*");
-    target->add("--*api_key<DELIMITER>*");
-    target->add("--*apikey<DELIMITER>*");
-    target->add("--*client-secret<DELIMITER>*");
-    target->add("--*client_secret<DELIMITER>*");
-    target->add("--*clientsecret<DELIMITER>*");
-    target->add("--*private-key<DELIMITER>*");
-    target->add("--*private_key<DELIMITER>*");
-    target->add("--*privatekey<DELIMITER>*");
+    target->add("-*api*key *");
+    target->add("-*client*secret *");
+    target->add("-*credential *");
+    target->add("-*jaas*config *");
+    target->add("-*passphrase *");
+    target->add("-*passwd *");
+    target->add("-*password *");
+    target->add("-*private*key *");
+    target->add("-*pwd *");
+    target->add("-*secret *");
+    target->add("-*token *");
   } else {
     target->add("*auth*");
   }
-  target->add("*jaas*config*");
-  target->add("*password*");
-  target->add("*passwd*");
-  target->add("*pwd*");
-  target->add("*passphrase*");
-  target->add("*token*");
-  target->add("*secret*");
+  target->add("*api*key*");
+  target->add("*client*secret*");
   target->add("*credential*");
-  target->add("*api-key*");
-  target->add("*api_key*");
-  target->add("*apikey*");
-  target->add("*client-secret*");
-  target->add("*client_secret*");
-  target->add("*clientsecret*");
-  target->add("*private-key*");
-  target->add("*private_key*");
-  target->add("*privatekey*");
+  target->add("*jaas*config*");
+  target->add("*passphrase*");
+  target->add("*passwd*");
+  target->add("*password*");
+  target->add("*private*key*");
+  target->add("*pwd*");
+  target->add("*secret*");
+  target->add("*token*");
 }
 
 bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const char* filters) {
@@ -187,7 +184,7 @@ char* JfrRedactedEvents::new_redacted_text() {
   return result;
 }
 
-bool JfrRedactedEvents::emit_initial_environment_variables() {
+bool JfrRedactedEvents::emit_initial_environment_variables(bool log) {
   if (_initial_environment_variables == nullptr) {
     ensure_initialized();
     char** envp = os::get_environ();
@@ -204,6 +201,9 @@ bool JfrRedactedEvents::emit_initial_environment_variables() {
         const char* value = equal_sign + 1;
         if (is_redacted_key(key->text())) {
           value = REDACTED;
+          if (log) {
+            log_debug(jfr, redact)("Redacted initial environment variable named '%s'", key->text());
+          }
         }
         _initial_environment_variables->append(new StringKeyValue(key, value));
       }
@@ -222,7 +222,7 @@ bool JfrRedactedEvents::emit_initial_environment_variables() {
   return true;
 }
 
-void JfrRedactedEvents::emit_initial_system_properties() {
+void JfrRedactedEvents::emit_initial_system_properties(bool log) {
   if (_initial_system_properties == nullptr) {
     ensure_initialized();
     _initial_system_properties = make_array<StringKeyValue*>(0);
@@ -234,6 +234,9 @@ void JfrRedactedEvents::emit_initial_system_properties() {
         }
         if (is_redacted_key(p->key())) {
            value = REDACTED;
+        }
+        if (log && value != nullptr && strstr(value, REDACTED) != nullptr) {
+          log_debug(jfr, redact)("Redacted initial system property named '%s'", p->key());
         }
         _initial_system_properties->append(new StringKeyValue(p->key(), value));
       }
@@ -266,7 +269,7 @@ bool JfrRedactedEvents::match_flag(const char* flag_name, const char* arg) {
   return *arg == '\0' || *arg == '=';
 }
 
-void JfrRedactedEvents::emit_string_flags() {
+void JfrRedactedEvents::emit_string_flags(bool log) {
   if (_string_flags == nullptr) {
     ensure_initialized();
    _string_flags = make_array<StringFlag*>(0);
@@ -274,16 +277,22 @@ void JfrRedactedEvents::emit_string_flags() {
      while (flag->name() != nullptr) {
        if (flag->is_ccstr() && flag->is_unlocked()) {
          const char* value = nullptr;
+         bool redacted = false;
          for (int i = 0; i < _redacted_arguments->length(); i++) {
            if (match_flag(flag->name(), _redacted_arguments->at(i)->text())) {
              value = REDACTED;
+             redacted = true;
              break;
            }
          }
          if (strcmp("FlightRecorderOptions", flag->name()) == 0) {
            if (_redacted_flight_recorder_options != nullptr) {
              value = _redacted_flight_recorder_options->text();
+             redacted = true;
            }
+         }
+         if (log && redacted) {
+           log_debug(jfr, redact)("Redacted string flag '%s'", flag->name());
          }
          _string_flags->append(new StringFlag(flag, value));
       }
@@ -309,7 +318,14 @@ void JfrRedactedEvents::emit_string_flags() {
   }
 }
 
-void JfrRedactedEvents::emit_jvm_information() {
+void JfrRedactedEvents::log_jvm_information_redaction(const char* type, const String* redacted) {
+  const char* text = String::c_str(redacted);
+  if (text != nullptr && strstr(text, REDACTED) != nullptr) {
+    log_debug(jfr, redact)("Redacted %s '%s'", type, text);
+  }
+}
+
+void JfrRedactedEvents::emit_jvm_information(bool log) {
   ensure_initialized();
   EventJVMInformation event;
   event.set_jvmName(VM_Version::vm_name());
@@ -320,6 +336,11 @@ void JfrRedactedEvents::emit_jvm_information() {
   event.set_jvmStartTime(Management::vm_init_done_time());
   event.set_pid(os::current_process_id());
   event.commit();
+  if (log) {
+    log_jvm_information_redaction("Java Arguments", _redacted_java_command_line);
+    log_jvm_information_redaction("JVM Arguments", _redacted_jvm_command_line);
+    log_jvm_information_redaction("JVM Flags", _redacted_flags_command_line);
+  }
 }
 
 void JfrRedactedEvents::ensure_initialized() {
@@ -579,7 +600,6 @@ bool JfrRedactedEvents::match_key(StringArray* filters, const char* text) {
   }
   return false;
 }
-
 
 bool JfrRedactedEvents::read_file(StringArray* target, const char* filename) {
   FILE* file = os::fopen(filename, "r");

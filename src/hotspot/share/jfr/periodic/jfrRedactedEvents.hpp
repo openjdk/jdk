@@ -41,10 +41,11 @@ class JfrRedactedEvents: public AllStatic {
   static bool set_argument_filter(const char* filters);
   static bool set_key_filter(const char* filters);
   // Synchronized in Java
-  static bool emit_initial_environment_variables();
-  static void emit_initial_system_properties();
-  static void emit_jvm_information();
-  static void emit_string_flags();
+  static bool emit_initial_environment_variables(bool log = false);
+  static void emit_initial_system_properties(bool log = false);
+  static void emit_jvm_information(bool log = false);
+  static void emit_string_flags(bool log = false);
+  static void log_redaction();
   // Called at shutdown
   static void destroy();
 
@@ -206,6 +207,7 @@ class JfrRedactedEvents: public AllStatic {
   static StringArray* make_java_args_array();
   static StringArray* make_jvm_args_array(char** jvm_args_array, int array_length);
   static StringArray* make_filter_array(const char* filter);
+  static void log_jvm_information_redaction(const char* type, const String* redacted);
   static bool match(const char* pattern, const char* text);
   static bool match_flag(const char* flag_name, const char* argument);
   static int match_arguments(StringArray* filter_array, StringArray* arguments, int arg_index);
