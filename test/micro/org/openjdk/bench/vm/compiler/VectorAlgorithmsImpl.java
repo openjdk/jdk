@@ -348,6 +348,21 @@ public class VectorAlgorithmsImpl {
         return sum;
     }
 
+    public static float dotProductF_VectorAPI_fma(float[] a, float[] b) {
+        var sums = FloatVector.broadcast(SPECIES_F, 0.0f);
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var va = FloatVector.fromArray(SPECIES_F, a, i);
+            var vb = FloatVector.fromArray(SPECIES_F, b, i);
+            sums = va.fma(vb, sums);
+        }
+        float sum = sums.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum = Math.fma(a[i], b[i], sum);
+        }
+        return sum;
+    }
+
     public static int hashCodeB_loop(byte[] a) {
         int h = 1;
         for (int i = 0; i < a.length; i++) {

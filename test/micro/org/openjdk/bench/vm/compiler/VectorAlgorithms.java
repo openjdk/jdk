@@ -166,6 +166,11 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public float dotProductF_VectorAPI_fma() {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_fma(d.aF, d.bF);
+    }
+
+    @Benchmark
     public int hashCodeB_loop() {
         return VectorAlgorithmsImpl.hashCodeB_loop(d.aB);
     }

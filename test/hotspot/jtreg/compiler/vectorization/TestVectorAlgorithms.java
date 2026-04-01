@@ -122,6 +122,7 @@ public class TestVectorAlgorithms {
         testGroups.get("dotProductF").put("dotProductF_loop",                           i -> { return dotProductF_loop(d.aF, d.bF); });
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                i -> { return dotProductF_VectorAPI_naive(d.aF, d.bF); });
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", i -> { return dotProductF_VectorAPI_reduction_after_loop(d.aF, d.bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_fma",                  i -> { return dotProductF_VectorAPI_fma(d.aF, d.bF); });
 
         testGroups.put("hashCodeB", new HashMap<String,TestFunction>());
         testGroups.get("hashCodeB").put("hashCodeB_loop",         i -> { return hashCodeB_loop(d.aB); });
@@ -192,6 +193,7 @@ public class TestVectorAlgorithms {
                  "dotProductF_loop",
                  "dotProductF_VectorAPI_naive",
                  "dotProductF_VectorAPI_reduction_after_loop",
+                 "dotProductF_VectorAPI_fma",
                  "hashCodeB_loop",
                  "hashCodeB_Arrays",
                  "hashCodeB_VectorAPI_v1",
@@ -407,6 +409,16 @@ public class TestVectorAlgorithms {
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(a, b);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.FMA_VF,          "> 0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"},
+        applyIf = {"UseSuperWord", "true"})
+    public float dotProductF_VectorAPI_fma(float[] a, float[] b) {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_fma(a, b);
     }
 
     @Test
