@@ -254,17 +254,29 @@ public:
   }
 
   void load_from_unknown_flat_array(const TypeOopPtr* element_ptr) {
-    Node* vt = nullptr;
+    Node* ld = nullptr;
     if (element_ptr->is_inlinetypeptr()) {
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _parse.cast_to_flat_array(_array, vk);
-      vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+
+      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      ld = vt;
+
+      Node* null_ctl = _parse.top();
+      _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+
+      _res_phi->add_req(_parse.zerocon(T_OBJECT));
+      _region->add_req(null_ctl);
+      _io_phi->add_req(_parse.i_o());
+      _mem_phi->add_req(_parse.reset_memory());
+      _parse.set_all_memory(_mem);
+
     } else {
-      vt = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+      ld = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
     }
 
     _region->add_req(_parse.control());
-    _res_phi->add_req(vt);
+    _res_phi->add_req(ld);
     _mem_phi->add_req(_parse.reset_memory());
     _io_phi->add_req(_parse.i_o());
   }

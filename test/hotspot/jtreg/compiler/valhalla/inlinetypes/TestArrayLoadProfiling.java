@@ -48,16 +48,18 @@ public class TestArrayLoadProfiling {
         TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI");
     }
 
-    static final MyValue1[] array1 = { new MyValue1(42) };
-    static MyValue2[] array2 = { new MyValue2(42) };
-    static MyValue1[] array3 = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, new MyValue1(42));
-    static MyValue2[] array4 = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, new MyValue2(42));
+    static final MyValue1[] array1 = { new MyValue1((byte)42) };
+    static MyValue2[] array2 = { new MyValue2((byte)42) };
+    static MyValue1[] array3 = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, new MyValue1((byte)42));
+    static MyValue2[] array4 = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, new MyValue2((byte)42));
     static A[] array5 = { new A() };
     static MyValue1[] array6 = (MyValue1[])ValueClass.newReferenceArray(MyValue1.class, 1);
     static MyValue2[] array7 = (MyValue2[])ValueClass.newReferenceArray(MyValue2.class, 1);
-    { // doesn't run!?
-        array6[0] = new MyValue1(42);
-        array7[0] = new MyValue2(42);
+    static MyValue1[] array8 = (MyValue1[])ValueClass.newNullRestrictedAtomicArray(MyValue1.class, 1, new MyValue1((byte)42));
+    static {
+        array6[0] = new MyValue1((byte)42);
+        array7[0] = new MyValue2((byte)42);
+        array8[0] = new MyValue1((byte)42);
     }
     
     @Test
@@ -219,10 +221,6 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test9")
     public static void test9Runner() {
-        if (array6[0] == null) {
-            array6[0] = new MyValue1(42);
-            array7[0] = new MyValue2(42);
-        }
         test9(array1);
         test9(array2);
         test9(array6);
@@ -313,10 +311,6 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test15")
     public static void test15Runner() {
-        if (array6[0] == null) {
-            array6[0] = new MyValue1(42);
-            array7[0] = new MyValue2(42);
-        }
         test15(array1);
         test15(array2);
         test15(array3);
@@ -380,15 +374,63 @@ public class TestArrayLoadProfiling {
         test20(array1);
     }
 
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "8" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test21() {
+        I[] array = array3;
+        test21Inline(array);
+    }
+
+    @Run(test = "test21")
+    public static void test21Runner() {
+        test21();
+        test21Inline(array2);
+        test21Inline(array4);
+        test21Inline(array5);
+        test21Inline(array7);
+    }
+
+    @ForceInline
+    static void test21Inline(I[] array) {
+        array[0].m();
+    }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "9" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test22(I[] array) {
+        test22Inline(array[0]);
+    }
+
+    @Run(test = "test22")
+    public static void test22Runner() {
+        test22(array1);
+        test22(array3);
+        test22(array6);
+        test22(array8);
+        test22Inline(array2[0]);
+        test22Inline(array4[0]);
+        test22Inline(array5[0]);
+    }
+
+    @ForceInline
+    static void test22Inline(I i) {
+        i.m();
+    }
+
     interface I {
         void m();
     }
     
-    static value class MyValue1 implements I {
-        int intField;
 
-        MyValue1(int intField) {
-            this.intField = intField;
+    static value class MyValue1 implements I {
+        byte byteField;
+        byte byteField2;
+
+        MyValue1(byte byteField) {
+            this.byteField = byteField;
+            this.byteField2 = byteField;
         }
         
         public void m() {
