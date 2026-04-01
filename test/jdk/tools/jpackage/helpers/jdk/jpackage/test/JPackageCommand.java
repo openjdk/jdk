@@ -1078,6 +1078,53 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            List<CannedFormattedString> expectedMessages) {
+
+        Objects.requireNonNull(validatorMutator);
+
+        if (!messageGroup.isEnum()) {
+            throw new IllegalArgumentException();
+        }
+
+        var messageSpecs = messageGroup.getEnumConstants();
+
+        var expectMessageFormats = expectedMessages.stream().map(CannedFormattedString::key).toList();
+
+        var groupMessageFormats = Stream.of(messageSpecs)
+                .map(CannedFormattedString.Spec::format)
+                .collect(Collectors.toMap(x -> x, x -> x))
+                .keySet();
+
+        if (!groupMessageFormats.containsAll(expectMessageFormats)) {
+            // Expected format strings should be a subset of the group format strings.
+            throw new IllegalArgumentException();
+        }
+
+        if (!expectedMessages.isEmpty()) {
+            new JPackageOutputValidator().expectMatchingStrings(expectedMessages).mutate(validatorMutator).applyTo(this);
+        }
+
+        Stream.of(messageSpecs).filter(spec -> {
+            return !expectMessageFormats.contains(spec.format());
+        }).map(CannedFormattedString.Spec::asPattern).map(pattern -> {
+            return TKit.assertTextStream(pattern).negate();
+        }).forEach(validator -> {
+            new JPackageOutputValidator().add(validator).stdoutAndStderr().applyTo(this);
+        });
+
+        return this;
+    }
+
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            CannedFormattedString... expected) {
+        return validateOutput(messageGroup, validatorMutator, List.of(expected));
+    }
+
     public boolean isWithToolProvider() {
         return toolProviderSource.toolProvider().isPresent();
     }
