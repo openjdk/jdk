@@ -60,12 +60,8 @@ public class SendCheck {
     static DatagramSocket socket;
 
     @BeforeAll
-    public static void setUp() {
-        try {
-            socket = new DatagramSocket();
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
+    public static void setUp() throws Exception {
+        socket = new DatagramSocket();
     }
 
     @AfterAll
