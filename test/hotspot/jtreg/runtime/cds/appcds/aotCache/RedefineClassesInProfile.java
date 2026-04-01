@@ -60,6 +60,7 @@ public class RedefineClassesInProfile {
             .addVmArgs("-javaagent:redefineagent.jar")
             .addVmArgs("-Xlog:aot,aot+class=debug")
             .addVmArgs("-Xlog:redefine+class+load")
+            .addVmArgs("-Xlog:aot+training+data")
             .classpath("redef0.jar" +  File.pathSeparator + "app.jar")
             .appCommandLine("RedefineClassesInProfileApp")
             .setTrainingChecker((OutputAnalyzer out) -> {
@@ -75,6 +76,19 @@ public class RedefineClassesInProfile {
                 })
             .setAssemblyChecker((OutputAnalyzer out) -> {
                     out.shouldNotContain("RedefFoo");
+
+                    // The names of the Redef* classes should not appear in training data,
+                    // as these classes have been redefined and excluded from the AOT cache.
+                    //
+                    // Note: do not pass Redef* as parameters in any of the methods that can be
+                    // stored into the AOT cache, or else the substring Redef* may appear in
+                    // method signatures, and make the following checks fail.
+                    String prefix = "aot,training,data.*";
+
+                    out.shouldMatch(prefix + "RedefineClassesInProfileApp"); // sanity
+                    out.shouldNotMatch(prefix + "RedefFoo");
+                    out.shouldNotMatch(prefix + "RedefBar");
+                    out.shouldNotMatch(prefix + "RedefTaz");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Redefined: class RedefBar");
@@ -135,6 +149,7 @@ class RedefineClassesInProfileApp {
     static volatile int x;
     static void hotspot1() {
         long start = System.currentTimeMillis();
+        // run this loop long enough (400ms) for it to be JIT compiled.
         while (System.currentTimeMillis() - start < 400) {
             // RedefFoo will be excluded fro the AOT configuration file, so
             // any reference to RedefFoo recorded in TrainingData should be
