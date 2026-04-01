@@ -756,7 +756,7 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 //------------------------------Ideal------------------------------------------
 Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::make_paths_from_here_dead_if_needed(phase, can_reshape);
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
     if (progress != nullptr) {
       return progress;
     }
@@ -865,7 +865,7 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
 // Blow off prior masking to int
 Node* ConvL2INode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::make_paths_from_here_dead_if_needed(phase, can_reshape);
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
     if (progress != nullptr) {
       return progress;
     }

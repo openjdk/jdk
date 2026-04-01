@@ -112,7 +112,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    return TypeNode::make_paths_from_here_dead_if_needed(phase, can_reshape);
+    return TypeNode::Ideal(phase, can_reshape);
   }
   return nullptr;
 }

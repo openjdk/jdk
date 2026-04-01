@@ -3176,7 +3176,7 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
   igvn->add_input_to(igvn->C->root(), halt);
 }
 
-Node* TypeNode::make_paths_from_here_dead_if_needed(PhaseGVN* phase, bool can_reshape) {
+Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     Node* top = igvn->C->top();
@@ -3185,6 +3185,6 @@ Node* TypeNode::make_paths_from_here_dead_if_needed(PhaseGVN* phase, bool can_re
     return top;
   }
 
-  return nullptr;
+  return Node::Ideal(phase, can_reshape);
 }
 
