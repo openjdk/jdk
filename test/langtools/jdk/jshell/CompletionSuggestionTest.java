@@ -783,7 +783,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         }
 
         try {
-            Field availableSources = getAnalysis().getClass().getDeclaredField("availableSourcesOverride");
+            Field availableSources = getAnalysis().getClass().getDeclaredField("jdkSourcesOverride");
             availableSources.setAccessible(true);
             availableSources.set(getAnalysis(), Arrays.asList(srcZip));
         } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {

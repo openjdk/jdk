@@ -38,9 +38,11 @@
  */
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -321,6 +323,15 @@ public class ToolTabSnippetTest extends UITesting {
 
         Path binaryJar = Paths.get("test.jar");
         compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
+
+        try {
+            //to ensure test stability, don't use JDK's src.zip:
+            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("jdkSourcesOverride");
+            availableSources.setAccessible(true);
+            availableSources.set(null, List.of());
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
+            throw new IllegalStateException(ex);
+        }
 
         return binaryJar;
     }

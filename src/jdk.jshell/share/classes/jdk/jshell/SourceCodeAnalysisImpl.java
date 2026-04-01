@@ -1970,7 +1970,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
-    private static List<Path> availableSourcesOverride; //for tests
+    private static List<Path> jdkSourcesOverride; //for tests
     private List<Path> availableSources;
     private final Map<Path, Iterable<Path>> mappedSourcesForBinaries =
             new ConcurrentHashMap<>();
@@ -1983,48 +1983,52 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
         }
         List<Path> result = new ArrayList<>();
-        Path home = Paths.get(System.getProperty("java.home"));
-        Path srcZip = home.resolve("lib").resolve("src.zip");
-        if (!Files.isReadable(srcZip))
-            srcZip = home.getParent().resolve("src.zip");
-        if (Files.isReadable(srcZip)) {
-            boolean keepOpen = false;
-            FileSystem zipFO = null;
+        if (jdkSourcesOverride == null) {
+            Path home = Paths.get(System.getProperty("java.home"));
+            Path srcZip = Path.of("/home/jlahoda/src/jdk/jdk8/build/linux-x86_64-server-release/images/jdk/lib/src.zip");//home.resolve("lib").resolve("src.zip");
+            if (!Files.isReadable(srcZip))
+                srcZip = home.getParent().resolve("src.zip");
+            if (Files.isReadable(srcZip)) {
+                boolean keepOpen = false;
+                FileSystem zipFO = null;
 
-            try {
-                zipFO = FileSystems.newFileSystem(srcZip, Collections.emptyMap());
-                Path root = zipFO.getRootDirectories().iterator().next();
+                try {
+                    zipFO = FileSystems.newFileSystem(srcZip, Collections.emptyMap());
+                    Path root = zipFO.getRootDirectories().iterator().next();
 
-                if (Files.exists(root.resolve("java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
-                    //non-modular format:
-                    result.add(srcZip);
-                } else if (Files.exists(root.resolve("java.base/java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
-                    //modular format:
-                    try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
-                        for (Path p : ds) {
-                            if (Files.isDirectory(p)) {
-                                result.add(p);
+                    if (Files.exists(root.resolve("java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
+                        //non-modular format:
+                        result.add(srcZip);
+                    } else if (Files.exists(root.resolve("java.base/java/lang/Object.java".replace("/", zipFO.getSeparator())))) {
+                        //modular format:
+                        try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
+                            for (Path p : ds) {
+                                if (Files.isDirectory(p)) {
+                                    result.add(p);
+                                }
                             }
                         }
-                    }
 
-                    keepOpen = true;
-                }
-            } catch (IOException ex) {
-                proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
-            } finally {
-                if (zipFO != null) {
-                    if (keepOpen) {
-                        closeables.add(zipFO);
-                    } else {
-                        try {
-                            zipFO.close();
-                        } catch (IOException ex) {
-                            proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
+                        keepOpen = true;
+                    }
+                } catch (IOException ex) {
+                    proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
+                } finally {
+                    if (zipFO != null) {
+                        if (keepOpen) {
+                            closeables.add(zipFO);
+                        } else {
+                            try {
+                                zipFO.close();
+                            } catch (IOException ex) {
+                                proc.debug(ex, "SourceCodeAnalysisImpl.findSources()");
+                            }
                         }
                     }
                 }
             }
+        } else {
+            result.addAll(jdkSourcesOverride);
         }
 
         if (proc.binarySourceMapping != null) {
@@ -2043,10 +2047,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     return sources;
                 }).forEach(result::add);
             }
-        }
-
-        if (availableSourcesOverride != null) {
-            result.addAll(availableSourcesOverride);
         }
 
         synchronized (currentIndexes) {
