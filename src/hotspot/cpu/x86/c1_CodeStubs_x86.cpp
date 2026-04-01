@@ -341,14 +341,16 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
-  if (0x40 <= *_pc_start && *_pc_start <= 0x4f && 0xb8 <= *(_pc_start + 1) && *(_pc_start + 1) <= 0xbf) {
+  // 8377655: replace the leftover 0x00 by nops to be disassembler-friendly
+  // REX prefix | MOV r64
+  if ((*_pc_start & Assembler::REX) == Assembler::REX && (*(_pc_start + 1) & 0xb8) == 0xb8) {
     assert(*(long long int*)(_pc_start+2) == 0, "imm64 must be 0 in mov r64, imm64");
     for (int i = NativeGeneralJump::instruction_size; i < 10; ++i) {
       *(_pc_start + i) = NativeInstruction::nop_instruction_code;
     }
   }
 #ifdef ASSERT
-  else {
+  else {  // make sure we are patching all that is patchable
     for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
       assert(*(_pc_start + i) == NativeInstruction::nop_instruction_code, "");
     }
