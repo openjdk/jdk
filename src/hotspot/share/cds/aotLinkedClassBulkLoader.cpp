@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,11 +116,24 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
   }
 }
 
+#ifdef ASSERT
+// true iff we are inside AOTLinkedClassBulkLoader::link_classes(), when
+// we are moving classes into the fully_initialized state before the
+// JVM is able to execute any bytecodes.
+static bool _is_initializing_classes_early = false;
+bool AOTLinkedClassBulkLoader::is_initializing_classes_early() {
+  return _is_initializing_classes_early;
+}
+#endif
+
 // Some cached heap objects may hold references to methods in aot-linked
 // classes (via MemberName). We need to make sure all classes are
 // linked before executing any bytecode.
 void AOTLinkedClassBulkLoader::link_classes(JavaThread* current) {
+  DEBUG_ONLY(_is_initializing_classes_early = true);
   link_classes_impl(current);
+  DEBUG_ONLY(_is_initializing_classes_early = false);
+
   if (current->has_pending_exception()) {
     exit_on_exception(current);
   }
@@ -135,6 +148,13 @@ void AOTLinkedClassBulkLoader::link_classes_impl(TRAPS) {
   link_classes_in_table(table->boot2(), CHECK);
   link_classes_in_table(table->platform(), CHECK);
   link_classes_in_table(table->app(), CHECK);
+
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), /*early_only=*/true, CHECK);
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot2(), /*early_only=*/true, CHECK);
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->platform(), /*early_only=*/true, CHECK);
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->app(), /*early_only=*/true, CHECK);
+
+  log_info(aot, init)("------ finished early class init");
 }
 
 void AOTLinkedClassBulkLoader::link_classes_in_table(Array<InstanceKlass*>* classes, TRAPS) {
@@ -216,7 +236,7 @@ void AOTLinkedClassBulkLoader::validate_module(Klass* k, const char* category_na
 #endif
 
 void AOTLinkedClassBulkLoader::init_javabase_classes(JavaThread* current) {
-  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), current);
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), /*early_only=*/false, current);
   if (current->has_pending_exception()) {
     exit_on_exception(current);
   }
@@ -246,9 +266,9 @@ void AOTLinkedClassBulkLoader::init_non_javabase_classes_impl(TRAPS) {
   assert(h_system_loader() != nullptr,   "must be");
 
   AOTLinkedClassTable* table = AOTLinkedClassTable::get();
-  init_classes_for_loader(Handle(), table->boot2(), CHECK);
-  init_classes_for_loader(h_platform_loader, table->platform(), CHECK);
-  init_classes_for_loader(h_system_loader, table->app(), CHECK);
+  init_classes_for_loader(Handle(), table->boot2(), /*early_only=*/false, CHECK);
+  init_classes_for_loader(h_platform_loader, table->platform(), /*early_only=*/false, CHECK);
+  init_classes_for_loader(h_system_loader, table->app(), /*early_only=*/false, CHECK);
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
     // Make sure we're still in a clean state.
@@ -324,22 +344,80 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
   }
 }
 
-// Some AOT-linked classes for <class_loader> must be initialized early. This includes
-// - classes that were AOT-initialized by AOTClassInitializer
-// - the classes of all objects that are reachable from the archived mirrors of
-//   the AOT-linked classes for <class_loader>.
-void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
+// Can we move ik into fully_initialized state before the JVM is able to execute
+// bytecodes?
+static bool is_early_init_possible(InstanceKlass* ik) {
+  if (ik->is_runtime_setup_required()) {
+    // Bytecodes need to be executed in order to initialize this class.
+    if (log_is_enabled(Debug, aot, init)) {
+      ResourceMark rm;
+      log_debug(aot, init)("No early init %s: needs runtimeSetup()",
+                           ik->external_name());
+    }
+    return false;
+  }
+
+  if (ik->super() != nullptr && !ik->super()->is_initialized()) {
+    // is_runtime_setup_required() == true for a super type
+    if (log_is_enabled(Debug, aot, init)) {
+      ResourceMark rm;
+      log_debug(aot, init)("No early init %s: super type %s not initialized",
+                           ik->external_name(), ik->super()->external_name());
+    }
+    return false;
+  }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  int num_interfaces = interfaces->length();
+  for (int i = 0; i < num_interfaces; i++) {
+    InstanceKlass* intf = interfaces->at(i);
+    if (!intf->is_initialized() && intf->interface_needs_clinit_execution_as_super(/*also_check_supers*/false)) {
+      // is_runtime_setup_required() == true for this interface
+      if (log_is_enabled(Debug, aot, init)) {
+        ResourceMark rm;
+        log_debug(aot, init)("No early init %s: interface type %s not initialized",
+                             ik->external_name(), intf->external_name());
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Normally, classes are initialized on demand. However, some AOT-linked classes
+// for the class_loader must be proactively intialized, including:
+// - Classes that have an AOT-initialized mirror (they were AOT-initialized by
+//   AOTClassInitializer during the assembly phase).
+// - The classes of all objects that are reachable from the archived mirrors of
+//   the AOT-linked classes for the class_loader. These are recorded in the special
+//   subgraph.
+//
+// (early_only == true) means that this function is called before the JVM
+// is capable of executing Java bytecodes.
+void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes,
+                                                       bool early_only, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
       InstanceKlass* ik = classes->at(i);
       assert(ik->class_loader_data() != nullptr, "must be");
-      if (ik->has_aot_initialized_mirror()) {
-        ik->initialize_with_aot_initialized_mirror(CHECK);
+
+      bool do_init = ik->has_aot_initialized_mirror();
+      if (do_init && early_only && !is_early_init_possible(ik)) {
+        // ik will be proactively initialized later when init_classes_for_loader()
+        // is called again with (early_only == false).
+        do_init = false;
+      }
+
+      if (do_init) {
+        ik->initialize_with_aot_initialized_mirror(early_only, CHECK);
       }
     }
   }
 
-  HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+  if (!early_only) {
+    HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+  }
 }
 
 void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) {

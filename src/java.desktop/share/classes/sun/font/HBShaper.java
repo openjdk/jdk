@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,7 @@ public class HBShaper {
     private static final MemorySegment get_h_advance_stub;
     private static final MemorySegment get_v_advance_stub;
     private static final MemorySegment get_contour_pt_stub;
+    private static final MemorySegment get_table_data_fn_stub;
 
     private static final MemorySegment store_layout_results_stub;
 
@@ -209,6 +210,12 @@ public class HBShaper {
         jdk_hb_shape_handle = tmp4;
 
         Arena garena = Arena.global(); // creating stubs that exist until VM exit.
+
+        get_table_data_fn_stub = getUpcallStub(garena,
+                "getFontTableData", // method name
+                JAVA_INT,           // return type
+                JAVA_INT, ADDRESS); // arg types
+
         FunctionDescriptor get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,  // return type
               ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
         MethodHandle get_var_glyph_mh =
@@ -303,15 +310,9 @@ public class HBShaper {
         clusterHandle = getVarHandle(GlyphInfoLayout, "cluster");
     }
 
-
-    /*
-     * This is expensive but it is done just once per font.
-     * The unbound stub could be cached but the savings would
-     * be very low in the only case it is used.
-     */
     @SuppressWarnings("restricted")
-    private static MemorySegment getBoundUpcallStub
-         (Arena arena, Class<?> clazz, Object bindArg, String mName,
+    private static MemorySegment getUpcallStub
+         (Arena arena, String mName,
           MemoryLayout retType, MemoryLayout... argTypes) {
 
        try {
@@ -320,10 +321,8 @@ public class HBShaper {
                    FunctionDescriptor.ofVoid(argTypes) :
                    FunctionDescriptor.of(retType, argTypes);
            MethodType mType = nativeDescriptor.toMethodType();
-           mType = mType.insertParameterTypes(0, clazz);
            MethodHandle mh = MH_LOOKUP.findStatic(HBShaper.class, mName, mType);
-           MethodHandle bound_handle = mh.bindTo(bindArg);
-           return LINKER.upcallStub(bound_handle, nativeDescriptor, arena);
+           return LINKER.upcallStub(mh, nativeDescriptor, arena);
        } catch (IllegalAccessException | NoSuchMethodException e) {
           return null;
        }
@@ -480,15 +479,16 @@ public class HBShaper {
         });
     }
 
-    private static int getFontTableData(Font2D font2D,
-                                int tag,
-                                MemorySegment data_ptr_out) {
+    private static int getFontTableData(int tag, MemorySegment data_ptr_out) {
 
         /*
          * On return, the data_out_ptr will point to memory allocated by native malloc,
          * so it will be freed by the caller using native free - when it is
          * done with it.
          */
+
+        Font2D font2D = scopedVars.get().font();
+
         @SuppressWarnings("restricted")
         MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
         if (tag == 0) {
@@ -539,10 +539,6 @@ public class HBShaper {
     private static class FaceRef implements DisposerRecord {
         private Font2D font2D;
         private MemorySegment face;
-        // get_table_data_fn uses an Arena managed by GC,
-        // so we need to keep a reference to it here until
-        // this FaceRef is collected.
-        private MemorySegment get_table_data_fn;
 
         private FaceRef(Font2D font) {
             this.font2D = font;
@@ -561,16 +557,7 @@ public class HBShaper {
 
         private void createFace() {
             try {
-                get_table_data_fn = getBoundUpcallStub(Arena.ofAuto(),
-                        Font2D.class,
-                        font2D,                      // bind arg
-                        "getFontTableData",          // method name
-                        JAVA_INT,                   // return type
-                        JAVA_INT, ADDRESS); // arg types
-                if (get_table_data_fn == null) {
-                    return;
-                }
-                face = (MemorySegment)create_face_handle.invokeExact(get_table_data_fn);
+                face = (MemorySegment)create_face_handle.invokeExact(get_table_data_fn_stub);
             } catch (Throwable t) {
             }
         }

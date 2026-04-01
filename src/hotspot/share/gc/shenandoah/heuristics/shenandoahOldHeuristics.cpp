@@ -79,7 +79,6 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
-  _mixed_evac_cset = collection_set;
   _included_old_regions = 0;
   _evacuated_old_bytes = 0;
   _collected_old_bytes = 0;
@@ -105,10 +104,6 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
                               compare_by_live);
 
   _first_pinned_candidate = NOT_FOUND;
-
-  uint included_old_regions = 0;
-  size_t evacuated_old_bytes = 0;
-  size_t collected_old_bytes = 0;
 
   // If a region is put into the collection set, then this region's free (not yet used) bytes are no longer
   // "available" to hold the results of other evacuations.  This may cause a decrease in the remaining amount
@@ -152,7 +147,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: " PROPERFMT ", candidates: %u",
                 PROPERFMTARGS(_old_evacuation_budget),
                 unprocessed_old_collection_candidates());
-  return add_old_regions_to_cset();
+  return add_old_regions_to_cset(collection_set);
 }
 
 bool ShenandoahOldHeuristics::all_candidates_are_pinned() {
@@ -226,7 +221,7 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
   _next_old_collection_candidate = write_index + 1;
 }
 
-bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
+bool ShenandoahOldHeuristics::add_old_regions_to_cset(ShenandoahCollectionSet* collection_set) {
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   }
@@ -310,7 +305,7 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
         break;
       }
     }
-    _mixed_evac_cset->add_region(r);
+    collection_set->add_region(r);
     _included_old_regions++;
     _evacuated_old_bytes += live_data_for_evacuation;
     _collected_old_bytes += r->garbage();
@@ -356,7 +351,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   return (_included_old_regions > 0);
 }
 
-bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old) {
+bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* collection_set, size_t &add_regions_to_old) {
   if (unprocessed_old_collection_candidates() == 0) {
     add_regions_to_old = 0;
     return false;
@@ -367,15 +362,13 @@ bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old)
 
     // We have budgeted to assure the live_bytes_in_tenurable_regions() get evacuated into old generation.  Young reserves
     // only for untenurable region evacuations.
-    size_t planned_young_evac = _mixed_evac_cset->get_live_bytes_in_untenurable_regions();
+    size_t planned_young_evac = collection_set->get_live_bytes_in_untenurable_regions();
     size_t consumed_from_young_cset = (size_t) (planned_young_evac * ShenandoahEvacWaste);
 
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    size_t regions_required_for_collector_reserve = (consumed_from_young_cset + region_size_bytes - 1) / region_size_bytes;
 
     assert(consumed_from_young_cset <= max_young_cset, "sanity");
     assert(max_young_cset <= young_unaffiliated_regions * region_size_bytes, "sanity");
-
     size_t regions_for_old_expansion;
     if (consumed_from_young_cset < max_young_cset) {
       size_t excess_young_reserves = max_young_cset - consumed_from_young_cset;
@@ -398,8 +391,11 @@ bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old)
       _unspent_unfragmented_old_budget += supplement_without_waste;
       _old_generation->augment_evacuation_reserve(budget_supplement);
       young_generation->set_evacuation_reserve(max_young_cset - budget_supplement);
-
-      return add_old_regions_to_cset();
+      assert(young_generation->get_evacuation_reserve() >=
+             collection_set->get_live_bytes_in_untenurable_regions() * ShenandoahEvacWaste,
+             "adjusted evac reserve (%zu) must be large enough for planned evacuation (%zu)",
+             young_generation->get_evacuation_reserve(), collection_set->get_live_bytes_in_untenurable_regions());
+      return add_old_regions_to_cset(collection_set);
     } else {
       add_regions_to_old = 0;
       return false;
