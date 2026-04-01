@@ -325,6 +325,11 @@ public class TestFoldCompares {
         return i;
     }
 
+    @Check(test = "test_array_length_and_null_check_1")
+    public void check_test_array_length_and_null_check_1(int i) {
+        if (i < 0) { throw new RuntimeException("Wrong value: " + i); }
+    }
+
     @Test
     @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING,
         applyIf = {"TieredCompilation", "true"}) // proxy for "not Xcomp"
