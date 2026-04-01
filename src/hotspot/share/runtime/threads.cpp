@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1355,6 +1355,7 @@ public:
 
   virtual void do_thread(Thread* thread) {
     if (thread != nullptr) {
+      ResourceMark rm(thread);
       thread->print_on(_st);
       _st->cr();
     }
@@ -1425,6 +1426,12 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   non_java_threads_do(&cl);
 
   st->flush();
+}
+
+void Threads::print(bool print_stacks, bool internal_format) {
+  // this function is only used by debug.cpp
+  ResourceMark rm;
+  print_on(tty, print_stacks, internal_format, false /* no concurrent lock printed */, false /* simple format */);
 }
 
 void Threads::print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,

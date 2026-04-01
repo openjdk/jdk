@@ -575,6 +575,7 @@ extern "C" NOINLINE nmethod* findnm(intptr_t addr) {
 extern "C" NOINLINE void find(intptr_t x) {
   Command c("find");
   if (!c.onThread()) return;
+  ResourceMark rm;
   os::print_location(tty, x, false);
 }
 
@@ -582,6 +583,7 @@ extern "C" NOINLINE void find(intptr_t x) {
 extern "C" NOINLINE void findpc(intptr_t x) {
   Command c("findpc");
   if (!c.onThread()) return;
+  ResourceMark rm;
   os::print_location(tty, x, true);
 }
 

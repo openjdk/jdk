@@ -179,6 +179,7 @@ bool VM_PrintThreads::doit_prologue() {
 }
 
 void VM_PrintThreads::doit() {
+  ResourceMark rm;
   Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
   if (_print_jni_handle_info) {
     JNIHandles::print_on(_out);

@@ -110,6 +110,7 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
     msg.append("  region: %s", ss.freeze());
   } else {
     msg.append("  outside of Java heap\n");
+    ResourceMark rm;
     stringStream ss;
     os::print_location(&ss, (intptr_t) loc, false);
     msg.append("  %s", ss.freeze());

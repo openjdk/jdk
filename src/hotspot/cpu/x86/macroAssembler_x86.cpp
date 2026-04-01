@@ -443,6 +443,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
 }
 
 void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
+  ResourceMark rm;
   ttyLocker ttyl;
   DebuggingContext debugging{};
   tty->print_cr("rip = 0x%016lx", (intptr_t)pc);

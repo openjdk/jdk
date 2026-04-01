@@ -45,6 +45,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -1541,7 +1542,10 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   }
 }
 
-void JavaThread::print() const { print_on(tty); }
+void JavaThread::print() const {
+  ResourceMark rm;
+  print_on(tty);
+}
 
 void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s", get_thread_name_string(buf, buflen));

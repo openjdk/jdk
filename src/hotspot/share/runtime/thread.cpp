@@ -503,7 +503,10 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   DEBUG_ONLY(if (WizardMode) print_owned_locks_on(st);)
 }
 
-void Thread::print() const { print_on(tty); }
+void Thread::print() const {
+  ResourceMark rm;
+  print_on(tty);
+}
 
 // Thread::print_on_error() is called by fatal error handler. Don't use
 // any lock or allocate memory.
@@ -549,6 +552,11 @@ void Thread::print_owned_locks_on(outputStream* st) const {
       cur = cur->next();
     }
   }
+}
+
+void Thread::print_owned_locks() const {
+  ResourceMark rm;
+  print_owned_locks_on(tty);
 }
 
 Thread* Thread::_starting_thread = nullptr;

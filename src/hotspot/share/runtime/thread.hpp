@@ -558,7 +558,7 @@ protected:
 
  public:
   void print_owned_locks_on(outputStream* st) const;
-  void print_owned_locks() const                 { print_owned_locks_on(tty);    }
+  void print_owned_locks() const;
   Mutex* owned_locks() const                     { return _owned_locks;          }
   bool owns_locks() const                        { return owned_locks() != nullptr; }
 
