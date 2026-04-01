@@ -1392,7 +1392,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //         leads to rhs overflow  with lo=min_int and hi=max_int
     jlong lo_type_hi = lo_type->_hi;
     jlong hi_type_lo = hi_type->_lo;
-    if (lo_type_hi < hi_type_lo - 1) {
+    if (lo_type_hi >= hi_type_lo - 1) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
     // Produce form: n - lo + x1 <cond> hi - lo + x2
