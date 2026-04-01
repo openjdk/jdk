@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,7 +661,7 @@ public final class ML_KEM {
 
         // Note: only the 1st 32-byte in the seed is used
         mlKemG.update(seed, 0, 32);
-//        mlKemG.update((byte)mlKem_k);
+        mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
         mlKemG.reset();
