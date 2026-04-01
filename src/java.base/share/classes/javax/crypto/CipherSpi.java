@@ -1016,7 +1016,7 @@ public abstract class CipherSpi {
      *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived data
      *
-     * @return the derived data
+     * @return a new array containing the derived data
      *
      * @throws UnsupportedOperationException if this method has not been
      *          overridden by an implementation or the derived data is not

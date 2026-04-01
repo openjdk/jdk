@@ -2643,7 +2643,7 @@ public class Cipher {
      * @param length the desired length of the derived data
      *          (must be greater than 0)
      *
-     * @return the derived data
+     * @return a new array containing the derived data
      *
      * @throws UnsupportedOperationException if the corresponding method in the
      *          {@code CipherSpi} is not supported or the derived data is not
