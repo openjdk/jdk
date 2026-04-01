@@ -155,10 +155,9 @@ public class ZipFSTester {
         }
     }
 
-    // Validates ZipFS provider for expected FSE on duplicate input
+    // Validates ZipFS provider for expected FSAE on duplicate input
     @Test
-    void providerValidationFSETest() throws Exception {
-        var nonZipFile = getNonZipFile();
+    void providerValidationFSAETest() throws Exception {
         var tmpfsPath = getTempZipPath();
         createClonedZip(tmpfsPath);
         try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
@@ -168,14 +167,12 @@ public class ZipFSTester {
                             Map.of()), "newFileSystem(URI...) does not throw exception");
         } finally {
             Files.deleteIfExists(tmpfsPath);
-            Files.deleteIfExists(nonZipFile);
         }
     }
 
     // Validates ZipFS provider for newFileSystem(Path, ...)
     @Test
     void providerValidationTest() throws Exception {
-        var nonZipFile = getNonZipFile();
         var tmpfsPath = getTempZipPath();
         createClonedZip(tmpfsPath);
         try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
@@ -183,7 +180,6 @@ public class ZipFSTester {
             try (FileSystem _ = provider.newFileSystem(tmpfsPath, Map.of())) {}
         } finally {
             Files.deleteIfExists(tmpfsPath);
-            Files.deleteIfExists(nonZipFile);
         }
     }
 
