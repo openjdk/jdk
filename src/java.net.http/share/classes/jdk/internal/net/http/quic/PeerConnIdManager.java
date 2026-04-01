@@ -65,6 +65,7 @@ final class PeerConnIdManager {
     private final QuicConnectionImpl connection;
     private final String logTag;
     private final boolean isClient;
+    private boolean closed; // when true, no more reset tokens are registered
 
     private enum State {
         INITIAL_PKT_NOT_RECEIVED_FROM_PEER,
@@ -267,6 +268,7 @@ final class PeerConnIdManager {
             if (handshakeConnId == null) {
                 throw new IllegalStateException("No handshake peer connection available");
             }
+            if (closed) return;
             // recreate the conn id with the stateless token
             this.peerConnectionIds.put(0L, new PeerConnectionId(handshakeConnId.asReadOnlyBuffer(),
                     statelessResetToken));
@@ -305,7 +307,7 @@ final class PeerConnIdManager {
     QuicConnectionId getPeerConnId() {
         lock.lock();
         try {
-            if (activeConnIdSeq < largestReceivedRetirePriorTo) {
+            if (activeConnIdSeq < largestReceivedRetirePriorTo && !closed) {
                 // stop using the old connection ID
                 switchConnectionId();
             }
@@ -496,9 +498,11 @@ final class PeerConnIdManager {
             // connection ids. It does however store the peer-issued stateless reset token of a
             // peer connection id, so we let the endpoint know that the stateless reset token needs
             // to be forgotten since the corresponding peer connection id is being retired
-            final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
-            if (resetTokenToForget != null) {
-                this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
+            if (seqNumToRetire == activeConnIdSeq) {
+                final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
+                if (resetTokenToForget != null) {
+                    this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
+                }
             }
         }
         for (Iterator<Long> iterator = gaps.iterator(); iterator.hasNext(); ) {
@@ -539,5 +543,11 @@ final class PeerConnIdManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    public void close() {
+        lock.lock();
+        closed = true;
+        lock.unlock();
     }
 }
