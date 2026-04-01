@@ -26,16 +26,19 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
+// Assembly function to get SVE vector length using INCB instruction
+extern "C" int get_sve_vector_length();
+
 int VM_Version::get_current_sve_vector_length() {
   assert(VM_Version::supports_sve(), "should not call this");
-  ShouldNotReachHere();
-  return 0;
+  // Use assembly instruction to get the actual SVE vector length
+  return  VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(VM_Version::supports_sve(), "should not call this");
-  ShouldNotReachHere();
-  return 0;
+  // Use assembly instruction to get the SVE vector length
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
 }
 
 void VM_Version::get_os_cpu_info() {
@@ -47,11 +50,29 @@ void VM_Version::get_os_cpu_info() {
     set_feature(CPU_AES);
     set_feature(CPU_SHA1);
     set_feature(CPU_SHA2);
+    set_feature(CPU_PMULL);
   }
   if (IsProcessorFeaturePresent(PF_ARM_VFP_32_REGISTERS_AVAILABLE)) {
     set_feature(CPU_ASIMD);
   }
-  // No check for CPU_PMULL, CPU_SVE, CPU_SVE2
+  if (IsProcessorFeaturePresent(PF_ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_LSE);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_SVE);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_SVE2);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_BITPERM_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_SVEBITPERM);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_SHA3);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_SHA512);
+  }
 
   __int64 dczid_el0 = _ReadStatusReg(0x5807 /* ARM64_DCZID_EL0 */);
 
@@ -102,8 +123,8 @@ void VM_Version::get_os_cpu_info() {
       SYSTEM_INFO si;
       GetSystemInfo(&si);
       _model = si.wProcessorLevel;
-      _variant = si.wProcessorRevision / 0xFF;
-      _revision = si.wProcessorRevision & 0xFF;
+      _variant = (si.wProcessorRevision >> 8) & 0xFF; // Variant is the upper byte of wProcessorRevision
+      _revision = si.wProcessorRevision & 0xFF; // Revision is the lower byte of wProcessorRevision
     }
   }
 }

@@ -1313,7 +1313,7 @@ bool os::is_primordial_thread(void) {
 // Find the virtual memory area that contains addr
 static bool find_vma(address addr, address* vma_low, address* vma_high) {
   FILE *fp = os::fopen("/proc/self/maps", "r");
-  if (fp) {
+  if (fp != nullptr) {
     address low, high;
     while (!feof(fp)) {
       if (fscanf(fp, "%p-%p", &low, &high) == 2) {
@@ -1326,7 +1326,7 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
       }
       for (;;) {
         int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
+        if (ch == EOF || ch == '\n') break;
       }
     }
     fclose(fp);
@@ -4384,7 +4384,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   os::snprintf_checked(fname, sizeof(fname), "/proc/%d/status", vmid);
   FILE *fp = os::fopen(fname, "r");
 
-  if (fp) {
+  if (fp != nullptr) {
     int pid, nspid;
     int ret;
     while (!feof(fp) && !ferror(fp)) {
@@ -4398,7 +4398,7 @@ int os::Linux::get_namespace_pid(int vmid) {
       }
       for (;;) {
         int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
+        if (ch == EOF || ch == '\n') break;
       }
     }
     fclose(fp);

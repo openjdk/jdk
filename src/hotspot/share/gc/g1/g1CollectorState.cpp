@@ -22,42 +22,32 @@
  *
  */
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
 
 G1CollectorState::Pause G1CollectorState::gc_pause_type(bool concurrent_operation_is_full_mark) const {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   switch (_phase) {
     case Phase::YoungNormal: return Pause::Normal;
-    case Phase::YoungPrepareMixed: return Pause::PrepareMixed;
     case Phase::YoungConcurrentStart:
         return concurrent_operation_is_full_mark ? Pause::ConcurrentStartFull :
                                                    Pause::ConcurrentStartUndo;
+    case Phase::YoungPrepareMixed: return Pause::PrepareMixed;
     case Phase::Mixed: return Pause::Mixed;
     case Phase::FullGC: return Pause::Full;
     default: ShouldNotReachHere();
   }
 }
 
-bool G1CollectorState::is_in_concurrent_cycle() const {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_concurrent_cycle();
+const char* G1CollectorState::to_string(Pause type) {
+  static const char* pause_strings[] = { "Normal",
+                                         "Concurrent Start", // Do not distinguish between the different
+                                         "Concurrent Start", // Concurrent Start pauses.
+                                         "Prepare Mixed",
+                                         "Cleanup",
+                                         "Remark",
+                                         "Mixed",
+                                         "Full" };
+  return pause_strings[static_cast<uint>(type)];
 }
-
-bool G1CollectorState::is_in_marking() const {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_marking();
-}
-
-bool G1CollectorState::is_in_mark_or_rebuild() const {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return is_in_marking() || cm->is_in_rebuild_or_scrub();
-}
-
-bool G1CollectorState::is_in_reset_for_next_cycle() const {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_reset_for_next_cycle();
-}
-

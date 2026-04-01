@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ public:
     static jfieldID graphicsConfigID;
     static jfieldID peerGCID;
     static jfieldID focusableID;
-    static jfieldID appContextID;
     static jfieldID hwndID;
 
     static jmethodID getFontMID;
