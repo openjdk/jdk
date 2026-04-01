@@ -1205,76 +1205,67 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
     // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
-    // TODO: fix up
-    // Simplified version:
-    //   n > a && n <= b                    (BEFORE)
-    //
-    // Transformed to:
-    //   n - a - 1 <u b - a              (AFTER)
-    // Equivalent to:
-    //   n - lo <cond> adjusted_lim
-    // Where:
-    //   lo   = a + 1
-    //   hi   = b
-    //   cond = "<u"
-    //   adjusted_lim = a - b
     //
     // Proof:
     //   From IfNode::filtered_int_type, we get:
-    //     lo_type = [min_int .. a->_hi]
-    //     -> lo_type->_hi >= a->_hi
-    //     hi_type = [min(b->_lo+1, max_int) .. max_int]
-    //     -> hi_type->_lo <= b->_lo + 1
-    //   Given check from above:
-    //     lo_type->_hi <  hi_type->_lo
-    //     -> a->_hi   <  b->_lo + 1
-    //     -> a        <  b      + 1
-    //     -> a        <= b                 (A-B)
+    //     lo_type = [min_int .. lo->_hi]                  for n <= lo
+    //     -> lo_type->_hi = lo->_hi
+    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]  for n > hi
+    //     -> hi_type->_lo <= lo->_lo + 1
+    //   We will need the assumption "lo <= hi" below, which we can
+    //   establish with the following (CHECK):
+    //        lo_type->_hi <  hi_type->_lo       (CHECK)
+    //     -> lo->_hi      <  hi->_lo + 1
+    //     -> lo           <  hi      + 1
+    //     -> lo           <= hi                 (LO-HI)
     //
-    //   Case A: a = b
-    //     Let y = a = b
-    //     -> n > a && n <= b     vs     n - a - 1 <u b - a
-    //     -> n > y && n <= y     vs     n - y - 1 <u y - y = 0
+    //   Case A: lo = hi
+    //     Let y = lo = hi
+    //     -> n > lo && n <= hi   vs     n - lo - 1 <u hi - lo
+    //     -> n > y  && n <= y    vs     n - y  - 1 <u y  - y = 0
     //        false                      false
     //     Hence, (BEFORE) and (AFTER) are both always false.
     //
-    //   Case B: a < b
-    //     Case n <= a:
+    //   Case B: lo < hi
+    //     Case n <= lo:
     //       (BEFORE) is always false, show (AFTER) is always false.
-    //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-    //       -> n < a+1
-    //       U(n - (a + 1))          <  U(b - a)
-    //       -- Lemma2 (n < a+1) --     -- Lemma1 (a <= b) --
-    //         n - (a + 1) + 2^32    <    b - a
-    //         n -      1  + 2^32    <    b
-    //         n           + 2^32    <=   b
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> n < lo+1
+    //       U(n - (lo + 1))         <  U(hi - lo)
+    //       -- Lemma2 (n < lo+1) --    -- Lemma1 (lo <= hi) --
+    //         n - (lo + 1) + 2^32   <    hi - lo
+    //         n -       1  + 2^32   <    hi
+    //         n            + 2^32   <=   hi
     //       Always false by Lemma3.
     //       Note: To apply Lemma2 above, we must use (Case B), we
-    //             could not have done it with (A-B) alone.
+    //             could not have done it with (LO-HI) alone.
     //
-    //     Case a < n <= b:
+    //     Case lo < n <= hi:
     //       (BEFORE) is always true, show (AFTER) is always true.
-    //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-    //       -> n >= a+1
-    //       U(n - (a + 1))          <  U(b - a)
-    //       -- Lemma1 (n >= a+1) --    -- Lemma1 (a <= b) --
-    //         n - (a + 1)           <    b - a
-    //         n -      1            <    b
-    //         n                     <=   b
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> n >= lo+1
+    //       U(n - (lo + 1))          <  U(hi - lo)
+    //       -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo <= hi) --
+    //         n - (lo + 1)           <    hi - lo
+    //         n -       1            <    hi
+    //         n                      <=   hi
     //       Follows from case assumption, so always true.
     //
-    //     Case n > b:
+    //     Case n > hi:
     //       (BEFORE) is always false, show (AFTER) is always false.
-    //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-    //       -> a+1 <= b
-    //       -> n > a+1
-    //       U(n - (a + 1))          <  U(b - a)
-    //       -- Lemma1 (n >  a+1) --    -- Lemma1 (a <= b) --
-    //         n - (a + 1)           <    b - a
-    //         n -      1            <    b
-    //         n                     <=   b
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> lo+1 <= hi
+    //       -> n > lo+1
+    //       U(n - (lo + 1))          <  U(hi - lo)
+    //       -- Lemma1 (n > lo+1) --     -- Lemma1 (lo <= hi) --
+    //         n - (lo + 1)           <    hi - lo
+    //         n -       1            <    hi
+    //         n                      <=   hi
     //     Contradicts case assumption, so always false.
     // QED.
+    //
+    // Note: we cannot use anything more relaxed than the assumption
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would undeflow.
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
