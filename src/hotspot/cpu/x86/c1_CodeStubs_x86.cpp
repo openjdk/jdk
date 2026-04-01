@@ -341,12 +341,20 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
-  if (*_pc_start == 0x48 && 0xb8 <= *(_pc_start + 1) && *(_pc_start + 1) <= 0xbf) {
+  if (0x40 <= *_pc_start && *_pc_start <= 0x4f && 0xb8 <= *(_pc_start + 1) && *(_pc_start + 1) <= 0xbf) {
     assert(*(long long int*)(_pc_start+2) == 0, "imm64 must be 0 in mov r64, imm64");
-    for (int i = 0; i < 8; ++i) {
-      *(_pc_start + i + 2) = NativeInstruction::nop_instruction_code;
+    for (int i = NativeGeneralJump::instruction_size; i < 10; ++i) {
+      *(_pc_start + i) = NativeInstruction::nop_instruction_code;
     }
   }
+#ifdef ASSERT
+  else {
+    for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
+      assert(*(_pc_start + i) == NativeInstruction::nop_instruction_code, "");
+    }
+  }
+#endif
+
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
