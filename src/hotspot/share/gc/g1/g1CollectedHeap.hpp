@@ -531,7 +531,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection();
+  void verify_before_full_collection(bool concurrent_cycle_aborted);
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();

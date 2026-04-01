@@ -846,7 +846,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   _hrm.remove_all_free_regions();
 }
 
-void G1CollectedHeap::verify_before_full_collection() {
+void G1CollectedHeap::verify_before_full_collection(bool concurrent_cycle_aborted) {
   assert_used_and_recalculate_used_equal(this);
   if (!VerifyBeforeGC) {
     return;
@@ -856,7 +856,7 @@ void G1CollectedHeap::verify_before_full_collection() {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc();
-  _verifier->verify_bitmap_clear(true /* above_tams_only */);
+  _verifier->verify_bitmap_clear(true /* above_tams_only */, concurrent_cycle_aborted);
 }
 
 void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocation_word_size) {
@@ -2880,6 +2880,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
+  concurrent_mark()->reset_region_marking_state(hr);
   _policy->remset_tracker()->update_at_free(hr);
 
   if (free_list != nullptr) {
@@ -3192,6 +3193,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
     }
+
+    _cm->notify_new_region(new_alloc_region);
+
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
@@ -3209,8 +3213,8 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->is_in_concurrent_start_gc();
-  if (during_im && allocated_bytes > 0) {
+  bool in_concurrent_start_gc = collector_state()->is_in_concurrent_start_gc();
+  if (in_concurrent_start_gc && allocated_bytes > 0) {
     _cm->add_root_region(alloc_region);
   }
   G1HeapRegionPrinter::retire(alloc_region);

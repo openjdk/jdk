@@ -672,8 +672,8 @@ void G1Policy::record_dirtying_stats(double last_mutator_start_dirty_ms,
   _to_collection_set_cards = next_to_collection_set_cards;
 }
 
-bool G1Policy::should_retain_evac_failed_region(uint index) const {
-  size_t live_bytes = _g1h->region_at(index)->live_bytes();
+bool G1Policy::should_retain_evac_failed_region(G1HeapRegion* r) const {
+  size_t live_bytes = r->live_bytes();
   size_t threshold = G1RetainRegionLiveThresholdPercent * G1HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }
