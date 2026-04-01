@@ -79,8 +79,10 @@ const BufferBlob::Vptr               BufferBlob::_vpntr;
 const RuntimeStub::Vptr              RuntimeStub::_vpntr;
 const SingletonBlob::Vptr            SingletonBlob::_vpntr;
 const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const SafepointBlob::Vptr            SafepointBlob::_vpntr;
 #ifdef COMPILER2
 const ExceptionBlob::Vptr            ExceptionBlob::_vpntr;
+const UncommonTrapBlob::Vptr         UncommonTrapBlob::_vpntr;
 #endif // COMPILER2
 const UpcallStub::Vptr               UpcallStub::_vpntr;
 
@@ -386,7 +388,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
 // Implementation of BufferBlob
 
 BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size)
-: RuntimeBlob(name, kind, size, header_size)
+  : RuntimeBlob(name, kind, size, header_size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
@@ -621,8 +623,8 @@ DeoptimizationBlob::DeoptimizationBlob(
   int         unpack_with_reexecution_offset,
   int         frame_size
 )
-: SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
-                size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
+  : SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
+                  size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
 {
   _unpack_offset           = unpack_offset;
   _unpack_with_exception   = unpack_with_exception_offset;
@@ -671,8 +673,8 @@ UncommonTrapBlob::UncommonTrapBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
-                size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
+  : SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
+                  size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
 
@@ -703,8 +705,8 @@ ExceptionBlob::ExceptionBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
-                size, sizeof(ExceptionBlob), frame_size, oop_maps)
+  : SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
+                  size, sizeof(ExceptionBlob), frame_size, oop_maps)
 {}
 
 
@@ -737,8 +739,8 @@ SafepointBlob::SafepointBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("SafepointBlob", CodeBlobKind::Safepoint, cb,
-                size, sizeof(SafepointBlob), frame_size, oop_maps)
+  : SingletonBlob(cb->name(), CodeBlobKind::Safepoint, cb,
+                  size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
 
@@ -755,7 +757,7 @@ SafepointBlob* SafepointBlob::create(
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
-  trace_new_stub(blob, "SafepointBlob");
+  trace_new_stub(blob, "SafepointBlob - ", blob->name());
 
   return blob;
 }
@@ -895,7 +897,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
     }
   }
   if (is_nmethod()) {
-    nmethod* nm = (nmethod*)this;
+    nmethod* nm = as_nmethod();
     ResourceMark rm;
     st->print(INTPTR_FORMAT " is at entry_point+%d in (nmethod*)" INTPTR_FORMAT,
               p2i(addr), (int)(addr - nm->entry_point()), p2i(nm));
@@ -931,7 +933,7 @@ void RuntimeStub::print_on_impl(outputStream* st) const {
   RuntimeBlob::print_on_impl(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void RuntimeStub::print_value_on_impl(outputStream* st) const {
@@ -942,7 +944,7 @@ void SingletonBlob::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
   RuntimeBlob::print_on_impl(st);
   st->print_cr("%s", name());
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void SingletonBlob::print_value_on_impl(outputStream* st) const {
@@ -960,7 +962,7 @@ void UpcallStub::print_on_impl(outputStream* st) const {
   oop recv = JNIHandles::resolve(_receiver);
   st->print("Receiver MH=");
   recv->print_on(st);
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void UpcallStub::print_value_on_impl(outputStream* st) const {
