@@ -31,7 +31,6 @@ import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -45,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8240533
  * @summary Check that DatagramSocket, MulticastSocket and DatagramSocketAdaptor
  *          throw expected Exception when connecting to port 0
- * @run junit/othervm ConnectPortZero
+ * @run junit/othervm ${test.main.class}
  */
 
 public class ConnectPortZero {
@@ -60,8 +59,10 @@ public class ConnectPortZero {
     }
 
     public static List<Arguments> testCases() throws IOException {
-        // Closeable arguments passed to a ParameterizedTest are automatically
-        // closed by JUnit
+        // Note that Closeable arguments passed to a ParameterizedTest are automatically
+        // closed by JUnit. We do not want to rely on this, but we do need to
+        // create a new set of sockets for each invocation of this method, so that
+        // the next test method invoked doesn't get a closed socket.
         return List.of(
                 Arguments.of(new DatagramSocket(),            loopbackAddr),
                 Arguments.of(DatagramChannel.open().socket(), loopbackAddr),
@@ -74,16 +75,18 @@ public class ConnectPortZero {
 
     @ParameterizedTest
     @MethodSource("testCases")
-    public void testConnect(DatagramSocket ds, InetAddress addr) {
-        assertFalse(ds.isConnected());
-        assertFalse(ds.isClosed());
-        Throwable t = assertThrows(UCIOE, () -> ds.connect(addr, 0));
-        assertSame(SE, t.getCause().getClass());
-        assertFalse(ds.isConnected());
-        assertFalse(ds.isClosed());
-        assertThrows(SE, () -> ds
-                .connect(new InetSocketAddress(addr, 0)));
-        assertFalse(ds.isConnected());
-        assertFalse(ds.isClosed());
+    public void testConnect(DatagramSocket socket, InetAddress addr) {
+        try (var ds = socket) {
+            assertFalse(ds.isConnected());
+            assertFalse(ds.isClosed());
+            Throwable t = assertThrows(UCIOE, () -> ds.connect(addr, 0));
+            assertSame(SE, t.getCause().getClass());
+            assertFalse(ds.isConnected());
+            assertFalse(ds.isClosed());
+            assertThrows(SE, () -> ds
+                    .connect(new InetSocketAddress(addr, 0)));
+            assertFalse(ds.isConnected());
+            assertFalse(ds.isClosed());
+        }
     }
 }

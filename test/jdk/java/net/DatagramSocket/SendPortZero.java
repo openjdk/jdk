@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8236105 8240533
  * @summary Check that DatagramSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
- * @run junit/othervm SendPortZero
+ * @run junit/othervm ${test.main.class}
  */
 
 public class SendPortZero {

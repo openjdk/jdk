@@ -24,7 +24,7 @@
 /* @test
  * @bug 8243507 8243999
  * @summary Checks to ensure that DatagramSocket constructors behave as expected
- * @run junit Constructor
+ * @run junit ${test.main.class}
  */
 
 

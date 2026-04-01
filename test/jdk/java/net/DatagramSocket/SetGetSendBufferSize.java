@@ -27,8 +27,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @summary Check that setSendBufferSize and getSendBufferSize work as expected
- * @run junit SetGetSendBufferSize
- * @run junit/othervm -Djava.net.preferIPv4Stack=true SetGetSendBufferSize
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import jdk.test.lib.Platform;
@@ -40,10 +40,10 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SetGetSendBufferSize {
@@ -70,7 +70,7 @@ public class SetGetSendBufferSize {
 
         try (var socket = supplier.open()) {
             for (int i : invalidArgs) {
-                Exception ex = Assertions.assertThrows(IAE, () -> socket.setSendBufferSize(i));
+                Exception ex = assertThrows(IAE, () -> socket.setSendBufferSize(i));
                 System.out.println(name + " got expected exception: " + ex);
             }
         }
@@ -108,10 +108,10 @@ public class SetGetSendBufferSize {
         var socket = supplier.open();
         socket.close();
 
-        Exception setException = Assertions.assertThrows(SE, () -> socket.setSendBufferSize(2345));
+        Exception setException = assertThrows(SE, () -> socket.setSendBufferSize(2345));
         System.out.println(name + " got expected exception: " + setException);
 
-        Exception getException = Assertions.assertThrows(SE, () -> socket.getSendBufferSize());
+        Exception getException = assertThrows(SE, () -> socket.getSendBufferSize());
         System.out.println(name + " got expected exception: " + getException);
     }
 }

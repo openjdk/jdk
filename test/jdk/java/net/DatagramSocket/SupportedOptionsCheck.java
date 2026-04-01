@@ -27,7 +27,7 @@
  * @library /test/lib
  * @summary checks that the DatagramSocket supportedOptions set contains all
  *  MulticastSocket socket options
- * @run junit SupportedOptionsCheck
+ * @run junit ${test.main.class}
  */
 
 import jdk.test.lib.Platform;

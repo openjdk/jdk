@@ -26,7 +26,7 @@
  * @bug 4163126 8222829
  * @summary Test to see if timeout hangs. Also checks that
  * negative timeout value fails as expected.
- * @run junit DatagramTimeout
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
@@ -53,8 +53,10 @@ public class DatagramTimeout {
     private static final Class<SocketException> SE = SocketException.class;
 
     public static List<DatagramSocket> sockets() throws IOException {
-        // Closeable arguments passed to a ParameterizedTest are automatically
-        // closed by JUnit
+        // Note that Closeable arguments passed to a ParameterizedTest are automatically
+        // closed by JUnit. We do not want to rely on this, but we do need to
+        // create a new set of sockets for each invocation of this method, so that
+        // the next test method invoked doesn't get a closed socket.
         return List.of(
                 new DatagramSocket(),
                 new MulticastSocket(),
@@ -63,27 +65,33 @@ public class DatagramTimeout {
 
     @ParameterizedTest
     @MethodSource("sockets")
-    public void testSetNegTimeout(DatagramSocket ds)  {
-        assertFalse(ds.isClosed());
-        assertThrows(IAE, () -> ds.setSoTimeout(-1));
+    public void testSetNegTimeout(DatagramSocket socket)  {
+        try (var ds = socket) {
+            assertFalse(ds.isClosed());
+            assertThrows(IAE, () -> ds.setSoTimeout(-1));
+        }
     }
 
     @ParameterizedTest
     @MethodSource("sockets")
-    public void testSetTimeout(DatagramSocket ds) throws Exception {
-        assertFalse(ds.isClosed());
-        byte[] buffer = new byte[50];
-        DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
-        ds.setSoTimeout(2);
-        assertThrows(STE, () -> ds.receive(pkt));
+    public void testSetTimeout(DatagramSocket socket) throws Exception {
+        try (var ds = socket) {
+            assertFalse(ds.isClosed());
+            byte[] buffer = new byte[50];
+            DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+            ds.setSoTimeout(2);
+            assertThrows(STE, () -> ds.receive(pkt));
+        }
     }
 
     @ParameterizedTest
     @MethodSource("sockets")
-    public void testGetTimeout(DatagramSocket ds) throws Exception {
-        assertFalse(ds.isClosed());
-        ds.setSoTimeout(10);
-        assertEquals(10, ds.getSoTimeout());
+    public void testGetTimeout(DatagramSocket socket) throws Exception {
+        try (var ds = socket) {
+            assertFalse(ds.isClosed());
+            ds.setSoTimeout(10);
+            assertEquals(10, ds.getSoTimeout());
+        }
     }
 
     @Test

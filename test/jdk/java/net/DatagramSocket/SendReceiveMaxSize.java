@@ -33,7 +33,7 @@
  *          limit.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm SendReceiveMaxSize
+ * @run junit/othervm ${test.main.class}
  */
 /*
  * @test id=preferIPv4Stack
@@ -42,7 +42,7 @@
  *          maximum size on macOS, using an IPv4 only socket.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 /*
  * @test id=preferIPv6Addresses
@@ -52,7 +52,7 @@
  *          IPv6 addresses.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 /*
  * @test id=preferLoopback
@@ -62,7 +62,7 @@
  *          interface.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm -Dtest.preferLoopback=true SendReceiveMaxSize
+ * @run junit/othervm -Dtest.preferLoopback=true ${test.main.class}
  */
 /*
  * @test id=preferIPv6Loopback
@@ -72,7 +72,7 @@
  *          interface.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
+ * @run junit/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 /*
  * @test id=preferIPv4Loopback
@@ -82,7 +82,7 @@
  *          loopback interface
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run junit/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
+ * @run junit/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import jdk.test.lib.RandomFactory;
@@ -101,11 +101,13 @@ import java.util.Random;
 
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -173,7 +175,7 @@ public class SendReceiveMaxSize {
                 var sendPkt = new DatagramPacket(testData, capacity, addr);
 
                 if (exception != null) {
-                    Exception ex = Assertions.assertThrows(exception, () -> sender.send(sendPkt));
+                    Exception ex = assertThrows(exception, () -> sender.send(sendPkt));
                     System.out.println(name + " got expected exception: " + ex);
                 } else {
                     sender.send(sendPkt);
@@ -182,7 +184,7 @@ public class SendReceiveMaxSize {
 
                     // check packet data has been fragmented and re-assembled correctly at receiver
                     assertEquals(capacity, receivePkt.getLength());
-                    Assertions.assertArrayEquals(testData, receivePkt.getData());
+                    assertArrayEquals(testData, receivePkt.getData());
                 }
             }
         }

@@ -34,11 +34,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -48,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          DatagramSocketAdaptor and DatagramChannel all
  *          throw expected Exception when passed a DatagramPacket
  *          with invalid details
- * @run junit SendCheck
+ * @run junit ${test.main.class}
  */
 
 public class SendCheck {
@@ -122,6 +123,10 @@ public class SendCheck {
 
         List<Arguments> testcases = new ArrayList<>();
         for (var packet : Packets) {
+            // Note that Closeable arguments passed to a ParameterizedTest are automatically
+            // closed by JUnit. We do not want to rely on this, but we do need to
+            // create a new set of sockets for each invocation of this method, so that
+            // the next test method invoked doesn't get a closed socket.
             List<Sender> senders = List.of(
                     Sender.of(new DatagramSocket(null)),
                     Sender.of(new MulticastSocket(null)),
@@ -143,20 +148,19 @@ public class SendCheck {
 
     @ParameterizedTest
     @MethodSource("providerIO")
-    public void sendCheck(Sender<IOException> sender,
+    public void sendCheck(Sender<IOException> socket,
                           Packet packet,
                           Class<? extends Throwable> exception)
+            throws IOException
     {
-        DatagramPacket pkt = packet.packet;
-        if (exception != null) {
-            Throwable t = assertThrows(exception, () -> sender.send(pkt));
-            System.out.printf("%s got expected exception %s%n", packet, t);
-        } else {
-            try {
-                sender.send(pkt);
-            } catch (IOException e) {
-                throw new AssertionError("Unexpected exception for "
-                        + sender + " / " + packet, e);
+        try (var sender = socket) {
+            DatagramPacket pkt = packet.packet;
+            if (exception != null) {
+                Throwable t = assertThrows(exception, () -> sender.send(pkt));
+                System.out.printf("%s got expected exception %s%n", packet, t);
+            } else {
+                assertDoesNotThrow(() -> sender.send(pkt),
+                        "Unexpected exception for " + sender + " / " + packet);
             }
         }
     }

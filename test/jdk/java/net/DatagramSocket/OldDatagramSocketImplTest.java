@@ -25,7 +25,7 @@
  * @test
  * @bug 8260428
  * @summary Drop support for pre JDK 1.4 DatagramSocketImpl implementations
- * @run junit/othervm OldDatagramSocketImplTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;
@@ -50,11 +50,9 @@ public class OldDatagramSocketImplTest {
     @Test
     public void testOldImplConnect() {
         try (var ds = new DatagramSocket(new OldDatagramSocketImpl()) {}) {
-            ds.connect(new InetSocketAddress(LOOPBACK, 6667));
-            throw new RuntimeException("ERROR: test failed");
-        } catch (SocketException ex) {
+            SocketException ex = assertThrows(SocketException.class,
+                    () -> ds.connect(new InetSocketAddress(LOOPBACK, 6667)));
             assertEquals("connect not implemented", ex.getMessage());
-            System.out.println("PASSED: default implementation of connect has thrown as expected");
         }
     }
 
@@ -64,7 +62,6 @@ public class OldDatagramSocketImplTest {
             UncheckedIOException ex = assertThrows(UncheckedIOException.class,
                     () -> ds.connect(LOOPBACK, 6667));
             assertEquals("connect failed", ex.getMessage());
-            System.out.println("PASSED: default implementation of connect has thrown as expected");
         }
     }
 
@@ -76,7 +73,6 @@ public class OldDatagramSocketImplTest {
             var innerException = ex.getCause();
             assertSame(SocketException.class, innerException.getClass());
             assertEquals("disconnect not implemented", innerException.getMessage());
-            System.out.println("PASSED: default implementation of disconnect has thrown as expected");
         }
     }
 
@@ -85,7 +81,6 @@ public class OldDatagramSocketImplTest {
         try (var ds = new PublicOldDatagramSocketImpl()) {
             SocketException ex = assertThrows(SocketException.class, () -> ds.connect(LOOPBACK, 0));
             assertEquals("connect not implemented", ex.getMessage());
-            System.out.println("PASSED: default implementation of disconnect has thrown as expected");
         }
     }
     @Test
@@ -95,7 +90,6 @@ public class OldDatagramSocketImplTest {
             var innerException = ex.getCause();
             assertSame(SocketException.class, innerException.getClass());
             assertEquals("disconnect not implemented", innerException.getMessage());
-            System.out.println("PASSED: default implementation of disconnect has thrown as expected");
         }
     }
 
