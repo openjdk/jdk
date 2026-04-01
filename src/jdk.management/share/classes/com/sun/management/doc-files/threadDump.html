@@ -191,7 +191,7 @@ following members:
         <th scope="row"> parkBlocker </th>
         <td> object </td>
         <td> yes </td>
-        <td> The {@link java.util.Objects#toIdentityString(Object) identity string} of the
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string} of the
             {@linkplain java.util.concurrent.locks.LockSupport#park(Object) blocker object}
             responsible for the thread parking. </td>
     </tr>
@@ -199,7 +199,7 @@ following members:
         <th scope="row"> blockedOn </th>
         <td> string </td>
         <td> yes </td>
-        <td> The {@link java.util.Objects#toIdentityString(Object) identity string} of the
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string} of the
             object that the thread is blocked on waiting to enter/re-enter a synchronization
             method or block. </td>
     </tr>
@@ -207,8 +207,9 @@ following members:
         <th scope="row"> waitingOn </th>
         <td> string </td>
         <td> yes </td>
-        <td> The {@link java.util.Objects#toIdentityString(Object) identity string} of the
-            object that the thread is waiting to be notified, {@see java.lang.Object#wait()}. </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
+            of the object that the thread is {@linkplain java.lang.Object#wait() waiting}
+            to be notified. </td>
     </tr>
     <tr>
         <th scope="row"> monitorsOwned </th>
@@ -235,7 +236,7 @@ following members:
         <th scope="row"> object </th>
         <td> string </td>
         <td> no </td>
-        <td> The {@link java.util.Objects#toIdentityString(Object) identity string}
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
              of the blocker object responsible for the thread parking. </td>
     </tr>
     <tr>
@@ -271,7 +272,7 @@ following members:
         <td> array </td>
         <td> no </td>
         <td> The elements of the array are of type string or null. An element of type string
-            has a value that is the {@link java.util.Objects#toIdentityString(Object)
+            has a value that is the {@linkplain java.util.Objects#toIdentityString(Object)
             identity string} of the object for which the monitor is owned by the thread.
             The element is of type null when the object has been eliminated. </td>
     </tr>
