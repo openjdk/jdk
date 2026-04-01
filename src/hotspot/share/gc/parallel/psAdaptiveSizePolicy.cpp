@@ -258,7 +258,7 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool eden_squeezed_by_surv
     _grace_gc_count = 0;
   }
 
-  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, eden squeezed: %s, can commit young: %s, recovery count: %u)",
+  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, eden squeezed: %s, can commit young: %s, grace gc count: %u)",
                      original_threshold,
                      tenuring_threshold,
                      MaxTenuringThreshold,

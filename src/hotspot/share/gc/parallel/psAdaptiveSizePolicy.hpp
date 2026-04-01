@@ -46,6 +46,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // with increasing collections.
   uint _young_gen_size_increment_supplement;
 
+  // Count eligible young GCs before raising the tenuring threshold.
   uint _grace_gc_count;
 
   size_t decrease_eden_for_minor_pause_time(size_t current_eden_size);
