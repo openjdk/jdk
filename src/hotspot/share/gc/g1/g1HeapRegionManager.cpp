@@ -315,7 +315,6 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
   return uncommitted;
 }
 
-
 uint G1HeapRegionManager::expand_inactive(uint num_regions) {
   uint offset = 0;
   uint expanded = 0;

@@ -118,7 +118,7 @@ public:
 
   // Methods for time-based sizing analysis
   uint count_uncommit_candidates();
-  void find_uncommit_candidates_by_time(GrowableArray<G1HeapRegion*>* candidates, uint max_candidates);
+  void find_uncommit_candidates_by_time(GrowableArray<G1HeapRegion*>* candidates);
   bool should_uncommit_region(G1HeapRegion* hr) const;
 
   // Mark specific time-based candidates as idle for uncommitting

@@ -110,17 +110,20 @@ public:
   void work() override;
 };
 
-class VM_G1ShrinkHeap : public VM_Operation {
+class VM_G1ShrinkHeap : public VM_GC_Operation {
  private:
   G1CollectedHeap* _g1h;
-  size_t _bytes;  // Maximum bytes to shrink (used as hint for re-evaluation)
+  size_t _bytes;  // Maximum bytes to shrink (used as hint for re-evaluation).
+
+ protected:
+  bool skip_operation() const override;
+
  public:
-  VM_G1ShrinkHeap(G1CollectedHeap* g1h, size_t bytes)
-    : _g1h(g1h), _bytes(bytes) {}
+  VM_G1ShrinkHeap(G1CollectedHeap* g1h, uint gc_count_before, size_t bytes)
+    : VM_GC_Operation(gc_count_before, GCCause::_g1_periodic_collection, 0, false),
+      _g1h(g1h), _bytes(bytes) {}
   VMOp_Type type() const override { return VMOp_G1ShrinkHeap; }
-  const char* name() const override { return "G1ShrinkHeap"; }
-  bool is_gc_operation() const override { return true; }
-  void doit() override;  // Re-evaluates regions at safepoint
+  void doit() override;  // Re-evaluates regions at safepoint.
 };
 
 #endif // SHARE_GC_G1_G1VMOPERATIONS_HPP

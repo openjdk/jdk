@@ -1243,7 +1243,7 @@ void G1CollectedHeap::shrink_helper_with_time_based_selection(size_t shrink_byte
 
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
   log_debug(gc, ergo, heap)("Time-based shrink: Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
-                           shrink_bytes, shrunk_bytes, num_regions_removed);
+                            shrink_bytes, shrunk_bytes, num_regions_removed);
 
   if (num_regions_removed > 0) {
     log_info(gc, heap)("Time-based shrink: uncommitted %u oldest regions (%zuMB), heap size now %zuMB",
@@ -1284,7 +1284,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     }
     policy()->record_new_heap_size(num_committed_regions());
   } else {
-    log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
+    log_debug(gc, ergo, heap)("Heap resize. Did not shrink the heap (heap shrinking operation failed)");
   }
 }
 
@@ -1331,9 +1331,12 @@ void G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
     return;
   }
 
+  // Capture GC count before scheduling to detect if a GC occurs in the interim.
+  uint gc_count_before = total_collections();
+
   // Always schedule a VM operation for proper synchronization with GC.
   // The VM operation will re-evaluate which regions to uncommit at the time of execution.
-  VM_G1ShrinkHeap op(this, shrink_bytes);
+  VM_G1ShrinkHeap op(this, gc_count_before, shrink_bytes);
   VMThread::execute(&op);
 }
 
