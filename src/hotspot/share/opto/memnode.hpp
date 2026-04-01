@@ -186,7 +186,7 @@ public:
 // Analyze a MemNode to try to prove that it is independent from other memory accesses
 class AccessAnalyzer : StackObj {
 private:
-  PhaseValues* const _phase;
+  PhaseGVN* const _phase;
   MemNode* const _n;
   Node* _base;
   intptr_t _offset;
@@ -197,7 +197,7 @@ private:
   int _alias_idx;
 
 public:
-  AccessAnalyzer(PhaseValues* phase, MemNode* n);
+  AccessAnalyzer(PhaseGVN* phase, MemNode* n);
 
   // The result of deciding whether a memory node 'other' writes into the memory which '_n'
   // observes.

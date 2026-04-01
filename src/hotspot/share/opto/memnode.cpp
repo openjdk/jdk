@@ -698,7 +698,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
 // specific to loads and stores, so they are handled by the callers.
 // (Currently, only LoadNode::Ideal has steps (c), (d).  More later.)
 //
-Node* MemNode::find_previous_store(PhaseValues* phase) {
+Node* MemNode::find_previous_store(PhaseGVN* phase) {
   AccessAnalyzer analyzer(phase, this);
 
   Node* mem = in(MemNode::Memory); // start searching here...
@@ -774,7 +774,7 @@ uint8_t MemNode::barrier_data(const Node* n) {
   return 0;
 }
 
-AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
+AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n)
   : _phase(phase), _n(n), _memory_size(n->memory_size()), _alias_idx(-1) {
   Node* adr  = _n->in(MemNode::Address);
   _offset    = 0;
@@ -886,7 +886,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc)) {
+    } else if (MemNode::all_controls_dominate(_n, st_alloc, _phase)) {
       known_independent = true;
     }
 
