@@ -2258,7 +2258,7 @@ void os::set_native_thread_name(const char *name, size_t len) {
   if (name != nullptr) {
     // Add a "Java: " prefix to the name. Truncating directly like this is
     // faster than using snprintf.
-    char buf[MAXTHREADNAMESIZE] = { 'J', 'a', 'v', 'a', ':', " "};
+    char buf[MAXTHREADNAMESIZE] = { 'J', 'a', 'v', 'a', ':', ' '};
     const char* prefix = "Java: ";
     const size_t prefix_len = strlen(prefix);
     size_t name_len = MIN2(len, sizeof(buf) - (prefix_len + 1));
