@@ -27,7 +27,7 @@
 
 // Included in runtime/prefetch.inline.hpp
 
-#include <xmmintrin.h>
+#include <intrin.h>
 
 inline void Prefetch::read (const void *loc, intx interval) {
   if (interval >= 0) {
