@@ -1666,7 +1666,7 @@ import java.util.Arrays;
  * <tr style="border-top:1px solid #000;">
  * <td><code>byte[16]:128</code></td>
  * <td><code>reinterpretShape()</code></td>
- * <td><code>byte[8]: 64</code></td>
+ * <td><code>byte[16]:128</code></td>
  * <td>1</td>
  * <td>1/2</td>
  * <td>1/2</td>
@@ -1679,7 +1679,7 @@ import java.util.Arrays;
  * <tr>
  * <td><code>byte[16]:128</code></td>
  * <td><code>reinterpretShape()</code></td>
- * <td><code>byte[8]: 64</code></td>
+ * <td><code>byte[16]:128</code></td>
  * <td>1</td>
  * <td>1/2</td>
  * <td>1/2</td>
@@ -1692,7 +1692,7 @@ import java.util.Arrays;
  * <tr style="border-top:1px solid #000;">
  * <td><code>byte[8]: 64</code></td>
  * <td><code>reinterpretShape()</code></td>
- * <td><code>byte[16]:128</code></td>
+ * <td><code>byte[8]: 64</code></td>
  * <td>1</td>
  * <td>2</td>
  * <td>2</td>
@@ -1705,7 +1705,7 @@ import java.util.Arrays;
  * <tr>
  * <td><code>byte[8]: 64</code></td>
  * <td><code>reinterpretShape()</code></td>
- * <td><code>byte[16]:128</code></td>
+ * <td><code>byte[8]: 64</code></td>
  * <td>1</td>
  * <td>2</td>
  * <td>2</td>
