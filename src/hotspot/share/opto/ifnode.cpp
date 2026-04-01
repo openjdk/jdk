@@ -1005,7 +1005,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
         // The intersection is empty -> succ is not reachable.
         // Fold iff2 towards fail2 (and away from succ).
         igvn->replace_input_of(iff2, 1, igvn->intcon(fail2->_con));
-        return true;
+        return true; // success: succ not reachable
       }
     }
   }
@@ -1148,6 +1148,10 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   // -------------------------------------------------------------------
 
   // Handle the 4 cases.
+  // All produce this form: n - lo + x1 <cond> hi - lo + x2
+  Node* x1 = nullptr;
+  Node* x2 = nullptr;
+  BoolTest::mask cond = BoolTest::illegal;
   if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
     // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
@@ -1202,7 +1206,11 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    assert(false, "TODO a)");
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo -  1   <u   hi - lo - 1
+    x1 = igvn->intcon(-1);
+    x2 = igvn->intcon(-1);
+    cond = BoolTest::lt;
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
     // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
@@ -1270,7 +1278,11 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    assert(false, "TODO b)");
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo -  1   <u   hi - lo
+    x1 = igvn->intcon(-1);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::lt;
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
     // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
     //     (BEFORE)                   (AFTER)                     (LO-HI)
@@ -1318,7 +1330,11 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    assert(false, "TODO c)");
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo        <u   hi - lo
+    x1 = igvn->intcon(0);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::lt;
   } else {
     assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
     // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
@@ -1379,11 +1395,27 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     if (lo_type_hi < hi_type_lo - 1) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    assert(false, "TODO d)");
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo        <=u  hi - lo
+    x1 = igvn->intcon(0);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::le;
   }
 
-  assert(false, "TODO");
-  return false; // TODO: fix me!
+  // Construct the new check: n - lo + x1 <cond> hi - lo + x2
+  Node* lhs = igvn->transform(new SubINode(n,  lo));
+  lhs = igvn->transform(new AddINode(lhs, x1));
+  Node* rhs = igvn->transform(new SubINode(hi, lo));
+  rhs = igvn->transform(new AddINode(rhs, x2));
+  Node* newcmp = igvn->transform(new CmpUNode(lhs, rhs));
+  if (succ->Opcode() == Op_IfFalse) { cond = BoolTest::negate_mask(cond); }
+  Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
+
+  // Fold iff1 towards middle, and replace the iff2 condition:
+  igvn->replace_input_of(iff1, 1, igvn->intcon(middle->_con));
+  igvn->replace_input_of(iff2, 1, newbool);
+
+  return true; // Success with CmpU
 }
 
 // Merge the branches that trap for this If and the dominating If into
