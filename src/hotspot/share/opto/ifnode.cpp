@@ -1014,20 +1014,20 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   // We can handle the following 4 cases:
   //     Input: two CmpI            Output: one CmpU           Assumption
   //     --------------------       -------------------------  -------------------
-  // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u hi - lo - 1  (assuming lo <  hi) TODO: consider assumption?
-  //     (n >  2  && n <  5 )       n - 3      <u 2
+  // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
+  //     (n >  2  && n <  5 )       n - 3      <u  2
   //     range: [3, 4]
   //
-  // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u hi - a       (assuming lo <= hi)
-  //     (n >  2  && n <= 5 )       n - 3      <u 3
+  // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
+  //     (n >  2  && n <= 5 )       n - 3      <u  3
   //     range: [3, 4, 5]
   //
-  // c)  (n >= lo && n <  hi)  ->   n - lo     <u hi - a       (assuming lo <= hi)
-  //     (n >= 2  && n <  5 )       n - 2      <u 3
+  // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <  5 )       n - 2      <u  3
   //     range: [2, 3, 4]
   //
-  // d)  (n >= lo && n <= hi)  ->   TODO: problem case
-  //     (n >= 2  && n <= 5 )
+  // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <= 5 )       n - 2      <=u 3
   //     range: [2, 3, 4, 5]
   //
   // Note: the rhs of the CmpU indicates the cardinality of the range,
@@ -1095,19 +1095,70 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     return false;
   }
 
+  // -------------------------------------------------------------------
+  // In the proofs below, we need some basic Lemmas to deal with integer
+  // signed and unsigned arithmetic.
+  //
+  // Lemma1:
+  //   Let a and b be in [min_int .. max_int].
+  //   If a >=s b, then:
+  //     U(a - b) = a - b
+  //
+  //   Proof:
+  //     a >= b
+  //     -> a - b >= 0
+  //
+  //     a <= max_int
+  //     b >= min_int
+  //     -> a - b <= max_int - min_int = 2^32-1
+  //
+  //     0 <= a - b <= 2^32-1
+  //     -> cast to unsigned has no overflow
+  //     -> U(a - b) = a - b
+  //
+  // Lemma2:
+  //   Let a and b be in [min_int .. max_int].
+  //   If a <s b, then:
+  //     U(a - b) = a - b + 2^32
+  //
+  //   Proof:
+  //     a < b
+  //     -> a - b < 0
+  //
+  //     a >= min_int
+  //     b <= max_int
+  //     -> a - b >= min_int - max_int = 2^32-1
+  //
+  //     2^32-1 <= a - b < 0
+  //     -> cast to unsigned leads to exactly one overflow
+  //     -> U(a - b) = a - b + 2^32
+  //
+  // Lemma3:
+  //   Let a and b be in [min_int .. max_int].
+  //     a + 2^32 > b
+  //
+  //   Proof:
+  //     Using a >= min_int, and b <= max_int:
+  //     a + 2^32 <= min_int + 2^32
+  //               = max_int + 1
+  //              <= b       + 1
+  //              <  b
+  // -------------------------------------------------------------------
+
   // Handle the 4 cases.
   if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
-    // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u hi - lo - 1  (assuming lo <  hi)
+    // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
     //
     // Proof:
     //   From IfNode::filtered_int_type, we get:
     //     lo_type = [min_int .. lo->_hi]    for n <= lo
     //     -> lo_type->_hi = lo->_hi
-    //     hi_type = [hi->_lo .. max_int]
+    //     hi_type = [hi->_lo .. max_int]    for n >= lo
     //     -> hi_type->_lo = hi->_lo
     //   We will need the assumption "lo < hi" below, which we can
-    //   establish with the following check:
-    //     lo_type->_hi < hi_type->_lo
+    //   establish with the following (CHECK):
+    //     lo_type->_hi < hi_type->_lo               (CHECK)
     //     -> lo->_hi < hi->_lo
     //     -> lo      < hi                           (LO-HI)
     //
@@ -1147,16 +1198,76 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     // Note: we cannot use anything more relaxed than the assumption
     //       lo < hi: with lo=hi the rhs of the CmpU would undeflow.
     if (lo_type->_hi >= hi_type->_lo) {
-      return false; // Cannot establish assumption for (LO-HI)
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
     assert(false, "TODO a)");
   } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
-    // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u hi - a       (assuming lo <= hi)
+    // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - a       (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
   } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
-    // c)  (n >= lo && n <  hi)  ->   n - lo     <u hi - a       (assuming lo <= hi)
+    // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - a       (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
   } else {
     assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
-    // d)  (n >= lo && n <= hi)  ->
+    // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. max(min_int, lo->_hi-1)]   for n < lo
+    //     -> lo_type->_hi >= lo->_hi - 1
+    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]   for n > hi
+    //     -> hi_type->_lo <= hi->_lo + 1
+    //   We will need the assumption "lo <= hi" below, which we can
+    //   establish with the following (CHECK), which we must compute in
+    //   long to avoid underflow:
+    //        lo_type->_hi     <  hi_type->_lo - 1      (CHECK)
+    //     -> lo_type->_hi + 1 <= hi_type->_lo - 1
+    //     -> lo->_hi          <= hi->_lo
+    //     -> lo               <= hi                    (LO-HI)
+    //
+    //   Case n <s a:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              <= U(hi - lo)
+    //     -- Lemma2 (n < lo) --     -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo + 2^32        <=  hi - lo
+    //       n      + 2^32        <=  hi
+    //     Always false by Lemma3.
+    //
+    //   Case lo <=s n <=s hi:
+    //     (BEFORE) is always true, show (AFTER) is always true.
+    //     U(n - lo)              <= U(hi - lo)
+    //     -- Lemma1 (n >= lo) --    -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo               <=   hi - lo
+    //       n                    <=   hi
+    //     Corresponds to case assumption, so always true.
+    //
+    //   Case n >s hi:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              <=  U(hi - lo)
+    //     -- Lemma1 (n > lo) --      -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo               <=    hi - lo
+    //       n                    <=    hi
+    //       n                    <=    hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    // Note: (CHECK) is stronger in this case than in (a, b, c). We have
+    //       had multiple bugs around this case (d) in the past. For example:
+    //       - Before JDK-8135069: transform into: n - lo <=u hi - lo
+    //         leads to rhs underflow with lo=0      and hi=-1
+    //         -> we are coming back to this solution, but instead
+    //            of checking   lo_type->_hi <  hi_type->_lo
+    //            we now check: lo_type->_hi <  hi_type->_lo - 1
+    //            which implies lo <= hi and excludes this bad case.
+    //       - Before JDK-8346420: transform into: n - lo <u hi - lo + 1
+    //         leads to rhs overflow  with lo=min_int and hi=max_int
+    jlong lo_type_hi = lo_type->_hi;
+    jlong hi_type_lo = hi_type->_lo;
+    if (lo_type_hi < hi_type_lo - 1) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
+    assert(false, "TODO d)");
   }
 
   assert(false, "TODO");
