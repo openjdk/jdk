@@ -54,11 +54,4 @@ public class ThreadSetName {
         toggle = !toggle;
         Thread.currentThread().setName(toggle ? nameA : nameB);
     }
-
-    @Benchmark
-    public void setNameSame() {
-        // Setting the same name repeatedly; exercises the skip-unchanged
-        // optimization that avoids the native call entirely.
-        Thread.currentThread().setName(nameA);
-    }
 }
