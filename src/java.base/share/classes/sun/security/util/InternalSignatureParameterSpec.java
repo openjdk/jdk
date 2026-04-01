@@ -109,7 +109,7 @@ public final class InternalSignatureParameterSpec implements AlgorithmParameterS
 
     @Override
     public String toString() {
-        return context != null && context.length > 0 ? "hasContext" : "noContext"
+        return (context != null && context.length > 0 ? "hasContext" : "noContext")
                 + ", preHash=" + preHash
                 + (!features.isEmpty() ? ", features: " + features : "");
     }
