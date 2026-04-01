@@ -1256,7 +1256,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
-  // First, collector_state()->in_concurrent_start_gc() should not be already set. We
+  // First, collector_state()->is_in_concurrent_start_gc() should not already be set. We
   // will set it here if we have to. However, it should be cleared by
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
