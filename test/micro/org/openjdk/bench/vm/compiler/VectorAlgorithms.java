@@ -233,6 +233,26 @@ public class VectorAlgorithms {
     }
 
     @Benchmark
+    public int mismatchB_loop() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_loop);
+    }
+
+    @Benchmark
+    public int mismatchB_Arrays() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_Arrays);
+    }
+
+    @Benchmark
+    public int mismatchB_MemorySegment() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_MemorySegment);
+    }
+
+    @Benchmark
+    public int mismatchB_VectorAPI() {
+        return d.wrap_mismatchB(d.mismatchB_idx_idx++, VectorAlgorithmsImpl::mismatchB_VectorAPI);
+    }
+
+    @Benchmark
     public Object reverseI_loop() {
         return VectorAlgorithmsImpl.reverseI_loop(d.aI, d.rI1);
     }
