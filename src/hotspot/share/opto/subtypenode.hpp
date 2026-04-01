@@ -43,7 +43,7 @@ public:
   }
 
   Node* Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* sub(const Type*, const Type*) const;
+  virtual const Type* sub(const Type*, const Type*, PhaseGVN*) const;
   Node* Identity(PhaseGVN* phase) { return this; }
 
   virtual int Opcode() const;

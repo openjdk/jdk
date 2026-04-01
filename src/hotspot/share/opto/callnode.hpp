@@ -942,7 +942,7 @@ protected:
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:
-  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
+    CallLeafPureNode(const TypeFunc* tf, address addr, const char* name)
       : CallLeafNode(tf, addr, name, nullptr) {
     init_class_id(Class_CallLeafPure);
   }

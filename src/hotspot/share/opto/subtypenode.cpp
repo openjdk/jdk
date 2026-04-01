@@ -31,7 +31,7 @@
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
-const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const {
+const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t, PhaseGVN*) const {
   const TypeKlassPtr* superk = super_t->isa_klassptr();
   assert(sub_t != Type::TOP && !TypePtr::NULL_PTR->higher_equal(sub_t), "should be not null");
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();

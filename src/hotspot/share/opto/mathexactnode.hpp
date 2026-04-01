@@ -35,7 +35,7 @@ public:
   OverflowNode(Node* in1, Node* in2) : CmpNode(in1, in2) {}
 
   virtual uint ideal_reg() const { return Op_RegFlags; }
-  virtual const Type* sub(const Type* t1, const Type* t2) const;
+  virtual const Type* sub(const Type* t1, const Type* t2, PhaseGVN*) const;
 };
 
 class OverflowINode : public OverflowNode {
