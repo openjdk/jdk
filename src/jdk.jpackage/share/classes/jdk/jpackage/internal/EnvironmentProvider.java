@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal;
 
-#include "jni_util.h"
+public interface EnvironmentProvider {
 
-/* fieldIDs for Component fields that may be accessed from C */
-struct ComponentIDs {
-    jfieldID x;
-    jfieldID y;
-    jfieldID width;
-    jfieldID height;
-    jfieldID peer;
-    jfieldID background;
-    jfieldID foreground;
-    jfieldID isPacked;
-    jfieldID graphicsConfig;
-    jfieldID name;
-    jfieldID isProxyActive;
-    jmethodID getParent;
-    jmethodID getLocationOnScreen;
-};
+    String getProperty(String propertyName);
+
+    String getenv(String envVarName);
+
+    public static EnvironmentProvider DEFAULT = new EnvironmentProvider() {
+
+        @Override
+        public String getenv(String envVarName) {
+            return System.getenv(envVarName);
+        }
+
+        @Override
+        public String getProperty(String propertyName) {
+            return System.getProperty(propertyName);
+        }
+    };
+}

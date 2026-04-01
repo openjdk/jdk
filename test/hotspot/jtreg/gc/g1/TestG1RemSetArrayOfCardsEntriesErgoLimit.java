@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,21 +21,23 @@
  * questions.
  */
 
-#include "jni_util.h"
+/**
+ * @test
+ * @bug 8379174
+ * @summary Test for G1 ergonomics deriving an out-of-range
+ *          G1RemSetArrayOfCardsEntries value from G1RemSetArrayOfCardsEntriesBase
+ * @requires vm.gc.G1
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UseG1GC
+ *                   -XX:G1RemSetArrayOfCardsEntriesBase=62117
+ *                   -XX:G1HeapRegionSize=4m
+ *                   ${test.main.class}
+ */
 
-/* fieldIDs for Component fields that may be accessed from C */
-struct ComponentIDs {
-    jfieldID x;
-    jfieldID y;
-    jfieldID width;
-    jfieldID height;
-    jfieldID peer;
-    jfieldID background;
-    jfieldID foreground;
-    jfieldID isPacked;
-    jfieldID graphicsConfig;
-    jfieldID name;
-    jfieldID isProxyActive;
-    jmethodID getParent;
-    jmethodID getLocationOnScreen;
-};
+package gc.g1;
+
+public class TestG1RemSetArrayOfCardsEntriesErgoLimit {
+    public static void main(String[] args) {
+        System.out.println("passed");
+    }
+}
