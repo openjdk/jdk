@@ -275,7 +275,9 @@ void VM_RedefineClasses::doit() {
     redefine_single_class(current, _class_defs[i].klass, _scratch_classes[i]);
   }
 
+#if INCLUDE_CDS
   TrainingData::cleanup_after_redefinition();
+#endif
 
   // Flush all compiled code that depends on the classes redefined.
   flush_dependent_code();
