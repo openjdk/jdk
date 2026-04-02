@@ -285,6 +285,9 @@ final class PeerConnIdManager {
     public List<byte[]> activeResetTokens() {
         lock.lock();
         try {
+            // this method is currently only used to remove a connection from the endpoint
+            // after the connection is closed.
+            // The below assert can be removed if the method is needed elsewhere.
             assert closed;
             // we only support one active connection ID at the time
             PeerConnectionId cid = peerConnectionIds.get(activeConnIdSeq);
