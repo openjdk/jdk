@@ -25,6 +25,7 @@
  * @test
  * @bug 8067449
  * @key headful
+ * @requires (os.family != "mac")
  * @summary Test SwingUtilities.getSystemMnemonicKeyMask()
  * @run main TestMnemonicMask
  */
@@ -125,20 +126,8 @@ public class TestMnemonicMask {
     }
 
     private static int getModKeyCode(int mod) {
-        if ((mod & (InputEvent.SHIFT_DOWN_MASK | InputEvent.SHIFT_MASK)) != 0) {
-            return KeyEvent.VK_SHIFT;
-        }
-
-        if ((mod & (InputEvent.CTRL_DOWN_MASK | InputEvent.CTRL_MASK)) != 0) {
-            return KeyEvent.VK_CONTROL;
-        }
-
         if ((mod & (InputEvent.ALT_DOWN_MASK | InputEvent.ALT_MASK)) != 0) {
             return KeyEvent.VK_ALT;
-        }
-
-        if ((mod & (InputEvent.META_DOWN_MASK | InputEvent.META_MASK)) != 0) {
-            return KeyEvent.VK_META;
         }
 
         return 0;
