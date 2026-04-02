@@ -37,7 +37,7 @@
 package compiler.arraycopy;
 
 public class TestACNonEscapingSrcBadAddPBaseType {
-    private static volatile int voltileField;
+    private static volatile int volatileField;
 
     public static void main(String[] args) {
         int[] dst = new int[2];
