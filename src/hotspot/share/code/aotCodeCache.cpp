@@ -381,19 +381,14 @@ void AOTCodeCache::init_early_c1_table() {
 }
 
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
-  _systemClassAssertions = JavaAssertions::systemClassDefault();
-  _userClassAssertions = JavaAssertions::userClassDefault();
 
 #define AOTCODECACHE_SAVE_VAR(type, name) _saved_ ## name =  name;
+#define AOTCODECACHE_SAVE_FUN(type, name, fun) _saved_ ## name =  fun;
 
-  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR);
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR, AOTCODECACHE_SAVE_FUN);
 
-  // The following needs special handling, so record/check manually
-  _compressedOops        = UseCompressedOops;
-  _compressedOopShift    = CompressedOops::shift();
+  // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
-  _compressedKlassShift  = CompressedKlassPointers::shift();
-  _gc                    = (uint)Universe::heap()->kind();
 
 #if defined(X86) && !defined(ZERO)
   _useUnalignedLoadStores = UseUnalignedLoadStores;
@@ -450,6 +445,11 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
 
 #define AOTCODECACHE_DISABLED_MSG "AOT Code Cache disabled: it was created with %s = "
 
+inline void log_config_mismatch(CollectedHeap::Name saved, CollectedHeap::Name current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "\"%s\" vs current \"%s\"", name,
+                                  GCConfig::hs_err_name(saved), GCConfig::hs_err_name(current));
+}
+
 inline void log_config_mismatch(bool saved, bool current, const char* name) {
   log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%s vs current %s", name,
                                   saved ? "true" : "false", current ? "true" : "false");
@@ -460,7 +460,7 @@ inline void log_config_mismatch(int saved, int current, const char* name) {
 }
 
 inline void log_config_mismatch(uint saved, uint current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%u vs current %u",name, saved, current);
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%u vs current %u", name, saved, current);
 }
 
 #ifdef _LP64
@@ -469,7 +469,7 @@ inline void log_config_mismatch(intx saved, intx current, const char* name) {
 }
 
 inline void log_config_mismatch(uintx saved, uintx current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu",name, saved, current);
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu", name, saved, current);
 }
 #endif
 
@@ -484,18 +484,6 @@ bool check_config(T saved, T current, const char* name) {
 }
 
 bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
-  // First checks affect all cached AOT code
-  CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
-  if (aot_gc != Universe::heap()->kind()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
-    return false;
-  }
-
-  if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
-    return false;
-  }
-
   // check CPU features before checking flags that may be
   // auto-configured in response to them
   if (!verify_cpu_features(cache)) {
@@ -508,14 +496,24 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 
 #define AOTCODECACHE_CHECK_VAR(type, name) \
   if (!check_config(_saved_ ## name, name, #name)) { return false; }
+#define AOTCODECACHE_CHECK_FUN(type, name, fun) \
+  if (!check_config(_saved_ ## name, fun, #fun)) { return false; }
 
-  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR)
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
+
+  // Special configs that cannot be checked with macros
+
+  if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
+                                    _compressedOopBase, CompressedOops::base());
+    return false;
+  }
 
 #if defined(X86) && !defined(ZERO)
   // switching off UseUnalignedLoadStores can affect validity of fill
   // stubs
   if (_useUnalignedLoadStores && !UseUnalignedLoadStores) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
+    log_config_mismatch(_useUnalignedLoadStores, UseUnalignedLoadStores, "UseUnalignedLoadStores");
     return false;
   }
 #endif // defined(X86) && !defined(ZERO)
@@ -524,27 +522,10 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
   if (!_avoidUnalignedAccesses && AvoidUnalignedAccesses) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AvoidUnalignedAccesses = false vs current = true");
+    log_config_mismatch(_avoidUnalignedAccesses, AvoidUnalignedAccesses, "AvoidUnalignedAccesses");
     return false;
   }
 #endif // defined(AARCH64) && !defined(ZERO)
-
-  // The following checks do not affect AOT adapters caching
-
-  if (_compressedOops != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s vs current %s", (_compressedOops ? "true" : "false"), (UseCompressedOops ? "true" : "false"));
-    AOTStubCaching = false;
-  }
-  if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
-    AOTStubCaching = false;
-  }
-
-  // This should be the last check as it only disables AOTStubCaching
-  if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: incompatible CompressedOops::base(): %p vs current %p", _compressedOopBase, CompressedOops::base());
-    AOTStubCaching = false;
-  }
 
   return true;
 }

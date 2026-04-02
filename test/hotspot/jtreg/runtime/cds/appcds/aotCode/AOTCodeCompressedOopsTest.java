@@ -202,15 +202,15 @@ public class AOTCodeCompressedOopsTest {
                      throw new RuntimeException("Failed to find CompressedOops settings");
                  }
 
-                 if (!out.contains("AOT Code Cache disabled:")) {
-                     // Changes in compressed oop encoding could randomly affect flags like AllocatePrefetchDistance
-                     // due to the OS-assigned range of the Java heap. If that happens, the entire AOT code cache is
-                     // disabled, and we won't see the following messages.
-                     if (aotCacheShift != currentShift) {
-                         out.shouldContain("AOTStubCaching is disabled: it was created with different CompressedOops::shift()");
-                     } else if ((aotCacheBase == 0 || currentBase == 0) && (aotCacheBase != currentBase)) {
-                         out.shouldContain("AOTStubCaching is disabled: incompatible CompressedOops::base()");
-                     } else {
+                 // Changes in compressed oop encoding could randomly affect flags like AllocatePrefetchDistance
+                 // due to the OS-assigned range of the Java heap. If that happens, the exact error message may vary
+                 String disabledMsg = "AOT Code Cache disabled:";
+                 if (aotCacheShift != currentShift) {
+                     out.shouldContain(disabledMsg);
+                 } else if ((aotCacheBase == 0 || currentBase == 0) && (aotCacheBase != currentBase)) {
+                     out.shouldContain(disabledMsg);
+                 } else {
+                     if (!out.contains(disabledMsg)) {
                          out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
                      }
                  }
