@@ -277,7 +277,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
   for (uint worklist_idx = 0; worklist_idx < to_visit.size(); worklist_idx++) {
     Node* mem = to_visit.at(worklist_idx);
 
-    if (mem->is_Proj() && mem->in(0)->is_ArrayCopy() && mem->in(0) == ac) {
+    if (mem->is_Proj() && mem->in(0) == ac) {
       // Reached the target, so visit what is left on the worklist.
       continue;
     }
