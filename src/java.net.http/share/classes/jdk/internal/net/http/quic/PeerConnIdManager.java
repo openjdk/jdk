@@ -548,7 +548,10 @@ final class PeerConnIdManager {
 
     public void close() {
         lock.lock();
-        closed = true;
-        lock.unlock();
+        try {
+            closed = true;
+        } finally {
+            lock.unlock();
+        }
     }
 }
