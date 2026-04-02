@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,31 @@
  * questions.
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.spi.InetAddressResolver;
 
-import static org.testng.Assert.*;
 
 /*
  * @test
  * @summary white-box test to check that the built-in resolver
  *  is used by default.
  * @modules java.base/java.net:open
- * @run testng/othervm BuiltInResolverTest
+ * @run junit/othervm BuiltInResolverTest
  */
 
 public class BuiltInResolverTest {
 
-    private Field builtInResolverField, resolverField;
+    private static Field builtInResolverField, resolverField;
 
-    @BeforeTest
-    public void beforeTest() throws NoSuchFieldException {
+    @BeforeAll
+    public static void beforeTest() throws NoSuchFieldException {
         Class<InetAddress> inetAddressClass = InetAddress.class;
         // Needs to happen for InetAddress.resolver to be initialized
         try {
@@ -64,15 +65,15 @@ public class BuiltInResolverTest {
         Object defaultResolverObject = builtInResolverField.get(InetAddressResolver.class);
         Object usedResolverObject = resolverField.get(InetAddressResolver.class);
 
-        assertTrue(defaultResolverObject == usedResolverObject);
+        Assertions.assertTrue(defaultResolverObject == usedResolverObject);
 
         String defaultClassName = defaultResolverObject.getClass().getCanonicalName();
         String currentClassName = usedResolverObject.getClass().getCanonicalName();
 
-        assertNotNull(defaultClassName, "defaultClassName not set");
-        assertNotNull(currentClassName, "currentClassName name not set");
+        Assertions.assertNotNull(defaultClassName, "defaultClassName not set");
+        Assertions.assertNotNull(currentClassName, "currentClassName name not set");
 
-        assertEquals(currentClassName, defaultClassName,
+        Assertions.assertEquals(defaultClassName, currentClassName,
                 "BUILTIN_RESOLVER resolver was not used.");
         System.err.println("Resolver used by default is the built-in resolver");
     }

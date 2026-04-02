@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import impl.ThrowingLookupsProviderImpl;
 
 import static impl.ThrowingLookupsProviderImpl.RUNTIME_EXCEPTION_MESSAGE;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * implementation throws RuntimeException during forward or reverse lookup.
  * @library providers/throwing
  * @build throwing.lookups.provider/impl.ThrowingLookupsProviderImpl
- * @run testng/othervm ResolutionWithExceptionTest
+ * @run junit/othervm ResolutionWithExceptionTest
  */
 
 public class ResolutionWithExceptionTest {
@@ -68,7 +68,7 @@ public class ResolutionWithExceptionTest {
 
     private void runGetByNameTest() {
         // InetAddress.getByName() is expected to throw UnknownHostException in all cases
-        UnknownHostException uhe = Assert.expectThrows(UnknownHostException.class,
+        UnknownHostException uhe = Assertions.assertThrows(UnknownHostException.class,
                 () -> InetAddress.getByName("doesnt.matter.com"));
         // If provider is expected to throw RuntimeException - check that UnknownHostException
         // is set as its cause
@@ -76,10 +76,10 @@ public class ResolutionWithExceptionTest {
             Throwable cause = uhe.getCause();
             if (cause instanceof RuntimeException re) {
                 // Check RuntimeException message
-                Assert.assertEquals(re.getMessage(), RUNTIME_EXCEPTION_MESSAGE,
+                Assertions.assertEquals(RUNTIME_EXCEPTION_MESSAGE, re.getMessage(),
                         "incorrect exception message");
             } else {
-                Assert.fail("UnknownHostException cause is not RuntimeException");
+                Assertions.fail("UnknownHostException cause is not RuntimeException");
             }
         }
     }
@@ -89,6 +89,6 @@ public class ResolutionWithExceptionTest {
         // if there is an error during reverse lookup operation the literal IP
         // address String will be returned.
         String literalIP = InetAddress.getByAddress(new byte[]{1, 2, 3, 4}).getCanonicalHostName();
-        Assert.assertEquals(literalIP, "1.2.3.4");
+        Assertions.assertEquals("1.2.3.4", literalIP);
     }
 }
