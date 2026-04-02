@@ -274,7 +274,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     Node* base = ac->in(ArrayCopyNode::Src);
-    Node* adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
+    Node* adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
     MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -293,7 +293,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       if (src_pos_t->is_con() && dest_pos_t->is_con()) {
         intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
+        adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(off)));
         adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Don't emit a new load from src if src == dst but try to get the value from memory instead
@@ -308,7 +308,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 
         Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, off));
+        adr = _igvn.transform(AddPNode::make_with_base(base, off));
         adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Non constant offset in the array: we can't statically
@@ -973,7 +973,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           }
           k -= (oc2 - use->outcnt());
         }
-        _igvn.remove_dead_node(use);
+        _igvn.remove_dead_node(use, PhaseIterGVN::NodeOrigin::Graph);
       } else if (use->is_ArrayCopy()) {
         // Disconnect ArrayCopy node
         ArrayCopyNode* ac = use->as_ArrayCopy();
@@ -1008,7 +1008,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           // src can be top at this point if src and dest of the
           // arraycopy were the same
           if (src->outcnt() == 0 && !src->is_top()) {
-            _igvn.remove_dead_node(src);
+            _igvn.remove_dead_node(src, PhaseIterGVN::NodeOrigin::Graph);
           }
         }
         _igvn._worklist.push(ac);
@@ -1018,7 +1018,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       j -= (oc1 - res->outcnt());
     }
     assert(res->outcnt() == 0, "all uses of allocated objects must be deleted");
-    _igvn.remove_dead_node(res);
+    _igvn.remove_dead_node(res, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   //
@@ -1199,7 +1199,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
-  Node* adr = basic_plus_adr(top(), base, offset);
+  Node* adr = off_heap_plus_addr(base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
@@ -1208,7 +1208,7 @@ Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offs
 
 
 Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
-  Node* adr = basic_plus_adr(top(), base, offset);
+  Node* adr = off_heap_plus_addr(base, offset);
   mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
@@ -1502,7 +1502,7 @@ void PhaseMacroExpand::expand_allocate_common(
       transform_later(_callprojs.fallthrough_memproj);
     }
     migrate_outs(_callprojs.catchall_memproj, _callprojs.fallthrough_memproj);
-    _igvn.remove_dead_node(_callprojs.catchall_memproj);
+    _igvn.remove_dead_node(_callprojs.catchall_memproj, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // An allocate node has separate i_o projections for the uses on the control
@@ -1521,7 +1521,7 @@ void PhaseMacroExpand::expand_allocate_common(
       transform_later(_callprojs.fallthrough_ioproj);
     }
     migrate_outs(_callprojs.catchall_ioproj, _callprojs.fallthrough_ioproj);
-    _igvn.remove_dead_node(_callprojs.catchall_ioproj);
+    _igvn.remove_dead_node(_callprojs.catchall_ioproj, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // if we generated only a slow call, we are done
@@ -1585,11 +1585,11 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
       --i; // back up iterator
     }
     assert(_callprojs.resproj->outcnt() == 0, "all uses must be deleted");
-    _igvn.remove_dead_node(_callprojs.resproj);
+    _igvn.remove_dead_node(_callprojs.resproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_catchproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_catchproj, ctrl);
-    _igvn.remove_dead_node(_callprojs.fallthrough_catchproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_catchproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.catchall_catchproj != nullptr) {
     _igvn.rehash_node_delayed(_callprojs.catchall_catchproj);
@@ -1597,16 +1597,16 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   }
   if (_callprojs.fallthrough_proj != nullptr) {
     Node* catchnode = _callprojs.fallthrough_proj->unique_ctrl_out();
-    _igvn.remove_dead_node(catchnode);
-    _igvn.remove_dead_node(_callprojs.fallthrough_proj);
+    _igvn.remove_dead_node(catchnode, PhaseIterGVN::NodeOrigin::Graph);
+    _igvn.remove_dead_node(_callprojs.fallthrough_proj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_memproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_memproj, mem);
-    _igvn.remove_dead_node(_callprojs.fallthrough_memproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_memproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_ioproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_ioproj, i_o);
-    _igvn.remove_dead_node(_callprojs.fallthrough_ioproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_ioproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.catchall_memproj != nullptr) {
     _igvn.rehash_node_delayed(_callprojs.catchall_memproj);
@@ -1625,7 +1625,7 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
     }
   }
 #endif
-  _igvn.remove_dead_node(alloc);
+  _igvn.remove_dead_node(alloc, PhaseIterGVN::NodeOrigin::Graph);
 }
 
 void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeNode* init,
@@ -1834,7 +1834,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* thread = new ThreadLocalNode();
       transform_later(thread);
 
-      Node* eden_pf_adr = new AddPNode(top()/*not oop*/, thread,
+      Node* eden_pf_adr = AddPNode::make_off_heap(thread,
                    _igvn.MakeConX(in_bytes(JavaThread::tlab_pf_top_offset())));
       transform_later(eden_pf_adr);
 
@@ -1860,8 +1860,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* need_pf_false = new IfFalseNode(need_pf_iff);
       transform_later(need_pf_false);
 
-      Node* new_pf_wmt = new AddPNode(top(), old_pf_wm,
-                                    _igvn.MakeConX(AllocatePrefetchDistance));
+      Node* new_pf_wmt = AddPNode::make_off_heap(old_pf_wm,
+                                                 _igvn.MakeConX(AllocatePrefetchDistance));
       transform_later(new_pf_wmt);
       new_pf_wmt->set_req(0, need_pf_true);
 
@@ -1880,8 +1880,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = 0;
 
       for (intx i = 0; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), new_pf_wmt,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(new_pf_wmt,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(i_o, prefetch_adr);
         transform_later(prefetch);
@@ -1912,8 +1912,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = AllocatePrefetchDistance;
 
       // Next cache address.
-      Node* cache_adr = new AddPNode(top(), old_eden_top,
-                                     _igvn.MakeConX(step_size + distance));
+      Node* cache_adr = AddPNode::make_off_heap(old_eden_top,
+                                                _igvn.MakeConX(step_size + distance));
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
@@ -1932,8 +1932,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* prefetch_adr;
       distance = step_size;
       for (intx i = 1; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), cache_adr,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(cache_adr,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(contended_phi_rawmem, prefetch_adr);
         transform_later(prefetch);
@@ -1948,8 +1948,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for (intx i = 0; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), new_eden_top,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(new_eden_top,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(i_o, prefetch_adr);
         // Do not let it float too high, since if eden_top == eden_end,
@@ -2500,6 +2500,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
+               n->Opcode() == Op_PowD ||
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2656,18 +2657,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     default:
       switch (n->Opcode()) {
       case Op_ModD:
-      case Op_ModF: {
-        CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
-        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
-        call->init_req(TypeFunc::I_O, C->top());
-        call->init_req(TypeFunc::Memory, C->top());
-        call->init_req(TypeFunc::ReturnAdr, C->top());
-        call->init_req(TypeFunc::FramePtr, C->top());
-        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
-        }
-        _igvn.replace_node(mod_macro, call);
+      case Op_ModF:
+      case Op_PowD: {
+        CallLeafPureNode* call_macro = n->as_CallLeafPure();
+        CallLeafPureNode* call = call_macro->inline_call_leaf_pure_node();
+        _igvn.replace_node(call_macro, call);
         transform_later(call);
         break;
       }

@@ -755,8 +755,6 @@ public final class AWTAccessor {
      * An accessor object for the AccessibleContext class
      */
     public interface AccessibleContextAccessor {
-        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
-        AppContext getAppContext(AccessibleContext accessibleContext);
         Object getNativeAXResource(AccessibleContext accessibleContext);
         void setNativeAXResource(AccessibleContext accessibleContext, Object value);
     }

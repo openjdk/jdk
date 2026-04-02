@@ -45,10 +45,10 @@ class ExplicitHugePageSupport {
 
   // All supported hugepage sizes (sizes for which entries exist
   // in /sys/kernel/mm/hugepages/hugepage-xxx)
-  os::PageSizes _pagesizes;
+  os::PageSizes _os_supported;
 
   // Above pages filtered for where the contents of file nr_hugepages was larger than zero
-  os::PageSizes _pre_allocated_pagesizes;
+  os::PageSizes _pre_allocated;
 
   // Contains the default hugepage. The "default hugepage size" is the one that
   // - is marked in /proc/meminfo as "Hugepagesize"
@@ -63,8 +63,8 @@ public:
 
   void scan_os();
 
-  os::PageSizes pagesizes() const;
-  os::PageSizes pre_allocated_pagesizes() const;
+  os::PageSizes os_supported() const;
+  os::PageSizes pre_allocated() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
 

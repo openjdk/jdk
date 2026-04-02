@@ -697,7 +697,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
     }
 #ifdef ASSERT
     if (mm != nullptr) {
-      _igvn.remove_dead_node(mm);
+      _igvn.remove_dead_node(mm, PhaseIterGVN::NodeOrigin::Speculative);
     }
 #endif
   }
@@ -2002,7 +2002,7 @@ bool CountedLoopConverter::stress_long_counted_loop() {
       Node* n = iv_nodes.at(i);
       Node* clone = old_new[n->_idx];
       if (clone != nullptr) {
-        igvn->remove_dead_node(clone);
+        igvn->remove_dead_node(clone, PhaseIterGVN::NodeOrigin::Speculative);
       }
     }
     return false;
@@ -2137,7 +2137,6 @@ bool CountedLoopConverter::is_counted_loop() {
   }
 
   assert(_head->Opcode() == Op_Loop || _head->Opcode() == Op_LongCountedLoop, "regular loops only");
-  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2411,6 +2410,12 @@ bool CountedLoopConverter::is_counted_loop() {
   _checked_for_counted_loop = true;
 #endif
 
+#ifndef PRODUCT
+  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+    return false;
+  }
+#endif
+
   return true;
 }
 
@@ -2552,6 +2557,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
 #endif
 
   PhaseIterGVN* igvn = &_phase->igvn();
+
+  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   if (_should_insert_stride_overflow_limit_check) {
     insert_stride_overflow_limit_check();
@@ -4338,8 +4345,13 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
-    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
-      // Terminate this path
+    if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
+        && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
+      // Terminate this path: guaranteed safepoint found.
+      // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+      // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+      // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+      // to avoid this additional check.
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
@@ -4437,7 +4449,12 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
+        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+        // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+        // to avoid this additional check.
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
+            && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
           has_call = true;
           _has_sfpt = 1;          // Then no need for a safept!
           break;
@@ -4659,7 +4676,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     _igvn.replace_node( phi2, add );
     // Sometimes an induction variable is unused
     if (add->outcnt() == 0) {
-      _igvn.remove_dead_node(add);
+      _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
     }
     --i; // deleted this phi; rescan starting with next position
   }
@@ -4734,7 +4751,11 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
+    // This is expected behavior for the stress mode, which exercises alternative compilation paths.
+    if (!StressCountedLoop) {
+      assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;
@@ -5333,7 +5354,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // clear out the dead code after build_loop_late
   while (_deadlist.size()) {
-    _igvn.remove_globally_dead_node(_deadlist.pop());
+    _igvn.remove_globally_dead_node(_deadlist.pop(), PhaseIterGVN::NodeOrigin::Graph);
   }
 
   eliminate_useless_zero_trip_guard();

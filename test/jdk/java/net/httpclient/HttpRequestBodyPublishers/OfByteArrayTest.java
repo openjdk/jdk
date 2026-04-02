@@ -25,7 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofByteArray` behavior
- * @build RecordingSubscriber
+ *
+ * @build ByteBufferUtils
+ *        RecordingSubscriber
+ *        ReplayTestSupport
+ *
  * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
@@ -55,14 +60,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @run main/othervm -Djdk.httpclient.bufsize=2 ${test.main.class} testChunking abcdef 2 4 cd:ef
  */
 
-public class OfByteArrayTest {
+public class OfByteArrayTest extends ReplayTestSupport {
 
     private static final Charset CHARSET = StandardCharsets.US_ASCII;
 
     @Test
     void testNullContent() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArray(null));
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArray(null, 1, 2));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArray(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArray(null, 1, 2));
     }
 
     @ParameterizedTest
@@ -78,7 +83,15 @@ public class OfByteArrayTest {
         byte[] content = contentText.getBytes(CHARSET);
         assertThrows(
                 IndexOutOfBoundsException.class,
-                () -> HttpRequest.BodyPublishers.ofByteArray(content, offset, length));
+                () -> BodyPublishers.ofByteArray(content, offset, length));
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] content = "this content needs to be replayed again and again".getBytes(CHARSET);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
+        BodyPublisher publisher = BodyPublishers.ofByteArray(content);
+        return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
     /**
@@ -105,7 +118,7 @@ public class OfByteArrayTest {
 
         // Create the publisher
         byte[] content = contentText.getBytes(CHARSET);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArray(content, offset, length);
+        BodyPublisher publisher = BodyPublishers.ofByteArray(content, offset, length);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();

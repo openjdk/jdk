@@ -625,14 +625,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         while(true) {
             // Fix for 6829923: we should gracefully handle toolkit thread interruption
             if (Thread.currentThread().isInterrupted()) {
-                // We expect interruption from the AppContext.dispose() method only.
                 // If the thread is interrupted from another place, let's skip it
-                // for compatibility reasons. Probably some time later we'll remove
-                // the check for AppContext.isDisposed() and will unconditionally
-                // break the loop here.
-                if (AppContext.getAppContext().isDisposed()) {
-                    break;
-                }
+                // for compatibility reasons.
             }
             awtLock();
             try {
@@ -2052,14 +2046,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE) ||
                (exclusionType == Dialog.ModalExclusionType.APPLICATION_EXCLUDE) ||
                (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE);
-    }
-
-    static EventQueue getEventQueue(Object target) {
-        AppContext appContext = targetToAppContext(target);
-        if (appContext != null) {
-            return (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
-        }
-        return null;
     }
 
     static void removeSourceEvents(EventQueue queue,

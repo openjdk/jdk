@@ -210,7 +210,7 @@ public class TestUnstableIfTrap {
         boolean isMethodCompiledAtMaxTier
                 = WB.getMethodCompilationLevel(m) == MAX_TIER;
 
-        return Platform.isServer() && !Platform.isEmulatedClient() && isMethodCompiled
+        return Platform.isServer() && isMethodCompiled
                 && (!isTiered || isMethodCompiledAtMaxTier);
     }
 

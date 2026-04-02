@@ -249,6 +249,9 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
+  develop(bool, TraceSplitIf, false,                                        \
+          "Trace Split-If optimization")                                    \
+                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
@@ -702,6 +705,10 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
+  develop(bool, UseDeepIGVNRevisit, true,                                   \
+          "Re-process nodes that could benefit from a deep revisit after "  \
+          "the IGVN worklist drains")                                       \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
           "  F: verify Node::Ideal does not return nullptr if the node"     \
@@ -904,6 +911,9 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  develop(bool, StressCountedLoop, false,                                   \
+          "Randomly delay conversion to counted loops")                     \
 
 // end of C2_FLAGS
 
