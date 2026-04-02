@@ -28,6 +28,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -323,6 +324,128 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
   return array;
 }
 
+/**
+ * Initialize the graph, equivalent to the following Java code:
+ *
+ * for (int index = 0; index < length1; index++)
+ *   multi_array[index] = new array_klass[length2];
+ *
+ * The actual loop structure:
+ *
+ * if (length1 > 0) {
+ *   int index = 0;
+ *   do {
+ *     multi_array[index] = new T[length2];
+ *     index++;
+ *   } while (index < length1);
+ * }
+ *
+ * The corresponding C2 IR graph:
+ *
+ * CmpI(length1, 0) -> Bool(gt) -> If
+ *   IfFalse => skip_ctrl
+ *   IfTrue =>
+ *     CastII(length2, POS) -> length2
+ *     LoopNode(IfTrue, back_edge)
+ *       Phi(LoopNode, 0,       next_index) -> index
+ *       Phi(LoopNode, pre_mem, body_mem)
+ *       Phi(LoopNode, pre_io,  body_io)
+ *       AllocateArray(klass_1, length2) -> array
+ *       StoreP(array_element_address(multi_array, index), array)
+ *       AddI(index, 1) -> next_index
+ *       CmpI(next_index, length1) -> Bool(lt) -> If
+ *         IfTrue  => back_edge => LoopNode
+ *         IfFalse => loop_exit
+ * Region(skip_ctrl, loop_exit)
+ *   Phi(Region, pre_mem, body_mem)
+ *   Phi(Region, pre_io,  body_io)
+ */
+void Parse::init_array2d(Node* multi_array,
+                         ciArrayKlass* array_klass,
+                         Node* length1, Node* length2) {
+
+  C->set_has_loops(true);
+
+  Node* i_init = _gvn.intcon(0);
+  Node* cmp_init = _gvn.transform(new CmpINode(length1, i_init));
+  Node* bool_init = _gvn.transform(new BoolNode(cmp_init, BoolTest::gt));
+  IfNode* iff_init = create_and_map_if(control(), bool_init, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* skip_ctrl = IfFalse(iff_init); // skip if length1 <= 0
+  set_control(IfTrue(iff_init));
+
+  // Narrow length2 to POS so new_array() in the loop body skips its own CastII.
+  if (!_gvn.type(length2)->higher_equal(TypeInt::POS)) {
+    length2 = _gvn.transform(new CastIINode(control(), length2, TypeInt::POS));
+  }
+
+  Node* pre_mem = merged_memory();
+  Node* pre_io  = i_o();
+
+  LoopNode* head = new LoopNode(control(), C->top()); // back-edge wired below
+  _gvn.set_type(head, Type::CONTROL);
+  record_for_igvn(head);
+
+  // int index = 0
+  PhiNode* index = new PhiNode(head, TypeInt::INT);
+  index->init_req(1, i_init);
+  _gvn.set_type(index, TypeInt::INT);
+  record_for_igvn(index);
+
+  PhiNode* mem_phi = PhiNode::make(head, pre_mem, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(mem_phi);
+  PhiNode* io_phi = PhiNode::make(head, pre_io, Type::ABIO);
+  _gvn.set_type(io_phi, Type::ABIO);
+  record_for_igvn(io_phi);
+
+  set_control(head);
+  set_all_memory(mem_phi);
+  set_i_o(io_phi);
+
+  ciArrayKlass* array_klass_1 =
+      array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
+  Node* klass_node = makecon(TypeKlassPtr::make(array_klass_1, Type::trust_interfaces));
+
+  Node* array = _gvn.transform(new_array(klass_node, length2, false));
+
+  store_to_memory(control(),
+                  array_element_address(multi_array, index, T_OBJECT),
+                  array,
+                  T_OBJECT, MemNode::unordered, TypeAryPtr::OOPS, false, false, true);
+
+  Node* new_i = _gvn.transform(new AddINode(index, _gvn.intcon(1)));
+  Node* cmp = _gvn.transform(new CmpINode(new_i, length1));
+  Node* bool_cmp = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+  IfNode* iff = create_and_map_if(control(), bool_cmp, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* loop_body_mem = merged_memory();
+  Node* loop_body_io  = i_o();
+
+  head->set_req(LoopNode::LoopBackControl, IfTrue(iff));
+  index->init_req(2, new_i);
+  mem_phi->set_req(2, loop_body_mem);
+  io_phi->set_req(2, loop_body_io);
+
+  RegionNode* exit_region = new RegionNode(3);
+  exit_region->init_req(1, skip_ctrl);
+  exit_region->init_req(2, IfFalse(iff));
+  record_for_igvn(exit_region);
+  _gvn.set_type(exit_region, Type::CONTROL);
+
+  PhiNode* exit_mem = PhiNode::make(exit_region, pre_mem, Type::MEMORY, TypePtr::BOTTOM);
+  exit_mem->set_req(2, loop_body_mem);
+  record_for_igvn(exit_mem);
+  _gvn.set_type(exit_mem, Type::MEMORY);
+  PhiNode* exit_io = PhiNode::make(exit_region, pre_io, Type::ABIO);
+  exit_io->set_req(2, loop_body_io);
+  record_for_igvn(exit_io);
+  _gvn.set_type(exit_io, Type::ABIO);
+
+  set_control(exit_region);
+  set_all_memory(exit_mem);
+  set_i_o(exit_io);
+}
+
 void Parse::do_multianewarray() {
   int ndimensions = iter().get_dimensions();
 
@@ -376,6 +499,21 @@ void Parse::do_multianewarray() {
       // Pass 0 as nargs since uncommon trap code does not need to restore stack.
       obj = expand_multianewarray(array_klass, &length[0], ndimensions, 0);
     } //original reexecute and sp are set back here
+    push(obj);
+    return;
+  }
+
+  if (ndimensions == 2) {
+    Node* obj = nullptr;
+    { PreserveReexecuteState preexecs(this);
+      inc_sp(ndimensions);
+
+      Node* length1 = length[0];
+      Node* length2 = length[1];
+      assert(length1 != nullptr && length2 != nullptr, "");
+      obj = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
+      init_array2d(obj, array_klass, length1, length2);
+    }
     push(obj);
     return;
   }
@@ -439,6 +577,5 @@ void Parse::do_multianewarray() {
   push(cast);
 
   // Possible improvements:
-  // - Make a fast path for small multi-arrays.  (W/ implicit init. loops.)
   // - Issue CastII against length[*] values, to TypeInt::POS.
 }
