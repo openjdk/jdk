@@ -173,6 +173,16 @@ protected:
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
     uint _gc;
+    uint _optoLoopAlignment;
+    uint _codeEntryAlignment;
+    uint _allocatePrefetchLines;
+    uint _allocateInstancePrefetchLines;
+    uint _allocatePrefetchDistance;
+    uint _allocatePrefetchStepSize;
+#ifdef COMPILER2
+    uint _maxVectorSize;
+    uint _arrayOperationPartialInlineSize;
+#endif // COMPILER2
     enum Flags {
       none                     = 0,
       debugVM                  = 1,
@@ -184,8 +194,90 @@ protected:
       restrictContendedPadding = 64
     };
     uint _flags;
+    enum IntrinsicsUseFlags {
+      use_none                = 0,
+      useCRC32                = 1 << 0,
+      useCRC32C               = 1 << 1,
+      useMultiplyToLen        = 1 << 2,
+      useSquareToLen          = 1 << 3,
+      useMulAdd               = 1 << 4,
+      useMontgomeryMultiply   = 1 << 5,
+      useMontgomerySquare     = 1 << 6,
+      useChaCha20             = 1 << 7,
+      useDilithium            = 1 << 8,
+      useKyber                = 1 << 9,
+      useBASE64               = 1 << 10,
+      useAdler32              = 1 << 11,
+      useAES                  = 1 << 12,
+      useAESCTR               = 1 << 13,
+      useGHASH                = 1 << 14,
+      useMD5                  = 1 << 15,
+      useSHA1                 = 1 << 16,
+      useSHA256               = 1 << 17,
+      useSHA512               = 1 << 18,
+      useSHA3                 = 1 << 19,
+      usePoly1305             = 1 << 20,
+      useVectorizedMismatch   = 1 << 21,
+      useSecondarySupersTable = 1 << 22,
+    };
+    uint _use_intrinsics_flags;
+    bool test_flag(enum Flags flag) const { return (_flags & flag) != 0; }
+    bool test_use_flag(enum IntrinsicsUseFlags flag) const { return (_use_intrinsics_flags & flag) != 0; }
+    void set_flag(enum Flags flag) { _flags |= flag; }
+    void set_use_flag(enum IntrinsicsUseFlags flag) { _use_intrinsics_flags |= flag; }
+#if defined(X86) && !defined(ZERO)
+    uint _avx3threshold;
+    uint _useAVX;
+    enum X86Flags {
+      x86_none                   = 0,
+      x86_enableX86ECoreOpts     = 1,
+      x86_useUnalignedLoadStores = 2,
+      x86_useAPX                 = 4
+    };
+    uint _x86_flags;
+    enum X86IntrinsicsUseFlags {
+      x86_use_none              = 0,
+      x86_useLibm               = 1 << 1,
+      x86_useIntPoly            = 1 << 2,
+    };
+    uint _x86_use_intrinsics_flags;
+    bool test_x86_flag(enum X86Flags flag) const { return (_x86_flags & flag) != 0; }
+    bool test_x86_use_flag(enum X86IntrinsicsUseFlags flag) const { return (_x86_use_intrinsics_flags & flag) != 0; }
+    void set_x86_flag(enum X86Flags flag) { _x86_flags |= flag; }
+    void set_x86_use_flag(enum X86IntrinsicsUseFlags flag) { _x86_use_intrinsics_flags |= flag; }
+#endif // defined(X86) && !defined(ZERO)
+#if defined(AARCH64) && !defined(ZERO)
+    // this is global but x86 does not use it and aarch64 does
+    uint _prefetchCopyIntervalInBytes;
+    uint _blockZeroingLowLimit;
+    uint _softwarePrefetchHintDistance;
+    uint _useSVE;
+    enum AArch64Flags {
+      aarch64_none = 0,
+      aarch64_avoidUnalignedAccesses = 1,
+      aarch64_useSIMDForMemoryOps    = 2,
+      aarch64_useSIMDForArrayEquals  = 4,
+      aarch64_useSIMDForSHA3         = 8,
+      aarch64_useLSE                 = 16,
+    };
+    uint _aarch64_flags;
+    enum AArch64IntrinsicsUseFlags {
+      aarch64_use_none                  = 0,
+      aarch64_useBlockZeroing           = 1 << 0,
+      aarch64_useSIMDForBigIntegerShift = 1 << 1,
+      aarch64_useSimpleArrayEquals      = 1 << 2,
+      aarch64_useSecondarySupersCache   = 1 << 3,
+    };
+    uint _aarch64_use_intrinsics_flags;
+    bool test_aarch64_flag(enum AArch64Flags flag) const { return (_aarch64_flags & flag) != 0; }
+    bool test_aarch64_use_flag(enum AArch64IntrinsicsUseFlags flag) const { return (_aarch64_use_intrinsics_flags & flag) != 0; }
+    void set_aarch64_flag(enum AArch64Flags flag) { _aarch64_flags |= flag; }
+    void set_aarch64_use_flag(enum AArch64IntrinsicsUseFlags flag) { _aarch64_use_intrinsics_flags |= flag; }
+#endif // defined(AARCH64) && !defined(ZERO)
+#if INCLUDE_JVMCI
+    uint _enableJVMCI;
+#endif // INCLUDE_JVMCI
     uint _cpu_features_offset; // offset in the cache where cpu features are stored
-
   public:
     void record(uint cpu_features_offset);
     bool verify_cpu_features(AOTCodeCache* cache) const;

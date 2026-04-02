@@ -162,7 +162,7 @@ public class BootAppendTests {
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
-            String MATCH_PATTERN = ".class.load. javax.annotation.processing.FilerException source:.*bootAppend.jar*";
+            String MATCH_PATTERN = ".class.load.*javax.annotation.processing.FilerException source:.*bootAppend.jar*";
             CDSTestUtils.run(opts)
                 .assertNormalExit(out -> {
                     out.shouldNotMatch(MATCH_PATTERN);
@@ -188,7 +188,7 @@ public class BootAppendTests {
                            APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
             CDSTestUtils.Result res = CDSTestUtils.run(opts);
             String MATCH_PATTERN =
-                ".class.load. javax.sound.sampled.MyClass source:.*bootAppend.jar*";
+                ".class.load.*javax.sound.sampled.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
                 res.assertSilentlyDisabledCDS(out -> {
                     out.shouldHaveExitValue(0)
@@ -225,7 +225,7 @@ public class BootAppendTests {
 
             CDSTestUtils.Result res = CDSTestUtils.run(opts);
             String MATCH_PATTERN =
-                ".class.load. javax.annotation.processing.FilerException source:.*bootAppend.jar*";
+                ".class.load.*javax.annotation.processing.FilerException source:.*bootAppend.jar*";
             if (mode.equals("on")) {
                 res.assertSilentlyDisabledCDS(out -> {
                     out.shouldHaveExitValue(0)
@@ -258,7 +258,7 @@ public class BootAppendTests {
 
             CDSTestUtils.Result res = CDSTestUtils.run(opts);
             String MATCH_PATTERN =
-                ".class.load. nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
+                ".class.load.*nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
                 res.assertSilentlyDisabledCDS(out -> {
                     out.shouldHaveExitValue(0)
@@ -287,7 +287,7 @@ public class BootAppendTests {
 
             CDSTestUtils.Result res = CDSTestUtils.run(opts);
             String MATCH_PATTERN =
-                ".class.load. nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
+                ".class.load.*nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
                 res.assertSilentlyDisabledCDS(out -> {
                     out.shouldHaveExitValue(0)
