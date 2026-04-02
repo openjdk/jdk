@@ -407,23 +407,19 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   RECORD_FLAG(, enableContendedPadding, EnableContended);
   RECORD_FLAG(, restrictContendedPadding, RestrictContended);
 
+#define AOTCODECACHE_SAVE_VAR(type, name) _saved_ ## name =  name;
+
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR)
+
   _compressedOopShift    = CompressedOops::shift();
   _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
-  _contendedPaddingWidth = ContendedPaddingWidth;
+  _contendedPaddingWidth = ContendedPaddingWidth; // FIXME -- this is never checked!
   _gc                    = (uint)Universe::heap()->kind();
-  _optoLoopAlignment               = (uint)OptoLoopAlignment;
-  _codeEntryAlignment              = (uint)CodeEntryAlignment;
-  _allocatePrefetchLines           = (uint)AllocatePrefetchLines;
-  _allocateInstancePrefetchLines   = (uint)AllocateInstancePrefetchLines;
-  _allocatePrefetchDistance        = (uint)AllocatePrefetchDistance;
-  _allocatePrefetchStepSize        = (uint)AllocatePrefetchStepSize;
   _use_intrinsics_flags = 0;
   RECORD_FLAG(use_, useCRC32, UseCRC32Intrinsics);
   RECORD_FLAG(use_, useCRC32C, UseCRC32CIntrinsics);
 #ifdef COMPILER2
-  _maxVectorSize                   = (uint)MaxVectorSize;
-  _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
   RECORD_FLAG(use_, useMultiplyToLen, UseMultiplyToLenIntrinsic);
   RECORD_FLAG(use_, useSquareToLen, UseSquareToLenIntrinsic);
   RECORD_FLAG(use_, useMulAdd, UseMulAddIntrinsic);
@@ -447,38 +443,29 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   RECORD_FLAG(use_, useVectorizedMismatch,UseVectorizedMismatchIntrinsic );
   RECORD_FLAG(use_, useSecondarySupersTable, UseSecondarySupersTable);
 #if defined(X86) && !defined(ZERO)
-  _avx3threshold                   = (uint)AVX3Threshold;
-  _useAVX                          = (uint)UseAVX;
-  _x86_flags                       = 0;
+  _x86_flags = 0;
   RECORD_FLAG(x86_, x86_enableX86ECoreOpts, EnableX86ECoreOpts);
   RECORD_FLAG(x86_, x86_useUnalignedLoadStores, UseUnalignedLoadStores);
   RECORD_FLAG(x86_, x86_useAPX, UseAPX);
 
-  _x86_use_intrinsics_flags            = 0;
+  _x86_use_intrinsics_flags = 0;
   RECORD_FLAG(x86_use_, x86_useLibm, UseLibmIntrinsic);
   RECORD_FLAG(x86_use_, x86_useIntPoly, UseIntPolyIntrinsics);
 #endif // defined(X86) && !defined(ZERO)
 #if defined(AARCH64)  && !defined(ZERO)
-  _prefetchCopyIntervalInBytes     = (uint)PrefetchCopyIntervalInBytes;
-  _blockZeroingLowLimit            = (uint)BlockZeroingLowLimit;
-  _softwarePrefetchHintDistance    = (uint)SoftwarePrefetchHintDistance;
-  _useSVE                          = (uint)UseSVE;
-  _aarch64_flags                   = 0;
+  _aarch64_flags = 0;
   RECORD_FLAG(aarch64_, aarch64_avoidUnalignedAccesses, AvoidUnalignedAccesses);
   RECORD_FLAG(aarch64_, aarch64_useSIMDForMemoryOps, UseSIMDForMemoryOps);
   RECORD_FLAG(aarch64_, aarch64_useSIMDForArrayEquals, UseSIMDForArrayEquals);
   RECORD_FLAG(aarch64_, aarch64_useSIMDForSHA3, UseSIMDForSHA3Intrinsic);
   RECORD_FLAG(aarch64_, aarch64_useLSE, UseLSE);
 
-  _aarch64_use_intrinsics_flags     = 0;
+  _aarch64_use_intrinsics_flags = 0;
   RECORD_FLAG(aarch64_use_, aarch64_useBlockZeroing, UseBlockZeroing);
   RECORD_FLAG(aarch64_use_, aarch64_useSIMDForBigIntegerShift, UseSIMDForBigIntegerShiftIntrinsics);
   RECORD_FLAG(aarch64_use_, aarch64_useSimpleArrayEquals, UseSimpleArrayEquals);
   RECORD_FLAG(aarch64_use_, aarch64_useSecondarySupersCache, UseSecondarySupersCache);
 #endif // defined(AARCH64) && !defined(ZERO)
-#if INCLUDE_JVMCI
-  _enableJVMCI                     = (uint)EnableJVMCI;
-#endif
   _cpu_features_offset   = cpu_features_offset;
 }
 
@@ -522,6 +509,39 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
     return false;
   }
   return true;
+}
+
+#define AOTCODECACHE_DISABLED_MSG "AOT Code Cache disabled: it was created with %s = "
+
+inline void log_config_mismatch(bool saved, bool current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%s vs current %s", name,
+                                  saved ? "true" : "false", current ? "true" : "false");
+}
+
+inline void log_config_mismatch(int saved, int current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%d vs current %d", name, saved, current);
+}
+
+inline void log_config_mismatch(uint saved, uint current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%u vs current %u",name, saved, current);
+}
+
+inline void log_config_mismatch(intx saved, intx current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zd vs current %zd", name, saved, current);
+}
+
+inline void log_config_mismatch(uintx saved, uintx current, const char* name) {
+  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu",name, saved, current);
+}
+
+template <typename T>
+bool check_config(T saved, T current, const char* name) {
+  if (saved != current) {
+    log_config_mismatch(saved, current, name);
+    return false;
+  } else {
+    return true;
+  }
 }
 
 // macro to do *standard* flag eq checks -- flag_type selects the
@@ -576,38 +596,10 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // stubs or nmethods. Currently we take a pessemistic stand and
   // drop the whole cache if any of these are changed.
 
-  // change to opto alignment can affect performance of array copy
-  // stubs and nmethods
-  if (_optoLoopAlignment != (uint)OptoLoopAlignment) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with OptoLoopAlignment = %d vs current %d", (int)_optoLoopAlignment, (int)OptoLoopAlignment);
-    return false;
-  }
+#define AOTCODECACHE_CHECK_VAR(type, name) \
+  if (!check_config(_saved_ ## name, name, #name)) { return false; }
 
-  // change to CodeEntryAlignment can affect performance of array
-  // copy stubs and nmethods
-  if (_codeEntryAlignment != CodeEntryAlignment) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CodeEntryAlignment = %d vs current %d", _codeEntryAlignment, CodeEntryAlignment);
-    return false;
-  }
-
-  // changing Prefetch configuration can affect validity of nmethods
-  // and stubs
-  if (_allocatePrefetchLines != (uint)AllocatePrefetchLines) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchLines, (int)AllocatePrefetchLines);
-    return false;
-  }
-  if (_allocateInstancePrefetchLines != (uint)AllocateInstancePrefetchLines) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocateInstancePrefetchLines, (int)AllocateInstancePrefetchLines);
-    return false;
-  }
-  if (_allocatePrefetchDistance != (uint)AllocatePrefetchDistance) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchDistance, (int)AllocatePrefetchDistance);
-    return false;
-  }
-  if (_allocatePrefetchStepSize != (uint)AllocatePrefetchStepSize) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchStepSize, (int)AllocatePrefetchStepSize);
-    return false;
-  }
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR)
 
   // check intrinsic use settings are compatible
 
@@ -615,19 +607,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   CHECK_FLAG(use_, useCRC32C, UseCRC32CIntrinsics);
 
 #ifdef COMPILER2
-  // change to MaxVectorSize can affect validity of array copy/fill
-  // stubs
-  if (_maxVectorSize != (uint)MaxVectorSize) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with MaxVectorSize = %d vs current %d", (int)_maxVectorSize, (int)MaxVectorSize);
-    return false;
-  }
-
-  // changing ArrayOperationPartialInlineSize can affect validity of
-  // nmethods and stubs
-  if (_arrayOperationPartialInlineSize != (uint)ArrayOperationPartialInlineSize) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ArrayOperationPartialInlineSize = %d vs current %d", (int)_arrayOperationPartialInlineSize, (int)ArrayOperationPartialInlineSize);
-    return false;
-  }
   CHECK_FLAG(use_, useMultiplyToLen, UseMultiplyToLenIntrinsic);
   CHECK_FLAG(use_, useSquareToLen, UseSquareToLenIntrinsic);
   CHECK_FLAG(use_, useMulAdd, UseMulAddIntrinsic);
@@ -651,19 +630,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   CHECK_FLAG(use_, useSecondarySupersTable, UseSecondarySupersTable);
 
 #if defined(X86) && !defined(ZERO)
-  // change to AVX3Threshold may affect validity of array copy stubs
-  // and nmethods
-  if (_avx3threshold != (uint)AVX3Threshold) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AVX3Threshold = %d vs current %d", (int)_avx3threshold, AVX3Threshold);
-    return false;
-  }
-
-  // change to UseAVX may affect validity of array copy stubs and
-  // nmethods
-  if (_useAVX != (uint)UseAVX) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with useAVX = %d vs current %d", (int)_useAVX, UseAVX);
-    return false;
-  }
 
   // change to EnableX86ECoreOpts may affect validity of nmethods
   CHECK_FLAG(x86_, x86_enableX86ECoreOpts, EnableX86ECoreOpts);
@@ -685,33 +651,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 #endif // defined(X86) && !defined(ZERO)
 
 #if defined(AARCH64) && !defined(ZERO)
-  // change to PrefetchCopyIntervalInBytes may affect validity of
-  // array copy stubs
-  if (_prefetchCopyIntervalInBytes != (uint)PrefetchCopyIntervalInBytes) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with PrefetchCopyIntervalInBytes = %d vs current %d", (int)_prefetchCopyIntervalInBytes, (int)PrefetchCopyIntervalInBytes);
-    return false;
-  }
-
-  // change to BlockZeroingLowLimit may affect validity of array fill
-  // stubs
-  if (_blockZeroingLowLimit != (uint)BlockZeroingLowLimit) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with BlockZeroingLowLimit = %d vs current %d", (int)_blockZeroingLowLimit, (int)BlockZeroingLowLimit);
-    return false;
-  }
-
-  // change to SoftwarePrefetchHintDistance may affect validity of array fill
-  // stubs
-  if (_softwarePrefetchHintDistance != (uint)SoftwarePrefetchHintDistance) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with SoftwarePrefetchHintDistance = %d vs current %d", (int)_softwarePrefetchHintDistance, (int)SoftwarePrefetchHintDistance);
-    return false;
-  }
-
-  // change to UseSVE may affect validity of stubs and nmethods
-  if (_useSVE != (uint)UseSVE) {
-  log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %d vs current %d",(int)_useSVE, UseSVE);
-    return false;
-  }
-
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
   if (!test_aarch64_flag(aarch64_avoidUnalignedAccesses) && AvoidUnalignedAccesses) {
@@ -738,23 +677,14 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   CHECK_FLAG(aarch64_use_, aarch64_useSecondarySupersCache, UseSecondarySupersCache);
 #endif // defined(AARCH64) && !defined(ZERO)
 
-#if INCLUDE_JVMCI
-  // change to EnableJVMCI will affect validity of adapters and
-  // nmethods
-  if (_enableJVMCI != (uint)EnableJVMCI) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableJVMCI = %s vs current %s", (_enableJVMCI ? "true" : "false"), (EnableJVMCI ? "true" : "false"));
-    return false;
-  }
-#endif // INCLUDE_JVMCI
-
   // The following checks do not affect AOT adapters caching
 
   if (test_flag(compressedOops) != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     AOTStubCaching = false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
     AOTStubCaching = false;
   }
 

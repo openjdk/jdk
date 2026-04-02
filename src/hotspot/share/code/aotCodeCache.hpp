@@ -163,26 +163,73 @@ public:
   address address_for_id(int id);
 };
 
+#define AOTCODECACHE_CONFIGS_GENERIC_DO(do_var) \
+  do_var(int,   AllocateInstancePrefetchLines)          /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchDistance)               /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchLines)                  /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchStepSize)               /* stubs and nmethods */ \
+  do_var(uint,  CodeEntryAlignment)                     /* array copy stubs and nmethods */ \
+  do_var(intx,  OptoLoopAlignment)                      /* array copy stubs and nmethods */ \
+  // END
+
+#ifdef COMPILER2
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var) \
+  do_var(intx,  ArrayOperationPartialInlineSize)        /* array copy stubs and nmethods */ \
+  do_var(intx,  MaxVectorSize)                          /* array copy/fill stubs */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var)
+#endif
+
+#if INCLUDE_JVMCI
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var) \
+  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var)
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
+  do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
+  do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
+  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var)
+#endif
+
+#if defined(X86) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var) \
+  do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
+  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var)
+#endif
+
+#define AOTCODECACHE_CONFIGS_DO(do_var) \
+  AOTCODECACHE_CONFIGS_GENERIC_DO(do_var) \
+  AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var) \
+  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var) \
+  AOTCODECACHE_CONFIGS_AARCH64_DO(do_var) \
+  AOTCODECACHE_CONFIGS_X86_DO(do_var) \
+  // END
+
+#define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
+
 class AOTCodeCache : public CHeapObj<mtCode> {
 
 // Classes used to describe AOT code cache.
 protected:
   class Config {
+    AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_DECLARE_VAR)
     address _compressedOopBase;
     uint _compressedOopShift;
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
     uint _gc;
-    uint _optoLoopAlignment;
-    uint _codeEntryAlignment;
-    uint _allocatePrefetchLines;
-    uint _allocateInstancePrefetchLines;
-    uint _allocatePrefetchDistance;
-    uint _allocatePrefetchStepSize;
-#ifdef COMPILER2
-    uint _maxVectorSize;
-    uint _arrayOperationPartialInlineSize;
-#endif // COMPILER2
     enum Flags {
       none                     = 0,
       debugVM                  = 1,
@@ -226,8 +273,6 @@ protected:
     void set_flag(enum Flags flag) { _flags |= flag; }
     void set_use_flag(enum IntrinsicsUseFlags flag) { _use_intrinsics_flags |= flag; }
 #if defined(X86) && !defined(ZERO)
-    uint _avx3threshold;
-    uint _useAVX;
     enum X86Flags {
       x86_none                   = 0,
       x86_enableX86ECoreOpts     = 1,
@@ -247,11 +292,6 @@ protected:
     void set_x86_use_flag(enum X86IntrinsicsUseFlags flag) { _x86_use_intrinsics_flags |= flag; }
 #endif // defined(X86) && !defined(ZERO)
 #if defined(AARCH64) && !defined(ZERO)
-    // this is global but x86 does not use it and aarch64 does
-    uint _prefetchCopyIntervalInBytes;
-    uint _blockZeroingLowLimit;
-    uint _softwarePrefetchHintDistance;
-    uint _useSVE;
     enum AArch64Flags {
       aarch64_none = 0,
       aarch64_avoidUnalignedAccesses = 1,
@@ -274,9 +314,6 @@ protected:
     void set_aarch64_flag(enum AArch64Flags flag) { _aarch64_flags |= flag; }
     void set_aarch64_use_flag(enum AArch64IntrinsicsUseFlags flag) { _aarch64_use_intrinsics_flags |= flag; }
 #endif // defined(AARCH64) && !defined(ZERO)
-#if INCLUDE_JVMCI
-    uint _enableJVMCI;
-#endif // INCLUDE_JVMCI
     uint _cpu_features_offset; // offset in the cache where cpu features are stored
   public:
     void record(uint cpu_features_offset);
