@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023, Azul Systems, Inc. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +45,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class DremFrem {
 
-    private static final int DEFAULT_X_RANGE = 1 << 11;
-    private static final int DEFAULT_Y_RANGE = 1 << 11;
+    private static final int DEFAULT_X_RANGE = 1 << 16;
+    private static final int DEFAULT_Y_RANGE = 1 << 8;
     private static boolean regressionValue = false;
 
     @Benchmark
@@ -72,5 +73,27 @@ public class DremFrem {
                 regressionValue = regressionValue & result;
             }
         }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void calcDoubleConstDivisor() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            double x = i;
+            sum += (13.0D * x * x * x) % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(DEFAULT_X_RANGE)
+    public void calcDoubleConstDivisorSimple() {
+        double sum = 0;
+        for (int i = 0; i < DEFAULT_X_RANGE; i++) {
+            double x = i;
+            sum += x % 42.0D;
+        }
+        regressionValue = sum % 2 == 1;
     }
 }
