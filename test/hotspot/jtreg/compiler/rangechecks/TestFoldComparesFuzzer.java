@@ -204,6 +204,17 @@ public class TestFoldComparesFuzzer {
     interface TestMethodGenerator {
         Template.OneArg<String> getTestTemplate();
         Template.ZeroArgs getIRTemplate();
+
+        default Template.ZeroArgs getInputTemplate() {
+            return Template.make(() -> scope(
+                """
+                RestrictableGenerator<Integer> gen = Generators.G.ints();
+                int n = gen.next();
+                int a = gen.next();
+                int b = gen.next();
+                """
+            ));
+        };
     }
 
     // Some basic ranges with constant bounds.
@@ -382,7 +393,6 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
-
         private final Template.ZeroArgs irTemplate = Template.make(() -> {
             String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
             String comment;
@@ -488,6 +498,35 @@ public class TestFoldComparesFuzzer {
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
         public Template.ZeroArgs getIRTemplate() { return irTemplate; }
+
+        @Override
+        public Template.ZeroArgs getInputTemplate() {
+            return Template.make(() -> scope(
+                let("lo", lo),
+                let("hi", hi),
+                """
+                Random r = Utils.getRandomInstance();
+                RestrictableGenerator<Integer> gen = Generators.G.ints();
+                int a = gen.next();
+                int b = gen.next();
+                """,
+                switch (RANDOM.nextInt(9)) {
+                    // Random values
+                    case 0 -> "int n = gen.next();\n";
+                    // Fuzz around specific values
+                    case 1 -> "int n = r.nextInt(10) - 5 + #lo;\n";
+                    case 2 -> "int n = r.nextInt(10) - 5 + #hi;\n";
+                    case 3 -> "int n = r.nextInt(10) - 5 + (r.nextBoolean() ? #lo : #hi);\n";
+                    case 4 -> "int n = r.nextInt(10) - 5 + Integer.MAX_VALUE;\n";
+                    // Only very low or very high values, or in the middle
+                    case 5 -> "int n = r.nextInt(10) - 10 + Integer.MAX_VALUE;\n";
+                    case 6 -> "int n = r.nextInt(10) + Integer.MIN_VALUE;\n";
+                    case 7 -> "int n = r.nextInt(10) - 5 + #lo/2 + #hi/2;\n";
+                    // Always the same constant
+                    default -> "int n = " + INT_GEN.next() + ";\n";
+                }
+            ));
+        };
     }
 
     public static TemplateToken generateTest(int warmup) {
@@ -500,6 +539,7 @@ public class TestFoldComparesFuzzer {
         //    case 3 -> new TestMethodGeneratorConstIR();
         //    default -> throw new RuntimeException("not expected");
         //};
+        Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
         Template.OneArg<String> testMethodTemplate = tg.getTestTemplate();
         Template.ZeroArgs testIRTemplate = tg.getIRTemplate();
 
@@ -511,11 +551,10 @@ public class TestFoldComparesFuzzer {
             @Warmup(#warmup)
             public static void $run() {
                 for (int i = 0; i < 100; i++) {
-                    // Generate random values.
-                    RestrictableGenerator<Integer> gen = Generators.G.ints();
-                    int n = gen.next();
-                    int a = gen.next();
-                    int b = gen.next();
+                    // Generate random values for n, a, b.
+                    """,
+                    testInputTemplate.asToken(),
+                    """
 
                     // Run test and compare with interpreter results.
                     var result   =      $test(n, a, b);
