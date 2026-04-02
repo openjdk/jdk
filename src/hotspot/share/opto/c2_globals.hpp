@@ -921,8 +921,9 @@
                                                                             \
   product(double, HotCodeStablePercent, 5, EXPERIMENTAL,                    \
           "Maximum percentage of newly compiled to total C2 nmethods "      \
-          "to treat nmethod count as stable")                               \
-          range(0, DBL_MAX)                                                 \
+          "to treat nmethod count as stable. "                              \
+          "Values less than zero disable the stable check")                 \
+          range(-1, DBL_MAX)                                                \
                                                                             \
   product(uint, HotCodeIntervalSeconds, 300, EXPERIMENTAL,                  \
           "Seconds between hot code grouping attempts")                     \

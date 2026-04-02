@@ -50,7 +50,7 @@ class HotCodeCollector : public JavaThread {
   static void unregister_nmethod(nmethod* nm);
   static void register_nmethod(nmethod* nm);
 
-  static bool is_nmethod_count_steady();
+  static bool is_nmethod_count_stable();
 };
 
 #endif // SHARE_RUNTIME_HOTCODECOLLECTOR_HPP

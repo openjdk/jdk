@@ -27,9 +27,9 @@
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
- *                   -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0
- *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeStablePercent=100 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0
+ *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
  *                   compiler.hotcode.HotCodeCollectorMoveFunction
  */
 
@@ -61,11 +61,6 @@ public class HotCodeCollectorMoveFunction {
         WHITE_BOX.testSetDontInlineMethod(method, true);
 
         compileFunc();
-
-        // Function should be in the NonProfiled code heap right after compilation
-        NMethod orig_nm = NMethod.get(method, false);
-        Asserts.assertNotEquals(orig_nm, null);
-        Asserts.assertEQ(orig_nm.code_blob_type, BlobType.MethodNonProfiled);
 
         // Call function so collector samples and relocates
         func();

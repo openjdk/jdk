@@ -58,7 +58,12 @@ void HotCodeCollector::initialize() {
   _is_initialized = true;
 }
 
-bool HotCodeCollector::is_nmethod_count_steady() {
+bool HotCodeCollector::is_nmethod_count_stable() {
+  if (HotCodeStablePercent < 0) {
+    log_info(hotcode)("HotCodeStablePercent is less than zero, stable check disabled");
+    return true;
+  }
+
   MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   if (_total_c2_nmethods_count <= 0) {
@@ -67,14 +72,14 @@ bool HotCodeCollector::is_nmethod_count_steady() {
   }
 
   const double percent_new = 100.0 * _new_c2_nmethods_count / _total_c2_nmethods_count;
-  bool is_steady_nmethod_count = percent_new < HotCodeStablePercent;
+  bool is_stable_nmethod_count = percent_new <= HotCodeStablePercent;
 
-  log_info(hotcode)("C2 nmethod count %s", is_steady_nmethod_count ? "steady" : "not steady");
+  log_info(hotcode)("C2 nmethod count %s", is_stable_nmethod_count ? "stable" : "not stable");
   log_debug(hotcode)("C2 nmethod stats: New: %d, Total: %d, Percent new: %f", _new_c2_nmethods_count, _total_c2_nmethods_count, percent_new);
 
   _new_c2_nmethods_count = 0;
 
-  return is_steady_nmethod_count;
+  return is_stable_nmethod_count;
 }
 
 void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
@@ -84,8 +89,8 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
   while (true) {
     ResourceMark rm;
 
-    // Sample application and group hot nmethods if nmethod count is steady
-    if (is_nmethod_count_steady()) {
+    // Sample application and group hot nmethods if nmethod count is stable
+    if (is_nmethod_count_stable()) {
       log_info(hotcode)("Sampling...");
 
       ThreadSampler sampler;
