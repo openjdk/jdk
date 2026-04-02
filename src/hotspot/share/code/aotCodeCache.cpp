@@ -463,6 +463,7 @@ inline void log_config_mismatch(uint saved, uint current, const char* name) {
   log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%u vs current %u",name, saved, current);
 }
 
+#ifdef _LP64
 inline void log_config_mismatch(intx saved, intx current, const char* name) {
   log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zd vs current %zd", name, saved, current);
 }
@@ -470,6 +471,7 @@ inline void log_config_mismatch(intx saved, intx current, const char* name) {
 inline void log_config_mismatch(uintx saved, uintx current, const char* name) {
   log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu",name, saved, current);
 }
+#endif
 
 template <typename T>
 bool check_config(T saved, T current, const char* name) {
