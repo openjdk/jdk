@@ -195,6 +195,10 @@ public class TestFoldComparesFuzzer {
         Comparison complementRandom() {
             return RANDOM.nextBoolean() ? this : new Comparison(lhs, cmp.negate(), rhs, true);
         }
+
+        Comparison negateCmp() {
+            return new Comparison(lhs, cmp.negate(), rhs, negated);
+        }
     }
 
     interface TestMethodGenerator {
@@ -349,8 +353,14 @@ public class TestFoldComparesFuzzer {
         private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
         private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
         private final boolean swap = RANDOM.nextBoolean();
-        private final Comparison c1 = (swap ? c_lo : c_hi).permuteRandom();
-        private final Comparison c2 = (swap ? c_hi : c_lo).permuteRandom();
+        private final Comparison c1Permuted = (swap ? c_lo : c_hi).permuteRandom();
+        private final Comparison c2Permuted = (swap ? c_hi : c_lo).permuteRandom();
+        // n >  lo && n <  hi -> check for inside range
+        // n <= lo || n >= hi -> chedk for outside range
+        private final boolean withAnd = RANDOM.nextBoolean();
+        private final String operator = withAnd ? "&&" : "||";
+        private final Comparison c1 = withAnd ? c1Permuted : c1Permuted.negateCmp();
+        private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
 
         // TODO: find a way to fuzz around interesting n ranges.
 
@@ -359,11 +369,12 @@ public class TestFoldComparesFuzzer {
             let("hi", hi),
             let("c1", c1),
             let("c2", c2),
+            let("op", operator),
             """
             static boolean #methodName(int n, int a, int b) {
                 int lo = #lo;
                 int hi = #hi;
-                if (#c1 && #c2) {
+                if (#c1 #op #c2) {
                     return true;
                 }
                 return false;
