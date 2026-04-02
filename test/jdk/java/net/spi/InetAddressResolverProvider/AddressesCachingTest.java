@@ -26,8 +26,11 @@ import java.net.UnknownHostException;
 
 
 import impl.SimpleResolverProviderImpl;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /*
@@ -66,10 +69,10 @@ public class AddressesCachingTest {
     public void testPositiveCaching() {
         boolean observedTwoLookups = performLookups(false);
         if (CACHING_DISABLED) {
-            Assertions.assertTrue(observedTwoLookups,
+            assertTrue(observedTwoLookups,
                     "Two positive lookups are expected with caching disabled");
         } else {
-            Assertions.assertFalse(observedTwoLookups,
+            assertFalse(observedTwoLookups,
                     "Only one positive lookup is expected with caching enabled");
         }
     }
@@ -78,10 +81,10 @@ public class AddressesCachingTest {
     public void testNegativeCaching() {
         boolean observedTwoLookups = performLookups(true);
         if (CACHING_DISABLED) {
-            Assertions.assertTrue(observedTwoLookups,
+            assertTrue(observedTwoLookups,
                     "Two negative lookups are expected with caching disabled");
         } else {
-            Assertions.assertFalse(observedTwoLookups,
+            assertFalse(observedTwoLookups,
                     "Only one negative lookup is expected with caching enabled");
         }
     }
@@ -107,11 +110,11 @@ public class AddressesCachingTest {
         try {
             InetAddress.getByName(hostName);
             if (performNegativeLookup) {
-                Assertions.fail("Host name is expected to get unresolved");
+                fail("Host name is expected to get unresolved");
             }
         } catch (UnknownHostException uhe) {
             if (!performNegativeLookup) {
-                Assertions.fail("Host name is expected to get resolved");
+                fail("Host name is expected to get resolved");
             }
         }
     }

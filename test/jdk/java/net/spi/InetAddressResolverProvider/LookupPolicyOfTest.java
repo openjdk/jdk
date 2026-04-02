@@ -28,7 +28,6 @@
  * @run junit LookupPolicyOfTest
  */
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -39,6 +38,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LookupPolicyOfTest {
 
@@ -51,7 +51,7 @@ public class LookupPolicyOfTest {
     @ParameterizedTest
     @MethodSource("illegalCharacteristicValue")
     public void testInvalidCharacteristicCombination(List<Integer> invalidCombination) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> LookupPolicy.of(bitFlagsToCharacteristicsValue(invalidCombination)));
+        assertThrows(IllegalArgumentException.class, () -> LookupPolicy.of(bitFlagsToCharacteristicsValue(invalidCombination)));
     }
 
     public static Object[][] validCharacteristicValue() {

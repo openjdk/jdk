@@ -22,7 +22,6 @@
  */
 
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +29,10 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.spi.InetAddressResolver;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /*
@@ -65,15 +68,15 @@ public class BuiltInResolverTest {
         Object defaultResolverObject = builtInResolverField.get(InetAddressResolver.class);
         Object usedResolverObject = resolverField.get(InetAddressResolver.class);
 
-        Assertions.assertTrue(defaultResolverObject == usedResolverObject);
+        assertTrue(defaultResolverObject == usedResolverObject);
 
         String defaultClassName = defaultResolverObject.getClass().getCanonicalName();
         String currentClassName = usedResolverObject.getClass().getCanonicalName();
 
-        Assertions.assertNotNull(defaultClassName, "defaultClassName not set");
-        Assertions.assertNotNull(currentClassName, "currentClassName name not set");
+        assertNotNull(defaultClassName, "defaultClassName not set");
+        assertNotNull(currentClassName, "currentClassName name not set");
 
-        Assertions.assertEquals(defaultClassName, currentClassName,
+        assertEquals(defaultClassName, currentClassName,
                 "BUILTIN_RESOLVER resolver was not used.");
         System.err.println("Resolver used by default is the built-in resolver");
     }

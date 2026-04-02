@@ -27,6 +27,8 @@ import java.net.UnknownHostException;
 import impl.ThrowingLookupsProviderImpl;
 
 import static impl.ThrowingLookupsProviderImpl.RUNTIME_EXCEPTION_MESSAGE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -76,10 +78,10 @@ public class ResolutionWithExceptionTest {
             Throwable cause = uhe.getCause();
             if (cause instanceof RuntimeException re) {
                 // Check RuntimeException message
-                Assertions.assertEquals(RUNTIME_EXCEPTION_MESSAGE, re.getMessage(),
+                assertEquals(RUNTIME_EXCEPTION_MESSAGE, re.getMessage(),
                         "incorrect exception message");
             } else {
-                Assertions.fail("UnknownHostException cause is not RuntimeException");
+                fail("UnknownHostException cause is not RuntimeException");
             }
         }
     }
@@ -89,6 +91,6 @@ public class ResolutionWithExceptionTest {
         // if there is an error during reverse lookup operation the literal IP
         // address String will be returned.
         String literalIP = InetAddress.getByAddress(new byte[]{1, 2, 3, 4}).getCanonicalHostName();
-        Assertions.assertEquals("1.2.3.4", literalIP);
+        assertEquals("1.2.3.4", literalIP);
     }
 }

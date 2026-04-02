@@ -21,13 +21,13 @@
  * questions.
  */
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 
 
 import static impl.WithBootstrapResolverUsageProvider.numberOfGetCalls;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
@@ -44,6 +44,6 @@ public class BootstrapResolverUsageTest {
     @Test
     public void testSuccessfulProviderInstantiationTest() throws Exception {
         System.err.println(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
-        Assertions.assertEquals(1, numberOfGetCalls, "InetAddressResolverProvider.get was called more than once");
+        assertEquals(1, numberOfGetCalls, "InetAddressResolverProvider.get was called more than once");
     }
 }

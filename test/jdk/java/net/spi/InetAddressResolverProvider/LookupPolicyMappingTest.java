@@ -34,8 +34,9 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
 
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.NetworkConfiguration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.abort;
 
 /*
@@ -88,7 +89,7 @@ public class LookupPolicyMappingTest {
         String expectedResultsKey = calculateMapKey(preferIPv4Stack, preferIPv6Addresses);
         int expectedCharacteristics = EXPECTED_RESULTS_MAP.get(expectedResultsKey);
 
-        Assertions.assertTrue(characteristicsMatch(
+        assertTrue(characteristicsMatch(
                 runtimeCharacteristics, expectedCharacteristics), "Unexpected LookupPolicy observed");
     }
 

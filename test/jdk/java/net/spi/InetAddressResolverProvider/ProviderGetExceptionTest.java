@@ -21,13 +21,15 @@
  * questions.
  */
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import java.net.InetAddress;
 import java.util.Arrays;
 
 import static impl.FaultyResolverProviderGetImpl.EXCEPTION_MESSAGE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -55,9 +57,9 @@ public class ProviderGetExceptionTest {
     }
 
     private void callInetAddressAndCheckException(Executable apiCall) {
-        IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class, apiCall);
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, apiCall);
         System.out.println("Got exception of expected type:" + iae);
-        Assertions.assertNull(iae.getCause(), "cause is not null");
-        Assertions.assertEquals(EXCEPTION_MESSAGE, iae.getMessage());
+        assertNull(iae.getCause(), "cause is not null");
+        assertEquals(EXCEPTION_MESSAGE, iae.getMessage());
     }
 }

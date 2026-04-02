@@ -27,8 +27,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import impl.SimpleResolverProviderImpl;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 /*
@@ -64,21 +67,21 @@ public class AddressesStaleCachingTest {
         Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired, we will do the successful lookup.
         Lookup second = doLookup(false, 0);
-        Assertions.assertNotEquals(first.timestamp, second.timestamp,
+        assertNotEquals(first.timestamp, second.timestamp,
                                "Two lookups are expected");
 
         Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired again, we will do the failed lookup.
         Lookup third = doLookup(true, 0);
-        Assertions.assertNotEquals(second.timestamp, third.timestamp,
+        assertNotEquals(second.timestamp, third.timestamp,
                                "Two lookups are expected");
 
         // The stale cache is enabled, so we should get valid/same data for
         // all requests(even for the failed request).
-        Assertions.assertArrayEquals(first.address, second.address,
+        assertArrayEquals(first.address, second.address,
                             "Same address is expected");
 
-        Assertions.assertArrayEquals(second.address, third.address,
+        assertArrayEquals(second.address, third.address,
                             "Same address is expected");
     }
 
@@ -134,10 +137,10 @@ public class AddressesStaleCachingTest {
             byte[] secondAddress = InetAddress.getByName("javaTest.org").getAddress();
             long secondTimestamp = SimpleResolverProviderImpl.getLastLookupTimestamp();
 
-            Assertions.assertArrayEquals(firstAddress, secondAddress,
+            assertArrayEquals(firstAddress, secondAddress,
                                 "Same address is expected");
             if (timeout == 0 || timeout - System.nanoTime() > 0) {
-                Assertions.assertEquals(firstTimestamp, secondTimestamp,
+                assertEquals(firstTimestamp, secondTimestamp,
                         "Only one positive lookup is expected with caching enabled");
             }
             return new Lookup(firstAddress, firstTimestamp);

@@ -21,7 +21,8 @@
  * questions.
  */
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
@@ -52,10 +53,10 @@ public class ReverseLookupDelegationTest {
 
         // Check that originally supplied byte array was used to construct canonical host name after
         // failed reverse lookup.
-        Assertions.assertEquals("1.2.3.4", canonicalHostName, "unexpected canonical hostname");
+        assertEquals("1.2.3.4", canonicalHostName, "unexpected canonical hostname");
 
         // Check that on a provider side the IllegalArgumentException has been thrown by the built-in resolver
-        Assertions.assertTrue(lastReverseLookupThrowable instanceof IllegalArgumentException,
+        assertTrue(lastReverseLookupThrowable instanceof IllegalArgumentException,
                 "wrong exception type is thrown by the built-in resolver");
     }
 }
