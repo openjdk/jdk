@@ -344,11 +344,16 @@ public class TestFoldComparesFuzzer {
         // Since we are using constants for lo and hi, the checks should get canonicalized,
         // so that n is always in the lhs. We only create cases that are covered by the
         // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
-        private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
-        private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
+        private final Comparison c_lo = new Comparison("n", Comparator.GE, "lo");
+        private final Comparison c_hi = new Comparison("n", Comparator.LT, "hi");
+        // TODO: all other options:
+        //private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
+        //private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
         private final boolean swap = RANDOM.nextBoolean();
         private final Comparison c1 = (swap ? c_lo : c_hi); // TODO: consider permutations
         private final Comparison c2 = (swap ? c_hi : c_lo);
+
+        // TODO: find a way to fuzz around interesting n ranges.
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("lo", lo),
@@ -411,11 +416,21 @@ public class TestFoldComparesFuzzer {
                 if (lo == Integer.MIN_VALUE || hi == Integer.MIN_VALUE) {
                     foldedAfterParsing = true;
                     comment = "c) one or both checks fold at parse time";
-                } else if (lo <= hi) {
+                } else if (lo < hi && lo+1 == hi) {
+                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                    foldedAfterParsing = false;
+                    cmpI = 1;
+                    cmpU = 0;
+                    comment = "c) replace with CmpU (single element) -> CmpI eq";
+                } else if (lo < hi && lo+1 < hi) {
                     foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
-                    comment = "c) replace with CmpU";
+                    comment = "c) replace with CmpU (non-empty)";
+                } else if (lo == hi) {
+                    // RegionNode::optimize_trichotomy: can fold (n >= x && n < x) -> never
+                    foldedAfterParsing = true;
+                    comment = "c) impossible condition (exact) -> fold away";
                 } else {
                     foldedAfterParsing = false;
                     cmpI = 0;
