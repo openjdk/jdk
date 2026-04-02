@@ -82,7 +82,7 @@ following members:
 <p> Each element in the "threadContainers" array is an object that represents a
     grouping/container of threads with the following members:
 <table class="striped">
-    <caption style="display:none">??</caption>
+    <caption style="display:none">threadContainers members</caption>
     <thead>
     <tr>
         <th scope="col">Name</th>
@@ -131,7 +131,7 @@ following members:
 
 <p> Each element in a "threads" array is an object with the following members:
 <table class="striped">
-    <caption style="display:none">??</caption>
+    <caption style="display:none">threads members</caption>
     <thead>
     <tr>
         <th scope="col">Name</th>
@@ -191,9 +191,8 @@ following members:
         <th scope="row"> parkBlocker </th>
         <td> object </td>
         <td> yes </td>
-        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string} of the
-            {@linkplain java.util.concurrent.locks.LockSupport#park(Object) blocker object}
-            responsible for the thread parking. </td>
+        <td> The object responsible for the thread parking. Its members identity the
+             blocker object, and the exclusive owner thread if owned. </td>
     </tr>
     <tr>
         <th scope="row"> blockedOn </th>
@@ -237,14 +236,15 @@ following members:
         <td> string </td>
         <td> no </td>
         <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
-             of the blocker object responsible for the thread parking. </td>
+             of the {@linkplain java.util.concurrent.locks.LockSupport#park(Object) blocker
+             object} responsible for the thread parking. </td>
     </tr>
     <tr>
         <th scope="row"> owner </th>
         <td> number </td>
         <td> yes </td>
-        <td> The thread identifier of the owner thread when the parkBlocker is an
-            {@link java.util.concurrent.locks.AbstractOwnableSynchronizer}. </td>
+        <td> The thread identifier of the exclusive owner thread when the parkBlocker is
+             an {@link java.util.concurrent.locks.AbstractOwnableSynchronizer}. </td>
     </tr>
     </tbody>
 </table>
