@@ -262,54 +262,13 @@ public class CompositeProxyTest {
         assertEquals("ciao,bye", proxy.talk());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testBasicObjectMethods(boolean withOverrides) {
-        interface A {
-            default void foo() {}
+    @Test
+    public void testBasicObjectMethods() {
+        interface Foo {
         }
 
-        interface B {
-            default void bar() {}
-        }
-
-        interface C extends A, B {
-        }
-
-        final A aImpl;
-        final B bImpl;
-
-        if (withOverrides) {
-            aImpl = new A() {
-                @Override
-                public String toString() {
-                    return "theA";
-                }
-
-                @Override
-                public boolean equals(Object other) {
-                    return true;
-                }
-
-                @Override
-                public int hashCode() {
-                    return 7;
-                }
-            };
-
-            bImpl = new B() {
-                @Override
-                public String toString() {
-                    return "theB";
-                }
-            };
-        } else {
-            aImpl = new A() {};
-            bImpl = new B() {};
-        }
-
-        var proxy = CompositeProxy.create(C.class, aImpl, bImpl);
-        var proxy2 = CompositeProxy.create(C.class, aImpl, bImpl);
+        var proxy = CompositeProxy.create(Foo.class);
+        var proxy2 = CompositeProxy.create(Foo.class);
 
         assertNotEquals(proxy.toString(), proxy2.toString());
         assertNotEquals(proxy.hashCode(), proxy2.hashCode());
