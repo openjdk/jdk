@@ -70,7 +70,7 @@ public class FileDialogUIUpdate extends Frame {
         Button showButton = new Button("Show FileDialog");
         setLayout(new BorderLayout());
 
-        fd.setDirectory(System.getenv("SYSTEMROOT"));
+        fd.setDirectory("c:/");
         showButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 fd.setVisible(true);

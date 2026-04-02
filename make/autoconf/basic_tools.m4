@@ -56,21 +56,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   # Tools only needed on some platforms
   UTIL_LOOKUP_PROGS(LOCALE, locale)
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
   UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
-
-  case "`uname -s 2>/dev/null || true`" in
-    *MINGW*|*MSYS*|*CYGWIN*|*NT*) HAVE_WINDOWS_ENV=yes ;;
-    *) HAVE_WINDOWS_ENV=no ;;
-  esac
-
-  if test "x${HAVE_WINDOWS_ENV}" = "xyes"; then
-    if test "x${SYSTEMROOT:-}" = "x"; then
-      AC_MSG_ERROR([Environment variable SYSTEMROOT is not set. Please set SYSTEMROOT (e.g. C:\Windows) before building on Windows.])
-    fi
-  fi
-
-  SYSTEM32_PATH=$($PATHTOOL -u "${SYSTEMROOT}/system32" 2>/dev/null)
-  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:${SYSTEM32_PATH})
 ])
 
 ################################################################################

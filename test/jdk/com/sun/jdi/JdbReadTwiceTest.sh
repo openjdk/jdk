@@ -44,20 +44,13 @@ if [ -z "$TESTCLASSES" ] ; then
 fi
 
 case `uname -s` in
-    *MINGW*|*MSYS*|*CYGWIN*|*NT*)
-      IS_WINDOWS=true
-      ;;
     Linux)
-      IS_WINDOWS=false
-
       # Need this to convert to the /.automount/... form which
       # is what jdb will report when it reads an init file.
       echo TESTCLASSES=$TESTCLASSES
       TESTCLASSES=`(cd $TESTCLASSES; /bin/pwd)`
       echo TESTCLASSES=$TESTCLASSES
       ;;
-    *)
-      IS_WINDOWS=false
 esac
 
 # All output will go under this dir.  We define HOME to
@@ -75,6 +68,12 @@ jdbFiles="$HOME/jdb.ini $HOME/.jdbrc $here/jdb.ini $here/.jdbrc $tmpResult $fred
 cd $here
 failed=
 
+target_os=$($TESTJAVA/bin/java -XshowSettings:all 2>&1 | grep 'os.name' | grep -i 'windows')
+if [ -n "$target_os" ]; then
+    IS_WINDOWS=true
+else
+    IS_WINDOWS=false
+fi
 
 mkFiles()
 {
