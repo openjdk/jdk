@@ -380,91 +380,29 @@ void AOTCodeCache::init_early_c1_table() {
   }
 }
 
-// macro to record which flags are set -- flag_type selects the
-// relevant accessor e.g. set_flag, set_x86_flag, set_x86_use_flag.
-// n.b. flag_enum_name and global_flag_name are both needed because we
-// don't have consistent conventions for naming global flags e.g.
-// EnableContended vs UseMulAddIntrinsic vs UseCRC32Intrinsics
-
-#define RECORD_FLAG(flag_type, flag_enum_name, global_flag_name)        \
-  if (global_flag_name) {                                               \
-    set_ ## flag_type ## flag(flag_enum_name);                          \
-  }
-
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
-  _flags = 0;
-#ifdef ASSERT
-  set_flag(debugVM);
-#endif
-  RECORD_FLAG(, compressedOops, UseCompressedOops);
-  RECORD_FLAG(, useTLAB, UseTLAB);
-  if (JavaAssertions::systemClassDefault()) {
-    set_flag(systemClassAssertions);
-  }
-  if (JavaAssertions::userClassDefault()) {
-    set_flag(userClassAssertions);
-  }
-  RECORD_FLAG(, enableContendedPadding, EnableContended);
-  RECORD_FLAG(, restrictContendedPadding, RestrictContended);
+  _systemClassAssertions = JavaAssertions::systemClassDefault();
+  _userClassAssertions = JavaAssertions::userClassDefault();
 
 #define AOTCODECACHE_SAVE_VAR(type, name) _saved_ ## name =  name;
 
-  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR)
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR);
 
+  // The following needs special handling, so record/check manually
+  _compressedOops        = UseCompressedOops;
   _compressedOopShift    = CompressedOops::shift();
   _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
   _gc                    = (uint)Universe::heap()->kind();
-  _use_intrinsics_flags = 0;
-  RECORD_FLAG(use_, useCRC32, UseCRC32Intrinsics);
-  RECORD_FLAG(use_, useCRC32C, UseCRC32CIntrinsics);
-#ifdef COMPILER2
-  RECORD_FLAG(use_, useMultiplyToLen, UseMultiplyToLenIntrinsic);
-  RECORD_FLAG(use_, useSquareToLen, UseSquareToLenIntrinsic);
-  RECORD_FLAG(use_, useMulAdd, UseMulAddIntrinsic);
-  RECORD_FLAG(use_, useMontgomeryMultiply, UseMontgomeryMultiplyIntrinsic);
-  RECORD_FLAG(use_, useMontgomerySquare, UseMontgomerySquareIntrinsic);
-#endif // COMPILER2
-  RECORD_FLAG(use_, useChaCha20, UseChaCha20Intrinsics);
-  RECORD_FLAG(use_, useDilithium, UseDilithiumIntrinsics);
-  RECORD_FLAG(use_, useKyber, UseKyberIntrinsics);
-  RECORD_FLAG(use_, useBASE64, UseBASE64Intrinsics);
-  RECORD_FLAG(use_, useAdler32, UseAdler32Intrinsics);
-  RECORD_FLAG(use_, useAES, UseAESIntrinsics);
-  RECORD_FLAG(use_, useAESCTR, UseAESCTRIntrinsics);
-  RECORD_FLAG(use_, useGHASH, UseGHASHIntrinsics);
-  RECORD_FLAG(use_, useMD5, UseMD5Intrinsics);
-  RECORD_FLAG(use_, useSHA1, UseSHA1Intrinsics);
-  RECORD_FLAG(use_, useSHA256, UseSHA256Intrinsics);
-  RECORD_FLAG(use_, useSHA512, UseSHA512Intrinsics);
-  RECORD_FLAG(use_, useSHA3, UseSHA3Intrinsics);
-  RECORD_FLAG(use_, usePoly1305, UsePoly1305Intrinsics);
-  RECORD_FLAG(use_, useVectorizedMismatch,UseVectorizedMismatchIntrinsic );
-  RECORD_FLAG(use_, useSecondarySupersTable, UseSecondarySupersTable);
+
 #if defined(X86) && !defined(ZERO)
-  _x86_flags = 0;
-  RECORD_FLAG(x86_, x86_enableX86ECoreOpts, EnableX86ECoreOpts);
-  RECORD_FLAG(x86_, x86_useUnalignedLoadStores, UseUnalignedLoadStores);
-  RECORD_FLAG(x86_, x86_useAPX, UseAPX);
+  _useUnalignedLoadStores = UseUnalignedLoadStores;
+#endif
 
-  _x86_use_intrinsics_flags = 0;
-  RECORD_FLAG(x86_use_, x86_useLibm, UseLibmIntrinsic);
-  RECORD_FLAG(x86_use_, x86_useIntPoly, UseIntPolyIntrinsics);
-#endif // defined(X86) && !defined(ZERO)
 #if defined(AARCH64)  && !defined(ZERO)
-  _aarch64_flags = 0;
-  RECORD_FLAG(aarch64_, aarch64_avoidUnalignedAccesses, AvoidUnalignedAccesses);
-  RECORD_FLAG(aarch64_, aarch64_useSIMDForMemoryOps, UseSIMDForMemoryOps);
-  RECORD_FLAG(aarch64_, aarch64_useSIMDForArrayEquals, UseSIMDForArrayEquals);
-  RECORD_FLAG(aarch64_, aarch64_useSIMDForSHA3, UseSIMDForSHA3Intrinsic);
-  RECORD_FLAG(aarch64_, aarch64_useLSE, UseLSE);
+  _avoidUnalignedAccesses = AvoidUnalignedAccesses;
+#endif
 
-  _aarch64_use_intrinsics_flags = 0;
-  RECORD_FLAG(aarch64_use_, aarch64_useBlockZeroing, UseBlockZeroing);
-  RECORD_FLAG(aarch64_use_, aarch64_useSIMDForBigIntegerShift, UseSIMDForBigIntegerShiftIntrinsics);
-  RECORD_FLAG(aarch64_use_, aarch64_useSimpleArrayEquals, UseSimpleArrayEquals);
-  RECORD_FLAG(aarch64_use_, aarch64_useSecondarySupersCache, UseSecondarySupersCache);
-#endif // defined(AARCH64) && !defined(ZERO)
   _cpu_features_offset   = cpu_features_offset;
 }
 
@@ -543,32 +481,8 @@ bool check_config(T saved, T current, const char* name) {
   }
 }
 
-// macro to do *standard* flag eq checks -- flag_type selects the
-// relevant accessor e.g. test_flag, test_x86_flag, test_x86_use_flag.
-// n.b. flag_enum_name and global_flag_name are both needed because we
-// don't have consistent conventions for naming global flags e.g.
-// EnableContended vs UseMulAddIntrinsic vs UseCRC32Intrinsics
-
-#define CHECK_FLAG(flag_type, flag_enum_name, global_flag_name)         \
-  if (test_ ## flag_type ## flag(flag_enum_name) != global_flag_name) {   \
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with " # global_flag_name " = %s vs current %s" , (global_flag_name ? "false" : "true"), (global_flag_name ? "true" : "false")); \
-    return false;                                                       \
-  }
-
 bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // First checks affect all cached AOT code
-#ifdef ASSERT
-  if (!test_flag(debugVM)) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
-    return false;
-  }
-#else
-  if (test_flag(debugVM)) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
-    return false;
-  }
-#endif
-
   CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
   if (aot_gc != Universe::heap()->kind()) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
@@ -586,11 +500,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  // change to EnableContended can affect validity of nmethods
-  CHECK_FLAG(, enableContendedPadding, EnableContended);
-  // change to RestrictContended can affect validity of nmethods
-  CHECK_FLAG(, restrictContendedPadding, RestrictContended);
-
   // Tests for config options which might affect validity of adapters,
   // stubs or nmethods. Currently we take a pessemistic stand and
   // drop the whole cache if any of these are changed.
@@ -600,86 +509,28 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR)
 
-  // check intrinsic use settings are compatible
-
-  CHECK_FLAG(use_, useCRC32, UseCRC32Intrinsics);
-  CHECK_FLAG(use_, useCRC32C, UseCRC32CIntrinsics);
-
-#ifdef COMPILER2
-  CHECK_FLAG(use_, useMultiplyToLen, UseMultiplyToLenIntrinsic);
-  CHECK_FLAG(use_, useSquareToLen, UseSquareToLenIntrinsic);
-  CHECK_FLAG(use_, useMulAdd, UseMulAddIntrinsic);
-  CHECK_FLAG(use_, useMontgomeryMultiply,UseMontgomeryMultiplyIntrinsic);
-  CHECK_FLAG(use_, useMontgomerySquare, UseMontgomerySquareIntrinsic);
-#endif // COMPILER2
-  CHECK_FLAG(use_, useChaCha20, UseChaCha20Intrinsics);
-  CHECK_FLAG(use_, useDilithium, UseDilithiumIntrinsics);
-  CHECK_FLAG(use_, useKyber, UseKyberIntrinsics);
-  CHECK_FLAG(use_, useBASE64, UseBASE64Intrinsics);
-  CHECK_FLAG(use_, useAES, UseAESIntrinsics);
-  CHECK_FLAG(use_, useAESCTR, UseAESCTRIntrinsics);
-  CHECK_FLAG(use_, useGHASH, UseGHASHIntrinsics);
-  CHECK_FLAG(use_, useMD5, UseMD5Intrinsics);
-  CHECK_FLAG(use_, useSHA1, UseSHA1Intrinsics);
-  CHECK_FLAG(use_, useSHA256, UseSHA256Intrinsics);
-  CHECK_FLAG(use_, useSHA512, UseSHA512Intrinsics);
-  CHECK_FLAG(use_, useSHA3, UseSHA3Intrinsics);
-  CHECK_FLAG(use_, usePoly1305, UsePoly1305Intrinsics);
-  CHECK_FLAG(use_, useVectorizedMismatch, UseVectorizedMismatchIntrinsic);
-  CHECK_FLAG(use_, useSecondarySupersTable, UseSecondarySupersTable);
-
 #if defined(X86) && !defined(ZERO)
-
-  // change to EnableX86ECoreOpts may affect validity of nmethods
-  CHECK_FLAG(x86_, x86_enableX86ECoreOpts, EnableX86ECoreOpts);
-
   // switching off UseUnalignedLoadStores can affect validity of fill
   // stubs
-  if (test_x86_flag(x86_useUnalignedLoadStores) && !UseUnalignedLoadStores) {
+  if (_useUnalignedLoadStores && !UseUnalignedLoadStores) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
     return false;
   }
-
-  // change to UseAPX can affect validity of nmethods and stubs
-  CHECK_FLAG(x86_, x86_useAPX, UseAPX);
-
-  // check x86-specific intrinsic use settings are compatible
-
-  CHECK_FLAG(x86_use_, x86_useLibm, UseLibmIntrinsic);
-  CHECK_FLAG(x86_use_, x86_useIntPoly, UseIntPolyIntrinsics);
 #endif // defined(X86) && !defined(ZERO)
 
 #if defined(AARCH64) && !defined(ZERO)
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
-  if (!test_aarch64_flag(aarch64_avoidUnalignedAccesses) && AvoidUnalignedAccesses) {
+  if (!_avoidUnalignedAccesses && AvoidUnalignedAccesses) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AvoidUnalignedAccesses = false vs current = true");
     return false;
   }
-
-  // change to UseSIMDForMemoryOps may affect validity of array
-  // copy stubs and nmethods
-  CHECK_FLAG(aarch64_, aarch64_useSIMDForMemoryOps, UseSIMDForMemoryOps);
-  // change to UseSIMDForArrayEquals may affect validity of array
-  // copy stubs and nmethods
-  CHECK_FLAG(aarch64_, aarch64_useSIMDForArrayEquals, UseSIMDForArrayEquals);
-  // change to useSIMDForSHA3 may affect validity of SHA3 stubs
-  CHECK_FLAG(aarch64_, aarch64_useSIMDForSHA3, UseSIMDForSHA3Intrinsic);
-  // change to UseLSE may affect validity of stubs and nmethods
-  CHECK_FLAG(aarch64_, aarch64_useLSE, UseLSE);
-
-  // check aarch64-specific intrinsic use settings are compatible
-
-  CHECK_FLAG(aarch64_use_, aarch64_useBlockZeroing, UseBlockZeroing);
-  CHECK_FLAG(aarch64_use_, aarch64_useSIMDForBigIntegerShift, UseSIMDForBigIntegerShiftIntrinsics);
-  CHECK_FLAG(aarch64_use_, aarch64_useSimpleArrayEquals, UseSimpleArrayEquals);
-  CHECK_FLAG(aarch64_use_, aarch64_useSecondarySupersCache, UseSecondarySupersCache);
 #endif // defined(AARCH64) && !defined(ZERO)
 
   // The following checks do not affect AOT adapters caching
 
-  if (test_flag(compressedOops) != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s vs current %s", (test_flag(compressedOops)  ? "true" : "false"), (UseCompressedOops ? "true" : "false"));
+  if (_compressedOops != UseCompressedOops) {
+    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s vs current %s", (_compressedOops ? "true" : "false"), (UseCompressedOops ? "true" : "false"));
     AOTStubCaching = false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
