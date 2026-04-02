@@ -1,3 +1,4 @@
+;
 ; Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
 ; DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ;
@@ -20,18 +21,21 @@
 ; questions.
 ;
 
-    ; int get_sve_vector_length_impl(void);
+    ; Support for int get_sve_vector_length();
     ;
     ; Returns the current SVE vector length in bytes.
-    ; Uses the RDVL instruction which returns imm * VL in bytes.
-    ; With imm=1 this gives the SVE vector length directly.
+    ; This function uses the INCB instruction which increments a register
+    ; by the number of bytes in an SVE vector register.
+    ;
+    ; Note: This function will fault if SVE is not available or enabled.
+    ; The caller must ensure SVE support is detected before calling.
 
     ALIGN  4
-    EXPORT get_sve_vector_length_impl
-    AREA   sve_helper_text, CODE, READONLY
+    EXPORT get_sve_vector_length
+    AREA sve_text, CODE
 
-get_sve_vector_length_impl
-    rdvl    x0, 1
+get_sve_vector_length
+    rdvl     x0, #1       ; x0 = 1 * vector_length_in_bytes
     ret
 
     END
