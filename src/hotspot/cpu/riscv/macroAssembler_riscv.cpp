@@ -3511,16 +3511,19 @@ void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, R
   sd(tmp1, adr);
 }
 
-void MacroAssembler::cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal) {
+void MacroAssembler::cmp_klass(Register obj, Register klass,
+                               Register tmp1, Register tmp2, Label &L, bool equal) {
+  assert_different_registers(obj, klass, tmp1, tmp2);
   if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(tmp, oop);
+    load_narrow_klass_compact(tmp1, obj);
   } else {
-    lwu(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    lwu(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
+  decode_klass_not_null(tmp1, tmp2);
   if (equal) {
-    beq(trial_klass, tmp, L);
+    beq(klass, tmp1, L);
   } else {
-    bne(trial_klass, tmp, L);
+    bne(klass, tmp1, L);
   }
 }
 
