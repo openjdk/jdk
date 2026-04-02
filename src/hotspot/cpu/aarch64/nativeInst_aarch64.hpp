@@ -181,8 +181,8 @@ public:
     int64_t offset = dest - instruction_address();
     jint insn = 0b100101 << 26;
     assert((offset & 3) == 0, "should be");
+    Instruction_aarch64::spatch(reinterpret_cast<address>(&insn), 25, 0, offset >> 2);
     set_int_at(displacement_offset, insn);
-    Instruction_aarch64::spatch(instruction_address(), 25, 0, offset >> 2);
   }
 
   void verify_alignment() { ; }
