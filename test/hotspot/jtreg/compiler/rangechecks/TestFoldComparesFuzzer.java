@@ -63,6 +63,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *   the two conditions, see test_array_length_and_null_check_1
  * - TODO: Cases with switch
  *         See: JavaTokenizer::isSpecial
+ * - TODO: IR rule example with arr.length
  *
  * - Extend to long
  * - Add IR rules - Currently difficult because not all cases are
@@ -376,6 +377,7 @@ public class TestFoldComparesFuzzer {
         // TODO: find a way to fuzz around interesting n ranges.
         // Ok, but now the problem seems to be with warmup, and strange input ranges.
         // Do we care? I don't know. But I need to investigate a bit more, I don't want random failures.
+        // With warmup, we need to make sure that both ifs are encountered. That could be tricky.
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("lo", lo),
