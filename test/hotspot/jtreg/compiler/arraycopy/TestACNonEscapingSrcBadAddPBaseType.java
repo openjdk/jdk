@@ -49,7 +49,7 @@ public class TestACNonEscapingSrcBadAddPBaseType {
     private static void test1(int[] dst) {
         int[] array = new int[2];
         A a = new A(array);
-        voltileField = 42;
+        volatileField = 42;
         int[] src = a.src;
         System.arraycopy(src, 0, dst, 0, src.length);
         System.arraycopy(src, 0, dst, 0, src.length);
