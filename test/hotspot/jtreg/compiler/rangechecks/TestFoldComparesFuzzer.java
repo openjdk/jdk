@@ -367,12 +367,13 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
-        private final boolean foldedAfterParsing;
-        private final int cmpI;
-        private final int cmpU;
-        private final String comment;
 
-        public TestMethodGeneratorConstIR() {
+        private final Template.ZeroArgs irTemplate = Template.make(() -> {
+            boolean foldedAfterParsing;
+            int cmpI = -1;
+            int cmpU = -1;
+            String comment;
+
             if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
                 // a)   (n >  lo && n <  hi)
                 if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
@@ -440,25 +441,25 @@ public class TestFoldComparesFuzzer {
             } else {
                 throw new RuntimeException("should not be generated: " + c_lo + " and " + c_hi);
             }
-        }
 
-        private final Template.ZeroArgs irTemplate = Template.make(() -> scope(
-            let("cmpI", cmpI),
-            let("cmpU", cmpU),
-            let("comment", comment),
-            """
-            // #comment
-            """,
-            foldedAfterParsing
-            ?   """
-                @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-                @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"})
+            return scope(
+                let("cmpI", cmpI),
+                let("cmpU", cmpU),
+                let("comment", comment),
                 """
-            :   """
-                @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-                @IR(counts = {IRNode.CMP_I, "= #cmpI", IRNode.CMP_U, "= #cmpU"})
-                """
-        ));
+                // #comment
+                """,
+                foldedAfterParsing
+                ?   """
+                    @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+                    @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"})
+                    """
+                :   """
+                    @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+                    @IR(counts = {IRNode.CMP_I, "= #cmpI", IRNode.CMP_U, "= #cmpU"})
+                    """
+                );
+        });
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
         public Template.ZeroArgs getIRTemplate() { return irTemplate; }
