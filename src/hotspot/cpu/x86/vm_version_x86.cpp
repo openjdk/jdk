@@ -1144,6 +1144,19 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseFMA, false);
   }
 
+  if (supports_sha() || (supports_avx2() && supports_bmi2())) {
+    if (FLAG_IS_DEFAULT(UseSHA)) {
+      UseSHA = true;
+    } else if (!UseSHA) {
+      _features.clear_feature(CPU_SHA);
+    }
+  } else if (UseSHA) {
+    if (!FLAG_IS_DEFAULT(UseSHA)) {
+      warning("SHA instructions are not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
     FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
@@ -1345,19 +1358,6 @@ void VM_Version::get_processor_features() {
 
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     UseMD5Intrinsics = true;
-  }
-
-  if (supports_sha() || (supports_avx2() && supports_bmi2())) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    } else if (!UseSHA) {
-      _features.clear_feature(CPU_SHA);
-    }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA)) {
-      warning("SHA instructions are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   if (supports_sha() && supports_sse4_1() && UseSHA) {
