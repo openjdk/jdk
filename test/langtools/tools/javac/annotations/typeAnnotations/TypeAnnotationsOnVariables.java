@@ -42,17 +42,23 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+import java.io.IOException;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -68,6 +74,7 @@ import toolbox.ToolBox;
 
 public class TypeAnnotationsOnVariables {
 
+    private static final Pattern CP_REFERENCE = Pattern.compile("#([1-9][0-9]*)");
     final ToolBox tb = new ToolBox();
     Path base;
 
@@ -255,6 +262,28 @@ public class TypeAnnotationsOnVariables {
                                                   System.err.println(test4);
                                               }
                                           };
+                                          Object o = null;
+                                          if (o instanceof @TypeAnno String s) {
+                                              System.err.println(s);
+                                          }
+                                      }
+                                  };
+                              }
+                              void lambdaInClass() {
+                                  class C {
+                                      Runnable r = () -> {
+                                          @TypeAnno long test1 = 0;
+                                          System.err.println(test1);
+                                      };
+                                  }
+                              }
+                              void classInLambda() {
+                                  Runnable r = () -> {
+                                      class C {
+                                          void method() {
+                                              @TypeAnno long test1 = 0;
+                                              System.err.println(test1);
+                                          }
                                       }
                                   };
                               }
@@ -268,55 +297,62 @@ public class TypeAnnotationsOnVariables {
                 .writeAll();
 
         Path testClass = classes.resolve("Test.class");
-        ClassModel model = ClassFile.of().parse(testClass);
-        Map<String, List<MethodModel>> name2Method =
-                model.methods()
-                     .stream()
-                     .collect(Collectors.groupingBy(m -> m.methodName().stringValue()));
-        MethodModel oMethod = singletonValue(name2Method.get("o"));
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+        MethodModel oMethod = singletonValue(testClassDesc.name2Method().get("o"));
         var oTypeAnnos = getAnnotations(oMethod);
         assertFalse(oTypeAnnos.isPresent(), () -> oTypeAnnos.toString());
 
-        checkTypeAnnotations(testClass,
-                             name2Method,
+        checkTypeAnnotations(testClassDesc,
                              "lambda$o$0",
-                             "        0: #64(): LOCAL_VARIABLE, {start_pc=2, length=125, index=0}",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=151, index=0}",
                              "          Test$TypeAnno",
-                             "        1: #64(): LOCAL_VARIABLE, {start_pc=4, length=120, index=2}",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=4, length=146, index=2}",
                              "          Test$TypeAnno",
-                             "        2: #64(): RESOURCE_VARIABLE, {start_pc=14, length=52, index=4}",
+                             "        2: LTest$TypeAnno;(): RESOURCE_VARIABLE, {start_pc=14, length=52, index=4}",
                              "          Test$TypeAnno",
-                             "        3: #64(): EXCEPTION_PARAMETER, exception_index=2",
+                             "        3: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=2",
                              "          Test$TypeAnno",
-                             "        4: #64(): EXCEPTION_PARAMETER, exception_index=3",
+                             "        4: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=3",
                              "          Test$TypeAnno",
-                             "        5: #64(): EXCEPTION_PARAMETER, exception_index=4",
+                             "        5: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=4",
                              "          Test$TypeAnno",
-                             "        6: #64(): EXCEPTION_PARAMETER, exception_index=5",
+                             "        6: LTest$TypeAnno;(): EXCEPTION_PARAMETER, exception_index=5",
+                             "          Test$TypeAnno",
+                             "        7: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=142, length=8, index=6}",
                              "          Test$TypeAnno");
 
-        checkTypeAnnotations(testClass,
-                             name2Method,
+        checkTypeAnnotations(testClassDesc,
                              "lambda$o$1",
-                             "        0: #64(): LOCAL_VARIABLE, {start_pc=2, length=12, index=0}",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=12, index=0}",
                              "          Test$TypeAnno",
-                             "        1: #64(): LOCAL_VARIABLE, {start_pc=4, length=7, index=2}",
+                             "        1: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=4, length=7, index=2}",
+                             "          Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$classInLambda$0");
+
+        checkTypeAnnotations(TestClassDesc.create(classes.resolve("Test$1C.class")),
+                             "lambda$new$0",
+                             "        0: LTest$TypeAnno;(): LOCAL_VARIABLE, {start_pc=2, length=8, index=0}",
                              "          Test$TypeAnno");
     }
 
-    private void checkTypeAnnotations(Path testClass,
-                                      Map<String, List<MethodModel>> name2Method,
+    private void checkTypeAnnotations(TestClassDesc testClassDesc,
                                       String lambdaMethodName,
-                                      String... expectedEntries) {
-        MethodModel lambdaMethod = singletonValue(name2Method.get(lambdaMethodName));
+                                      String... expectedEntries) throws IOException {
+        MethodModel lambdaMethod = singletonValue(testClassDesc.name2Method().get(lambdaMethodName));
         var lambdaTypeAnnos = getAnnotations(lambdaMethod);
-        assertTrue(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
-        assertEquals(expectedEntries.length / 2,
-                     lambdaTypeAnnos.orElseThrow().annotations().size(),
-                     () -> lambdaTypeAnnos.orElseThrow().annotations().toString());
+        if (expectedEntries.length == 0) {
+            assertFalse(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
+        } else {
+            assertTrue(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
+            assertEquals(expectedEntries.length / 2,
+                         lambdaTypeAnnos.orElseThrow().annotations().size(),
+                         () -> lambdaTypeAnnos.orElseThrow().annotations().toString());
 
-        checkJavapOutput(testClass,
-                         List.of(expectedEntries));
+            checkJavapOutput(testClassDesc,
+                             List.of(expectedEntries));
+        }
     }
 
     private <T> T singletonValue(List<T> values) {
@@ -330,18 +366,54 @@ public class TypeAnnotationsOnVariables {
                 .findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
     }
 
-    void checkJavapOutput(Path pathToClass, List<String> expectedOutput) {
+    void checkJavapOutput(TestClassDesc testClassDesc, List<String> expectedOutput) throws IOException {
         String javapOut = new JavapTask(tb)
                 .options("-v", "-p")
-                .classes(pathToClass.toString())
+                .classes(testClassDesc.pathToClass().toString())
                 .run()
                 .getOutput(Task.OutputKind.DIRECT);
 
+        StringBuilder expandedJavapOutBuilder = new StringBuilder();
+        Matcher m = CP_REFERENCE.matcher(javapOut);
+
+        while (m.find()) {
+            String cpIndexText = m.group(1);
+            int cpIndex = Integer.parseInt(cpIndexText);
+            m.appendReplacement(expandedJavapOutBuilder, Matcher.quoteReplacement(testClassDesc.cpIndex2Name().getOrDefault(cpIndex, cpIndexText)));
+        }
+
+        m.appendTail(expandedJavapOutBuilder);
+
+        String expandedJavapOut = expandedJavapOutBuilder.toString();
+
         for (String expected : expectedOutput) {
-            if (!javapOut.contains(expected)) {
-                System.err.println(javapOut);
+            if (!expandedJavapOut.contains(expected)) {
+                System.err.println(expandedJavapOut);
                 throw new AssertionError("unexpected output");
             }
+        }
+    }
+
+    record TestClassDesc(Path pathToClass,
+                     Map<String, List<MethodModel>> name2Method,
+                     Map<Integer, String> cpIndex2Name) {
+        public static TestClassDesc create(Path pathToClass) throws IOException{
+            ClassModel model = ClassFile.of().parse(pathToClass);
+            Map<String, List<MethodModel>> name2Method =
+                    model.methods()
+                         .stream()
+                         .collect(Collectors.groupingBy(m -> m.methodName().stringValue()));
+            ConstantPool cp = model.constantPool();
+            int cpSize = cp.size();
+            Map<Integer, String> cpIndex2Name = new HashMap<>();
+
+            for (int i = 1; i < cpSize; i++) {
+                if (cp.entryByIndex(i) instanceof Utf8Entry string) {
+                    cpIndex2Name.put(i, string.stringValue());
+                }
+            }
+
+            return new TestClassDesc(pathToClass, name2Method, cpIndex2Name);
         }
     }
 
