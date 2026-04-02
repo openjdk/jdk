@@ -414,7 +414,6 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _compressedOopShift    = CompressedOops::shift();
   _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
-  _contendedPaddingWidth = ContendedPaddingWidth; // FIXME -- this is never checked!
   _gc                    = (uint)Universe::heap()->kind();
   _use_intrinsics_flags = 0;
   RECORD_FLAG(use_, useCRC32, UseCRC32Intrinsics);
@@ -680,7 +679,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // The following checks do not affect AOT adapters caching
 
   if (test_flag(compressedOops) != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_debug(aot, codecache, init)("AOTStubCaching is disabled: it was created with UseCompressedOops = %s vs current %s", (test_flag(compressedOops)  ? "true" : "false"), (UseCompressedOops ? "true" : "false"));
     AOTStubCaching = false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {

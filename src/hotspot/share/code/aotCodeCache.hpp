@@ -228,7 +228,6 @@ protected:
     address _compressedOopBase;
     uint _compressedOopShift;
     uint _compressedKlassShift;
-    uint _contendedPaddingWidth;
     uint _gc;
     enum Flags {
       none                     = 0,
