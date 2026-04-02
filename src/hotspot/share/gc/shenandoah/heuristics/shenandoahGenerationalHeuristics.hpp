@@ -76,7 +76,7 @@ private:
   // Filter and sort remaining regions before adding to collection set.
   void filter_regions(ShenandoahCollectionSet* collection_set);
 
-  // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer
+  // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()
   void adjust_evacuation_budgets(ShenandoahHeap* const heap,
                                  ShenandoahCollectionSet* const collection_set);

@@ -43,6 +43,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -1371,6 +1372,25 @@ TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(con
   return tuple;
 }
 
+CallLeafPureNode* CallLeafPureNode::inline_call_leaf_pure_node(Node* control) const {
+  Node* top = Compile::current()->top();
+  if (control == nullptr) {
+    control = in(TypeFunc::Control);
+  }
+
+  CallLeafPureNode* call = new CallLeafPureNode(tf(), entry_point(), _name);
+  call->init_req(TypeFunc::Control, control);
+  call->init_req(TypeFunc::I_O, top);
+  call->init_req(TypeFunc::Memory, top);
+  call->init_req(TypeFunc::ReturnAdr, top);
+  call->init_req(TypeFunc::FramePtr, top);
+  for (unsigned int i = 0; i < tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+    call->init_req(TypeFunc::Parms + i, in(TypeFunc::Parms + i));
+  }
+
+  return call;
+}
+
 Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (is_dead()) {
     return nullptr;
@@ -2436,4 +2456,158 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
   }
 
   return true;
+}
+
+PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
+    : CallLeafPureNode(
+        OptoRuntime::Math_DD_D_Type(),
+        StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
+        "pow") {
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+
+  init_req(TypeFunc::Parms + 0, base);
+  init_req(TypeFunc::Parms + 1, C->top());  // double slot padding
+  init_req(TypeFunc::Parms + 2, exp);
+  init_req(TypeFunc::Parms + 3, C->top());  // double slot padding
+}
+
+const Type* PowDNode::Value(PhaseGVN* phase) const {
+  const Type* t_base = phase->type(base());
+  const Type* t_exp  = phase->type(exp());
+
+  if (t_base == Type::TOP || t_exp == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeD* base_con = t_base->isa_double_constant();
+  const TypeD* exp_con  = t_exp->isa_double_constant();
+  const TypeD* result_t = nullptr;
+
+  // constant folding: both inputs are constants
+  if (base_con != nullptr && exp_con != nullptr) {
+    result_t = TypeD::make(SharedRuntime::dpow(base_con->getd(), exp_con->getd()));
+  }
+
+  // Special cases when only the exponent is known:
+  if (exp_con != nullptr) {
+    double e = exp_con->getd();
+
+    // If the second argument is positive or negative zero, then the result is 1.0.
+    // i.e., pow(x, +/-0.0D) => 1.0
+    if (e == 0.0) { // true for both -0.0 and +0.0
+      result_t = TypeD::ONE;
+    }
+
+    // If the second argument is NaN, then the result is NaN.
+    // i.e., pow(x, NaN) => NaN
+    if (g_isnan(e)) {
+      result_t = TypeD::make(NAN);
+    }
+  }
+
+  if (result_t != nullptr) {
+    // We can't simply return a TypeD here, it must be a tuple type to be compatible with call nodes.
+    const Type** fields = TypeTuple::fields(2);
+    fields[TypeFunc::Parms + 0] = result_t;
+    fields[TypeFunc::Parms + 1] = Type::HALF;
+    return TypeTuple::make(TypeFunc::Parms + 2, fields);
+  }
+
+  return tf()->range();
+}
+
+Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;  // wait for igvn
+  }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* base = this->base();
+  Node* exp  = this->exp();
+
+  const Type* t_exp  = phase->type(exp);
+  const TypeD* exp_con  = t_exp->isa_double_constant();
+
+  // Special cases when only the exponent is known:
+  if (exp_con != nullptr) {
+    double e = exp_con->getd();
+
+    // If the second argument is 1.0, then the result is the same as the first argument.
+    // i.e., pow(x, 1.0) => x
+    if (e == 1.0) {
+      return make_tuple_of_input_state_and_result(igvn, base);
+    }
+
+    // If the second argument is 2.0, then strength reduce to multiplications.
+    // i.e., pow(x, 2.0) => x * x
+    if (e == 2.0) {
+      Node* mul = igvn->transform(new MulDNode(base, base));
+      return make_tuple_of_input_state_and_result(igvn, mul);
+    }
+
+    // If the second argument is 0.5, the strength reduce to square roots.
+    // i.e., pow(x, 0.5) => sqrt(x) iff x > 0
+    if (e == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+      Node* ctrl = in(TypeFunc::Control);
+      Node* zero = igvn->zerocon(T_DOUBLE);
+
+      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+      Node* cmp = igvn->register_new_node_with_optimizer(new CmpDNode(base, zero));
+      Node* test = igvn->register_new_node_with_optimizer(new BoolNode(cmp, BoolTest::le));
+
+      IfNode* iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+      igvn->register_new_node_with_optimizer(iff);
+      Node* if_slow = igvn->register_new_node_with_optimizer(new IfTrueNode(iff));  // x <= 0
+      Node* if_fast = igvn->register_new_node_with_optimizer(new IfFalseNode(iff)); // x > 0
+
+      // slow path: call pow(x, 0.5)
+      Node* call = igvn->register_new_node_with_optimizer(inline_call_leaf_pure_node(if_slow));
+      Node* call_ctrl = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Control));
+      Node* call_result = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Parms + 0));
+
+      // fast path: sqrt(x)
+      Node* sqrt = igvn->register_new_node_with_optimizer(new SqrtDNode(igvn->C, if_fast, base));
+
+      // merge paths
+      RegionNode* region = new RegionNode(3);
+      igvn->register_new_node_with_optimizer(region);
+      region->init_req(1, call_ctrl); // slow path
+      region->init_req(2, if_fast);   // fast path
+
+      PhiNode* phi = new PhiNode(region, Type::DOUBLE);
+      igvn->register_new_node_with_optimizer(phi);
+      phi->init_req(1, call_result); // slow: pow() result
+      phi->init_req(2, sqrt);        // fast: sqrt() result
+
+      igvn->C->set_has_split_ifs(true); // Has chance for split-if optimization
+
+      return make_tuple_of_input_state_and_result(igvn, phi, region);
+    }
+  }
+
+  return CallLeafPureNode::Ideal(phase, can_reshape);
+}
+
+// We can't simply have Ideal() returning a Con or MulNode since the users are still expecting a Call node, but we could
+// produce a tuple that follows the same pattern so users can still get control, io, memory, etc..
+TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control) {
+  if (control == nullptr) {
+    control = in(TypeFunc::Control);
+  }
+
+  Compile* C = phase->C;
+  C->remove_macro_node(this);
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      control,
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr),
+      result,
+      C->top());
+  return tuple;
 }

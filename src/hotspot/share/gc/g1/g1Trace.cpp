@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
