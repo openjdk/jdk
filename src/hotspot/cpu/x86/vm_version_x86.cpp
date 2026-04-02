@@ -1647,7 +1647,7 @@ void VM_Version::get_processor_features() {
       }
 #endif // COMPILER2
 
-      if ((supports_sse4_2() && supports_ht()) || supports_avx()) { // Newest Intel cpus
+      if (is_intel_modern_cpu()) { // Newest Intel cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
@@ -1883,7 +1883,7 @@ void VM_Version::get_processor_features() {
 
   if (is_intel() && is_intel_server_family() && supports_sse3()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
-        supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+        is_intel_modern_cpu()) { // Nehalem based cpus
       FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
     }
 #ifdef COMPILER2
@@ -3316,7 +3316,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
     }
   } else { // Intel
     if (supports_sse3() && is_intel_server_family()) {
-      if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+      if (is_intel_modern_cpu()) { // Nehalem based cpus
         return 192;
       } else if (use_watermark_prefetch) { // watermark prefetching on Core
         return 384;
