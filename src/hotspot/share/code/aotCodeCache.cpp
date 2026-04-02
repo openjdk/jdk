@@ -73,11 +73,23 @@ const char* aot_code_entry_kind_name[] = {
 #undef DECL_KIND_STRING
 };
 
+// Stream to printing AOTCodeCache loading failure.
+// Print to error channel when -XX:AOTMode is set to "on"
+static LogStream& load_failure_log() {
+  static LogStream err_stream(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  static LogStream dbg_stream(LogLevel::Debug, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  if (RequireSharedSpaces) {
+    return err_stream;
+  } else {
+    return dbg_stream;
+  }
+}
+
 static void report_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  log_info(aot, codecache, init)("Unable to use AOT Code Cache.");
+  load_failure_log().print_cr("Unable to use AOT Code Cache.");
   AOTCodeCache::disable_caching();
 }
 
@@ -86,7 +98,7 @@ static void report_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  log_info(aot, codecache, exit)("Unable to create AOT Code Cache.");
+  log_error(aot, codecache, exit)("Unable to create AOT Code Cache.");
   AOTCodeCache::disable_caching();
 }
 
@@ -401,8 +413,6 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _cpu_features_offset   = cpu_features_offset;
 }
 
-#undef RECORD_FLAG
-
 bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
   uint offset = _cpu_features_offset;
@@ -430,13 +440,13 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
       }
     }
   } else {
-    if (log.is_enabled()) {
+    if (load_failure_log().is_enabled()) {
       ResourceMark rm; // required for stringStream::as_string()
       stringStream ss;
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
       VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, ss);
-      log.print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
+      load_failure_log().print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
     }
     return false;
   }
@@ -446,30 +456,30 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
 #define AOTCODECACHE_DISABLED_MSG "AOT Code Cache disabled: it was created with %s = "
 
 inline void log_config_mismatch(CollectedHeap::Name saved, CollectedHeap::Name current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "\"%s\" vs current \"%s\"", name,
-                                  GCConfig::hs_err_name(saved), GCConfig::hs_err_name(current));
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "\"%s\" vs current \"%s\"", name,
+                              GCConfig::hs_err_name(saved), GCConfig::hs_err_name(current));
 }
 
 inline void log_config_mismatch(bool saved, bool current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%s vs current %s", name,
-                                  saved ? "true" : "false", current ? "true" : "false");
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%s vs current %s", name,
+                              saved ? "true" : "false", current ? "true" : "false");
 }
 
 inline void log_config_mismatch(int saved, int current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%d vs current %d", name, saved, current);
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%d vs current %d", name, saved, current);
 }
 
 inline void log_config_mismatch(uint saved, uint current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%u vs current %u", name, saved, current);
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%u vs current %u", name, saved, current);
 }
 
 #ifdef _LP64
 inline void log_config_mismatch(intx saved, intx current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zd vs current %zd", name, saved, current);
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%zd vs current %zd", name, saved, current);
 }
 
 inline void log_config_mismatch(uintx saved, uintx current, const char* name) {
-  log_debug(aot, codecache, init)(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu", name, saved, current);
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu", name, saved, current);
 }
 #endif
 
@@ -504,8 +514,8 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // Special configs that cannot be checked with macros
 
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
-                                    _compressedOopBase, CompressedOops::base());
+    load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
+                                _compressedOopBase, CompressedOops::base());
     return false;
   }
 
@@ -530,15 +540,13 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   return true;
 }
 
-#undef TEST_FLAG
-
 bool AOTCodeCache::Header::verify(uint load_size) const {
   if (_version != AOT_CODE_VERSION) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
+    load_failure_log().print_cr("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
     return false;
   }
   if (load_size < _cache_size) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
+    load_failure_log().print_cr("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
     return false;
   }
   return true;
