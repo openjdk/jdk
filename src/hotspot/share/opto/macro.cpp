@@ -375,7 +375,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res->is_Load() &&
       has_interfering_store(ac, res->as_Load(), &_igvn)) {
     // Not safe: use control and memory from the arraycopy to ensure correct memory state.
-    _igvn.remove_dead_node(res, PhaseIterGVN::NodeOrigin::Speculative); // Clean up the unusable rematerialization load.
+    _igvn.remove_dead_node(res, PhaseIterGVN::NodeOrigin::Graph); // Clean up the unusable rematerialization load.
     return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
   }
 
