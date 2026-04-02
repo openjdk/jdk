@@ -329,7 +329,7 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
     State final_pre_sweep_state = (_state == State::SweepRT || _state == State::CompleteRefineWork)
                                   ? State::SweepRT : _state;
 
-    log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2f) "
+    log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2fms) "
                           "(scanned %zu clean %zu (%.2f%%) not_clean %zu (%.2f%%) not_parsable %zu "
                           "refers_to_cset %zu (%.2f%%) still_refers_to_cset %zu (%.2f%%) no_cross_region %zu pending %zu)",
                           get_duration(State::Idle, _state).seconds() * 1000.0,
