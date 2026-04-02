@@ -316,8 +316,31 @@ public class TestFoldComparesFuzzer {
 
     // Generate some more constrained cases, but with IR rules
     static class TestMethodGeneratorConstIR implements TestMethodGenerator {
-        private final int lo = INT_GEN.next();
-        private final int hi = INT_GEN.next();
+        private final int lo;
+        private final int hi;
+        { // instance initializer
+            // We want to cover all cases for lo and hi combinations. But the
+            // critical cases happen around int_min and int_max, and when
+            // lo and hi are close to each other.
+            switch (RANDOM.nextInt(3)) {
+                case 0 -> {
+                    // Full freedom, will eventually cover all cases
+                    lo = INT_GEN.next();
+                    hi = INT_GEN.next();
+                }
+                case 1 -> {
+                    // Pick cases around overflow and underflow
+                    lo = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
+                    hi = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
+                }
+                default -> {
+                    // Pick cases where lo and hi are close to each other
+                    lo = INT_GEN.next();
+                    hi = lo - 5 + RANDOM.nextInt(10);
+                }
+            }
+        }
+
         // Since we are using constants for lo and hi, the checks should get canonicalized,
         // so that n is always in the lhs. We only create cases that are covered by the
         // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
