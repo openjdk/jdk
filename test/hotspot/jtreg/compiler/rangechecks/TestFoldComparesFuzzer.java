@@ -374,6 +374,8 @@ public class TestFoldComparesFuzzer {
         private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
 
         // TODO: find a way to fuzz around interesting n ranges.
+        // Ok, but now the problem seems to be with warmup, and strange input ranges.
+        // Do we care? I don't know. But I need to investigate a bit more, I don't want random failures.
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("lo", lo),
