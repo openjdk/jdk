@@ -144,7 +144,7 @@ public class TestFoldComparesFuzzer {
                 case LT -> GE;
                 case LE -> GT;
                 case GT -> LE;
-                case GE -> GT;
+                case GE -> LT;
                 case EQ -> NE;
                 case NE -> EQ;
             };
@@ -185,13 +185,15 @@ public class TestFoldComparesFuzzer {
 
         // Keep the same semantics of the test, but change its form.
         Comparison permuteRandom() {
-            return switch(RANDOM.nextInt(4)) {
-                case 0 -> this;
-                case 1 -> new Comparison(rhs, cmp.flip(), lhs);
-                case 2 -> new Comparison(lhs, cmp.negate(), rhs, true);
-                case 3 -> new Comparison(rhs, cmp.negate().flip(), lhs, true);
-                default -> throw new RuntimeException("impossible");
-            };
+            return flipRandom().complementRandom();
+        }
+
+        Comparison flipRandom() {
+            return RANDOM.nextBoolean() ? this : new Comparison(rhs, cmp.flip(), lhs);
+        }
+
+        Comparison complementRandom() {
+            return RANDOM.nextBoolean() ? this : new Comparison(lhs, cmp.negate(), rhs, true);
         }
     }
 
@@ -344,14 +346,11 @@ public class TestFoldComparesFuzzer {
         // Since we are using constants for lo and hi, the checks should get canonicalized,
         // so that n is always in the lhs. We only create cases that are covered by the
         // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
-        private final Comparison c_lo = new Comparison("n", Comparator.GT, "lo");
-        private final Comparison c_hi = new Comparison("n", Comparator.LE, "hi");
-        // TODO: all other options:
-        //private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
-        //private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
+        private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
+        private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
         private final boolean swap = RANDOM.nextBoolean();
-        private final Comparison c1 = (swap ? c_lo : c_hi); // TODO: consider permutations
-        private final Comparison c2 = (swap ? c_hi : c_lo);
+        private final Comparison c1 = (swap ? c_lo : c_hi).permuteRandom();
+        private final Comparison c2 = (swap ? c_hi : c_lo).permuteRandom();
 
         // TODO: find a way to fuzz around interesting n ranges.
 
@@ -415,7 +414,7 @@ public class TestFoldComparesFuzzer {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                     comment = "b) replace with CmpU (non-empty)";
                 } else if (lo == hi) {
-                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                     comment = "b) impossible condition (exact) -> fold away";
                 } else {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
@@ -446,9 +445,14 @@ public class TestFoldComparesFuzzer {
                 if (lo == Integer.MIN_VALUE || hi == Integer.MAX_VALUE) {
                     cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                     comment = "d) one or both checks fold at parse time";
-                } else if (lo <= hi) {
+                } else if (lo == hi) {
+                    // same CmpI at parse time
+                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                    comment = "d) replace with CmpU (single element) -> CmpI eq";
+                } else if (lo < hi) {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "d) replace with CmpU";
+                    comment = "d) replace with CmpU (non-empty)";
                 } else {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                     comment = "d) impossible condition -> fold away";
