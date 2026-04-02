@@ -949,10 +949,17 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
- if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
-   tty->print_cr("==================== archived_training_data ** before dumping ====================");
-   TrainingData::print_archived_training_data_on(tty);
+ if (CDSConfig::is_dumping_final_static_archive()) {
+   if (AOTPrintTrainingInfo) {
+     tty->print_cr("==================== archived_training_data ** before dumping ====================");
+     TrainingData::print_archived_training_data_on(tty);
+   }
+   LogStreamHandle(Info, aot, training, data) log;
+   if (log.is_enabled()) {
+     TrainingData::print_archived_training_data_on(&log);
+   }
  }
+
 
   StaticArchiveBuilder builder;
   dump_static_archive_impl(builder, THREAD);
