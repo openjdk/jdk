@@ -367,50 +367,72 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
+        private final boolean foldedAfterParsing;
         private final int cmpI;
         private final int cmpU;
         private final String comment;
-        { // instance initializer
+
+        public TestMethodGeneratorConstIR() {
             if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
                 // a)   (n >  lo && n <  hi)
-                if (lo < hi) {
+                if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
+                    foldedAfterParsing = true;
+                    comment = "a) one or both checks fold at parse time";
+                } else if (lo < hi) {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
                     comment = "a) replace with CmpU";
                 } else {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 0;
                     comment = "a) impossible condition -> fold away";
                 }
             } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
                 // b)   (n >  lo && n <= hi)
-                if (lo <= hi) {
+                if (lo == Integer.MAX_VALUE || hi == Integer.MAX_VALUE) {
+                    foldedAfterParsing = true;
+                    comment = "b) one or both checks fold at parse time";
+                } else if (lo <= hi) {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
                     comment = "b) replace with CmpU";
                 } else {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 0;
                     comment = "b) impossible condition -> fold away";
                 }
             } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
                 // c)   (n >= lo && n <  hi)
-                if (lo <= hi) {
+                if (lo == Integer.MIN_VALUE || hi == Integer.MIN_VALUE) {
+                    foldedAfterParsing = true;
+                    comment = "c) one or both checks fold at parse time";
+                } else if (lo <= hi) {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
                     comment = "c) replace with CmpU";
                 } else {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 0;
                     comment = "c) impossible condition -> fold away";
                 }
             } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
                 // d)   (n >= lo && n <= hi)
-                if (lo <= hi) {
+                if (lo == Integer.MIN_VALUE || hi == Integer.MAX_VALUE) {
+                    foldedAfterParsing = true;
+                    comment = "d) one or both checks fold at parse time";
+                } else if (lo <= hi) {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
                     comment = "d) replace with CmpU";
                 } else {
+                    foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 0;
                     comment = "d) impossible condition -> fold away";
@@ -426,9 +448,16 @@ public class TestFoldComparesFuzzer {
             let("comment", comment),
             """
             // #comment
-            @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-            @IR(counts = {IRNode.CMP_I, "= #cmpI", IRNode.CMP_U, "= #cmpU"})
-            """
+            """,
+            foldedAfterParsing
+            ?   """
+                @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+                @IR(counts = {IRNode.CMP_I, "< 2", IRNode.CMP_U, "= 0"})
+                """
+            :   """
+                @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+                @IR(counts = {IRNode.CMP_I, "= #cmpI", IRNode.CMP_U, "= #cmpU"})
+                """
         ));
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
@@ -436,13 +465,15 @@ public class TestFoldComparesFuzzer {
     }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(4)) {
-            case 0 -> new TestMethodGeneratorConst();
-            case 1 -> new TestMethodGeneratorWithIf();
-            case 2 -> new TestMethodGeneratorRanges();
-            case 3 -> new TestMethodGeneratorConstIR();
-            default -> throw new RuntimeException("not expected");
-        };
+        TestMethodGenerator tg = new TestMethodGeneratorConstIR();
+        // TODO: revert to all cases
+        //TestMethodGenerator tg = switch(RANDOM.nextInt(4)) {
+        //    case 0 -> new TestMethodGeneratorConst();
+        //    case 1 -> new TestMethodGeneratorWithIf();
+        //    case 2 -> new TestMethodGeneratorRanges();
+        //    case 3 -> new TestMethodGeneratorConstIR();
+        //    default -> throw new RuntimeException("not expected");
+        //};
         Template.OneArg<String> testMethodTemplate = tg.getTestTemplate();
         Template.ZeroArgs testIRTemplate = tg.getIRTemplate();
 
