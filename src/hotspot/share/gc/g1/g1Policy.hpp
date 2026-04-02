@@ -313,9 +313,6 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
-
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
@@ -331,11 +328,6 @@ private:
   // Predict the number of bytes of surviving objects from survivor and old
   // regions and update the associated members.
   void update_survival_estimates_for_next_collection();
-
-  // Set the state to start a concurrent marking cycle and clear
-  // _initiate_conc_mark_if_possible because it has now been
-  // acted on.
-  void initiate_conc_mark();
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a

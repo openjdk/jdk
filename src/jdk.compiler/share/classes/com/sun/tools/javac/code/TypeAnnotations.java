@@ -472,11 +472,12 @@ public class TypeAnnotations {
                 Assert.check(tc.position == pos);
             }
 
-            if (type.hasTag(TypeTag.ARRAY))
-                return rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
+            Type ret;
 
-            if (type.hasTag(TypeTag.TYPEVAR)) {
-                return type.annotatedType(onlyTypeAnnotations);
+            if (type.hasTag(TypeTag.ARRAY)) {
+                ret = rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
+            } else if (type.hasTag(TypeTag.TYPEVAR)) {
+                ret = type.annotatedType(onlyTypeAnnotations);
             } else if (type.getKind() == TypeKind.UNION) {
                 // There is a TypeKind, but no TypeTag.
                 UnionClassType ut = (UnionClassType) type;
@@ -487,7 +488,7 @@ public class TypeAnnotations {
                 ListBuffer<Type> alternatives = new ListBuffer<>();
                 alternatives.add(res);
                 alternatives.addAll(ut.alternatives_field.tail);
-                return new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
+                ret = new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
             } else {
                 Type enclTy = type;
                 Element enclEl = type.asElement();
@@ -567,10 +568,10 @@ public class TypeAnnotations {
                     pos.location = pos.location.appendList(depth.toList());
                 }
 
-                Type ret = typeWithAnnotations(type, enclTy, annotations);
-                typetree.type = ret;
-                return ret;
+                ret = typeWithAnnotations(type, enclTy, annotations);
             }
+            typetree.type = ret;
+            return ret;
         }
 
         /**
