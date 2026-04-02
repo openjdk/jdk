@@ -272,6 +272,12 @@ source %{
           return false;
         }
         break;
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        if (length_in_bytes > 16) {
+          return false; // NEON only, since SLI/USHR are not available in SVE
+        }
+        break;
       default:
         break;
     }
@@ -1933,6 +1939,49 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
     } else { // for S/D
       assert(type2aelembytes(bt) == 4 || type2aelembytes(bt) == 8, "unsupported type");
       __ usra($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister, con);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector rotate with constant shift count (NEON only)
+// Uses USHR+SLI 2-instruction sequence instead of SHL+USHR+ORR 3-instruction decomposition.
+
+instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst);
+  format %{ "vrotateconstant $dst, $src, $shift" %}
+  ins_encode %{
+    int opc = this->ideal_Opcode();
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int esize = type2aelembytes(bt) * BitsPerByte;
+    int raw_shift = (int)$shift$$constant;
+
+    // Compute left and right shift amounts.
+    int lshift, rshift;
+    if (opc == Op_RotateLeftV) {
+      lshift = raw_shift & (esize - 1);
+      rshift = esize - lshift;
+    } else {
+      assert(opc == Op_RotateRightV, "unexpected opcode");
+      rshift = raw_shift & (esize - 1);
+      lshift = esize - rshift;
+    }
+
+    if (lshift == 0 || rshift == 0) {
+      // Rotate by 0 (or by element width) is identity - just copy.
+      uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+      __ orr($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src$$FloatRegister, $src$$FloatRegister);
+    } else {
+      // USHR places the right-shifted bits into dst.
+      // SLI shifts src left and inserts those bits into dst.
+      __ ushr($dst$$FloatRegister, get_arrangement(this),
+              $src$$FloatRegister, rshift);
+      __ sli($dst$$FloatRegister, get_arrangement(this),
+             $src$$FloatRegister, lshift);
     }
   %}
   ins_pipe(pipe_slow);
