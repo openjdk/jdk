@@ -344,7 +344,7 @@ public class TestFoldComparesFuzzer {
         // Since we are using constants for lo and hi, the checks should get canonicalized,
         // so that n is always in the lhs. We only create cases that are covered by the
         // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
-        private final Comparison c_lo = new Comparison("n", Comparator.GE, "lo");
+        private final Comparison c_lo = new Comparison("n", Comparator.GT, "lo");
         private final Comparison c_hi = new Comparison("n", Comparator.LT, "hi");
         // TODO: all other options:
         //private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
@@ -384,11 +384,23 @@ public class TestFoldComparesFuzzer {
                 if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
                     foldedAfterParsing = true;
                     comment = "a) one or both checks fold at parse time";
+                } else if (lo < hi && lo+2 == hi) {
+                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                    foldedAfterParsing = false;
+                    cmpI = 1;
+                    cmpU = 0;
+                    comment = "c) replace with CmpU (single element) -> CmpI eq";
+                } else if (lo < hi && lo+1 == hi) {
+                    // Not yet folded at parsing, because lo != hi
+                    foldedAfterParsing = false;
+                    cmpI = 0;
+                    cmpU = 0;
+                    comment = "c) impossible condition (exact) -> fold away";
                 } else if (lo < hi) {
                     foldedAfterParsing = false;
                     cmpI = 0;
                     cmpU = 1;
-                    comment = "a) replace with CmpU";
+                    comment = "c) replace with CmpU (non-empty)";
                 } else {
                     foldedAfterParsing = false;
                     cmpI = 0;
