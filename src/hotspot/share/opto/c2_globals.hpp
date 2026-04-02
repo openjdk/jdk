@@ -70,6 +70,11 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  product(ccstr, StressDeepIGVNRevisit, nullptr, DIAGNOSTIC,                \
+          "Override deep IGVN revisit for all optimize() calls: "           \
+          "all or random. Requires UseDeepIGVNRevisit=true.")               \
+          constraint(StressDeepIGVNRevisitConstraintFunc, AtParse)          \
+                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
@@ -708,11 +713,6 @@
   develop(bool, UseDeepIGVNRevisit, true,                                   \
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
-                                                                            \
-  product(ccstr, StressDeepIGVNRevisit, nullptr, DIAGNOSTIC,                \
-          "Override deep IGVN revisit for all optimize() calls: "           \
-          "all or random. Requires UseDeepIGVNRevisit=true.")               \
-          constraint(StressDeepIGVNRevisitConstraintFunc, AtParse)          \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
