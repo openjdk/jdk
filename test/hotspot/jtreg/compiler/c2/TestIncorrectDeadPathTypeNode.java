@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.        See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,8 +25,8 @@
  * @test
  * @bug 8376587
  * @summary Fatal "dead path discovered by TypeNode during igvn" after C2 compilation
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+StressIGVN -XX:StressSeed=24476278 ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+StressIGVN ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=24476278 ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN ${test.main.class}
  * @run main ${test.main.class}
  */
 
