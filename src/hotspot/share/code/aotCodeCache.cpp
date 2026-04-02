@@ -455,8 +455,9 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
 
 #define AOTCODECACHE_DISABLED_MSG "AOT Code Cache disabled: it was created with %s = "
 
-inline void log_config_mismatch(CollectedHeap::Name saved, CollectedHeap::Name current, const char* name) {
-  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "\"%s\" vs current \"%s\"", name,
+// Special case, print "GC = ..." to be more understandable.
+inline void log_config_mismatch(CollectedHeap::Name saved, CollectedHeap::Name current, const char* name/*unused*/) {
+  load_failure_log().print_cr("AOT Code Cache disabled: it was created with GC = \"%s\" vs current \"%s\"",
                               GCConfig::hs_err_name(saved), GCConfig::hs_err_name(current));
 }
 
