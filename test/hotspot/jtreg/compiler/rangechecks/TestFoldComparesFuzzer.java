@@ -64,9 +64,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - TODO: Cases with switch
  *         See: JavaTokenizer::isSpecial
  *
- * - TODO: check if we can have cases where the unc
- *         lead to different places.
- *
  * - Extend to long
  * - Add IR rules - Currently difficult because not all cases are
  *   consistently optimized, not all permutations are covered.
@@ -167,6 +164,14 @@ public class TestFoldComparesFuzzer {
         static Comparator random() {
             return values()[RANDOM.nextInt(values().length)];
         }
+
+        static Comparator randomGreater() {
+            return RANDOM.nextBoolean() ? GE : GT;
+        }
+
+        static Comparator randomLess() {
+            return RANDOM.nextBoolean() ? LE : LT;
+        }
     }
 
     record Comparison(String lhs, Comparator cmp, String rhs, boolean negated) {
@@ -192,6 +197,7 @@ public class TestFoldComparesFuzzer {
 
     interface TestMethodGenerator {
         Template.OneArg<String> getTestTemplate();
+        Template.ZeroArgs getIRTemplate();
     }
 
     // Some basic ranges with constant bounds.
@@ -222,6 +228,7 @@ public class TestFoldComparesFuzzer {
         ));
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
     }
 
     // Cases where a and b are ranges that touch min_int/max_int.
@@ -266,6 +273,7 @@ public class TestFoldComparesFuzzer {
         ));
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
     }
 
     // Just for good practice: add some case where the ranges are more free.
@@ -303,16 +311,117 @@ public class TestFoldComparesFuzzer {
         ));
 
         public Template.OneArg<String> getTestTemplate() { return template; }
+        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
+    }
+
+    // Generate some more constrained cases, but with IR rules
+    static class TestMethodGeneratorConstIR implements TestMethodGenerator {
+        private final int lo = INT_GEN.next();
+        private final int hi = INT_GEN.next();
+        // Since we are using constants for lo and hi, the checks should get canonicalized,
+        // so that n is always in the lhs. We only create cases that are covered by the
+        // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
+        private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
+        private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
+        private final boolean swap = RANDOM.nextBoolean();
+        private final Comparison c1 = (swap ? c_lo : c_hi); // TODO: consider permutations
+        private final Comparison c2 = (swap ? c_hi : c_lo);
+
+        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("lo", lo),
+            let("hi", hi),
+            let("c1", c1),
+            let("c2", c2),
+            """
+            static boolean #methodName(int n, int a, int b) {
+                int lo = #lo;
+                int hi = #hi;
+                if (#c1 && #c2) {
+                    return true;
+                }
+                return false;
+            }
+            """
+        ));
+
+        private final int cmpI;
+        private final int cmpU;
+        private final String comment;
+        { // instance initializer
+            if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
+                // a)   (n >  lo && n <  hi)
+                if (lo < hi) {
+                    cmpI = 0;
+                    cmpU = 1;
+                    comment = "a) replace with CmpU";
+                } else {
+                    cmpI = 0;
+                    cmpU = 0;
+                    comment = "a) impossible condition -> fold away";
+                }
+            } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
+                // b)   (n >  lo && n <= hi)
+                if (lo <= hi) {
+                    cmpI = 0;
+                    cmpU = 1;
+                    comment = "b) replace with CmpU";
+                } else {
+                    cmpI = 0;
+                    cmpU = 0;
+                    comment = "b) impossible condition -> fold away";
+                }
+            } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
+                // c)   (n >= lo && n <  hi)
+                if (lo <= hi) {
+                    cmpI = 0;
+                    cmpU = 1;
+                    comment = "c) replace with CmpU";
+                } else {
+                    cmpI = 0;
+                    cmpU = 0;
+                    comment = "c) impossible condition -> fold away";
+                }
+            } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
+                // d)   (n >= lo && n <= hi)
+                if (lo <= hi) {
+                    cmpI = 0;
+                    cmpU = 1;
+                    comment = "d) replace with CmpU";
+                } else {
+                    cmpI = 0;
+                    cmpU = 0;
+                    comment = "d) impossible condition -> fold away";
+                }
+            } else {
+                throw new RuntimeException("should not be generated: " + c_lo + " and " + c_hi);
+            }
+        }
+
+        private final Template.ZeroArgs irTemplate = Template.make(() -> scope(
+            let("cmpI", cmpI),
+            let("cmpU", cmpU),
+            let("comment", comment),
+            """
+            // #comment
+            @IR(counts = {IRNode.CMP_I, "= 2", IRNode.CMP_U, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+            @IR(counts = {IRNode.CMP_I, "= #cmpI", IRNode.CMP_U, "= #cmpU"})
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+        public Template.ZeroArgs getIRTemplate() { return irTemplate; }
     }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(3)) {
+        TestMethodGenerator tg = switch(RANDOM.nextInt(4)) {
             case 0 -> new TestMethodGeneratorConst();
             case 1 -> new TestMethodGeneratorWithIf();
             case 2 -> new TestMethodGeneratorRanges();
+            case 3 -> new TestMethodGeneratorConstIR();
             default -> throw new RuntimeException("not expected");
         };
         Template.OneArg<String> testMethodTemplate = tg.getTestTemplate();
+        Template.ZeroArgs testIRTemplate = tg.getIRTemplate();
 
         var testTemplate = Template.make(() -> scope(
             let("warmup", warmup / 100),
@@ -342,6 +451,7 @@ public class TestFoldComparesFuzzer {
 
             @Test
             """,
+            testIRTemplate.asToken(),
             testMethodTemplate.asToken($("test")),
             """
 
