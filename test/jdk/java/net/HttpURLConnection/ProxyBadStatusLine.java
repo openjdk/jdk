@@ -66,7 +66,10 @@ class ProxyBadStatusLine {
                 Arguments.of("HTTP/1.1\n", "Unable to tunnel through proxy"),
                 Arguments.of("HTTP/1.1 301 ", "Unable to tunnel through proxy"),
                 Arguments.of("HTTP/1.1 404 ", "Unable to tunnel through proxy"),
-                Arguments.of("HTTP/1.1 503 ", "Unable to tunnel through proxy")
+                Arguments.of("HTTP/1.1 503 ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1\n200 ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1\r200 ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1\f200 ", "Unable to tunnel through proxy")
         );
     }
 

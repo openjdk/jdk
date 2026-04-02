@@ -2041,7 +2041,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (statusLine == null || statusLine.isBlank()) {
             return invalidStatusLine;
         }
-        final StringTokenizer st = new StringTokenizer(statusLine);
+        //
+        // status-line = HTTP-version SP status-code SP [ reason-phrase ]
+        // SP = space character
+        //
+        final StringTokenizer st = new StringTokenizer(statusLine, " ");
         if (!st.hasMoreTokens()) {
             return invalidStatusLine;
         }
@@ -2049,7 +2053,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (!st.hasMoreTokens()) {
             return invalidStatusLine;
         }
-        final String v = st.nextToken().trim(); // response code
+        final String v = st.nextToken().trim(); // status code
         try {
             return Integer.parseInt(v);
         } catch (NumberFormatException nfe) {
