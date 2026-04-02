@@ -345,7 +345,7 @@ public class TestFoldComparesFuzzer {
         // so that n is always in the lhs. We only create cases that are covered by the
         // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
         private final Comparison c_lo = new Comparison("n", Comparator.GT, "lo");
-        private final Comparison c_hi = new Comparison("n", Comparator.LT, "hi");
+        private final Comparison c_hi = new Comparison("n", Comparator.LE, "hi");
         // TODO: all other options:
         //private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
         //private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
@@ -386,14 +386,14 @@ public class TestFoldComparesFuzzer {
                     // Not yet folded at parsing, because lo != hi
                     // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                    comment = "c) replace with CmpU (single element) -> CmpI eq";
+                    comment = "a) replace with CmpU (single element) -> CmpI eq";
                 } else if (lo < hi && lo+1 == hi) {
                     // Not yet folded at parsing, because lo != hi
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "c) impossible condition (exact) -> fold away";
+                    comment = "a) impossible condition (exact) -> fold away";
                 } else if (lo < hi) {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "c) replace with CmpU (non-empty)";
+                    comment = "a) replace with CmpU (non-empty)";
                 } else if (lo == hi) {
                     // same CmpI at parse time
                     cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
@@ -407,9 +407,16 @@ public class TestFoldComparesFuzzer {
                 if (lo == Integer.MAX_VALUE || hi == Integer.MAX_VALUE) {
                     cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                     comment = "b) one or both checks fold at parse time";
-                } else if (lo <= hi) {
+                } else if (lo < hi && lo+1 == hi) {
+                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                    comment = "b) replace with CmpU (single element) -> CmpI eq";
+                } else if (lo < hi && lo+1 < hi) {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "b) replace with CmpU";
+                    comment = "b) replace with CmpU (non-empty)";
+                } else if (lo == hi) {
+                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                    comment = "b) impossible condition (exact) -> fold away";
                 } else {
                     cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                     comment = "b) impossible condition -> fold away";
