@@ -704,6 +704,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
     if (!constants()->in_aot_cache()) {
+      HeapShared::remove_scratch_resolved_references(constants());
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -1121,6 +1122,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       }
     }
   }
+
+  if (log_is_enabled(Info, class, link))  {
+    ResourceMark rm(THREAD);
+    log_info(class, link)("Linked class %s", external_name());
+  }
+
   return true;
 }
 

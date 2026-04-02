@@ -379,7 +379,13 @@ public class RepaintManager
             return;
         }
         if (invalidComponents != null) {
-            invalidComponents.remove(component);
+            int n = invalidComponents.size();
+            for (int i = 0; i < n; i++) {
+                if (component == invalidComponents.get(i)) {
+                    invalidComponents.remove(i);
+                    break;
+                }
+            }
         }
     }
 

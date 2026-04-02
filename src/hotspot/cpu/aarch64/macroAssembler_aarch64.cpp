@@ -6807,11 +6807,36 @@ void MacroAssembler::spin_wait() {
         assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
         sb();
         break;
+      case SpinWait::WFET:
+        spin_wait_wfet(VM_Version::spin_wait_desc().delay());
+        break;
       default:
         ShouldNotReachHere();
     }
   }
   block_comment("}");
+}
+
+void MacroAssembler::spin_wait_wfet(int delay_ns) {
+  // The sequence assumes CNTFRQ_EL0 is fixed to 1GHz. The assumption is valid
+  // starting from Armv8.6, according to the "D12.1.2 The system counter" of the
+  // Arm Architecture Reference Manual for A-profile architecture version M.a.a.
+  // This is sufficient because FEAT_WFXT is introduced from Armv8.6.
+  Register target = rscratch1;
+  Register current = rscratch2;
+  get_cntvctss_el0(current);
+  add(target, current, delay_ns);
+
+  Label L_wait_loop;
+  bind(L_wait_loop);
+
+  wfet(target);
+  get_cntvctss_el0(current);
+
+  cmp(current, target);
+  br(LT, L_wait_loop);
+
+  sb();
 }
 
 // Stack frame creation/removal

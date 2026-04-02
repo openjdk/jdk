@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * Aix' own version of dladdr().
- * This function tries to mimic dladdr(3) on Linux
- * (see http://linux.die.net/man/3/dladdr)
- * dladdr(3) is not POSIX but a GNU extension, and is not available on AIX.
- *
+/**
+ * @test
+ * @bug 8379174
+ * @summary Test for G1 ergonomics deriving an out-of-range
+ *          G1RemSetArrayOfCardsEntries value from G1RemSetArrayOfCardsEntriesBase
+ * @requires vm.gc.G1
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UseG1GC
+ *                   -XX:G1RemSetArrayOfCardsEntriesBase=62117
+ *                   -XX:G1HeapRegionSize=4m
+ *                   ${test.main.class}
  */
 
-#include "dl_info.h"
+package gc.g1;
 
-#ifdef __cplusplus
-extern "C"
-#endif
-int dladdr(void *addr, Dl_info *info);
+public class TestG1RemSetArrayOfCardsEntriesErgoLimit {
+    public static void main(String[] args) {
+        System.out.println("passed");
+    }
+}
