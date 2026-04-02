@@ -1256,10 +1256,12 @@ public:
 #endif
   }
   virtual int Opcode() const = 0;
-  Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
-  Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
-  Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
-  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+  Node*   obj_node() const       { return in(TypeFunc::Parms + 0); }
+  Node*   box_node() const       { return in(TypeFunc::Parms + 1); }
+  FastLockNode*  fastlock_node() const {
+    return in(TypeFunc::Parms + 2)->as_FastLock();
+  }
+  void    set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
 
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
@@ -1316,7 +1318,7 @@ public:
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    fields[TypeFunc::Parms+2] = TypeInt::BOOL;         // FastLock
+    fields[TypeFunc::Parms+2] = TypeInt::CC;           // FastLock
     const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
 
     // create result type (range)

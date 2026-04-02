@@ -38,6 +38,7 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
@@ -5775,6 +5776,15 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   } else {
     assert(!phase_verify->has_ctrl(n), "sanity");
     // n is a ctrl node.
+
+    // Lock and FastLock are tightly coupled.
+    if (n->is_Lock()) {
+      Node* flock_ctrl = get_ctrl_no_update(n->as_Lock()->fastlock_node());
+      if (get_loop(n) != get_loop(flock_ctrl)) {
+        return false;
+      }
+    }
+
     // Verify that not has_ctrl, and that get_loop_idx is the same.
 
     // Broken part of VerifyLoopOptimizations (B)

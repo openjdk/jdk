@@ -31,6 +31,7 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -2810,18 +2811,19 @@ void PhaseIdealLoop::fix_body_edges(const Node_List &body, IdealLoopTree* loop, 
     }
     // Correct edges to the new node
     for (uint j = 0; j < nnn->req(); j++) {
-        Node *n = nnn->in(j);
-        if (n != nullptr) {
-          IdealLoopTree *old_in_loop = get_loop(has_ctrl(n) ? get_ctrl(n) : n);
-          if (loop->is_member(old_in_loop)) {
-            if (old_new[n->_idx] != nullptr) {
-              nnn->set_req(j, old_new[n->_idx]);
-            } else {
-              assert(!body.contains(n), "");
-              assert(partial, "node not cloned");
-            }
+      Node* n = nnn->in(j);
+      if (n != nullptr) {
+        IdealLoopTree* old_in_loop = get_loop(ctrl_or_self(n));
+        if (loop->is_member(old_in_loop)) {
+          if (old_new[n->_idx] != nullptr) {
+            nnn->set_req(j, old_new[n->_idx]);
+          } else {
+            assert(!body.contains(n), "");
+            assert(partial, "node not cloned");
+            assert(!n->is_FastLock(), "not cloned");
           }
         }
+      }
     }
     _igvn.hash_find_insert(nnn);
   }

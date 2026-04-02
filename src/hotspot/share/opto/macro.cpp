@@ -2310,13 +2310,10 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     _igvn.replace_node(ctrlproj, fallthroughproj);
     _igvn.replace_node(memproj, memproj_fallthrough);
 
-    // Delete FastLock node also if this Lock node is unique user
-    // (a loop peeling may clone a Lock node).
+    // Delete FastLock node.
     Node* flock = alock->as_Lock()->fastlock_node();
-    if (flock->outcnt() == 1) {
-      assert(flock->unique_out() == alock, "sanity");
-      _igvn.replace_node(flock, top());
-    }
+    assert(flock->unique_out() == alock, "sanity");
+    _igvn.replace_node(flock, top());
   }
 
   // Search for MemBarReleaseLock node and delete it also.

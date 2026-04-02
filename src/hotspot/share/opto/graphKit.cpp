@@ -3570,14 +3570,14 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   box = _gvn.transform(box);
   Node* mem = reset_memory();
 
-  FastLockNode * flock = _gvn.transform(new FastLockNode(nullptr, obj, box) )->as_FastLock();
+  FastLockNode* flock = _gvn.transform(new FastLockNode(control(), obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
   map()->push_monitor( flock );
 
-  const TypeFunc *tf = LockNode::lock_type();
-  LockNode *lock = new LockNode(C, tf);
+  const TypeFunc* tf = LockNode::lock_type();
+  LockNode* lock = new LockNode(C, tf);
 
   lock->init_req( TypeFunc::Control, control() );
   lock->init_req( TypeFunc::Memory , mem );

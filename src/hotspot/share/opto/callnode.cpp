@@ -2185,13 +2185,14 @@ void AbstractLockNode::dump_compact_spec(outputStream* st) const {
 #endif
 
 //=============================================================================
-Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-
+Node* LockNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // perform any generic optimizations first (returns 'this' or null)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
   if (result != nullptr)  return result;
   // Don't bother trying to transform a dead node
   if (in(0) && in(0)->is_top())  return nullptr;
+
+  assert(fastlock_node()->outcnt() == 1, "can't be shared");
 
   // Now see if we can optimize away this lock.  We don't actually
   // remove the locking here, we simply set the _eliminate flag which
