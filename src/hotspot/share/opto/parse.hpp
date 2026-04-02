@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,6 +518,11 @@ class Parse : public GraphKit {
 
   // Helper function to setup Ideal Call nodes
   void do_call();
+
+  // Try to optimize String.format/formatted with constant format string
+  void try_optimize_string_format(ciMethod*& callee, bool& call_does_dispatch,
+                                  bool is_virtual_or_interface, bool is_virtual,
+                                  bool& did_redirect, int& extra_args);
 
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);

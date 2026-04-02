@@ -1102,7 +1102,12 @@ bool CallJavaNode::validate_symbolic_info() const {
   if (symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic()) {
     assert(override_symbolic_info(), "should be set");
   }
-  assert(ciMethod::is_consistent_info(symbolic_info, callee), "inconsistent info");
+  // override_symbolic_info is set when callee was intentionally replaced:
+  // - method handle intrinsic resolution (existing)
+  // - String.format/formatted -> optimized helper (try_optimize_string_format)
+  if (!override_symbolic_info()) {
+    assert(ciMethod::is_consistent_info(symbolic_info, callee), "inconsistent info");
+  }
   return true;
 }
 #endif
