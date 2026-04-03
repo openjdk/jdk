@@ -151,19 +151,21 @@ public:
     if (invisible_root == nullptr) return;
 
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
-    if (!heap->marking_context()->is_marked(invisible_root)) {
+    ShenandoahMarkingContext* marking_context = heap->marking_context();
+    if (!marking_context->allocated_after_mark_start(invisible_root) &&
+        !marking_context->is_marked_strong(invisible_root)) {
       bool was_upgraded = false;
-      if (!heap->marking_context()->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
+      if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
 
+      ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
       if (region->is_regular() || region->is_regular_pinned()) {
         region->increase_live_data_alloc_words(live_words);
       } else if (region->is_humongous_start()) {
         do {
           assert(live_words > 0, "Must be");
           size_t region_live_words = live_words >= ShenandoahHeapRegion::region_size_words() ? ShenandoahHeapRegion::region_size_words() : live_words;
-          region->increase_live_data_alloc_words(region_live_words);
           live_words -= region_live_words;
+          region->increase_live_data_alloc_words(region_live_words);
           region = heap->get_region(region->index() + 1);
         } while (region != nullptr && region->is_humongous_continuation());
         assert(live_words == 0, "Must be");

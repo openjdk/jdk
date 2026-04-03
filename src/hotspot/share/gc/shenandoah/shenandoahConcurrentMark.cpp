@@ -303,7 +303,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
 
   if (!generation()->is_old()) {
     ShenandoahInvisibleRootsMarkClosure cl;
-    Threads::java_threads_do(&cl);
+    Threads::threads_do(&cl);
   }
 
   assert(task_queues()->is_empty(), "Should be empty");
