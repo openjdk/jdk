@@ -51,7 +51,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -69,7 +69,7 @@ public class InvalidSSLContextTest {
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile SSLServerSocket sslServerSocket;
     static volatile String uri;
-    private static HttpServerAdapters.HttpTestServer h3Server;
+    private static HttpTestServer h3Server;
     private static String h3Uri;
 
     public static Object[][] versions() {
@@ -189,7 +189,7 @@ public class InvalidSSLContextTest {
         };
         t.start();
 
-        h3Server = HttpServerAdapters.HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
         h3Server.start();
         h3Uri = "https://" + h3Server.serverAuthority() + "/hello";
