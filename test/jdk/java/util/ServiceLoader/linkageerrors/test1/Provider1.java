@@ -21,7 +21,11 @@
  * questions.
  */
 
+package test1;
+
 /**
- * Service interface.
+ * Service provider implementation.
  */
-public interface Service {}
+public class Provider1 implements Service {
+    public Provider1() {}
+}

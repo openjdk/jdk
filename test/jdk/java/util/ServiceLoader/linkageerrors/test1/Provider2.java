@@ -21,8 +21,16 @@
  * questions.
  */
 
+package test1;
+
 /**
- * Super class of Provider2.
+ * Service provider implementation.
  */
-class Super {
+public class Provider2 implements Service {
+    public Provider2() {}
+
+    /**
+     * Constructor with a parameter of a type that may not be visible.
+     */
+    public Provider2(Param p) { }
 }

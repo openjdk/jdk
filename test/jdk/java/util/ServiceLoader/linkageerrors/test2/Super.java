@@ -21,9 +21,10 @@
  * questions.
  */
 
+package test2;
+
 /**
- * Service provider implementation.
+ * Super class of Provider2.
  */
-public class Provider1 implements Service {
-    public Provider1() {}
+class Super {
 }

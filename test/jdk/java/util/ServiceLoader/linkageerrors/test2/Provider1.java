@@ -21,7 +21,11 @@
  * questions.
  */
 
+package test2;
+
 /**
- * Param for a public constructor in Provider2.
+ * Service provider implementation.
  */
-public class Param { }
+public class Provider1 implements Service {
+    public Provider1() {}
+}

@@ -21,14 +21,9 @@
  * questions.
  */
 
-/**
- * Service provider implementation.
- */
-public class Provider2 extends Super implements Service {
-    public Provider2() {}
+package test1;
 
-    /**
-     * Constructor with a parameter of a type that may not be visible.
-     */
-    public Provider2(Param p) { }
-}
+/**
+ * Param for a public constructor in Provider2.
+ */
+public class Param { }
