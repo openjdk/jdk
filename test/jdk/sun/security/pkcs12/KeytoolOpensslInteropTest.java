@@ -80,7 +80,7 @@ public class KeytoolOpensslInteropTest {
     public static void main(String[] args) throws Throwable {
         boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
         if (generatePKCS12) {
-            String opensslPath = OpensslArtifactFetcher.getOpensslPath();
+            String opensslPath = OpensslArtifactFetcher.getOpensslPathWithProviderPathPresent();
             generateInitialKeystores(opensslPath);
             testWithJavaCommands();
             testWithOpensslCommands(opensslPath);
