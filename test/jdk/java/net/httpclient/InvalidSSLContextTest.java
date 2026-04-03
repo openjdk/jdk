@@ -57,6 +57,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.*;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -84,7 +85,7 @@ public class InvalidSSLContextTest {
     @MethodSource("versions")
     public void testSync(Version version, String uri) throws Exception {
         // client-side uses a different context to that of the server-side
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = createClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .sslContext(SSLContext.getDefault())
                 .build();
@@ -107,7 +108,7 @@ public class InvalidSSLContextTest {
     @MethodSource("versions")
     public void testAsync(Version version, String uri) throws Exception {
         // client-side uses a different context to that of the server-side
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = createClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .sslContext(SSLContext.getDefault())
                 .build();
