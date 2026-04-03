@@ -282,10 +282,10 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ mov_metadata(tmp, default_type->constant_encoding());
 
     if (basic_type != T_OBJECT) {
-      __ cmp_klass(dst, tmp, t0, t1, halt, false);
-      __ cmp_klass(src, tmp, t0, t1, known_ok, true);
+      __ cmp_klass_bne(dst, tmp, t0, t1, halt);
+      __ cmp_klass_beq(src, tmp, t0, t1, known_ok);
     } else {
-      __ cmp_klass(dst, tmp, t0, t1, known_ok, true);
+      __ cmp_klass_beq(dst, tmp, t0, t1, known_ok);
       __ beq(src, dst, known_ok);
     }
     __ bind(halt);
