@@ -80,11 +80,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
 
   ShenandoahHeapRegion* region = heap->heap_region_containing(mem);
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    region->record_pin();
-    region->make_pinned();
-  }
+  region->record_pin();
 
   // Segmented clearing with safepoint yields
   for (size_t processed = 0; processed < process_size; processed += segment_max) {
@@ -97,14 +93,6 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     yield_for_safepoint();
   }
 
-  {
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-    region->record_unpin();
-    if (region->pin_count() == 0) {
-      region->make_unpinned();
-    }
-  }
-
   // Debug padding
   mem_zap_start_padding(mem);
   mem_zap_end_padding(mem);
@@ -113,6 +101,8 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   arrayOopDesc::set_length(mem, _length);
   oop arrayObj = finish(mem);
+
+  region->record_unpin();
 
   if (heap->is_concurrent_young_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
     heap->keep_alive(arrayObj);
