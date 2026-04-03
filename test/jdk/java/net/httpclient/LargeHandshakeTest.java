@@ -84,8 +84,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run main/othervm -Djdk.tls.enableCertificateCompression=true
- *                   -Dtest.requiresHost=true
+ * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true
  *                   -Djdk.tls.maxHandshakeMessageSize=131072
@@ -111,7 +110,8 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run main/othervm -Djdk.tls.enableCertificateCompression=false
+ * @run main/othervm -Djdk.tls.client.disableExtensions=compress_certificate
+ *                   -Djdk.tls.server.disableExtensions=compress_certificate
  *                   -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true

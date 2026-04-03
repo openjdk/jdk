@@ -64,7 +64,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
                 """
                 Produced CompressedCertificate handshake message (
                 "CompressedCertificate": {
-                  "algorithm": "zlib",
+                  "algorithm": "ZLIB",
                 """));
 
         // Make sure CompressedCertificate message is consumed twice - by the
@@ -73,7 +73,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
                 """
                 Consuming CompressedCertificate handshake message (
                 "CompressedCertificate": {
-                  "algorithm": "zlib",
+                  "algorithm": "ZLIB",
                 """));
     }
 }

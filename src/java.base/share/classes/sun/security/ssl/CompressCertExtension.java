@@ -250,8 +250,7 @@ final class CompressCertExtension {
 
         // Produce the extension.
         if (hc.certInflaters == null) {
-            hc.certInflaters =
-                    CompressionAlgorithm.findInflaters(hc.sslConfig);
+            hc.certInflaters = CompressionAlgorithm.getInflaters();
         }
 
         if (hc.certInflaters.isEmpty()) {
@@ -291,21 +290,13 @@ final class CompressCertExtension {
             return;     // ignore the extension
         }
 
-        if (hc.sslConfig.certDeflaters == null ||
-                hc.sslConfig.certDeflaters.isEmpty()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine("Ignore unsupported " +
-                        "compress_certificate extension");
-            }
-            return;     // ignore the extension
-        }
-
         // Parse the extension.
         CertCompressionSpec spec = new CertCompressionSpec(hc, buffer);
 
         // Update the context.
         hc.certDeflater = CompressionAlgorithm.selectDeflater(
-                hc.sslConfig, spec.compressionAlgorithms);
+                spec.compressionAlgorithms);
+
         if (hc.certDeflater == null) {
             if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Ignore, no supported " +

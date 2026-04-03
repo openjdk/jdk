@@ -28,7 +28,6 @@ package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
 import java.util.AbstractMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.zip.Deflater;
@@ -38,194 +37,142 @@ import java.util.zip.Inflater;
  * Enum for TLS certificate compression algorithms.
  */
 enum CompressionAlgorithm {
-    // Currently only ZLIB is supported.
-    ZLIB(1, "zlib");
+    ZLIB(1);  // Currently only ZLIB is supported.
 
     final int id;
-    final String name;
 
-    CompressionAlgorithm(int id, String name) {
+    CompressionAlgorithm(int id) {
         this.id = id;
-        this.name = name;
     }
 
-    static CompressionAlgorithm nameOf(String name) {
-        for (CompressionAlgorithm cca : CompressionAlgorithm.values()) {
-            if (cca.name.equals(name)) {
-                return cca;
+    static CompressionAlgorithm nameOf(int id) {
+        for (CompressionAlgorithm ca : CompressionAlgorithm.values()) {
+            if (ca.id == id) {
+                return ca;
             }
         }
 
         return null;
     }
 
-    static String nameOf(int id) {
-        for (CompressionAlgorithm cca : CompressionAlgorithm.values()) {
-            if (cca.id == id) {
-                return cca.name;
-            }
-        }
-
-        return "<UNKNOWN CONTENT TYPE: " + id + ">";
-    }
-
-    // Return the size of a compression algorithms structure in TLS record
+    // Return the size of a compression algorithms structure in TLS record.
     static int sizeInRecord() {
         return 2;
     }
 
-    // Get local supported algorithm collection.
-    static Map<Integer, Function<byte[], byte[]>> findInflaters(
-            SSLConfiguration config) {
-        if (config.certInflaters == null || config.certInflaters.isEmpty()) {
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.finest(
-                        "No supported certificate compression algorithms");
-            }
-            return Map.of();
-        }
+    private static final Map<Integer, Function<byte[], byte[]>> DEFLATORS =
+            Map.of(ZLIB.id, (input) -> {
+                try (Deflater deflater = new Deflater();
+                        ByteArrayOutputStream outputStream =
+                                new ByteArrayOutputStream(input.length)) {
 
-        Map<Integer, Function<byte[], byte[]>> inflaters =
-                LinkedHashMap.newLinkedHashMap(config.certInflaters.size());
+                    deflater.setInput(input);
+                    deflater.finish();
+                    byte[] buffer = new byte[1024];
 
-        for (Map.Entry<String, Function<byte[], byte[]>> entry :
-                config.certInflaters.entrySet()) {
-            CompressionAlgorithm ca =
-                    CompressionAlgorithm.nameOf(entry.getKey());
-            if (ca == null) {
-                if (SSLLogger.isOn()
-                        && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.finest("Ignore unsupported certificate " +
-                            "compression algorithm: " + entry.getKey());
+                    while (!deflater.finished()) {
+                        int compressedSize = deflater.deflate(buffer);
+                        outputStream.write(buffer, 0, compressedSize);
+                    }
+
+                    return outputStream.toByteArray();
+                } catch (Exception e) {
+                    if (SSLLogger.isOn()
+                            && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                        SSLLogger.warning("Exception during certificate "
+                                + "compression: ", e);
+                    }
+                    return null;
                 }
-                continue;
-            }
+            });
 
-            inflaters.putIfAbsent(ca.id, entry.getValue());
-        }
+    private static final Map<Integer, Function<byte[], byte[]>> INFLATORS =
+            Map.of(ZLIB.id, (input) -> {
+                try (Inflater inflater = new Inflater();
+                        ByteArrayOutputStream outputStream =
+                                new ByteArrayOutputStream(input.length)) {
 
-        return inflaters;
+                    inflater.setInput(input);
+                    byte[] buffer = new byte[1024];
+
+                    while (!inflater.finished()) {
+                        int decompressedSize = inflater.inflate(buffer);
+
+                        if (decompressedSize == 0) {
+                            if (inflater.needsDictionary()) {
+                                if (SSLLogger.isOn()
+                                        && SSLLogger.isOn(
+                                        SSLLogger.Opt.HANDSHAKE)) {
+                                    SSLLogger.warning("Compressed input "
+                                            + "requires a dictionary");
+                                }
+
+                                return null;
+                            }
+
+                            if (inflater.needsInput()) {
+                                if (SSLLogger.isOn()
+                                        && SSLLogger.isOn(
+                                        SSLLogger.Opt.HANDSHAKE)) {
+                                    SSLLogger.warning(
+                                            "Incomplete compressed input");
+                                }
+
+                                return null;
+                            }
+
+                            // Else just break the loop.
+                            break;
+                        }
+
+                        outputStream.write(buffer, 0, decompressedSize);
+
+                        // Bound the memory usage.
+                        if (outputStream.size()
+                                > SSLConfiguration.maxHandshakeMessageSize) {
+                            if (SSLLogger.isOn()
+                                    && SSLLogger.isOn(
+                                    SSLLogger.Opt.HANDSHAKE)) {
+                                SSLLogger.warning("The size of the "
+                                        + "uncompressed certificate message "
+                                        + "exceeds maximum allowed size of "
+                                        + SSLConfiguration.maxHandshakeMessageSize
+                                        + " bytes; compressed size: "
+                                        + input.length);
+                            }
+
+                            return null;
+                        }
+                    }
+
+                    return outputStream.toByteArray();
+                } catch (Exception e) {
+                    if (SSLLogger.isOn()
+                            && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                        SSLLogger.warning(
+                                "Exception during certificate decompression: ",
+                                e);
+                    }
+                    return null;
+                }
+            });
+
+
+    static Map<Integer, Function<byte[], byte[]>> getInflaters() {
+        return INFLATORS;
     }
 
     static Map.Entry<Integer, Function<byte[], byte[]>> selectDeflater(
-            SSLConfiguration config, int[] compressionAlgorithmIds) {
-        if (config.certDeflaters == null) {
-            return null;
-        }
+            int[] compressionAlgorithmIds) {
 
-        for (Map.Entry<String, Function<byte[], byte[]>> entry :
-                config.certDeflaters.entrySet()) {
-            CompressionAlgorithm ca =
-                    CompressionAlgorithm.nameOf(entry.getKey());
-            if (ca != null) {
-                for (int id : compressionAlgorithmIds) {
-                    if (ca.id == id) {
-                        return new AbstractMap.SimpleImmutableEntry<>(
-                                id, entry.getValue());
-                    }
+        for (var entry : DEFLATORS.entrySet()) {
+            for (int id : compressionAlgorithmIds) {
+                if (id == entry.getKey()) {
+                    return new AbstractMap.SimpleImmutableEntry<>(entry);
                 }
             }
         }
 
         return null;
-    }
-
-    // Default Deflaters and Inflaters.
-
-    static Map<String, Function<byte[], byte[]>> getDefaultDeflaters() {
-        return Map.of(ZLIB.name, (input) -> {
-            try (Deflater deflater = new Deflater();
-                    ByteArrayOutputStream outputStream =
-                            new ByteArrayOutputStream(input.length)) {
-
-                deflater.setInput(input);
-                deflater.finish();
-                byte[] buffer = new byte[1024];
-
-                while (!deflater.finished()) {
-                    int compressedSize = deflater.deflate(buffer);
-                    outputStream.write(buffer, 0, compressedSize);
-                }
-
-                return outputStream.toByteArray();
-            } catch (Exception e) {
-                if (SSLLogger.isOn()
-                        && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.warning("Exception during certificate "
-                            + "compression: ", e);
-                }
-                return null;
-            }
-        });
-    }
-
-    static Map<String, Function<byte[], byte[]>> getDefaultInflaters() {
-        return Map.of(ZLIB.name, (input) -> {
-            try (Inflater inflater = new Inflater();
-                    ByteArrayOutputStream outputStream =
-                            new ByteArrayOutputStream(input.length)) {
-
-                inflater.setInput(input);
-                byte[] buffer = new byte[1024];
-
-                while (!inflater.finished()) {
-                    int decompressedSize = inflater.inflate(buffer);
-
-                    if (decompressedSize == 0) {
-                        if (inflater.needsDictionary()) {
-                            if (SSLLogger.isOn()
-                                    && SSLLogger.isOn(
-                                    SSLLogger.Opt.HANDSHAKE)) {
-                                SSLLogger.warning("Compressed input requires"
-                                        + " a dictionary");
-                            }
-
-                            return null;
-                        }
-
-                        if (inflater.needsInput()) {
-                            if (SSLLogger.isOn()
-                                    && SSLLogger.isOn(
-                                    SSLLogger.Opt.HANDSHAKE)) {
-                                SSLLogger.warning(
-                                        "Incomplete compressed input");
-                            }
-
-                            return null;
-                        }
-
-                        // Else just break the loop.
-                        break;
-                    }
-
-                    outputStream.write(buffer, 0, decompressedSize);
-
-                    // Bound the memory usage.
-                    if (outputStream.size()
-                            > SSLConfiguration.maxHandshakeMessageSize) {
-                        if (SSLLogger.isOn()
-                                && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                            SSLLogger.warning("The size of the "
-                                    + "uncompressed certificate message "
-                                    + "exceeds maximum allowed size of "
-                                    + SSLConfiguration.maxHandshakeMessageSize
-                                    + " bytes; compressed size: "
-                                    + input.length);
-                        }
-
-                        return null;
-                    }
-                }
-
-                return outputStream.toByteArray();
-            } catch (Exception e) {
-                if (SSLLogger.isOn()
-                        && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                    SSLLogger.warning(
-                            "Exception during certificate decompression: ", e);
-                }
-                return null;
-            }
-        });
     }
 }
