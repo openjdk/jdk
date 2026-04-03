@@ -141,6 +141,37 @@ public:
   }
 };
 
+class ShenandoahInvisibleRootsMarkClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* t) {
+    if (!t->is_Java_thread()) return;
+
+    HeapWord* invisible_root = ShenandoahThreadLocalData::get_invisible_root(t);
+    size_t live_words = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
+    if (invisible_root == nullptr) return;
+
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
+    if (!heap->marking_context()->is_marked(invisible_root)) {
+      bool was_upgraded = false;
+      heap->marking_context()->mark_strong(cast_to_oop(invisible_root), was_upgraded);
+
+      if (region->is_regular() || region->is_regular_pinned()) {
+        region->increase_live_data_alloc_words(live_words);
+      } else if (region->is_humongous_start()) {
+        do {
+          assert(live_words > 0, "Must be");
+          size_t region_live_words = live_words >= ShenandoahHeapRegion::region_size_words() ? ShenandoahHeapRegion::region_size_words() : live_words;
+          region->increase_live_data_alloc_words(region_live_words);
+          live_words -= region_live_words;
+          region = heap->get_region(region->index() + 1);
+        } while (region != nullptr && region->is_humongous_continuation());
+        assert(live_words == 0, "Must be");
+      }
+    }
+  }
+};
+
 // The rationale for selecting the roots to scan is as follows:
 //   a. With unload_classes = true, we only want to scan the actual strong roots from the
 //      code cache. This will allow us to identify the dead classes, unload them, *and*

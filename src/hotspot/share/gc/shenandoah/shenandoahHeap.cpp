@@ -62,6 +62,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
@@ -1071,6 +1072,11 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
   return allocate_memory(req);
+}
+
+oop ShenandoahHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
+  ShenandoahObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  return allocator.allocate();
 }
 
 MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

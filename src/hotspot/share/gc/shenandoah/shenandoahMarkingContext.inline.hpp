@@ -45,7 +45,9 @@ inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
 }
 
 inline bool ShenandoahMarkingContext::is_marked(HeapWord* raw_obj) const {
-  return allocated_after_mark_start(raw_obj) || _mark_bit_map.is_marked(raw_obj);
+  if (allocated_after_mark_start(raw_obj)) return true;
+  if (_mark_bit_map.is_marked(raw_obj)) return true;
+  return false;
 }
 
 inline bool ShenandoahMarkingContext::is_marked_strong(oop obj) const {

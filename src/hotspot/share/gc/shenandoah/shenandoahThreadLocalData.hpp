@@ -67,6 +67,9 @@ private:
 
   ShenandoahEvacuationStats* _evacuation_stats;
 
+  HeapWord* _invisible_root;
+  size_t _invisible_root_word_size;
+
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
 
@@ -205,6 +208,25 @@ public:
 
   static ByteSize card_table_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
+  }
+
+  // invisible root are the partially initialized obj array set by ShenandoahObjArrayAllocator
+  static void set_invisible_root(Thread* thread, HeapWord* invisible_root, size_t word_size) {
+    data(thread)->_invisible_root = invisible_root;
+    data(thread)->_invisible_root_word_size = word_size;
+  }
+
+  static void clear_invisible_root(Thread* thread) {
+    data(thread)->_invisible_root = nullptr;
+    data(thread)->_invisible_root_word_size = 0;
+  }
+
+  static HeapWord* get_invisible_root(Thread* thread) {
+    return data(thread)->_invisible_root;
+  }
+
+  static size_t get_invisible_root_word_size(Thread* thread) {
+    return data(thread)->_invisible_root_word_size;
   }
 };
 
