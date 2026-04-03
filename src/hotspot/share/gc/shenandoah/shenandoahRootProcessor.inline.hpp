@@ -154,7 +154,7 @@ public:
     ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
     if (!heap->marking_context()->is_marked(invisible_root)) {
       bool was_upgraded = false;
-      heap->marking_context()->mark_strong(cast_to_oop(invisible_root), was_upgraded);
+      if (!heap->marking_context()->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
 
       if (region->is_regular() || region->is_regular_pinned()) {
         region->increase_live_data_alloc_words(live_words);

@@ -22,15 +22,14 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
-
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/universe.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/memAllocator.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

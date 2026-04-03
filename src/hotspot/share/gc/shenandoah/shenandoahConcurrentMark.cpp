@@ -301,8 +301,10 @@ void ShenandoahConcurrentMark::finish_mark_work() {
       ShouldNotReachHere();
   }
 
-  ShenandoahInvisibleRootsMarkClosure cl;
-  Threads::java_threads_do(&cl);
+  if (!generation()->is_old()) {
+    ShenandoahInvisibleRootsMarkClosure cl;
+    Threads::java_threads_do(&cl);
+  }
 
   assert(task_queues()->is_empty(), "Should be empty");
 }
