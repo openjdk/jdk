@@ -94,7 +94,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     // coalesce those regions. Only the old regions which are not part of the collection set at this point are
     // eligible for coalescing. As implemented now, this has the side effect of possibly initiating mixed-evacuations
     // after a global cycle for old regions that were not included in this collection set.
-    heap->old_generation()->update_old_regions_after_global_cycle();
+    heap->old_generation()->transition_old_generation_after_global_gc();
   }
 }
 
