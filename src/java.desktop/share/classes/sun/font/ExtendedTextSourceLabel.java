@@ -91,9 +91,10 @@ final class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Lab
         cm = source.getCoreMetrics();
     } else {
       AffineTransform charTX = AttributeValues.getCharTransform(atts);
-      if (charTX != null) {
-          font = font.deriveFont(charTX);
+      if (charTX == null) {
+          charTX = new AffineTransform();
       }
+      font = font.deriveFont(charTX);
       LineMetrics lm = font.getLineMetrics(source.getChars(), source.getStart(),
           source.getStart() + source.getLength(), source.getFRC());
       cm = CoreMetrics.get(lm);
