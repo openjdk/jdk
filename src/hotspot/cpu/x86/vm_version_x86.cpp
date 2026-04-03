@@ -1108,25 +1108,9 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAPX, false);
   }
 
-#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
-  if (feature_test_fn()) { \
-    if (FLAG_IS_DEFAULT(Use##feature)) { \
-      FLAG_SET_DEFAULT(Use##feature, true); \
-    } else if (!Use##feature) { \
-      _features.clear_feature(CPU_##feature); \
-    } \
-  } else if (Use##feature) { \
-    if (!FLAG_IS_DEFAULT(Use##feature)) { \
-      warning(#feature " instructions not available on this CPU"); \
-    } \
-    FLAG_SET_DEFAULT(Use##feature, false); \
-  }
-
   CHECK_CPU_FEATURE(supports_clmul, CLMUL);
   CHECK_CPU_FEATURE(supports_aes, AES);
   CHECK_CPU_FEATURE(supports_fma, FMA);
-
-#undef CHECK_CPU_FEATURE
 
   if (supports_sha() || (supports_avx2() && supports_bmi2())) {
     if (FLAG_IS_DEFAULT(UseSHA)) {

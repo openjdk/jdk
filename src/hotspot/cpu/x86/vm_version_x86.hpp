@@ -535,6 +535,10 @@ protected:
 
   static const char* _features_names[];
 
+  static void clear_feature(Feature_Flag feature) {
+    _features.clear_feature(feature);
+  }
+
   static void clear_cpu_features() {
     _features = VM_Features();
     _cpu_features = VM_Features();

@@ -283,20 +283,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
-  if (feature_test_fn()) { \
-    if (FLAG_IS_DEFAULT(Use##feature)) { \
-      FLAG_SET_DEFAULT(Use##feature, true); \
-    } else if (!Use##feature) { \
-      clear_feature(CPU_##feature); \
-    } \
-  } else if (Use##feature) { \
-    if (!FLAG_IS_DEFAULT(Use##feature)) { \
-      warning(#feature " instructions not available on this CPU"); \
-    } \
-    FLAG_SET_DEFAULT(Use##feature, false); \
-  }
-
   CHECK_CPU_FEATURE(supports_crc32, CRC32);
   CHECK_CPU_FEATURE(supports_lse, LSE);
   CHECK_CPU_FEATURE(supports_aes, AES);
