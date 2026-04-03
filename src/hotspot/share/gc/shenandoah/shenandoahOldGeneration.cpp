@@ -685,7 +685,7 @@ void ShenandoahOldGeneration::abandon_collection_candidates() {
   _old_heuristics->abandon_collection_candidates();
 }
 
-void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
+void ShenandoahOldGeneration::transition_old_generation_after_global_gc() {
   assert(is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
   _old_heuristics->prepare_for_old_collections();
   log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: %zu",

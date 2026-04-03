@@ -213,7 +213,7 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   bool entry_coalesce_and_fill();
-  void prepare_for_mixed_collections_after_global_gc();
+  void transition_old_generation_after_global_gc();
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   void record_success_concurrent(bool abbreviated) override;
