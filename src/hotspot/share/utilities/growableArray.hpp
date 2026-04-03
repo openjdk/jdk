@@ -27,10 +27,13 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class MetaspaceClosure;
 
 // A growable array.
 
@@ -117,7 +120,7 @@ protected:
   ~GrowableArrayView() {}
 
 protected:
-  // Used by AOTGrowableArray for MetaspaceClosure support.
+  // Used by GrowableArray for MetaspaceClosure support.
   E** data_addr() {
     return &_data;
   }
@@ -821,6 +824,12 @@ public:
       this->clear_and_deallocate();
     }
   }
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(*this)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::GrowableArrayType; }
+  static bool is_read_only_by_default() { return false; }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.

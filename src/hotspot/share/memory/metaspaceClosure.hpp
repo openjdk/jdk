@@ -25,7 +25,6 @@
 #ifndef SHARE_MEMORY_METASPACECLOSURE_HPP
 #define SHARE_MEMORY_METASPACECLOSURE_HPP
 
-#include "cds/aotGrowableArray.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -303,11 +302,11 @@ private:
   };
 
   //--------------------------------
-  // Support for AOTGrowableArray<T>
+  // Support for GrowableArray<T>
   //--------------------------------
 
   // Abstract base class for MSOCArrayRef, MSOPointerCArrayRef and OtherCArrayRef.
-  // These are used for iterating the buffer held by AOTGrowableArray<T>.
+  // These are used for iterating the buffer held by GrowableArray<T>.
   template <class T> class CArrayRef : public Ref {
     T** _mpp;
     int _num_elems; // Number of elements
@@ -354,7 +353,7 @@ private:
 
   // MSOCArrayRef<T> -- iterate a C array of type T, where T has metaspace_pointer_do().
   // We recursively call T::metaspace_pointers_do() for each element in this array.
-  // This is for supporting AOTGrowableArray<T>.
+  // This is for supporting GrowableArray<T>.
   //
   // E.g., PackageEntry* _pkg_entry_pointers[2]; // a buffer that has 2 PackageEntry objects
   //       ...
@@ -377,7 +376,7 @@ private:
 
   // MSOPointerCArrayRef<T> -- iterate a C array of type T*, where T has metaspace_pointer_do().
   // We recursively call MetaspaceClosure::push() for each pointer in this array.
-  // This is for supporting AOTGrowableArray<T*>.
+  // This is for supporting GrowableArray<T*>.
   //
   // E.g., PackageEntry** _pkg_entry_pointers[2]; // a buffer that has 2 PackageEntry pointers
   //       ...
@@ -440,11 +439,11 @@ public:
   // Array<Array<Klass*>*>* a4 = ...;  it->push(&a4);    => MSOPointerArrayRef
   // Array<Annotation*>*    a5 = ...;  it->push(&a5);    => MSOPointerArrayRef
   //
-  // AOTGrowableArrays have a separate "C array" buffer, so they are scanned in two steps:
+  // GrowableArrays have a separate "C array" buffer, so they are scanned in two steps:
   //
-  // AOTGrowableArray<jlong>*      ga1 = ...;  it->push(&ga1);  => MSORef => OtherCArrayRef
-  // AOTGrowableArray<Annotation>* ga2 = ...;  it->push(&ga2);  => MSORef => MSOCArrayRef
-  // AOTGrowableArray<Klass*>*     ga3 = ...;  it->push(&ga3);  => MSORef => MSOPointerCArrayRef
+  // GrowableArray<jlong>*      ga1 = ...;  it->push(&ga1);  => MSORef => OtherCArrayRef
+  // GrowableArray<Annotation>* ga2 = ...;  it->push(&ga2);  => MSORef => MSOCArrayRef
+  // GrowableArray<Klass*>*     ga3 = ...;  it->push(&ga3);  => MSORef => MSOPointerCArrayRef
   //
   // Note that the following will fail to compile:
   //
@@ -476,7 +475,7 @@ public:
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 
-  // --- The buffer of AOTGrowableArray<T>
+  // --- The buffer of GrowableArray<T>
   template <typename T, ENABLE_IF(!HAS_METASPACE_POINTERS_DO(T))>
   void push_c_array(T** mpp, int num_elems, Writability w = _default) {
     push_impl(new OtherCArrayRef<T>(mpp, num_elems, w));

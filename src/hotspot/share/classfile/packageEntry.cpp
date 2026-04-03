@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -40,6 +39,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/events.hpp"
+#include "utilities/hashTable.hpp"
+#include "utilities/growableArray.inline.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
@@ -83,7 +84,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
-    _qualified_exports = new (mtModule) AOTGrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
+    _qualified_exports = new (mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
   }
 
   // Determine, based on this newly established export to module m,
