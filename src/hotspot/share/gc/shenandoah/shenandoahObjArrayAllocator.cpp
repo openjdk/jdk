@@ -74,7 +74,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const size_t process_size = _word_size - process_start;
 
   // Fill with long array, GC won't look into the memory until initialization is done
-  ObjArrayAllocator obj_array_allocator(Universe::longArrayKlass(), _word_size,  process_size / (T_LONG_aelem_bytes / HeapWordSize) , /* do_zero */ false);
+  ObjArrayAllocator obj_array_allocator(Universe::longArrayKlass(), _word_size,  (int) (process_size / (T_LONG_aelem_bytes / HeapWordSize)) , /* do_zero */ false);
   obj_array_allocator.initialize(mem);
 
   ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
