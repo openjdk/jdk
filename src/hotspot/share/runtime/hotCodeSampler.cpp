@@ -30,8 +30,6 @@
 #include "runtime/javaThread.inline.hpp"
 
 void ThreadSampler::sample_all_java_threads() {
-  uint64_t start_time = os::javaTimeMillis();
-
   // Collect samples for each JavaThread
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->is_hidden_from_external_view() ||

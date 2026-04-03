@@ -26,7 +26,6 @@
 #ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 #define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 
-#include "code/codeCache.hpp"
 #include "runtime/javaThread.hpp"
 
 class Candidates;
