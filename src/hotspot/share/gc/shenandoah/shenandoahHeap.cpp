@@ -1970,6 +1970,7 @@ public:
     ShenandoahHeapRegion* region = _regions.next();
     while (region != nullptr) {
       _closure->heap_region_do(region);
+      region = _regions.next();
     }
   }
 };
