@@ -537,8 +537,8 @@ void ciMethodData::clear_escape_info() {
   if (mdo != nullptr) {
     mdo->clear_escape_info();
     ArgInfoData *aid = arg_info();
-    int arg_count = (aid == nullptr) ? 0 : aid->size_of_args();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = (aid == nullptr) ? 0 : aid->size_of_args();
+    for (int i = 0; i < arg_size; i++) {
       set_arg_modified(i, 0);
     }
   }
