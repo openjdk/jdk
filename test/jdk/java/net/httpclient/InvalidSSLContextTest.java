@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8381316
  * @summary Test to ensure the HTTP client throws an appropriate SSL exception
  *          when SSL context is not valid.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
