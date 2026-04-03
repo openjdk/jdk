@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @run testng ConnectionReset
+ * @run junit ${test.main.class}
  * @summary Test behavior of read and available when a connection is reset
  */
 
@@ -34,10 +34,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class ConnectionReset {
 
     static final int REPEAT_COUNT = 5;
@@ -45,6 +44,7 @@ public class ConnectionReset {
     /**
      * Tests available before read when there are no bytes to read
      */
+    @Test
     public void testAvailableBeforeRead1() throws IOException {
         System.out.println("testAvailableBeforeRead1");
         withResetConnection(null, s -> {
@@ -71,6 +71,7 @@ public class ConnectionReset {
     /**
      * Tests available before read when there are bytes to read
      */
+    @Test
     public void testAvailableBeforeRead2() throws IOException {
         System.out.println("testAvailableBeforeRead2");
         byte[] data = { 1, 2, 3 };
@@ -102,6 +103,7 @@ public class ConnectionReset {
     /**
      * Tests read before available when there are no bytes to read
      */
+    @Test
     public void testReadBeforeAvailable1() throws IOException {
         System.out.println("testReadBeforeAvailable1");
         withResetConnection(null, s -> {
@@ -128,6 +130,7 @@ public class ConnectionReset {
     /**
      * Tests read before available when there are bytes to read
      */
+    @Test
     public void testReadBeforeAvailable2() throws IOException {
         System.out.println("testReadBeforeAvailable2");
         byte[] data = { 1, 2, 3 };
@@ -159,6 +162,7 @@ public class ConnectionReset {
     /**
      * Tests available and read on a socket closed after connection reset
      */
+    @Test
     public void testAfterClose() throws IOException {
         System.out.println("testAfterClose");
         withResetConnection(null, s -> {

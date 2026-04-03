@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8220493
  * @modules java.base/java.net:+open java.base/sun.nio.ch:+open
- * @run testng/othervm SocketImplCombinations
+ * @run junit/othervm ${test.main.class}
  * @summary Test Socket and ServerSocket with combinations of SocketImpls
  */
 
@@ -46,15 +46,17 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.function.BiConsumer;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class SocketImplCombinations {
 
     /**
      * Test creating an unconnected Socket, it should be created with a platform SocketImpl.
      */
+    @Test
     public void testNewSocket1() throws IOException {
         try (Socket s = new Socket()) {
             SocketImpl si = getSocketImpl(s);
@@ -67,6 +69,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a connected Socket, it should be created with a platform SocketImpl.
      */
+    @Test
     public void testNewSocket2() throws IOException {
         try (ServerSocket ss = boundServerSocket()) {
             try (Socket s = new Socket(ss.getInetAddress(), ss.getLocalPort())) {
@@ -82,6 +85,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a DIRECT connection, it should be created with a
      * platform SocketImpl.
      */
+    @Test
     public void testNewSocket3() throws IOException {
         try (Socket s = new Socket(Proxy.NO_PROXY)) {
             SocketImpl si = getSocketImpl(s);
@@ -93,6 +97,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a SOCKS connection, it should be created with a
      * SOCKS SocketImpl.
      */
+    @Test
     public void testNewSocket4() throws IOException {
         var address = new InetSocketAddress("127.0.0.1", 1080);
         var socksProxy = new Proxy(Proxy.Type.SOCKS, address);
@@ -108,6 +113,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a HTTP proxy connection, it should be created with
      * a HTTP proxy SocketImpl.
      */
+    @Test
     public void testNewSocket5() throws IOException {
         var address = new InetSocketAddress("127.0.0.1", 8080);
         var httpProxy = new Proxy(Proxy.Type.HTTP, address);
@@ -123,6 +129,7 @@ public class SocketImplCombinations {
      * Test creating a Socket no SocketImpl. A platform SocketImpl should be
      * created lazily.
      */
+    @Test
     public void testNewSocket6() throws IOException {
         Socket s = new Socket((SocketImpl) null) { };
         try (s) {
@@ -138,6 +145,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a Socket with a custom SocketImpl.
      */
+    @Test
     public void testNewSocket7() throws IOException {
         Socket s = new Socket(new CustomSocketImpl(false)) { };
         try (s) {
@@ -149,6 +157,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a Socket when there is a SocketImplFactory set.
      */
+    @Test
     public void testNewSocket8() throws IOException {
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (Socket s = new Socket()) {
@@ -163,6 +172,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a DIRECT connection when there is a
      * SocketImplFactory set.
      */
+    @Test
     public void testNewSocket9() throws IOException {
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (Socket s = new Socket(Proxy.NO_PROXY)) {
@@ -177,6 +187,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a SOCKS connection when there is a
      * SocketImplFactory set.
      */
+    @Test
     public void testNewSocket10() throws IOException {
         var address = new InetSocketAddress("127.0.0.1", 1080);
         var socksProxy = new Proxy(Proxy.Type.SOCKS, address);
@@ -195,6 +206,7 @@ public class SocketImplCombinations {
      * Test creating a Socket for a HTTP proxy connection when there is a
      * SocketImplFactory set.
      */
+    @Test
     public void testNewSocket11() throws IOException {
         var address = new InetSocketAddress("127.0.0.1", 8080);
         var httpProxy = new Proxy(Proxy.Type.HTTP, address);
@@ -212,6 +224,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a Socket no SocketImpl when there is a SocketImplFactory set.
      */
+    @Test
     public void testNewSocket12() throws IOException {
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try {
@@ -230,6 +243,7 @@ public class SocketImplCombinations {
      * Test creating an unbound ServerSocket, it should be created with a platform
      * SocketImpl.
      */
+    @Test
     public void testNewServerSocket1() throws IOException {
         try (ServerSocket ss = new ServerSocket()) {
             SocketImpl si = getSocketImpl(ss);
@@ -241,6 +255,7 @@ public class SocketImplCombinations {
      * Test creating a bound ServerSocket, it should be created with a platform
      * SocketImpl.
      */
+    @Test
     public void testNewServerSocket2() throws IOException {
         try (ServerSocket ss = new ServerSocket(0)) {
             SocketImpl si = getSocketImpl(ss);
@@ -251,6 +266,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a ServerSocket with a custom SocketImpl.
      */
+    @Test
     public void testNewServerSocket3() throws IOException {
         ServerSocket ss = new ServerSocket(new CustomSocketImpl(true)) { };
         try (ss) {
@@ -262,6 +278,7 @@ public class SocketImplCombinations {
     /**
      * Test creating an unbound ServerSocket when there is a SocketImplFactory set.
      */
+    @Test
     public void testNewServerSocket4() throws IOException {
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = new ServerSocket()) {
@@ -275,6 +292,7 @@ public class SocketImplCombinations {
     /**
      * Test creating a bound ServerSocket when there is a SocketImplFactory set.
      */
+    @Test
     public void testNewServerSocket5() throws IOException {
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = new ServerSocket(0)) {
@@ -289,6 +307,7 @@ public class SocketImplCombinations {
      * Test ServerSocket.accept. The ServerSocket uses a platform SocketImpl,
      * the Socket to accept is created with no SocketImpl.
      */
+    @Test
     public void testServerSocketAccept1() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
         assertTrue(getSocketImpl(socket) == null);
@@ -307,6 +326,7 @@ public class SocketImplCombinations {
      * the Socket to accept is created with no SocketImpl, and there is a custom
      * client SocketImplFactory set.
      */
+    @Test
     public void testServerSocketAccept2() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
         assertTrue(getSocketImpl(socket) == null);
@@ -325,6 +345,7 @@ public class SocketImplCombinations {
      * the Socket to accept is created with a SocketImpl that delegates to a
      * platform SocketImpl.
      */
+    @Test
     public void testServerSocketAccept3() throws IOException {
         var socket = new Socket();
         SocketImpl si = getSocketImpl(socket);
@@ -345,18 +366,20 @@ public class SocketImplCombinations {
      * Test ServerSocket.accept. The ServerSocket uses a platform SocketImpl,
      * the Socket to accept is created with a custom SocketImpl.
      */
+    @Test
     public void testServerSocketAccept4a() throws IOException {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };
         assertTrue(getSocketImpl(socket) == clientImpl);
 
         try (ServerSocket ss = serverSocketToAccept(socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             socket.close();
         }
     }
 
+    @Test
     public void testServerSocketAccept4b() throws IOException {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };
@@ -364,7 +387,7 @@ public class SocketImplCombinations {
 
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (ServerSocket ss = serverSocketToAccept(socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             setSocketSocketImplFactory(null);
             socket.close();
@@ -375,42 +398,46 @@ public class SocketImplCombinations {
      * Test ServerSocket.accept. The ServerSocket uses a custom SocketImpl,
      * the Socket to accept is created no SocketImpl.
      */
+    @Test
     public void testServerSocketAccept5a() throws IOException {
         SocketImpl serverImpl = new CustomSocketImpl(true);
         try (ServerSocket ss = new ServerSocket(serverImpl) { }) {
             ss.bind(loopbackSocketAddress());
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         }
     }
 
+    @Test
     public void testServerSocketAccept5b() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
         assertTrue(getSocketImpl(socket) == null);
 
         SocketImpl serverImpl = new CustomSocketImpl(true);
         try (ServerSocket ss = serverSocketToAccept(serverImpl, socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             socket.close();
         }
     }
 
+    @Test
     public void testServerSocketAccept5c() throws IOException {
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = new ServerSocket(0)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             setServerSocketImplFactory(null);
         }
     }
 
+    @Test
     public void testServerSocketAccept5d() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
         assertTrue(getSocketImpl(socket) == null);
 
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = serverSocketToAccept(socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             setServerSocketImplFactory(null);
             socket.close();
@@ -422,6 +449,7 @@ public class SocketImplCombinations {
      * the Socket to accept is created with no SocketImpl, and there is a custom
      * client SocketImplFactory set.
      */
+    @Test
     public void testServerSocketAccept6() throws Exception {
         var socket = new Socket((SocketImpl) null) { };
         assertTrue(getSocketImpl(socket) == null);
@@ -441,6 +469,7 @@ public class SocketImplCombinations {
      * the Socket to accept is created with a SocketImpl that delegates to a
      * platform SocketImpl.
      */
+    @Test
     public void testServerSocketAccept7a() throws IOException {
         var socket = new Socket();
         SocketImpl si = getSocketImpl(socket);
@@ -450,12 +479,13 @@ public class SocketImplCombinations {
 
         SocketImpl serverImpl = new CustomSocketImpl(true);
         try (ServerSocket ss = serverSocketToAccept(serverImpl, socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             socket.close();
         }
     }
 
+    @Test
     public void testServerSocketAccept7b() throws IOException {
         var socket = new Socket();
         SocketImpl si = getSocketImpl(socket);
@@ -465,7 +495,7 @@ public class SocketImplCombinations {
 
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = serverSocketToAccept(socket)) {
-            expectThrows(IOException.class, ss::accept);
+            assertThrows(IOException.class, ss::accept);
         } finally {
             setServerSocketImplFactory(null);
             socket.close();
@@ -476,6 +506,7 @@ public class SocketImplCombinations {
      * Test ServerSocket.accept. The ServerSocket uses a custom SocketImpl,
      * the Socket to accept is created with a custom SocketImpl.
      */
+    @Test
     public void testServerSocketAccept8() throws Exception {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };

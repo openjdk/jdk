@@ -25,7 +25,7 @@
  * @test
  * @bug 8224477
  * @summary Basic test for java.net.SocketImpl default behavior
- * @run testng TestDefaultBehavior
+ * @run junit TestDefaultBehavior
  */
 
 import java.io.IOException;
@@ -36,11 +36,13 @@ import java.net.SocketAddress;
 import java.net.SocketImpl;
 import java.net.SocketOption;
 import java.util.Set;
-import org.testng.annotations.Test;
 import static java.lang.Boolean.*;
 import static java.net.StandardSocketOptions.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.expectThrows;
+import org.junit.jupiter.api.Test;
 
 public class TestDefaultBehavior {
 
@@ -51,21 +53,21 @@ public class TestDefaultBehavior {
     public void socketImpl() {
         CustomSocketImpl csi = new CustomSocketImpl();
 
-        assertEquals(csi.supportedOptions().size(), 0);
+        assertEquals(0, csi.supportedOptions().size());
 
-        expectThrows(NPE, () -> csi.setOption(null, null));
-        expectThrows(NPE, () -> csi.setOption(null, 1));
-        expectThrows(UOE, () -> csi.setOption(SO_RCVBUF, 100));
-        expectThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
-        expectThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, FALSE));
-        expectThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, TRUE));
-        expectThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, FALSE));
-        expectThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
+        Assertions.assertThrows(NPE, () -> csi.setOption(null, null));
+        Assertions.assertThrows(NPE, () -> csi.setOption(null, 1));
+        Assertions.assertThrows(UOE, () -> csi.setOption(SO_RCVBUF, 100));
+        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
+        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, FALSE));
+        Assertions.assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, TRUE));
+        Assertions.assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, FALSE));
+        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
 
-        expectThrows(NPE, () -> csi.getOption(null));
-        expectThrows(UOE, () -> csi.getOption(SO_RCVBUF));
-        expectThrows(UOE, () -> csi.getOption(SO_KEEPALIVE));
-        expectThrows(UOE, () -> csi.getOption(FAKE_SOCK_OPT));
+        Assertions.assertThrows(NPE, () -> csi.getOption(null));
+        Assertions.assertThrows(UOE, () -> csi.getOption(SO_RCVBUF));
+        Assertions.assertThrows(UOE, () -> csi.getOption(SO_KEEPALIVE));
+        Assertions.assertThrows(UOE, () -> csi.getOption(FAKE_SOCK_OPT));
     }
 
     static final SocketOption<Boolean> FAKE_SOCK_OPT = new SocketOption<>() {
