@@ -144,31 +144,33 @@ public:
 class ShenandoahInvisibleRootsMarkClosure : public ThreadClosure {
 public:
   void do_thread(Thread* t) {
-    if (!t->is_Java_thread()) return;
-
     HeapWord* invisible_root = ShenandoahThreadLocalData::get_invisible_root(t);
-    size_t live_words = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
     if (invisible_root == nullptr) return;
+    size_t invisible_root_word_size = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
 
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahMarkingContext* marking_context = heap->marking_context();
-    if (!marking_context->allocated_after_mark_start(invisible_root) &&
-        !marking_context->is_marked_strong(invisible_root)) {
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    ShenandoahMarkingContext* const marking_context = heap->marking_context();
+    if (!marking_context->is_marked(invisible_root)) {
       bool was_upgraded = false;
       if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
 
       ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
       if (region->is_regular() || region->is_regular_pinned()) {
-        region->increase_live_data_alloc_words(live_words);
+        assert(!ShenandoahHeapRegion::requires_humongous(invisible_root_word_size), "Must not be humongous.");
+        region->increase_live_data_alloc_words(invisible_root_word_size);
       } else if (region->is_humongous_start()) {
+        DEBUG_ONLY(size_t total_live_words = 0;)
         do {
-          assert(live_words > 0, "Must be");
-          size_t region_live_words = live_words >= ShenandoahHeapRegion::region_size_words() ? ShenandoahHeapRegion::region_size_words() : live_words;
-          live_words -= region_live_words;
-          region->increase_live_data_alloc_words(region_live_words);
+          size_t current = region->get_live_data_words();
+          size_t region_used_words = region->used() >> LogHeapWordSize;
+          DEBUG_ONLY(total_live_words += region_used_words;)
+          assert(current == 0 || current == region_used_words, "Must be");
+          if (current == 0) {
+            region->increase_live_data_alloc_words(region_used_words);
+          }
           region = heap->get_region(region->index() + 1);
         } while (region != nullptr && region->is_humongous_continuation());
-        assert(live_words == 0, "Must be");
+        assert(total_live_words == invisible_root_word_size, "Must be");
       }
     }
   }
