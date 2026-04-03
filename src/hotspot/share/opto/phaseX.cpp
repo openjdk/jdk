@@ -2210,9 +2210,77 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    if (!k->is_CFG() && t == Type::TOP) {
+    // if (k->is_CFG() && t == Type::TOP) {
+    //   k->remove_dead_region(this, true);
+    // }
+    if (t == Type::TOP) {
       ResourceMark rm;
-      k->make_paths_from_here_dead(this, nullptr, "igvn");
+      Unique_Node_List wq;
+      wq.push(k);
+      for (uint i = 0; i < wq.size(); i++) {
+        Node* n = wq.at(i);
+        if (n !=k && (n->is_Region() || n->is_Phi() || (n->is_CFG() && !wq.member(n->in(0))))) {
+          continue;
+        }
+        for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+          Node* u = n->fast_out(k);
+          wq.push(u);
+        }
+      }
+
+      RegionNode* r = nullptr;
+      assert(wq.at(0) == k, "");
+      for (uint i = 1; i < wq.size(); i++) {
+        Node* n = wq.at(i);
+        if (n->is_Region()) {
+          for (uint j = 1; j < n->req(); j++) {
+            Node* in = n->in(j);
+            if (in != nullptr && wq.member(in)) {
+              replace_input_of(n, j, C->top());
+              in->remove_dead_region(this, true);
+            }
+          }
+        } else if (n->is_Phi()) {
+          for (uint j = 1; j < n->req(); j++) {
+            Node* in = n->in(j);
+            if (in != nullptr && wq.member(in)) {
+              if (n->in(0)->in(j)->is_top()) {
+                continue;
+              }
+              if (r == nullptr) {
+                r = new RegionNode(2);
+                r->init_req(1, C->root());
+                register_new_node_with_optimizer(r);
+                Node::create_halt_path(this, r, nullptr, "igvn");
+              }
+              r->add_req(n->in(0)->in(j));
+              replace_input_of(n, j, C->top());
+              replace_input_of(n->in(0), j, C->top());
+              if (in->outcnt() == 0) {
+                remove_dead_node(in);
+              }
+            }
+          }
+        } else if (n->is_CFG() && !wq.member(n->in(0))) {
+          if (n->in(0)->is_top()) {
+            continue;
+          }
+          if (r == nullptr) {
+            r = new RegionNode(2);
+            r->init_req(1, C->root());
+            register_new_node_with_optimizer(r);
+            Node::create_halt_path(this, r, nullptr, "igvn");
+          }
+          r->add_req(n->in(0));
+          replace_input_of(n, 0, C->top());
+          n->remove_dead_region(this, true);
+        }
+      }
+      if (r != nullptr) {
+        assert(r->in(1) == C->root(), "");
+        replace_input_of(r, 1, C->top());
+      }
+        // k->make_paths_from_here_dead(this, nullptr, "igvn");
     }
     NOT_PRODUCT(set_progress();)
     Node* con = makecon(t);     // Make a constant

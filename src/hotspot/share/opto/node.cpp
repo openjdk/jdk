@@ -3161,7 +3161,7 @@ void Node::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, c
   }
 }
 
-void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
+void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) {
   Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(frame);
