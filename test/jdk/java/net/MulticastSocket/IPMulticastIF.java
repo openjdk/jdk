@@ -28,7 +28,7 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.net.IPSupport;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.net.StandardSocketOptions.IP_MULTICAST_IF;
@@ -55,8 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IPMulticastIF {
 
     @BeforeAll
-    public void sanity() {
-        IPSupport.diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
+    public static void sanity() {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         NetworkConfiguration.printSystemConfiguration(out);
     }
 
