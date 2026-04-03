@@ -27,9 +27,10 @@
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions
- *                   -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
+ *                   -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0 -XX:HotCodeCallLevel=0
  *                   -XX:HotCodeSampleSeconds=5 -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
+ *                   -XX:CompileCommand=compileonly,compiler.hotcode.HotCodeCollectorMoveFunction::func
  *                   compiler.hotcode.HotCodeCollectorMoveFunction
  */
 
@@ -47,7 +48,7 @@ public class HotCodeCollectorMoveFunction {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final Method method;
     private static final int C2_LEVEL = 4;
-    private static final int FUNC_RUN_MILLIS = 30_000;
+    private static final int FUNC_RUN_MILLIS = 60_000;
 
     static {
         try {
