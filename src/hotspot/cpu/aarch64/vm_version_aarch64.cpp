@@ -282,18 +282,23 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (supports_crc32()) {
-    if (FLAG_IS_DEFAULT(UseCRC32)) {
-      FLAG_SET_DEFAULT(UseCRC32, true);
-    } else if (!UseCRC32) {
-      clear_feature(CPU_CRC32);
-    }
-  } else if (UseCRC32) {
-    if (!FLAG_IS_DEFAULT(UseCRC32)) {
-      warning("UseCRC32 specified, but not supported on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseCRC32, false);
+#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
+  if (feature_test_fn()) { \
+    if (FLAG_IS_DEFAULT(Use##feature)) { \
+      FLAG_SET_DEFAULT(Use##feature, true); \
+    } else if (!Use##feature) { \
+      _features.clear_feature(CPU_##feature); \
+    } \
+  } else if (Use##feature) { \
+    if (!FLAG_IS_DEFAULT(Use##feature)) { \
+      warning(#feature " instructions not available on this CPU"); \
+    } \
+    FLAG_SET_DEFAULT(Use##feature, false); \
   }
+
+  CHECK_CPU_FEATURE(supports_crc32, CRC32);
+  CHECK_CPU_FEATURE(supports_lse, LSE);
+  CHECK_CPU_FEATURE(supports_aes, AES);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -320,46 +325,32 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (supports_lse()) {
-    if (FLAG_IS_DEFAULT(UseLSE)) {
-      FLAG_SET_DEFAULT(UseLSE, true);
-    } else if (!UseLSE) {
-      clear_feature(CPU_LSE);
-    }
-  } else {
-    if (UseLSE) {
-      warning("UseLSE specified, but not supported on this CPU");
-      FLAG_SET_DEFAULT(UseLSE, false);
-    }
-  }
-
   if (supports_aes()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      FLAG_SET_DEFAULT(UseAES, true);
-    } else if (!UseAES) {
-      clear_feature(CPU_AES);
-    }
-    UseAESIntrinsics =
-        UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
-    if (UseAESIntrinsics && !UseAES) {
-      warning("UseAESIntrinsics enabled, but UseAES not, enabling");
-      UseAES = true;
+    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      FLAG_SET_DEFAULT(UseAESIntrinsics, true);
     }
     if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
     }
   } else {
-    if (UseAES) {
-      warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
-    }
-    if (UseAESIntrinsics) {
-      warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-    }
-    if (UseAESCTRIntrinsics) {
-      warning("AES/CTR intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    if (!UseAES) {
+      if (UseAESIntrinsics) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+      if (UseAESCTRIntrinsics) {
+        warning("AES/CTR intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
+    } else if (!cpu_supports_aes()) {
+      if (UseAESIntrinsics) {
+        warning("AES intrinsics are not available on this CPU");
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+      if (UseAESCTRIntrinsics) {
+        warning("AES/CTR intrinsics are not available on this CPU");
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
     }
   }
 

@@ -1094,55 +1094,39 @@ void VM_Version::get_processor_features() {
     }
   }
 
-    // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
-  if (UseAPX && !apx_supported) {
-    warning("UseAPX is not supported on this CPU, setting it to false");
+  // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
+    if (FLAG_IS_DEFAULT(UseAPX)) {
+      UseAPX = false; // by default UseAPX is false
+    } else if (!UseAPX) {
+      _features.clear_feature(CPU_APX_F);
+    }
+  } else if (UseAPX) {
+    if (!FLAG_IS_DEFAULT(UseAPX)) {
+      warning("APX is not supported on this CPU, setting it to false)");
+    }
     FLAG_SET_DEFAULT(UseAPX, false);
   }
 
-  if (!UseAPX) {
-    _features.clear_feature(CPU_APX_F);
+#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
+  if (feature_test_fn()) { \
+    if (FLAG_IS_DEFAULT(Use##feature)) { \
+      FLAG_SET_DEFAULT(Use##feature, true); \
+    } else if (!Use##feature) { \
+      _features.clear_feature(CPU_##feature); \
+    } \
+  } else if (Use##feature) { \
+    if (!FLAG_IS_DEFAULT(Use##feature)) { \
+      warning(#feature " instructions not available on this CPU"); \
+    } \
+    FLAG_SET_DEFAULT(Use##feature, false); \
   }
 
-  // Use CLMUL instructions if available.
-  if (supports_clmul()) {
-    if (FLAG_IS_DEFAULT(UseCLMUL)) {
-      UseCLMUL = true;
-    } else if (!UseCLMUL) {
-      _features.clear_feature(CPU_CLMUL);
-    }
-  } else if (UseCLMUL) {
-    if (!FLAG_IS_DEFAULT(UseCLMUL))
-      warning("CLMUL instructions not available on this CPU (AVX may also be required)");
-    FLAG_SET_DEFAULT(UseCLMUL, false);
-  }
+  CHECK_CPU_FEATURE(supports_clmul, CLMUL);
+  CHECK_CPU_FEATURE(supports_aes, AES);
+  CHECK_CPU_FEATURE(supports_fma, FMA);
 
-  if (supports_aes()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      FLAG_SET_DEFAULT(UseAES, true);
-    } else if (!UseAES) {
-      _features.clear_feature(CPU_AES);
-    }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES)) {
-      warning("AES instructions are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseAES, false);
-  }
-
-  if (supports_fma()) {
-    if (FLAG_IS_DEFAULT(UseFMA)) {
-      UseFMA = true;
-    } else if (!UseFMA) {
-      _features.clear_feature(CPU_FMA);
-    }
-  } else if (UseFMA) {
-    if (!FLAG_IS_DEFAULT(UseFMA)) {
-      warning("FMA instructions are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseFMA, false);
-  }
+#undef CHECK_CPU_FEATURE
 
   if (supports_sha() || (supports_avx2() && supports_bmi2())) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
