@@ -256,11 +256,7 @@ public:
   }
 
   bool is_idle() const {
-    return state() == WAITING_FOR_BOOTSTRAP;
-  }
-
-  bool is_bootstrapping() const {
-    return state() == BOOTSTRAPPING;
+    return state() == IDLE;
   }
 
   // Amount of live memory (bytes) in regions waiting for mixed collections
@@ -271,11 +267,11 @@ public:
 
 public:
   enum State {
-    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
+    FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
 
 #ifdef ASSERT
-  bool validate_waiting_for_bootstrap();
+  bool validate_idle();
 #endif
 
 private:
@@ -318,7 +314,7 @@ public:
   size_t usage_trigger_threshold() const;
 
   bool can_start_gc() {
-    return _state == WAITING_FOR_BOOTSTRAP;
+    return _state == IDLE;
   }
 
   static const char* state_name(State state);
