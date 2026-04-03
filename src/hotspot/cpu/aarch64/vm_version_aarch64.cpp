@@ -97,6 +97,7 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = true;
 
   get_os_cpu_info();
+  _cpu_features = _features;
 
   int dcache_line = dcache_line_size();
 
