@@ -68,8 +68,12 @@ public class OpensslArtifactFetcher {
             return path;
         }
         path = getArtifactsFromArtifactory();
-        throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
+	if(path == null) {
+		throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
                 OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
+	}
+	System.out.println("Artifacts Path is"+path);
+	return path;
     }
 
     public static String getOpensslPathWithProviderPathPresent() {
