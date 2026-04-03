@@ -287,7 +287,7 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(Use##feature)) { \
       FLAG_SET_DEFAULT(Use##feature, true); \
     } else if (!Use##feature) { \
-      _features.clear_feature(CPU_##feature); \
+      clear_feature(CPU_##feature); \
     } \
   } else if (Use##feature) { \
     if (!FLAG_IS_DEFAULT(Use##feature)) { \

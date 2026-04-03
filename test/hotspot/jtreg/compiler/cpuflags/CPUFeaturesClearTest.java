@@ -140,5 +140,4 @@ public class CPUFeaturesClearTest {
         cpuFeaturesList = CPUInfo.getFeatures();
         new CPUFeaturesClearTest().runTestCases();
     }
-} 
-
+}
