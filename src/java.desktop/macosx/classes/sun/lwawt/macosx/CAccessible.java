@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 package sun.lwawt.macosx;
 
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Objects;
@@ -52,6 +56,16 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
+        return getCAccessible(a, true);
+    }
+
+    /**
+     * @param createIfUndefined if there is not yet a cached CAccessible for
+     *                          the given Accessible, then this boolean
+     *                          controls whether this method creates a new
+     *                          CAccessible or returns null.
+     */
+    public static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
@@ -60,9 +74,12 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (cachedCAX != null) {
             return cachedCAX;
         }
-        final CAccessible newCAX = new CAccessible(a);
-        accessor.setNativeAXResource(context, newCAX);
-        return newCAX;
+        if (createIfUndefined) {
+            final CAccessible newCAX = new CAccessible(a);
+            accessor.setNativeAXResource(context, newCAX);
+            return newCAX;
+        }
+        return null;
     }
 
     private static native void unregisterFromCocoaAXSystem(long ptr);
@@ -82,6 +99,29 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
     private AccessibleContext activeDescendant;
 
+    private static ContainerListener axContainerListener = new ContainerAdapter() {
+
+        @Override
+        public void componentRemoved(ContainerEvent e) {
+            Component child = e.getChild();
+            disposeRecursively(child);
+        }
+
+        private void disposeRecursively(Component component) {
+            if (component instanceof Container container) {
+                for (Component child : container.getComponents()) {
+                    disposeRecursively(child);
+                }
+            }
+            if (component instanceof Accessible ax) {
+                CAccessible cax = CAccessible.getCAccessible(ax, false);
+                if (cax != null) {
+                    cax.dispose();
+                }
+            }
+        }
+    };
+
     private CAccessible(final Accessible accessible) {
         super(0L, true); // real pointer will be poked in by native
 
@@ -95,6 +135,9 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
     @Override
     protected synchronized void dispose() {
+        if (accessible instanceof Container container) {
+            container.removeContainerListener(axContainerListener);
+        }
         if (ptr != 0) unregisterFromCocoaAXSystem(ptr);
         super.dispose();
     }
@@ -108,6 +151,9 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (c instanceof Accessible) {
             AccessibleContext ac = ((Accessible)c).getAccessibleContext();
             ac.addPropertyChangeListener(new AXChangeNotifier());
+            if (c instanceof Container container) {
+                container.addContainerListener(axContainerListener);
+            }
         }
     }
 
