@@ -2528,12 +2528,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-
-// Used for PostMortemDump
-extern "C" void safepoints();
-extern "C" void find(int x);
-extern "C" void events();
-
 // According to Windows API documentation, an illegal instruction sequence should generate
 // the 0xC000001C exception code. However, real world experience shows that occasionnaly
 // the execution of an illegal instruction can generate the exception code 0xC000001E. This
