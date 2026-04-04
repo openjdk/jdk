@@ -46,7 +46,9 @@ public class GenKeyStore {
 
     static final char[] password = "test12".toCharArray();
 
-    private static X509Certificate getCertificate(String suffix, PublicKey publicKey, PrivateKey privateKey) throws Exception {
+    private static X509Certificate getCertificate(String suffix,
+                                                    PublicKey publicKey,
+                                                    PrivateKey privateKey) throws Exception {
         X500Name name = new X500Name("CN=Dummy Certificate " + suffix);
         String algorithm = "SHA1with" + publicKey.getAlgorithm();
         Date date = new Date();
