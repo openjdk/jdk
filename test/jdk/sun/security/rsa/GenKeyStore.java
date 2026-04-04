@@ -47,22 +47,16 @@ public class GenKeyStore {
         X500Name name = new X500Name("CN=Dummy Certificate " + suffix);
         String algorithm = "SHA1with" + publicKey.getAlgorithm();
         Date date = new Date();
-        AlgorithmId algID = AlgorithmId.getAlgorithmId(algorithm);
 
         X509CertInfo certInfo = new X509CertInfo();
+        certInfo.setVersion(new CertificateVersion(CertificateVersion.V1));
+        certInfo.setSerialNumber(new CertificateSerialNumber(1));
+        certInfo.setSubject(name);
+        certInfo.setIssuer(name);
+        certInfo.setKey(new CertificateX509Key(publicKey));
+        certInfo.setValidity(new CertificateValidity(date, date));
 
-        certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V1));
-        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(1));
-        certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algID));
-        certInfo.set(X509CertInfo.SUBJECT, name);
-        certInfo.set(X509CertInfo.ISSUER, name);
-        certInfo.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(date, date));
-
-        X509CertImpl cert = new X509CertImpl(certInfo);
-        cert.sign(privateKey, algorithm);
-
-        return cert;
+        return X509CertImpl.newSigned(certInfo, privateKey, algorithm);
     }
 
     private static void addToKeyStore(KeyStore ks, KeyPair kp, String name) throws Exception {
