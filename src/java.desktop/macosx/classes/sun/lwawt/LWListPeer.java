@@ -158,14 +158,14 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void select(final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().setSkipStateChangedEvent(true);
-            try {
-                ListModel<String> model = getDelegate().getModel();
-                if (index >= 0 && index < model.getSize()) {
+            ListModel<String> model = getDelegate().getModel();
+            if (index >= 0 && index < model.getSize()) {
+                getDelegate().setSkipStateChangedEvent(true);
+                try {
                     getDelegate().getView().addSelectionInterval(index, index);
+                } finally {
+                    getDelegate().setSkipStateChangedEvent(false);
                 }
-            } finally {
-                getDelegate().setSkipStateChangedEvent(false);
             }
         }
     }
