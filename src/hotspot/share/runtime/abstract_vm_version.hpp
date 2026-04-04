@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ typedef enum {
 } VirtualizationType;
 
 class outputStream;
+class stringStream;
 enum class vmIntrinsicID;
 
 // Abstract_VM_Version provides information about the VM.
@@ -191,8 +192,8 @@ class Abstract_VM_Version: AllStatic {
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
 
-  // Is recursive lightweight locking implemented for this platform?
-  constexpr static bool supports_recursive_lightweight_locking() { return false; }
+  // Is recursive fast locking implemented for this platform?
+  constexpr static bool supports_recursive_fast_locking() { return false; }
 
   // Does platform support secondary supers table lookup?
   constexpr static bool supports_secondary_supers_table() { return false; }
@@ -226,6 +227,21 @@ class Abstract_VM_Version: AllStatic {
 
   static const char* cpu_name(void);
   static const char* cpu_description(void);
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss) { return; }
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) { return; }
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size() { return 0; }
+
+  // Stores arch dependent cpu features representation in the provided buffer.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf) { return; }
+
+  // features_to_test is an opaque object that stores arch specific representation of cpu features
+  static bool supports_features(void* features_to_test) { return false; };
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

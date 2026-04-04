@@ -30,6 +30,7 @@
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -204,7 +205,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -251,7 +252,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
@@ -310,15 +311,6 @@ class MallocTracker : AllStatic {
   // totally failproof. Only use this during debugging or when you can afford
   // signals popping up, e.g. when writing an hs_err file.
   static bool print_pointer_information(const void* p, outputStream* st);
-
-  static inline MallocHeader* malloc_header(void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (MallocHeader*)memblock -1;
-  }
-  static inline const MallocHeader* malloc_header(const void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (const MallocHeader*)memblock -1;
-  }
 };
 
 #endif // SHARE_NMT_MALLOCTRACKER_HPP

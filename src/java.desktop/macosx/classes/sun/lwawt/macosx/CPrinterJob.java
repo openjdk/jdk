@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.Pageable;
@@ -85,6 +86,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     // future compatibility and the state keeping that it handles.
 
     private static String sShouldNotReachHere = "Should not reach here.";
+    private static final double USER_SPACE_DPI = 72.0;
+    private static final int DEFAULT_DOC_DPI_X = 300;
+    private static final int DEFAULT_DOC_DPI_Y = 300;
 
     private volatile SecondaryLoop printingLoop;
     private AtomicReference<Throwable> printErrorRef = new AtomicReference<>();
@@ -109,6 +113,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     private long fNSPrintInfo = -1;
     private final Object fNSPrintInfoLock = new Object();
     private final Object disposerReferent = new Object();
+
+    private double hRes = DEFAULT_DOC_DPI_X;
+    private double vRes = DEFAULT_DOC_DPI_Y;
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -348,20 +355,9 @@ public final class CPrinterJob extends RasterPrinterJob {
             validateDestination(destinationAttr);
         }
 
-        /* Get the range of pages we are to print. If the
-         * last page to print is unknown, then we print to
-         * the end of the document. Note that firstPage
-         * and lastPage are 0 based page indices.
-         */
-
+        // Note that firstPage is 0 based page index.
         int firstPage = getFirstPage();
-        int lastPage = getLastPage();
-        if(lastPage == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-            int totalPages = mDocument.getNumberOfPages();
-            if (totalPages != Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-                lastPage = mDocument.getNumberOfPages() - 1;
-            }
-        }
+        int totalPages = mDocument.getNumberOfPages();
 
         try {
             synchronized (this) {
@@ -386,7 +382,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     try {
                         // Fire off the print rendering loop on the AppKit thread, and don't have
                         //  it wait and block this thread.
-                        if (printLoop(false, firstPage, lastPage)) {
+                        if (printLoop(false, firstPage, totalPages)) {
                             // Start a secondary loop on EDT until printing operation is finished or cancelled
                             printingLoop.enter();
                         }
@@ -400,7 +396,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     onEventThread = false;
 
                     try {
-                        printLoop(true, firstPage, lastPage);
+                        printLoop(true, firstPage, totalPages);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -410,7 +406,6 @@ public final class CPrinterJob extends RasterPrinterJob {
                 }
                 if (++loopi < prMembers.length) {
                      firstPage = prMembers[loopi][0]-1;
-                     lastPage = prMembers[loopi][1] -1;
                 }
             }  while (loopi < prMembers.length);
         } finally {
@@ -461,8 +456,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getXRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return hRes;
     }
 
     /**
@@ -471,8 +465,31 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getYRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return vRes;
+    }
+
+    @Override
+    protected void setXYRes(double x, double y) {
+        hRes = x;
+        vRes = y;
+    }
+
+    /**
+     * Returns the resolution in dots per inch across the width
+     * of the page. This method take into account the page orientation.
+     */
+    private double getXRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getXRes() : getYRes();
+    }
+
+    /**
+     * Returns the resolution in dots per inch across the height
+     * of the page. This method take into account the page orientation.
+     */
+    private double getYRes(PageFormat pageFormat) {
+        return pageFormat.getOrientation() == PageFormat.PORTRAIT ?
+                getYRes() : getXRes();
     }
 
     /**
@@ -664,7 +681,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private native boolean printLoop(boolean waitUntilDone, int firstPage, int lastPage) throws PrinterException;
+    private native boolean printLoop(boolean waitUntilDone, int firstPage, int totalPages) throws PrinterException;
 
     private PageFormat getPageFormat(int pageIndex) {
         // This is called from the native side.
@@ -817,7 +834,11 @@ public final class CPrinterJob extends RasterPrinterJob {
         // This is called from the native side.
         Runnable r = new Runnable() { public void run() {
             try {
-                SurfaceData sd = CPrinterSurfaceData.createData(page, context); // Just stores page into an ivar
+                AffineTransform deviceTransform = new AffineTransform(
+                        getXRes(page) / USER_SPACE_DPI, 0, 0,
+                        getYRes(page) / USER_SPACE_DPI, 0, 0);
+                SurfaceData sd = CPrinterSurfaceData
+                        .createData(page, deviceTransform, context); // Just stores page into an ivar
                 if (defaultFont == null) {
                     defaultFont = new Font("Dialog", Font.PLAIN, 12);
                 }
@@ -873,6 +894,9 @@ public final class CPrinterJob extends RasterPrinterJob {
                         Rectangle2D pageFormatArea =
                              getPageFormatArea(pageFormat);
                         initPrinterGraphics(peekGraphics, pageFormatArea);
+                        double scaleX = getXRes(pageFormat) / USER_SPACE_DPI;
+                        double scaleY = getYRes(pageFormat) / USER_SPACE_DPI;
+                        peekGraphics.scale(scaleX, scaleY);
 
                         // Do the assignment here!
                         ret[0] = pageFormat;

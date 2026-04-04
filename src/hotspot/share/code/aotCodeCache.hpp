@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/stubInfo.hpp"
 
 /*
@@ -151,7 +153,6 @@ public:
     _early_c1_complete(false),
     _complete(false)
   { }
-  ~AOTCodeAddressTable();
   void init_extrs();
   void init_early_stubs();
   void init_shared_blobs();
@@ -163,32 +164,128 @@ public:
   address address_for_id(int id);
 };
 
+#define AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  do_var(int,   AllocateInstancePrefetchLines)          /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchDistance)               /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchLines)                  /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchStepSize)               /* stubs and nmethods */ \
+  do_var(uint,  CodeEntryAlignment)                     /* array copy stubs and nmethods */ \
+  do_var(bool,  UseCompressedOops)                      /* stubs and nmethods */ \
+  do_var(bool,  EnableContended)                        /* nmethods */ \
+  do_var(intx,  OptoLoopAlignment)                      /* array copy stubs and nmethods */ \
+  do_var(bool,  RestrictContended)                      /* nmethods */ \
+  do_var(bool,  UseAESCTRIntrinsics) \
+  do_var(bool,  UseAESIntrinsics) \
+  do_var(bool,  UseBASE64Intrinsics) \
+  do_var(bool,  UseChaCha20Intrinsics) \
+  do_var(bool,  UseCRC32CIntrinsics) \
+  do_var(bool,  UseCRC32Intrinsics) \
+  do_var(bool,  UseDilithiumIntrinsics) \
+  do_var(bool,  UseGHASHIntrinsics) \
+  do_var(bool,  UseKyberIntrinsics) \
+  do_var(bool,  UseMD5Intrinsics) \
+  do_var(bool,  UsePoly1305Intrinsics) \
+  do_var(bool,  UseSecondarySupersTable) \
+  do_var(bool,  UseSHA1Intrinsics) \
+  do_var(bool,  UseSHA256Intrinsics) \
+  do_var(bool,  UseSHA3Intrinsics) \
+  do_var(bool,  UseSHA512Intrinsics) \
+  do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
+  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
+  do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
+  do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
+  do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
+  // END
+
+#ifdef COMPILER2
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  do_var(intx,  ArrayOperationPartialInlineSize)        /* array copy stubs and nmethods */ \
+  do_var(intx,  MaxVectorSize)                          /* array copy/fill stubs */ \
+  do_var(bool,  UseMontgomeryMultiplyIntrinsic) \
+  do_var(bool,  UseMontgomerySquareIntrinsic) \
+  do_var(bool,  UseMulAddIntrinsic) \
+  do_var(bool,  UseMultiplyToLenIntrinsic) \
+  do_var(bool,  UseSquareToLenIntrinsic) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
+#endif
+
+#if INCLUDE_JVMCI
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun)
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
+  do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
+  do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
+  do_var(bool,  UseBlockZeroing) \
+  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
+  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
+  do_var(bool,  UseSecondarySupersCache) \
+  do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
+  do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
+  do_var(bool,  UseSimpleArrayEquals) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
+#endif
+
+#if defined(X86) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
+  do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
+  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
+  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
+  do_var(bool,  UseLibmIntrinsic) \
+  do_var(bool,  UseIntPolyIntrinsics) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
+#endif
+
+#define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  // END
+
+#define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
+#define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
+
 class AOTCodeCache : public CHeapObj<mtCode> {
 
 // Classes used to describe AOT code cache.
 protected:
   class Config {
-    address _compressedOopBase;
-    uint _compressedOopShift;
-    uint _compressedKlassShift;
-    uint _contendedPaddingWidth;
-    uint _gc;
-    enum Flags {
-      none                     = 0,
-      debugVM                  = 1,
-      compressedOops           = 2,
-      compressedClassPointers  = 4,
-      useTLAB                  = 8,
-      systemClassAssertions    = 16,
-      userClassAssertions      = 32,
-      enableContendedPadding   = 64,
-      restrictContendedPadding = 128
-    };
-    uint _flags;
+    AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_DECLARE_VAR, AOTCODECACHE_DECLARE_FUN)
 
+    // Special configs that cannot be checked with macros
+    address _compressedOopBase;
+
+#if defined(X86) && !defined(ZERO)
+    bool _useUnalignedLoadStores;
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+    bool _avoidUnalignedAccesses;
+#endif
+
+    uint _cpu_features_offset; // offset in the cache where cpu features are stored
   public:
-    void record();
-    bool verify() const;
+    void record(uint cpu_features_offset);
+    bool verify_cpu_features(AOTCodeCache* cache) const;
+    bool verify(AOTCodeCache* cache) const;
   };
 
   class Header : public CHeapObj<mtCode> {
@@ -206,14 +303,15 @@ protected:
     uint   _shared_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
-    Config _config;
+    Config _config; // must be the last element as there is trailing data stored immediately after Config
 
   public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
               uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count) {
+              uint C1_blobs_count, uint C2_blobs_count,
+              uint cpu_features_offset) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -224,7 +322,7 @@ protected:
       _shared_blobs_count = shared_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
-      _config.record();
+      _config.record(cpu_features_offset);
     }
 
 
@@ -239,8 +337,8 @@ protected:
     uint C2_blobs_count() const { return _C2_blobs_count; }
 
     bool verify(uint load_size)  const;
-    bool verify_config() const { // Called after Universe initialized
-      return _config.verify();
+    bool verify_config(AOTCodeCache* cache) const { // Called after Universe initialized
+      return _config.verify(cache);
     }
   };
 
@@ -256,7 +354,6 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_use;         // AOT cache is open for using AOT code
   bool   _for_dump;        // AOT cache is open for dumping AOT code
-  bool   _closing;         // Closing cache file
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
   bool   _lookup_failed;   // Failed to lookup for info (skip only this code load)
 
@@ -286,7 +383,6 @@ private:
 
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
-  ~AOTCodeCache();
 
   const char* cache_buffer() const { return _load_buffer; }
   bool failed() const { return _failed; }
@@ -310,8 +406,6 @@ public:
   bool for_use()  const { return _for_use  && !_failed; }
   bool for_dump() const { return _for_dump && !_failed; }
 
-  bool closing()          const { return _closing; }
-
   AOTCodeEntry* add_entry() {
     _store_entries_cnt++;
     _store_entries -= 1;
@@ -319,6 +413,8 @@ public:
   }
 
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id);
+
+  void store_cpu_features(char*& buffer, uint buffer_size);
 
   bool finish_write();
 
@@ -361,7 +457,7 @@ private:
   static bool open_cache(bool is_dumping, bool is_using);
   bool verify_config() {
     if (for_use()) {
-      return _load_header->verify_config();
+      return _load_header->verify_config(this);
     }
     return true;
   }
@@ -369,8 +465,8 @@ public:
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
-  static void close() NOT_CDS_RETURN;
-  static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
+  static void dump() NOT_CDS_RETURN;
+  static bool is_on() CDS_ONLY({ return cache() != nullptr; }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_dump() CDS_ONLY({ return is_on() && _cache->for_dump(); }) NOT_CDS_RETURN_(false);
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
@@ -402,11 +498,13 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
-  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
-public:
-  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+  // Values used by restore(code_blob).
+  // They should be set before calling it.
+  const char*         _name;
+  address             _reloc_data;
+  ImmutableOopMapSet* _oop_maps;
 
-  CodeBlob* compile_code_blob(const char* name);
+  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
 
   ImmutableOopMapSet* read_oop_map_set();
 
@@ -415,6 +513,45 @@ public:
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
 #endif // PRODUCT
+
+public:
+  AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
+
+  CodeBlob* compile_code_blob(const char* name);
+
+  void restore(CodeBlob* code_blob);
+};
+
+// code cache internal runtime constants area used by AOT code
+class AOTRuntimeConstants {
+ friend class AOTCodeCache;
+ private:
+  address _card_table_base;
+  uint    _grain_shift;
+  static address _field_addresses_list[];
+  static AOTRuntimeConstants _aot_runtime_constants;
+  // private constructor for unique singleton
+  AOTRuntimeConstants() { }
+  // private for use by friend class AOTCodeCache
+  static void initialize_from_runtime();
+ public:
+#if INCLUDE_CDS
+  static bool contains(address adr) {
+    address base = (address)&_aot_runtime_constants;
+    address hi = base + sizeof(AOTRuntimeConstants);
+    return (base <= adr && adr < hi);
+  }
+  static address card_table_base_address();
+  static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
+  static address* field_addresses_list() {
+    return _field_addresses_list;
+  }
+#else
+  static bool contains(address adr)        { return false; }
+  static address card_table_base_address() { return nullptr; }
+  static address grain_shift_address()     { return nullptr; }
+  static address* field_addresses_list()   { return nullptr; }
+#endif
 };
 
 #endif // SHARE_CODE_AOTCODECACHE_HPP

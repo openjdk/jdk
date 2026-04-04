@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,21 @@ public class TypeHarness {
             String msg = expected ?
                 " is not assignable to " :
                 " is assignable to ";
+            error(s + msg + t);
+        }
+    }
+
+    /** assert that 's' is unconditionally exact to 't' */
+    public void assertIsUnconditionallyExactConstantPrimitives(Type s, Type t) {
+        assertIsUnconditionallyExactConstantPrimitives(s, t, true);
+    }
+
+    /** assert that 's' is/is not unconditionally exact to 't' */
+    public void assertIsUnconditionallyExactConstantPrimitives(Type s, Type t, boolean expected) {
+        if (types.isUnconditionallyExactValueBased(s, t) != expected) {
+            String msg = expected ?
+                    " is not unconditionally exact to " :
+                    " is unconditionally exact to ";
             error(s + msg + t);
         }
     }

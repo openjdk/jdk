@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /*
  * @test
@@ -88,7 +89,7 @@ public class ServerStopTerminationTest {
             try {
                 // Wait for test to signal that we can complete the exchange
                 complete.await();
-                exchange.sendResponseHeaders(200, 0);
+                exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
                 exchange.close();
             } catch (final InterruptedException e) {
                 throw new IOException(e);
@@ -191,7 +192,7 @@ public class ServerStopTerminationTest {
         server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0),
                 0,
                 "/", exchange -> {
-                    exchange.sendResponseHeaders(200, 0);
+                    exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
                     exchange.close();
                 });
         final Duration executorSleepTime = Duration.ofSeconds(Utils.adjustTimeout(20));

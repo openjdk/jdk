@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,6 +129,57 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   }
 }
 
+static void generate_post_barrier(MacroAssembler* masm,
+                                  const Register store_addr,
+                                  const Register new_val,
+                                  const Register thread,
+                                  const Register tmp1,
+                                  const Register tmp2,
+                                  Label& done,
+                                  bool new_val_may_be_null) {
+
+  __ block_comment("generate_post_barrier {");
+
+  assert(thread == Z_thread, "must be");
+  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
+
+  // Does store cross heap regions?
+  if (VM_Version::has_DistinctOpnds()) {
+    __ z_xgrk(tmp1, store_addr, new_val);    // tmp1 := store address ^ new value
+  } else {
+    __ z_lgr(tmp1, store_addr);
+    __ z_xgr(tmp1, new_val);
+  }
+  __ z_srag(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes); // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+  __ branch_optimized(Assembler::bcondEqual, done);
+
+  // Crosses regions, storing null?
+  if (new_val_may_be_null) {
+    __ z_ltgr(new_val, new_val);
+    __ z_bre(done);
+  } else {
+#ifdef ASSERT
+    __ z_ltgr(new_val, new_val);
+    __ asm_assert(Assembler::bcondNotZero, "null oop not allowed (G1 post)", 0x322); // Checked by caller.
+#endif
+  }
+
+  __ z_srag(tmp1, store_addr, CardTable::card_shift());
+
+  Address card_table_addr(thread, in_bytes(G1ThreadLocalData::card_table_base_offset()));
+  __ z_alg(tmp1, card_table_addr);     // tmp1 := card address
+
+  if(UseCondCardMark) {
+    __ z_cli(0, tmp1, G1CardTable::clean_card_val());
+    __ branch_optimized(Assembler::bcondNotEqual, done);
+  }
+
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use z_mvi");
+  __ z_mvi(0, tmp1, G1CardTable::dirty_card_val()); // *(card address) := dirty_card_val
+
+  __ block_comment("} generate_post_barrier");
+}
+
 #if defined(COMPILER2)
 
 #undef __
@@ -204,57 +255,6 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
   BLOCK_COMMENT("} generate_c2_pre_barrier_stub");
 }
 
-static void generate_post_barrier(MacroAssembler* masm,
-                                  const Register store_addr,
-                                  const Register new_val,
-                                  const Register thread,
-                                  const Register tmp1,
-                                  const Register tmp2,
-                                  Label& done,
-                                  bool new_val_may_be_null) {
-
-  __ block_comment("generate_post_barrier {");
-
-  assert(thread == Z_thread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
-
-  // Does store cross heap regions?
-  if (VM_Version::has_DistinctOpnds()) {
-    __ z_xgrk(tmp1, store_addr, new_val);    // tmp1 := store address ^ new value
-  } else {
-    __ z_lgr(tmp1, store_addr);
-    __ z_xgr(tmp1, new_val);
-  }
-  __ z_srag(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes); // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ branch_optimized(Assembler::bcondEqual, done);
-
-  // Crosses regions, storing null?
-  if (new_val_may_be_null) {
-    __ z_ltgr(new_val, new_val);
-    __ z_bre(done);
-  } else {
-#ifdef ASSERT
-    __ z_ltgr(new_val, new_val);
-    __ asm_assert(Assembler::bcondNotZero, "null oop not allowed (G1 post)", 0x322); // Checked by caller.
-#endif
-  }
-
-  __ z_srag(tmp1, store_addr, CardTable::card_shift());
-
-  Address card_table_addr(thread, in_bytes(G1ThreadLocalData::card_table_base_offset()));
-  __ z_alg(tmp1, card_table_addr);     // tmp1 := card address
-
-  if(UseCondCardMark) {
-    __ z_cli(0, tmp1, G1CardTable::clean_card_val());
-    __ branch_optimized(Assembler::bcondNotEqual, done);
-  }
-
-  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use z_mvi");
-  __ z_mvi(0, tmp1, G1CardTable::dirty_card_val()); // *(card address) := dirty_card_val
-
-  __ block_comment("} generate_post_barrier");
-}
-
 void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register store_addr,
                                                      Register new_val,
@@ -279,7 +279,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_reference = on_weak || on_phantom;
   Label done;
   if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, L_handle_null);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.

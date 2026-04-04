@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8157105
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all BadCipherSuiteErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all BadCipherSuiteErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -49,7 +49,7 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.
@@ -65,7 +65,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
     //@Test(timeOut=5000)
     @Test
     public void test() throws Exception {
-        SSLContext sslContext = (new SimpleSSLContext()).get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         ExecutorService exec = Executors.newCachedThreadPool();
         var builder = newClientBuilderForH3()
                                       .executor(exec)
@@ -80,7 +80,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
 
         HttpTestServer httpsServer = null;
         try {
-            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLContext serverContext = SimpleSSLContext.findSSLContext();
             SSLParameters p = serverContext.getSupportedSSLParameters();
             p.setApplicationProtocols(new String[]{"h3"});
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, serverContext);

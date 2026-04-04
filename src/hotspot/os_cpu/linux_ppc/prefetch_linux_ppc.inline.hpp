@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,7 @@
 #ifndef OS_CPU_LINUX_PPC_PREFETCH_LINUX_PPC_INLINE_HPP
 #define OS_CPU_LINUX_PPC_PREFETCH_LINUX_PPC_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
-
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read(const void *loc, intx interval) {
   __asm__ __volatile__ (

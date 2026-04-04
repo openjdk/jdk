@@ -438,7 +438,10 @@ class TemplateAssertionPredicate : public Predicate {
   TemplateAssertionPredicate clone(Node* new_control, CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   TemplateAssertionPredicate clone_and_replace_opaque_input(Node* new_control, Node* new_opaque_input,
                                                             CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
+  TemplateAssertionPredicate clone_and_replace_init(Node* new_control, Node* new_input,
+                                                    CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
+  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
@@ -1228,6 +1231,7 @@ public:
   }
 
   void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate);
+  void clone_template_assertion_predicate_and_replace_init(const TemplateAssertionPredicate& template_assertion_predicate, Node* new_init);
 };
 
 // Visitor to clone Parse and Template Assertion Predicates from a loop to its unswitched true and false path loop.
@@ -1298,6 +1302,22 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
   void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
+};
+
+// This visitor replaces the OpaqueLoopInitNode for an Assertion Predicate with the expression passed as input.
+class UpdateInitForTemplateAssertionPredicates : public PredicateVisitor {
+  Node* const _new_init;
+  PhaseIdealLoop* const _phase;
+
+public:
+  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase)
+      : _new_init(new_init),
+        _phase(phase) {}
+  NONCOPYABLE(UpdateInitForTemplateAssertionPredicates);
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
 // Eliminate all useless Parse and Template Assertion Predicates. They become useless when they can no longer be found

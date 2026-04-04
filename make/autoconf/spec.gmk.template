@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -513,12 +513,14 @@ C_O_FLAG_HI := @C_O_FLAG_HI@
 C_O_FLAG_NORM := @C_O_FLAG_NORM@
 C_O_FLAG_NONE := @C_O_FLAG_NONE@
 C_O_FLAG_SIZE := @C_O_FLAG_SIZE@
+C_O_FLAG_LTO := @C_O_FLAG_LTO@
 CXX_O_FLAG_HIGHEST_JVM := @CXX_O_FLAG_HIGHEST_JVM@
 CXX_O_FLAG_HIGHEST := @CXX_O_FLAG_HIGHEST@
 CXX_O_FLAG_HI := @CXX_O_FLAG_HI@
 CXX_O_FLAG_NORM := @CXX_O_FLAG_NORM@
 CXX_O_FLAG_NONE := @CXX_O_FLAG_NONE@
 CXX_O_FLAG_SIZE := @CXX_O_FLAG_SIZE@
+CXX_O_FLAG_LTO  := @CXX_O_FLAG_LTO@
 
 GENDEPS_FLAGS := @GENDEPS_FLAGS@
 
@@ -527,6 +529,7 @@ CFLAGS_WARNINGS_ARE_ERRORS := @CFLAGS_WARNINGS_ARE_ERRORS@
 DISABLED_WARNINGS := @DISABLED_WARNINGS@
 DISABLED_WARNINGS_C := @DISABLED_WARNINGS_C@
 DISABLED_WARNINGS_CXX := @DISABLED_WARNINGS_CXX@
+CFLAGS_CONVERSION_WARNINGS := @CFLAGS_CONVERSION_WARNINGS@
 
 # A global flag (true or false) determining if native warnings are considered errors.
 WARNINGS_AS_ERRORS := @WARNINGS_AS_ERRORS@
@@ -586,6 +589,9 @@ LDFLAGS_CXX_JDK := @LDFLAGS_CXX_JDK@
 
 # LDFLAGS specific to partial linking.
 LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
+
+# LDFLAGS specific to link time optimization
+LDFLAGS_LTO := @LDFLAGS_LTO@
 
 # Sometimes a different linker is needed for c++ libs
 LDCXX := @LDCXX@

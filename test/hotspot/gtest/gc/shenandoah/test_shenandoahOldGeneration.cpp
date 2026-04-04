@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 #define SKIP_IF_NOT_SHENANDOAH() \
@@ -58,10 +59,15 @@ protected:
     old->set_evacuation_reserve(512 * HeapWordSize);
 
     Thread* thread = Thread::current();
-    ShenandoahThreadLocalData::reset_plab_promoted(thread);
-    ShenandoahThreadLocalData::disable_plab_promotions(thread);
-    ShenandoahThreadLocalData::set_plab_actual_size(thread, INITIAL_PLAB_SIZE);
-    ShenandoahThreadLocalData::add_to_plab_promoted(thread, INITIAL_PLAB_PROMOTED);
+    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (shenandoah_plab == nullptr) {
+      ShenandoahThreadLocalData::initialize_gclab(thread);
+      shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    }
+    shenandoah_plab->reset_promoted();
+    shenandoah_plab->disable_promotions();
+    shenandoah_plab->set_actual_size(INITIAL_PLAB_SIZE);
+    shenandoah_plab->add_to_promoted(INITIAL_PLAB_PROMOTED);
   }
 
   void TearDown() override {
@@ -72,15 +78,15 @@ protected:
   }
 
   static bool promotions_enabled() {
-    return ShenandoahThreadLocalData::allow_plab_promotions(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->allows_promotion();
   }
 
   static size_t plab_size() {
-    return ShenandoahThreadLocalData::get_plab_actual_size(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->get_actual_size();
   }
 
   static size_t plab_promoted() {
-    return ShenandoahThreadLocalData::get_plab_promoted(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->get_promoted();
   }
 };
 
@@ -165,35 +171,12 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_actual_size_exceeds_promotion_reserv
   EXPECT_FALSE(promotions_enabled()) << "New plab can only be used for evacuations";
 }
 
-TEST_VM_F(ShenandoahOldGenerationTest, test_shared_expends_promoted_but_does_not_change_plab) {
+TEST_VM_F(ShenandoahOldGenerationTest, test_expend_promoted_should_increase_expended) {
   SKIP_IF_NOT_SHENANDOAH();
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, true);
-  req.set_actual_size(128);
-  size_t actual_size = req.actual_size() * HeapWordSize;
-
   size_t expended_before = old->get_promoted_expended();
-  old->configure_plab_for_current_thread(req);
+  old->expend_promoted(128);
   size_t expended_after = old->get_promoted_expended();
-
-  EXPECT_EQ(expended_before + actual_size, expended_after) << "Shared promotion still expends promotion";
-  EXPECT_EQ(plab_promoted(), INITIAL_PLAB_PROMOTED) << "Shared promotion should not count in plab";
-  EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Shared promotion should not change size of plab";
-  EXPECT_FALSE(promotions_enabled());
-}
-
-TEST_VM_F(ShenandoahOldGenerationTest, test_shared_evacuation_has_no_side_effects) {
-  SKIP_IF_NOT_SHENANDOAH();
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(128, ShenandoahAffiliation::OLD_GENERATION, false);
-  req.set_actual_size(128);
-
-  size_t expended_before = old->get_promoted_expended();
-  old->configure_plab_for_current_thread(req);
-  size_t expended_after = old->get_promoted_expended();
-
-  EXPECT_EQ(expended_before, expended_after) << "Not a promotion, should not expend promotion reserve";
-  EXPECT_EQ(plab_promoted(), INITIAL_PLAB_PROMOTED) << "Not a plab, should not have touched plab";
-  EXPECT_EQ(plab_size(), INITIAL_PLAB_SIZE) << "Not a plab, should not have touched plab";
-  EXPECT_FALSE(promotions_enabled());
+  EXPECT_EQ(expended_before + 128, expended_after) << "Should expend promotion";
 }
 
 #undef SKIP_IF_NOT_SHENANDOAH

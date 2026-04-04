@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -82,7 +82,7 @@ void LockStack::verify(const char* msg) const {
     int top = to_index(_top);
     for (int i = 0; i < top; i++) {
       assert(_base[i] != nullptr, "no zapped before top");
-      if (VM_Version::supports_recursive_lightweight_locking()) {
+      if (VM_Version::supports_recursive_fast_locking()) {
         oop o = _base[i];
         for (; i < top - 1; i++) {
           // Consecutive entries may be the same
@@ -118,7 +118,4 @@ void LockStack::print_on(outputStream* st) {
 OMCache::OMCache(JavaThread* jt) : _entries() {
   STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
   STATIC_ASSERT(std::is_standard_layout<OMCache::OMCacheEntry>::value);
-  STATIC_ASSERT(offsetof(OMCache, _null_sentinel) == offsetof(OMCache, _entries) +
-                offsetof(OMCache::OMCacheEntry, _oop) +
-                OMCache::CAPACITY * in_bytes(oop_to_oop_difference()));
 }

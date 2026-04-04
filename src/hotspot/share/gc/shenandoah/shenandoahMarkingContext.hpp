@@ -67,7 +67,11 @@ public:
   inline bool is_marked_or_old(oop obj) const;
   inline bool is_marked_strong_or_old(oop obj) const;
 
+  // Return address of the first marked address in the range [addr,limit), or limit if no marked object found
   inline HeapWord* get_next_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
+
+  // Return address of the last marked object in range [limit, start], returning start+1 if no marked object found
+  inline HeapWord* get_prev_marked_addr(const HeapWord* limit, const HeapWord* start) const;
 
   inline bool allocated_after_mark_start(const oop obj) const;
   inline bool allocated_after_mark_start(const HeapWord* addr) const;

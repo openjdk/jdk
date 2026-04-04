@@ -50,6 +50,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import static java.awt.event.ItemEvent.DESELECTED;
+import static java.awt.event.ItemEvent.ITEM_STATE_CHANGED;
+import static java.awt.event.ItemEvent.SELECTED;
+
 /**
  * Lightweight implementation of {@link ListPeer}. Delegates most of the work to
  * the {@link JList}, which is placed inside {@link JScrollPane}.
@@ -87,8 +91,11 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         final int[] selectedIndices = getTarget().getSelectedIndexes();
         synchronized (getDelegateLock()) {
             getDelegate().setSkipStateChangedEvent(true);
-            getDelegate().getView().setSelectedIndices(selectedIndices);
-            getDelegate().setSkipStateChangedEvent(false);
+            try {
+                getDelegate().getView().setSelectedIndices(selectedIndices);
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
@@ -112,34 +119,52 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void add(final String item, final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().add(index, item);
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().add(index, item);
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void delItems(final int start, final int end) {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().removeRange(start, end);
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().removeRange(start, end);
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void removeAll() {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().removeAllElements();
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().removeAllElements();
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void select(final int index) {
         synchronized (getDelegateLock()) {
-            ListModel<String> model = getDelegate().getModel();
-            if (index >= 0 && index < model.getSize()) {
-                getDelegate().setSkipStateChangedEvent(true);
-                getDelegate().getView().addSelectionInterval(index, index);
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                ListModel<String> model = getDelegate().getModel();
+                if (index >= 0 && index < model.getSize()) {
+                    getDelegate().getView().addSelectionInterval(index, index);
+                }
+            } finally {
                 getDelegate().setSkipStateChangedEvent(false);
             }
         }
@@ -148,7 +173,12 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void deselect(final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().getView().removeSelectionInterval(index, index);
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getView().removeSelectionInterval(index, index);
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
@@ -258,21 +288,18 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
 
         @Override
         public void valueChanged(final ListSelectionEvent e) {
-            if (!e.getValueIsAdjusting() && !isSkipStateChangedEvent()) {
-                final JList<?> source = (JList<?>) e.getSource();
-                for(int i = 0 ; i < source.getModel().getSize(); i++) {
-
-                    final boolean wasSelected = Arrays.binarySearch(oldSelectedIndices, i) >= 0;
-                    final boolean isSelected = source.isSelectedIndex(i);
-
-                    if (wasSelected == isSelected) {
-                        continue;
+            if (!e.getValueIsAdjusting()) {
+                JList<?> source = (JList<?>) e.getSource();
+                if (!isSkipStateChangedEvent()) {
+                    for (int i = 0; i < source.getModel().getSize(); i++) {
+                        boolean wasSelected =
+                                Arrays.binarySearch(oldSelectedIndices, i) >= 0;
+                        if (wasSelected != source.isSelectedIndex(i)) {
+                            int state = wasSelected ? DESELECTED : SELECTED;
+                            LWListPeer.this.postEvent(new ItemEvent(getTarget(),
+                                                ITEM_STATE_CHANGED, i, state));
+                        }
                     }
-
-                    final int state = !wasSelected && isSelected ? ItemEvent.SELECTED: ItemEvent.DESELECTED;
-
-                    LWListPeer.this.postEvent(new ItemEvent(getTarget(), ItemEvent.ITEM_STATE_CHANGED,
-                            i, state));
                 }
                 oldSelectedIndices = source.getSelectedIndices();
             }

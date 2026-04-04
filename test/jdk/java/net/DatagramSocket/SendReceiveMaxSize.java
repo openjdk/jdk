@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8242885 8250886 8240901
  * @key randomness
  * @summary This test verifies that on macOS, the send buffer size is configured
@@ -34,13 +34,62 @@
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  * @run testng/othervm SendReceiveMaxSize
+ */
+/*
+ * @test id=preferIPv4Stack
+ * @key randomness
+ * @summary Check that it is possible to send and receive datagrams of
+ *          maximum size on macOS, using an IPv4 only socket.
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
+ */
+/*
+ * @test id=preferIPv6Addresses
+ * @key randomness
+ * @summary Check that it is possible to send and receive datagrams of
+ *          maximum size on macOS, using a dual socket and prefering
+ *          IPv6 addresses.
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
+ */
+/*
+ * @test id=preferLoopback
+ * @key randomness
+ * @summary Check that it is possible to send and receive datagrams of
+ *          maximum size on macOS, using a dual socket and the loopback
+ *          interface.
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run testng/othervm -Dtest.preferLoopback=true SendReceiveMaxSize
+ */
+/*
+ * @test id=preferIPv6Loopback
+ * @key randomness
+ * @summary Check that it is possible to send and receive datagrams of
+ *          maximum size on macOS, using a dual socket and the loopback
+ *          interface.
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run testng/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv6Addresses=true SendReceiveMaxSize
+ */
+/*
+ * @test id=preferIPv4Loopback
+ * @key randomness
+ * @summary Check that it is possible to send and receive datagrams of
+ *          maximum size on macOS, using an IPv4 only socket and the
+ *          loopback interface
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run testng/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  */
 
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -55,10 +104,15 @@ import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
 import java.util.Random;
 
+import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.expectThrows;
 
 public class SendReceiveMaxSize {
+
+    private final static boolean PREFER_LOOPBACK = Boolean.getBoolean("test.preferLoopback");
+
     private int BUF_LIMIT;
     private InetAddress HOST_ADDR;
     private final static int IPV4_SNDBUF = 65507;
@@ -73,8 +127,15 @@ public class SendReceiveMaxSize {
 
     @BeforeTest
     public void setUp() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
-        HOST_ADDR = InetAddress.getLocalHost();
+        try {
+            // This method throws jtreg.SkippedException, which is
+            // interpreted as a test failure by testng
+            IPSupport.throwSkippedExceptionIfNonOperational();
+        } catch (SkippedException skip) {
+            // throws the appropriate TestNG SkipException
+            throw new SkipException(skip.getMessage(), skip);
+        }
+        HOST_ADDR = PREFER_LOOPBACK ? InetAddress.getLoopbackAddress() : InetAddress.getLocalHost();
         BUF_LIMIT = (HOST_ADDR instanceof Inet6Address) ? IPV6_SNDBUF : IPV4_SNDBUF;
         System.out.printf("Host address: %s, Buffer limit: %d%n", HOST_ADDR, BUF_LIMIT);
     }
@@ -102,6 +163,10 @@ public class SendReceiveMaxSize {
                                        DatagramSocketSupplier supplier,
                                        Class<? extends Exception> exception) throws IOException {
         try (var receiver = new DatagramSocket(new InetSocketAddress(HOST_ADDR, 0))) {
+            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity,
+                       receiver.getOption(SO_RCVBUF) +
+                       " for UDP receive buffer too small to hold capacity " +
+                       capacity);
             var port = receiver.getLocalPort();
             var addr = new InetSocketAddress(HOST_ADDR, port);
             try (var sender = supplier.open()) {

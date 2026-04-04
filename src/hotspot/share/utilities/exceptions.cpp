@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -62,6 +61,8 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 }
 
 void ThreadShadow::clear_pending_exception() {
+  assert(_pending_exception == nullptr || !_pending_exception->is_a(vmClasses::PreemptedException_klass()),
+         "unexpected PreemptedException, missing NoPreemptMark?");
   LogTarget(Debug, exceptions) lt;
   if (_pending_exception != nullptr && lt.is_enabled()) {
     ResourceMark rm;
@@ -81,6 +82,30 @@ void ThreadShadow::clear_pending_nonasync_exception() {
     clear_pending_exception();
   }
 }
+
+void ThreadShadow::set_pending_preempted_exception() {
+  assert(!has_pending_exception(), "");
+  // We always install the same pre-allocated exception since we only
+  // want to use the TRAPS mechanism to bail out from all methods until
+  // reaching the one using the CHECK_AND_CLEAR_PREEMPTED macro.
+  set_pending_exception(Universe::preempted_exception_instance(), __FILE__, __LINE__);
+}
+
+void ThreadShadow::clear_pending_preempted_exception() {
+  assert(has_pending_exception(), "");
+  if (pending_exception()->is_a(vmClasses::PreemptedException_klass())) {
+    _pending_exception = nullptr;
+    _exception_file    = nullptr;
+    _exception_line    = 0;
+  }
+}
+
+#ifdef ASSERT
+void ThreadShadow::check_preempted_exception() {
+  assert(has_pending_exception(), "");
+  assert(pending_exception()->is_a(vmClasses::PreemptedException_klass()), "should only be PreemptedException");
+}
+#endif
 
 // Implementation of Exceptions
 
@@ -177,7 +202,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
-    AtomicAccess::inc(&_linkage_errors, memory_order_relaxed);
+    _linkage_errors.add_then_fetch(1, memory_order_relaxed);
   }
 
   assert(h_exception->is_a(vmClasses::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
@@ -242,6 +267,10 @@ void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Sy
 }
 
 
+void Exceptions::increment_stack_overflow_errors() {
+  Exceptions::_stack_overflow_errors.add_then_fetch(1, memory_order_relaxed);
+}
+
 void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
@@ -253,7 +282,7 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
       java_lang_Throwable::fill_in_stack_trace(exception, method);
     }
     // Increment counter for hs_err file reporting
-    AtomicAccess::inc(&Exceptions::_stack_overflow_errors, memory_order_relaxed);
+    increment_stack_overflow_errors();
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
@@ -317,6 +346,11 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
 
   if (!thread->has_pending_exception()) {
     assert(klass != nullptr, "klass must exist");
+    // We could get here while linking or initializing a klass
+    // from a preemptable call. Don't preempt here since before
+    // the PreemptedException is propagated we might make an upcall
+    // to Java to initialize the object with the cause of exception.
+    NoPreemptMark npm(thread);
     h_exception = JavaCalls::construct_new_instance(InstanceKlass::cast(klass),
                                 signature,
                                 args,
@@ -487,20 +521,20 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 }
 
 // Exception counting for hs_err file
-volatile int Exceptions::_stack_overflow_errors = 0;
-volatile int Exceptions::_linkage_errors = 0;
-volatile int Exceptions::_out_of_memory_error_java_heap_errors = 0;
-volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
-volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
+Atomic<int> Exceptions::_stack_overflow_errors{0};
+Atomic<int> Exceptions::_linkage_errors{0};
+Atomic<int> Exceptions::_out_of_memory_error_java_heap_errors{0};
+Atomic<int> Exceptions::_out_of_memory_error_metaspace_errors{0};
+Atomic<int> Exceptions::_out_of_memory_error_class_metaspace_errors{0};
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
   if (Universe::is_out_of_memory_error_metaspace(exception())) {
-     AtomicAccess::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
+    _out_of_memory_error_metaspace_errors.add_then_fetch(1, memory_order_relaxed);
   } else if (Universe::is_out_of_memory_error_class_metaspace(exception())) {
-     AtomicAccess::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
+    _out_of_memory_error_class_metaspace_errors.add_then_fetch(1, memory_order_relaxed);
   } else {
-     // everything else reported as java heap OOM
-     AtomicAccess::inc(&_out_of_memory_error_java_heap_errors, memory_order_relaxed);
+    // everything else reported as java heap OOM
+    _out_of_memory_error_java_heap_errors.add_then_fetch(1, memory_order_relaxed);
   }
 }
 
@@ -511,19 +545,24 @@ static void print_oom_count(outputStream* st, const char *err, int count) {
 }
 
 bool Exceptions::has_exception_counts() {
-  return (_stack_overflow_errors + _out_of_memory_error_java_heap_errors +
-         _out_of_memory_error_metaspace_errors + _out_of_memory_error_class_metaspace_errors) > 0;
+  return (_stack_overflow_errors.load_relaxed() +
+          _out_of_memory_error_java_heap_errors.load_relaxed() +
+          _out_of_memory_error_metaspace_errors.load_relaxed() +
+          _out_of_memory_error_class_metaspace_errors.load_relaxed()) > 0;
 }
 
 void Exceptions::print_exception_counts_on_error(outputStream* st) {
-  print_oom_count(st, "java_heap_errors", _out_of_memory_error_java_heap_errors);
-  print_oom_count(st, "metaspace_errors", _out_of_memory_error_metaspace_errors);
-  print_oom_count(st, "class_metaspace_errors", _out_of_memory_error_class_metaspace_errors);
-  if (_stack_overflow_errors > 0) {
-    st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors);
+  print_oom_count(st, "java_heap_errors",
+                  _out_of_memory_error_java_heap_errors.load_relaxed());
+  print_oom_count(st, "metaspace_errors",
+                  _out_of_memory_error_metaspace_errors.load_relaxed());
+  print_oom_count(st, "class_metaspace_errors",
+                  _out_of_memory_error_class_metaspace_errors.load_relaxed());
+  if (_stack_overflow_errors.load_relaxed() > 0) {
+    st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors.load_relaxed());
   }
-  if (_linkage_errors > 0) {
-    st->print_cr("LinkageErrors=%d", _linkage_errors);
+  if (_linkage_errors.load_relaxed() > 0) {
+    st->print_cr("LinkageErrors=%d", _linkage_errors.load_relaxed());
   }
 }
 
@@ -550,12 +589,13 @@ inline void ExceptionMark::check_no_pending_exception() {
   }
 }
 
+extern bool is_vm_created();
 
 ExceptionMark::~ExceptionMark() {
   if (_thread->has_pending_exception()) {
     Handle exception(_thread, _thread->pending_exception());
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
-    if (is_init_completed()) {
+    if (is_vm_created()) {
       ResourceMark rm;
       exception->print();
       fatal("ExceptionMark destructor expects no pending exceptions");

@@ -162,7 +162,13 @@ public class TestReinterpretAndCast {
                   IRNode.STORE_VECTOR,       "> 0",
                   IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least I2F
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureAnd = {"avx", "true", "f16c", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    IRNode.VECTOR_SIZE + "min(max_int, max_float, max_short)", "> 0",
+                  IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_int, max_float, max_short)", "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least I2F
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "fphp", "true", "asimdhp", "true"})
     public static void test2(int[] a, short[] b) {
         for (int i = 0; i < SIZE; i++) {
             int v0 = a[i];
@@ -202,7 +208,14 @@ public class TestReinterpretAndCast {
                   IRNode.STORE_VECTOR,       "> 0",
                   IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least F2I
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureAnd = {"avx", "true", "f16c", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S,    IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_I2L,  IRNode.VECTOR_SIZE + "min(max_float, max_short, max_long)", "> 0",
+                  IRNode.STORE_VECTOR,       "> 0",
+                  IRNode.VECTOR_REINTERPRET, "> 0"}, // We have at least F2I
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureAnd = {"asimd", "true", "fphp", "true", "asimdhp", "true"})
     public static void test3(short[] a, long[] b) {
         for (int i = 0; i < SIZE; i++) {
             short v0 = a[i];

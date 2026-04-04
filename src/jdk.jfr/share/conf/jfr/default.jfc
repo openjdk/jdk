@@ -117,6 +117,11 @@
       <setting name="period">everyChunk</setting>
     </event>
 
+    <event name="jdk.FinalFieldMutation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.SyncOnValueBasedClass">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -484,6 +489,11 @@
 
     <event name="jdk.GCCPUTime">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
+    </event>
+
+    <event name="jdk.StringDeduplication">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.PromotionFailed">

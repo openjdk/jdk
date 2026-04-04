@@ -46,6 +46,7 @@ super class IllegalAccessInCatch
     idiv;
     endtry t0;
     ireturn;
+    catch t0 java/lang/IllegalAccessError;
     catch t0 jdk/internal/agent/AgentConfigurationError; // loadable but not accessible from unnamed module
     stack_frame_type full;
     stack_map class java/lang/Throwable;

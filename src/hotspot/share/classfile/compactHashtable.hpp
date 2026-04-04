@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 #define SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/cds_globals.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
@@ -114,8 +115,13 @@ private:
   int _num_other_buckets;
   GrowableArray<Entry>** _buckets;
   CompactHashtableStats* _stats;
-  Array<u4>* _compact_buckets;
-  Array<u4>* _compact_entries;
+  u4* _compact_buckets;
+  size_t _num_compact_buckets;
+  u4* _compact_entries;
+  size_t _num_compact_entries;
+
+  void compact_buckets_set(u4 index, u4 value);
+  void compact_entries_set(u4 index, u4 value);
 
 public:
   // This is called at dump-time only
@@ -123,6 +129,9 @@ public:
   ~CompactHashtableWriter();
 
   void add(unsigned int hash, u4 encoded_value);
+  void add(unsigned int hash, AOTCompressedPointers::narrowPtr encoded_value) {
+    add(hash, cast_to_u4(encoded_value));
+  }
   void dump(SimpleCompactHashtable *cht, const char* table_name);
 
 private:
@@ -294,6 +303,7 @@ public:
     return nullptr;
   }
 
+  // Iterate through the values in the table, stopping when do_value() returns false.
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
 
@@ -302,6 +312,7 @@ public:
     iterate(const_cast<Function&>(function));
   }
 
+  // Iterate through the values in the table, stopping when the lambda returns false.
   template<typename Function>
   inline void iterate(Function& function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
@@ -311,15 +322,33 @@ public:
       u4* entry = _entries + bucket_offset;
 
       if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
-        function(decode(entry[0]));
+        if (!function(decode(entry[0]))) {
+          return;
+        }
       } else {
         u4* entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
         while (entry < entry_max) {
-          function(decode(entry[1]));
+          if (!function(decode(entry[1]))) {
+            return;
+          }
           entry += 2;
         }
       }
     }
+  }
+
+  // Unconditionally iterate through all the values in the table
+  template <class ITER>
+  inline void iterate_all(ITER* iter) const { iterate_all([&](V v) { iter->do_value(v); }); }
+
+  // Unconditionally iterate through all the values in the table using lambda
+  template<typename Function>
+  void iterate_all(Function function) const { // lambda enabled API
+    auto wrapper = [&] (V v) {
+      function(v);
+      return true;
+    };
+    iterate(wrapper);
   }
 
   void print_table_statistics(outputStream* st, const char* name) {
@@ -351,11 +380,11 @@ public:
 //
 // OffsetCompactHashtable -- This is used to store many types of objects
 // in the CDS archive. On 64-bit platforms, we save space by using a 32-bit
-// offset from the CDS base address.
+// narrowPtr from the CDS base address.
 
 template <typename V>
-inline V read_value_from_compact_hashtable(address base_address, u4 offset) {
-  return (V)(base_address + offset);
+inline V read_value_from_compact_hashtable(address base_address, u4 narrowp) {
+  return AOTCompressedPointers::decode_not_null<V>(cast_from_u4(narrowp), base_address);
 }
 
 template <

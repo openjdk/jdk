@@ -512,6 +512,10 @@ helps to reproduce intermittent test failures. Defaults to 0.
 Use this report style when reporting test results (sent to JTReg as `-report`).
 Defaults to `files`.
 
+#### MANUAL
+
+Set to `true` to execute manual tests only.
+
 ### Gtest keywords
 
 #### REPEAT
@@ -635,6 +639,32 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
+
+
+### SCTP Tests
+
+The SCTP tests require the SCTP runtime library, which is often not installed
+by default in popular Linux distributions. Without this library, the SCTP tests
+will be skipped. If you want to enable the SCTP tests, you should install the
+SCTP library before running the tests.
+
+For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:
+
+```
+sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
+For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:
+
+```
+sudo dnf install -y lksctp-tools
+sudo modprobe sctp
+lsmod | grep sctp
+```
 
 ### Testing Ahead-of-time Optimizations
 

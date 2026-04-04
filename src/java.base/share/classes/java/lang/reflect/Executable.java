@@ -70,6 +70,10 @@ public abstract sealed class Executable extends AccessibleObject
     abstract ConstructorRepository getGenericInfo();
 
     boolean equalParamTypes(Class<?>[] params1, Class<?>[] params2) {
+        // The parameter arrays are trusted and the same for a root and all leaf
+        // copies. Thus, == on arrays is more useful than == on Executable.
+        if (params1 == params2)
+            return true;
         /* Avoid unnecessary cloning */
         if (params1.length == params2.length) {
             for (int i = 0; i < params1.length; i++) {
@@ -427,7 +431,7 @@ public abstract sealed class Executable extends AccessibleObject
             // modifiers?  Probably not in the general case, since
             // we'd have no way of knowing about them, but there
             // may be specific cases.
-            out[i] = new Parameter("arg" + i, 0, this, i);
+            out[i] = new Parameter(null, 0, this, i);
         return out;
     }
 

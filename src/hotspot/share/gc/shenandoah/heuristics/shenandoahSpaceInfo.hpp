@@ -38,7 +38,7 @@ class ShenandoahSpaceInfo {
 public:
   virtual const char* name() const = 0;
   virtual size_t max_capacity() const = 0;
-  virtual size_t soft_available() const = 0;
+  virtual size_t soft_mutator_available() const = 0;
   virtual size_t available() const = 0;
   virtual size_t used() const = 0;
 

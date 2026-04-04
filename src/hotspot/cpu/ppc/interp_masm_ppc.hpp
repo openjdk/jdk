@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,12 +49,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void check_and_handle_popframe(Register scratch_reg);
   virtual void check_and_handle_earlyret(Register scratch_reg);
 
+  // Use for vthread preemption
   void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void restore_after_resume(Register fp);
   // R22 and R31 are preserved when a vthread gets preempted in the interpreter.
   // The interpreter already assumes that these registers are nonvolatile across native calls.
   bool nonvolatile_accross_vthread_preemtion(Register r) const {
-    return r->is_nonvolatile() && ((r == R22) || (r == R31));
+    return r->is_nonvolatile() && ((r == R24) || (r == R31));
   }
 
   // Base routine for all dispatches.
@@ -256,7 +258,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register scratch1, Register scratch2);
   void profile_call(Register scratch1, Register scratch2);
   void profile_final_call(Register scratch1, Register scratch2);
-  void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2,  bool receiver_can_be_null);
+  void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2);
   void profile_typecheck(Register Rklass, Register Rscratch1, Register Rscratch2);
   void profile_ret(TosState state, Register return_bci, Register scratch1, Register scratch2);
   void profile_switch_default(Register scratch1, Register scratch2);

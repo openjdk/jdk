@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,15 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.RuntimeLayout;
 
 final class MacRuntimeValidator {
 
-    static void validateRuntimeHasJliLib(RuntimeLayout runtimeLayout) throws ConfigException {
+    static void validateRuntimeHasJliLib(RuntimeLayout runtimeLayout) {
         final var jliName = Path.of("libjli.dylib");
         try (var walk = Files.walk(runtimeLayout.runtimeDirectory().resolve("lib"))) {
             if (walk.map(Path::getFileName).anyMatch(Predicate.isEqual(jliName))) {
@@ -46,17 +49,29 @@ final class MacRuntimeValidator {
             throw new UncheckedIOException(ex);
         }
 
-        throw I18N.buildConfigException("error.invalid-runtime-image-missing-file",
+        throw new JPackageException(I18N.format("error.invalid-runtime-image-missing-file",
                 runtimeLayout.rootDirectory(),
-                runtimeLayout.unresolve().runtimeDirectory().resolve("lib/**").resolve(jliName)).create();
+                runtimeLayout.unresolve().runtimeDirectory().resolve("lib/**").resolve(jliName)));
     }
 
-    static void validateRuntimeHasNoBinDir(RuntimeLayout runtimeLayout) throws ConfigException {
-        if (Files.isDirectory(runtimeLayout.runtimeDirectory().resolve("bin"))) {
-            throw I18N.buildConfigException()
-                    .message("error.invalid-runtime-image-bin-dir", runtimeLayout.rootDirectory())
-                    .advice("error.invalid-runtime-image-bin-dir.advice", "--mac-app-store")
-                    .create();
+    static void validateRuntimeHasNoBinDir(AppImageLayout appImageLayout) {
+        if (Files.isDirectory(appImageLayout.runtimeDirectory().resolve("bin"))) {
+            switch (appImageLayout) {
+                case RuntimeLayout runtimeLayout -> {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-runtime-image-bin-dir", runtimeLayout.rootDirectory()),
+                            I18N.format("error.invalid-runtime-image-bin-dir.advice", "--mac-app-store"));
+                }
+                case ApplicationLayout appLayout -> {
+                    throw new JPackageException(I18N.format("error.invalid-app-image-runtime-image-bin-dir",
+                            appLayout.rootDirectory().relativize(appLayout.runtimeDirectory()),
+                            appLayout.rootDirectory()));
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
+
         }
     }
 }

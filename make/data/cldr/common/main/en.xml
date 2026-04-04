@@ -100,6 +100,7 @@ annotations.
 			<language type="bo">Tibetan</language>
 			<language type="bpy">Bishnupriya</language>
 			<language type="bqi">Bakhtiari</language>
+			<language type="bqi" alt="variant">Luri Bakhtiari</language>
 			<language type="br">Breton</language>
 			<language type="bra">Braj</language>
 			<language type="brh">Brahui</language>
@@ -132,6 +133,8 @@ annotations.
 			<language type="chy">Cheyenne</language>
 			<language type="cic">Chickasaw</language>
 			<language type="ckb">Central Kurdish</language>
+			<language type="ckb" menu="core">Kurdish</language>
+			<language type="ckb" menu="extension">Central</language>
 			<language type="ckb" alt="menu">Kurdish, Central</language>
 			<language type="ckb" alt="variant">Kurdish, Sorani</language>
 			<language type="clc">Chilcotin</language>
@@ -312,6 +315,7 @@ annotations.
 			<language type="kcg">Tyap</language>
 			<language type="kde">Makonde</language>
 			<language type="kea">Kabuverdianu</language>
+			<language type="kek">Qʼeqchiʼ</language>
 			<language type="ken">Kenyang</language>
 			<language type="kfo">Koro</language>
 			<language type="kg">Kongo</language>
@@ -346,6 +350,8 @@ annotations.
 			<language type="ksf">Bafia</language>
 			<language type="ksh">Colognian</language>
 			<language type="ku">Kurdish</language>
+			<language type="ku" menu="core">Kurdish</language>
+			<language type="ku" menu="extension">Kurmanji</language>
 			<language type="kum">Kumyk</language>
 			<language type="kut">Kutenai</language>
 			<language type="kv">Komi</language>
@@ -474,6 +480,7 @@ annotations.
 			<language type="ojs">Oji-Cree</language>
 			<language type="ojw">Western Ojibwa</language>
 			<language type="oka">Okanagan</language>
+			<language type="oka" alt="variant">Colville Salish</language>
 			<language type="om">Oromo</language>
 			<language type="or">Odia</language>
 			<language type="os">Ossetic</language>
@@ -493,6 +500,7 @@ annotations.
 			<language type="pfl">Palatine German</language>
 			<language type="phn">Phoenician</language>
 			<language type="pi">Pali</language>
+			<language type="pi" alt="variant">Pāli</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polish</language>
 			<language type="pms">Piedmontese</language>
@@ -544,6 +552,8 @@ annotations.
 			<language type="sd">Sindhi</language>
 			<language type="sdc">Sassarese Sardinian</language>
 			<language type="sdh">Southern Kurdish</language>
+			<language type="sdh" menu="core">Kurdish</language>
+			<language type="sdh" menu="extension">Southern</language>
 			<language type="se">Northern Sami</language>
 			<language type="se" alt="menu">Sami, Northern</language>
 			<language type="see">Seneca</language>
@@ -615,7 +625,7 @@ annotations.
 			<language type="tig">Tigre</language>
 			<language type="tiv">Tiv</language>
 			<language type="tk">Turkmen</language>
-			<language type="tkl">Tokelau</language>
+			<language type="tkl">Tokelauan</language>
 			<language type="tkr">Tsakhur</language>
 			<language type="tl">Tagalog</language>
 			<language type="tlh">Klingon</language>
@@ -721,6 +731,7 @@ annotations.
 			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batak</script>
 			<script type="Beng">Bangla</script>
+			<script type="Berf">Beria Erfe</script>
 			<script type="Bhks">Bhaiksuki</script>
 			<script type="Blis">Blissymbols</script>
 			<script type="Bopo">Bopomofo</script>
@@ -869,6 +880,7 @@ annotations.
 			<script type="Shaw">Shavian</script>
 			<script type="Shrd">Sharada</script>
 			<script type="Sidd">Siddham</script>
+			<script type="Sidt">Sidetic</script>
 			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Sogd">Sogdian</script>
@@ -889,6 +901,7 @@ annotations.
 			<script type="Taml">Tamil</script>
 			<script type="Tang">Tangut</script>
 			<script type="Tavt">Tai Viet</script>
+			<script type="Tayo">Tai Yo</script>
 			<script type="Telu">Telugu</script>
 			<script type="Teng">Tengwar</script>
 			<script type="Tfng">Tifinagh</script>
@@ -899,6 +912,7 @@ annotations.
 			<script type="Tirh">Tirhuta</script>
 			<script type="Tnsa">Tangsa</script>
 			<script type="Todr">Todhri</script>
+			<script type="Tols">Tolong Siki</script>
 			<script type="Toto">Toto</script>
 			<script type="Tutg">Tulu-Tigalari</script>
 			<script type="Ugar">Ugaritic</script>
@@ -1284,7 +1298,7 @@ annotations.
 			<variant type="OSOJS">Oseacco/Osojane dialect</variant>
 			<variant type="OXENDICT">Oxford English Dictionary spelling</variant>
 			<variant type="PAMAKA">Pamaka dialect</variant>
-			<variant type="PINYIN">Pinyin Romanization</variant>
+			<variant type="PINYIN">Pinyin romanization</variant>
 			<variant type="POLYTON">Polytonic</variant>
 			<variant type="POSIX">Computer</variant>
 			<variant type="REVISED">Revised Orthography</variant>
@@ -1300,7 +1314,7 @@ annotations.
 			<variant type="UCRCOR">Unified Revised Orthography</variant>
 			<variant type="UNIFON">Unifon phonetic alphabet</variant>
 			<variant type="VALENCIA">Valencian</variant>
-			<variant type="WADEGILE">Wade-Giles Romanization</variant>
+			<variant type="WADEGILE">Wade-Giles romanization</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Calendar</key>
@@ -1317,15 +1331,15 @@ annotations.
 			<key type="currency">Currency</key>
 			<key type="d0">Transform Destination</key>
 			<key type="dx">Dictionary Break Exclusions</key>
-			<key type="em">Emoji Presentation Style</key>
+			<key type="em">Emoji Presentation</key>
 			<key type="fw">First day of week</key>
 			<key type="h0">Mixed-in</key>
 			<key type="hc">Hour Cycle (12 vs 24)</key>
 			<key type="i0">Input Method</key>
 			<key type="k0">Keyboard</key>
 			<key type="kv">Highest Ignored</key>
-			<key type="lb">Line Break Style</key>
-			<key type="lw">Line Breaks In Words Setting</key>
+			<key type="lb">CJK Line Break</key>
+			<key type="lw">Line Breaks within Words</key>
 			<key type="m0">Transform Rules</key>
 			<key type="ms">Measurement System</key>
 			<key type="mu">Measurement Unit</key>
@@ -1333,7 +1347,7 @@ annotations.
 			<key type="rg">Region For Supplemental Data</key>
 			<key type="s0">Transform Source</key>
 			<key type="sd">Region Subdivision</key>
-			<key type="ss">Sentence Break Suppressions Type</key>
+			<key type="ss">Sentence Break After Abbr.</key>
 			<key type="t">Transform</key>
 			<key type="t0">Machine Translated</key>
 			<key type="timezone">Time Zone</key>
@@ -1343,25 +1357,47 @@ annotations.
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buddhist Calendar</type>
+			<type key="calendar" type="buddhist" scope="core">Buddhist</type>
 			<type key="calendar" type="chinese">Chinese Calendar</type>
+			<type key="calendar" type="chinese" scope="core">Chinese</type>
 			<type key="calendar" type="coptic">Coptic Calendar</type>
+			<type key="calendar" type="coptic" scope="core">Coptic</type>
 			<type key="calendar" type="dangi">Dangi Calendar</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Ethiopic Calendar</type>
+			<type key="calendar" type="ethiopic" scope="core">Ethiopic</type>
 			<type key="calendar" type="ethiopic-amete-alem">Ethiopic Amete Alem Calendar</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Ethiopic Amete Alem</type>
 			<type key="calendar" type="gregorian">Gregorian Calendar</type>
+			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Hebrew Calendar</type>
+			<type key="calendar" type="hebrew" scope="core">Hebrew</type>
 			<type key="calendar" type="indian">Indian National Calendar</type>
+			<type key="calendar" type="indian" scope="core">Indian National</type>
 			<type key="calendar" type="islamic">Hijri Calendar</type>
+			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Hijri Calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-rgsa">Hijri Calendar (Saudi Arabia, sighting)</type>
+			<!-- Added values for English -->
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia sighting</type>
 			<type key="calendar" type="islamic-tbla">Hijri Calendar (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Calendar (Umm al-Qura)</type>
-			<type key="calendar" type="iso8601">ISO-8601 Calendar</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
+			<type key="calendar" type="iso8601">Gregorian Calendar (ISO 8601 Weeks)</type>
+			<type key="calendar" type="iso8601" alt="variant">ISO 8601 Weeks</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Japanese Calendar</type>
+			<type key="calendar" type="japanese" scope="core">Japanese</type>
 			<type key="calendar" type="persian">Persian Calendar</type>
+			<type key="calendar" type="persian" scope="core">Persian</type>
 			<type key="calendar" type="roc">Minguo Calendar</type>
+			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Accounting Currency Format</type>
+			<type key="cf" type="account" scope="core">Accounting</type>
 			<type key="cf" type="standard">Standard Currency Format</type>
+			<type key="cf" type="standard" scope="core">Standard</type>
 			<type key="colAlternate" type="non-ignorable">Sort Symbols</type>
 			<type key="colAlternate" type="shifted">Sort Ignoring Symbols</type>
 			<type key="colBackwards" type="no">Sort Accents Normally</type>
@@ -1371,23 +1407,36 @@ annotations.
 			<type key="colCaseFirst" type="upper">Sort Uppercase First</type>
 			<type key="colCaseLevel" type="no">Sort Case Insensitive</type>
 			<type key="colCaseLevel" type="yes">Sort Case Sensitive</type>
-			<type key="collation" type="big5han">Traditional Chinese Sort Order - Big5</type>
 			<type key="collation" type="compat">Previous Sort Order, for compatibility</type>
+			<type key="collation" type="compat" scope="core">Compatibility</type>
 			<type key="collation" type="dictionary">Dictionary Sort Order</type>
+			<type key="collation" type="dictionary" scope="core">Dictionary</type>
 			<type key="collation" type="ducet">Default Unicode Sort Order</type>
+			<type key="collation" type="ducet" scope="core">Default Unicode</type>
 			<type key="collation" type="emoji">Emoji Sort Order</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">European Ordering Rules</type>
-			<type key="collation" type="gb2312han">Simplified Chinese Sort Order - GB2312</type>
+			<type key="collation" type="eor" scope="core">European rules</type>
 			<type key="collation" type="phonebook">Phonebook Sort Order</type>
+			<type key="collation" type="phonebook" scope="core">Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic Sort Order</type>
+			<type key="collation" type="phonetic" scope="core">Phonetic</type>
 			<type key="collation" type="pinyin">Pinyin Sort Order</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">General-Purpose Search</type>
+			<type key="collation" type="search" scope="core">Search</type>
 			<type key="collation" type="searchjl">Search By Hangul Initial Consonant</type>
+			<type key="collation" type="searchjl" scope="core">Korean initial consonant</type>
 			<type key="collation" type="standard">Standard Sort Order</type>
+			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Stroke Sort Order</type>
+			<type key="collation" type="stroke" scope="core">Stroke</type>
 			<type key="collation" type="traditional">Traditional Sort Order</type>
+			<type key="collation" type="traditional" scope="core">Traditional</type>
 			<type key="collation" type="unihan">Radical-Stroke Sort Order</type>
+			<type key="collation" type="unihan" scope="core">Radical-Stroke</type>
 			<type key="collation" type="zhuyin">Zhuyin Sort Order</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Sort Without Normalization</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>
 			<type key="colNumeric" type="no">Sort Digits Individually</type>
@@ -1425,21 +1474,28 @@ annotations.
 			<type key="d0" type="title">To Titlecase</type>
 			<type key="d0" type="upper">To Uppercase</type>
 			<type key="d0" type="zawgyi">To Zawgyi Myanmar Encoding</type>
-			<type key="em" type="default">Use Default Presentation For Emoji Characters</type>
-			<type key="em" type="emoji">Prefer Emoji Presentation For Emoji Characters</type>
-			<type key="em" type="text">Prefer Text Presentation For Emoji Characters</type>
-			<type key="fw" type="fri">First Day of Week Is Friday</type>
-			<type key="fw" type="mon">First Day of Week Is Monday</type>
-			<type key="fw" type="sat">First Day of Week Is Saturday</type>
-			<type key="fw" type="sun">First Day of Week Is Sunday</type>
-			<type key="fw" type="thu">First Day of Week Is Thursday</type>
-			<type key="fw" type="tue">First Day of Week Is Tuesday</type>
-			<type key="fw" type="wed">First Day of Week Is Wednesday</type>
+			<type key="em" type="default">Default Presentation For Emoji</type>
+			<type key="em" type="default" scope="core">Default</type>
+			<type key="em" type="emoji">Emoji Presentation For Emoji</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text">Text Presentation For Emoji</type>
+			<type key="em" type="text" scope="core">Text</type>
+			<type key="fw" type="fri">First day of week: Friday</type>
+			<type key="fw" type="mon">First day of week: Monday</type>
+			<type key="fw" type="sat">First day of week: Saturday</type>
+			<type key="fw" type="sun">First day of week: Sunday</type>
+			<type key="fw" type="thu">First day of week: Thursday</type>
+			<type key="fw" type="tue">First day of week: Tuesday</type>
+			<type key="fw" type="wed">First day of week: Wednesday</type>
 			<type key="h0" type="hybrid">Hybrid</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 Hour System (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 Hour System (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="i0" type="handwrit">Handwriting Input Method</type>
 			<type key="i0" type="pinyin">Pinyin Input Method</type>
 			<type key="i0" type="und">Unspecified Input Method</type>
@@ -1474,16 +1530,42 @@ annotations.
 			<type key="k0" type="viqr">Vietnamese VIQR Keyboard</type>
 			<type key="k0" type="windows">Windows Keyboard</type>
 			<type key="kv" type="currency">Ignore Symbols affects spaces, punctuation, all symbols</type>
+			<!-- <type key="ka" type="noignore" scope="core">Punctuation… not ignored</type>
+				 <type key="ka" type="shifted" scope="core">Punctuation… ignored</type>
+				 <type key="kf" type="lower" scope="core">Lowercase &lt; uppercase</type>
+				 <type key="kf" type="upper" scope="core">Uppercase &lt; lowercase</type>
+				 <type key="kr" type="currency" scope="core">Currency reordering code</type>
+				 <type key="kr" type="digit" scope="core">Digit (number) reordering code</type>
+				 <type key="kr" type="punct" scope="core">Punctuation reordering code</type>
+				 <type key="kr" type="space" scope="core">Whitespace reordering code</type>
+				 <type key="kr" type="symbol" scope="core">Symbol reordering code (other than currency)</type>
+				 <type key="ks" type="identic" scope="core">The identical level</type>
+				 <type key="ks" type="level1" scope="core">The primary level</type>
+				 <type key="ks" type="level2" scope="core">The secondary level</type>
+				 <type key="ks" type="level3" scope="core">The tertiary level</type>
+				 <type key="ks" type="level4" scope="core">The quaternary level</type>
+			-->
+			<type key="kv" type="currency" scope="core">Shift Spaces, punctuation, all symbols</type>
 			<type key="kv" type="punct">Ignore Symbols affects spaces and punctuation only</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="space">Ignore Symbols affects spaces only</type>
+			<type key="kv" type="space" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="symbol">Ignore Symbols affects spaces, punctuation, non-currency symbols</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, punctuation, non-currency symbols</type>
 			<type key="lb" type="loose">Loose Line Break Style</type>
+			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Normal Line Break Style</type>
+			<type key="lb" type="normal" scope="core">Normal</type>
 			<type key="lb" type="strict">Strict Line Break Style</type>
+			<type key="lb" type="strict" scope="core">Strict</type>
 			<type key="lw" type="breakall">Allow Line Breaks In All Words</type>
+			<type key="lw" type="breakall" scope="core">Break all</type>
 			<type key="lw" type="keepall">Prevent Line Breaks In All Words</type>
+			<type key="lw" type="keepall" scope="core">Keep all</type>
 			<type key="lw" type="normal">Normal Line Breaks For Words</type>
+			<type key="lw" type="normal" scope="core">Normal</type>
 			<type key="lw" type="phrase">Prevent Line Breaks In Phrases</type>
+			<type key="lw" type="phrase" scope="core">Keep in phrases</type>
 			<type key="m0" type="aethiopi">Encylopedia Aethiopica Transliteration</type>
 			<type key="m0" type="alaloc">US ALA-LOC Transliteration</type>
 			<type key="m0" type="betamets">Beta Maṣāḥǝft Transliteration</type>
@@ -1517,8 +1599,11 @@ annotations.
 			<type key="m0" type="xml">Hex transform using XML syntax</type>
 			<type key="m0" type="xml10">Hex transform using XML decimal syntax</type>
 			<type key="ms" type="metric">Metric System</type>
+			<type key="ms" type="metric" scope="core">Metric</type>
 			<type key="ms" type="uksystem">Imperial Measurement System</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">US Measurement System</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="mu" type="celsius">Celsius</type>
 			<type key="mu" type="fahrenhe">Fahrenheit</type>
 			<type key="mu" type="kelvin">Kelvin</type>
@@ -1527,8 +1612,10 @@ annotations.
 			<type key="numbers" type="arab">Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext">Extended Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext" alt="short">X Arabic-Indic Digits</type>
+			<type key="numbers" type="arabext" scope="core">Extended Arabic-Indic</type>
 			<type key="numbers" type="armn">Armenian Numerals</type>
 			<type key="numbers" type="armnlow">Armenian Lowercase Numerals</type>
+			<type key="numbers" type="armnlow" scope="core">Armenian lowercase</type>
 			<type key="numbers" type="bali">Balinese Digits</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
 			<type key="numbers" type="bhks">Bhaiksuki Digits</type>
@@ -1540,29 +1627,38 @@ annotations.
 			<type key="numbers" type="diak">Dives Akuru Digits</type>
 			<type key="numbers" type="ethi">Ethiopic Numerals</type>
 			<type key="numbers" type="finance">Financial Numerals</type>
+			<type key="numbers" type="finance" scope="core">Financial</type>
 			<type key="numbers" type="fullwide">Full-Width Digits</type>
+			<type key="numbers" type="fullwide" scope="core">Full-width</type>
 			<type key="numbers" type="gara">Garay Digits</type>
 			<type key="numbers" type="geor">Georgian Numerals</type>
 			<type key="numbers" type="gong">Gunjala Gondi digits</type>
 			<type key="numbers" type="gonm">Masaram Gondi digits</type>
 			<type key="numbers" type="grek">Greek Numerals</type>
 			<type key="numbers" type="greklow">Greek Lowercase Numerals</type>
+			<type key="numbers" type="greklow" scope="core">Greek lowercase</type>
 			<type key="numbers" type="gujr">Gujarati Digits</type>
 			<type key="numbers" type="gukh">Gurung Khema Digits</type>
 			<type key="numbers" type="guru">Gurmukhi Digits</type>
 			<type key="numbers" type="hanidays">Chinese Calendar Day-of-Month Numerals</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character day-of-month numbering for traditional calendars</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numerals</type>
+			<type key="numbers" type="hanidec" scope="core">Positional decimal system using Chinese number ideographs as digits</type>
 			<type key="numbers" type="hans">Simplified Chinese Numerals</type>
 			<type key="numbers" type="hansfin">Simplified Chinese Financial Numerals</type>
+			<type key="numbers" type="hansfin" scope="core">Simplified Chinese financial</type>
 			<type key="numbers" type="hant">Traditional Chinese Numerals</type>
 			<type key="numbers" type="hantfin">Traditional Chinese Financial Numerals</type>
+			<type key="numbers" type="hantfin" scope="core">Traditional Chinese financial</type>
 			<type key="numbers" type="hebr">Hebrew Numerals</type>
 			<type key="numbers" type="hmng">Pahawh Hmong Digits</type>
 			<type key="numbers" type="hmnp">Nyiakeng Puachue Hmong Digits</type>
 			<type key="numbers" type="java">Javanese Digits</type>
 			<type key="numbers" type="jpan">Japanese Numerals</type>
 			<type key="numbers" type="jpanfin">Japanese Financial Numerals</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanese financial</type>
 			<type key="numbers" type="jpanyear">Japanese Calendar Gannen Year Numerals</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanese first-year Gannen numbering</type>
 			<type key="numbers" type="kali">Kayah Li Digits</type>
 			<type key="numbers" type="kawi">Kawi Digits</type>
 			<type key="numbers" type="khmr">Khmer Digits</type>
@@ -1570,15 +1666,21 @@ annotations.
 			<type key="numbers" type="krai">Kirat Rai Digits</type>
 			<type key="numbers" type="lana">Tai Tham Hora Digits</type>
 			<type key="numbers" type="lanatham">Tai Tham Tham Digits</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">Lao Digits</type>
 			<type key="numbers" type="latn">Western Digits</type>
 			<type key="numbers" type="lepc">Lepcha Digits</type>
 			<type key="numbers" type="limb">Limbu Digits</type>
 			<type key="numbers" type="mathbold">Mathematical Bold Digits</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
 			<type key="numbers" type="mathdbl">Mathematical Double-Struck Digits</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
 			<type key="numbers" type="mathmono">Mathematical Monospace Digits</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
 			<type key="numbers" type="mathsanb">Mathematical Sans-Serif Bold Digits</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
 			<type key="numbers" type="mathsans">Mathematical Sans-Serif Digits</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">Malayalam Digits</type>
 			<type key="numbers" type="modi">Modi Digits</type>
 			<type key="numbers" type="mong">Mongolian Digits</type>
@@ -1586,11 +1688,16 @@ annotations.
 			<type key="numbers" type="mtei">Meetei Mayek Digits</type>
 			<type key="numbers" type="mymr">Myanmar Digits</type>
 			<type key="numbers" type="mymrepka">Myanmar Eastern Pwo Karen Digits</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
 			<type key="numbers" type="mymrpao">Myanmar Pao Digits</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
 			<type key="numbers" type="mymrshan">Myanmar Shan Digits</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
 			<type key="numbers" type="mymrtlng">Myanmar Tai Laing Digits</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
 			<type key="numbers" type="nagm">Nag Mundari Digits</type>
 			<type key="numbers" type="native">Native Digits</type>
+			<type key="numbers" type="native" scope="core">Native digits</type>
 			<type key="numbers" type="newa">Newa Digits</type>
 			<type key="numbers" type="nkoo">N’Ko Digits</type>
 			<type key="numbers" type="olck">Ol Chiki Digits</type>
@@ -1598,11 +1705,15 @@ annotations.
 			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="osma">Osmanya Digits</type>
 			<type key="numbers" type="outlined">Outlined Digits</type>
+			<type key="numbers" type="outlined" scope="core">Outlined</type>
 			<type key="numbers" type="rohg">Hanifi Rohingya digits</type>
 			<type key="numbers" type="roman">Roman Numerals</type>
+			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
+			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
 			<type key="numbers" type="saur">Saurashtra Digits</type>
 			<type key="numbers" type="segment">Segmented Digits</type>
+			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="shrd">Sharada Digits</type>
 			<type key="numbers" type="sind">Khudawadi Digits</type>
 			<type key="numbers" type="sinh">Sinhala Lith Digits</type>
@@ -1613,12 +1724,15 @@ annotations.
 			<type key="numbers" type="talu">New Tai Lue Digits</type>
 			<type key="numbers" type="taml">Traditional Tamil Numerals</type>
 			<type key="numbers" type="tamldec">Tamil Digits</type>
+			<type key="numbers" type="tamldec" scope="core">Modern Tamil</type>
 			<type key="numbers" type="telu">Telugu Digits</type>
 			<type key="numbers" type="thai">Thai Digits</type>
 			<type key="numbers" type="tibt">Tibetan Digits</type>
 			<type key="numbers" type="tirh">Tirhuta Digits</type>
 			<type key="numbers" type="tnsa">Tangsa Digits</type>
+			<type key="numbers" type="tols">Tolong Siki Digits</type>
 			<type key="numbers" type="traditional">Traditional Numerals</type>
+			<type key="numbers" type="traditional" scope="core">Traditional numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
 			<type key="numbers" type="wcho">Wancho Digits</type>
@@ -1630,9 +1744,12 @@ annotations.
 			<type key="s0" type="publish">From Publishing Punctuation To ASCII</type>
 			<type key="s0" type="zawgyi">From Zawgyi Myanmar Encoding</type>
 			<type key="ss" type="none">Sentence Breaks Without Abbreviation Handling</type>
+			<type key="ss" type="none" scope="core">Off</type>
 			<type key="ss" type="standard">Suppress Sentence Breaks After Standard Abbreviations</type>
+			<type key="ss" type="standard" scope="core">On</type>
 			<type key="t0" type="und">Unspecified Machine Translation</type>
 			<type key="va" type="posix">POSIX Compliant Locale</type>
+			<type key="va" type="posix" scope="core">POSIX variant</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
@@ -1671,8 +1788,9 @@ annotations.
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person">[\- ‐‑ , . /]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1820,12 +1938,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1845,9 +1969,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1870,6 +1997,9 @@ annotations.
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hms" alt="ascii">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2002,6 +2132,16 @@ annotations.
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="coptic">
+				<eras>
+					<eraNames>
+						<era type="1">Anno Martyrum</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="1">AM</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -2024,7 +2164,7 @@ annotations.
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -2037,12 +2177,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2053,12 +2199,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2068,9 +2220,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2078,7 +2233,9 @@ annotations.
 						<dateFormatItem id="Ehms" alt="ascii">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2091,6 +2248,9 @@ annotations.
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hms" alt="ascii">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2101,9 +2261,9 @@ annotations.
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2143,21 +2303,21 @@ annotations.
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
@@ -2234,18 +2394,18 @@ annotations.
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
@@ -2631,12 +2791,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2647,12 +2813,18 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2662,9 +2834,12 @@ annotations.
 						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBh">E h B</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Eh">E h a</dateFormatItem>
+						<dateFormatItem id="Eh" alt="ascii">E h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehm" alt="ascii">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2672,7 +2847,9 @@ annotations.
 						<dateFormatItem id="Ehms" alt="ascii">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -2691,6 +2868,9 @@ annotations.
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="hmv" alt="ascii">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="hv">h a v</dateFormatItem>
+						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -3157,8 +3337,13 @@ annotations.
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">Anno Hegirae</era>
+						<era type="1">Before Hijrah</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AH</era>
+						<era type="1">BH</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -3179,7 +3364,7 @@ annotations.
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -3189,7 +3374,9 @@ annotations.
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -3202,9 +3389,9 @@ annotations.
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -3241,6 +3428,89 @@ annotations.
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="EEEEd">EEEE d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MEEEEd">EEEE, M/d</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEEE, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">EEEE, MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">EEEE, MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="roc">
 				<eras>
@@ -3911,20 +4181,40 @@ annotations.
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Unknown City</exemplarCity>
+				<exemplarCity>Unknown Location</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>Rothera Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>Palmer Land</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>Troll Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>Showa Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>Mawson Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>Vostok Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>Casey Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Dumont d’Urville Station</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>McMurdo Station</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Macquarie">
 				<exemplarCity>Macquarie Island</exemplarCity>
@@ -3941,6 +4231,15 @@ annotations.
 			<zone type="Indian/Christmas">
 				<exemplarCity>Christmas Island</exemplarCity>
 			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>Galápagos Islands</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Canaries</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>Faroes</exemplarCity>
+			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British Summer Time</daylight>
@@ -3951,11 +4250,47 @@ annotations.
 					<daylight>Irish Standard Time</daylight>
 				</long>
 			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>Chagos Archipelago</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Canton Island</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>Comoros</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Aktau</exemplarCity>
+			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
 			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>Kwajalein Atoll</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Mexico City</exemplarCity>
+			</zone>
 			<zone type="Pacific/Norfolk">
 				<exemplarCity>Norfolk Island</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>Chatham Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>Marquesas Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>Pitcairn Islands</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>Kerguelen Islands</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>Midway Atoll</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake Island</exemplarCity>
@@ -3992,9 +4327,7 @@ annotations.
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>West Africa Time</generic>
-					<standard>West Africa Standard Time</standard>
-					<daylight>West Africa Summer Time</daylight>
+					<standard>West Africa Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4422,6 +4755,14 @@ annotations.
 					<standard>Guyana Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleutian Standard Time</standard>
+				</long>
+				<short>
+					<standard>HST</standard>
+				</short>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Hawaii-Aleutian Time</generic>
@@ -4443,9 +4784,9 @@ annotations.
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Hovd Time</generic>
-					<standard>Hovd Standard Time</standard>
-					<daylight>Hovd Summer Time</daylight>
+					<generic>Khovd Time</generic>
+					<standard>Khovd Standard Time</standard>
+					<daylight>Khovd Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -4777,9 +5118,9 @@ annotations.
 			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
-					<generic>Qyzylorda Time</generic>
-					<standard>Qyzylorda Standard Time</standard>
-					<daylight>Qyzylorda Summer Time</daylight>
+					<generic>Kyzylorda Time</generic>
+					<standard>Kyzylorda Standard Time</standard>
+					<daylight>Kyzylorda Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4875,6 +5216,13 @@ annotations.
 			<metazone type="Truk">
 				<long>
 					<standard>Chuuk Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -5042,6 +5390,12 @@ annotations.
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<rationalFormats numberSystem="latn">
+			<rationalPattern>{0}⁄{1}</rationalPattern>
+			<integerAndRationalPattern>{0} {1}</integerAndRationalPattern>
+			<integerAndRationalPattern alt="superSub">{0}⁠{1}</integerAndRationalPattern>
+			<rationalUsage>sometimes</rationalUsage>
+		</rationalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -5866,9 +6220,9 @@ annotations.
 				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
-				<displayName>Kyrgystani Som</displayName>
-				<displayName count="one">Kyrgystani som</displayName>
-				<displayName count="other">Kyrgystani soms</displayName>
+				<displayName>Kyrgyz Som</displayName>
+				<displayName count="one">Kyrgyz som</displayName>
+				<displayName count="other">Kyrgyz soms</displayName>
 				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
@@ -6823,12 +7177,12 @@ annotations.
 			<pattern type="atLeast">{0}+</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">{0} day</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">{0} days</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="few">Take the {0}rd right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">Take the {0}st right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="two">Take the {0}nd right.</ordinalMinimalPairs>
+			<pluralMinimalPairs count="one">{0} day</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} days</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">Take the {0}rd right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Take the {0}st right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">Take the {0}nd right.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7055,7 +7409,12 @@ annotations.
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>parts</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} parts</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts per million</displayName>
 				<unitPattern count="one">{0} part per million</unitPattern>
 				<unitPattern count="other">{0} parts per million</unitPattern>
@@ -7079,6 +7438,11 @@ annotations.
 				<displayName>moles</displayName>
 				<unitPattern count="one">{0} mole</unitPattern>
 				<unitPattern count="other">{0} moles</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>of glucose</displayName>
+				<unitPattern count="one">{0} of glucose</unitPattern>
+				<unitPattern count="other">{0} of glucose</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liters per kilometer</displayName>
@@ -7617,6 +7981,11 @@ annotations.
 				<unitPattern count="one">{0} millimeter of mercury</unitPattern>
 				<unitPattern count="other">{0} millimeters of mercury</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of mercury</displayName>
+				<unitPattern count="one">{0} of mercury</unitPattern>
+				<unitPattern count="other">{0} of mercury</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pounds-force per square inch</displayName>
 				<unitPattern count="one">{0} pound-force per square inch</unitPattern>
@@ -7795,6 +8164,11 @@ annotations.
 				<unitPattern count="one">{0} metric cup</unitPattern>
 				<unitPattern count="other">{0} metric cups</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>metric fluid ounces</displayName>
+				<unitPattern count="one">{0} metric fluid ounce</unitPattern>
+				<unitPattern count="other">{0} metric fluid ounces</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-feet</displayName>
 				<unitPattern count="one">{0} acre-foot</unitPattern>
@@ -7827,10 +8201,20 @@ annotations.
 				<unitPattern count="one">{0} pint</unitPattern>
 				<unitPattern count="other">{0} pints</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pints Imperial</displayName>
+				<unitPattern count="one">{0} pint Imperial</unitPattern>
+				<unitPattern count="other">{0} pints Imperial</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cups</displayName>
 				<unitPattern count="one">{0} cup</unitPattern>
 				<unitPattern count="other">{0} cups</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cups Imperial</displayName>
+				<unitPattern count="one">{0} cup Imperial</unitPattern>
+				<unitPattern count="other">{0} cups Imperial</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fluid ounces</displayName>
@@ -7892,17 +8276,202 @@ annotations.
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quarts</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>steradians</displayName>
+				<unitPattern count="one">{0} steradian</unitPattern>
+				<unitPattern count="other">{0} steradians</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katals</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} katals</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>coulombs</displayName>
+				<unitPattern count="one">{0} coulomb</unitPattern>
+				<unitPattern count="other">{0} coulombs</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>farads</displayName>
+				<unitPattern count="one">{0} farad</unitPattern>
+				<unitPattern count="other">{0} farads</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henrys</displayName>
+				<unitPattern count="one">{0} henry</unitPattern>
+				<unitPattern count="other">{0} henrys</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemens</displayName>
+				<unitPattern count="one">{0} siemens</unitPattern>
+				<unitPattern count="other">{0} siemens</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>calories [IT]</displayName>
+				<unitPattern count="one">{0} calorie [IT]</unitPattern>
+				<unitPattern count="other">{0} calories [IT]</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>British thermal units [IT]</displayName>
+				<unitPattern count="one">{0} British thermal unit [IT]</unitPattern>
+				<unitPattern count="other">{0} British thermal units [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>becquerels</displayName>
+				<unitPattern count="one">{0} becquerel</unitPattern>
+				<unitPattern count="other">{0} becquerels</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sieverts</displayName>
+				<unitPattern count="one">{0} sievert</unitPattern>
+				<unitPattern count="other">{0} sieverts</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>grays</displayName>
+				<unitPattern count="one">{0} gray</unitPattern>
+				<unitPattern count="other">{0} grays</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilograms-force</displayName>
+				<unitPattern count="one">{0} kilogram-force</unitPattern>
+				<unitPattern count="other">{0} kilograms-force</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rods</displayName>
+				<unitPattern count="one">{0} rod</unitPattern>
+				<unitPattern count="other">{0} rods</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>chains</displayName>
+				<unitPattern count="one">{0} chain</unitPattern>
+				<unitPattern count="other">{0} chains</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>teslas</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} teslas</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>webers</displayName>
+				<unitPattern count="one">{0} weber</unitPattern>
+				<unitPattern count="other">{0} webers</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>rankines</displayName>
+				<unitPattern count="one">{0} rankine</unitPattern>
+				<unitPattern count="other">{0} rankines</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fortnights</displayName>
+				<unitPattern count="one">{0} fortnight</unitPattern>
+				<unitPattern count="other">{0} fortnights</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slugs</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slugs</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>of gasoline equivalent</displayName>
 				<unitPattern count="one">{0} of gasoline equivalent</unitPattern>
 				<unitPattern count="other">{0} of gasoline equivalent</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [volume, JP]</displayName>
+				<unitPattern count="one">{0} shaku [volume, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [volume, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0} light</unitPattern>
 				<unitPattern count="other">{0} light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts per billion</displayName>
 				<unitPattern count="one">{0} part per billion</unitPattern>
 				<unitPattern count="other">{0} parts per billion</unitPattern>
@@ -8144,7 +8713,12 @@ annotations.
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>part</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} part</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts/million</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -8168,6 +8742,11 @@ annotations.
 				<displayName>mole</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="other">{0} mol</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liters/km</displayName>
@@ -8706,6 +9285,11 @@ annotations.
 				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of Hg</displayName>
+				<unitPattern count="one">{0} of Hg</unitPattern>
+				<unitPattern count="other">{0} of Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0} psi</unitPattern>
@@ -8884,6 +9468,11 @@ annotations.
 				<unitPattern count="one">{0} mc</unitPattern>
 				<unitPattern count="other">{0} mc</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>fl oz m.</displayName>
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
 				<unitPattern count="one">{0} ac ft</unitPattern>
@@ -8915,10 +9504,20 @@ annotations.
 				<unitPattern count="one">{0} pt</unitPattern>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pt Imp.</displayName>
+				<unitPattern count="one">{0} pt Imp.</unitPattern>
+				<unitPattern count="other">{0} pt Imp.</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cups</displayName>
 				<unitPattern count="one">{0} c</unitPattern>
 				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup Imp</displayName>
+				<unitPattern count="one">{0} cup Imp.</unitPattern>
+				<unitPattern count="other">{0} cup Imp.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -8980,17 +9579,202 @@ annotations.
 				<unitPattern count="one">{0} qt-Imp.</unitPattern>
 				<unitPattern count="other">{0} qt-Imp.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>sr</displayName>
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>kat</displayName>
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>C</displayName>
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>F</displayName>
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>H</displayName>
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>S</displayName>
+				<unitPattern count="one">{0} S</unitPattern>
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>BTU-IT</displayName>
+				<unitPattern count="one">{0} BTU-IT</unitPattern>
+				<unitPattern count="other">{0} BT-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Bq</displayName>
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Sv</displayName>
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Gy</displayName>
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kgf</displayName>
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rd</displayName>
+				<unitPattern count="one">{0} rd</unitPattern>
+				<unitPattern count="other">{0} rd</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>ch</displayName>
+				<unitPattern count="one">{0} ch</unitPattern>
+				<unitPattern count="other">{0} ch</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>T</displayName>
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Wb</displayName>
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>°R</displayName>
+				<unitPattern count="one">{0} °R</unitPattern>
+				<unitPattern count="other">{0} °R</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fw</displayName>
+				<unitPattern count="one">{0} fw</unitPattern>
+				<unitPattern count="other">{0} fw</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slug</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slug</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0} gas-equiv</unitPattern>
 				<unitPattern count="other">{0} gas-equiv</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [vol, JP]</displayName>
+				<unitPattern count="one">{0} shaku [vol, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [vol, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0} light</unitPattern>
 				<unitPattern count="other">{0} light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts/billion</displayName>
 				<unitPattern count="one">{0} ppb</unitPattern>
 				<unitPattern count="other">{0} ppb</unitPattern>
@@ -9230,7 +10014,12 @@ annotations.
 				<unitPattern count="one">{0}item</unitPattern>
 				<unitPattern count="other">{0}items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>part</displayName>
+				<unitPattern count="one">{0} part</unitPattern>
+				<unitPattern count="other">{0} part</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -9254,6 +10043,11 @@ annotations.
 				<displayName>mol</displayName>
 				<unitPattern count="one">{0}mol</unitPattern>
 				<unitPattern count="other">{0}mol</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
+				<unitPattern count="one">{0} Glc</unitPattern>
+				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -9792,6 +10586,11 @@ annotations.
 				<unitPattern count="one">{0}mmHg</unitPattern>
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>of Hg</displayName>
+				<unitPattern count="one">{0} of Hg</unitPattern>
+				<unitPattern count="other">{0} of Hg</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
 				<unitPattern count="one">{0}psi</unitPattern>
@@ -9970,6 +10769,11 @@ annotations.
 				<unitPattern count="one">{0}mc</unitPattern>
 				<unitPattern count="other">{0}mc</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>fl oz m.</displayName>
+				<unitPattern count="one">{0} fl oz m.</unitPattern>
+				<unitPattern count="other">{0} fl oz m.</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre ft</displayName>
 				<unitPattern count="one">{0}ac ft</unitPattern>
@@ -9988,8 +10792,8 @@ annotations.
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>Imp gal</displayName>
-				<unitPattern count="one">{0}galIm</unitPattern>
-				<unitPattern count="other">{0}galIm</unitPattern>
+				<unitPattern count="one">{0}gal-Im</unitPattern>
+				<unitPattern count="other">{0}gal-Im</unitPattern>
 				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
@@ -10002,10 +10806,20 @@ annotations.
 				<unitPattern count="one">{0}pt</unitPattern>
 				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
+			<unit type="volume-pint-imperial">
+				<displayName>pt Imp.</displayName>
+				<unitPattern count="one">{0} pt Imp.</unitPattern>
+				<unitPattern count="other">{0} pt Imp.</unitPattern>
+			</unit>
 			<unit type="volume-cup">
 				<displayName>cup</displayName>
 				<unitPattern count="one">{0}c</unitPattern>
 				<unitPattern count="other">{0}c</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup Imp</displayName>
+				<unitPattern count="one">{0} cup Imp.</unitPattern>
+				<unitPattern count="other">{0} cup Imp.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
@@ -10067,17 +10881,202 @@ annotations.
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>sr</displayName>
+				<unitPattern count="one">{0} sr</unitPattern>
+				<unitPattern count="other">{0} sr</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>kat</displayName>
+				<unitPattern count="one">{0} kat</unitPattern>
+				<unitPattern count="other">{0} kat</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>C</displayName>
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>F</displayName>
+				<unitPattern count="one">{0} F</unitPattern>
+				<unitPattern count="other">{0} F</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>H</displayName>
+				<unitPattern count="one">{0} H</unitPattern>
+				<unitPattern count="other">{0} H</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>S</displayName>
+				<unitPattern count="one">{0} S</unitPattern>
+				<unitPattern count="other">{0} S</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+				<unitPattern count="one">{0} cal-IT</unitPattern>
+				<unitPattern count="other">{0} cal-IT</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit-it">
+				<displayName>BTU-IT</displayName>
+				<unitPattern count="one">{0} BTU-IT</unitPattern>
+				<unitPattern count="other">{0} BT-IT</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Bq</displayName>
+				<unitPattern count="one">{0} Bq</unitPattern>
+				<unitPattern count="other">{0} Bq</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Sv</displayName>
+				<unitPattern count="one">{0} Sv</unitPattern>
+				<unitPattern count="other">{0} Sv</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Gy</displayName>
+				<unitPattern count="one">{0} Gy</unitPattern>
+				<unitPattern count="other">{0} Gy</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kgf</displayName>
+				<unitPattern count="one">{0} kgf</unitPattern>
+				<unitPattern count="other">{0} kgf</unitPattern>
+			</unit>
+			<unit type="length-rod">
+				<displayName>rd</displayName>
+				<unitPattern count="one">{0} rd</unitPattern>
+				<unitPattern count="other">{0} rd</unitPattern>
+			</unit>
+			<unit type="length-chain">
+				<displayName>ch</displayName>
+				<unitPattern count="one">{0} ch</unitPattern>
+				<unitPattern count="other">{0} ch</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>T</displayName>
+				<unitPattern count="one">{0} T</unitPattern>
+				<unitPattern count="other">{0} T</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Wb</displayName>
+				<unitPattern count="one">{0} Wb</unitPattern>
+				<unitPattern count="other">{0} Wb</unitPattern>
+			</unit>
+			<unit type="temperature-rankine">
+				<displayName>°R</displayName>
+				<unitPattern count="one">{0} °R</unitPattern>
+				<unitPattern count="other">{0} °R</unitPattern>
+			</unit>
+			<unit type="duration-fortnight">
+				<displayName>fw</displayName>
+				<unitPattern count="one">{0} fw</unitPattern>
+				<unitPattern count="other">{0} fw</unitPattern>
+			</unit>
+			<unit type="mass-slug">
+				<displayName>slug</displayName>
+				<unitPattern count="one">{0} slug</unitPattern>
+				<unitPattern count="other">{0} slug</unitPattern>
+			</unit>
 			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0}gas-equiv</unitPattern>
 				<unitPattern count="other">{0}gas-equiv</unitPattern>
+			</unit>
+			<unit type="length-rin">
+				<displayName>rin [JP]</displayName>
+				<unitPattern count="one">{0} rin [JP]</unitPattern>
+				<unitPattern count="other">{0} rin [JP]</unitPattern>
+			</unit>
+			<unit type="length-sun">
+				<displayName>sun [JP]</displayName>
+				<unitPattern count="one">{0} sun [JP]</unitPattern>
+				<unitPattern count="other">{0} sun [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-length">
+				<displayName>shaku [JP]</displayName>
+				<unitPattern count="one">{0} shaku [JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [JP]</unitPattern>
+			</unit>
+			<unit type="length-shaku-cloth">
+				<displayName>shaku [cloth, JP]</displayName>
+				<unitPattern count="one">{0} shaku [cloth, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [cloth, JP]</unitPattern>
+			</unit>
+			<unit type="length-ken">
+				<displayName>ken [JP]</displayName>
+				<unitPattern count="one">{0} ken [JP]</unitPattern>
+				<unitPattern count="other">{0} ken [JP]</unitPattern>
+			</unit>
+			<unit type="length-jo-jp">
+				<displayName>jo [JP]</displayName>
+				<unitPattern count="one">{0} jo [JP]</unitPattern>
+				<unitPattern count="other">{0} jo [JP]</unitPattern>
+			</unit>
+			<unit type="length-ri-jp">
+				<displayName>ri [JP]</displayName>
+				<unitPattern count="one">{0} ri [JP]</unitPattern>
+				<unitPattern count="other">{0} ri [JP]</unitPattern>
+			</unit>
+			<unit type="area-bu-jp">
+				<displayName>bu [JP]</displayName>
+				<unitPattern count="one">{0} bu [JP]</unitPattern>
+				<unitPattern count="other">{0} bu [JP]</unitPattern>
+			</unit>
+			<unit type="area-se-jp">
+				<displayName>se [JP]</displayName>
+				<unitPattern count="one">{0} se [JP]</unitPattern>
+				<unitPattern count="other">{0} se [JP]</unitPattern>
+			</unit>
+			<unit type="area-cho">
+				<displayName>cho [JP]</displayName>
+				<unitPattern count="one">{0} cho [JP]</unitPattern>
+				<unitPattern count="other">{0} cho [JP]</unitPattern>
+			</unit>
+			<unit type="volume-kosaji">
+				<displayName>kosaji [JP]</displayName>
+				<unitPattern count="one">{0} kosaji [JP]</unitPattern>
+				<unitPattern count="other">{0} kosaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-osaji">
+				<displayName>osaji [JP]</displayName>
+				<unitPattern count="one">{0} osaji [JP]</unitPattern>
+				<unitPattern count="other">{0} osaji [JP]</unitPattern>
+			</unit>
+			<unit type="volume-cup-jp">
+				<displayName>cup [JP]</displayName>
+				<unitPattern count="one">{0} cup [JP]</unitPattern>
+				<unitPattern count="other">{0} cup [JP]</unitPattern>
+			</unit>
+			<unit type="volume-shaku">
+				<displayName>shaku [vol, JP]</displayName>
+				<unitPattern count="one">{0} shaku [vol, JP]</unitPattern>
+				<unitPattern count="other">{0} shaku [vol, JP]</unitPattern>
+			</unit>
+			<unit type="volume-sai">
+				<displayName>sai [JP]</displayName>
+				<unitPattern count="one">{0} sai [JP]</unitPattern>
+				<unitPattern count="other">{0} sai [JP]</unitPattern>
+			</unit>
+			<unit type="volume-to-jp">
+				<displayName>to [JP]</displayName>
+				<unitPattern count="one">{0} to [JP]</unitPattern>
+				<unitPattern count="other">{0} to [JP]</unitPattern>
+			</unit>
+			<unit type="volume-koku">
+				<displayName>koku [JP]</displayName>
+				<unitPattern count="one">{0} koku [JP]</unitPattern>
+				<unitPattern count="other">{0} koku [JP]</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<displayName>light</displayName>
 				<unitPattern count="one">{0}light</unitPattern>
 				<unitPattern count="other">{0}light</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="mass-fun">
+				<displayName>fun [JP]</displayName>
+				<unitPattern count="one">{0} fun [JP]</unitPattern>
+				<unitPattern count="other">{0} fun [JP]</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>ppb</displayName>
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>

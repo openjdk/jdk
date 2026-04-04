@@ -41,6 +41,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="az">Azerbaiyano Simi</language>
 			<language type="az" alt="short">Azerí Simi</language>
 			<language type="ba">Baskir Simi</language>
+			<language type="bal">Baluchi Simi</language>
 			<language type="ban">Balines Simi</language>
 			<language type="bas">Basaa Simi</language>
 			<language type="be">Bielorruso Simi</language>
@@ -48,10 +49,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bez">Bena Simi</language>
 			<language type="bg">Bulgaro Simi</language>
 			<language type="bgc">Haryanvi</language>
-			<language type="bho">Bhojpuri</language>
+			<language type="bho">Bhojpuri Simi</language>
 			<language type="bi">Bislama</language>
 			<language type="bin">Bini</language>
 			<language type="bla">Siksiká Simi</language>
+			<language type="blo">Anii Simi</language>
 			<language type="bm">Bambara Simi</language>
 			<language type="bn">Bangla Simi</language>
 			<language type="bo">Tibetano Simi</language>
@@ -164,6 +166,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="iba">Iban Simi</language>
 			<language type="ibb">Ibibio Simi</language>
 			<language type="id">Indonesio Simi</language>
+			<language type="ie">Interlingue Simi</language>
 			<language type="ig">Igbo Simi</language>
 			<language type="ii">Yi Simi</language>
 			<language type="ikt">Inuktitut Simi (Canadá occidental)</language>
@@ -212,10 +215,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksf">Bafia Simi</language>
 			<language type="ksh">Kölsch Simi</language>
 			<language type="ku">Kurdo Simi</language>
+			<language type="ku" menu="core">Kurdo Simi</language>
+			<language type="ku" menu="extension">Kurmanji Simi</language>
 			<language type="kum">Kumyk Simi</language>
 			<language type="kv">Komi Simi</language>
 			<language type="kw">Córnico Simi</language>
 			<language type="kwk">Kwakʼwala Simi</language>
+			<language type="kxv">Kuvi Simi</language>
 			<language type="ky">Kirghiz Simi</language>
 			<language type="la">Latín Simi</language>
 			<language type="lad">Ladino Simi</language>
@@ -224,8 +230,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">Lezghian Simi</language>
 			<language type="lg">Luganda Simi</language>
 			<language type="li">Limburgues Simi</language>
+			<language type="lij">Liguria Simi</language>
 			<language type="lil">Lillooet Simi</language>
 			<language type="lkt">Lakota Simi</language>
+			<language type="lmo">Lombardo Simi</language>
 			<language type="ln">Lingala Simi</language>
 			<language type="lo">Lao Simi</language>
 			<language type="lou">Luisiana Criollo</language>
@@ -267,7 +275,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ms">Malayo Simi</language>
 			<language type="mt">Maltes Simi</language>
 			<language type="mua">Mundang Simi</language>
-			<language type="mul">Idiomas M´últiples Simi</language>
+			<language type="mul">Achka simikuna</language>
 			<language type="mus">Muscogee Simi</language>
 			<language type="mwl">Mirandés Simi</language>
 			<language type="my">Birmano Simi</language>
@@ -375,6 +383,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw_CD">Suajili Simi (Congo (RDC))</language>
 			<language type="swb">Comorian Simi</language>
 			<language type="syr">Siriaco Simi</language>
+			<language type="szl">Silesiano</language>
 			<language type="ta">Tamil Simi</language>
 			<language type="tce">Tutchone Meridional</language>
 			<language type="te">Telugu Simi</language>
@@ -414,7 +423,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">Uzbeko Simi</language>
 			<language type="vai">Vai Simi</language>
 			<language type="ve">Venda Simi</language>
+			<language type="vec">Veneciamanta</language>
 			<language type="vi">Vietnamita Simi</language>
+			<language type="vmw">Makhuwa Simi</language>
 			<language type="vo">Volapük Simi</language>
 			<language type="vun">Vunjo Simi</language>
 			<language type="wa">Valona Simi</language>
@@ -425,6 +436,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">Wu Chino</language>
 			<language type="xal">Kalmyk Simi</language>
 			<language type="xh">Isixhosa Simi</language>
+			<language type="xnr">Kangri Simi</language>
 			<language type="xog">Soga Simi</language>
 			<language type="yav">Yangben Simi</language>
 			<language type="ybb">Yemba Simi</language>
@@ -433,6 +445,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yrl">Nheengatu Simi</language>
 			<language type="yue">Cantonés Simi</language>
 			<language type="yue" alt="menu">Chino Cantonés Simi</language>
+			<language type="za">Zhuang</language>
 			<language type="zgh">Bereber Marroquí Estándar Simi</language>
 			<language type="zh">Chino Simi</language>
 			<language type="zh" alt="menu">Chino Mandarín Simi</language>
@@ -589,6 +602,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Isla Clipperton</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Costa Rica</territory>
 			<territory type="CU">Cuba</territory>
 			<territory type="CV">Cabo Verde</territory>
@@ -814,42 +828,81 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="cf">Imayna Qullqi kaynin</key>
 			<key type="collation">Ñiqinchana</key>
 			<key type="currency">qullqi</key>
+			<key type="em">Emoji nisqamanta rikuchiy</key>
 			<key type="hc">Ciclo de Horas (12 vs 24)</key>
 			<key type="lb">Siqi paway kaynin</key>
+			<key type="lw">Simikuna ukhupi Chiru Pakikuna</key>
 			<key type="ms">Tupuy Kamay</key>
 			<key type="numbers">Yupaykuna</key>
+			<key type="ss">Oración Pakikuy Abbr.</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Budista Intiwatana</type>
+			<type key="calendar" type="buddhist" scope="core">Buddhist</type>
 			<type key="calendar" type="chinese">Chino Intiwatana</type>
+			<type key="calendar" type="chinese" scope="core">Chinese</type>
 			<type key="calendar" type="coptic">Copto Intiwatana</type>
+			<type key="calendar" type="coptic" scope="core">Copto</type>
 			<type key="calendar" type="dangi">Dangi Intiwatana</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Etiope Intiwatana</type>
+			<type key="calendar" type="ethiopic" scope="core">Ethiopic</type>
 			<type key="calendar" type="ethiopic-amete-alem">Etíope Amete Alem Intiwatana</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Ethiopic Amete Alem</type>
 			<type key="calendar" type="gregorian">Gregoriano Intiwatana</type>
+			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Hebreo Intiwatana</type>
+			<type key="calendar" type="hebrew" scope="core">Hebreo</type>
 			<type key="calendar" type="islamic">Hijri Intiwatana</type>
+			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Hijri Intiwatana (tabular, epoca civil)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, epoca civil)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Intiwatana (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Intiwatana</type>
 			<type key="calendar" type="japanese">Japones Intiwatana</type>
+			<type key="calendar" type="japanese" scope="core">Japones</type>
 			<type key="calendar" type="persian">Persa Intiwatana</type>
+			<type key="calendar" type="persian" scope="core">Persa</type>
 			<type key="calendar" type="roc">Minguo Intiwatana</type>
+			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Yupana Qullqi imayna kaynin</type>
+			<type key="cf" type="account" scope="core">Accounting</type>
 			<type key="cf" type="standard">Estandar nisqa qullqi imayna kaynin</type>
+			<type key="cf" type="standard" scope="core">Standard</type>
 			<type key="collation" type="ducet">Ñawpaqchasqa Unicode Nisqa Ñiqinchana</type>
+			<type key="collation" type="ducet" scope="core">Ñawpaqchasqa Unicode</type>
 			<type key="collation" type="search">Llapanpaq maskana</type>
+			<type key="collation" type="search" scope="core">maskana</type>
 			<type key="collation" type="standard">Estandar nisqa Ñiqinchana</type>
+			<type key="collation" type="standard" scope="core">Estandar</type>
+			<type key="em" type="default" scope="core">Default</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Text</type>
 			<type key="hc" type="h11">12 hora kaynin (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 hora kaynin (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 hora kaynin (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 hora kaynin (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">Siqi paway chinkachiy kaynin</type>
+			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Siqi paway Normal kaynin</type>
+			<type key="lb" type="normal" scope="core">Normal</type>
 			<type key="lb" type="strict">Siqi paway Chiqa kaynin</type>
+			<type key="lb" type="strict" scope="core">Strict</type>
+			<type key="lw" type="breakall" scope="core">Tukuyta pakiy</type>
+			<type key="lw" type="keepall" scope="core">Tukuy imata waqaychay</type>
+			<type key="lw" type="normal" scope="core">Normal</type>
+			<type key="lw" type="phrase" scope="core">Frases nisqapi waqaychay</type>
 			<type key="ms" type="metric">Metrico Kamay</type>
+			<type key="ms" type="metric" scope="core">Metrico</type>
 			<type key="ms" type="uksystem">Metrico Ingles Kamay</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">Metrico Americano Kamay</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">Arabe Sananpakuna</type>
 			<type key="numbers" type="arabext">Arabe Mirachisqa Sananpakuna</type>
 			<type key="numbers" type="armn">Armenio Sananpakuna</type>
@@ -890,6 +943,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="thai">Thai Sananpakuna</type>
 			<type key="numbers" type="tibt">Tibetano Sananpakuna</type>
 			<type key="numbers" type="vaii">Vai Yupaykuna</type>
+			<type key="ss" type="none" scope="core">Off</type>
+			<type key="ss" type="standard" scope="core">On</type>
 		</types>
 		<codePatterns>
 			<codePattern type="language">Simi: {0}</codePattern>
@@ -899,8 +954,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a {ch} {chʼ} h i k {kʼ} l {ll} m nñ p {pʼ} q {qʼ} s t {tʼ} u w y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[áàăâåäãā æ b cç d eéèĕêëē f g íìĭîïī j oóòŏôöøō œ r úùŭûüū v x ÿ z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M NÑ P Q S T U W Y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ b cç {chh} d eéèĕêëē f g íìĭîïī j oóòŏôöøō œ {ph} {qh} r úùŭûüū v x ÿ z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A {CH} H I K L {Ll} M NÑ P Q R S T U W Y]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -1970,9 +2025,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tokio</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>San Cristobal</exemplarCity>
 			</zone>
@@ -2136,9 +2188,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Hora de Africa Occidental</generic>
-					<standard>Hora Estandar de Africa Occidental</standard>
-					<daylight>Hora Estandar de Verano de Africa Occidental</daylight>
+					<standard>Hora de Africa Occidental</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2486,6 +2536,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>Hora de Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hora Estandar de Hawai-Aleutiano</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3004,7 +3059,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
-					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -3604,6 +3659,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Dólar del Caribe Oriental</displayName>
 				<displayName count="other">Dólar del caribe oriental</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>Caribe guilderkuna</displayName>
+				<displayName count="other">Caribe guilderkuna</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Franco CFA de África Occidental</displayName>
 				<displayName count="other">Franco CFA de áfrica occidental</displayName>
@@ -3626,6 +3685,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="ZMW">
 				<displayName>Kwacha Zambiano</displayName>
 				<displayName count="other">Kwacha zambiano</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>Zimbabuemanta quri</displayName>
+				<displayName count="other">Zimbabuemanta quri</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -3775,7 +3838,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>imakuna</displayName>
 				<unitPattern count="other">{0} imakuna</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes por millon</displayName>
 				<unitPattern count="other">{0} partes por millon</unitPattern>
 			</unit>
@@ -4139,7 +4202,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ima</displayName>
 				<unitPattern count="other">{0} ima</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes/millon</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">

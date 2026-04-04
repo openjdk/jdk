@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
@@ -110,7 +110,7 @@ size_t MutableNUMASpace::free_in_words() const {
   return s;
 }
 
-size_t MutableNUMASpace::tlab_capacity(Thread *ignored) const {
+size_t MutableNUMASpace::tlab_capacity() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->capacity_in_bytes();
@@ -118,7 +118,7 @@ size_t MutableNUMASpace::tlab_capacity(Thread *ignored) const {
   return s / (size_t)lgrp_spaces()->length();
 }
 
-size_t MutableNUMASpace::tlab_used(Thread *ignored) const {
+size_t MutableNUMASpace::tlab_used() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->used_in_bytes();
@@ -126,7 +126,7 @@ size_t MutableNUMASpace::tlab_used(Thread *ignored) const {
   return s / (size_t)lgrp_spaces()->length();
 }
 
-size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *ignored) const {
+size_t MutableNUMASpace::unsafe_max_tlab_alloc() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->free_in_bytes();
@@ -489,7 +489,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
-      if (AtomicAccess::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
+      if (top_addr()->compare_set(cur_top, cur_chunk_top)) {
         break;
       }
     }
