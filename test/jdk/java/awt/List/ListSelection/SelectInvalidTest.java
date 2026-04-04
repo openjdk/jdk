@@ -27,12 +27,12 @@ import jdk.test.lib.Platform;
 
 /**
  * @test
- * @key headful
  * @bug 8369327
- * @library /java/awt/regtesthelpers /test/lib
  * @summary Test awt list selection of invalid indexes
+ * @key headful
+ * @library /test/lib
  */
-public final class SelectInvalid {
+public final class SelectInvalidTest {
 
     /**
      * A special index on windows, selects or deselects all elements.
@@ -49,12 +49,12 @@ public final class SelectInvalid {
     public static void main(String[] args) {
         for (int i : INVALID) {
             if (Platform.isWindows() && i == WINDOWS_INVALID) {
-                testDisplayable(SelectInvalid::testWinDeselectAllSingleMode, i);
-                testDisplayable(SelectInvalid::testWinSelectAllMultipleMode, i);
+                testDisplayable(SelectInvalidTest::testWinDeselectAllSingleMode, i);
+                testDisplayable(SelectInvalidTest::testWinSelectAllMultipleMode, i);
             } else {
-                testDisplayable(SelectInvalid::testSingleMode, i);
-                testDisplayable(SelectInvalid::testMultipleMode, i);
-                testDisplayable(SelectInvalid::testEmptySelection, i);
+                testDisplayable(SelectInvalidTest::testSingleMode, i);
+                testDisplayable(SelectInvalidTest::testMultipleMode, i);
+                testDisplayable(SelectInvalidTest::testEmptySelection, i);
             }
         }
     }
@@ -152,9 +152,8 @@ public final class SelectInvalid {
 
     private static void assertEquals(int expected, int actual) {
         if (expected != actual) {
-            System.err.println("Expected: " + expected);
-            System.err.println("Actual: " + actual);
-            throw new RuntimeException("Values are not equal");
+            throw new RuntimeException(
+                    "Expected %d, got %d".formatted(expected, actual));
         }
     }
 

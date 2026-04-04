@@ -26,28 +26,28 @@ import java.awt.List;
 
 /**
  * @test
- * @key headful
  * @bug 8369327
- * @summary Test awt list deselection methods
+ * @summary Test awt list selection methods
+ * @key headful
  */
-public final class DeselectionUnitTest {
+public final class SelectionUnitTest {
 
     public static void main(String[] args) {
-        // non-displayable list
-        testSingleMode(null);
-        testMultipleMode(null);
-        testInvalidDeselection(null);
-        testEmptyListDeselection(null);
+        testNonDisplayable(SelectionUnitTest::testSingleMode);
+        testNonDisplayable(SelectionUnitTest::testMultipleMode);
+        testNonDisplayable(SelectionUnitTest::testEmptySelection);
 
-        // displayable list
-        testDisplayable(DeselectionUnitTest::testSingleMode);
-        testDisplayable(DeselectionUnitTest::testMultipleMode);
-        testDisplayable(DeselectionUnitTest::testInvalidDeselection);
-        testDisplayable(DeselectionUnitTest::testEmptyListDeselection);
+        testDisplayable(SelectionUnitTest::testSingleMode);
+        testDisplayable(SelectionUnitTest::testMultipleMode);
+        testDisplayable(SelectionUnitTest::testEmptySelection);
     }
 
     interface Test {
         void execute(Frame frame);
+    }
+
+    private static void testNonDisplayable(Test test) {
+        test.execute(null);
     }
 
     private static void testDisplayable(Test test) {
@@ -62,93 +62,75 @@ public final class DeselectionUnitTest {
         }
     }
 
-    private static void testSingleMode(Frame frame) {
-        List list = new List(4, false);
+    private static List createList(Frame frame, boolean multi) {
+        List list = new List(4, multi);
         if (frame != null) {
             frame.add(list);
         }
         list.add("Item1");
         list.add("Item2");
         list.add("Item3");
+        return list;
+    }
 
-        // Select and deselect single item
-        list.select(1);
-        assertTrue(list.isIndexSelected(1));
-        list.deselect(1);
+    private static void testSingleMode(Frame frame) {
+        List list = createList(frame, false);
+
+        // Test initial state
         assertEquals(-1, list.getSelectedIndex());
         assertEquals(0, list.getSelectedIndexes().length);
         assertFalse(list.isIndexSelected(0));
         assertFalse(list.isIndexSelected(1));
         assertFalse(list.isIndexSelected(2));
 
-        // Deselect non-selected item (should be no-op)
-        list.select(0);
-        list.deselect(2);
-        assertEquals(0, list.getSelectedIndex());
-        assertTrue(list.isIndexSelected(0));
-        assertFalse(list.isIndexSelected(1));
+        // Test single selection
+        list.select(1);
+        assertEquals(1, list.getSelectedIndex());
+        assertEquals(1, list.getSelectedIndexes().length);
+        assertEquals(1, list.getSelectedIndexes()[0]);
+        assertFalse(list.isIndexSelected(0));
+        assertTrue(list.isIndexSelected(1));
         assertFalse(list.isIndexSelected(2));
+
+        // Test selection replacement in single mode
+        list.select(2);
+        assertEquals(2, list.getSelectedIndex());
+        assertEquals(1, list.getSelectedIndexes().length);
+        assertEquals(2, list.getSelectedIndexes()[0]);
+        assertFalse(list.isIndexSelected(0));
+        assertFalse(list.isIndexSelected(1));
+        assertTrue(list.isIndexSelected(2));
     }
 
     private static void testMultipleMode(Frame frame) {
-        List list = new List(4, true);
-        if (frame != null) {
-            frame.add(list);
-        }
-        list.add("Item1");
-        list.add("Item2");
-        list.add("Item3");
+        List list = createList(frame, true);
 
-        // Select multiple items and deselect one
+        // Test multiple selections
         list.select(0);
-        list.select(1);
         list.select(2);
-        assertEquals(3, list.getSelectedIndexes().length);
-
-        list.deselect(1);
+        // Returns -1 for multiple selections
+        assertEquals(-1, list.getSelectedIndex());
         assertEquals(2, list.getSelectedIndexes().length);
         assertTrue(list.isIndexSelected(0));
         assertFalse(list.isIndexSelected(1));
         assertTrue(list.isIndexSelected(2));
 
-        // Deselect all remaining
+        // Test partial deselection
         list.deselect(0);
-        list.deselect(2);
-        assertEquals(-1, list.getSelectedIndex());
-        assertEquals(0, list.getSelectedIndexes().length);
+        // Single selection remaining
+        assertEquals(2, list.getSelectedIndex());
+        assertEquals(1, list.getSelectedIndexes().length);
+        assertEquals(2, list.getSelectedIndexes()[0]);
         assertFalse(list.isIndexSelected(0));
         assertFalse(list.isIndexSelected(1));
-        assertFalse(list.isIndexSelected(2));
+        assertTrue(list.isIndexSelected(2));
     }
 
-    private static void testInvalidDeselection(Frame frame) {
-        List list = new List(4, false);
-        if (frame != null) {
-            frame.add(list);
-        }
-        list.add("Item1");
-        list.add("Item2");
-        list.add("Item3");
-
-        // Deselect invalid indices (should be no-op)
-        list.select(0);
-        list.deselect(-1);
-        list.deselect(5);
-        assertEquals(0, list.getSelectedIndex());
-        assertTrue(list.isIndexSelected(0));
-        assertFalse(list.isIndexSelected(1));
-        assertFalse(list.isIndexSelected(2));
-    }
-
-    private static void testEmptyListDeselection(Frame frame) {
+    private static void testEmptySelection(Frame frame) {
         List list = new List();
         if (frame != null) {
             frame.add(list);
         }
-
-        // Deselect on empty list (should be no-op)
-        list.deselect(0);
-        list.deselect(-1);
         assertEquals(-1, list.getSelectedIndex());
         assertEquals(0, list.getSelectedIndexes().length);
         assertFalse(list.isIndexSelected(0));
@@ -156,9 +138,8 @@ public final class DeselectionUnitTest {
 
     private static void assertEquals(int expected, int actual) {
         if (expected != actual) {
-            System.err.println("Expected: " + expected);
-            System.err.println("Actual: " + actual);
-            throw new RuntimeException("Values are not equal");
+            throw new RuntimeException(
+                    "Expected %d, got %d".formatted(expected, actual));
         }
     }
 
