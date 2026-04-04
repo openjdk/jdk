@@ -1288,7 +1288,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                else if (((room & m) == 0 ||
+                if ((room == 0 || room == m ||
                      U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
@@ -2814,10 +2814,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if ((e & TERMINATED) != 0L)
                     break;
-                if (ctl != 0L) // else loop if didn't finish cleaning
+                if (((ds = delayScheduler) != null && ds.signal() >= 0) ||
+                    ctl != 0L) { // else loop if didn't finish cleaning
+                    releaseWaiters();
                     break;
-                if ((ds = delayScheduler) != null && ds.signal() >= 0)
-                    break;
+                }
                 if ((e & CLEANED) != 0L) {
                     e |= TERMINATED;
                     if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0L) {
@@ -2889,6 +2890,13 @@ public class ForkJoinPool extends AbstractExecutorService
                     o.interrupt();
                 } catch (Throwable ignore) {
                 }
+            }
+        }
+        DelayScheduler ds;
+        if ((ds = delayScheduler) != null) {
+            try {
+                ds.interrupt();
+            } catch (Throwable ignore) {
             }
         }
     }
