@@ -25,6 +25,9 @@
 // program to generate rsakeys.ks. does not need to run during testing
 // checked into the workspace so that the keystore file can be recreated
 // in the future if needed.
+//
+// To run:
+//   java --add-exports java.base/sun.security.x509=ALL-UNNAMED GenKeyStore.java
 
 // @author Andreas Sterbenz
 
