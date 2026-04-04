@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,9 +198,9 @@ public class TestFrame extends Frame implements ActionListener,
             dummyButton.equals(b)) && robot != null) {
             robot.mouseMove((int) b.getLocationOnScreen().x + b.getSize().width / 2,
                             (int) b.getLocationOnScreen().y + b.getSize().height / 2);
-            robot.delay(delay);
+            robot.waitForIdle(delay);
             robot.click();
-            robot.delay(delay);
+            robot.waitForIdle(delay);
         }
     }
 
@@ -269,9 +269,9 @@ public class TestFrame extends Frame implements ActionListener,
         if (robot != null) {
             robot.mouseMove((int) topPanel.getLocationOnScreen().x + topPanel.getSize().width / 2,
                             (int) topPanel.getLocationOnScreen().y + topPanel.getSize().height / 2);
-            robot.delay(delay);
+            robot.waitForIdle(delay);
             robot.click();
-            robot.delay(delay);
+            robot.waitForIdle(delay);
         }
     }
 
