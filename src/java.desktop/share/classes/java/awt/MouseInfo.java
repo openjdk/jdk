@@ -58,6 +58,7 @@ public class MouseInfo {
      *
      * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns true
      * @return    location of the mouse pointer
+     * @see       GraphicsConfiguration
      * @since     1.5
      */
     public static PointerInfo getPointerInfo() throws HeadlessException {
