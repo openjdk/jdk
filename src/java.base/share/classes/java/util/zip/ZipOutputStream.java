@@ -262,6 +262,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         default:
             throw new ZipException("unsupported compression method");
         }
+        // Verify that entry name and comment can be encoded
+        byte[] nameBytes = checkEncodable(e.name, "unmappable character in ZIP entry name");
+        if (e.comment != null) {
+            checkEncodable(e.comment, "unmappable character in ZIP entry comment");
+        }
         if (! names.add(e.name)) {
             throw new ZipException("duplicate entry: " + e.name);
         }
@@ -275,7 +280,16 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         current = new XEntry(e, written);
         xentries.add(current);
-        writeLOC(current);
+        writeLOC(current, nameBytes);
+    }
+
+    // Throws ZipException if the given string cannot be encoded
+    private byte[] checkEncodable(String str, String msg) throws ZipException {
+        try {
+            return zc.getBytes(str);
+        } catch (IllegalArgumentException ex) {
+            throw (ZipException) new ZipException(msg).initCause(ex);
+        }
     }
 
     /**
@@ -429,7 +443,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     /*
      * Writes local file (LOC) header for specified entry.
      */
-    private void writeLOC(XEntry xentry) throws IOException {
+    private void writeLOC(XEntry xentry, byte[] nameBytes) throws IOException {
         ZipEntry e = xentry.entry;
         int flag = e.flag;
         boolean hasZip64 = false;
@@ -466,7 +480,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 writeInt(e.size);   // uncompressed size
             }
         }
-        byte[] nameBytes = zc.getBytes(e.name);
         writeShort(nameBytes.length);
 
         int elenEXTT = 0;         // info-zip extended timestamp
