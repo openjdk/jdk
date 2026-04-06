@@ -191,7 +191,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_ref_proc_time_ms;
 
   // Not included in _gc_pause_time_ms
-  double _root_region_scan_wait_time_ms;
+  double _root_region_scan_time_ms;
 
   double _external_accounted_time_ms;
 
@@ -325,8 +325,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_prepare_concurrent_task_time_ms = ms;
   }
 
-  void record_root_region_scan_wait_time(double time_ms) {
-    _root_region_scan_wait_time_ms = time_ms;
+  void record_root_region_scan_time(double time_ms) {
+    _root_region_scan_time_ms = time_ms;
   }
 
   void record_serial_free_cset_time_ms(double time_ms) {
@@ -399,8 +399,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _cur_resize_heap_time_ms;
   }
 
-  double root_region_scan_wait_time_ms() {
-    return _root_region_scan_wait_time_ms;
+  double root_region_scan_time_ms() {
+    return _root_region_scan_time_ms;
   }
 
   double young_cset_choice_time_ms() {
