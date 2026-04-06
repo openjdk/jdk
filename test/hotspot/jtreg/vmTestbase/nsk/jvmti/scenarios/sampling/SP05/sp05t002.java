@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class sp05t002 extends DebugeeClass {
 
@@ -120,7 +121,7 @@ public class sp05t002 extends DebugeeClass {
 /* =================================================================== */
 
 // basic class for tested threads
-abstract class sp05t002Thread extends Thread {
+abstract class sp05t002Thread extends ThreadWrapper {
     // check if thread started
     public abstract boolean checkStarted();
 

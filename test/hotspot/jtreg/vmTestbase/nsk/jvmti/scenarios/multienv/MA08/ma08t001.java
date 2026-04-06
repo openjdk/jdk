@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class ma08t001 extends DebugeeClass {
 
@@ -92,7 +93,7 @@ public class ma08t001 extends DebugeeClass {
 
 /* =================================================================== */
 
-class ma08t001Thread extends Thread {
+class ma08t001Thread extends ThreadWrapper {
     Wicket startingBarrier = new Wicket();
     private long timeout = 0;
 
