@@ -79,7 +79,7 @@ private:
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
 
   // Select regions for inclusion in the collection set that are tenured, but do
-  // not hold enough live data to warrant promotion in place. 
+  // not hold enough live data to warrant promotion in place.
   void add_tenured_regions_to_collection_set(size_t old_promotion_reserve,
                                              ShenandoahGenerationalHeap *const heap,
                                              size_t candidates, AgedRegionData* sorted_regions);

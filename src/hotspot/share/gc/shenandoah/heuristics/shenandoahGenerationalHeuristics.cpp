@@ -316,7 +316,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
                                            immediate_garbage);
 }
 
-void ShenandoahGenerationalHeuristics::add_tenured_regions_to_collection_set(const size_t old_promotion_reserve, 
+void ShenandoahGenerationalHeuristics::add_tenured_regions_to_collection_set(const size_t old_promotion_reserve,
                                                                                ShenandoahGenerationalHeap *const heap,
                                                                                size_t candidates, AgedRegionData* sorted_regions) {
   size_t old_consumed = 0;
@@ -416,7 +416,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
         sorted_regions[candidates]._live_data = r->get_live_data_bytes();
         candidates++;
       }
-    } 
+    }
   }
 
   in_place_promotions.complete_planning();
@@ -429,7 +429,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
   assert(tenurable_next_cycle >= tenurable_this_cycle,
           "Tenurable next cycle (" PROPERFMT ") should include tenurable this cycle (" PROPERFMT ")",
           PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle));
-  
+
   const size_t max_promotions = tenurable_this_cycle * ShenandoahPromoEvacWaste;
   const size_t old_consumed = MIN2(max_promotions, old_promotion_reserve);
 
