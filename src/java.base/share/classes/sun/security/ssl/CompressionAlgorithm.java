@@ -60,6 +60,9 @@ enum CompressionAlgorithm {
         return 2;
     }
 
+    // The size of compression/decompression buffer.
+    private static final int BUF_SIZE = 1024;
+
     private static final Map<Integer, Function<byte[], byte[]>> DEFLATORS =
             Map.of(ZLIB.id, (input) -> {
                 try (Deflater deflater = new Deflater();
@@ -68,7 +71,7 @@ enum CompressionAlgorithm {
 
                     deflater.setInput(input);
                     deflater.finish();
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[BUF_SIZE];
 
                     while (!deflater.finished()) {
                         int compressedSize = deflater.deflate(buffer);
@@ -93,7 +96,7 @@ enum CompressionAlgorithm {
                                 new ByteArrayOutputStream(input.length)) {
 
                     inflater.setInput(input);
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[BUF_SIZE];
 
                     while (!inflater.finished()) {
                         int decompressedSize = inflater.inflate(buffer);
@@ -156,7 +159,6 @@ enum CompressionAlgorithm {
                     return null;
                 }
             });
-
 
     static Map<Integer, Function<byte[], byte[]>> getInflaters() {
         return INFLATORS;

@@ -59,6 +59,12 @@ public class CompressedCertMsg extends SSLSocketTemplate {
               "algorithm": "ZLIB",
             """;
 
+    private static final String IGNORE_EXT_MSG =
+            """
+            Ignore unknown or unsupported extension (
+            "compress_certificate (27)": {
+            """;
+
     private static final String CH_EXT =
             """
                 },
@@ -101,6 +107,9 @@ public class CompressedCertMsg extends SSLSocketTemplate {
             }
         });
 
+        // To make the test pass on Windows.
+        log = log.replace("\r\n", "\n");
+
         if (clientSideEnabled && serverSideEnabled) {
             // Make sure CompressedCertificate message is produced and consumed
             // twice - by the server and by the client.
@@ -112,6 +121,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
             // log twice.
             assertEquals(2, countSubstringOccurrences(log, CH_EXT));
             assertEquals(2, countSubstringOccurrences(log, CR_EXT));
+            assertEquals(0, countSubstringOccurrences(log, IGNORE_EXT_MSG));
         } else if (clientSideEnabled) {
             assertEquals(0, countSubstringOccurrences(log,
                     PRODUCED_COMP_CERT_MSG));
@@ -119,6 +129,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
                     CONSUMING_COMP_CERT_MSG));
             assertEquals(2, countSubstringOccurrences(log, CH_EXT));
             assertEquals(0, countSubstringOccurrences(log, CR_EXT));
+            assertEquals(1, countSubstringOccurrences(log, IGNORE_EXT_MSG));
         } else if (serverSideEnabled) {
             assertEquals(0, countSubstringOccurrences(log,
                     PRODUCED_COMP_CERT_MSG));
@@ -126,6 +137,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
                     CONSUMING_COMP_CERT_MSG));
             assertEquals(0, countSubstringOccurrences(log, CH_EXT));
             assertEquals(2, countSubstringOccurrences(log, CR_EXT));
+            assertEquals(1, countSubstringOccurrences(log, IGNORE_EXT_MSG));
         } else {
             assertEquals(0, countSubstringOccurrences(log,
                     PRODUCED_COMP_CERT_MSG));
@@ -133,6 +145,7 @@ public class CompressedCertMsg extends SSLSocketTemplate {
                     CONSUMING_COMP_CERT_MSG));
             assertEquals(0, countSubstringOccurrences(log, CH_EXT));
             assertEquals(0, countSubstringOccurrences(log, CR_EXT));
+            assertEquals(0, countSubstringOccurrences(log, IGNORE_EXT_MSG));
         }
     }
 }
