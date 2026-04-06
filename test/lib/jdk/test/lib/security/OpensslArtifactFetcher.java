@@ -148,6 +148,7 @@ public class OpensslArtifactFetcher {
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
             absolutePath = outputAnalyzer.getOutput();
+            System.out.println("absolutePath:"+absolutePath);
         } catch(Throwable t) {
             t.printStackTrace();
         }
@@ -157,7 +158,8 @@ public class OpensslArtifactFetcher {
     private static boolean verifyOpensslVersion(String path, String version) {
         if (path != null) {
             try {
-                ProcessTools.executeCommand(path, "version")
+                System.out.println("path is:"+path+"version is "+version);
+                ProcessTools.executeCommand(path.trim(),"version")
                         .shouldHaveExitValue(0)
                         .shouldContain(version);
                 return true;
