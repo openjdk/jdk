@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /* @test
  * @bug 8380450
- * @summary Unmappable characters in ZipFileSystem path name should be rejected with InvalidPathException
+ * @summary Unmappable characters in ZipFileSystem path names should be rejected with InvalidPathException
  * @run junit ${test.main.class}
  */
 public class UnmappablePathName {
@@ -55,9 +55,50 @@ public class UnmappablePathName {
      * @throws IOException if an unexpected IO error occurs
      */
     @Test
-    void rejectUnmappablePathName() throws IOException {
+    void unmappableGetPath() throws IOException {
         try (FileSystem fs = createFileSystem(ZIP, CHARSET)) {
             assertThrows(InvalidPathException.class, () -> fs.getPath(UNMAPPABLE));
+        }
+    }
+
+    /**
+     * Verify that calling ZipFileSystem.getPath with a partially unmappable path
+     * name is rejected with an InvalidPathException.
+     *
+     * @throws IOException if an unexpected IO error occurs
+     */
+    @Test
+    void unmappableGetPathPartial() throws IOException {
+        try (FileSystem fs = createFileSystem(ZIP, CHARSET)) {
+            assertThrows(InvalidPathException.class, () -> fs.getPath("mappable", UNMAPPABLE));
+        }
+    }
+
+    /**
+     * Verify that calling ZipPath::resolve with an unmappable path
+     * name is rejected with an InvalidPathException.
+     *
+     * @throws IOException if an unexpected IO error occurs
+     */
+    @Test
+    void unmappableResolve() throws IOException {
+        try (FileSystem fs = createFileSystem(ZIP, CHARSET)) {
+            Path path = fs.getPath("mappable");
+            assertThrows(InvalidPathException.class, () -> path.resolve(UNMAPPABLE));
+        }
+    }
+
+    /**
+     * Verify that calling ZipPath::resolve with a partially unmappable path
+     * name is rejected with an InvalidPathException.
+     *
+     * @throws IOException if an unexpected IO error occurs
+     */
+    @Test
+    void unmappableResolvePartial() throws IOException {
+        try (FileSystem fs = createFileSystem(ZIP, CHARSET)) {
+            Path path = fs.getPath("mappable");
+            assertThrows(InvalidPathException.class, () -> path.resolve("mappable", UNMAPPABLE));
         }
     }
 
