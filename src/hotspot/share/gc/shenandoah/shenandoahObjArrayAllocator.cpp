@@ -64,23 +64,31 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const size_t base_offset_in_bytes = (size_t)arrayOopDesc::base_offset_in_bytes(element_type);
   const size_t process_start_offset_in_bytes = align_up(base_offset_in_bytes, (size_t)BytesPerWord);
 
+  const size_t process_start = process_start_offset_in_bytes / BytesPerWord;
+  const size_t process_size = _word_size - process_start;
+
+  // pin the region before segmented clearing avoid moving the object until it is done
+  ShenandoahHeapRegion* region = heap->heap_region_containing(mem);
+  region->record_pin();
+
+  // Always initialize the mem with primitive array so GC won't look into the elements in the array.
+  // For obj array, the header will be rewritten to object array after clearing the memory.
+  Klass* filling_klass = _klass;
+  int filling_array_length = _length;
+  if (element_type == T_OBJECT || element_type == T_ARRAY) {
+    filling_klass = Universe::longArrayKlass();
+    filling_array_length = (int) (process_size / (T_LONG_aelem_bytes >> LogBytesPerWord));
+  }
+  ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
+  filling_array_allocator.initialize(mem);
+
+  ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
+
   // Handle potential 4-byte alignment gap before array data
   if (process_start_offset_in_bytes != base_offset_in_bytes) {
     assert(process_start_offset_in_bytes - base_offset_in_bytes == 4, "Must be 4-byte aligned");
     *reinterpret_cast<int*>(reinterpret_cast<char*>(mem) + base_offset_in_bytes) = 0;
   }
-
-  const size_t process_start = process_start_offset_in_bytes / BytesPerWord;
-  const size_t process_size = _word_size - process_start;
-
-  // Fill with long array, GC won't look into the memory until initialization is done
-  ObjArrayAllocator obj_array_allocator(Universe::longArrayKlass(), _word_size,  (int) (process_size / (T_LONG_aelem_bytes / HeapWordSize)) , /* do_zero */ false);
-  obj_array_allocator.initialize(mem);
-
-  ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
-
-  ShenandoahHeapRegion* region = heap->heap_region_containing(mem);
-  region->record_pin();
 
   // Segmented clearing with safepoint yields
   for (size_t processed = 0; processed < process_size; processed += segment_max) {
@@ -93,21 +101,24 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     yield_for_safepoint();
   }
 
-  // Debug padding
+  // reference array, header need to be overridden to its own.
+  if (element_type == T_OBJECT || element_type == T_ARRAY) {
+    assert(_length >= 0, "length should be non-negative");
+    arrayOopDesc::set_length(mem, _length);
+    finish(mem);
+  }
+
+  // zap paddings after setting correct klass
   mem_zap_start_padding(mem);
   mem_zap_end_padding(mem);
 
-  // Set array length, then finish (installs mark word + klass)
-  assert(_length >= 0, "length should be non-negative");
-  arrayOopDesc::set_length(mem, _length);
-  oop arrayObj = finish(mem);
-
-  region->record_unpin();
-
+  oop arrayObj = cast_to_oop(mem);
   if (heap->is_concurrent_young_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
     heap->keep_alive(arrayObj);
   }
   ShenandoahThreadLocalData::clear_invisible_root(_thread);
+
+  region->record_unpin();
 
   return arrayObj;
 }
