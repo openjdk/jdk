@@ -41,19 +41,19 @@ ShenandoahObjArrayAllocator::ShenandoahObjArrayAllocator(
   : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
 oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
-  // A max segment size of 64K was chosen because microbenchmarking
-  // suggested that it offered a good trade-off between allocation
-  // time and time-to-safepoint (same value used by ZGC).
-  const size_t segment_max = 64 * K / BytesPerWord;
+  // threshold of object size, while above this size current mutator will yield to safepoint
+  // when it clears the array content.
+  constexpr size_t THRESHOLD = 64 * K / BytesPerWord;
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
-  // Fast path: delegate to base class for small arrays or no-zero case
-  if (!_do_zero || _word_size <= segment_max || strcmp(ShenandoahGCMode, "passive") == 0) {
+  // Fast path: delegate to base class for small arrays or no-zero case.
+  // In no-zero case(_do_zero is false), the content of the array won't be zeroed, therefore no need to fall into slow-path.
+  if (!_do_zero || _word_size <= THRESHOLD) {
     return ObjArrayAllocator::initialize(mem);
   }
 
-  // Slow path: segmented clearing for large arrays
+  // Slow path: yield to safepoint when clearing for large arrays
 
   // Compute clearing bounds
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
