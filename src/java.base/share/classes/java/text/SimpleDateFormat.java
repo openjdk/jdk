@@ -41,8 +41,6 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
-import static java.text.DateFormatSymbols.*;
-
 import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,6 +56,8 @@ import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
+
+import static java.text.DateFormatSymbols.*;
 
 /**
  * {@code SimpleDateFormat} is a concrete class for formatting and
