@@ -1932,7 +1932,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -1954,7 +1954,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -1974,7 +1974,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate for display to
+     * Returns a name for {@code this} locale's script that is appropriate for display to
      * the user. If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  Returns
      * the empty string if this locale doesn't specify a script code.
@@ -1988,7 +1988,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate
+     * Returns a name for {@code this} locale's script that is appropriate
      * for display to the user. If possible, the name will be
      * localized for the given locale. Returns the empty string if
      * this locale doesn't specify a script code.
@@ -2003,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -2025,7 +2025,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -2062,7 +2062,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
@@ -2075,7 +2075,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for inLocale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
@@ -2100,7 +2100,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display to the
+     * Returns a name for {@code this} locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
      * getDisplayScript(), getDisplayCountry(), getDisplayVariant() and
      * optional {@linkplain ##def_locale_extension Unicode extensions}
@@ -2126,7 +2126,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display
+     * Returns a name for {@code this} locale that is appropriate for display
      * to the user.  This will be the values returned by
      * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional {@linkplain ##def_locale_extension
