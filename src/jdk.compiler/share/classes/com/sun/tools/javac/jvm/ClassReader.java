@@ -1367,9 +1367,7 @@ public class ClassReader {
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
-        if (m != null) {
-            ((ClassType)sym.type).setEnclosingType(m.type);
-        } else if ((self.flags_field & STATIC) == 0) {
+        if ((self.flags_field & STATIC) == 0 && (m == null || (m.flags_field & STATIC) == 0)) {
             ((ClassType)sym.type).setEnclosingType(c.type);
         } else {
             ((ClassType)sym.type).setEnclosingType(Type.noType);
@@ -2687,6 +2685,7 @@ public class ClassReader {
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
             boolean local = forceLocal =
+                    currentOwner.owner.kind != TYP ||
                     !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
@@ -3038,7 +3037,9 @@ public class ClassReader {
      *  `typevars'.
      */
     protected void enterTypevars(Symbol sym, Type t) {
-        if (t.getEnclosingType() != null) {
+        if (sym.owner.kind == MTH) {
+            enterTypevars(sym.owner, sym.owner.type);
+        } else if (t.getEnclosingType() != null) {
             if (!t.getEnclosingType().hasTag(TypeTag.NONE)) {
                 enterTypevars(sym.owner, t.getEnclosingType());
             }

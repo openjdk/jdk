@@ -159,7 +159,9 @@ public:
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
     decl(SVE2,          sve2,          28)    \
-    decl(A53MAC,        a53mac,        31)
+    decl(A53MAC,        a53mac,        31)    \
+    decl(ECV,           ecv,           32)    \
+    decl(WFXT,          wfxt,          33)
 
   enum Feature_Flag {
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
@@ -190,6 +192,8 @@ public:
   static bool supports_feature(uint64_t features, Feature_Flag flag) {
     return (features & BIT_MASK(flag)) != 0;
   }
+
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }

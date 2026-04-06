@@ -235,6 +235,7 @@ public:
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
 
+  static void check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) NOT_CDS_RETURN;
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,
                                            Handle protection_domain,
