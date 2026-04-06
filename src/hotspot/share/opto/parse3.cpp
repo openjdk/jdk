@@ -327,44 +327,47 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
 /**
  * Initialize the graph, equivalent to the following Java code:
  *
- * for (int index = 0; index < length1; index++)
- *   multi_array[index] = new array_klass[length2];
- *
- * The actual loop structure:
- *
- * if (length1 > 0) {
- *   int index = 0;
- *   do {
- *     multi_array[index] = new T[length2];
- *     index++;
- *   } while (index < length1);
- * }
- *
- * The corresponding C2 IR graph:
- *
- * CmpI(length1, 0) -> Bool(gt) -> If
- *   IfFalse => skip_ctrl
- *   IfTrue =>
- *     CastII(length2, POS) -> length2
- *     LoopNode(IfTrue, back_edge)
- *       Phi(LoopNode, 0,       next_index) -> index
- *       Phi(LoopNode, pre_mem, body_mem)
- *       Phi(LoopNode, pre_io,  body_io)
- *       AllocateArray(klass_1, length2) -> array
- *       StoreP(array_element_address(multi_array, index), array)
- *       AddI(index, 1) -> next_index
- *       CmpI(next_index, length1) -> Bool(lt) -> If
- *         IfTrue  => back_edge => LoopNode
- *         IfFalse => loop_exit
- * Region(skip_ctrl, loop_exit)
- *   Phi(Region, pre_mem, body_mem)
- *   Phi(Region, pre_io,  body_io)
+ *   multi_array = new T[length1][];
+ *   for (int index = 0; index < length1; index++) {
+ *     multi_array[index] = new array_klass[length2];
+ *   }
  */
-void Parse::init_array2d(Node* multi_array,
-                         ciArrayKlass* array_klass,
-                         Node* length1, Node* length2) {
+Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* length2) {
+
+  assert(length1 != nullptr && length2 != nullptr, "");
+  Node* multi_array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
 
   C->set_has_loops(true);
+
+  // The actual loop structure:
+  //
+  // if (length1 > 0) {
+  //   int index = 0;
+  //   do {
+  //     multi_array[index] = new T[length2];
+  //     index++;
+  //   } while (index < length1);
+  // }
+  //
+  // The corresponding C2 IR graph:
+  //
+  // CmpI(length1, 0) -> Bool(gt) -> If
+  //   IfFalse => skip_ctrl
+  //   IfTrue =>
+  //     CastII(length2, POS) -> length2
+  //     LoopNode(IfTrue, back_edge)
+  //       Phi(LoopNode, 0,       next_index) -> index
+  //       Phi(LoopNode, pre_mem, body_mem)
+  //       Phi(LoopNode, pre_io,  body_io)
+  //       AllocateArray(klass_1, length2) -> array
+  //       StoreP(array_element_address(multi_array, index), array)
+  //       AddI(index, 1) -> next_index
+  //       CmpI(next_index, length1) -> Bool(lt) -> If
+  //         IfTrue  => back_edge => LoopNode
+  //         IfFalse => loop_exit
+  // Region(skip_ctrl, loop_exit)
+  //   Phi(Region, pre_mem, body_mem)
+  //   Phi(Region, pre_io,  body_io)
 
   Node* i_init = _gvn.intcon(0);
   Node* cmp_init = _gvn.transform(new CmpINode(length1, i_init));
@@ -408,10 +411,11 @@ void Parse::init_array2d(Node* multi_array,
 
   Node* array = _gvn.transform(new_array(klass_node, length2, false));
 
-  store_to_memory(control(),
+  const TypeOopPtr* elemtype = _gvn.type(multi_array)->is_aryptr()->elem()->make_oopptr();
+  access_store_at(multi_array,
                   array_element_address(multi_array, index, T_OBJECT),
-                  array,
-                  T_OBJECT, MemNode::unordered, TypeAryPtr::OOPS, false, false, true);
+                  TypeAryPtr::OOPS,
+                  array, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
 
   Node* new_i = _gvn.transform(new AddINode(index, _gvn.intcon(1)));
   Node* cmp = _gvn.transform(new CmpINode(new_i, length1));
@@ -444,6 +448,8 @@ void Parse::init_array2d(Node* multi_array,
   set_control(exit_region);
   set_all_memory(exit_mem);
   set_i_o(exit_io);
+
+  return multi_array;
 }
 
 void Parse::do_multianewarray() {
@@ -507,12 +513,7 @@ void Parse::do_multianewarray() {
     Node* obj = nullptr;
     { PreserveReexecuteState preexecs(this);
       inc_sp(ndimensions);
-
-      Node* length1 = length[0];
-      Node* length2 = length[1];
-      assert(length1 != nullptr && length2 != nullptr, "");
-      obj = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
-      init_array2d(obj, array_klass, length1, length2);
+      obj = multianewarray2(array_klass, length[0], length[1]);
     }
     push(obj);
     return;
@@ -521,7 +522,7 @@ void Parse::do_multianewarray() {
   address fun = nullptr;
   switch (ndimensions) {
   case 1: ShouldNotReachHere(); break;
-  case 2: fun = OptoRuntime::multianewarray2_Java(); break;
+  case 2: ShouldNotReachHere(); break;
   case 3: fun = OptoRuntime::multianewarray3_Java(); break;
   case 4: fun = OptoRuntime::multianewarray4_Java(); break;
   case 5: fun = OptoRuntime::multianewarray5_Java(); break;

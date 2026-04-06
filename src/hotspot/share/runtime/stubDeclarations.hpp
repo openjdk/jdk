@@ -218,7 +218,6 @@
   do_stub(new_instance, 0, true, false)                                \
   do_stub(new_array, 0, true, false)                                   \
   do_stub(new_array_nozero, 0, true, false)                            \
-  do_stub(multianewarray2, 0, true, false)                             \
   do_stub(multianewarray3, 0, true, false)                             \
   do_stub(multianewarray4, 0, true, false)                             \
   do_stub(multianewarray5, 0, true, false)                             \
