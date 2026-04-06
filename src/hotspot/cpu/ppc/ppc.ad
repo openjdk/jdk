@@ -2716,12 +2716,7 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
-<<<<<<< HEAD
-    if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
-=======
-
     nodes->push(loadConLNodes._last);
->>>>>>> 1c23921c9e6 (rename node members)
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
