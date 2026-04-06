@@ -120,6 +120,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     private Accessible accessible;
 
     private AccessibleContext activeDescendant;
+    private AXChangeNotifier axChangeNotifier;
 
     private CAccessible(final Accessible accessible) {
         super(0L, true); // real pointer will be poked in by native
@@ -143,6 +144,11 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (ptr != 0) unregisterFromCocoaAXSystem(ptr);
         super.dispose();
 
+        AccessibleContext ax = accessible.getAccessibleContext();
+        if (ax != null) {
+            ax.removePropertyChangeListener(axChangeNotifier);
+        }
+
         AccessibleContext context = accessible.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
                 = AWTAccessor.getAccessibleContextAccessor();
@@ -157,7 +163,8 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     public void addNotificationListeners(Component c) {
         if (c instanceof Accessible) {
             AccessibleContext ac = ((Accessible)c).getAccessibleContext();
-            ac.addPropertyChangeListener(new AXChangeNotifier());
+             axChangeNotifier = new AXChangeNotifier();
+            ac.addPropertyChangeListener(axChangeNotifier);
         }
     }
 
