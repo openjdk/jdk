@@ -114,7 +114,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   mem_zap_end_padding(mem);
 
   oop arrayObj = cast_to_oop(mem);
-  if (heap->is_concurrent_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
+  if (heap->is_concurrent_young_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
     // Keep the obj alive because we don't know the progress of marking,
     // current concurrent marking have done and VM is calling safepoint for final mark.
     heap->keep_alive(arrayObj);
