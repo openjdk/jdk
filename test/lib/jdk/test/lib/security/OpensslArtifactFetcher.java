@@ -128,7 +128,7 @@ public class OpensslArtifactFetcher {
     }
 
     private static String getDefaultSystemOpensslPath(String version) {
-    String absolutePath = getOpenSslAbsolutePath();
+        String absolutePath = getOpenSslAbsolutePath();
         if (verifyOpensslVersion(absolutePath, version)) {
             return absolutePath;
         }
@@ -136,22 +136,22 @@ public class OpensslArtifactFetcher {
     }
 
     private static String getDefaultSystemOpensslPathWithProviderPathPresent(String version) {
-    String absolutePath = getDefaultSystemOpensslPath(version);
-    if(absolutePath != null && isProviderPathPresent(absolutePath) != null) {
-        return absolutePath;
+        String absolutePath = getDefaultSystemOpensslPath(version);
+        if (absolutePath != null && isProviderPathPresent(absolutePath) != null) {
+          return absolutePath;
         }
-    return null;
+        return null;
     }
 
     private static String getOpenSslAbsolutePath() {
         String absolutePath = null;
-    try {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
-        absolutePath=outputAnalyzer.getOutput();
-    } catch(Throwable t) {
-        t.printStackTrace();
-    }
-    return absolutePath;
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
+            absolutePath=outputAnalyzer.getOutput();
+        } catch(Throwable t) {
+            t.printStackTrace();
+        }
+        return absolutePath;
     }
 
     private static boolean verifyOpensslVersion(String path, String version) {
@@ -189,12 +189,12 @@ public class OpensslArtifactFetcher {
     }
 
     private static Path isProviderPathPresent(String opensslAbsolutePath) {
-    Path osslModulesPath = getProviderPath(opensslAbsolutePath);
+        Path osslModulesPath = getProviderPath(opensslAbsolutePath);
         if(Files.exists(osslModulesPath)) {
-        return osslModulesPath;
+             return osslModulesPath;
         } else {
-        return null;
-    }
+             return null;
+        }
     }
 
     public static String getTestOpensslBundleVersion() {
