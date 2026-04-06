@@ -2592,7 +2592,7 @@ encode %{
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
     address const_toc_addr;
     if (ra_->C->output()->in_scratch_emit_size()) {
-      __ addis($dst$$Register, R29_TOC, 0);
+      __ addis($dst$$Register, $toc$$Register, 0);
       __ ld($dst$$Register, 0, $dst$$Register);
       return;
     }
@@ -2621,7 +2621,7 @@ encode %{
 source %{
 
 typedef struct {
-  loadConLNode    *_small;
+  loadConLNode    *_load;
   MachNode        *_last;
 } loadConLNodesTuple;
 
@@ -2647,8 +2647,8 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
   ra_->set_pair(m2->_idx, reg_second, reg_first);
 
   // Create result.
-  nodes._small = m2;
-  nodes._last = nodes._small;
+  nodes._load = m2;
+  nodes._last = nodes._load;
   assert(m2->bottom_type()->isa_long(), "must be long");
 
 
@@ -2658,7 +2658,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
 typedef struct {
   mtvsrdNode      *_moved;
   xxspltdNode     *_replicated;
-  loadConLNode    *_small;
+  loadConLNode    *_load;
   MachNode        *_last;
 } loadConLReplicatedNodesTuple;
 
@@ -2695,7 +2695,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
   ra_->set_pair(m2->_idx, reg_second, reg_first);
 
   // Create result.
-  nodes._small = m2;
+  nodes._load = m2;
   nodes._moved = m3;
   nodes._replicated = m4;
   nodes._last = nodes._replicated;
@@ -2716,7 +2716,12 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
+<<<<<<< HEAD
     if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
+=======
+
+    nodes->push(loadConLNodes._last);
+>>>>>>> 1c23921c9e6 (rename node members)
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
@@ -3083,7 +3088,7 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
-    if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
+    nodes->push(loadConLNodes._last);
     assert(nodes->length() >= 1, "must have created at least 1 node");
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
   %}
@@ -3101,9 +3106,9 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
-    if (loadConLNodes._small) { nodes->push(loadConLNodes._small); }
+    if (loadConLNodes._load) { nodes->push(loadConLNodes._load); }
     if (loadConLNodes._moved)    { nodes->push(loadConLNodes._moved); }
-    if (loadConLNodes._last)     { nodes->push(loadConLNodes._last); }
+    nodes->push(loadConLNodes._last);
 
     assert(nodes->length() >= 1, "must have created at least 1 node");
   %}
@@ -3294,7 +3299,7 @@ encode %{
     }
 
     // Remember nodes loading the inline cache into r19.
-    call->_load_ic_node    = loadConLNodes_IC._small;
+    call->_load_ic_node    = loadConLNodes_IC._load;
 
     // Operands for new nodes.
     call->_opnds[0] = _opnds[0];
@@ -3304,7 +3309,7 @@ encode %{
     assert(Matcher::inline_cache_reg() == OptoReg::Name(R19_num), "ic reg should be R19");
 
     // Push new nodes.
-    if (loadConLNodes_IC._last)     nodes->push(loadConLNodes_IC._last);
+    nodes->push(loadConLNodes_IC._last);
     nodes->push(call);
   %}
 
@@ -3428,7 +3433,7 @@ encode %{
       loadConLNodes_Env = loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) fd->env()),
                                                     OptoReg::Name(R11_H_num), OptoReg::Name(R11_num));
     } else {
-      loadConLNodes_Env._small    = nullptr;
+      loadConLNodes_Env._load    = nullptr;
       loadConLNodes_Env._last = new loadConL16Node();
       loadConLNodes_Env._last->_opnds[0] = new iRegLdstOper();
       loadConLNodes_Env._last->_opnds[1] = new immL16Oper(0);
