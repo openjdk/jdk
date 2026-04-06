@@ -74,9 +74,6 @@ define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
 define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
-
 define_pd_global(bool, TrapBasedRangeChecks,         false); // Not needed.
 
 #endif // CPU_RISCV_C2_GLOBALS_RISCV_HPP

@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class IntVectorMax extends IntVector {
     static final IntSpecies VSPECIES =
         (IntSpecies) IntVector.SPECIES_MAX;
@@ -371,7 +371,7 @@ final class IntVectorMax extends IntVector {
     @Override
     @ForceInline
     public final IntShuffleMax toShuffle() {
-        return (IntShuffleMax) toShuffle(vspecies(), false);
+        return (IntShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -568,7 +568,7 @@ final class IntVectorMax extends IntVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class IntMaskMax extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -616,7 +616,7 @@ final class IntVectorMax extends IntVector {
 
         @Override
         IntMaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -626,7 +626,7 @@ final class IntVectorMax extends IntVector {
 
         @Override
         IntMaskMax bOp(VectorMask<Integer> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((IntMaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -776,16 +776,16 @@ final class IntVectorMax extends IntVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, IntMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((IntMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((IntMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, IntMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((IntMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((IntMaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -793,7 +793,7 @@ final class IntVectorMax extends IntVector {
         static IntMaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(IntMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final IntMaskMax  TRUE_MASK = new IntMaskMax(true);
         private static final IntMaskMax FALSE_MASK = new IntMaskMax(false);
@@ -812,7 +812,7 @@ final class IntVectorMax extends IntVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class IntShuffleMax extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -864,7 +864,7 @@ final class IntVectorMax extends IntVector {
 
         @Override
         IntVectorMax toBitsVector0() {
-            return ((IntVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((IntVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -889,7 +889,7 @@ final class IntVectorMax extends IntVector {
         @ForceInline
         public final IntMaskMax laneIsValid() {
             return (IntMaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -897,7 +897,7 @@ final class IntVectorMax extends IntVector {
         public final IntShuffleMax rearrange(VectorShuffle<Integer> shuffle) {
             IntShuffleMax concreteShuffle = (IntShuffleMax) shuffle;
             return (IntShuffleMax) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -910,7 +910,7 @@ final class IntVectorMax extends IntVector {
                 v = (IntVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (IntShuffleMax) v.toShuffle(vspecies(), false);
+            return (IntShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static int[] prepare(int[] indices, int offset) {

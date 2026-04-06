@@ -1170,9 +1170,10 @@ import java.util.Arrays;
  * @param <E> the boxed version of {@code ETYPE},
  *           the element type of a vector
  *
+ * @sealedGraph
  */
 @SuppressWarnings("exports")
-public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> {
+public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> permits AbstractVector {
 
     // This type is sealed within its package.
     // Users cannot roll their own vector types.

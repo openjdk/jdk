@@ -833,7 +833,7 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * Captured state can be stored in, or retrieved from the capture state segment by
          * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
-         * Some functions require this state the be initialized to a particular value before
+         * Some functions require this state to be initialized to a particular value before
          * invoking the downcall.
          * <p>
          * The following example demonstrates the use of this linker option:
