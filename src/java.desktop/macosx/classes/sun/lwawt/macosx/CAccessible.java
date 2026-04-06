@@ -102,8 +102,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                     Component comp = (Component) evt.getSource();
                     Accessible ax = comp instanceof Accessible z ? z : null;
                     if (ax == null) {
-                        // it shouldn't be possible to get here, but just in case
-                        // let's avoid a NPE
+                        // it shouldn't be possible to get here, but just in case:
                         return;
                     }
                     if (evt.getNewValue() == null) {
