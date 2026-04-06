@@ -1187,7 +1187,7 @@ class CallStubImpl {
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 5;
+    return 5; // metadata; call dest; trampoline address; trampoline destination; trampoline_owner_metadata
   }
 };
 
