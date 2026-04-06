@@ -1619,6 +1619,8 @@ public class PathOps {
         // startsWith
         test("/")
             .starts("/")
+            .starts("//")
+            .starts("///")
             .notStarts("")
             .notStarts("/foo");
         test("/foo")
