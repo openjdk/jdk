@@ -193,6 +193,8 @@ public:
     return (features & BIT_MASK(flag)) != 0;
   }
 
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
+
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
   static int cpu_model2()                     { return _model2; }
