@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.TrustFinalFields;
 abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
         implements VectorSpecies<E>
         permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
-        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies {
+        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies, Float16Vector.Float16Species {
     final VectorShape vectorShape;
     final LaneType laneType;
     final int laneCount;

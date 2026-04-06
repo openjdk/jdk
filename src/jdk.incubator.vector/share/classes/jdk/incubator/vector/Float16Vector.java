@@ -52,7 +52,8 @@ import static java.lang.Float.*;
  * {@code short} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class Float16Vector extends AbstractVector<Float16> {
+public abstract sealed class Float16Vector extends AbstractVector<Float16>
+         permits Float16Vector64, Float16Vector128, Float16Vector256, Float16Vector512, Float16VectorMax {
 
     Float16Vector(short[] vec) {
         super(vec);

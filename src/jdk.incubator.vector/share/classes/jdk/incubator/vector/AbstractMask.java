@@ -36,7 +36,9 @@ abstract sealed class AbstractMask<E> extends VectorMask<E>
         FloatVector64.FloatMask64, FloatVector128.FloatMask128, FloatVector256.FloatMask256, FloatVector512.FloatMask512, FloatVectorMax.FloatMaskMax,
         IntVector64.IntMask64, IntVector128.IntMask128, IntVector256.IntMask256, IntVector512.IntMask512, IntVectorMax.IntMaskMax,
         LongVector64.LongMask64, LongVector128.LongMask128, LongVector256.LongMask256, LongVector512.LongMask512, LongVectorMax.LongMaskMax,
-        ShortVector64.ShortMask64, ShortVector128.ShortMask128, ShortVector256.ShortMask256, ShortVector512.ShortMask512, ShortVectorMax.ShortMaskMax {
+        ShortVector64.ShortMask64, ShortVector128.ShortMask128, ShortVector256.ShortMask256, ShortVector512.ShortMask512, ShortVectorMax.ShortMaskMax,
+        Float16Vector64.Float16Mask64, Float16Vector128.Float16Mask128, Float16Vector256.Float16Mask256, Float16Vector512.Float16Mask512,
+        Float16VectorMax.Float16MaskMax {
     AbstractMask(boolean[] bits) {
         super(bits);
     }

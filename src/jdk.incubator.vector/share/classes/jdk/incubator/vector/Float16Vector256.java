@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class Float16Vector256 extends Float16Vector {
     static final Float16Species VSPECIES =
         (Float16Species) Float16Vector.SPECIES_256;
@@ -370,7 +370,7 @@ final class Float16Vector256 extends Float16Vector {
     @Override
     @ForceInline
     public final Float16Shuffle256 toShuffle() {
-        return (Float16Shuffle256) toShuffle(vspecies(), false);
+        return (Float16Shuffle256) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -599,7 +599,7 @@ final class Float16Vector256 extends Float16Vector {
     }
 
     // Mask
-
+    @ValueBased
     static final class Float16Mask256 extends AbstractMask<Float16> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -647,7 +647,7 @@ final class Float16Vector256 extends Float16Vector {
 
         @Override
         Float16Mask256 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -657,7 +657,7 @@ final class Float16Vector256 extends Float16Vector {
 
         @Override
         Float16Mask256 bOp(VectorMask<Float16> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((Float16Mask256)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -807,16 +807,16 @@ final class Float16Vector256 extends Float16Vector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, Float16Mask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Float16Mask256)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((Float16Mask256)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, Float16Mask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Float16Mask256)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((Float16Mask256)m).getBits()));
         }
 
         @ForceInline
@@ -824,7 +824,7 @@ final class Float16Vector256 extends Float16Vector {
         static Float16Mask256 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Float16Mask256.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float16Mask256  TRUE_MASK = new Float16Mask256(true);
         private static final Float16Mask256 FALSE_MASK = new Float16Mask256(false);
@@ -832,7 +832,7 @@ final class Float16Vector256 extends Float16Vector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class Float16Shuffle256 extends AbstractShuffle<Float16> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -873,7 +873,7 @@ final class Float16Vector256 extends Float16Vector {
         @Override
         @ForceInline
         public Float16Vector256 toVector() {
-            return (Float16Vector256) toBitsVector().castShape(vspecies(), 0);
+            return (Float16Vector256) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -884,7 +884,7 @@ final class Float16Vector256 extends Float16Vector {
 
         @Override
         ShortVector256 toBitsVector0() {
-            return ((ShortVector256) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ShortVector256) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -923,7 +923,7 @@ final class Float16Vector256 extends Float16Vector {
         @ForceInline
         public final Float16Mask256 laneIsValid() {
             return (Float16Mask256) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -931,7 +931,7 @@ final class Float16Vector256 extends Float16Vector {
         public final Float16Shuffle256 rearrange(VectorShuffle<Float16> shuffle) {
             Float16Shuffle256 concreteShuffle = (Float16Shuffle256) shuffle;
             return (Float16Shuffle256) toBitsVector().rearrange(concreteShuffle.cast(ShortVector.SPECIES_256))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -944,7 +944,7 @@ final class Float16Vector256 extends Float16Vector {
                 v = (ShortVector256) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (Float16Shuffle256) v.toShuffle(vspecies(), false);
+            return (Float16Shuffle256) v.toShuffle(VSPECIES, false);
         }
 
         private static short[] prepare(int[] indices, int offset) {

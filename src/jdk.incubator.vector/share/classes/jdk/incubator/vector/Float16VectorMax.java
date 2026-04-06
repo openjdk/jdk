@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class Float16VectorMax extends Float16Vector {
     static final Float16Species VSPECIES =
         (Float16Species) Float16Vector.SPECIES_MAX;
@@ -370,7 +370,7 @@ final class Float16VectorMax extends Float16Vector {
     @Override
     @ForceInline
     public final Float16ShuffleMax toShuffle() {
-        return (Float16ShuffleMax) toShuffle(vspecies(), false);
+        return (Float16ShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -568,7 +568,7 @@ final class Float16VectorMax extends Float16Vector {
     }
 
     // Mask
-
+    @ValueBased
     static final class Float16MaskMax extends AbstractMask<Float16> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -616,7 +616,7 @@ final class Float16VectorMax extends Float16Vector {
 
         @Override
         Float16MaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -626,7 +626,7 @@ final class Float16VectorMax extends Float16Vector {
 
         @Override
         Float16MaskMax bOp(VectorMask<Float16> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((Float16MaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -776,16 +776,16 @@ final class Float16VectorMax extends Float16Vector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, Float16MaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Float16MaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((Float16MaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, Float16MaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Float16MaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((Float16MaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -793,7 +793,7 @@ final class Float16VectorMax extends Float16Vector {
         static Float16MaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(Float16MaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float16MaskMax  TRUE_MASK = new Float16MaskMax(true);
         private static final Float16MaskMax FALSE_MASK = new Float16MaskMax(false);
@@ -801,7 +801,7 @@ final class Float16VectorMax extends Float16Vector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class Float16ShuffleMax extends AbstractShuffle<Float16> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -842,7 +842,7 @@ final class Float16VectorMax extends Float16Vector {
         @Override
         @ForceInline
         public Float16VectorMax toVector() {
-            return (Float16VectorMax) toBitsVector().castShape(vspecies(), 0);
+            return (Float16VectorMax) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -853,7 +853,7 @@ final class Float16VectorMax extends Float16Vector {
 
         @Override
         ShortVectorMax toBitsVector0() {
-            return ((ShortVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ShortVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -892,7 +892,7 @@ final class Float16VectorMax extends Float16Vector {
         @ForceInline
         public final Float16MaskMax laneIsValid() {
             return (Float16MaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -900,7 +900,7 @@ final class Float16VectorMax extends Float16Vector {
         public final Float16ShuffleMax rearrange(VectorShuffle<Float16> shuffle) {
             Float16ShuffleMax concreteShuffle = (Float16ShuffleMax) shuffle;
             return (Float16ShuffleMax) toBitsVector().rearrange(concreteShuffle.cast(ShortVector.SPECIES_MAX))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -913,7 +913,7 @@ final class Float16VectorMax extends Float16Vector {
                 v = (ShortVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (Float16ShuffleMax) v.toShuffle(vspecies(), false);
+            return (Float16ShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static short[] prepare(int[] indices, int offset) {
