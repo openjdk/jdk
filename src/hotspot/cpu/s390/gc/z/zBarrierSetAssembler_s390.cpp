@@ -75,9 +75,9 @@ private:
     //TODO: macroAssembler_s390.cpp:5921 save_volatile_regs
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (16 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
-    int offset = 0;
+    int offset = 160;
 
-    __ push_frame(_nbytes_save);          offset += 8;
+    __ push_frame_abi160(_nbytes_save);   offset += 8;
     __ save_return_pc();                  offset += 8;
     __ z_stmg(Z_R0, Z_R1, offset, Z_SP);  offset += 2 * 8;
     if(preserve_R2) {
@@ -97,7 +97,7 @@ private:
   void restore() {
     MacroAssembler* masm = _masm;
     bool restore_R2 = _result != Z_R2;
-    int offset = 8;
+    int offset = 168;
 
     __ restore_return_pc();               offset += 8;
     __ z_lmg(Z_R0, Z_R1, offset, Z_SP);   offset += 2 * 8;
@@ -202,18 +202,26 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
       __ z_lgr(Z_ARG1, dst);
     }
     // RuntimeTODO: Why are we storing the contents af temp registers in ARG2, all other architectures have done a similiar thing
-    __ z_lay(Z_ARG2, scratch);
+    __ z_lgr(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
   }
 
   // Slow-path has already uncolored
+  if (L_handle_null != nullptr) {
+    __ z_ltgr(dst, dst);
+    __ z_bre(*L_handle_null);
+  }
   __ z_brul(done);
 
   __ bind(uncolor);
 
   // Remove the color bits
   __ z_srlg(dst, dst, ZPointerLoadShift);
+  if (L_handle_null != nullptr) {
+    __ z_ltgr(dst, dst);
+    __ z_bre(*L_handle_null);
+  }
 
   __ bind(done);
 }
