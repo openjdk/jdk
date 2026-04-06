@@ -69,9 +69,6 @@
  */
 
 /**
- * Validates: Requirements 3.3, 6.1, 6.2, 6.3, 9.2, 10.1, 10.2, 10.3, 10.4
- *
- * Property 1: Zero-initialization completeness across all array types and sizes.
  *
  * Allocates large byte[], int[], long[], and Object[] arrays whose sizes span
  * multiple 64K-word segments (~100MB each), then verifies every element is

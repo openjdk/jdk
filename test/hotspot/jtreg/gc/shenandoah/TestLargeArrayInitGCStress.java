@@ -70,9 +70,6 @@
  */
 
 /**
- * Validates: Requirements 8.2, 8.3, 10.1, 10.2, 10.3, 10.4
- *
- * Property 3: Correct object metadata after initialization.
  *
  * Allocates large arrays of various types under GC stress (aggressive heuristics,
  * tight 256MB heap) and verifies that after each allocation:

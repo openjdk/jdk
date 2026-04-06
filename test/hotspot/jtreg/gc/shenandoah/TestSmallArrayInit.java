@@ -45,9 +45,6 @@
  */
 
 /**
- * Validates: Requirements 2.1, 2.2, 2.3
- *
- * Property 2: Behavioral equivalence for small arrays.
  *
  * For arrays with word_size &lt;= 64K words (the segment size threshold),
  * ShenandoahObjArrayAllocator delegates to ObjArrayAllocator::initialize().
