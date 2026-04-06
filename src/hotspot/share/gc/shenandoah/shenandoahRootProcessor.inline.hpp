@@ -144,16 +144,20 @@ public:
 class ShenandoahInvisibleRootsMarkClosure : public ThreadClosure {
 public:
   void do_thread(Thread* t) {
+    assert_at_safepoint();
+
     HeapWord* invisible_root = ShenandoahThreadLocalData::get_invisible_root(t);
     if (invisible_root == nullptr) return;
     size_t invisible_root_word_size = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
 
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* const marking_context = heap->marking_context();
+    // Mark the invisible root if it is not marked.
     if (!marking_context->is_marked(invisible_root)) {
       bool was_upgraded = false;
       if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
 
+      // Update region liveness data
       ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
       if (region->is_regular() || region->is_regular_pinned()) {
         assert(!ShenandoahHeapRegion::requires_humongous(invisible_root_word_size), "Must not be humongous.");

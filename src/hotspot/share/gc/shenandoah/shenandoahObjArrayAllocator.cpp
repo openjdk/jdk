@@ -67,12 +67,12 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const size_t process_start = process_start_offset_in_bytes / BytesPerWord;
   const size_t process_size = _word_size - process_start;
 
-  // pin the region before segmented clearing avoid moving the object until it is done
+  // Pin the region before segmented clearing avoid moving the object until it is done
   ShenandoahHeapRegion* region = heap->heap_region_containing(mem);
   region->record_pin();
 
-  // Always initialize the mem with primitive array so GC won't look into the elements in the array.
-  // For obj array, the header will be rewritten to object array after clearing the memory.
+  // Always initialize the mem with primitive array first so GC won't look into the elements in the array.
+  // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
   int filling_array_length = _length;
   if (element_type == T_OBJECT || element_type == T_ARRAY) {
@@ -82,6 +82,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   ObjArrayAllocator filling_array_allocator(filling_klass, _word_size,  filling_array_length , /* do_zero */ false);
   filling_array_allocator.initialize(mem);
 
+  // Invisible roots will be scanned and marked at the end of marking.
   ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
 
   // Handle potential 4-byte alignment gap before array data
@@ -113,7 +114,9 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   mem_zap_end_padding(mem);
 
   oop arrayObj = cast_to_oop(mem);
-  if (heap->is_concurrent_young_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
+  if (heap->is_concurrent_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
+    // Keep the obj alive because we don't know the progress of marking,
+    // current concurrent marking have done and VM is calling safepoint for final mark.
     heap->keep_alive(arrayObj);
   }
   ShenandoahThreadLocalData::clear_invisible_root(_thread);
