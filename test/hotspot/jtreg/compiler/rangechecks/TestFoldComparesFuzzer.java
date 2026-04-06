@@ -376,11 +376,6 @@ public class TestFoldComparesFuzzer {
         private final Comparison c1 = withAnd ? c1Permuted : c1Permuted.negateCmp();
         private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
 
-        // TODO: find a way to fuzz around interesting n ranges.
-        // Ok, but now the problem seems to be with warmup, and strange input ranges.
-        // Do we care? I don't know. But I need to investigate a bit more, I don't want random failures.
-        // With warmup, we need to make sure that both ifs are encountered. That could be tricky.
-
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
             let("lo", lo),
             let("hi", hi),
@@ -402,106 +397,117 @@ public class TestFoldComparesFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
 
         public Template.ZeroArgs getIRTemplate(boolean withWarmup) {
-            String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
-            String comment;
+            return Template.make(() -> {
+                String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
+                String comment;
 
-            if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
-                // a)   (n >  lo && n <  hi)
-                if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
-                    cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
-                    comment = "a) one or both checks fold at parse time";
-                } else if (lo < hi && lo+2 == hi) {
-                    // Not yet folded at parsing, because lo != hi
-                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                    comment = "a) replace with CmpU (single element) -> CmpI eq";
-                } else if (lo < hi && lo+1 == hi) {
-                    // Not yet folded at parsing, because lo != hi
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "a) impossible condition (exact) -> fold away";
-                } else if (lo < hi) {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "a) replace with CmpU (non-empty)";
-                } else if (lo == hi) {
-                    // same CmpI at parse time
-                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "a) impossible condition -> fold away";
+                if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
+                    // a)   (n >  lo && n <  hi)
+                    if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
+                        comment = "a) one or both checks fold at parse time";
+                    } else if (lo < hi && lo+2 == hi) {
+                        // Not yet folded at parsing, because lo != hi
+                        // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                        comment = "a) replace with CmpU (single element) -> CmpI eq";
+                    } else if (lo < hi && lo+1 == hi) {
+                        // Not yet folded at parsing, because lo != hi
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "a) impossible condition (exact) -> fold away";
+                    } else if (lo < hi) {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "a) replace with CmpU (non-empty)";
+                    } else if (lo == hi) {
+                        // same CmpI at parse time
+                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "a) impossible condition -> fold away";
+                    } else {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "a) impossible condition -> fold away";
+                    }
+                } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
+                    // b)   (n >  lo && n <= hi)
+                    if (lo == Integer.MAX_VALUE || hi == Integer.MAX_VALUE) {
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
+                        comment = "b) one or both checks fold at parse time";
+                    } else if (lo < hi && lo+1 == hi) {
+                        // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                        comment = "b) replace with CmpU (single element) -> CmpI eq";
+                    } else if (lo < hi && lo+1 < hi) {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "b) replace with CmpU (non-empty)";
+                    } else if (lo == hi) {
+                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "b) impossible condition (exact) -> fold away";
+                    } else {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "b) impossible condition -> fold away";
+                    }
+                } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
+                    // c)   (n >= lo && n <  hi)
+                    if (lo == Integer.MIN_VALUE || hi == Integer.MIN_VALUE) {
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
+                        comment = "c) one or both checks fold at parse time";
+                    } else if (lo < hi && lo+1 == hi) {
+                        // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                        comment = "c) replace with CmpU (single element) -> CmpI eq";
+                    } else if (lo < hi && lo+1 < hi) {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "c) replace with CmpU (non-empty)";
+                    } else if (lo == hi) {
+                        // RegionNode::optimize_trichotomy: can fold (n >= x && n < x) -> never
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "c) impossible condition (exact) -> fold away";
+                    } else {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "c) impossible condition -> fold away";
+                    }
+                } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
+                    // d)   (n >= lo && n <= hi)
+                    if (lo == Integer.MIN_VALUE || hi == Integer.MAX_VALUE) {
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
+                        comment = "d) one or both checks fold at parse time";
+                    } else if (lo == hi) {
+                        // same CmpI at parse time
+                        // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
+                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
+                        comment = "d) replace with CmpU (single element) -> CmpI eq";
+                    } else if (lo < hi) {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "d) replace with CmpU (non-empty)";
+                    } else {
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
+                        comment = "d) impossible condition -> fold away";
+                    }
                 } else {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "a) impossible condition -> fold away";
+                    throw new RuntimeException("should not be generated: " + c_lo + " and " + c_hi);
                 }
-            } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
-                // b)   (n >  lo && n <= hi)
-                if (lo == Integer.MAX_VALUE || hi == Integer.MAX_VALUE) {
-                    cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
-                    comment = "b) one or both checks fold at parse time";
-                } else if (lo < hi && lo+1 == hi) {
-                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                    comment = "b) replace with CmpU (single element) -> CmpI eq";
-                } else if (lo < hi && lo+1 < hi) {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "b) replace with CmpU (non-empty)";
-                } else if (lo == hi) {
-                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "b) impossible condition (exact) -> fold away";
-                } else {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "b) impossible condition -> fold away";
-                }
-            } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
-                // c)   (n >= lo && n <  hi)
-                if (lo == Integer.MIN_VALUE || hi == Integer.MIN_VALUE) {
-                    cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
-                    comment = "c) one or both checks fold at parse time";
-                } else if (lo < hi && lo+1 == hi) {
-                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                    comment = "c) replace with CmpU (single element) -> CmpI eq";
-                } else if (lo < hi && lo+1 < hi) {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "c) replace with CmpU (non-empty)";
-                } else if (lo == hi) {
-                    // RegionNode::optimize_trichotomy: can fold (n >= x && n < x) -> never
-                    cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "c) impossible condition (exact) -> fold away";
-                } else {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "c) impossible condition -> fold away";
-                }
-            } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
-                // d)   (n >= lo && n <= hi)
-                if (lo == Integer.MIN_VALUE || hi == Integer.MAX_VALUE) {
-                    cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
-                    comment = "d) one or both checks fold at parse time";
-                } else if (lo == hi) {
-                    // same CmpI at parse time
-                    // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                    cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                    comment = "d) replace with CmpU (single element) -> CmpI eq";
-                } else if (lo < hi) {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
-                    comment = "d) replace with CmpU (non-empty)";
-                } else {
-                    cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
-                    comment = "d) impossible condition -> fold away";
-                }
-            } else {
-                throw new RuntimeException("should not be generated: " + c_lo + " and " + c_hi);
-            }
 
-            return Template.make(() -> scope(
-                let("IP", cmpIParse),
-                let("UP", cmpUParse),
-                let("IF", cmpIFinal),
-                let("UF", cmpUFinal),
-                let("comment", comment),
-                """
-                // #comment
-                @IR(counts = {IRNode.CMP_I, "#IP", IRNode.CMP_U, "#UP"}, phase = CompilePhase.AFTER_PARSING)
-                @IR(counts = {IRNode.CMP_I, "#IF", IRNode.CMP_U, "#UF"})
-                """
-            ));
+                // All the precise counting above assumes that both ifs get compiled, and hence
+                // both CmpI are generated. But unstable-if could speculate that the first if
+                // always goes away from the second if. Still, we know that we always at least
+                // start out with at least one CmpI, and end up with at most one CmpI or CmpU.
+                if (withWarmup) {
+                    cmpIParse = "> 0"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "< 2";
+                    comment = "with warmup: unstable-if makes precise counting hard.";
+                }
+
+                return scope(
+                    let("IP", cmpIParse),
+                    let("UP", cmpUParse),
+                    let("IF", cmpIFinal),
+                    let("UF", cmpUFinal),
+                    let("comment", comment),
+                    """
+                    // #comment
+                    @IR(counts = {IRNode.CMP_I, "#IP", IRNode.CMP_U, "#UP"}, phase = CompilePhase.AFTER_PARSING)
+                    @IR(counts = {IRNode.CMP_I, "#IF", IRNode.CMP_U, "#UF"})
+                    """
+                );
+            });
         }
 
         @Override
