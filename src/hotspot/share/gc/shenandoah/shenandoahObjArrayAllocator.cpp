@@ -40,10 +40,6 @@ ShenandoahObjArrayAllocator::ShenandoahObjArrayAllocator(
     Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)
   : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
-void ShenandoahObjArrayAllocator::yield_for_safepoint() const {
-  ThreadBlockInVM tbivm(JavaThread::cast(_thread));
-}
-
 oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // A max segment size of 64K was chosen because microbenchmarking
   // suggested that it offered a good trade-off between allocation
@@ -85,38 +81,32 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // Invisible roots will be scanned and marked at the end of marking.
   ShenandoahThreadLocalData::set_invisible_root(_thread, mem, _word_size);
 
-  // Handle potential 4-byte alignment gap before array data
-  if (process_start_offset_in_bytes != base_offset_in_bytes) {
-    assert(process_start_offset_in_bytes - base_offset_in_bytes == 4, "Must be 4-byte aligned");
-    *reinterpret_cast<int*>(reinterpret_cast<char*>(mem) + base_offset_in_bytes) = 0;
+  {
+    // The mem has been initialized as primitive array, the entire clearing work is safe for safepoint
+    ThreadBlockInVM tbivm(JavaThread::cast(_thread)); // Allow safepoint to proceed.
+    // Handle potential 4-byte alignment gap before array data
+    if (process_start_offset_in_bytes != base_offset_in_bytes) {
+      assert(process_start_offset_in_bytes - base_offset_in_bytes == 4, "Must be 4-byte aligned");
+      *reinterpret_cast<int*>(reinterpret_cast<char*>(mem) + base_offset_in_bytes) = 0;
+    }
+
+    Copy::zero_to_words(mem + process_start, process_size);
+    // reference array, header need to be overridden to its own.
+    if (element_type == T_OBJECT || element_type == T_ARRAY) {
+      assert(_length >= 0, "length should be non-negative");
+      arrayOopDesc::set_length(mem, _length);
+      finish(mem);
+    }
+
+    // zap paddings after setting correct klass
+    mem_zap_start_padding(mem);
+    mem_zap_end_padding(mem);
   }
-
-  // Segmented clearing with safepoint yields
-  for (size_t processed = 0; processed < process_size; processed += segment_max) {
-    HeapWord* const start = mem + process_start + processed;
-    const size_t remaining = process_size - processed;
-    const size_t segment = MIN2(remaining, segment_max);
-
-    Copy::zero_to_words(start, segment);
-
-    yield_for_safepoint();
-  }
-
-  // reference array, header need to be overridden to its own.
-  if (element_type == T_OBJECT || element_type == T_ARRAY) {
-    assert(_length >= 0, "length should be non-negative");
-    arrayOopDesc::set_length(mem, _length);
-    finish(mem);
-  }
-
-  // zap paddings after setting correct klass
-  mem_zap_start_padding(mem);
-  mem_zap_end_padding(mem);
 
   oop arrayObj = cast_to_oop(mem);
   if (heap->is_concurrent_young_mark_in_progress() && !heap->marking_context()->allocated_after_mark_start(arrayObj)) {
     // Keep the obj alive because we don't know the progress of marking,
-    // current concurrent marking have done and VM is calling safepoint for final mark.
+    // current concurrent marking could have done and VM is calling safepoint for final mark.
     heap->keep_alive(arrayObj);
   }
   ShenandoahThreadLocalData::clear_invisible_root(_thread);

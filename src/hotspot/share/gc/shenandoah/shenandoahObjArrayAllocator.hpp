@@ -32,9 +32,6 @@ private:
   // Override: segmented clearing with safepoint yields for large arrays
   oop initialize(HeapWord* mem) const override;
 
-  // Transitions thread to blocked state, allowing pending safepoints to proceed
-  void yield_for_safepoint() const;
-
 public:
   ShenandoahObjArrayAllocator(Klass* klass, size_t word_size, int length,
                                bool do_zero, Thread* thread);
