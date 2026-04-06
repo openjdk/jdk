@@ -3550,7 +3550,10 @@ public class Check {
                 if (s.kind == PCK)
                     applicableTargets.add(names.PACKAGE);
             } else if (target == names.TYPE_USE) {
-                if (s.kind == VAR && s.owner.kind == MTH && s.type.hasTag(NONE)) {
+                if (s.kind == VAR &&
+                    (s.flags() & Flags.VAR_VARIABLE) != 0 &&
+                    (!Feature.TYPE_ANNOTATIONS_ON_VAR_LAMBDA_PARAMETER.allowedInSource(source) ||
+                     ((s.flags() & Flags.LAMBDA_PARAMETER) == 0))) {
                     //cannot type annotate implicitly typed locals
                     continue;
                 } else if (s.kind == TYP || s.kind == VAR ||
@@ -5603,8 +5606,8 @@ public class Check {
             }
             case JCVariableDecl variableDecl -> {
                 if (variableDecl.vartype != null &&
-                        (variableDecl.sym.flags_field & RECORD) == 0 ||
-                        (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                        ((variableDecl.sym.flags_field & RECORD) == 0 ||
+                         (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0)) {
                     /* we don't want to warn twice so if this variable is a compiler generated parameter of
                      * a canonical record constructor, we don't want to issue a warning as we will warn the
                      * corresponding compiler generated private record field anyways

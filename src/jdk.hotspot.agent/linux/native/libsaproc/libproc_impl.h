@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ struct core_data {
    // part of the class sharing workaround
    int                classes_jsa_fd; // file descriptor of class share archive
    uintptr_t          dynamic_addr;  // address of dynamic section of a.out
+   uintptr_t          vdso_addr;     // address of vDSO
+   off_t              vdso_offset;   // offset of vDSO in core
+   size_t             vdso_size;     // size of vDSO
    uintptr_t          ld_base_addr;  // base address of ld.so
    size_t             num_maps;  // number of maps.
    map_info*          maps;      // maps in a linked list
