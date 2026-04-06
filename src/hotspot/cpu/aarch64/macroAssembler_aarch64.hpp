@@ -1628,6 +1628,9 @@ public:
           const FloatRegister (&stateVectors)[16], int idx1, int idx2,
           int idx3, int idx4);
 
+  void neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                          FloatRegister src, int lshift, int rshift);
+
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
 
