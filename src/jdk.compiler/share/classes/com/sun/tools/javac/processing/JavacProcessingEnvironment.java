@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -991,6 +992,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** The set of module-info files to be processed this round. */
         List<ModuleSymbol> moduleInfoFiles;
 
+        /** All source files from this and previous rounds. */
+        Set<JavaFileObject> cumulativeSourceFiles;
+
         /** Create a round (common code). */
         private Round(int number, Set<JCCompilationUnit> treesToClean,
                 Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
@@ -1019,7 +1023,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             this(1, treesToClean, deferredDiagnosticHandler);
             this.roots = roots;
             genClassFiles = new HashMap<>();
-
+            cumulativeSourceFiles = roots.stream().map(JCCompilationUnit::getSourceFile).collect(Collectors.toSet());
             // The reverse() in the following line is to maintain behavioural
             // compatibility with the previous revision of the code. Strictly speaking,
             // it should not be necessary, but a javah golden file test fails without it.
@@ -1035,14 +1039,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Create a new round. */
         private Round(Round prev,
-                Set<JavaFileObject> newSourceFiles, Map<ModuleSymbol, Map<String,JavaFileObject>> newClassFiles) {
+                      Set<JavaFileObject> sourceFiles, Map<ModuleSymbol, Map<String,JavaFileObject>> newClassFiles) {
             this(prev.number+1, prev.treesToClean, null);
             prev.newRound();
             this.genClassFiles = prev.genClassFiles;
 
+            this.cumulativeSourceFiles = new HashSet<>(prev.cumulativeSourceFiles);
+            this.cumulativeSourceFiles.addAll(sourceFiles);
             //parse the generated files even despite errors reported so far, to eliminate
             //recoverable errors related to the type declared in the generated files:
-            List<JCCompilationUnit> parsedFiles = compiler.parseFiles(newSourceFiles, true);
+            List<JCCompilationUnit> parsedFiles = compiler.parseFiles(sourceFiles, true, false);
             roots = prev.roots.appendList(parsedFiles);
 
             // Check for errors after parsing
@@ -1196,8 +1202,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         void showDiagnostics(boolean showAll) {
             deferredDiagnosticHandler.reportDeferredDiagnostics(
-                    ACCEPT_NON_RECOVERABLE_LINTS.and(showAll ? ACCEPT_ALL
-                                                             : ACCEPT_NON_RECOVERABLE));
+                    showAll ? ACCEPT_ALL : ACCEPT_NON_RECOVERABLE.and(ACCEPT_NON_RECOVERABLE_LINTS));
             log.popDiagnosticHandler(deferredDiagnosticHandler);
             compiler.setDeferredDiagnosticHandler(null);
         }
@@ -1322,6 +1327,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } while (moreToDo && !errorStatus);
 
         // run last round
+        compiler.parseFiles(round.cumulativeSourceFiles, true, true); // Replay warnings, no events
+        // All classes are already entered
         round.run(true, errorStatus);
         round.showDiagnostics(true);
 
@@ -1361,7 +1368,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         if (compiler.continueAfterProcessAnnotations()) {
             round.finalCompiler();
-            compiler.enterTrees(compiler.initModules(roots));
+            // We already did enterTrees in the final round
+            Log.DiagnosticHandler discardHandler = log.new DiscardDiagnosticHandler();
+            try {
+                compiler.enterTrees(compiler.initModules(roots));
+            } finally {
+                log.popDiagnosticHandler(discardHandler);
+            }
         } else {
             compiler.todo.clear();
         }

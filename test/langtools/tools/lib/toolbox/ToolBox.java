@@ -151,7 +151,7 @@ public class ToolBox {
                 String s2 = l2.get(i);
                 if (!Objects.equals(s1, s2)) {
                     throw new Error("comparison failed, index " + i +
-                            ", (" + s1 + ":" + s2 + ")");
+                            ", (" + s1 + ":" + s2 + "), l1.size=" + l1.size() + ", l2.size=" + l2.size());
                 }
             }
             throw new Error("comparison failed: l1.size=" + l1.size() + ", l2.size=" + l2.size());

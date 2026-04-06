@@ -688,9 +688,17 @@ public class JavaCompiler {
      *  @param filename     The name of the file to be parsed.
      */
     public JCTree.JCCompilationUnit parse(JavaFileObject filename) {
+        return parse(filename, false);
+    }
+
+    /** Parse contents of file.
+     *  @param filename     The name of the file to be parsed.
+     * @param silent Blocks task events
+     */
+    public JCTree.JCCompilationUnit parse(JavaFileObject filename, boolean silent) {
         JavaFileObject prev = log.useSource(filename);
         try {
-            return parse(filename, readSource(filename));
+            return parse(filename, readSource(filename), silent);
         } finally {
             log.useSource(prev);
         }
@@ -1024,6 +1032,10 @@ public class JavaCompiler {
    }
 
    public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects, boolean force) {
+       return parseFiles(fileObjects, force, false);
+   }
+
+   public List<JCCompilationUnit> parseFiles(Iterable<JavaFileObject> fileObjects, boolean force, boolean silent) {
        if (!force && shouldStop(CompileState.PARSE))
            return List.nil();
 
@@ -1033,7 +1045,7 @@ public class JavaCompiler {
         for (JavaFileObject fileObject : fileObjects) {
             if (!filesSoFar.contains(fileObject)) {
                 filesSoFar.add(fileObject);
-                trees.append(parse(fileObject));
+                trees.append(parse(fileObject, silent));
             }
         }
         return trees.toList();
