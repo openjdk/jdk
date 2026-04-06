@@ -163,7 +163,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     public void addNotificationListeners(Component c) {
         if (c instanceof Accessible) {
             AccessibleContext ac = ((Accessible)c).getAccessibleContext();
-             axChangeNotifier = new AXChangeNotifier();
+            axChangeNotifier = new AXChangeNotifier();
             ac.addPropertyChangeListener(axChangeNotifier);
         }
     }
