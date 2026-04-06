@@ -204,7 +204,10 @@ public class TestFoldComparesFuzzer {
 
     interface TestMethodGenerator {
         Template.OneArg<String> getTestTemplate();
-        Template.ZeroArgs getIRTemplate();
+
+        default Template.ZeroArgs getIRTemplate(boolean withWarmup) {
+            return Template.make(() -> scope("// No IR rule.\n"));
+        }
 
         default Template.ZeroArgs getInputTemplate() {
             return Template.make(() -> scope(
@@ -246,7 +249,6 @@ public class TestFoldComparesFuzzer {
         ));
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
-        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
     }
 
     // Cases where a and b are ranges that touch min_int/max_int.
@@ -291,7 +293,6 @@ public class TestFoldComparesFuzzer {
         ));
 
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
-        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
     }
 
     // Just for good practice: add some case where the ranges are more free.
@@ -328,8 +329,9 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
-        public Template.OneArg<String> getTestTemplate() { return template; }
-        public Template.ZeroArgs getIRTemplate() { return Template.make(() -> scope("// No IR rule.\n")); }
+        public Template.OneArg<String> getTestTemplate() {
+            return template;
+        }
     }
 
     // Generate some more constrained cases, but with IR rules
@@ -397,7 +399,9 @@ public class TestFoldComparesFuzzer {
             """
         ));
 
-        private final Template.ZeroArgs irTemplate = Template.make(() -> {
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+
+        public Template.ZeroArgs getIRTemplate(boolean withWarmup) {
             String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
             String comment;
 
@@ -486,7 +490,7 @@ public class TestFoldComparesFuzzer {
                 throw new RuntimeException("should not be generated: " + c_lo + " and " + c_hi);
             }
 
-            return scope(
+            return Template.make(() -> scope(
                 let("IP", cmpIParse),
                 let("UP", cmpUParse),
                 let("IF", cmpIFinal),
@@ -497,11 +501,8 @@ public class TestFoldComparesFuzzer {
                 @IR(counts = {IRNode.CMP_I, "#IP", IRNode.CMP_U, "#UP"}, phase = CompilePhase.AFTER_PARSING)
                 @IR(counts = {IRNode.CMP_I, "#IF", IRNode.CMP_U, "#UF"})
                 """
-            );
-        });
-
-        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
-        public Template.ZeroArgs getIRTemplate() { return irTemplate; }
+            ));
+        }
 
         @Override
         public Template.ZeroArgs getInputTemplate() {
@@ -545,7 +546,7 @@ public class TestFoldComparesFuzzer {
         //};
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
         Template.OneArg<String> testMethodTemplate = tg.getTestTemplate();
-        Template.ZeroArgs testIRTemplate = tg.getIRTemplate();
+        Template.ZeroArgs testIRTemplate = tg.getIRTemplate(warmup >= 10_000);
 
         var testTemplate = Template.make(() -> scope(
             let("warmup", warmup / 100),
