@@ -45,6 +45,21 @@ class outputStream;
 class stringStream;
 enum class vmIntrinsicID;
 
+// Helper macro to test and set VM flag and corresponding cpu feature
+#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
+  if (feature_test_fn()) { \
+    if (FLAG_IS_DEFAULT(Use##feature)) { \
+      FLAG_SET_DEFAULT(Use##feature, true); \
+    } else if (!Use##feature) { \
+      clear_feature(CPU_##feature); \
+    } \
+  } else if (Use##feature) { \
+    if (!FLAG_IS_DEFAULT(Use##feature)) { \
+      warning(#feature " instructions not available on this CPU"); \
+    } \
+    FLAG_SET_DEFAULT(Use##feature, false); \
+  }
+
 // Abstract_VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {

@@ -97,8 +97,9 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = true;
 
   get_os_cpu_info();
+  _cpu_features = _features;
 
-  int dcache_line = VM_Version::dcache_line_size();
+  int dcache_line = dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the
   // static constraint of 512 defined in runtime/globals.hpp.
@@ -146,7 +147,7 @@ void VM_Version::initialize() {
     // if dcpop is available publish data cache line flush size via
     // generic field, otherwise let if default to zero thereby
     // disabling writeback
-    if (VM_Version::supports_dcpop()) {
+    if (supports_dcpop()) {
       _data_cache_line_flush_size = dcache_line;
     }
   }
@@ -267,14 +268,24 @@ void VM_Version::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(UseCRC32)) {
-    UseCRC32 = VM_Version::supports_crc32();
+  if (supports_sha1() || supports_sha256() ||
+      supports_sha3() || supports_sha512()) {
+    if (FLAG_IS_DEFAULT(UseSHA)) {
+      FLAG_SET_DEFAULT(UseSHA, true);
+    } else if (!UseSHA) {
+      clear_feature(CPU_SHA1);
+      clear_feature(CPU_SHA2);
+      clear_feature(CPU_SHA3);
+      clear_feature(CPU_SHA512);
+    }
+  } else if (UseSHA) {
+    warning("SHA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseCRC32 && !VM_Version::supports_crc32()) {
-    warning("UseCRC32 specified, but not supported on this CPU");
-    FLAG_SET_DEFAULT(UseCRC32, false);
-  }
+  CHECK_CPU_FEATURE(supports_crc32, CRC32);
+  CHECK_CPU_FEATURE(supports_lse, LSE);
+  CHECK_CPU_FEATURE(supports_aes, AES);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -287,7 +298,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
+  if (UseCryptoPmullForCRC32 && (!supports_pmull() || !supports_sha3() || !supports_crc32())) {
     warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);
   }
@@ -301,48 +312,40 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (VM_Version::supports_lse()) {
-    if (FLAG_IS_DEFAULT(UseLSE))
-      FLAG_SET_DEFAULT(UseLSE, true);
-  } else {
-    if (UseLSE) {
-      warning("UseLSE specified, but not supported on this CPU");
-      FLAG_SET_DEFAULT(UseLSE, false);
-    }
-  }
-
-  if (VM_Version::supports_aes()) {
-    UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
-    UseAESIntrinsics =
-        UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
-    if (UseAESIntrinsics && !UseAES) {
-      warning("UseAESIntrinsics enabled, but UseAES not, enabling");
-      UseAES = true;
+  if (supports_aes()) {
+    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      FLAG_SET_DEFAULT(UseAESIntrinsics, true);
     }
     if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
     }
   } else {
-    if (UseAES) {
-      warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
-    }
-    if (UseAESIntrinsics) {
-      warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-    }
-    if (UseAESCTRIntrinsics) {
-      warning("AES/CTR intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    if (!UseAES) {
+      if (UseAESIntrinsics) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+      if (UseAESCTRIntrinsics) {
+        warning("AES/CTR intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
+    } else if (!cpu_supports_aes()) {
+      if (UseAESIntrinsics) {
+        warning("AES intrinsics are not available on this CPU");
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+      if (UseAESCTRIntrinsics) {
+        warning("AES/CTR intrinsics are not available on this CPU");
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
     }
   }
-
 
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
     UseCRC32Intrinsics = true;
   }
 
-  if (VM_Version::supports_crc32()) {
+  if (supports_crc32()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
     }
@@ -359,17 +362,7 @@ void VM_Version::initialize() {
     UseMD5Intrinsics = true;
   }
 
-  if (VM_Version::supports_sha1() || VM_Version::supports_sha256() ||
-      VM_Version::supports_sha3() || VM_Version::supports_sha512()) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      FLAG_SET_DEFAULT(UseSHA, true);
-    }
-  } else if (UseSHA) {
-    warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-  if (UseSHA && VM_Version::supports_sha1()) {
+  if (UseSHA && supports_sha1()) {
     if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
@@ -378,7 +371,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && VM_Version::supports_sha256()) {
+  if (UseSHA && supports_sha256()) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
@@ -388,7 +381,7 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA) {
-    // No need to check VM_Version::supports_sha3(), since a fallback GPR intrinsic implementation is provided.
+    // No need to check supports_sha3(), since a fallback GPR intrinsic implementation is provided.
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
     }
@@ -398,7 +391,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (UseSHA3Intrinsics && VM_Version::supports_sha3()) {
+  if (UseSHA3Intrinsics && supports_sha3()) {
     // Auto-enable UseSIMDForSHA3Intrinsic on hardware with performance benefit.
     // Note that the evaluation of SHA3 extension Intrinsics shows better performance
     // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
@@ -408,12 +401,12 @@ void VM_Version::initialize() {
       }
     }
   }
-  if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic && !VM_Version::supports_sha3()) {
+  if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic && !supports_sha3()) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (UseSHA && VM_Version::supports_sha512()) {
+  if (UseSHA && supports_sha512()) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
@@ -426,7 +419,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (VM_Version::supports_pmull()) {
+  if (supports_pmull()) {
     if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
       FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
     }
@@ -477,7 +470,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::zva_length());
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zva_length());
     }
   } else if (UseBlockZeroing) {
     if (!FLAG_IS_DEFAULT(UseBlockZeroing)) {
@@ -486,11 +479,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
-  if (VM_Version::supports_sve2()) {
+  if (supports_sve2()) {
     if (FLAG_IS_DEFAULT(UseSVE)) {
       FLAG_SET_DEFAULT(UseSVE, 2);
     }
-  } else if (VM_Version::supports_sve()) {
+  } else if (supports_sve()) {
     if (FLAG_IS_DEFAULT(UseSVE)) {
       FLAG_SET_DEFAULT(UseSVE, 1);
     } else if (UseSVE > 1) {
@@ -541,7 +534,7 @@ void VM_Version::initialize() {
     // 1) this code has been built with branch-protection and
     // 2) the CPU/OS supports it
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (!VM_Version::supports_paca()) {
+    if (!supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
     } else {
