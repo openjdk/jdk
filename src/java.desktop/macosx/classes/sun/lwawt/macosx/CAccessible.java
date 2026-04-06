@@ -62,7 +62,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
      *                          controls whether this method creates a new
      *                          CAccessible or returns null.
      */
-    public static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
+    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
