@@ -93,35 +93,35 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     private static native void selectedCellsChanged(long ptr);
     private static native void tableContentCacheClear(long ptr);
 
-    private Accessible accessible;
-
-    private AccessibleContext activeDescendant;
-
     /**
      * This listens exclusively for "ancestor" changes on java.awt.Components
      */
     private static PropertyChangeListener ancestorListener =
             new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            Component comp = (Component) evt.getSource();
-            Accessible ax = comp instanceof Accessible z ? z : null;
-            if (ax == null) {
-                // it shouldn't be possible to get here, but just in case
-                // let's avoid a NPE
-                return;
-            }
-            if (evt.getNewValue() == null) {
-                CAccessible cax = CAccessible.getCAccessible(ax, false);
-                if (cax != null) {
-                    cax.dispose();
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    Component comp = (Component) evt.getSource();
+                    Accessible ax = comp instanceof Accessible z ? z : null;
+                    if (ax == null) {
+                        // it shouldn't be possible to get here, but just in case
+                        // let's avoid a NPE
+                        return;
+                    }
+                    if (evt.getNewValue() == null) {
+                        CAccessible cax = CAccessible.getCAccessible(ax, false);
+                        if (cax != null) {
+                            cax.dispose();
+                        }
+                    } else {
+                        // recreate our CAccessible
+                        getCAccessible(ax, true);
+                    }
                 }
-            } else {
-                // recreate our CAccessible
-                getCAccessible(ax, true);
-            }
-        }
-    };
+            };
+
+    private Accessible accessible;
+
+    private AccessibleContext activeDescendant;
 
     private CAccessible(final Accessible accessible) {
         super(0L, true); // real pointer will be poked in by native
