@@ -1946,7 +1946,7 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a language, this function returns the empty string.
      *
-     * @return The name of the display language appropriate to the current default
+     * @return The name of the display language appropriate to the default
      *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
     public String getDisplayLanguage() {
@@ -1979,7 +1979,7 @@ public final class Locale implements Cloneable, Serializable {
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  Returns
      * the empty string if this locale doesn't specify a script code.
      *
-     * @return The display name of the script code appropriate to the current default
+     * @return The display name of the script code appropriate to the default
      *     {@link Locale.Category#DISPLAY DISPLAY} locale.
      * @since 1.7
      */
@@ -2017,7 +2017,7 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a country, this function returns the empty string.
      *
-     * @return The name of the country appropriate to the current default
+     * @return The name of the country appropriate to the default
      *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
     public String getDisplayCountry() {
@@ -2067,7 +2067,7 @@ public final class Locale implements Cloneable, Serializable {
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
-     * @return The name of the display variant code appropriate to the current default
+     * @return The name of the display variant code appropriate to the default
      *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
     public String getDisplayVariant() {
@@ -2118,7 +2118,7 @@ public final class Locale implements Cloneable, Serializable {
      * be localized depending on the locale. If the language, script, country,
      * and variant fields are all empty, this function returns the empty string.
      *
-     * @return The display name appropriate to the current default
+     * @return The display name appropriate to the default
      *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
     public String getDisplayName() {
