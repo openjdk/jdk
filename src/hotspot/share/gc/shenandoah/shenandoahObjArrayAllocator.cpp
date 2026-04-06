@@ -71,7 +71,9 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
   int filling_array_length = _length;
-  if (element_type == T_OBJECT || element_type == T_ARRAY) {
+  const bool is_ref_type = is_reference_type(element_type, true);
+
+  if (is_ref_type) {
     filling_klass = Universe::longArrayKlass();
     filling_array_length = (int) (process_size / (T_LONG_aelem_bytes >> LogBytesPerWord));
   }
@@ -92,7 +94,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
 
     Copy::zero_to_words(mem + process_start, process_size);
     // reference array, header need to be overridden to its own.
-    if (element_type == T_OBJECT || element_type == T_ARRAY) {
+    if (is_ref_type) {
       assert(_length >= 0, "length should be non-negative");
       arrayOopDesc::set_length(mem, _length);
       finish(mem);
