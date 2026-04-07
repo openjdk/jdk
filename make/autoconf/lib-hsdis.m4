@@ -417,4 +417,20 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
     AC_MSG_RESULT([no])
   fi
   AC_SUBST(ENABLE_HSDIS_BUNDLING)
+
+  AC_ARG_WITH([print-assembly-options], [AS_HELP_STRING([--with-print-assembly-options],
+      [default value for the PrintAssemblyOptions diagnostic flag, passed verbatim to the disassembler])])
+
+  AC_MSG_CHECKING([for default PrintAssemblyOptions])
+  if test "x$with_print_assembly_options" = xyes; then
+    AC_MSG_RESULT([invalid])
+    AC_MSG_ERROR([--with-print-assembly-options requires an argument.])
+  elif test "x$with_print_assembly_options" = x || test "x$with_print_assembly_options" = xno; then
+    AC_MSG_RESULT([none])
+    DEFAULT_PRINT_ASSEMBLY_OPTIONS=
+  else
+    AC_MSG_RESULT([$with_print_assembly_options])
+    DEFAULT_PRINT_ASSEMBLY_OPTIONS=$with_print_assembly_options
+  fi
+  AC_SUBST(DEFAULT_PRINT_ASSEMBLY_OPTIONS)
 ])
