@@ -83,6 +83,7 @@ public interface DocSourcePositions extends SourcePositions {
      * @param comment the comment tree that encloses the tree for which the
      *                position is being sought
      * @param tree tree for which a position is sought
+     * @since 27
      */
     long getStartPosition(DocCommentTree comment, DocTree tree);
 
@@ -146,6 +147,7 @@ public interface DocSourcePositions extends SourcePositions {
      * @param comment the comment tree that encloses the tree for which the
      *                position is being sought
      * @param tree tree for which a position is sought
+     * @since 27
      */
     long getEndPosition(DocCommentTree comment, DocTree tree);
 
