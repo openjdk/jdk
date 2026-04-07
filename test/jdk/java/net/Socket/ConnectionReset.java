@@ -88,10 +88,7 @@ public class ConnectionReset {
                     int bytesRead = in.read();
                     // EOF is not expected, we should get an IOException
                     // before EOF.
-                    if (bytesRead == -1) {
-                        System.err.println("read => EOF");
-                        assertNotEquals(-1, bytesRead);
-                    }
+                    assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
                     // we should get an IOException before reading
@@ -147,10 +144,7 @@ public class ConnectionReset {
                     int bytesRead = in.read();
                     // EOF is not expected, we should get an IOException
                     // before EOF.
-                    if (bytesRead == -1) {
-                        System.err.println("read => EOF");
-                        assertNotEquals(-1, bytesRead);
-                    }
+                    assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
                     // we should get an IOException before reading
