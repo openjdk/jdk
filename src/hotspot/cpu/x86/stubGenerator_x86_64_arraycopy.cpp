@@ -981,7 +981,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     if (entry != nullptr) {
       *entry = entries.at(0);
     }
-    if (add_extras) {
+    if (add_handlers) {
       // restore 1 x UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 1);
     }
