@@ -870,7 +870,7 @@ public:
   };
 };
 
-// Analyze the loop in preparation for auto-vectorization. This class is
+// Analyze the C2 loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
 class VLoopAnalyzer : StackObj {

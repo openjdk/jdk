@@ -941,4 +941,16 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+// parallel to VLoopAnalyzer
+// - types - or maybe store types in scalar vtnode?
+// - reductions
+class VTransformAnalyzer : StackObj {
+private:
+  const VTransform& _vtransform;
+
+public:
+  VTransformAnalyzer(const VTransform& vtransform) :
+    _vtransform(vtransform) {}
+};
+
 #endif // SHARE_OPTO_VTRANSFORM_HPP

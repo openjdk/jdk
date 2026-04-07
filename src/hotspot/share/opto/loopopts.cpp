@@ -42,6 +42,7 @@
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
@@ -4539,6 +4540,8 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     ResourceMark rm;
     ScalarVTransformBuilder builder(scalar_vtransform);
   }
+
+  const VTransformAnalyzer vtransform_analyzer(scalar_vtransform);
 
   SuperWord sw(scalar_vtransform);
   if (!sw.transform_loop()) {
