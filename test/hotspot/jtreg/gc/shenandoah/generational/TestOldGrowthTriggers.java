@@ -92,75 +92,7 @@ public class TestOldGrowthTriggers {
             return;
         }
 
-        // With too many processors, the memory targeted for
-        // evacuations becomes freagmented between GCLABs, leading to
-        // OOM during evac. The full GCs that happen under this
-        // condition replace the need for concurrent old marking,
-        // causing the search for "Trigger (Old)" to fail.
-        if (Runtime.getRuntime().availableProcessors() > 4) {
-            testOld("-Xlog:gc",
-                    "-XX:ActiveProcessorCount=4",
-                    "-Xms96m",
-                    "-Xmx96m",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=generational",
-                    "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
-                    "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
-                    "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
-                    "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-                    "-XX:ShenandoahGuaranteedOldGCInterval=0",
-                    "-XX:-UseCompactObjectHeaders"
-                    );
-            testOld("-Xlog:gc",
-                    "-XX:ActiveProcessorCount=4",
-                    "-Xms96m",
-                    "-Xmx96m",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=generational",
-                    "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
-                    "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
-                    "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
-                    "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-                    "-XX:ShenandoahGuaranteedOldGCInterval=0",
-                    "-XX:+UseCompactObjectHeaders"
-                    );
-        } else {
-            testOld("-Xlog:gc",
-                    "-Xms96m",
-                    "-Xmx96m",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=generational",
-                    "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
-                    "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
-                    "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
-                    "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-                    "-XX:ShenandoahGuaranteedOldGCInterval=0",
-                    "-XX:-UseCompactObjectHeaders"
-                    );
-            testOld("-Xlog:gc",
-                    "-Xms96m",
-                    "-Xmx96m",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=generational",
-                    "-XX:ShenandoahMinOldGenGrowthPercent=12.5",
-                    "-XX:ShenandoahIgnoreOldGrowthBelowPercentage=10",
-                    "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
-                    "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-                    "-XX:ShenandoahGuaranteedOldGCInterval=0",
-                    "-XX:+UseCompactObjectHeaders"
-                    );
-        }
-
-/*
-        testOld("-Xlog:gc*",
+        testOld("-Xlog:gc",
                 "-Xms96m",
                 "-Xmx96m",
                 "-XX:+UnlockDiagnosticVMOptions",
@@ -175,7 +107,7 @@ public class TestOldGrowthTriggers {
                 "-XX:-UseCompactObjectHeaders"
         );
 
-        testOld("-Xlog:gc*",
+        testOld("-Xlog:gc",
                 "-Xms96m",
                 "-Xmx96m",
                 "-XX:+UnlockDiagnosticVMOptions",
@@ -189,6 +121,5 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
                 "-XX:+UseCompactObjectHeaders"
         );
-*/
     }
 }
