@@ -145,10 +145,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      *
      * @param     comment the comment string, or an empty string or null for no comment
      *
-     * @throws    IllegalArgumentException if the length of the specified
-     *            ZIP file comment is greater than 0xFFFF bytes or if the
-     *            {@code comment} contains characters that cannot be mapped
-     *            by the {@code Charset} of this {@code ZipOutputStream}
+     * @throws    IllegalArgumentException if the length of the specified ZIP file
+     *            comment is greater than 0xFFFF bytes or if the {@code comment}
+     *            contains characters that cannot be mapped by the {@code Charset}
+     *            used to encode entry names and comments
      */
     public void setComment(String comment) {
         byte[] bytes = null;
