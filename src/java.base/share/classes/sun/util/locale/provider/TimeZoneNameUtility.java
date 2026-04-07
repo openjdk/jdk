@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.calendar.ZoneInfo;
 import sun.util.cldr.CLDRLocaleProviderAdapter;
-import static sun.util.locale.provider.LocaleProviderAdapter.Type;
+import static sun.util.locale.provider.LocaleProviderAdapter.Type.CLDR;
 
 /**
  * Utility class that deals with the localized time zone names
@@ -169,7 +169,7 @@ public final class TimeZoneNameUtility {
      * Returns the canonical ID for the given ID
      */
     public static Optional<String> canonicalTZID(String id) {
-        return ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
+        return ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(CLDR))
                     .canonicalTZID(id);
     }
 
@@ -178,10 +178,11 @@ public final class TimeZoneNameUtility {
      * @param tzid the time zone ID
      */
     public static String explicitDstOffset(String tzid) {
-        return (String)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
-            .getLocaleResources(Locale.ROOT)
-            .getTimeZoneNames("metazone.dstoffset." +
-                TimeZoneNameUtility.canonicalTZID(tzid).orElse(tzid));
+        return (String) (LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca ?
+            ca.getLocaleResources(Locale.ROOT)
+                .getTimeZoneNames("metazone.dstoffset." +
+                    ca.canonicalTZID(tzid).orElse(tzid)) :
+            null);
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
