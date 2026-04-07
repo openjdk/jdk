@@ -165,13 +165,6 @@ public:
 
   friend class ShenandoahAllocationRate;
 
-  // Used to record the last trigger that signaled to start a GC.
-  // This itself is used to decide whether or not to adjust the margin of
-  // error for the average cycle time and allocation rate or the allocation
-  // spike detection threshold.
-  enum Trigger {
-    SPIKE, RATE, OTHER
-  };
 
   void adjust_last_trigger_parameters(double amount);
   void adjust_margin_of_error(double amount);
@@ -183,6 +176,15 @@ public:
   }
 
 protected:
+
+  // Used to record the last trigger that signaled to start a GC.
+  // This itself is used to decide whether or not to adjust the margin of
+  // error for the average cycle time and allocation rate or the allocation
+  // spike detection threshold.
+  enum Trigger {
+    SPIKE, RATE, OTHER
+  };
+
   ShenandoahAllocationRate _allocation_rate;
 
   // Invocations of should_start_gc() happen approximately once per ms.  Queries of allocation rate only happen if a
@@ -268,6 +270,9 @@ protected:
     _last_trigger = trigger_type;
     ShenandoahHeuristics::accept_trigger();
   }
+
+  bool trigger_min_free_threshold(size_t available);
+  bool trigger_learning(size_t available, size_t capacity);
 
 public:
   // Sample the allocation rate at GC trigger time if possible.  Return the number of allocated bytes that were

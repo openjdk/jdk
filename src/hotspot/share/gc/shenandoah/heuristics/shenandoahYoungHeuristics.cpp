@@ -23,13 +23,17 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
@@ -132,11 +136,33 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     }
   }
 
-  // inherited triggers have already decided to start a cycle, so no further evaluation is required
-  if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
-    // ShenandoahAdaptiveHeuristics::should_start_gc() has already accepted trigger, or declined it.
+  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t available = _space_info->soft_mutator_available();
+
+  if (trigger_learning(available, capacity)) {
     return true;
   }
+
+  if (trigger_min_free_threshold(available)) {
+    return true;
+  }
+
+  const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
+  size_t allocation_headroom = available;
+  const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+  const size_t penalties = capacity / 100 * _gc_time_penalties;
+
+  allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
+  allocation_headroom -= MIN2(allocation_headroom, penalties);
+  if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
+    log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (" PROPERFMT "/s)"
+                " to deplete free headroom (" PROPERFMT ") (margin of error = %.2f)",
+                avg_cycle_time / 1000, PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(allocation_headroom), _margin_of_error_sd);
+    accept_trigger_with_type(ShenandoahAdaptiveHeuristics::RATE);
+    return true;
+  }
+
 
   // Get through promotions and mixed evacuations as quickly as possible.  These cycles sometimes require significantly
   // more time than traditional young-generation cycles so start them up as soon as possible.  This is a "mitigation"

@@ -37,6 +37,7 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
 // These constants are used to adjust the margin of error for the moving
@@ -421,7 +422,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t consumption_accelerated = 0;
   double acceleration = 0.0;
   double current_rate_by_acceleration = 0.0;
-  size_t min_threshold = min_free_threshold();
   double predicted_future_gc_time = 0;
   double future_planned_gc_time = 0;
   bool future_planned_gc_time_is_average = false;
@@ -443,25 +443,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   _last_trigger = OTHER;
 
-  if (available < min_threshold) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
-                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
-    accept_trigger_with_type(OTHER);
+  if (trigger_min_free_threshold(available)) {
     return true;
   }
 
-  // Check if we need to learn a bit about the application
-  const size_t max_learn = ShenandoahLearningSteps;
-  if (_gc_times_learned < max_learn) {
-    size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
-    if (available < init_threshold) {
-      log_trigger("Learning %zu of %zu. Free (%zu%s) is below initial threshold (%zu%s)",
-                   _gc_times_learned + 1, max_learn,
-                   byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                   byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
-      accept_trigger_with_type(OTHER);
-      return true;
-    }
+  if (trigger_learning(available, capacity)) {
+    return true;
   }
 
   // The test (3 * allocated > available) below is intended to prevent triggers from firing so quickly that there
@@ -492,6 +479,20 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // we still allow more generic triggers, such as guaranteed GC intervals, to act.
     return ShenandoahHeuristics::should_start_gc();
   }
+
+  auto& new_rate = ShenandoahHeap::heap()->alloc_rate();
+  auto old_rate = _allocation_rate.rate()->avg();
+  auto old_upper = _allocation_rate.upper_bound(_margin_of_error_sd);
+  auto old_next = _allocation_rate.rate()->predict_next();
+  auto new_average = new_rate.average();
+  auto new_upper = new_rate.upper_bound(_margin_of_error_sd);
+  auto new_next = new_rate.predict_next();
+  log_debug(gc, alloc, ergo)("Old Average: %0.2f, Old Upper Bound: %0.2f, Old Next: %0.2f"
+    " New Average: %0.2f, New Upper Bound: %0.2f, New Next: %0.2f"
+    " Diff Average: %0.2f, Diff Upper Bound: %0.2f, Diff Next: %0.2f",
+    old_rate, old_upper, old_next, new_average, new_upper, new_next,
+    (old_rate - new_average), (old_upper - new_upper), (old_next - new_next)
+    );
 
   avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
@@ -684,6 +685,31 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
   return ShenandoahHeuristics::should_start_gc();
+}
+
+bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available) {
+  const size_t min_threshold = min_free_threshold();
+  if (available < min_threshold) {
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
+    accept_trigger_with_type(OTHER);
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t capacity) {
+  // Check if we need to learn a bit about the application
+  if (_gc_times_learned < ShenandoahLearningSteps) {
+    size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
+    if (available < init_threshold) {
+      log_trigger("Learning %zu of %zu. Free (" PROPERFMT ") is below initial threshold (" PROPERFMT ")",
+                  _gc_times_learned + 1, ShenandoahLearningSteps, PROPERFMTARGS(available), PROPERFMTARGS(init_threshold));
+      accept_trigger_with_type(OTHER);
+      return true;
+    }
+  }
+  return false;
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {
