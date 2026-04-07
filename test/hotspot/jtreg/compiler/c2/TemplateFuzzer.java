@@ -55,6 +55,13 @@ public class TemplateFuzzer {
                }
                """;
     }
+    // TODO: design the mechanics!
+    // - Statement
+    //   - can check if applicable in context
+    //   - can instantiate the template, and recurse
+    // - Context
+    //   - Has list of available statements
+    //   - Can dispatch the nested statements
 
     public static void main(String[] args) throws Exception {
         // Create a new CompileFramework instance.
