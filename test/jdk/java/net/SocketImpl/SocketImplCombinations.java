@@ -48,6 +48,9 @@ import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -110,8 +113,8 @@ public class SocketImplCombinations {
     }
 
     /**
-     * Test creating a Socket for a HTTP proxy connection, it should be created with
-     * a HTTP proxy SocketImpl.
+     * Test creating a Socket for an HTTP proxy connection, it should be created with
+     * an HTTP proxy SocketImpl.
      */
     @Test
     public void testNewSocket5() throws IOException {
@@ -133,7 +136,7 @@ public class SocketImplCombinations {
     public void testNewSocket6() throws IOException {
         Socket s = new Socket((SocketImpl) null) { };
         try (s) {
-            assertTrue(getSocketImpl(s) == null);
+            assertNull(getSocketImpl(s));
             s.bind(loopbackSocketAddress());   // force SocketImpl to be created
             SocketImpl si = getSocketImpl(s);
             assertTrue(isSocksSocketImpl(si));
@@ -150,7 +153,7 @@ public class SocketImplCombinations {
         Socket s = new Socket(new CustomSocketImpl(false)) { };
         try (s) {
             SocketImpl si = getSocketImpl(s);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         }
     }
 
@@ -162,7 +165,7 @@ public class SocketImplCombinations {
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (Socket s = new Socket()) {
             SocketImpl si = getSocketImpl(s);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         } finally {
             setSocketSocketImplFactory(null);
         }
@@ -177,7 +180,7 @@ public class SocketImplCombinations {
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (Socket s = new Socket(Proxy.NO_PROXY)) {
             SocketImpl si = getSocketImpl(s);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         } finally {
             setSocketSocketImplFactory(null);
         }
@@ -203,7 +206,7 @@ public class SocketImplCombinations {
     }
 
     /**
-     * Test creating a Socket for a HTTP proxy connection when there is a
+     * Test creating a Socket for an HTTP proxy connection when there is a
      * SocketImplFactory set.
      */
     @Test
@@ -230,9 +233,9 @@ public class SocketImplCombinations {
         try {
             Socket s = new Socket((SocketImpl) null) { };
             try (s) {
-                assertTrue(getSocketImpl(s) == null);
+                assertNull(getSocketImpl(s));
                 s.bind(loopbackSocketAddress());   // force SocketImpl to be created
-                assertTrue(getSocketImpl(s) instanceof CustomSocketImpl);
+                assertInstanceOf(CustomSocketImpl.class, getSocketImpl(s));
             }
         } finally {
             setSocketSocketImplFactory(null);
@@ -271,7 +274,7 @@ public class SocketImplCombinations {
         ServerSocket ss = new ServerSocket(new CustomSocketImpl(true)) { };
         try (ss) {
             SocketImpl si = getSocketImpl(ss);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         }
     }
 
@@ -283,7 +286,7 @@ public class SocketImplCombinations {
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = new ServerSocket()) {
             SocketImpl si = getSocketImpl(ss);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         } finally {
             setServerSocketImplFactory(null);
         }
@@ -297,7 +300,7 @@ public class SocketImplCombinations {
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = new ServerSocket(0)) {
             SocketImpl si = getSocketImpl(ss);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
         } finally {
             setServerSocketImplFactory(null);
         }
@@ -310,11 +313,11 @@ public class SocketImplCombinations {
     @Test
     public void testServerSocketAccept1() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
-        assertTrue(getSocketImpl(socket) == null);
+        assertNull(getSocketImpl(socket));
 
         serverSocketAccept(socket, (ss, s) -> {
             assertTrue(isPlatformSocketImpl(getSocketImpl(ss)));
-            assertTrue(s == socket);
+            assertSame(socket, s);
             SocketImpl si = getSocketImpl(s);
             assertTrue(isPlatformSocketImpl(si));
             checkFields(si);
@@ -329,11 +332,11 @@ public class SocketImplCombinations {
     @Test
     public void testServerSocketAccept2() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
-        assertTrue(getSocketImpl(socket) == null);
+        assertNull(getSocketImpl(socket));
 
         serverSocketAccept(socket, () -> new CustomSocketImpl(false), (ss, s) -> {
             assertTrue(isPlatformSocketImpl(getSocketImpl(ss)));
-            assertTrue(s == socket);
+            assertSame(socket, s);
             SocketImpl si = getSocketImpl(s);
             assertTrue(isPlatformSocketImpl(si));
             checkFields(si);
@@ -355,7 +358,7 @@ public class SocketImplCombinations {
 
         serverSocketAccept(socket, (ss, s) -> {
             assertTrue(isPlatformSocketImpl(getSocketImpl(ss)));
-            assertTrue(s == socket);
+            assertSame(socket, s);
             SocketImpl psi = getSocketImpl(socket);
             assertTrue(isPlatformSocketImpl(psi));
             checkFields(psi);
@@ -370,7 +373,7 @@ public class SocketImplCombinations {
     public void testServerSocketAccept4a() throws IOException {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };
-        assertTrue(getSocketImpl(socket) == clientImpl);
+        assertSame(clientImpl, getSocketImpl(socket));
 
         try (ServerSocket ss = serverSocketToAccept(socket)) {
             assertThrows(IOException.class, ss::accept);
@@ -383,7 +386,7 @@ public class SocketImplCombinations {
     public void testServerSocketAccept4b() throws IOException {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };
-        assertTrue(getSocketImpl(socket) == clientImpl);
+        assertSame(clientImpl, getSocketImpl(socket));
 
         setSocketSocketImplFactory(() -> new CustomSocketImpl(false));
         try (ServerSocket ss = serverSocketToAccept(socket)) {
@@ -410,7 +413,7 @@ public class SocketImplCombinations {
     @Test
     public void testServerSocketAccept5b() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
-        assertTrue(getSocketImpl(socket) == null);
+        assertNull(getSocketImpl(socket));
 
         SocketImpl serverImpl = new CustomSocketImpl(true);
         try (ServerSocket ss = serverSocketToAccept(serverImpl, socket)) {
@@ -433,7 +436,7 @@ public class SocketImplCombinations {
     @Test
     public void testServerSocketAccept5d() throws IOException {
         var socket = new Socket((SocketImpl) null) { };
-        assertTrue(getSocketImpl(socket) == null);
+        assertNull(getSocketImpl(socket));
 
         setServerSocketImplFactory(() -> new CustomSocketImpl(true));
         try (ServerSocket ss = serverSocketToAccept(socket)) {
@@ -452,14 +455,14 @@ public class SocketImplCombinations {
     @Test
     public void testServerSocketAccept6() throws Exception {
         var socket = new Socket((SocketImpl) null) { };
-        assertTrue(getSocketImpl(socket) == null);
+        assertNull(getSocketImpl(socket));
 
         SocketImpl serverImpl = new CustomSocketImpl(true);
         SocketImplFactory clientFactory = () -> new CustomSocketImpl(false);
         serverSocketAccept(serverImpl, socket, clientFactory, (ss, s) -> {
-            assertTrue(getSocketImpl(ss) == serverImpl);
+            assertSame(serverImpl, getSocketImpl(ss));
             SocketImpl si = getSocketImpl(s);
-            assertTrue(si instanceof CustomSocketImpl);
+            assertInstanceOf(CustomSocketImpl.class, si);
             checkFields(si);
         });
     }
@@ -510,13 +513,13 @@ public class SocketImplCombinations {
     public void testServerSocketAccept8() throws Exception {
         SocketImpl clientImpl = new CustomSocketImpl(false);
         Socket socket = new Socket(clientImpl) { };
-        assertTrue(getSocketImpl(socket) == clientImpl);
+        assertSame(clientImpl, getSocketImpl(socket));
 
         SocketImpl serverImpl = new CustomSocketImpl(true);
         SocketImplFactory clientFactory = () -> new CustomSocketImpl(false);
         serverSocketAccept(serverImpl, socket, clientFactory, (ss, s) -> {
-            assertTrue(getSocketImpl(ss) == serverImpl);
-            assertTrue(getSocketImpl(s) == clientImpl);
+            assertSame(serverImpl, getSocketImpl(ss));
+            assertSame(clientImpl, getSocketImpl(s));
             checkFields(clientImpl);
         });
     }
@@ -786,7 +789,7 @@ public class SocketImplCombinations {
     }
 
     /**
-     * Custom SocketImpl that is layed on a SocketChannel or ServerSocketChannel
+     * Custom SocketImpl that is layered on a SocketChannel or ServerSocketChannel
      */
     static class CustomSocketImpl extends SocketImpl {
         private final boolean server;
