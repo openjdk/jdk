@@ -1561,6 +1561,13 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   return false;
 }
 
+bool VectorCastNode::is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size) {
+  assert(def_bt != use_bt, "use and def types must be different");
+
+  // Opcode is only required to disambiguate half float, so we pass -1 as it can't be encountered here.
+  return (is_subword_type(def_bt) || is_subword_type(use_bt)) && VectorCastNode::implemented(-1, pack_size, def_bt, use_bt);
+}
+
 Node* VectorCastNode::Identity(PhaseGVN* phase) {
   if (!in(1)->is_top()) {
     BasicType  in_bt = in(1)->bottom_type()->is_vect()->element_basic_type();
@@ -2013,26 +2020,21 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   uint vlen = dst_type->length();
   const TypeVectMask* is_mask = dst_type->isa_vectmask();
 
+  // Pattern:      (VectorLongToMask (AndL (VectorMaskToLong src) mask))
+  // Replace with: (VectorMaskCast src)
+  //   The cast is needed if there are different mask types, and can be folded otherwise.
+  //   The mask has exactly the vlen first bits on: mask = (2 << vlen - 1)
   if (in(1)->Opcode() == Op_AndL &&
       in(1)->in(1)->Opcode() == Op_VectorMaskToLong &&
       in(1)->in(2)->bottom_type()->isa_long() &&
       in(1)->in(2)->bottom_type()->is_long()->is_con() &&
-      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1L << vlen) - 1)) {
-      // Different src/dst mask length represents a re-interpretation operation,
-      // we can however generate a mask casting operation if length matches.
-     Node* src = in(1)->in(1)->in(1);
-     if (is_mask == nullptr) {
-       if (src->Opcode() != Op_VectorStoreMask) {
-         return nullptr;
-       }
-       src = src->in(1);
-     }
-     const TypeVect* src_type = src->bottom_type()->is_vect();
-     if (src_type->length() == vlen &&
-         ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
-          (src_type->isa_vectmask() && is_mask))) {
-       return new VectorMaskCastNode(src, dst_type);
-     }
+      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1LL << vlen) - 1)) {
+    Node* src = in(1)->in(1)->in(1);
+    const TypeVect* src_type = src->bottom_type()->is_vect();
+    if (src_type->length() == vlen &&
+        ((src_type->isa_vectmask() == nullptr) == (is_mask == nullptr))) {
+      return new VectorMaskCastNode(src, dst_type);
+    }
   }
 
   // VectorLongToMask(-1/0) => MaskAll(-1/0)

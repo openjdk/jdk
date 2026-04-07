@@ -1086,7 +1086,7 @@ void ShenandoahVerifier::verify_generic(ShenandoahGeneration* generation, Verify
           _verify_cset_disable,        // cset may be inconsistent
           _verify_liveness_disable,    // no reliable liveness data
           _verify_regions_disable,     // no reliable region data
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
+          _verify_size_disable,        // no reliable sizing data
           _verify_gcstate_disable      // no data about gcstate
   );
 }

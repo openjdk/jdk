@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,25 @@
 /*
  * @test
  * @bug 8087112 8178699 8338569
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib /
  * @build jdk.test.lib.net.SimpleSSLContext ProxyServer
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,ssl,trace
  *      SmokeTest
  */
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
-
 import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
@@ -94,7 +80,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import jdk.httpclient.test.lib.common.TestServerConfigurator;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -120,11 +106,11 @@ import java.util.logging.Logger;
  * Uses a FileServerHandler serving a couple of known files
  * in docs directory.
  */
-public class SmokeTest {
+public class SmokeTest implements HttpServerAdapters {
     private static final SSLContext ctx = SimpleSSLContext.findSSLContext();
     static SSLParameters sslparams;
-    static HttpServer s1 ;
-    static HttpsServer s2;
+    static HttpTestServer s1 ;
+    static HttpTestServer s2;
     static ExecutorService executor;
     static int port;
     static int httpsport;
@@ -142,19 +128,10 @@ public class SmokeTest {
     static Path smallFile;
     static String fileroot;
 
-    static class HttpEchoHandler implements HttpHandler {
-
+    static class HttpEchoHandler extends HttpTestEchoHandler {
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            try (InputStream is = exchange.getRequestBody();
-                 OutputStream os = exchange.getResponseBody()) {
-                byte[] bytes = is.readAllBytes();
-                long responseLength = bytes.length == 0 ? -1 : bytes.length;
-                boolean fixedLength = "yes".equals(exchange.getRequestHeaders()
-                        .getFirst("XFixed"));
-                exchange.sendResponseHeaders(200, fixedLength ? responseLength : 0);
-                os.write(bytes);
-            }
+        protected boolean useXFixed() {
+            return true;
         }
     }
 
@@ -242,8 +219,8 @@ public class SmokeTest {
             //test12(httproot + "delay/foo", delayHandler);
 
         } finally {
-            s1.stop(0);
-            s2.stop(0);
+            s1.stop();
+            s2.stop();
             proxy.close();
             e.shutdownNow();
             executor.shutdownNow();
@@ -779,38 +756,31 @@ public class SmokeTest {
         ch.setLevel(Level.SEVERE);
         logger.addHandler(ch);
 
-        String root = System.getProperty ("test.src", ".")+ "/docs";
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        s1 = HttpServer.create (addr, 0);
-        if (s1 instanceof HttpsServer) {
-            throw new RuntimeException ("should not be httpsserver");
-        }
-        s2 = HttpsServer.create (addr, 0);
-        HttpHandler h = new FileServerHandler(root);
+        sslparams = ctx.getDefaultSSLParameters();
+        executor = Executors.newCachedThreadPool();
 
-        HttpContext c1 = s1.createContext("/files", h);
-        HttpContext c2 = s2.createContext("/files", h);
-        HttpContext c3 = s1.createContext("/echo", new HttpEchoHandler());
+        String root = System.getProperty ("test.src", ".")+ "/docs";
+        s1 = HttpTestServer.create(Version.HTTP_1_1, null, executor);
+        s2 = HttpTestServer.create(Version.HTTP_1_1, ctx, executor);
+        HttpTestHandler h = new HttpTestFileServerHandler(root);
+
+        HttpTestContext c1 = s1.createContext("/files", h);
+        HttpTestContext c2 = s2.createContext("/files", h);
+        HttpTestContext c3 = s1.createContext("/echo", new HttpEchoHandler());
         redirectHandler = new RedirectHandler("/redirect");
         redirectHandlerSecure = new RedirectHandler("/redirect");
-        HttpContext c4 = s1.createContext("/redirect", redirectHandler);
-        HttpContext c41 = s2.createContext("/redirect", redirectHandlerSecure);
-        HttpContext c5 = s2.createContext("/echo", new HttpEchoHandler());
-        HttpContext c6 = s1.createContext("/keepalive", new KeepAliveHandler());
+        HttpTestContext c4 = s1.createContext("/redirect", redirectHandler);
+        HttpTestContext c41 = s2.createContext("/redirect", redirectHandlerSecure);
+        HttpTestContext c5 = s2.createContext("/echo", new HttpEchoHandler());
+        HttpTestContext c6 = s1.createContext("/keepalive", new KeepAliveHandler());
         redirectErrorHandler = new RedirectErrorHandler("/redirecterror");
         redirectErrorHandlerSecure = new RedirectErrorHandler("/redirecterror");
-        HttpContext c7 = s1.createContext("/redirecterror", redirectErrorHandler);
-        HttpContext c71 = s2.createContext("/redirecterror", redirectErrorHandlerSecure);
+        HttpTestContext c7 = s1.createContext("/redirecterror", redirectErrorHandler);
+        HttpTestContext c71 = s2.createContext("/redirecterror", redirectErrorHandlerSecure);
         delayHandler = new DelayHandler();
-        HttpContext c8 = s1.createContext("/delay", delayHandler);
-        HttpContext c81 = s2.createContext("/delay", delayHandler);
+        HttpTestContext c8 = s1.createContext("/delay", delayHandler);
+        HttpTestContext c81 = s2.createContext("/delay", delayHandler);
 
-        executor = Executors.newCachedThreadPool();
-        s1.setExecutor(executor);
-        s2.setExecutor(executor);
-        sslparams = ctx.getDefaultSSLParameters();
-        //sslparams.setProtocols(new String[]{"TLSv1.2"});
-        s2.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
         s1.start();
         s2.start();
 
@@ -839,7 +809,7 @@ public class SmokeTest {
         }
     }
 
-    static class RedirectHandler implements HttpHandler {
+    static class RedirectHandler implements HttpTestHandler {
         private final String root;
         private volatile int count = 0;
 
@@ -848,17 +818,17 @@ public class SmokeTest {
         }
 
         @Override
-        public synchronized void handle(HttpExchange t) throws IOException {
+        public synchronized void handle(HttpTestExchange t) throws IOException {
             try (InputStream is = t.getRequestBody()) {
                 is.readAllBytes();
             }
 
-            Headers responseHeaders = t.getResponseHeaders();
+            var responseHeaders = t.getResponseHeaders();
 
             if (count++ < 1) {
-                responseHeaders.add("Location", root + "/foo/" + count);
+                responseHeaders.addHeader("Location", root + "/foo/" + count);
             } else {
-                responseHeaders.add("Location", SmokeTest.midSizedFilename);
+                responseHeaders.addHeader("Location", SmokeTest.midSizedFilename);
             }
             t.sendResponseHeaders(301, 64 * 1024);
             byte[] bb = new byte[1024];
@@ -879,7 +849,7 @@ public class SmokeTest {
         }
     }
 
-    static class RedirectErrorHandler implements HttpHandler {
+    static class RedirectErrorHandler implements HttpTestHandler {
         private final String root;
         private volatile int count = 1;
 
@@ -896,21 +866,21 @@ public class SmokeTest {
         }
 
         @Override
-        public synchronized void handle(HttpExchange t) throws IOException {
+        public synchronized void handle(HttpTestExchange t) throws IOException {
             try (InputStream is = t.getRequestBody()) {
                 is.readAllBytes();
             }
 
-            Headers map = t.getResponseHeaders();
-            String redirect = root + "/foo/" + Integer.toString(count);
+            var map = t.getResponseHeaders();
+            String redirect = root + "/foo/" + count;
             increment();
-            map.add("Location", redirect);
-            t.sendResponseHeaders(301, -1);
+            map.addHeader("Location", redirect);
+            t.sendResponseHeaders(301, HttpTestExchange.RSPBODY_EMPTY);
             t.close();
         }
     }
 
-    static class DelayHandler implements HttpHandler {
+    static class DelayHandler implements HttpTestHandler {
 
         CyclicBarrier bar1 = new CyclicBarrier(2);
         CyclicBarrier bar2 = new CyclicBarrier(2);
@@ -925,31 +895,14 @@ public class SmokeTest {
         }
 
         @Override
-        public synchronized void handle(HttpExchange he) throws IOException {
+        public synchronized void handle(HttpTestExchange he) throws IOException {
             he.getRequestBody().readAllBytes();
             try {
                 bar1.await();
                 bar2.await();
             } catch (Exception e) { }
-            he.sendResponseHeaders(200, -1); // will probably fail
+            he.sendResponseHeaders(200, HttpTestExchange.RSPBODY_EMPTY); // will probably fail
             he.close();
-        }
-    }
-
-    static class Configurator extends HttpsConfigurator {
-        private final InetAddress serverAddr;
-
-        public Configurator(InetAddress serverAddr, SSLContext ctx) {
-            super(ctx);
-            this.serverAddr = serverAddr;
-        }
-
-        @Override
-        public void configure(final HttpsParameters params) {
-            final SSLParameters p = getSSLContext().getDefaultSSLParameters();
-            TestServerConfigurator.addSNIMatcher(this.serverAddr, p);
-            //p.setProtocols(new String[]{"TLSv1.2"});
-            params.setSSLParameters(p);
         }
     }
 
@@ -971,120 +924,132 @@ public class SmokeTest {
         fos.close();
         return f.toPath();
     }
-}
 
-// check for simple hardcoded sequence and use remote address
-// to check.
-// First 4 requests executed in sequence (should use same connection/address)
-// Next 4 requests parallel (should use different addresses)
-// Then send 4 requests in parallel x 100 times (same four addresses used all time)
 
-class KeepAliveHandler implements HttpHandler {
-    final AtomicInteger counter = new AtomicInteger(0);
-    final AtomicInteger nparallel = new AtomicInteger(0);
+    // check for simple hardcoded sequence and use remote address
+    // to check.
+    // First 4 requests executed in sequence (should use same connection/address)
+    // Next 4 requests parallel (should use different addresses)
+    // Then send 4 requests in parallel x 100 times (same four addresses used all time)
 
-    final Set<Integer> portSet = Collections.synchronizedSet(new HashSet<>());
+    static class KeepAliveHandler implements HttpTestHandler {
+        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger nparallel = new AtomicInteger(0);
 
-    final int[] ports = new int[8];
+        final Set<Integer> portSet = Collections.synchronizedSet(new HashSet<>());
 
-    void sleep(int n) {
-        try {
-            Thread.sleep(n);
-        } catch (InterruptedException e) {}
-    }
+        final int[] ports = new int[8];
 
-    synchronized void setPort(int index, int value) {
-        ports[index] = value;
-    }
-
-    synchronized int getPort(int index) {
-        return ports[index];
-    }
-
-    synchronized void getPorts(int[] dest, int from) {
-        dest[0] = ports[from+0];
-        dest[1] = ports[from+1];
-        dest[2] = ports[from+2];
-        dest[3] = ports[from+3];
-    }
-
-    static final CountDownLatch latch = new CountDownLatch(4);
-    static final CountDownLatch latch7 = new CountDownLatch(4);
-    static final CountDownLatch latch8 = new CountDownLatch(1);
-
-    @Override
-    public void handle (HttpExchange t)
-        throws IOException
-    {
-        int np = nparallel.incrementAndGet();
-        int remotePort = t.getRemoteAddress().getPort();
-        String result = "OK";
-        int[] lports = new int[4];
-
-        int n = counter.getAndIncrement();
-
-        /// First test
-        if (n < 4) {
-            setPort(n, remotePort);
-        }
-        if (n == 3) {
-            getPorts(lports, 0);
-            // check all values in ports[] are the same
-            if (lports[0] != lports[1] || lports[2] != lports[3]
-                    || lports[0] != lports[2]) {
-                result = "Error " + Integer.toString(n);
-                System.out.println(result);
-            }
-        }
-        // Second test
-        if (n >=4 && n < 8) {
-            // delay so that this connection doesn't get reused
-            // before all 4 requests sent
-            setPort(n, remotePort);
-            latch.countDown();
-            try {latch.await();} catch (InterruptedException e) {}
-            latch7.countDown();
-        }
-        if (n == 7) {
-            // wait until all n <= 7 have called setPort(...)
-            try {latch7.await();} catch (InterruptedException e) {}
-            getPorts(lports, 4);
-            // should be all different
-            if (lports[0] == lports[1] || lports[2] == lports[3]
-                    || lports[0] == lports[2]) {
-                result = "Error " + Integer.toString(n);
-                System.out.println(result);
-            }
-            // setup for third test
-            for (int i=0; i<4; i++) {
-                portSet.add(lports[i]);
-            }
-            System.out.printf("Ports: %d, %d, %d, %d\n", lports[0], lports[1], lports[2], lports[3]);
-            latch8.countDown();
-        }
-        // Third test
-        if (n > 7) {
-            // wait until all n == 7 has updated portSet
-            try {latch8.await();} catch (InterruptedException e) {}
-            if (np > 4) {
-                System.err.println("XXX np = " + np);
-            }
-            // just check that port is one of the ones in portSet
-            if (!portSet.contains(remotePort)) {
-                System.out.println ("UNEXPECTED REMOTE PORT "
-                        + remotePort + " not in " + portSet);
-                result = "Error " + Integer.toString(n);
-                System.out.println(result);
+        void sleep(int n) {
+            try {
+                Thread.sleep(n);
+            } catch (InterruptedException e) {
             }
         }
 
-        try (InputStream is = t.getRequestBody()) {
-            is.readAllBytes();
+        synchronized void setPort(int index, int value) {
+            ports[index] = value;
         }
-        t.sendResponseHeaders(200, result.length());
-        OutputStream o = t.getResponseBody();
-        o.write(result.getBytes(StandardCharsets.UTF_8));
-        t.close();
-        nparallel.getAndDecrement();
+
+        synchronized int getPort(int index) {
+            return ports[index];
+        }
+
+        synchronized void getPorts(int[] dest, int from) {
+            dest[0] = ports[from + 0];
+            dest[1] = ports[from + 1];
+            dest[2] = ports[from + 2];
+            dest[3] = ports[from + 3];
+        }
+
+        static final CountDownLatch latch = new CountDownLatch(4);
+        static final CountDownLatch latch7 = new CountDownLatch(4);
+        static final CountDownLatch latch8 = new CountDownLatch(1);
+
+        @Override
+        public void handle(HttpTestExchange t)
+                throws IOException {
+            int np = nparallel.incrementAndGet();
+            int remotePort = t.getRemoteAddress().getPort();
+            String result = "OK";
+            int[] lports = new int[4];
+
+            int n = counter.getAndIncrement();
+
+            /// First test
+            if (n < 4) {
+                setPort(n, remotePort);
+            }
+            if (n == 3) {
+                getPorts(lports, 0);
+                // check all values in ports[] are the same
+                if (lports[0] != lports[1] || lports[2] != lports[3]
+                        || lports[0] != lports[2]) {
+                    result = "Error " + Integer.toString(n);
+                    System.out.println(result);
+                }
+            }
+            // Second test
+            if (n >= 4 && n < 8) {
+                // delay so that this connection doesn't get reused
+                // before all 4 requests sent
+                setPort(n, remotePort);
+                latch.countDown();
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                }
+                latch7.countDown();
+            }
+            if (n == 7) {
+                // wait until all n <= 7 have called setPort(...)
+                try {
+                    latch7.await();
+                } catch (InterruptedException e) {
+                }
+                getPorts(lports, 4);
+                // should be all different
+                if (lports[0] == lports[1] || lports[2] == lports[3]
+                        || lports[0] == lports[2]) {
+                    result = "Error " + Integer.toString(n);
+                    System.out.println(result);
+                }
+                // setup for third test
+                for (int i = 0; i < 4; i++) {
+                    portSet.add(lports[i]);
+                }
+                System.out.printf("Ports: %d, %d, %d, %d\n", lports[0], lports[1], lports[2], lports[3]);
+                latch8.countDown();
+            }
+            // Third test
+            if (n > 7) {
+                // wait until all n == 7 has updated portSet
+                try {
+                    latch8.await();
+                } catch (InterruptedException e) {
+                }
+                if (np > 4) {
+                    System.err.println("XXX np = " + np);
+                }
+                // just check that port is one of the ones in portSet
+                if (!portSet.contains(remotePort)) {
+                    System.out.println("UNEXPECTED REMOTE PORT "
+                            + remotePort + " not in " + portSet);
+                    result = "Error " + Integer.toString(n);
+                    System.out.println(result);
+                }
+            }
+
+            try (InputStream is = t.getRequestBody()) {
+                is.readAllBytes();
+            }
+            byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
+            long responseLength = HttpTestExchange.fixedRsp(bytes.length);
+            t.sendResponseHeaders(200, responseLength);
+            OutputStream o = t.getResponseBody();
+            o.write(bytes);
+            t.close();
+            nparallel.getAndDecrement();
+        }
     }
 }

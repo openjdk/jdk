@@ -151,6 +151,10 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
+void ShenandoahGeneration::post_initialize_heuristics() {
+  _heuristics->post_initialize();
+}
+
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
   shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;
@@ -268,7 +272,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
-  if (is_generational && ShenandoahGenerationalAdaptiveTenuring) {
+  if (is_generational) {
     // Objects above TAMS weren't included in the age census. Since they were all
     // allocated in this cycle they belong in the age 0 cohort. We walk over all
     // young regions and sum the volume of objects between TAMS and top.
@@ -311,8 +315,8 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     if (heap->mode()->is_generational()) {
       ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway =
-      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+      size_t allocation_runway =
+        gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
       gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
     }
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
@@ -358,8 +362,7 @@ void ShenandoahGeneration::cancel_marking() {
   set_concurrent_mark_in_progress(false);
 }
 
-ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
-                                           uint max_workers) :
+ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type, uint max_workers) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(this, MAX2(max_workers, 1U))),
@@ -416,12 +419,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 }
 
 size_t ShenandoahGeneration::available() const {
-  size_t result = available(max_capacity());
-  return result;
-}
-
-// For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
-size_t ShenandoahGeneration::available_with_reserve() const {
   size_t result = available(max_capacity());
   return result;
 }

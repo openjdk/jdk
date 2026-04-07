@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,21 @@ import javax.net.ssl.SSLParameters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import jdk.test.lib.security.SecurityUtils;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -56,7 +59,7 @@ import jdk.test.lib.security.SecurityUtils;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext TlsContextTest
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm -Dtest.requiresHost=true
+ * @run junit/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.disableHostnameVerification
  *                   -Djdk.internal.httpclient.debug=false
@@ -67,11 +70,11 @@ public class TlsContextTest implements HttpServerAdapters {
 
     static HttpTestServer https2Server;
     static String https2URI;
-    SSLContext server;
+    static SSLContext server;
     final static Integer ITERATIONS = 3;
 
-    @BeforeTest
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         // Re-enable TLSv1 and TLSv1.1 since test depends on them
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
@@ -86,8 +89,7 @@ public class TlsContextTest implements HttpServerAdapters {
         https2URI = "https://" + https2Server.serverAuthority() + "/server/";
     }
 
-    @DataProvider(name = "scenarios")
-    public Object[][] scenarios() throws Exception {
+    public static Object[][] scenarios() throws Exception {
         return new Object[][]{
                 { SimpleSSLContext.findSSLContext("TLS"),     HTTP_2,   "TLSv1.3" },
                 { SimpleSSLContext.findSSLContext("TLSv1.2"), HTTP_2,   "TLSv1.2" },
@@ -102,7 +104,8 @@ public class TlsContextTest implements HttpServerAdapters {
     /**
      * Tests various scenarios between client and server tls handshake with valid http
      */
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("scenarios")
     public void testVersionProtocolsNoParams(SSLContext context,
                                      Version version,
                                      String expectedProtocol) throws Exception {
@@ -113,7 +116,8 @@ public class TlsContextTest implements HttpServerAdapters {
      * Tests various scenarios between client and server tls handshake with valid http,
      * but with empty SSLParameters
      */
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("scenarios")
     public void testVersionProtocolsEmptyParams(SSLContext context,
                                              Version version,
                                              String expectedProtocol) throws Exception {
@@ -150,24 +154,24 @@ public class TlsContextTest implements HttpServerAdapters {
 
     private void testAllProtocols(HttpResponse<String> response,
                                   String expectedProtocol,
-                                  Version clientVersion) throws Exception {
+                                  Version clientVersion) {
         String protocol = response.sslSession().get().getProtocol();
         int statusCode = response.statusCode();
         Version version = response.version();
         out.println("Got Body " + response.body());
         out.println("The protocol negotiated is :" + protocol);
-        assertEquals(statusCode, 200);
-        assertEquals(protocol, expectedProtocol);
+        assertEquals(200, statusCode);
+        assertEquals(expectedProtocol, protocol);
         if (clientVersion == HTTP_3) {
-            assertEquals(version, expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 :
-                    expectedProtocol.equals("TLSv1.2") ? HTTP_2 : HTTP_3);
+            assertEquals(expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 :
+                    expectedProtocol.equals("TLSv1.2") ? HTTP_2 : HTTP_3, version);
         } else {
-            assertEquals(version, expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 : HTTP_2);
+            assertEquals(expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 : HTTP_2, version);
         }
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         https2Server.stop();
     }
 

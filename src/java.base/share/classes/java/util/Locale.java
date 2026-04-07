@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}.</dd>
  *   <dd> <em>BCP 47 deviation:</em> BCP 47 only
- *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
+ *   uses hyphen ('-') as a delimiter and APIs provided by {@code Locale} which accept
+ *   BCP 47 language tags expect as such. However, for backwards compatibility,
+ *   {@link Locale.Builder#setVariant(String)} also accepts underscore ('_').
+ *   {@link Locale#of(String, String, String)} accepts only underscore ('_').</dd>
  *
  *   <dd> <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
  *
