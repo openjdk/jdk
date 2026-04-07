@@ -39,8 +39,9 @@ import java.util.Set;
 import static java.lang.Boolean.*;
 import static java.net.StandardSocketOptions.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.Test;
 
 public class TestDefaultBehavior {
@@ -54,19 +55,19 @@ public class TestDefaultBehavior {
 
         assertEquals(0, csi.supportedOptions().size());
 
-        Assertions.assertThrows(NPE, () -> csi.setOption(null, null));
-        Assertions.assertThrows(NPE, () -> csi.setOption(null, 1));
-        Assertions.assertThrows(UOE, () -> csi.setOption(SO_RCVBUF, 100));
-        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
-        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, FALSE));
-        Assertions.assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, TRUE));
-        Assertions.assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, FALSE));
-        Assertions.assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
+        assertThrows(NPE, () -> csi.setOption(null, null));
+        assertThrows(NPE, () -> csi.setOption(null, 1));
+        assertThrows(UOE, () -> csi.setOption(SO_RCVBUF, 100));
+        assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
+        assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, FALSE));
+        assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, TRUE));
+        assertThrows(UOE, () -> csi.setOption(FAKE_SOCK_OPT, FALSE));
+        assertThrows(UOE, () -> csi.setOption(SO_KEEPALIVE, TRUE));
 
-        Assertions.assertThrows(NPE, () -> csi.getOption(null));
-        Assertions.assertThrows(UOE, () -> csi.getOption(SO_RCVBUF));
-        Assertions.assertThrows(UOE, () -> csi.getOption(SO_KEEPALIVE));
-        Assertions.assertThrows(UOE, () -> csi.getOption(FAKE_SOCK_OPT));
+        assertThrows(NPE, () -> csi.getOption(null));
+        assertThrows(UOE, () -> csi.getOption(SO_RCVBUF));
+        assertThrows(UOE, () -> csi.getOption(SO_KEEPALIVE));
+        assertThrows(UOE, () -> csi.getOption(FAKE_SOCK_OPT));
     }
 
     static final SocketOption<Boolean> FAKE_SOCK_OPT = new SocketOption<>() {
