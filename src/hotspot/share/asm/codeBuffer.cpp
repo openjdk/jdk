@@ -916,6 +916,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     assert(cb_sect->capacity() >= new_capacity[n], "big enough");
     address cb_start = cb_sect->start();
     cb_sect->set_end(cb_start + this_sect->size());
+    cb_sect->register_skipped(this_sect->_skipped_instructions_size);
     if (this_sect->mark() == nullptr) {
       cb_sect->clear_mark();
     } else {
