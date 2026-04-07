@@ -3289,9 +3289,9 @@ static bool is_VirtualAlloc2_supported() {
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
-      "Alignment must be a multiple of allocation granularity (page size)");
+      "Alignment must be a multiple of allocation granularity");
   assert(is_aligned(size, os::vm_allocation_granularity()),
-      "Size must be a multiple of allocation granularity (page size)");
+      "Size must be a multiple of allocation granularity");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3327,11 +3327,11 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 }
 
 // VirtualAlloc2 and MapViewOfFile3 support alignment natively.
-static char* map_or_reserve_memory_aligned_placeholder(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+static char* map_or_reserve_memory_aligned_va2(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
-         "Alignment must be a multiple of allocation granularity (page size)");
+         "Alignment must be a multiple of allocation granularity");
   assert(is_aligned(size, os::vm_allocation_granularity()),
-         "Size must be a multiple of allocation granularity (page size)");
+         "Size must be a multiple of allocation granularity");
 
   MEM_ADDRESS_REQUIREMENTS requirements = {0};
   requirements.Alignment = alignment;
@@ -3378,7 +3378,7 @@ static char* map_or_reserve_memory_aligned_placeholder(size_t size, size_t align
     }
     return aligned_base;
   }
-  log_trace(os)("Aligned allocation via VirtualAlloc2/MapViewOfFile3 failed, falling back to retry loop.");
+  log_trace(os)("Aligned allocation via VirtualAlloc2/MapViewOfFile3 failed, falling back to retry loop. GetLastError->%lu.", GetLastError());
   return map_or_reserve_memory_aligned(size, alignment, file_desc, mem_tag);
 }
 
@@ -3430,14 +3430,14 @@ size_t os::reserve_memory_limit() {
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
   if (is_VirtualAlloc2_supported()) {
-    return map_or_reserve_memory_aligned_placeholder(size, alignment,  -1/* file_desc */, mem_tag);
+    return map_or_reserve_memory_aligned_va2(size, alignment,  -1/* file_desc */, mem_tag);
   }
   return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
   if (is_VirtualAlloc2_supported()) {
-    return map_or_reserve_memory_aligned_placeholder(size, alignment, fd, mem_tag);
+    return map_or_reserve_memory_aligned_va2(size, alignment, fd, mem_tag);
   }
   return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
 }
@@ -3447,9 +3447,9 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
 }
 
 // This allocates a placeholder via VirtualAlloc2(MEM_RESERVE_PLACEHOLDER).
-os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
+static os::PlaceholderRegion reserve_placeholder_memory_helper(size_t bytes, bool exec, char* addr) {
   if (!is_VirtualAlloc2_supported()) {
-    return PlaceholderRegion();
+    return os::PlaceholderRegion();
   }
 
   char* res = (char*)os::win32::VirtualAlloc2(
@@ -3465,15 +3465,19 @@ os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec,
       // Got a different address than requested; release and fail.
       virtualFree(res, 0, MEM_RELEASE);
       log_warning(os)("VirtualAlloc2 placeholder at requested " PTR_FORMAT " returned different address " PTR_FORMAT ", released.", p2i(addr), p2i(res));
-      return PlaceholderRegion();
+      return os::PlaceholderRegion();
     }
     log_trace(os)("VirtualAlloc2 placeholder of size (%zu) returned " PTR_FORMAT ".", bytes, p2i(res));
-    return PlaceholderRegion(res, bytes);
+    return os::PlaceholderRegion(res, bytes);
   } else {
     PreserveLastError ple;
     log_warning(os)("VirtualAlloc2 placeholder reservation of size (%zu) at " PTR_FORMAT " failed (%u).", bytes, p2i(addr), ple.v);
-    return PlaceholderRegion();
+    return os::PlaceholderRegion();
   }
+}
+
+os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
+  return reserve_placeholder_memory_helper(bytes, exec, addr);
 }
 
 os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
@@ -3507,12 +3511,8 @@ os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, siz
 }
 
 // Replaces the placeholder via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
-char* os::pd_convert_to_reserved(PlaceholderRegion region) {
-  return os::win32::convert_placeholder_to_reserved(region);
-}
-
-// This function is for convenience to help with reserve_with_numa_placeholder.
-char* os::win32::convert_placeholder_to_reserved(PlaceholderRegion region, int numa_node) {
+// If numa_node >= 0, binds the reservation to that NUMA node.
+static char* convert_placeholder_to_reserved(os::PlaceholderRegion region, int numa_node = -1) {
   guarantee(is_VirtualAlloc2_supported(), "convert_placeholder_to_reserved requires VirtualAlloc2");
 
   char* base = region.base();
@@ -3553,16 +3553,16 @@ char* os::win32::convert_placeholder_to_reserved(PlaceholderRegion region, int n
 }
 
 // Reserve a region split across NUMA nodes.
-// This uses VirtualAlloc2 placeholders in order to avoid races when splitting up the initial reservation into chunks assigned to different nodes.
-// Returns the base address of the reserved range, or nullptr on failure.
-char* os::win32::reserve_with_numa_placeholder(char* addr, size_t bytes) {
+// Uses VirtualAlloc2 placeholders in order to avoid races when splitting up the initial reservation into
+// chunks assigned to different nodes. Returns the base address of the reserved range, or nullptr on failure.
+static char* reserve_with_numa_placeholder(char* addr, size_t bytes) {
   assert(is_VirtualAlloc2_supported(), "requires VirtualAlloc2");
 
   const size_t chunk_size = NUMAInterleaveGranularity;
 
   // Reserve the full range as a placeholder.
-  // If we requested an address, pd_reserve_placeholder_memory will obtain it or fail.
-  PlaceholderRegion whole_range = os::pd_reserve_placeholder_memory(bytes, false, addr);
+  // If we requested an address, reserve_placeholder_memory_helper will obtain it or fail.
+  os::PlaceholderRegion whole_range = reserve_placeholder_memory_helper(bytes, false, addr);
   if (whole_range.is_empty()) {
     log_warning(os)("Failed to reserve placeholder for NUMA interleaving (" PTR_FORMAT ", %zu).", p2i(addr), bytes);
     return nullptr;
@@ -3579,7 +3579,7 @@ char* os::win32::reserve_with_numa_placeholder(char* addr, size_t bytes) {
 
   while (remaining_len > 0) {
     const size_t bytes_to_rq = MIN2(remaining_len, chunk_size - ((size_t)cur % chunk_size));
-    PlaceholderRegion remaining(cur, remaining_len);
+    os::PlaceholderRegion remaining(cur, remaining_len);
     os::PlaceholderRegionPair split = os::split_memory(remaining, bytes_to_rq);
     DWORD node = node_count > 0 ? numa_node_list_holder.get_node_list_entry(count % node_count) : 0;  // Assign 0 for testing on UMA systems
     convert_placeholder_to_reserved(split.left, (int)node);
@@ -3589,6 +3589,11 @@ char* os::win32::reserve_with_numa_placeholder(char* addr, size_t bytes) {
   }
 
   return whole_range_base;
+}
+
+// Replaces the placeholder via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
+char* os::pd_convert_to_reserved(PlaceholderRegion region) {
+  return convert_placeholder_to_reserved(region);
 }
 
 // Reserve memory at an arbitrary address, only if that area is
@@ -3601,31 +3606,31 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   // note that if UseLargePages is on, all the areas that require interleaving
   // will go thru reserve_memory_special rather than thru here.
   bool use_numa_interleaving = (UseNUMAInterleaving && !UseLargePages);
-
-  if (use_numa_interleaving && is_VirtualAlloc2_supported()) {
-    // Splittable NUMA interleaving with VirtualAlloc2 placeholders.
-    res = win32::reserve_with_numa_placeholder(addr, bytes);
-    if (res == nullptr) {
-      log_warning(os)("NUMA allocation using placeholders failed");
-    }
-  } else if (use_numa_interleaving) {
-    // Non-splittable NUMA interleaving: allocate_pages_individually (possible races).
-    elapsedTimer reserveTimer;
-    if (Verbose && PrintMiscellaneous) reserveTimer.start();
-    // in numa interleaving, we have to allocate pages individually
-    // (well really chunks of NUMAInterleaveGranularity size)
-    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
-    if (res == nullptr) {
-      log_warning(os)("NUMA page allocation failed");
-    }
-    if (Verbose && PrintMiscellaneous) {
-      reserveTimer.stop();
-      tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
-                    reserveTimer.milliseconds(), reserveTimer.ticks());
+  if (use_numa_interleaving) {
+    if (is_VirtualAlloc2_supported()) {
+      // Splittable NUMA interleaving with VirtualAlloc2 placeholders.
+      res = reserve_with_numa_placeholder(addr, bytes);
+      if (res == nullptr) {
+        log_warning(os)("NUMA allocation using placeholders failed");
+      }
+    } else {
+      // Non-splittable NUMA interleaving: allocate_pages_individually (possible races).
+      elapsedTimer reserveTimer;
+      if (Verbose && PrintMiscellaneous) reserveTimer.start();
+      // in numa interleaving, we have to allocate pages individually
+      // (well really chunks of NUMAInterleaveGranularity size)
+      res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
+      if (res == nullptr) {
+        log_warning(os)("NUMA page allocation failed");
+      }
+      if (Verbose && PrintMiscellaneous) {
+        reserveTimer.stop();
+        tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
+                reserveTimer.milliseconds(), reserveTimer.ticks());
+      }
     }
   } else {
-    // Standard reservation. Callers who need splittable placeholders should use
-    // pd_reserve_placeholder_memory instead.
+    // Standard reservation.
     res = (char*)virtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
   }
   assert(res == nullptr || addr == nullptr || addr == res,
