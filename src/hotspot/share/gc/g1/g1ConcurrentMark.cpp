@@ -1132,8 +1132,9 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
   // continue after that safepoint.
   //
-  // Must not use work_remaining() here because we need to get a consistent view of the
-  // value containing the number of remaining regions across the usages below.
+  // Must not use G1CMRootMemRegions::work_completed() here because we need to get a
+  // consistent view of the value containing the number of remaining regions across the
+  // usages below.
   uint num_remaining = root_regions()->num_remaining_regions();
   bool do_scan = num_remaining > 0 && !has_root_region_scan_aborted();
   if (do_scan) {
