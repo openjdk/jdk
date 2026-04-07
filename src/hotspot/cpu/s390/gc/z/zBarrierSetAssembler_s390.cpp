@@ -185,23 +185,21 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 
   __ z_ngr(scratch2, dst);
-  __ z_brz(uncolor);
+  __ branch_optimized(Assembler::bcondZero, uncolor);
 
   //
   // Slow Path
   //
 
   {
+
     // Purpose: save all the volatile registers except when dst is Z_R2 because we want dst/oop to be present
     // in the Z_R2.
 
     // Call VM
     ZRuntimeCallSpill rcs(masm, dst);
 
-    if (Z_ARG1 != dst) {
-      __ z_lgr(Z_ARG1, dst);
-    }
-    // RuntimeTODO: Why are we storing the contents af temp registers in ARG2, all other architectures have done a similiar thing
+    __ z_lgr_if_needed(Z_ARG1, dst);
     __ z_lgr(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
@@ -210,9 +208,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // Slow-path has already uncolored
   if (L_handle_null != nullptr) {
     __ z_ltgr(dst, dst);
-    __ z_bre(*L_handle_null);
+    __ branch_optimized(Assembler::bcondEqual, *L_handle_null);
   }
-  __ z_brul(done);
+  __ branch_optimized(Assembler::bcondAlways, done);
 
   __ bind(uncolor);
 
@@ -220,7 +218,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ z_srlg(dst, dst, ZPointerLoadShift);
   if (L_handle_null != nullptr) {
     __ z_ltgr(dst, dst);
-    __ z_bre(*L_handle_null);
+    __ branch_optimized(Assembler::bcondEqual, *L_handle_null);
   }
 
   __ bind(done);
@@ -269,7 +267,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // TODO: Check if this will work or else implement z_chy
       __ z_ch(rnew_zpointer, ref_addr);
     }
-    __ z_brne(medium_path);
+    __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     assert_different_registers(rnew_zaddress, rnew_zpointer);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
@@ -281,10 +279,9 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
     __ z_lg(rnew_zpointer, ref_addr);
-    //TODO: check if we want to compare 32 bits or 64 bits
-      // TODO: Check if this will work or else implement z_chy
-    __ z_ch(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
-    __ z_brne(medium_path);
+    // TODO: In this using z_ch makes more sense but that is not working I don't know why? Also z_brne is emitted as jlh.
+    __ z_cg(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+    __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
       __ z_xgr(rnew_zpointer, rnew_zpointer);
@@ -293,7 +290,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
 
     __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
-    __ z_oy(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
+    // TODO: If I use z_oy here(2nd operand 32 bits) this does not work i.e. the instruction itself is not working it's doing OR
+    __ z_og(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
 
@@ -306,8 +304,6 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
                                      Register temp2,
                                      Label& slow_path) {
 
-  __ stop("store barrier buffer add");
-
   Address buffer(Z_thread, ZThreadLocalData::store_barrier_buffer_offset());
   assert_different_registers(ref_addr.base(), ref_addr.index(), temp1, temp2);
 
@@ -317,11 +313,11 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   // TODO: z_chy is not implemented and also check if we need to only compare the 8 bits
   __ z_lg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
   __ z_chi(temp2, (uint8_t)0);
-  __ z_bre(slow_path);
+  __ branch_optimized(Assembler::bcondEqual, slow_path);
   
   // Bump the pointer
   __ z_agfi(temp2, -(int)sizeof(ZStoreBarrierEntry));
-  __ z_st(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
+  __ z_stg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
 
   // Compute the buffer entry address
   __ z_la(temp2, Address(temp2, ZStoreBarrierBuffer::buffer_offset()));
@@ -329,11 +325,11 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
 
   // Compute and log the store address
   __ z_la(temp1, ref_addr);
-  __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::p_offset())));
+  __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::p_offset())));
 
   // Load and log the prev value
   __ z_lg(temp1, Address(temp1, 0));
-  __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
 }  
 
 // TODO: ppc does not have is_native support
@@ -353,21 +349,18 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Label& slow_path_continuation) const {
   assert_different_registers(ref_addr.base(), temp1, temp2);
 
-  __ stop("store barrier medium");
-
   // The reason to end up in the medium path is that the pre-value was not 'good'.
-
   if (is_native) {
-    __ z_brul(slow_path);
+    __ branch_optimized(Assembler::bcondAlways, slow_path);
     __ bind(slow_path_continuation);
-    __ z_brul(medium_path_continuation);
+    __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
   } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
-    __ z_xgr(temp2, temp2);
-    __ z_cg(temp2, ref_addr);
-    __ z_brne(slow_path);
+    __ z_la(temp2, ref_addr);
+    __ z_ltgr(temp2, temp2);
+    __ branch_optimized(Assembler::bcondNotEqual, slow_path);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
@@ -379,10 +372,10 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // did happen go to slow_path else store the mask in it
     __ z_csg(temp2, temp1, ref_addr);
 
-    __ z_brne(slow_path);
+    __ branch_optimized(Assembler::bcondNotEqual, slow_path);
 
     __ bind(slow_path_continuation);
-    __ z_brul(medium_path_continuation);
+    __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
   } else {
     // We don't know what comes here
 
@@ -396,7 +389,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                              temp2,
                              slow_path);
     __ bind(slow_path_continuation);
-    __ z_brul(medium_path_continuation);
+    __ branch_optimzied(Assembler::bcondAlways, medium_path_continuation);
   }
 }
 
@@ -426,7 +419,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
         __ z_lgr(temp1, src);
       }
       __ z_sllg(temp1, temp1, ZPointerLoadShift);
-      __ z_oy(temp1, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
+      __ z_og(temp1, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
       Label medium;
@@ -435,7 +428,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       Label slow_continuation;
       store_barrier_fast(masm, dst /* ref_addr */, src /* rnew_zaddress */, temp1 /* rnew_zpointer */
                          , false, false, medium, medium_continuation);
-      __ z_brul(done);
+      __ branch_optimized(Assembler::bcondAlways, done);
       __ bind(medium);
       store_barrier_medium(masm,
                            dst, /* ref_addr */
@@ -455,7 +448,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
         __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), Z_ARG1);
       }
 
-      __ z_brul(slow_continuation);
+      __ branch_optimized(Assembler::bcondAlways, slow_continuation);
       __ bind(done);
     }
 
@@ -481,7 +474,7 @@ void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
 
   __ z_lg(zpointer, Address(addr, 0));
   __ z_cgr(zpointer, load_bad_mask);
-  __ z_brne(slow_path);
+  __ branch_optimized(Assembler::bcondNotEqual, slow_path);
   __ bind(continuation);
 }
 
@@ -505,7 +498,7 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(), zpointer, Z_ARG2);
   }
   __ z_sllg(zpointer, Z_R0, ZPointerLoadShift); // Slow-path has uncolored; revert
-  __ z_brul(continuation);
+  __ branch_optimized(Assembler::bcondAlways, continuation);
 }
 
 // Purpose: if oop is not initialized we are checking if the oop addr has a bad 
@@ -524,7 +517,7 @@ void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
   if (!dest_uninitialized) {
     __ z_lg(Z_R0, Address(ref_addr, 0));
     __ z_cgr(Z_R0, store_bad_mask);
-    __ z_brne(medium_path);
+    __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(continuation);
   }
   __ z_ogr(zpointer, store_good_mask);
@@ -552,7 +545,7 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
       ZRuntimeCallSpill rcs(masm, noreg);
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), addr);
     }
-    __ z_brul(continuation);
+    __ branch_optimized(Assembler::bcondAlways, continuation);
   }
 }
 
@@ -605,7 +598,7 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   Label done, loop, load_bad, load_good, store_bad, store_good;
   __ z_sllg(Z_R0, Z_ARG3, 3);
   __ z_ltgr(Z_R0, Z_R0);
-  __ z_brz(done);
+  __ branch_optimized(Assembler::bcondZero, done);
   // Point behind last elements and copy backwards.
   __ z_agr(Z_ARG1, Z_R0);
   __ z_agr(Z_ARG2, Z_R0);
@@ -675,30 +668,30 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   // test for tag
   __ z_cgr(robj, JNIHandles::tag_mask);
-  __ z_brne(tagged);
+  __ branch_optimized(Assembler::bcondNotEqual, tagged);
 
   // Resolve local handle
   __ z_lg(robj, Address(robj, 0));
-  __ z_brul(done);
+  __ branch_optimized(Assembler::bcondAlways, done);
 
   __ bind(tagged);
 
   // Test for weak tag
   __ z_cgr(robj, JNIHandles::TypeTag::weak_global);
-  __ z_brne(weak_tagged);
+  __ branch_optimized(Assembler::bcondNotEqual, weak_tagged);
 
   // Resolve global handle
   __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
   __ z_ltg(robj, load_bad_mask_from_jni_env(jni_env));
-  __ z_brne(slowpath);
-  __ z_brul(uncolor);
+  __ branch_optimized(Assembler::bcondNotEqual, slowpath);
+  __ branch_optimized(Assembler::bcondAlways, uncolor);
 
   __ bind(weak_tagged);
 
   // Resolve weak handle
   __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
   __ z_ltg(robj, mark_bad_mask_from_jni_env(jni_env));
-  __ z_brne(slowpath);
+  __ branch_optimized(Assembler::bcondNotEqual, slowpath);
 
   __ bind(uncolor);
 
@@ -748,7 +741,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
     __ z_cghi(ref->as_register(), barrier_Relocation::unpatched);
 
     // Slow path if not zero
-    __ z_brne(*stub->entry());
+    __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
     // Fast path: convert to colorless
     z_uncolor(ce, ref);
   } else {
@@ -756,8 +749,8 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
     // TODO: double check this implementation, this follows aarch64 but ppc has done it differently
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
     __ z_cghi(ref->as_register(), barrier_Relocation::unpatched);
-    __ z_bre(good);
-    __ z_brul(*stub->entry());
+    __ branch_optimized(Assembler::bcondEqual, good);
+    __ branch_optimized(Assembler::bcondAlways, *stub->entry());
     __ bind(good);
     z_uncolor(ce, ref);
   }
@@ -796,8 +789,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   // TODO: x86 and aarch64 verified results whereas ppc did not, but implementation of verify oop in s390 and x86 varies
   // Runtime TODO: verify the result is stored in Z_R0
   __ z_lgr(ref, Z_R0);
-  __ z_brul(*stub->continuation());
-
+  __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
 // Purpose: It is just setting up the arguments and calling the store_barrier which we defined earlier
@@ -854,7 +846,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   __ add2reg(Z_SP, 2 * BytesPerWord);
 
   // Stub exit
-  __ z_brul(slow_continuation);
+  __ branch_optimized(Assembler::bcondAlways, slow_continuation);
 }
 
 #undef __
@@ -1004,7 +996,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
     __ call_stub(stub->slow_path());
   }
 
-  __ z_brul(*stub->continuation());
+  __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
 // Purpose: We are also here just calling the runtime but we are also trying it is_atomic null condition and
@@ -1046,7 +1038,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   }
 
   // Stub exit
-  __ z_brul(slow_continuation);
+  __ branch_optimized(Assembler::bcondAlways, slow_continuation);
 }
 
 #undef __
@@ -1066,14 +1058,14 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
   // Skip (colored) null
   __ z_srlg(Z_R0, obj, ZPointerLoadShift);
   __ z_ltgr(Z_R0, Z_R0);
-  __ z_brul(done);
+  __ branch_optimized(Assembler::bcondAlways, done);
 
   // Check if ZAddressHeapBase << ZPointerLoadShift is set. If so, we need to uncolor.
   // Runtime TODO: Check if this implementation is correct, (purpose is clear enough)
   __ z_srlg(Z_R0, obj, ZAddressHeapBaseShift + ZPointerLoadShift);
   __ z_chi(Z_R0, 0x01);
   __ z_lgr(Z_R0, obj);
-  __ z_brz(skip_uncolor);
+  __ branch_optimized(Assembler::bcondZero, skip_uncolor);
   __ z_srlg(Z_R0, obj, ZPointerLoadShift);
   __ bind(skip_uncolor);
 

@@ -55,7 +55,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   __ z_cghi(ref, barrier_Relocation::unpatched);
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  __ z_brne(*stub->entry());
+  __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
 
   z_uncolor(masm, node, ref);
 
@@ -84,8 +84,8 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   Label good;
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_cghi(ref, barrier_Relocation::unpatched);
-  __ z_bre(good);
-  __ z_brul(*stub->entry());
+  __ branch_optimized(Assembler::bcondEqual, good);
+  __ branch_optimized(Assembler::bcondAlways, *stub->entry());
   __ bind(good);
 
   z_uncolor(masm, node, ref);
@@ -227,7 +227,7 @@ instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
     __ z_lg($temp$$Register, mem_addr);
     __ bind(retry);
     __ z_csg($temp$$Register, $newval$$Register, mem_addr);
-    __ z_brne(retry);
+    __ branch_optimized(Assembler::bcondNotEqual, retry);
     __ z_lgr($newval$$Register, $temp$$Register);
     z_uncolor(masm, this, $newval$$Register);
   %}
