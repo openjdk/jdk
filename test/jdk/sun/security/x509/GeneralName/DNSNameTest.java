@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,16 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary DNSName parsing tests
- * @bug 8213952 8186143
+ * @bug 8213952 8186143 8381771
  * @modules java.base/sun.security.x509
  * @run testng DNSNameTest
  */
 
 import java.io.IOException;
+import java.net.IDN;
 import sun.security.x509.DNSName;
 
 import org.testng.annotations.DataProvider;
@@ -47,8 +48,8 @@ public class DNSNameTest {
                 {"a1b2c3.com"},
                 {"1abc.com"},
                 {"123.com"},
-                {"abc.com-"}, // end with hyphen
                 {"a-b-c.com"}, // hyphens
+                {IDN.toASCII("公司.com")} // IDN punycode
         };
         return data;
     }
@@ -62,10 +63,10 @@ public class DNSNameTest {
                 {"a1b2c3.com"},
                 {"1abc.com"},
                 {"123.com"},
-                {"abc.com-"}, // end with hyphen
                 {"a-b-c.com"}, // hyphens
                 {"*.domain.com"}, // wildcard in 1st level subdomain
                 {"*.com"},
+                {IDN.toASCII("公司.江利子")} // IDN punycode
         };
         return data;
     }
@@ -77,6 +78,7 @@ public class DNSNameTest {
                 {"1abc.com "}, // end with space
                 {"1a bc.com "}, // no space allowed
                 {"-abc.com"}, // begin with hyphen
+                {"abc.com-"}, // end with hyphen
                 {"a..b"}, // ..
                 {".a"}, // begin with .
                 {"a."}, // end with .
@@ -95,6 +97,7 @@ public class DNSNameTest {
                 {"1abc.com "}, // end with space
                 {"1a bc.com "}, // no space allowed
                 {"-abc.com"}, // begin with hyphen
+                {"abc.com-"}, // end with hyphen
                 {"a..b"}, // ..
                 {".a"}, // begin with .
                 {"a."}, // end with .
@@ -115,7 +118,7 @@ public class DNSNameTest {
         try {
             DNSName dn = new DNSName(dnsNameString);
         } catch (IOException e) {
-            fail("Unexpected IOException");
+            fail("Unexpected IOException: " + e.getMessage());
         }
     }
 
@@ -124,7 +127,7 @@ public class DNSNameTest {
         try {
             DNSName dn = new DNSName(dnsNameString, true);
         } catch (IOException e) {
-            fail("Unexpected IOException");
+            fail("Unexpected IOException: " + e.getMessage());
         }
     }
 

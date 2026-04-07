@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,9 @@ public class DNSName implements GeneralNameInterface {
             throw new IOException("DNSName with blank components is not permitted");
         if (name.startsWith(".") || name.endsWith("."))
             throw new IOException("DNSName may not begin or end with a .");
+        if (name.endsWith("-"))
+            throw new IOException("DNSName may not end with a hyphen");
+
         /*
          * Name will consist of label components separated by "."
          * startIndex is the index of the first character of a component
