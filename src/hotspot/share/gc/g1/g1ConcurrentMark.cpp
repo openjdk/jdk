@@ -1155,9 +1155,9 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
 
   // At the end of this method, we can re-read num_remaining() in the assert: either
   // we got non-zero above and we processed all root regions (and it must be zero
-  // after the worker task synchronization) or it has already been zero. We also
-  // can't have start another concurrent mark that could have set it to something else
-  // while still in the concurrent cycle (having been called concurrently).
+  // after the worker task synchronization) or it had already been zero. We also
+  // can't have started another concurrent cycle that could have set it to something else
+  // while still in the concurrent cycle (if called concurrently).
   assert_root_region_scan_completed_or_aborted();
 
   return do_scan;
