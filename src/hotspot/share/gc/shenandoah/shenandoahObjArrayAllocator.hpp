@@ -29,7 +29,7 @@
 
 class ShenandoahObjArrayAllocator : public ObjArrayAllocator {
 private:
-  // Override: segmented clearing with safepoint yields for large arrays
+  // Override: clearing with safepoint yields for large arrays
   oop initialize(HeapWord* mem) const override;
 
 public:
