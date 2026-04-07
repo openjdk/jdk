@@ -138,6 +138,8 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   __ shrptr(obj, CardTable::card_shift());
 
   Address card_addr;
+  precond(rscratch != noreg);
+  assert_different_registers(obj, rscratch);
 
   // The calculation for byte_map_base is as follows:
   // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
@@ -161,7 +163,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     // entry and that entry is not properly handled by the relocation code.
     AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
+    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch);
   }
 
   int dirty = CardTable::dirty_card_val();

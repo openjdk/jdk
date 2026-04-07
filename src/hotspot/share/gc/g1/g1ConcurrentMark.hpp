@@ -288,57 +288,36 @@ private:
 class G1CMRootMemRegions {
   // The set of root MemRegions.
   MemRegion* _root_regions;
-  size_t const _max_regions;
+  uint const _max_regions;
 
-  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
+  Atomic<uint> _num_regions;  // Actual number of root regions.
+  Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
 
-  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
-
-  Atomic<bool> _scan_in_progress;
-  Atomic<bool> _should_abort;
-
-  void notify_scan_done();
+  uint num_regions() const { return _num_regions.load_relaxed(); }
+  uint num_claimed_regions() const { return _num_claimed_regions.load_relaxed(); }
 
 public:
   G1CMRootMemRegions(uint const max_regions);
   ~G1CMRootMemRegions();
 
-  // Reset the data structure to allow addition of new root regions.
-  void reset();
-
   void add(HeapWord* start, HeapWord* end);
 
-  // Reset the claiming / scanning of the root regions.
-  void prepare_for_scan();
-
-  // Forces get_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort.store_relaxed(true); }
-
-  // Return true if the CM thread are actively scanning root regions,
-  // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
+  // Reset data structure to initial state.
+  void reset();
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
   const MemRegion* claim_next();
 
-  // The number of root regions to scan.
-  uint num_root_regions() const;
+  // Number of root regions to still process.
+  uint num_remaining_regions() const;
+
+  // Returns whether all root regions have been processed or the processing been aborted.
+  bool work_completed() const;
 
   // Is the given memregion contained in the root regions; the MemRegion must
   // match exactly.
   bool contains(const MemRegion mr) const;
-
-  void cancel_scan();
-
-  // Flag that we're done with root region scanning and notify anyone
-  // who's waiting on it. If aborted is false, assume that all regions
-  // have been claimed.
-  void scan_finished();
-
-  // If CM threads are still scanning root regions, wait until they
-  // are done. Return true if we had to wait, false otherwise.
-  bool wait_until_scan_finished();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
@@ -367,6 +346,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Root region tracking and claiming
   G1CMRootMemRegions      _root_regions;
+  Atomic<bool>            _root_region_scan_aborted;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
@@ -600,7 +580,7 @@ public:
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
-  // running.
+  // running or being aborted.
   void abort_marking_threads();
 
   // Total cpu time spent in mark worker threads in seconds.
@@ -651,17 +631,30 @@ public:
   // Stop active components/the concurrent mark thread.
   void stop();
 
-  // Scan all the root regions and mark everything reachable from
-  // them.
-  void scan_root_regions();
-  bool wait_until_root_region_scan_finished();
   void add_root_region(G1HeapRegion* r);
   bool is_root_region(G1HeapRegion* r);
-  void root_region_scan_abort_and_wait();
+
+  // Scan all the root regions concurrently and mark everything reachable from
+  // them.
+  void scan_root_regions_concurrently();
+  // Complete root region scan work in the safepoint, return if we did some work.
+  bool complete_root_regions_scan_in_safepoint();
+
+  // Abort an active concurrent root region scan outside safepoint.
+  void abort_root_region_scan();
+
+  bool has_root_region_scan_aborted() const;
 
 private:
+  // Abort an active concurrent root region scan during safepoint.
+  void abort_root_region_scan_at_safepoint();
+
+  void assert_root_region_scan_completed_or_aborted() PRODUCT_RETURN;
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
+  // Perform root region scan until all root regions have been processed, or
+  // the process has been aborted. Returns true if we did some work.
+  bool scan_root_regions(WorkerThreads* workers, bool concurrent);
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
 
