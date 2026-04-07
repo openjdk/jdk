@@ -4531,10 +4531,6 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
 
-  // Capture the (scalar) C2 input graph.
-  VTransform input_vtransform(vloop_analyzer, nullptr, 1);
-  // TODO: consider different arguments for nullptr and 1.
-
   SuperWord sw(vloop_analyzer);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
