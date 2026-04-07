@@ -29,8 +29,8 @@
  * @summary Avoid interp-only mode during stepping over method calls.
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
- * @run compile -g SingleStepPerformanceTest.java
- * @run driver/timeout=6000 SingleStepPerformanceTest
+ * @run compile -g StepOverStressTest.java
+ * @run driver/timeout=6000 StepOverStressTest
  */
 
 import com.sun.jdi.*;
@@ -80,18 +80,18 @@ class TestTarg {
 
     /********** test program **********/
 
-public class SingleStepPerformanceTest extends TestScaffold {
+public class StepOverStressTest extends TestScaffold {
     ClassType targetClass;
     ThreadReference mainThread;
 
     static void log(String msg) { System.out.println(msg); }
 
-    SingleStepPerformanceTest (String args[]) {
+    StepOverStressTest (String args[]) {
         super(args);
     }
 
     public static void main(String[] args)      throws Exception {
-        new SingleStepPerformanceTest(args).startTests();
+        new StepOverStressTest(args).startTests();
     }
 
     /********** event handlers **********/
@@ -157,7 +157,7 @@ public class SingleStepPerformanceTest extends TestScaffold {
         } catch (Exception ex){
             ex.printStackTrace();
             failure("failure: Could not add listener");
-            throw new Exception("SingleStepPerformanceTest: failed");
+            throw new Exception("StepOverStressTest: failed");
         }
 
         vm().resume();
@@ -174,9 +174,9 @@ public class SingleStepPerformanceTest extends TestScaffold {
          // Deal with results of test if anything has called failure("foo")
          // testFailed will be true.
         if (!testFailed) {
-            println("SingleStepPerformanceTest: passed");
+            println("StepOverStressTest: passed");
         } else {
-            throw new Exception("SingleStepPerformanceTest: failed");
+            throw new Exception("StepOverStressTest: failed");
         }
     }
 }
