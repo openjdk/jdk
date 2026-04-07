@@ -152,8 +152,9 @@ bool VM_G1PauseConcurrent::doit_prologue() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   if (g1h->is_shutting_down()) {
     Heap_lock->unlock();
-    // JVM shutdown has started. This ensures that any further operations will be properly aborted
-    // and will not interfere with the shutdown process.
+    // JVM shutdown has started. Abort concurrent marking to ensure that any further
+    // concurrent VM operations will not try to start and interfere with the shutdown
+    // process.
     g1h->concurrent_mark()->abort_marking_threads();
     return false;
   }
