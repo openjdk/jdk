@@ -92,12 +92,11 @@ public class OpensslArtifactFetcher {
            throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
                 OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
         }
-        System.out.println("Artifacts Path is"+path);
+        System.out.println("Artifacts Path is:"+path);
         return path;
     }
 
     private static String getArtifactsFromArtifactory() {
-        System.out.println("reached this point");
         String returnValue = null;
         if (Platform.isX64()) {
             if (Platform.isLinux()) {
