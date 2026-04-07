@@ -12087,8 +12087,6 @@ class StubGenerator: public StubCodeGenerator {
      */
     address generate_multiply() {
       Label argh, nothing;
-      bind(argh);
-      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       align(CodeEntryAlignment);
       address entry = pc();
@@ -12195,6 +12193,10 @@ class StubGenerator: public StubCodeGenerator {
       bind(nothing);
       ret(lr);
 
+      // handler for error case
+      bind(argh);
+      stop("MontgomeryMultiply total_allocation must be <= 8192");
+
       return entry;
     }
     // In C, approximately:
@@ -12298,8 +12300,6 @@ class StubGenerator: public StubCodeGenerator {
      */
     address generate_square() {
       Label argh;
-      bind(argh);
-      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       align(CodeEntryAlignment);
       address entry = pc();
@@ -12407,6 +12407,10 @@ class StubGenerator: public StubCodeGenerator {
 
       leave();
       ret(lr);
+
+      // handler for error case
+      bind(argh);
+      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       return entry;
     }
