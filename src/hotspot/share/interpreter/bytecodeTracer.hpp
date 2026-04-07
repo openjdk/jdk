@@ -25,21 +25,50 @@
 #ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
 #define SHARE_INTERPRETER_BYTECODETRACER_HPP
 
+#include "interpreter/bytecodes.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "opto/subnode.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class Method;
+class methodHandle;
+class outputStream;
+class BytecodeClosure;
 
 // The BytecodeTracer is a helper class used by the interpreter for run-time
 // bytecode tracing. If TraceBytecodes turned on, trace_interpreter() will be called
 // for each bytecode.
-
-class methodHandle;
-class outputStream;
-
-class BytecodeClosure;
 class BytecodeTracer: AllStatic {
  public:
   NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st);)
   static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered = true);
+};
+
+// Provides tracing-centric context on the current method and bytecode that
+// the thread is interpreting.
+class BytecodeTracerData : public CHeapObj<mtTracing> {
+ private:
+  Method*         _current_method;
+  bool            _is_wide;
+  Bytecodes::Code _raw_code;
+  address         _next_pc;
+
+ public:
+  BytecodeTracerData() : _current_method(nullptr),
+                         _is_wide(false),
+                         _raw_code(Bytecodes::Code::_illegal),
+                         _next_pc(nullptr) {}
+
+  Method*         current_method() const                 { return _current_method; }
+  void            set_current_method(Method* current)    { _current_method = current; }
+  bool            is_wide() const                        { return _is_wide; }
+  void            set_wide(bool wide)                    { _is_wide = wide; }
+  Bytecodes::Code raw_code()                             { return _raw_code; }
+  void            set_raw_code(Bytecodes::Code raw_code) { _raw_code = Bytecodes::Code(raw_code); }
+  address         next_pc() const                        { return _next_pc; }
+  void            set_next_pc(address next_pc)           { _next_pc = next_pc; }
 };
 
 #endif // SHARE_INTERPRETER_BYTECODETRACER_HPP

@@ -83,6 +83,8 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 class EventVirtualThreadPinned;
 class ThreadWXEnable;
 
+class BytecodeTracerData;
+
 class JavaThread: public Thread {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -275,6 +277,7 @@ class JavaThread: public Thread {
 #ifdef ASSERT
  private:
   volatile uint64_t _visited_for_critical_count;
+  BytecodeTracerData*  _bytecode_tracer_data;
 
  public:
   void set_visited_for_critical_count(uint64_t safepoint_id) {
@@ -288,6 +291,11 @@ class JavaThread: public Thread {
   }
   bool was_visited_for_critical_count(uint64_t safepoint_id) const {
     return _visited_for_critical_count == safepoint_id;
+  }
+
+  BytecodeTracerData* bytecode_tracer_data() {
+    assert(_bytecode_tracer_data != nullptr, "_bytecode_tracer_data should be initialized");
+    return _bytecode_tracer_data;
   }
 #endif // ASSERT
 
