@@ -4532,17 +4532,8 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   }
 
   // Capture the (scalar) C2 input graph.
-//#ifndef PRODUCT
-//  // TODO: refactor tracing
-//  VTransformTrace trace(vloop.vtrace(),
-//                        vloop.is_trace_rejections(),
-//                        is_trace_align_vector(),
-//                        vloop.is_trace_speculative_aliasing_analysis(),
-//                        vloop.is_trace_speculative_runtime_checks(),
-//                        is_trace_superword_info());
-//#endif
-//  VTransform input_vtransform(vloop_analyzer, nullptr, 1, NOT_PRODUCT(COMMA trace));
-//  // TODO: consider different arguments for nullptr and 1.
+  VTransform input_vtransform(vloop_analyzer, nullptr, 1);
+  // TODO: consider different arguments for nullptr and 1.
 
   SuperWord sw(vloop_analyzer);
   if (!sw.transform_loop()) {

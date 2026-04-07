@@ -1884,19 +1884,9 @@ bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
-#ifndef PRODUCT
-  // TODO: can we remove the trace?
-  VTransformTrace trace(_vloop.vtrace(),
-                        _vloop.is_trace_align_vector(),
-                        _vloop.is_trace_speculative_aliasing_analysis(),
-                        _vloop.is_trace_speculative_runtime_checks(),
-                        _vloop.is_trace_superword_info());
-#endif
   VTransform vtransform(_vloop_analyzer,
                         _vpointer_for_main_loop_alignment,
-                        _aw_for_main_loop_alignment
-                        NOT_PRODUCT(COMMA trace)
-                        );
+                        _aw_for_main_loop_alignment);
 
   // Build the transform from the packset.
   {
@@ -1921,7 +1911,7 @@ bool VTransform::is_profitable() const {
 
   if (AutoVectorizationOverrideProfitability == 0) {
 #ifndef PRODUCT
-    if (_trace._info) {
+    if (_vloop.is_trace_vtransform() || _vloop.is_trace_rejections() || _vloop.is_trace_cost()) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
 #endif
@@ -1930,7 +1920,7 @@ bool VTransform::is_profitable() const {
 
   if (AutoVectorizationOverrideProfitability == 2) {
 #ifndef PRODUCT
-    if (_trace._info) {
+    if (_vloop.is_trace_vtransform() || _vloop.is_trace_cost()) {
       tty->print_cr("\nForced vectorization, ignoring profitability (AutoVectorizationOverrideProfitability=2).");
     }
 #endif
@@ -1948,7 +1938,7 @@ bool VTransform::is_profitable() const {
   float scalar_cost = _vloop_analyzer.cost_for_scalar_loop();
   float vector_cost = cost_for_vector_loop();
 #ifndef PRODUCT
-  if (_trace._info) {
+  if (_vloop.is_trace_vtransform() || _vloop.is_trace_cost()) {
     tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
                   scalar_cost, vector_cost);
   }
@@ -1961,7 +1951,7 @@ bool VTransform::is_profitable() const {
 // See description at top of "vtransform.hpp".
 void VTransform::apply() {
 #ifndef PRODUCT
-  if (_trace._info || TraceLoopOpts) {
+  if (_vloop.is_trace_vtransform() || TraceLoopOpts) {
     tty->print_cr("\nVTransform::apply:");
     lpt()->dump_head();
     lpt()->head()->dump();
@@ -1992,7 +1982,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     VTransformApplyResult result = vtn->apply(apply_state);
-    NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
+    NOT_PRODUCT( if (_vloop.is_trace_vtransform_verbose()) { result.trace(vtn); } )
 
     apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
@@ -2014,7 +2004,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
 void VTransform::apply_vectorization() const {
   Compile* C = phase()->C;
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_vloop.is_trace_vtransform_verbose()) {
     tty->print_cr("\nVTransform::apply_vectorization:");
   }
 #endif
@@ -2742,7 +2732,7 @@ void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
   DEBUG_ONLY(                           \
-    if (_trace._align_vector) {         \
+    if (_vloop.is_trace_align_vector()) { \
       tty->print("  " #node ": ");      \
       node->dump();                     \
     }                                   \
@@ -2764,7 +2754,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
 #ifdef ASSERT
-    if (_trace._align_vector) {
+    if (_vloop.is_trace_align_vector()) {
       tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
     }
 #endif
@@ -2920,7 +2910,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* base          = p.mem_pointer().base().object_or_native();
 
 #ifdef ASSERT
-  if (_trace._align_vector) {
+  if (_vloop.is_trace_align_vector()) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  vpointer_for_main_loop_alignment");
     p.print_on(tty);
@@ -2951,7 +2941,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       iv_scale  == 0 || !is_power_of_2(abs(iv_scale))  ||
       abs(iv_scale) >= aw) {
 #ifdef ASSERT
-    if (_trace._align_vector) {
+    if (_vloop.is_trace_align_vector()) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" iv_stride or iv_scale are not power of 2, or abs(iv_scale) >= aw.");
     }
@@ -2967,7 +2957,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int AW = aw / abs(iv_scale);
 
 #ifdef ASSERT
-  if (_trace._align_vector) {
+  if (_vloop.is_trace_align_vector()) {
     tty->print_cr("  AW = aw(%d) / abs(iv_scale(%d)) = %d", aw, iv_scale, AW);
   }
 #endif

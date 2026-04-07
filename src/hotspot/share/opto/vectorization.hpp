@@ -240,6 +240,15 @@ public:
            _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
+  bool is_trace_vtransform() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
+  }
+
+  bool is_trace_vtransform_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM_VERBOSE);
+  }
+
   bool is_trace_optimization() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }
