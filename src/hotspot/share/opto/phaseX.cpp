@@ -2235,7 +2235,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
         if (n->is_Region()) {
           for (uint j = 1; j < n->req(); j++) {
             Node* in = n->in(j);
-            if (in != nullptr && wq.member(in)) {
+            if (in != nullptr && !in->is_Region() && wq.member(in)) {
               replace_input_of(n, j, C->top());
               in->remove_dead_region(this, true);
             }
@@ -2243,8 +2243,8 @@ Node *PhaseIterGVN::transform_old(Node* n) {
         } else if (n->is_Phi()) {
           for (uint j = 1; j < n->req(); j++) {
             Node* in = n->in(j);
-            if (in != nullptr && wq.member(in)) {
-              if (n->in(0)->in(j)->is_top()) {
+            if (in != nullptr && !in->is_Phi() && wq.member(in)) {
+              if (n->in(0)->is_top() || n->in(0)->in(j)->is_top()) {
                 continue;
               }
               if (r == nullptr) {
@@ -2261,7 +2261,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
               }
             }
           }
-        } else if (n->is_CFG() && !wq.member(n->in(0))) {
+        } else if (n->is_CFG() && !(!n->in(0)->is_Region() && wq.member(n->in(0)))) {
           if (n->in(0)->is_top()) {
             continue;
           }
