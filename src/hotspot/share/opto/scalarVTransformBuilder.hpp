@@ -49,31 +49,30 @@ public:
 private:
   void build();
   void build_scalar_vtnodes();
-//  void build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies);
-//  void build_uses_after_loop();
-//
-//  // Helper methods for building VTransform.
-//  VTransformNode* get_vtnode_or_null(Node* n) const {
-//    VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
-//    return (ptr == nullptr) ? nullptr : *ptr;
-//  }
-//
-//  VTransformNode* get_vtnode(Node* n) const {
-//    VTransformNode* vtn = get_vtnode_or_null(n);
-//    assert(vtn != nullptr, "expect non-null vtnode");
-//    return vtn;
-//  }
+  void build_inputs_for_vtnodes(VectorSet& vtn_memory_dependencies);
+  //void build_uses_after_loop();
+
+  // Helper methods for building VTransform.
+  VTransformNode* get_vtnode_or_null(Node* n) const {
+    VTransformNode** ptr = _idx_to_vtnode.get(n->_idx);
+    return (ptr == nullptr) ? nullptr : *ptr;
+  }
+
+  VTransformNode* get_vtnode(Node* n) const {
+    VTransformNode* vtn = get_vtnode_or_null(n);
+    assert(vtn != nullptr, "expect non-null vtnode");
+    return vtn;
+  }
 
   void map_node_to_vtnode(Node* n, VTransformNode* vtn) {
     assert(vtn != nullptr, "only set non-null vtnodes");
     _idx_to_vtnode.put_when_absent(n->_idx, vtn);
   }
 
-//  VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
-//  void init_req_with_scalar(Node* n, VTransformNode* vtn, const int index);
-//  void init_all_req_with_scalars(Node* n, VTransformNode* vtn);
-//  void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
-//  LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
+  VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
+  void init_req(Node* n, VTransformNode* vtn, const int index);
+  void init_all_req(Node* n, VTransformNode* vtn);
+  void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
 };
 
 #endif // SHARE_OPTO_SCALAR_VTRANSFORM_BUILDER_HPP
