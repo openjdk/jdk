@@ -27,6 +27,7 @@
 #define SHARE_OPTO_SCALAR_VTRANSFORM_BUILDER_HPP
 
 // Facility class that builds a VTransform from the scalar C2 graph.
+// From this scalar VTransform, we later derive vectorized VTransforms.
 class ScalarVTransformBuilder : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -50,7 +51,7 @@ private:
   void build();
   void build_scalar_vtnodes();
   void build_inputs_for_vtnodes(VectorSet& vtn_memory_dependencies);
-  //void build_uses_after_loop();
+  void build_uses_after_loop();
 
   // Helper methods for building VTransform.
   VTransformNode* get_vtnode_or_null(Node* n) const {

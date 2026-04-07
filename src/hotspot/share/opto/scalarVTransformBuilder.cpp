@@ -34,9 +34,9 @@ void ScalarVTransformBuilder::build() {
   VectorSet vtn_memory_dependencies; // Shared, but cleared for every vtnode.
   build_inputs_for_vtnodes(vtn_memory_dependencies);
 
-  // TODO: // // Build vtnodes for all uses of nodes from the loop, and connect them
-  // TODO: // // as outputs to the nodes in the loop.
-  // TODO: // build_uses_after_loop();
+  // Build vtnodes for all uses of nodes from the loop, and connect them
+  // as outputs to the nodes in the loop.
+  build_uses_after_loop();
 
 #ifndef PRODUCT
   if (_vloop.is_trace_vtransform()) {
@@ -92,31 +92,31 @@ void ScalarVTransformBuilder::build_inputs_for_vtnodes(VectorSet& vtn_memory_dep
   }
 }
 
-//// Build vtnodes for all uses of nodes from the loop, and connect them
-//// as outputs to the nodes in the loop.
-//void ScalarVTransformBuilder::build_uses_after_loop() {
-//  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
-//    Node* n = _vloop.lpt()->_body.at(i);
-//    VTransformNode* vtn = get_vtnode(n);
-//
-//    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-//      Node* use = n->fast_out(i);
-//
-//      if (!_vloop.in_bb(use)) {
-//        VTransformNode* vtn_use = get_vtnode_or_wrap_as_outer(use);
-//
-//        // Set all edges
-//        for (uint j = 0; j < use->req(); j++) {
-//          Node* def = use->in(j);
-//          if (n == def && vtn_use->in_req(j) != vtn) {
-//            assert(vtn_use->in_req(j) == nullptr, "should not yet be set");
-//            vtn_use->init_req(j, vtn);
-//          }
-//        }
-//      }
-//    }
-//  }
-//}
+// Build vtnodes for all uses of nodes from the loop, and connect them
+// as outputs to the nodes in the loop.
+void ScalarVTransformBuilder::build_uses_after_loop() {
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
+    VTransformNode* vtn = get_vtnode(n);
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* use = n->fast_out(i);
+
+      if (!_vloop.in_bb(use)) {
+        VTransformNode* vtn_use = get_vtnode_or_wrap_as_outer(use);
+
+        // Set all edges
+        for (uint j = 0; j < use->req(); j++) {
+          Node* def = use->in(j);
+          if (n == def && vtn_use->in_req(j) != vtn) {
+            assert(vtn_use->in_req(j) == nullptr, "should not yet be set");
+            vtn_use->init_req(j, vtn);
+          }
+        }
+      }
+    }
+  }
+}
 
 void ScalarVTransformBuilder::init_req(Node* n, VTransformNode* vtn, const int index) {
   VTransformNode* req = get_vtnode_or_wrap_as_outer(n->in(index));
