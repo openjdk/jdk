@@ -49,6 +49,8 @@ import java.util.function.BiConsumer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -785,7 +787,10 @@ public class SocketImplCombinations {
         InetAddress address = get(si, "address");
         int port = get(si, "port");
         int localport = get(si, "localport");
-        assertTrue(fd.valid() && address != null && port != 0 && localport != 0);
+        assertTrue(fd.valid());
+        assertNotNull(address);
+        assertNotEquals(0, port);
+        assertNotEquals(0, localport);
     }
 
     /**
