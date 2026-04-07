@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8341399 8381475
+ * @bug 8341399
  * @summary Test for `@since` in jdk.compiler module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.compiler
