@@ -111,7 +111,7 @@ void VM_Version::initialize() {
     }
   } else if (SuperwordUseVSX) {
     if(PowerArchitecturePPC64 == 8)
-      warning("SuperwordUseVSX is not recommended on POWER 8 due to poor VSX performance.");
+      warning("SuperwordUseVSX is not recommended on POWER8 due to poor VSX performance.");
     else
       warning("SuperwordUseVSX is not supported below POWER8.");
     FLAG_SET_DEFAULT(SuperwordUseVSX, false);
