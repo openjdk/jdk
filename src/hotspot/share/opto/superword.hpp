@@ -63,19 +63,19 @@
 class PairSet : public StackObj {
 private:
   const VLoop& _vloop;
-  const VLoopBody& _body;
+  const VLoopBody& _body; // TODO: consider removing, replace with VTransform
 
   // Doubly-linked pairs. If not linked: -1
-  GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
-  GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
+  GrowableArray<int> _left_to_right; // vtn idx -> vtn idx
+  GrowableArray<int> _right_to_left; // vtn idx -> vtn idx
   // Example:
   //
   //   Pairs: (n1, n2) and (n2, n3)
-  //   bb_idx(n1) = 1
-  //   bb_idx(n2) = 3
-  //   bb_idx(n3) = 5
+  //   n1->_idx = 1
+  //   n2->_idx = 3
+  //   n3->_idx = 5
   //
-  //   index / bb_idx:   0   1   2   3   4   5   6
+  //   vtn idx:          0   1   2   3   4   5   6
   //
   //   left_to_right:  |   | 3 |   | 5 |   |   |   |
   //                         n1----->
@@ -85,25 +85,25 @@ private:
   //                          <------n2
   //                                  <------n3
   //
-  //   Nodes with bb_idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
+  //   Nodes with vtn idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
   //   and hence have no entries in the mapping.
   //
-  //   Nodes with bb_idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
+  //   Nodes with vtn idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
   //   have an entry in the left_to_right mapping. This mapping indicates which right element they are
-  //   paired with, namely the nodes with bb_idx 3 and 5 (n2 and n3), respectively.
+  //   paired with, namely the nodes with vtn idx 3 and 5 (n2 and n3), respectively.
   //
-  //   Nodes with bb_idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
+  //   Nodes with vtn idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
   //   have an entry in the right_to_left mapping. This mapping indicates which left element they are
-  //   paired with, namely the nodes with bb_idx 1 and 3 (n1 and n2), respectively.
+  //   paired with, namely the nodes with vtn idx 1 and 3 (n1 and n2), respectively.
   //
-  //   Node n1 with bb_idx 1 is not a right element in any pair, thus its right_to_left is empty.
+  //   Node n1 with vtn idx 1 is not a right element in any pair, thus its right_to_left is empty.
   //
-  //   Node n2 with bb_idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
+  //   Node n2 with vtn idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
   //   Thus it has entries in both left_to_right (mapping n2->n3) and right_to_left (mapping n2->n1).
   //
-  //   Node n3 with bb_idx 5 is not a left element in any pair, thus its left_to_right is empty.
+  //   Node n3 with vtn idx 5 is not a left element in any pair, thus its left_to_right is empty.
 
-  // List of all left elements bb_idx, in the order of pair addition.
+  // List of all left elements vtn idx, in the order of pair addition.
   GrowableArray<int> _lefts_in_insertion_order;
 
 public:
@@ -121,8 +121,10 @@ public:
 
   bool is_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool is_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool is_left(const Node* n)  const { return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
-  bool is_right(const Node* n) const { return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
+  bool is_left(const Node* n)  const { assert(false, "depr"); return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
+  bool is_right(const Node* n) const { assert(false, "depr"); return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
+  bool is_left(const VTransformNode* n)  const { return is_left(n->_idx); }
+  bool is_right(const VTransformNode* n)  const { return is_right(n->_idx); }
 
   bool is_pair(const Node* n1, const Node* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
 
@@ -140,15 +142,16 @@ public:
   Node* left_at_in_insertion_order(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
   Node* right_at_in_insertion_order(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
 
-  void add_pair(Node* n1, Node* n2) {
+  void add_pair(VTransformNode* n1, VTransformNode* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
-    assert(!is_left(n1) && !is_right(n2), "cannot be left twice, or right twice");
-    int bb_idx_1 = _body.bb_idx(n1);
-    int bb_idx_2 = _body.bb_idx(n2);
-    _left_to_right.at_put(bb_idx_1, bb_idx_2);
-    _right_to_left.at_put(bb_idx_2, bb_idx_1);
-    _lefts_in_insertion_order.append(bb_idx_1);
+    _left_to_right.at_put(n1->_idx, n2->_idx);
+    _right_to_left.at_put(n2->_idx, n1->_idx);
+    _lefts_in_insertion_order.append(n1->_idx);
     assert(is_left(n1) && is_right(n2), "must be set now");
+  }
+
+  void add_pair(Node* n1, Node* n2) {
+    assert(false, "deprecated");
   }
 
   NOT_PRODUCT(void print() const;)

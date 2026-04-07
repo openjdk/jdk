@@ -661,7 +661,7 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
 #endif
 
       if (!found) {
-        _pairset.add_pair(mem1, mem2);
+        _pairset.add_pair(s1, s2);
       }
     }
   }
