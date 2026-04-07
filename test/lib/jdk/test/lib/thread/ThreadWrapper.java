@@ -28,19 +28,28 @@ import java.time.Duration;
 import java.util.Map;
 
 /*
-    This class help to adopt exiting multithreaded tests with following pattern:
+    The ThreadWrapper is a helper class that allows to extend
+    coverage of virtual threads testing for existing tests with threads.
 
-    resumethrd02Thread extends Thread {...}
+    Specifically, it is useful for the pattern where Thread is extended
+    by some class. Example:
+
+    class resumethrd02Thread extends Thread {...}
     ...
     resumethrd02Thread thr = new resumethrd02Thread();
 
-    The test might be replaced with
-
-    resumethrd02Thread extends ThreadWrapper {...}
+    The test can be updated to use this wrapper:
+    class resumethrd02Thread extends ThreadWrapper {...}
     ...
     resumethrd02Thread thr = new resumethrd02Thread();
 
-    to run resumethrd02Thread with plain or virtual threads using TestThreadFactory.
+    So resumethrd02Thread can be run with platform or virtual threads.
+
+    Method getThread() is used to get instance of Thread.
+
+    It is not expected to use this wrapper for new tests or classes that
+    are not extending Thread. The TestThreadFactory should be used to
+    create threads in such cases.
  */
 
 public class ThreadWrapper implements Runnable {
@@ -48,12 +57,13 @@ public class ThreadWrapper implements Runnable {
 
     @SuppressWarnings("this-escape")
     public ThreadWrapper() {
+        // thread is a platform or virtual thread
         thread = TestThreadFactory.newThread(this);
     }
 
-
     @SuppressWarnings("this-escape")
     public ThreadWrapper(String name) {
+        // thread is a platform or virtual thread
         thread = TestThreadFactory.newThread(this, name);
     }
 
@@ -107,7 +117,6 @@ public class ThreadWrapper implements Runnable {
 
     public void run() {
     }
-
 
     public void interrupt() {
         thread.interrupt();
