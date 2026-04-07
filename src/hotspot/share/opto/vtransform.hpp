@@ -220,6 +220,7 @@ public:
   Arena* arena() { return &_arena; }
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
+  const VTransformGraph& graph() const { return _graph; }
 
   void optimize();
   bool schedule() { return _graph.schedule(); }

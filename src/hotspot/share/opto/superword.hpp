@@ -388,7 +388,8 @@ public:
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
-  const VLoopAnalyzer& _vloop_analyzer;
+  const VTransform&    _scalar_vtransform;
+  const VLoopAnalyzer& _vloop_analyzer; // TODO: consider not using it...
   const VLoop&         _vloop;
 
   // Arena for small data structures. Large data structures are allocated in
@@ -406,7 +407,7 @@ class SuperWord : public ResourceObj {
   int _aw_for_main_loop_alignment;
 
  public:
-  SuperWord(const VLoopAnalyzer &vloop_analyzer);
+  SuperWord(const VTransform& scalar_vtransform);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -515,23 +516,19 @@ private:
   // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
   class MemOp : public StackObj {
   private:
-    MemNode* _mem;
-    const VPointer* _vpointer;
+    VTransformMemopScalarNode* _vtnode;
     int _original_index;
 
   public:
     // Empty, for GrowableArray
     MemOp() :
-      _mem(nullptr),
-      _vpointer(nullptr),
+      _vtnode(nullptr),
       _original_index(-1) {}
-    MemOp(MemNode* mem, const VPointer* vpointer, int original_index) :
-      _mem(mem),
-      _vpointer(vpointer),
+    MemOp(VTransformMemopScalarNode* vtnode, int original_index) :
+      _vtnode(vtnode),
       _original_index(original_index) {}
 
-    MemNode* mem() const { return _mem; }
-    const VPointer& vpointer() const { return *_vpointer; }
+    VTransformMemopScalarNode* vtnode() const { return _vtnode; }
     int original_index() const { return _original_index; }
 
     static int cmp_by_group(MemOp* a, MemOp* b);

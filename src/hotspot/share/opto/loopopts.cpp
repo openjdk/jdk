@@ -4539,9 +4539,8 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     ResourceMark rm;
     ScalarVTransformBuilder builder(scalar_vtransform);
   }
-  assert(false, "TODO next steps after builder!");
 
-  SuperWord sw(vloop_analyzer);
+  SuperWord sw(scalar_vtransform);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }

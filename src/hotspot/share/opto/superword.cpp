@@ -30,9 +30,10 @@
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 
-SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
-  _vloop_analyzer(vloop_analyzer),
-  _vloop(vloop_analyzer.vloop()),
+SuperWord::SuperWord(const VTransform& scalar_vtransform) :
+  _scalar_vtransform(scalar_vtransform),
+  _vloop_analyzer(scalar_vtransform.vloop_analyzer()),
+  _vloop(_vloop_analyzer.vloop()),
   _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
@@ -468,6 +469,7 @@ bool SuperWord::SLP_extract() {
 
   // Find "seed" pairs.
   create_adjacent_memop_pairs();
+  // TODO: continue here
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
@@ -502,12 +504,12 @@ bool SuperWord::SLP_extract() {
 
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   // Opcode
-  int c_Opcode = cmp_code(a->mem()->Opcode(), b->mem()->Opcode());
+  int c_Opcode = cmp_code(a->vtnode()->node()->Opcode(), b->vtnode()->node()->Opcode());
   if (c_Opcode != 0) { return c_Opcode; }
 
   // VPointer summands
-  return MemPointer::cmp_summands(a->vpointer().mem_pointer(),
-                                  b->vpointer().mem_pointer());
+  return MemPointer::cmp_summands(a->vtnode()->vpointer().mem_pointer(),
+                                  b->vtnode()->vpointer().mem_pointer());
 }
 
 int SuperWord::MemOp::cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b) {
@@ -516,8 +518,8 @@ int SuperWord::MemOp::cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b
   if (cmp_group != 0) { return cmp_group; }
 
   // VPointer con
-  jint a_con = a->vpointer().mem_pointer().con().value();
-  jint b_con = b->vpointer().mem_pointer().con().value();
+  jint a_con = a->vtnode()->vpointer().mem_pointer().con().value();
+  jint b_con = b->vtnode()->vpointer().mem_pointer().con().value();
   int c_con = cmp_code(a_con, b_con);
   if (c_con != 0) { return c_con; }
 
@@ -562,14 +564,20 @@ void SuperWord::create_adjacent_memop_pairs() {
 // Collect all memops that could potentially be vectorized.
 void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) const {
   int original_index = 0;
-  for_each_mem([&] (MemNode* mem, int bb_idx) {
-    const VPointer& p = vpointer(mem);
-    if (p.is_valid() &&
-        !mem->is_LoadStore() &&
-        is_java_primitive(mem->value_basic_type())) {
-      memops.append(MemOp(mem, &p, original_index++));
+  const GrowableArray<VTransformNode*>& vtnodes = _scalar_vtransform.graph().vtnodes();
+  for (int i = 0; i < vtnodes.length(); i++) {
+    VTransformNode* vtn = vtnodes.at(i);
+    if (vtn->is_load_or_store_in_loop()) {
+      VTransformMemopScalarNode* s = vtn->isa_MemopScalar();
+      assert(s != nullptr, "only expect scalars");
+      // TODO: should we worry about all these conditions or exclude some earlier?
+      if (s->vpointer().is_valid() &&
+          !s->node()->is_LoadStore() &&
+          is_java_primitive(s->node()->value_basic_type())) {
+        memops.append(MemOp(s, original_index++));
+      }
     }
-  });
+  }
 }
 
 // For each group, find the adjacent memops.
@@ -604,26 +612,26 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
     for (int i = group_start; i < group_end; i++) {
       const MemOp& memop = memops.at(i);
       tty->print("  ");
-      memop.mem()->dump();
-      tty->print("  ");
-      memop.vpointer().print_on(tty);
+      memop.vtnode()->print();
     }
   }
 #endif
 
-  MemNode* first = memops.at(group_start).mem();
+  MemNode* first = memops.at(group_start).vtnode()->node();
   const int element_size = data_size(first);
 
   // For each ref in group: find others that can be paired:
   for (int i = group_start; i < group_end; i++) {
-    const VPointer& p1  = memops.at(i).vpointer();
-    MemNode* mem1 = memops.at(i).mem();
+    VTransformMemopScalarNode* s1 = memops.at(i).vtnode();
+    const VPointer& p1  = s1->vpointer();
+    MemNode* mem1 = s1->node();
 
     bool found = false;
     // For each ref in group with larger or equal offset:
     for (int j = i + 1; j < group_end; j++) {
-      const VPointer& p2  = memops.at(j).vpointer();
-      MemNode* mem2 = memops.at(j).mem();
+      VTransformMemopScalarNode* s2 = memops.at(j).vtnode();
+      const VPointer& p2  = s2->vpointer();
+      MemNode* mem2 = s2->node();
       assert(mem1 != mem2, "look only at pair of different memops");
 
       // Check for correct distance.
@@ -646,9 +654,9 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
           tty->print_cr(" pair:");
         }
         tty->print("  ");
-        p1.print_on(tty);
+        s1->print();
         tty->print("  ");
-        p2.print_on(tty);
+        s2->print();
       }
 #endif
 
