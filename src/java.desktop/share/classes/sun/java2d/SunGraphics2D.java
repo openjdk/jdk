@@ -596,7 +596,9 @@ public final class SunGraphics2D
             textAt.scale(ptSize, ptSize);
             info.originX = (float)textAt.getTranslateX();
             info.originY = (float)textAt.getTranslateY();
-            textAt.translate(-info.originX, -info.originY);
+            textAt.setTransform(textAt.getScaleX(), textAt.getShearY(),
+                                textAt.getShearX(), textAt.getScaleY(),
+                                0, 0);
             if (transformState >= TRANSFORM_TRANSLATESCALE) {
                 transform.getMatrix(info.devTx = new double[4]);
                 devAt = new AffineTransform(info.devTx);

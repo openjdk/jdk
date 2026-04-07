@@ -73,11 +73,23 @@ const char* aot_code_entry_kind_name[] = {
 #undef DECL_KIND_STRING
 };
 
+// Stream to printing AOTCodeCache loading failure.
+// Print to error channel when -XX:AOTMode is set to "on"
+static LogStream& load_failure_log() {
+  static LogStream err_stream(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  static LogStream dbg_stream(LogLevel::Debug, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  if (RequireSharedSpaces) {
+    return err_stream;
+  } else {
+    return dbg_stream;
+  }
+}
+
 static void report_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  log_info(aot, codecache, init)("Unable to use AOT Code Cache.");
+  load_failure_log().print_cr("Unable to use AOT Code Cache.");
   AOTCodeCache::disable_caching();
 }
 
@@ -86,7 +98,7 @@ static void report_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  log_info(aot, codecache, exit)("Unable to create AOT Code Cache.");
+  log_error(aot, codecache, exit)("Unable to create AOT Code Cache.");
   AOTCodeCache::disable_caching();
 }
 
@@ -381,33 +393,23 @@ void AOTCodeCache::init_early_c1_table() {
 }
 
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
-  _flags = 0;
-#ifdef ASSERT
-  _flags |= debugVM;
-#endif
-  if (UseCompressedOops) {
-    _flags |= compressedOops;
-  }
-  if (UseTLAB) {
-    _flags |= useTLAB;
-  }
-  if (JavaAssertions::systemClassDefault()) {
-    _flags |= systemClassAssertions;
-  }
-  if (JavaAssertions::userClassDefault()) {
-    _flags |= userClassAssertions;
-  }
-  if (EnableContended) {
-    _flags |= enableContendedPadding;
-  }
-  if (RestrictContended) {
-    _flags |= restrictContendedPadding;
-  }
-  _compressedOopShift    = CompressedOops::shift();
+
+#define AOTCODECACHE_SAVE_VAR(type, name) _saved_ ## name =  name;
+#define AOTCODECACHE_SAVE_FUN(type, name, fun) _saved_ ## name =  fun;
+
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_SAVE_VAR, AOTCODECACHE_SAVE_FUN);
+
+  // Special configs that cannot be checked with macros
   _compressedOopBase     = CompressedOops::base();
-  _compressedKlassShift  = CompressedKlassPointers::shift();
-  _contendedPaddingWidth = ContendedPaddingWidth;
-  _gc                    = (uint)Universe::heap()->kind();
+
+#if defined(X86) && !defined(ZERO)
+  _useUnalignedLoadStores = UseUnalignedLoadStores;
+#endif
+
+#if defined(AARCH64)  && !defined(ZERO)
+  _avoidUnalignedAccesses = AvoidUnalignedAccesses;
+#endif
+
   _cpu_features_offset   = cpu_features_offset;
 }
 
@@ -438,74 +440,114 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
       }
     }
   } else {
-    if (log.is_enabled()) {
+    if (load_failure_log().is_enabled()) {
       ResourceMark rm; // required for stringStream::as_string()
       stringStream ss;
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
       VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, ss);
-      log.print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
+      load_failure_log().print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
     }
     return false;
   }
   return true;
 }
 
-bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
-  // First checks affect all cached AOT code
-#ifdef ASSERT
-  if ((_flags & debugVM) == 0) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
-    return false;
-  }
-#else
-  if ((_flags & debugVM) != 0) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
-    return false;
-  }
+#define AOTCODECACHE_DISABLED_MSG "AOT Code Cache disabled: it was created with %s = "
+
+// Special case, print "GC = ..." to be more understandable.
+inline void log_config_mismatch(CollectedHeap::Name saved, CollectedHeap::Name current, const char* name/*unused*/) {
+  load_failure_log().print_cr("AOT Code Cache disabled: it was created with GC = \"%s\" vs current \"%s\"",
+                              GCConfig::hs_err_name(saved), GCConfig::hs_err_name(current));
+}
+
+inline void log_config_mismatch(bool saved, bool current, const char* name) {
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%s vs current %s", name,
+                              saved ? "true" : "false", current ? "true" : "false");
+}
+
+inline void log_config_mismatch(int saved, int current, const char* name) {
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%d vs current %d", name, saved, current);
+}
+
+inline void log_config_mismatch(uint saved, uint current, const char* name) {
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%u vs current %u", name, saved, current);
+}
+
+#ifdef _LP64
+inline void log_config_mismatch(intx saved, intx current, const char* name) {
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%zd vs current %zd", name, saved, current);
+}
+
+inline void log_config_mismatch(uintx saved, uintx current, const char* name) {
+  load_failure_log().print_cr(AOTCODECACHE_DISABLED_MSG "%zu vs current %zu", name, saved, current);
+}
 #endif
 
-  CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
-  if (aot_gc != Universe::heap()->kind()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
+template <typename T>
+bool check_config(T saved, T current, const char* name) {
+  if (saved != current) {
+    log_config_mismatch(saved, current, name);
     return false;
+  } else {
+    return true;
   }
+}
 
-  if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
-    return false;
-  }
-
-  // The following checks do not affect AOT adapters caching
-
-  if (((_flags & compressedOops) != 0) != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
-    AOTStubCaching = false;
-  }
-  if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
-    AOTStubCaching = false;
-  }
-
-  // This should be the last check as it only disables AOTStubCaching
-  if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: incompatible CompressedOops::base(): %p vs current %p", _compressedOopBase, CompressedOops::base());
-    AOTStubCaching = false;
-  }
-
+bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
+  // check CPU features before checking flags that may be
+  // auto-configured in response to them
   if (!verify_cpu_features(cache)) {
     return false;
   }
+
+  // Tests for config options which might affect validity of adapters,
+  // stubs or nmethods. Currently we take a pessemistic stand and
+  // drop the whole cache if any of these are changed.
+
+#define AOTCODECACHE_CHECK_VAR(type, name) \
+  if (!check_config(_saved_ ## name, name, #name)) { return false; }
+#define AOTCODECACHE_CHECK_FUN(type, name, fun) \
+  if (!check_config(_saved_ ## name, fun, #fun)) { return false; }
+
+  AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);
+
+  // Special configs that cannot be checked with macros
+
+  if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
+    load_failure_log().print_cr("AOT Code Cache disabled: incompatible CompressedOops::base(): %p vs current %p",
+                                _compressedOopBase, CompressedOops::base());
+    return false;
+  }
+
+#if defined(X86) && !defined(ZERO)
+  // switching off UseUnalignedLoadStores can affect validity of fill
+  // stubs
+  if (_useUnalignedLoadStores && !UseUnalignedLoadStores) {
+    log_config_mismatch(_useUnalignedLoadStores, UseUnalignedLoadStores, "UseUnalignedLoadStores");
+    return false;
+  }
+#endif // defined(X86) && !defined(ZERO)
+
+#if defined(AARCH64) && !defined(ZERO)
+  // switching on AvoidUnalignedAccesses may affect validity of array
+  // copy stubs and nmethods
+  if (!_avoidUnalignedAccesses && AvoidUnalignedAccesses) {
+    log_config_mismatch(_avoidUnalignedAccesses, AvoidUnalignedAccesses, "AvoidUnalignedAccesses");
+    return false;
+  }
+#endif // defined(AARCH64) && !defined(ZERO)
+
   return true;
 }
 
 bool AOTCodeCache::Header::verify(uint load_size) const {
   if (_version != AOT_CODE_VERSION) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
+    load_failure_log().print_cr("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
     return false;
   }
   if (load_size < _cache_size) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
+    load_failure_log().print_cr("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
     return false;
   }
   return true;
