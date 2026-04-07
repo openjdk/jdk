@@ -66,8 +66,10 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
 
   // Unlike Linux, Windows does not present a way to modify the VL (the
   // rationale is that the OS expects the application to use the maximum vector
-  // length supported by the hardware), so we simply return the current VL. The
-  // caller (`VM_Version::initialize()`) will print a warning and move on.
+  // length supported by the hardware), so we simply return the current VL.  If
+  // the user sets `MaxVectorSize` that is not the same as the maximum possible
+  // vector length, then the caller (`VM_Version::initialize()`) will print a
+  // warning and move on.
   return get_sve_vector_length();
 }
 
