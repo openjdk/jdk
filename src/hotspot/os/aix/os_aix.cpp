@@ -1798,6 +1798,7 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   }
 }
 
+// mmap(PROT_NONE) allocations are inherently splittable.
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
@@ -1819,6 +1820,7 @@ os::PlaceholderRegionPair os::pd_split_memory(PlaceholderRegion& orig, size_t of
   assert(base != nullptr, "Region base cannot be null");
   assert(offset > 0, "Offset must be positive");
   assert(offset < region_size, "Offset must be less than region size");
+  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
 
   // update vmembk to reflect the split
   vmembk_t* const vmi = vmembk_find(base);

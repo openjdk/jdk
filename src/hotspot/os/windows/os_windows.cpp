@@ -243,12 +243,6 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
   return result;
 }
 
-// VirtualAlloc2 (since Windows version 1803). loaded from KernelBase in os::init_2()
-os::win32::VirtualAlloc2Fn os::win32::VirtualAlloc2 = nullptr;
-
-// MapViewOfFile3 (since Windows version 1803). loaded from KernelBase in os::init_2()
-os::win32::MapViewOfFile3Fn os::win32::MapViewOfFile3 = nullptr;
-
 static void* lookup_kernelbase_library() {
   const char* const name = "KernelBase";
   char ebuf[1024];
@@ -265,22 +259,6 @@ void* os::win32::lookup_kernelbase_symbol(const char* name) {
     return nullptr;
   }
   return os::dll_lookup(handle, name);
-}
-
-template <typename Fn>
-static void install_kernelbase_symbol(Fn*& fn, const char* name) {
-  fn = reinterpret_cast<Fn*>(os::win32::lookup_kernelbase_symbol(name));
-}
-
-static void initialize_kernelbase_apis() {
-  install_kernelbase_symbol(os::win32::VirtualAlloc2, "VirtualAlloc2");
-  log_debug(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
-  install_kernelbase_symbol(os::win32::MapViewOfFile3, "MapViewOfFile3");
-  log_debug(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
-}
-
-static bool is_VirtualAlloc2_supported() {
-  return os::win32::VirtualAlloc2 != nullptr;
 }
 
 // Logging wrapper for MapViewOfFileEx
@@ -3297,6 +3275,15 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
+// VirtualAlloc2 / MapViewOfFile3 (1803+). Resolved in os::init_2() via lookup_kernelbase_symbol.
+os::win32::VirtualAlloc2Fn os::win32::VirtualAlloc2 = nullptr;
+
+os::win32::MapViewOfFile3Fn os::win32::MapViewOfFile3 = nullptr;
+
+static bool is_VirtualAlloc2_supported() {
+  return os::win32::VirtualAlloc2 != nullptr;
+}
+
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
@@ -3459,6 +3446,7 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   return pd_attempt_reserve_memory_at(nullptr /* addr */, bytes, exec);
 }
 
+// This allocates a placeholder via VirtualAlloc2(MEM_RESERVE_PLACEHOLDER).
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   if (!is_VirtualAlloc2_supported()) {
     return PlaceholderRegion();
@@ -3497,6 +3485,7 @@ os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, siz
   assert(base != nullptr, "Region base cannot be null.");
   assert(offset > 0, "Offset must be positive (nothing to split at 0).");
   assert(offset < region_size, "Offset must be less than region size.");
+  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
 
   // VirtualFree with MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER splits the
   // placeholder [base, base+region_size) into two placeholders:
@@ -3517,6 +3506,7 @@ os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, siz
   return {PlaceholderRegion(base, offset), PlaceholderRegion(base + offset, region_size - offset)};
 }
 
+// Replaces the placeholder via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
 char* os::pd_convert_to_reserved(PlaceholderRegion region) {
   return os::win32::convert_placeholder_to_reserved(region);
 }
@@ -4821,23 +4811,21 @@ jint os::init_2(void) {
 
   // Lookup SetThreadDescription - the docs state we must use runtime-linking of
   // kernelbase.dll, so that is what we do.
-  HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
-  if (_kernelbase != nullptr) {
-    _SetThreadDescription =
-      reinterpret_cast<SetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "SetThreadDescription"));
+  _SetThreadDescription = reinterpret_cast<SetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("SetThreadDescription"));
 #ifdef ASSERT
-    _GetThreadDescription =
-      reinterpret_cast<GetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "GetThreadDescription"));
+  _GetThreadDescription = reinterpret_cast<GetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("GetThreadDescription"));
 #endif
-  }
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
   // Prepare KernelBase APIs (VirtualAlloc2, MapViewOfFile3) if available (Windows version 1803).
-  initialize_kernelbase_apis();
+  os::win32::VirtualAlloc2 = reinterpret_cast<os::win32::VirtualAlloc2Fn>(
+      os::win32::lookup_kernelbase_symbol("VirtualAlloc2"));
+  os::win32::MapViewOfFile3 = reinterpret_cast<os::win32::MapViewOfFile3Fn>(
+      os::win32::lookup_kernelbase_symbol("MapViewOfFile3"));
+  log_debug(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
+  log_debug(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
 
   return JNI_OK;
 }

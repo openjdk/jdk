@@ -242,18 +242,10 @@ class os: AllStatic {
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  // On Windows, this allocates a placeholder via VirtualAlloc2(MEM_RESERVE_PLACEHOLDER).
-  // On POSIX, this is a normal mmap(PROT_NONE) allocation (inherently splittable).
-  // If addr is non-null, attempts to place the reservation at that address.
-  // If the returned PlaceholderRegion is empty, the reservation failed.
   static PlaceholderRegion pd_reserve_placeholder_memory(size_t bytes, bool executable, char* addr = nullptr);
 
-  // On Windows, splits the placeholder with VirtualFree(MEM_PRESERVE_PLACEHOLDER).
-  // On POSIX/AIX, bookkeeping only (AIX updates vmembk). 'orig' must not be reused after this call.
   static PlaceholderRegionPair pd_split_memory(const PlaceholderRegion& orig, size_t offset);
 
-  // On Windows, replaces the placeholder via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
-  // On POSIX, this is just a no-op.
   static char* pd_convert_to_reserved(PlaceholderRegion region);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -555,8 +547,6 @@ class os: AllStatic {
 
   // Reserves a virtual memory region that can be split after allocation.
   // The returned region must be converted via convert_to_reserved() before committing.
-  // This can fail recoverably if this is a Windows system that does not support VirtualAlloc2
-  // (an empty PlaceholderRegion is returned).
   // If the returned PlaceholderRegion is empty, the reservation failed.
   // If addr is non-null, attempts to place the reservation at that address.
   static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable = false, char* addr = nullptr);

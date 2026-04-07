@@ -544,6 +544,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
 
 #ifndef AIX
 
+// mmap(PROT_NONE) allocations are inherently splittable.
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   // mmap returns memory that is splittable by default.
   char* base;
@@ -556,13 +557,14 @@ os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec,
 }
 
 os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
-  // On POSIX, mmap regions are inherently splittable. Just do bookkeeping.
+  // On POSIX, mmap regions are inherently splittable.
   char* base = orig.base();
   size_t region_size = orig.size();
 
   assert(base != nullptr, "Region base cannot be null");
   assert(offset > 0, "Offset must be positive");
   assert(offset < region_size, "Offset must be less than region size");
+  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
 
   return {PlaceholderRegion(base, offset), PlaceholderRegion(base + offset, region_size - offset)};
 }
