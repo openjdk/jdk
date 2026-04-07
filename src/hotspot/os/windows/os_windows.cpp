@@ -3488,11 +3488,11 @@ os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec,
   }
 }
 
-os::PlaceholderRegion os::pd_split_memory(PlaceholderRegion& region, size_t offset) {
+os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
   guarantee(is_VirtualAlloc2_supported(), "pd_split_memory requires VirtualAlloc2 on Windows.");
 
-  char* base = region.base();
-  size_t region_size = region.size();
+  char* base = orig.base();
+  size_t region_size = orig.size();
 
   assert(base != nullptr, "Region base cannot be null.");
   assert(offset > 0, "Offset must be positive (nothing to split at 0).");
@@ -3514,11 +3514,7 @@ os::PlaceholderRegion os::pd_split_memory(PlaceholderRegion& region, size_t offs
   log_trace(os)("Split placeholder " RANGE_FORMAT " at offset %zu.",
                 RANGE_FORMAT_ARGS(base, region_size), offset);
 
-  // Shrink region to the trailing piece.
-  region = PlaceholderRegion(base + offset, region_size - offset);
-
-  // Return the leading piece.
-  return PlaceholderRegion(base, offset);
+  return {PlaceholderRegion(base, offset), PlaceholderRegion(base + offset, region_size - offset)};
 }
 
 char* os::pd_convert_to_reserved(PlaceholderRegion region) {
@@ -3576,28 +3572,33 @@ char* os::win32::reserve_with_numa_placeholder(char* addr, size_t bytes) {
 
   // Reserve the full range as a placeholder.
   // If we requested an address, pd_reserve_placeholder_memory will obtain it or fail.
-  PlaceholderRegion remaining = os::pd_reserve_placeholder_memory(bytes, false, addr);
-  if (remaining.is_empty()) {
+  PlaceholderRegion whole_range = os::pd_reserve_placeholder_memory(bytes, false, addr);
+  if (whole_range.is_empty()) {
     log_warning(os)("Failed to reserve placeholder for NUMA interleaving (" PTR_FORMAT ", %zu).", p2i(addr), bytes);
     return nullptr;
   }
 
-  char* const base = remaining.base();
-  log_trace(os)("Created VirtualAlloc2 NUMA placeholder at " RANGE_FORMAT " (%zu bytes).", RANGE_FORMAT_ARGS(base, bytes), bytes);
+  char* const whole_range_base = whole_range.base();
+  log_trace(os)("Created VirtualAlloc2 NUMA placeholder at " RANGE_FORMAT " (%zu bytes).", RANGE_FORMAT_ARGS(whole_range_base, bytes), bytes);
+
+  char* cur = whole_range_base;
+  size_t remaining_len = whole_range.size();
 
   int count = 0;
   const int node_count = numa_node_list_holder.get_count();
 
-  while (!remaining.is_empty()) {
-    size_t bytes_to_rq = MIN2(remaining.size(), chunk_size - ((size_t)remaining.base() % chunk_size));
-    PlaceholderRegion chunk = os::split_memory(remaining, bytes_to_rq);
-
+  while (remaining_len > 0) {
+    const size_t bytes_to_rq = MIN2(remaining_len, chunk_size - ((size_t)cur % chunk_size));
+    PlaceholderRegion remaining(cur, remaining_len);
+    os::PlaceholderRegionPair split = os::split_memory(remaining, bytes_to_rq);
     DWORD node = node_count > 0 ? numa_node_list_holder.get_node_list_entry(count % node_count) : 0;  // Assign 0 for testing on UMA systems
-    convert_placeholder_to_reserved(chunk, (int)node);
+    convert_placeholder_to_reserved(split.left, (int)node);
+    cur = split.right.base();
+    remaining_len = split.right.size();
     count++;
   }
 
-  return base;
+  return whole_range_base;
 }
 
 // Reserve memory at an arbitrary address, only if that area is

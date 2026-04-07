@@ -1974,11 +1974,10 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
     os::PlaceholderRegion placeholder = os::reserve_placeholder_memory(total_range_size, mtNone, false /* exec */, (char*)base_address);
 
     if (!placeholder.is_empty()) {
-      os::PlaceholderRegion archive_placeholder = os::split_memory(placeholder, ccs_begin_offset);
-      // placeholder has been shrunk to [base+ccs_begin_offset, end) = class space
+      os::PlaceholderRegionPair split = os::split_memory(placeholder, ccs_begin_offset);
 
-      char* archive_base = os::convert_to_reserved(archive_placeholder);
-      char* class_base   = os::convert_to_reserved(placeholder);
+      char* archive_base = os::convert_to_reserved(split.left);
+      char* class_base   = os::convert_to_reserved(split.right);
 
       archive_space_rs = ReservedSpace(archive_base, ccs_begin_offset,
                                        archive_space_alignment, os::vm_page_size(),

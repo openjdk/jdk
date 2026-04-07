@@ -1265,19 +1265,19 @@ TEST_VM(os, splittable_split_two_way) {
   ASSERT_FALSE(region.is_empty());
 
   char* original_base = region.base();
-  os::PlaceholderRegion leading = os::split_memory(region, split_offset);
+  os::PlaceholderRegionPair split = os::split_memory(region, split_offset);
 
   // Leading piece: [base, base+split_offset)
-  ASSERT_EQ(leading.base(), original_base);
-  ASSERT_EQ(leading.size(), split_offset);
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), split_offset);
 
-  // Trailing piece (region): [base+split_offset, base+total)
-  ASSERT_EQ(region.base(), original_base + split_offset);
-  ASSERT_EQ(region.size(), total - split_offset);
+  // Trailing piece: [base+split_offset, base+total)
+  ASSERT_EQ(split.right.base(), original_base + split_offset);
+  ASSERT_EQ(split.right.size(), total - split_offset);
 
   // Convert both and commit.
-  char* addr1 = os::convert_to_reserved(leading);
-  char* addr2 = os::convert_to_reserved(region);
+  char* addr1 = os::convert_to_reserved(split.left);
+  char* addr2 = os::convert_to_reserved(split.right);
   ASSERT_EQ(addr1, original_base);
   ASSERT_EQ(addr2, original_base + split_offset);
 

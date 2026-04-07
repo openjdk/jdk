@@ -215,14 +215,20 @@ class os: AllStatic {
   // MEM_RESERVE_PLACEHOLDER). On POSIX platforms, any mmap'd region is
   // inherently splittable, so this is a thin wrapper.
   class PlaceholderRegion {
-    char*  _base;
-    size_t _size;
+    char* const  _base;
+    size_t const _size;
   public:
     PlaceholderRegion() : _base(nullptr), _size(0) {}
     PlaceholderRegion(char* base, size_t size) : _base(base), _size(size) {}
+    PlaceholderRegion(const PlaceholderRegion& source) : _base(source._base), _size(source._size) {}
     char*  base() const { return _base; }
     size_t size() const { return _size; }
     bool   is_empty() const { return _base == nullptr; }
+  };
+
+  struct PlaceholderRegionPair {
+    PlaceholderRegion left;
+    PlaceholderRegion right;
   };
 
  private:
@@ -243,10 +249,8 @@ class os: AllStatic {
   static PlaceholderRegion pd_reserve_placeholder_memory(size_t bytes, bool executable, char* addr = nullptr);
 
   // On Windows, splits the placeholder with VirtualFree(MEM_PRESERVE_PLACEHOLDER).
-  // On POSIX, this just does bookkeeping (updates fields of PlaceholderRegion).
-  // Returns the leading piece [base, base+offset). Shrinks 'region' to become the
-  // trailing piece [base+offset, base+original_size).
-  static PlaceholderRegion pd_split_memory(PlaceholderRegion& region, size_t offset);
+  // On POSIX/AIX, bookkeeping only (AIX updates vmembk). 'orig' must not be reused after this call.
+  static PlaceholderRegionPair pd_split_memory(const PlaceholderRegion& orig, size_t offset);
 
   // On Windows, replaces the placeholder via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
   // On POSIX, this is just a no-op.
@@ -557,11 +561,12 @@ class os: AllStatic {
   // If addr is non-null, attempts to place the reservation at that address.
   static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable = false, char* addr = nullptr);
 
-  // Split 'region' at 'offset'. Returns the leading piece [base, base+offset),
-  // shrinks 'region' to the trailing piece [base+offset, base+original_size).
+  // Split 'orig' at 'offset'. Returns leading and trailing placeholder pieces as a PlaceholderRegionPair.
+  // The caller must not use 'orig' afterward; only 'left' and 'right' describe the OS state.
   // Offset must be page-aligned.
-  // If offset == region.size(), returns the entire region and sets region to empty.
-  static PlaceholderRegion split_memory(PlaceholderRegion& region, size_t offset);
+  // If offset == orig.size(), returns { orig, empty }.
+  // On failure, returns {empty, empty}.
+  static PlaceholderRegionPair split_memory(const PlaceholderRegion& orig, size_t offset);
 
   // Convert a placeholder region into a regular reserved region.
   // After conversion the Placeholder region should no longer be used.
