@@ -46,7 +46,7 @@ public class TestParallelIvInvariantIncrement {
     @Test
     @IR(failOn = { IRNode.MUL_I },        phase = CompilePhase.BEFORE_CLOOPS)
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int intAdd(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
