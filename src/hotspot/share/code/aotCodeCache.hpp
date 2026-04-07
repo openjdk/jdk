@@ -233,14 +233,12 @@ private:
   StubAddrRange* _ranges;
 
   // flags indicating whether the AOT code cache is open and, if so,
-  // whether we are loading or storing stubs.the first of those
-  // cases whether we have encountered any invalid stubs or failed to
-  // find a stub that was being generated
+  // whether we are loading or storing stubs or have encountered any
+  // invalid stubs.
   enum Flags {
-    OPEN    = 1 << 0,            // cache is open for use
-    USING   = 1 << 1,            // open and loading stubs
-    DUMPING = 1 << 2,            // open and storing stubs
-    INVALID = 1 << 3,            // found invalid stub when loading
+    USING   = 1 << 0,            // open and loading stubs
+    DUMPING = 1 << 1,            // open and storing stubs
+    INVALID = 1 << 2,            // found invalid stub when loading
   };
 
   uint32_t _flags;
@@ -255,10 +253,8 @@ public:
 
   ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
 
-  bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
   bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
-  bool is_aot()     CDS_ONLY({ return is_using() || is_dumping(); }) NOT_CDS_RETURN_(false);
   bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
 
   BlobId blob_id() { return _blob_id; }
@@ -666,8 +662,6 @@ private:
 
   ImmutableOopMapSet* read_oop_map_set();
   void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
-  void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data);
-
 
   void fix_relocations(CodeBlob* code_blob, RelocIterator& iter);
 #ifndef PRODUCT

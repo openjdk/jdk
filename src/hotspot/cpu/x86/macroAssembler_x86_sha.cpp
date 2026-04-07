@@ -1345,8 +1345,6 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     // load g - r10 after it is used as scratch
     movq(h, Address(CTX, 8 * 7));
 
-    StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
-
     // the two successive pshuffle_byte_flip_mask_sha512 stub entries should
     // be offset by 32 bytes
     assert(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512() + 32 == StubRoutines::x86::pshuffle_byte_flip_mask_ymm_lo_addr_sha512(), "sanity");

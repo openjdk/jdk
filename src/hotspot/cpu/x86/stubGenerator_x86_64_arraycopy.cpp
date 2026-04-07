@@ -2292,7 +2292,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
          "unexpected handler addresses count %d", extras.length());
 #if INCLUDE_ZGC
   // retrieve addresses at which ZGC does colour patching
-  if ((UseZGC && is_oop)) {
+  if (add_relocs) {
     retrieve_reloc_addresses(start, end, extras);
   }
 #endif // INCLUDE_ZGC
@@ -2478,7 +2478,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
          "unexpected handler addresses count %d", extras.length());
 #if INCLUDE_ZGC
   // retrieve addresses at which ZGC does colour patching
-  if ((UseZGC && is_oop)) {
+  if (add_relocs) {
     retrieve_reloc_addresses(start, end, extras);
   }
 #endif // INCLUDE_ZGC
@@ -3114,10 +3114,10 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   address end = __ pc();
 #if INCLUDE_ZGC
-    // retrieve addresses at which ZGC does colour patching
-    if (UseZGC) {
-      retrieve_reloc_addresses(start, end, extras);
-    }
+  // retrieve addresses at which ZGC does colour patching
+  if (UseZGC) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
 #endif // INCLUDE_ZGC
   // record the stub entry and end plus the no_push entry
     store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);

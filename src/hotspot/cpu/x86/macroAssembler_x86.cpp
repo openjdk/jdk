@@ -5829,8 +5829,6 @@ void MacroAssembler::reinit_heapbase() {
     if (Universe::heap() != nullptr && !AOTCodeCache::is_on_for_dump()) {
       if (CompressedOops::base() == nullptr) {
         MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
-      } else if (AOTCodeCache::is_on_for_dump()) {
-        movptr(r12_heapbase, ExternalAddress(CompressedOops::base_addr()));
       } else {
         mov64(r12_heapbase, (int64_t)CompressedOops::base());
       }

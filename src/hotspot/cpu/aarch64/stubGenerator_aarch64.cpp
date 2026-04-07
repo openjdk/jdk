@@ -875,13 +875,13 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     Label done;
     Label base_aligned;
 
     Register base = r10, cnt = r11;
 
-    __ align(CodeEntryAlignment);
     start = __ pc();
 
     if (UseBlockZeroing) {
@@ -8594,7 +8594,6 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - numIter
   //
   address generate_bigIntegerLeftShift() {
-    __ align(CodeEntryAlignment);
     StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
@@ -8602,6 +8601,7 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
 
@@ -9600,6 +9600,8 @@ class StubGenerator: public StubCodeGenerator {
   // v1 = temporary float register
   address generate_floatToFloat16() {
     StubId stub_id = StubId::stubgen_f2hf_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
     address start = load_archive_data(stub_id);
     if (start != nullptr) {
       return start;
@@ -10385,9 +10387,9 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     Label polynomial; // local data generated at end of stub
-    __ align(CodeEntryAlignment);
     start = __ pc();
 
     Register state   = c_rarg0;
@@ -10926,7 +10928,7 @@ class StubGenerator: public StubCodeGenerator {
              "unexpected extra entry count %d", entries.length());
       StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
       for (int slot = 1; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-        StubRoutines::_lookup_secondary_supers_table_stubs[0] = entries.at(slot - 1);
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = entries.at(slot - 1);
       }
       return;
     }

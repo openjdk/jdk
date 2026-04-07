@@ -1642,7 +1642,9 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter) {
       }
     }
   }
-  log.print_cr("}");
+  if (log.is_enabled()) {
+    log.print_cr("}");
+  }
   return true;
 }
 
@@ -1657,8 +1659,6 @@ void AOTCodeReader::fix_relocations(CodeBlob *code_blob, RelocIterator& iter) {
   LogStreamHandle(Trace, aot, codecache, reloc) log;
   if (log.is_enabled()) {
     log.print_cr("======== extra relocations count=%d", reloc_count);
-  }
-  if (log.is_enabled()) {
     log.print("  {");
     for(int i = 0; i < reloc_count; i++) {
       if (i == 0) {
@@ -2519,7 +2519,6 @@ AOTStubData::AOTStubData(BlobId blob_id) :
   }
   if (AOTCodeCache::is_on()) {
     // allow update of stub entry addresses
-    _flags |= OPEN;
     if (AOTCodeCache::is_using_stub()) {
       // allow stub loading
       _flags |= USING;

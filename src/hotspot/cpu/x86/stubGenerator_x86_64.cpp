@@ -672,8 +672,8 @@ address StubGenerator::generate_f2i_fixup() {
 
   __ ret(0);
 
-    // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }
@@ -959,8 +959,8 @@ address StubGenerator::generate_iota_indices() {
   __ emit_data64(0x4018000000000000, relocInfo::none); // 6.0d
   __ emit_data64(0x401c000000000000, relocInfo::none); // 7.0d
 
-    // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }
@@ -4632,7 +4632,7 @@ void StubGenerator::generate_lookup_secondary_supers_table_stub() {
            "unexpected extra entry count %d", entries.length());
     StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
     for (int slot = 1; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-      StubRoutines::_lookup_secondary_supers_table_stubs[0] = entries.at(slot - 1);
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = entries.at(slot - 1);
     }
     return;
   }
