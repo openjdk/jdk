@@ -414,12 +414,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
 
     map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
                    RegisterSaver_LiveVRegs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(2));
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(3));
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -2660,7 +2654,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_lgr(unroll_block_reg, Z_RET);
   // restore the return registers that have been saved
   // (among other registers) by save_live_registers(...).
-  RegisterSaver::restore_result_registers(masm, /*save_vectors*/ SuperwordUseVX);
+  RegisterSaver::restore_result_registers(masm, /* save_vectors= */ SuperwordUseVX);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
   __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset()));
