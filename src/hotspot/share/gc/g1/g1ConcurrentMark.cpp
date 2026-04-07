@@ -2341,20 +2341,16 @@ void G1CMTask::drain_local_queue(bool partially) {
   }
 }
 
-size_t G1CMTask::start_partial_array_processing(oop obj) {
-  assert(should_be_sliced(obj), "Must be an array object %d and large %zu", obj->is_objArray(), obj->size());
-
-  objArrayOop obj_array = objArrayOop(obj);
-  size_t array_length = obj_array->length();
-
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj_array, nullptr, array_length);
+size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
+  assert(obj->length() >= (int)ObjArrayMarkingStride, "Must be a large array object %d", obj->length());
 
   // Mark objArray klass metadata
-  if (_cm_oop_closure->do_metadata()) {
-    _cm_oop_closure->do_klass(obj_array->klass());
-  }
+  process_klass(obj->klass());
 
-  process_array_chunk(obj_array, 0, initial_chunk_size);
+  size_t array_length = obj->length();
+  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length);
+
+  process_array_chunk(obj, 0, initial_chunk_size);
 
   // Include object header size
   return objArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
