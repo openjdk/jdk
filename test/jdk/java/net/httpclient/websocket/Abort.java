@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 /*
  * @test
  * @build DummyWebSocketServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
  *       Abort
  */
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.ProtocolException;
@@ -44,10 +43,12 @@ import java.util.concurrent.TimeoutException;
 
 import static java.net.http.HttpClient.newHttpClient;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 public class Abort {
 
@@ -79,7 +80,7 @@ public class Abort {
                 TimeUnit.SECONDS.sleep(5);
                 List<MockListener.Invocation> inv = listener.invocationsSoFar();
                 // no more invocations after onOpen as WebSocket was aborted
-                assertEquals(inv, List.of(MockListener.Invocation.onOpen(webSocket)));
+                assertEquals(List.of(MockListener.Invocation.onOpen(webSocket)), inv);
             } finally {
                 webSocket.abort();
             }
@@ -119,7 +120,7 @@ public class Abort {
                 List<MockListener.Invocation> expected = List.of(
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onText(webSocket, "", true));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -159,7 +160,7 @@ public class Abort {
                 List<MockListener.Invocation> expected = List.of(
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onBinary(webSocket, ByteBuffer.allocate(0), true));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -198,7 +199,7 @@ public class Abort {
                 List<MockListener.Invocation> expected = List.of(
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onPing(webSocket, ByteBuffer.allocate(0)));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -237,7 +238,7 @@ public class Abort {
                 List<MockListener.Invocation> expected = List.of(
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onPong(webSocket, ByteBuffer.allocate(0)));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -277,7 +278,7 @@ public class Abort {
                 List<MockListener.Invocation> expected = List.of(
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onClose(webSocket, 1005, ""));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -318,7 +319,7 @@ public class Abort {
                         MockListener.Invocation.onOpen(webSocket),
                         MockListener.Invocation.onError(webSocket, ProtocolException.class));
                 System.out.println("actual invocations:" + Arrays.toString(inv.toArray()));
-                assertEquals(inv, expected);
+                assertEquals(expected, inv);
             } finally {
                 webSocket.abort();
             }
@@ -396,7 +397,7 @@ public class Abort {
                         ws.abort();
                         assertTrue(ws.isInputClosed());
                         assertTrue(ws.isOutputClosed());
-                        assertEquals(ws.getSubprotocol(), "");
+                        assertEquals("", ws.getSubprotocol());
                     }
                     // at this point valid requests MUST be a no-op:
                     for (int j = 0; j < 3; j++) {
