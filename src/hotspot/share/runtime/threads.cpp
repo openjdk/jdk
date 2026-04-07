@@ -1127,7 +1127,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     MonitorLocker ml(Threads_lock);
 
-    if (ThreadIdTable::is_initialized()) {
+    if (ThreadIdTable::is_initialized_acquire()) {
       // This cleanup must be done before the current thread's GC barrier
       // is detached since we need to touch the threadObj oop.
       jlong tid = SharedRuntime::get_java_tid(p);

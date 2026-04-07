@@ -204,13 +204,13 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
   // Do we allocate directly, or flush and refill?
   if (obj_size > (OldPLABSize / 2)) {
     // Allocate this object directly
-    result = old_gen()->allocate(obj_size);
+    result = old_gen()->cas_allocate_with_expansion(obj_size);
     promotion_trace_event(cast_to_oop(result), klass, obj_size, age, true, nullptr);
   } else {
     // Flush and fill
     _old_lab.flush();
 
-    HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
+    HeapWord* lab_base = old_gen()->cas_allocate_with_expansion(OldPLABSize);
     if (lab_base != nullptr) {
       _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
       // Try the old lab allocation again.

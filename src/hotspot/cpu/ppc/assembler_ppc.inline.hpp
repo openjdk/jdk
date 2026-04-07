@@ -253,8 +253,6 @@ inline void Assembler::mr(      Register d, Register s)   { Assembler::orr(d, s,
 inline void Assembler::ori_opt( Register d, int ui16)     { if (ui16!=0) Assembler::ori( d, d, ui16); }
 inline void Assembler::oris_opt(Register d, int ui16)     { if (ui16!=0) Assembler::oris(d, d, ui16); }
 
-inline void Assembler::endgroup()                         { Assembler::ori(R1, R1, 0); }
-
 // count instructions
 inline void Assembler::cntlzw(  Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(0)); }
 inline void Assembler::cntlzw_( Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(1)); }
