@@ -108,7 +108,7 @@ public class SigningPackageTwoStepTest {
                 appImageSignOption = Optional.empty();
             }
 
-            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+            for (var signPackage : SigningPackageTest.TestSpec.minimalTestCases()) {
                 data.add(new TwoStepsTestSpec(appImageSignOption, signPackage));
             }
         }
@@ -212,9 +212,9 @@ public class SigningPackageTwoStepTest {
             }
         }
 
-        expected.ifPresent(cmd::validateOutput);
+        expected.ifPresent(cmd::validateOut);
         unexpected.forEach(str -> {
-            cmd.validateOutput(TKit.assertTextStream(cmd.getValue(str)).negate());
+            cmd.validateOut(TKit.assertTextStream(cmd.getValue(str)).negate());
         });
     }
 }

@@ -11742,7 +11742,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_setMemory)) {
+      StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    }
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
@@ -11874,16 +11876,13 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
     }
-    if (UseSHA3Intrinsics) {
-
+    if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
       StubRoutines::_double_keccak         = generate_double_keccak();
-      if (UseSIMDForSHA3Intrinsic) {
-         StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
-         StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
-      } else {
-         StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
-         StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
-      }
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
+    } else if (UseSHA3Intrinsics) {
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
     }
 
     if (UsePoly1305Intrinsics) {

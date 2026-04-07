@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +104,9 @@ void Parse::print_statistics() {
 Node *Parse::fetch_interpreter_state(int index,
                                      BasicType bt,
                                      Node* local_addrs) {
-  Node *mem = memory(Compile::AliasIdxRaw);
-  Node *adr = basic_plus_adr(top(), local_addrs, -index*wordSize);
-  Node *ctl = control();
+  Node* mem = memory(Compile::AliasIdxRaw);
+  Node* adr = off_heap_plus_addr(local_addrs, -index*wordSize);
+  Node* ctl = control();
 
   // Very similar to LoadNode::make, except we handle un-aligned longs and
   // doubles on Sparc.  Intel can handle them just fine directly.
@@ -120,7 +120,7 @@ Node *Parse::fetch_interpreter_state(int index,
   case T_DOUBLE: {
     // Since arguments are in reverse order, the argument address 'adr'
     // refers to the back half of the long/double.  Recompute adr.
-    adr = basic_plus_adr(top(), local_addrs, -(index+1)*wordSize);
+    adr = off_heap_plus_addr(local_addrs, -(index+1)*wordSize);
     if (Matcher::misaligned_doubles_ok) {
       l = (bt == T_DOUBLE)
         ? (Node*)new LoadDNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::DOUBLE, MemNode::unordered)
@@ -219,7 +219,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Commute monitors from interpreter frame to compiler frame.
   assert(jvms()->monitor_depth() == 0, "should be no active locks at beginning of osr");
   int mcnt = osr_block->flow()->monitor_count();
-  Node *monitors_addr = basic_plus_adr(top(), osr_buf, (max_locals+mcnt*2-1)*wordSize);
+  Node* monitors_addr = off_heap_plus_addr(osr_buf, (max_locals+mcnt*2-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
     BoxLockNode* osr_box = new BoxLockNode(next_monitor());
@@ -270,7 +270,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   }
 
   // Extract the needed locals from the interpreter frame.
-  Node *locals_addr = basic_plus_adr(top(), osr_buf, (max_locals-1)*wordSize);
+  Node* locals_addr = off_heap_plus_addr(osr_buf, (max_locals-1)*wordSize);
 
   // find all the locals that the interpreter thinks contain live oops
   const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci());
@@ -1651,9 +1651,14 @@ void Parse::merge_new_path(int target_bci) {
 }
 
 //-------------------------merge_exception-------------------------------------
-// Merge the current mapping into the basic block starting at bci
-// The ex_oop must be pushed on the stack, unlike throw_to_exit.
-void Parse::merge_exception(int target_bci) {
+// Push the given ex_oop onto the stack, then merge the current mapping into
+// the basic block starting at target_bci.
+void Parse::push_and_merge_exception(int target_bci, Node* ex_oop) {
+  // Add the safepoint before trimming the stack and pushing the exception oop.
+  // We could add the safepoint after, but then the bci would also need to be
+  // advanced to target_bci first, so the stack state matches.
+  maybe_add_safepoint(target_bci);
+  push_ex_oop(ex_oop);      // Push exception oop for handler
 #ifdef ASSERT
   if (target_bci <= bci()) {
     C->set_exception_backedge();
@@ -2127,7 +2132,7 @@ void Parse::call_register_finalizer() {
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
   Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
 
-  Node* access_flags_addr = basic_plus_adr(top(), klass, in_bytes(Klass::misc_flags_offset()));
+  Node* access_flags_addr = off_heap_plus_addr(klass, in_bytes(Klass::misc_flags_offset()));
   Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
 
   Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(KlassFlags::_misc_has_finalizer)));
@@ -2273,9 +2278,9 @@ void Parse::add_safepoint() {
   sfpnt->init_req(TypeFunc::FramePtr , top() );
 
   // Create a node for the polling address
-  Node *polladr;
-  Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
+  Node* polladr;
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* polling_page_load_addr = _gvn.transform(off_heap_plus_addr(thread, in_bytes(JavaThread::polling_page_offset())));
   polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 

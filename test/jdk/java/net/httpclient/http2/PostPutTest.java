@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,13 @@
  *          does not process any data. The client should read all data from the server and close the connection.
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=50 -Djdk.httpclient.HttpClient.log=all
+ * @run junit/othervm/timeout=50 -Djdk.httpclient.HttpClient.log=all
  *                      PostPutTest
  */
 
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -51,19 +46,24 @@ import java.net.http.HttpResponse;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 public class PostPutTest {
 
-    Http2TestServer http2TestServer;
-    URI warmupURI, testHandlerBasicURI, testHandlerCloseBosURI, testHandleNegativeContentLengthURI;
+    private static Http2TestServer http2TestServer;
+    private static URI warmupURI, testHandlerBasicURI, testHandlerCloseBosURI, testHandleNegativeContentLengthURI;
     static PrintStream testLog = System.err;
 
     // As per jdk.internal.net.http.WindowController.DEFAULT_INITIAL_WINDOW_SIZE
-    final int DEFAULT_INITIAL_WINDOW_SIZE = (64 * 1024) - 1;
+    private static final int DEFAULT_INITIAL_WINDOW_SIZE = (64 * 1024) - 1;
     // Add on a small amount of arbitrary bytes to see if client hangs when receiving RST_STREAM
-    byte[] data = new byte[DEFAULT_INITIAL_WINDOW_SIZE + 10];
+    private static byte[] data = new byte[DEFAULT_INITIAL_WINDOW_SIZE + 10];
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.addHandler(new WarmupHandler(), "/Warmup");
         http2TestServer.addHandler(new TestHandlerBasic(), "/TestHandlerBasic");
@@ -81,15 +81,14 @@ public class PostPutTest {
         testLog.println("PostPutTest.setup(): testHandleNegativeContentLengthURI: " + testHandleNegativeContentLengthURI);
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         testLog.println("PostPutTest.teardown(): Stopping server");
         http2TestServer.stop();
         data = null;
     }
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         HttpRequest over64kPost, over64kPut, over64kPostCloseBos, over64kPutCloseBos, over64kPostNegativeContentLength, over64kPutNegativeContentLength;
         over64kPost = HttpRequest.newBuilder().version(HTTP_2).POST(ofByteArray(data)).uri(testHandlerBasicURI).build();
         over64kPut = HttpRequest.newBuilder().version(HTTP_2).PUT(ofByteArray(data)).uri(testHandlerBasicURI).build();
@@ -117,7 +116,8 @@ public class PostPutTest {
                 .build();
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testOver64kPUT(HttpRequest req, String testMessage) {
         testLog.println("PostPutTest: Performing test: " + testMessage);
         HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();

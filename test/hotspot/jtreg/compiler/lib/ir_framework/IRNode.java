@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -117,13 +117,14 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
-    private static final String TYPE_BYTE   = "B";
-    private static final String TYPE_CHAR   = "C";
-    private static final String TYPE_SHORT  = "S";
-    private static final String TYPE_INT    = "I";
-    private static final String TYPE_LONG   = "J";
-    private static final String TYPE_FLOAT  = "F";
-    private static final String TYPE_DOUBLE = "D";
+    private static final String TYPE_BYTE    = "B";
+    private static final String TYPE_CHAR    = "C";
+    private static final String TYPE_SHORT   = "S";
+    private static final String TYPE_INT     = "I";
+    private static final String TYPE_LONG    = "J";
+    private static final String TYPE_FLOAT   = "F";
+    private static final String TYPE_DOUBLE  = "D";
+    private static final String TYPE_BOOLEAN = "Z";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
@@ -640,6 +641,11 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_D2F = PREFIX + "CONV_D2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2F, "ConvD2F");
+    }
+
     public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_D2I, "ConvD2I");
@@ -648,6 +654,11 @@ public class IRNode {
     public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_D2L, "ConvD2L");
+    }
+
+    public static final String CONV_F2D = PREFIX + "CONV_F2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2D, "ConvF2D");
     }
 
     public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
@@ -1100,6 +1111,11 @@ public class IRNode {
         vectorNode(LOAD_VECTOR_D, "LoadVector", TYPE_DOUBLE);
     }
 
+    public static final String LOAD_VECTOR_Z = VECTOR_PREFIX + "LOAD_VECTOR_Z" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_Z, "LoadVector", TYPE_BOOLEAN);
+    }
+
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
@@ -1187,29 +1203,9 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_D, "MaxD");
     }
 
-    public static final String MAX_D_REDUCTION_REG = PREFIX + "MAX_D_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REDUCTION_REG, "maxD_reduction_reg");
-    }
-
-    public static final String MAX_D_REG = PREFIX + "MAX_D_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_D_REG, "maxD_reg");
-    }
-
     public static final String MAX_F = PREFIX + "MAX_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_F, "MaxF");
-    }
-
-    public static final String MAX_F_REDUCTION_REG = PREFIX + "MAX_F_REDUCTION_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REDUCTION_REG, "maxF_reduction_reg");
-    }
-
-    public static final String MAX_F_REG = PREFIX + "MAX_F_REG" + POSTFIX;
-    static {
-        machOnlyNameRegex(MAX_F_REG, "maxF_reg");
     }
 
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
@@ -1293,14 +1289,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_D, "MinD");
     }
 
-    public static final String MIN_D_REDUCTION_REG = PREFIX + "MIN_D_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_D_REDUCTION_REG = PREFIX + "MINMAX_D_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REDUCTION_REG, "minD_reduction_reg");
+        machOnlyNameRegex(MINMAX_D_REDUCTION_REG, "minmaxD_reduction_reg");
     }
 
-    public static final String MIN_D_REG = PREFIX + "MIN_D_REG" + POSTFIX;
+    public static final String MINMAX_D_REG = PREFIX + "MINMAX_D_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_D_REG, "minD_reg");
+        machOnlyNameRegex(MINMAX_D_REG, "minmaxD_reg");
     }
 
     public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
@@ -1308,14 +1304,14 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_F, "MinF");
     }
 
-    public static final String MIN_F_REDUCTION_REG = PREFIX + "MIN_F_REDUCTION_REG" + POSTFIX;
+    public static final String MINMAX_F_REDUCTION_REG = PREFIX + "MINMAX_F_REDUCTION_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REDUCTION_REG, "minF_reduction_reg");
+        machOnlyNameRegex(MINMAX_F_REDUCTION_REG, "minmaxF_reduction_reg");
     }
 
-    public static final String MIN_F_REG = PREFIX + "MIN_F_REG" + POSTFIX;
+    public static final String MINMAX_F_REG = PREFIX + "MINMAX_F_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MIN_F_REG, "minF_reg");
+        machOnlyNameRegex(MINMAX_F_REG, "minmaxF_reg");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -1478,6 +1474,12 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_FIRST_TRUE, "VectorMaskFirstTrue");
     }
 
+    // Can only be used if libjsvml or libsleef is available
+    public static final String CALL_LEAF_VECTOR = PREFIX + "CALL_LEAF_VECTOR" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CALL_LEAF_VECTOR, "CallLeafVector");
+    }
+
     // Can only be used if avx512_vnni is available.
     public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
     static {
@@ -1572,6 +1574,16 @@ public class IRNode {
     public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
     static {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
+    }
+
+    public static final String UMIN_REDUCTION_V = PREFIX + "UMIN_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMIN_REDUCTION_V, "UMinReductionV");
+    }
+
+    public static final String UMAX_REDUCTION_V = PREFIX + "UMAX_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
     }
 
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
@@ -1762,6 +1774,11 @@ public class IRNode {
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
         trapNodes(PREDICATE_TRAP, "predicate");
+    }
+
+    public static final String RANGE_CHECK = PREFIX + "RANGE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(RANGE_CHECK, "RangeCheck");
     }
 
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
@@ -1983,6 +2000,11 @@ public class IRNode {
     public static final String SQRT_HF = PREFIX + "SQRT_HF" + POSTFIX;
     static {
        beforeMatchingNameRegex(SQRT_HF, "SqrtHF");
+    }
+
+    public static final String SQRT_D = PREFIX + "SQRT_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SQRT_D, "SqrtD");
     }
 
     public static final String SQRT_F = PREFIX + "SQRT_F" + POSTFIX;
@@ -3080,6 +3102,11 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
+    public static final String X86_CMOVEL_IMM01UCFE = PREFIX + "X86_CMOVEL_IMM01UCFE" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCFE, "cmovL_imm_01UCFE");
+    }
+
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
         String regex = START + "ModF" + MID + END;
@@ -3090,6 +3117,12 @@ public class IRNode {
     static {
         String regex = START + "ModD" + MID + END;
         macroNodes(MOD_D, regex);
+    }
+
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
     }
 
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
@@ -3135,6 +3168,11 @@ public class IRNode {
     public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
     static {
         machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
+    }
+
+    public static final String OPAQUE_CONSTANT_BOOL = PREFIX + "OPAQUE_CONSTANT_BOOL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
     /*
@@ -3471,11 +3509,11 @@ public class IRNode {
      */
     public static int getTypeSizeInBytes(String typeString) {
         return switch (typeString) {
-            case TYPE_BYTE              -> 1;
-            case TYPE_CHAR, TYPE_SHORT  -> 2;
-            case TYPE_INT, TYPE_FLOAT   -> 4;
-            case TYPE_LONG, TYPE_DOUBLE -> 8;
-            default                     -> 0;
+            case TYPE_BYTE, TYPE_BOOLEAN -> 1;
+            case TYPE_CHAR, TYPE_SHORT   -> 2;
+            case TYPE_INT, TYPE_FLOAT    -> 4;
+            case TYPE_LONG, TYPE_DOUBLE  -> 8;
+            default                      -> 0;
         };
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,25 +32,34 @@ class G1Policy;
 
 // The concurrent mark thread triggers the various steps of the concurrent marking
 // cycle, including various marking cleanup.
+//
+// The concurrent cycle may either be "Full" (i.e. include marking, rebuilding and
+// scrubbing, resetting for the next cycle) or "Undo", i.e. shortened to just the
+// reset part.
 class G1ConcurrentMarkThread: public ConcurrentGCThread {
   G1ConcurrentMark* _cm;
 
   enum ServiceState : uint {
     Idle,
-    FullMark,
-    UndoMark
+    FullCycleMarking,
+    FullCycleRebuildOrScrub,
+    FullCycleResetForNextCycle,
+    UndoCycleResetForNextCycle
   };
 
   volatile ServiceState _state;
+
+  // Returns whether we are in a "Full" cycle.
+  bool is_in_full_concurrent_cycle() const;
 
   // Wait for next cycle. Returns the command passed over.
   bool wait_for_next_cycle();
 
   bool mark_loop_needs_restart() const;
 
-  // Phases and subphases for the full concurrent marking cycle in order.
+  // Phases and subphases for the full concurrent cycle in order.
   //
-  // All these methods return true if the marking should be aborted.
+  // All these methods return true if the cycle should be aborted.
   bool phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
 
@@ -88,22 +97,25 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   double total_mark_cpu_time_s();
   // Cpu time used by all marking worker threads in seconds.
   double worker_threads_cpu_time_s();
-
-  G1ConcurrentMark* cm() { return _cm; }
-
+  // State management.
   void set_idle();
-  void start_full_mark();
-  void start_undo_mark();
+  void start_full_cycle();
+  void start_undo_cycle();
 
-  bool idle() const;
+  void set_full_cycle_rebuild_and_scrub();
+  void set_full_cycle_reset_for_next_cycle();
+
+  bool is_idle() const;
   // Returns true from the moment a concurrent cycle is
-  // initiated (during the concurrent start pause when started() is set)
-  // to the moment when the cycle completes (just after the next
-  // marking bitmap has been cleared and in_progress() is
-  // cleared).
-  bool in_progress() const;
+  // initiated (during the concurrent start pause when calling one of the
+  // start_*_cycle() methods) to the moment when the cycle completes.
+  bool is_in_progress() const;
 
-  bool in_undo_mark() const;
+  bool is_in_marking() const;
+  bool is_in_rebuild_or_scrub() const;
+  bool is_in_reset_for_next_cycle() const;
+
+  bool is_in_undo_cycle() const;
 
   // Update the perf data counter for concurrent mark.
   void update_perf_counter_cpu_time();

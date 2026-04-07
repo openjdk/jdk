@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/sizes.hpp"
 
 class VMStructs;
@@ -217,7 +218,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return AtomicAccess::load(&_state); }
+  RegionState state()              const { return _state.load_relaxed(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
@@ -247,7 +248,7 @@ private:
   HeapWord* _top_before_promoted;
 
   // Seldom updated fields
-  volatile RegionState _state;
+  Atomic<RegionState> _state;
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
@@ -257,12 +258,12 @@ private:
   size_t _gclab_allocs;
   size_t _plab_allocs;
 
-  volatile size_t _live_data;
-  volatile size_t _critical_pins;
+  Atomic<size_t> _live_data;
+  Atomic<size_t> _critical_pins;
 
   size_t _mixed_candidate_garbage_words;
 
-  HeapWord* volatile _update_watermark;
+  Atomic<HeapWord*> _update_watermark;
 
   uint _age;
   bool _promoted_in_place;
