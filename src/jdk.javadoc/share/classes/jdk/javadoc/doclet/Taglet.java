@@ -35,7 +35,7 @@ import com.sun.source.doctree.DocTree;
 
 /**
  * The interface for a custom taglet supported by doclets such as
- * the {@link jdk.javadoc.doclet.StandardDoclet standard doclet}.
+ * the {@linkplain StandardDoclet standard doclet}.
  * Custom taglets are used to handle custom tags in documentation
  * comments; custom tags can be instantiated individually as either
  * <i>block tags</i>, which appear at the end of a comment,
@@ -55,11 +55,11 @@ import com.sun.source.doctree.DocTree;
  *      {@link #getAllowedLocations() getAllowedLocations}, and
  *      {@link #isInlineTag() isInlineTag}, to determine the characteristics
  *      of the tags supported by the taglet.
- * <li> As appropriate, the doclet calls the
- *      {@link #toString(List,Element,URI) toString} method on the taglet object,
- *      giving it a list of tags, the element whose documentation comment contains
- *      the tags, and the relative URI of the documentation root directory, from
- *      which the taglet can determine the string to be included in the documentation.
+ * <li> As appropriate, the doclet calls one of the {@code toString} methods
+ *      declared in this interface, giving it a list of tags, the element whose
+ *      documentation comment contains the tags, and optionally the root URI
+ *      of the documentation, from which the taglet can determine the string
+ *      to be included in the documentation.
  *      The doclet will typically specify any requirements on the contents of
  *      the string that is returned.
  * </ol>
@@ -131,20 +131,24 @@ public interface Taglet {
      * this tag to be included in the generated output.
      *
      * <p>If this taglet supports {@link #isInlineTag inline} tags, it will
-     * be called once per instance of the inline tag, each time with a singleton list.
-     * If this taglet supports {@link #isBlockTag block} tags, it will be called once
-     * for each comment containing instances of block tags, with a list of all the instances
-     * of the block tag in that comment.
+     * be called once per instance of the inline tag, each time with a
+     * singleton list. If this taglet supports {@link #isBlockTag block} tags,
+     * it will be called once for each comment containing instances of block
+     * tags, with a list of all the instances of the block tag in that comment.
      *
-     * @apiNote Taglets that create relative references to other documentation resources
-     * may instead override {@link #toString(List, Element, URI)}, which provides the
-     * relative URI of the documentation root directory, and throw an exception in the
+     * @apiNote Taglets intended for use with doclets that support URI-based
+     * links such as the {@linkplain StandardDoclet standard doclet} may
+     * instead override {@link #toString(List, Element, URI)}, which
+     * provides the root URI of the documentation, and return alternative
+     * content or throw {@code UnsupportedOperationException} in the
      * implementation of this method.
      *
      * @param tags the list of instances of this tag
      * @param element the element to which the enclosing comment belongs
      * @return the string representation of the tags to be included in
      *  the generated output
+     * @throws UnsupportedOperationException if {@link #toString(List, Element, URI)}
+     *  should be invoked instead of this method
      *
      * @see <a href="StandardDoclet.html#user-defined-taglets">User-Defined Taglets
      *      for the Standard Doclet</a>
@@ -154,7 +158,10 @@ public interface Taglet {
 
     /**
      * Returns the string representation of one or more instances of
-     * this tag to be included in the generated output.
+     * this tag to be included in the generated output. This is an optional method
+     * for use with doclets that support URI-based links such as the {@linkplain
+     * StandardDoclet standard doclet}; other doclets should use
+     * {@link #toString(List, Element)} instead.
      *
      * <p>If this taglet supports {@link #isInlineTag inline} tags, it will
      * be called once per instance of the inline tag, each time with a singleton list.
@@ -162,22 +169,31 @@ public interface Taglet {
      * for each comment containing instances of block tags, with a list of all the instances
      * of the block tag in that comment.
      *
-     * <p>Since the location of the resource being rendered cannot always be derived
-     * from {@code element}, {@code pathToRoot} can be used to obtain references to other
+     * <p>The {@code docRoot} argument can be used to create links to other
      * documentation resources by invoking its {@link URI#resolve(String) resolve(String)}
-     * method with the relative path of the target resource.
+     * method with the path of the target resource relative to the documentation root URI.
      *
-     * @implSpec The default implementation returns {@link #toString(List, Element) toString(tags, element)}.
+     * @apiNote The kind of {@code URI} passed to this method is doclet-specific.
+     * With the {@linkplain StandardDoclet standard doclet}, {@code docRoot} is always
+     * a relative URI representing the inverse path from the current resource to
+     * the documentation root directory.
+     *
+     * @implSpec The default implementation returns {@link #toString(List, Element)
+     * toString(tags, element)}.
      *
      * @param tags the list of instances of this tag
      * @param element the element to which the enclosing comment belongs
-     * @param pathToRoot the relative URI of the documentation root directory
+     * @param docRoot the root URI of the documentation
      * @return the string representation of the tags to be included in
      *  the generated output
+     * @throws IllegalArgumentException if {@code docRoot} is a {@code URI}
+     *  that is not supported by the taglet, such as an {@linkplain
+     *  URI##uri-syntax-and-components-heading opaque or absolute URI}.
+     * @see #toString(List, Element)
      *
      * @since 27
      */
-    default String toString(List<? extends DocTree> tags, Element element, URI pathToRoot) {
+    default String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
         return toString(tags, element);
     }
 

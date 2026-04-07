@@ -80,11 +80,11 @@ public final class SealedGraph implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        throw new RuntimeException("Wrong toString method invoked");
+        throw new UnsupportedOperationException();
     }
 
     // @Override - requires JDK-8373922 in build JDK
-    public String toString(List<? extends DocTree> tags, Element element, URI pathToRoot) {
+    public String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
         if (sealedDotOutputDir == null || sealedDotOutputDir.isEmpty()) {
             return "";
         }
@@ -112,7 +112,7 @@ public final class SealedGraph implements Taglet {
                 .map(Objects::toString)
                 .collect(Collectors.toUnmodifiableSet());
 
-        String dotContent = new Renderer().graph(typeElement, exports, pathToRoot);
+        String dotContent = new Renderer().graph(typeElement, exports, docRoot);
 
         try  {
             Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);

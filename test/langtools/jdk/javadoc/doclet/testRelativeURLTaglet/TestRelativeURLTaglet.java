@@ -211,19 +211,19 @@ public class TestRelativeURLTaglet extends JavadocTester implements Taglet {
     }
 
     @Override
-    public String toString(List<? extends DocTree> tags, Element element, URI pathToRoot) {
+    public String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
         if (tags.size() == 1 && tags.getFirst() instanceof UnknownInlineTagTree uit) {
-            return pathToRoot.resolve(uit.getContent().toString()).toString();
+            return docRoot.resolve(uit.getContent().toString()).toString();
         } else {
             return tags.stream()
-                    .map(t -> pathToRoot.resolve(((UnknownBlockTagTree) t).getContent().toString()).toString())
+                    .map(t -> docRoot.resolve(((UnknownBlockTagTree) t).getContent().toString()).toString())
                     .collect(Collectors.joining(" "));
         }
     }
 
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        throw new RuntimeException("Wrong toString method invoked");
+        throw new UnsupportedOperationException();
     }
 }
 

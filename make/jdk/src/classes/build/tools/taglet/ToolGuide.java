@@ -91,11 +91,11 @@ public class ToolGuide implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element elem) {
-        throw new RuntimeException("Wrong toString method invoked");
+        throw new UnsupportedOperationException();
     }
 
     // @Override - requires JDK-8373922 in build JDK
-    public String toString(List<? extends DocTree> tags, Element elem, URI pathToRoot) {
+    public String toString(List<? extends DocTree> tags, Element elem, URI docRoot) {
 
         if (tags.isEmpty())
             return "";
@@ -123,7 +123,7 @@ public class ToolGuide implements Taglet {
                 if (label.isEmpty()) {
                     label = name;
                 }
-                String rootParent = pathToRoot.resolve("..").toString();
+                String rootParent = docRoot.resolve("..").toString();
 
                 String url = String.format("%s/%s/%s.html",
                         rootParent, BASE_URL, name);

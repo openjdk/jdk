@@ -141,11 +141,11 @@ public class JSpec implements Taglet  {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element elem) {
-        throw new RuntimeException("Wrong toString method invoked");
+        throw new UnsupportedOperationException();
     }
 
     // @Override - requires JDK-8373922 in build JDK
-    public String toString(List<? extends DocTree> tags, Element elem, URI pathToRoot) {
+    public String toString(List<? extends DocTree> tags, Element elem, URI docRoot) {
 
         if (tags.isEmpty())
             return "";
@@ -182,7 +182,7 @@ public class JSpec implements Taglet  {
                 String preview = m.group("preview"); // null if no preview feature
                 String chapter = m.group("chapter");
                 String section = m.group("section");
-                String rootParent = pathToRoot.resolve("..").toString();
+                String rootParent = docRoot.resolve("..").toString();
 
                 String url = preview == null ?
                         String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
