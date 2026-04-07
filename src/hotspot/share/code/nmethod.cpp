@@ -1332,6 +1332,7 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1811,6 +1812,7 @@ nmethod::nmethod(
     init_immutable_data_ref_count();
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
 
     // we use the information of entry points to find out if a method is
     // static or non static
@@ -2038,7 +2040,7 @@ void nmethod::copy_values(GrowableArray<jobject>* array) {
   // The code and relocations have already been initialized by the
   // CodeBlob constructor, so it is valid even at this early point to
   // iterate over relocations and patch the code.
-  fix_oop_relocations(nullptr, nullptr, /*initialize_immediates=*/ true);
+  fix_oop_relocations(/*initialize_immediates=*/ true);
 }
 
 void nmethod::copy_values(GrowableArray<Metadata*>* array) {
@@ -2050,23 +2052,41 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+bool nmethod::fix_oop_relocations(bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this, begin, end);
+  RelocIterator iter(this);
+  bool modified_code = false;
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
-      if (initialize_immediates && reloc->oop_is_immediate()) {
+      if (!reloc->oop_is_immediate()) {
+        // Refresh the oop-related bits of this instruction.
+        reloc->set_value(reloc->value());
+        modified_code = true;
+      } else if (initialize_immediates) {
         oop* dest = reloc->oop_addr();
         jobject obj = *reinterpret_cast<jobject*>(dest);
         initialize_immediate_oop(dest, obj);
       }
-      // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
+      modified_code |= !reloc->metadata_is_immediate();
     }
+  }
+  return modified_code;
+}
+
+void nmethod::fix_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_oop_relocations(&icic);
+}
+
+void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
+  assert(icic != nullptr, "must provide context to track if code was modified");
+  bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
+  if (modified_code) {
+    icic->set_has_modified_code();
   }
 }
 
