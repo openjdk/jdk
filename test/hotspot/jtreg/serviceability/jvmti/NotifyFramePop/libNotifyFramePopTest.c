@@ -44,7 +44,7 @@ extern "C" {
 static jvmtiEnv *jvmti = NULL;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
-static jint framePopReceived = 0;
+static jint framePopsReceived = 0;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -80,7 +80,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
     char* name = NULL;
     char* sign = NULL;
 
-    ++framePopReceived;
+    ++framePopsReceived;
 
     err = (*jvmti_env)->GetMethodDeclaringClass(jvmti_env, method, &cls);
     if (err != JVMTI_ERROR_NONE) {
@@ -167,9 +167,9 @@ Java_NotifyFramePopTest_notifyFramePop(JNIEnv *env, jclass cls, jthread thread)
 }
 
 JNIEXPORT jint JNICALL
-Java_NotifyFramePopTest_framePopReceived(JNIEnv *env, jclass cls) {
-    jint result = framePopReceived;
-    framePopReceived = 0;
+Java_NotifyFramePopTest_framePopsReceived(JNIEnv *env, jclass cls) {
+    jint result = framePopsReceived;
+    framePopsReceived = 0;
     return result;
 }
 

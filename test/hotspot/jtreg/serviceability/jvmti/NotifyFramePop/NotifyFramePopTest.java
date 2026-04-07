@@ -75,7 +75,7 @@ public class NotifyFramePopTest {
     private native static boolean canGenerateFramePopEvents();
     private native static void setFramePopNotificationMode(boolean enabled);
     private native static void notifyFramePop(Thread thread);
-    private native static int framePopReceived();
+    private native static int framePopsReceived();
 
     private static void log(String msg) {
         System.out.println(msg);
@@ -86,13 +86,9 @@ public class NotifyFramePopTest {
     }
 
     private static void test(String name, int framePopExpected, Test theTest) {
-      test1(name, framePopExpected, theTest);
-    }
-
-    private static void test1(String name, int framePopExpected, Test theTest) {
         log("test: " + name);
         theTest.test();
-        int actual = framePopReceived();
+        int actual = framePopsReceived();
         if (framePopExpected != actual) {
             throw new RuntimeException("unexpected notification:"
                     + " FramePop expected: " + framePopExpected
