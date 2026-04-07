@@ -23,7 +23,12 @@
 
 import java.awt.Frame;
 import java.awt.List;
+
 import jdk.test.lib.Platform;
+
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * @test
@@ -150,13 +155,6 @@ public final class SelectInvalidTest {
         assertFalse(list.isIndexSelected(0));
     }
 
-    private static void assertEquals(int expected, int actual) {
-        if (expected != actual) {
-            throw new RuntimeException(
-                    "Expected %d, got %d".formatted(expected, actual));
-        }
-    }
-
     private static void testWinDeselectAllSingleMode(Frame frame, int invalid) {
         List list = new List(4, false);
         frame.add(list);
@@ -213,15 +211,4 @@ public final class SelectInvalidTest {
         assertTrue(list.isIndexSelected(2));
     }
 
-    private static void assertTrue(boolean condition) {
-        if (!condition) {
-            throw new RuntimeException("Expected true but got false");
-        }
-    }
-
-    private static void assertFalse(boolean condition) {
-        if (condition) {
-            throw new RuntimeException("Expected false but got true");
-        }
-    }
 }
