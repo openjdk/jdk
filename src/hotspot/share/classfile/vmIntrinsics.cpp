@@ -204,6 +204,11 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
     return 5;
+  case vmIntrinsics::_binarySearchInt:
+  case vmIntrinsics::_binarySearchLong:
+  case vmIntrinsics::_binarySearchShort:
+  case vmIntrinsics::_binarySearchChar:
+    return 1;
   default:
     return 0;
   }

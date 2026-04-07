@@ -26,6 +26,7 @@
 package java.util;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
@@ -1614,8 +1615,15 @@ public final class Arrays {
     }
 
     // Like public version, but without range checks.
+    @IntrinsicCandidate
     private static int binarySearch0(long[] a, int fromIndex, int toIndex,
                                      long key) {
+        return binarySearch0Impl(a, fromIndex, toIndex, key);
+    }
+
+    @ForceInline
+    private static int binarySearch0Impl(long[] a, int fromIndex, int toIndex,
+                                         long key) {
         int low = fromIndex;
         int high = toIndex - 1;
 
@@ -1695,8 +1703,15 @@ public final class Arrays {
     }
 
     // Like public version, but without range checks.
+    @IntrinsicCandidate
     private static int binarySearch0(int[] a, int fromIndex, int toIndex,
                                      int key) {
+        return binarySearch0Impl(a, fromIndex, toIndex, key);
+    }
+
+    @ForceInline
+    private static int binarySearch0Impl(int[] a, int fromIndex, int toIndex,
+                                         int key) {
         int low = fromIndex;
         int high = toIndex - 1;
 
@@ -1776,8 +1791,15 @@ public final class Arrays {
     }
 
     // Like public version, but without range checks.
+    @IntrinsicCandidate
     private static int binarySearch0(short[] a, int fromIndex, int toIndex,
                                      short key) {
+        return binarySearch0Impl(a, fromIndex, toIndex, key);
+    }
+
+    @ForceInline
+    private static int binarySearch0Impl(short[] a, int fromIndex, int toIndex,
+                                         short key) {
         int low = fromIndex;
         int high = toIndex - 1;
 
@@ -1857,8 +1879,15 @@ public final class Arrays {
     }
 
     // Like public version, but without range checks.
+    @IntrinsicCandidate
     private static int binarySearch0(char[] a, int fromIndex, int toIndex,
                                      char key) {
+        return binarySearch0Impl(a, fromIndex, toIndex, key);
+    }
+
+    @ForceInline
+    private static int binarySearch0Impl(char[] a, int fromIndex, int toIndex,
+                                         char key) {
         int low = fromIndex;
         int high = toIndex - 1;
 

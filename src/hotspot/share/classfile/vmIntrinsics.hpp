@@ -350,6 +350,16 @@ class methodHandle;
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \
                                                                                                                         \
+  do_intrinsic(_binarySearchInt,          java_util_Arrays,       binarySearch0_name, binarySearch0_int_signature,   F_S) \
+   do_name(     binarySearch0_name,                              "binarySearch0")                                       \
+   do_signature(binarySearch0_int_signature,                     "([IIII)I")                                            \
+  do_intrinsic(_binarySearchLong,         java_util_Arrays,       binarySearch0_name, binarySearch0_long_signature,  F_S) \
+   do_signature(binarySearch0_long_signature,                    "([JIIJ)I")                                            \
+  do_intrinsic(_binarySearchShort,        java_util_Arrays,       binarySearch0_name, binarySearch0_short_signature, F_S) \
+   do_signature(binarySearch0_short_signature,                   "([SIIS)I")                                            \
+  do_intrinsic(_binarySearchChar,         java_util_Arrays,       binarySearch0_name, binarySearch0_char_signature,  F_S) \
+   do_signature(binarySearch0_char_signature,                    "([CIIC)I")                                            \
+                                                                                                                        \
   do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
