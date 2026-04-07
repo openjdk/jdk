@@ -28,12 +28,10 @@ package sun.security.util;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Locale;
@@ -488,18 +486,18 @@ public final class DerOutputStream
     /**
      * 1/1/1950 is the lowest date that RFC 2630 serializes to UTC time
      */
-    private static final Instant utcLow = Instant.ofEpochMilli(-631152000000L); // Dates before 1/1/1950
+    private static final Instant utcLow = Instant.ofEpochSecond(-631152000L); // Dates before 1/1/1950
 
     /**
      * 12/31/2049 is the highest date that RFC 2630 serializes to UTC time
      */
-    private static final Instant utcHigh = Instant.ofEpochMilli(2524607999000L);
+    private static final Instant utcHigh = Instant.ofEpochSecond(2524607999L);
 
     /**
      * Takes an instant and chooses UTC or GeneralizedTime as per RFC 2630
      */
     public DerOutputStream putTime(Instant d) {
-        return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedInstant(d) : putUTCInstant(d);
+        return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedTime(d) : putUTCInstant(d);
     }
 
     /**
@@ -529,7 +527,7 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putGeneralizedTime(Date d) {
-        return putGeneralizedInstant(d.toInstant());
+        return putGeneralizedTime(d.toInstant());
     }
 
     /**
@@ -538,7 +536,7 @@ public final class DerOutputStream
      * <P>YYYYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
-    public DerOutputStream putGeneralizedInstant(Instant d) {
+    public DerOutputStream putGeneralizedTime(Instant d) {
         return putTime(d, DerValue.tag_GeneralizedTime);
     }
 

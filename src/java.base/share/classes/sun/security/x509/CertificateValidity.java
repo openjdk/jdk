@@ -132,12 +132,12 @@ public class CertificateValidity implements DerEncoder {
         if (notBefore.isBefore(Instant.ofEpochMilli(YR_2050))) {
             pair.putUTCInstant(notBefore);
         } else
-            pair.putGeneralizedInstant(notBefore);
+            pair.putGeneralizedTime(notBefore);
 
         if (notAfter.isBefore(Instant.ofEpochMilli(YR_2050))) {
             pair.putUTCInstant(notAfter);
         } else {
-            pair.putGeneralizedInstant(notAfter);
+            pair.putGeneralizedTime(notAfter);
         }
         out.write(DerValue.tag_Sequence, pair);
     }

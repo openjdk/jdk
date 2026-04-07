@@ -79,13 +79,13 @@ public class PrivateKeyUsageExtension extends Extension {
         DerOutputStream tagged = new DerOutputStream();
         if (notBefore != null) {
             DerOutputStream tmp = new DerOutputStream();
-            tmp.putGeneralizedInstant(notBefore);
+            tmp.putGeneralizedTime(notBefore);
             tagged.writeImplicit(DerValue.createTag(DerValue.TAG_CONTEXT,
                                  false, TAG_BEFORE), tmp);
         }
         if (notAfter != null) {
             DerOutputStream tmp = new DerOutputStream();
-            tmp.putGeneralizedInstant(notAfter);
+            tmp.putGeneralizedTime(notAfter);
             tagged.writeImplicit(DerValue.createTag(DerValue.TAG_CONTEXT,
                                  false, TAG_AFTER), tmp);
         }

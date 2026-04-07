@@ -36,7 +36,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Date;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.pkcs10.PKCS10Attributes;
