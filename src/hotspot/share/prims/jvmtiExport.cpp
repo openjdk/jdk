@@ -1895,10 +1895,6 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
 }
 
 void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame current_frame) {
-  JvmtiThreadState* state = thread->jvmti_thread_state();
-  if (state == nullptr) {
-    return;
-  }
   // At this point we only have the address of a "raw result" and
   // we just call into the interpreter to convert this into a jvalue.
   // This method always makes transition to vm and back where GC can happen.
@@ -1917,11 +1913,15 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   if (is_reference_type(type)) {
     result = Handle(thread, oop_result);
   }
+  JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
 
   JRT_BLOCK
+    bool interp_only = thread->is_interp_only_mode();
+    // Avoid calls to get_jvmti_thread_state if is_interp_only_mode was not enabled.
+    state = interp_only ? get_jvmti_thread_state(thread) : thread->jvmti_thread_state();
     if (state != nullptr) {
-      if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+      if (interp_only && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
           value.l = JNIHandles::make_local(thread, result());
@@ -1961,7 +1961,8 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                            (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                                            (mh() == nullptr) ? "null" : mh()->name()->as_C_string() ));
 
-  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+  // Need to check is_interp_only_mode to consistently post method exit event for all frames.
+  if (thread->is_interp_only_mode() && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       if (ets->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
