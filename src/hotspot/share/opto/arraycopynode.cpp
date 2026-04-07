@@ -258,7 +258,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   return mem;
 }
 
-// We may have narrowed the type of base ut because this runs with PhaseIterGVN::_delay_transform true, explicitly
+// We may have narrowed the type of base because this runs with PhaseIterGVN::_delay_transform true, explicitly
 // update the type of the AddP so it's consistent with its base and load() picks the right memory slice.
 Node* ArrayCopyNode::make_and_transform_addp(PhaseGVN* phase, Node* base, Node* offset) {
   assert(phase->is_IterGVN() == nullptr || phase->is_IterGVN()->delay_transform(), "helper method when delay transform is set");
