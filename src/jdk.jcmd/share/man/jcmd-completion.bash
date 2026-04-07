@@ -1,4 +1,28 @@
 #!/usr/bin/env bash
+
+#
+# Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
 # Bash completion for jcmd.
 #
 # Source this file from an interactive shell after bash-completion is loaded:
@@ -9,8 +33,6 @@
 #   component of the main class name.
 # - Second argument completes the diagnostic commands reported by
 #   `jcmd <target> help`.
-# - For `help`, the command list excludes `help` itself to avoid recursion.
-# - `GC.heap_dump` gets a small option completer and falls back to file paths.
 
 if ! type complete >/dev/null 2>&1; then
   return 0 2>/dev/null || exit 0
@@ -49,12 +71,9 @@ _jcmd__complete_first_arg() {
   local -a candidates=("-l" "--help")
 
   local line # <pid> <main-class>
-  # IFS= preserves leading/trailing whitespace
   # -r prevents backslash escaping
-  while IFS= read -r line; do
-    # [[ -z $line ]] && continue
-    local pid=${line%% *}
-    local main_class=${line#* } # everything after first space
+  local pid main_class rest
+  while read -r pid main_class rest; do
     candidates+=("$pid" "$main_class")
   done < <(_jcmd__list_processes)
 
@@ -70,7 +89,7 @@ _jcmd__complete_command() {
   local -a commands=("-f")
 
   local cmd
-  while IFS= read -r cmd; do
+  while read -r cmd; do
     [[ -z $cmd ]] && continue
     commands+=("$cmd")
   done < <(_jcmd__list_commands_for_pid "$target")
@@ -87,7 +106,7 @@ _jcmd__complete_help_command() {
   local -a commands=()
 
   local cmd
-  while IFS= read -r cmd; do
+  while read -r cmd; do
     [[ -z $cmd || $cmd == help ]] && continue
     commands+=("$cmd")
   done < <(_jcmd__list_commands_for_pid "$target")
