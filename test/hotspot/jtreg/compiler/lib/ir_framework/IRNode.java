@@ -3120,6 +3120,26 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16 = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, "vector_slice_const_origin_GT16B_index16_reg");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_MULTIPLE4_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_MULTIPLE4_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_MULTIPLE4_EVEX, "vector_slice_const_origin_GT16B_index_multiple4_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_GT16_AND_LT48_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_GT16_AND_LT48_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_GT16_AND_LT48_EVEX, "vector_slice_const_origin_GT16B_index_GT16_AND_LT48_reg_evex");
+    }
+
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_LT16_OR_GT48_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_LT16_OR_GT48_EVEX" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_LT16_OR_GT48_EVEX, "vector_slice_const_origin_GT16B_index_LT16_OR_GT48_reg_evex");
+    }
+
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
         String regex = START + "ModF" + MID + END;

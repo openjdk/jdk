@@ -25242,7 +25242,7 @@ instruct vector_slice_const_origin_16B_reg(vec dst, vec src1, vec src2, immI ori
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_slice_const_origin_GT16B_index16B_reg(vec dst, vec src1, vec src2, immI origin)
+instruct vector_slice_const_origin_GT16B_index16_reg(vec dst, vec src1, vec src2, immI origin)
 %{
   predicate(Matcher::vector_length_in_bytes(n) > 16 && !VM_Version::supports_avx512vlbw() && n->in(2)->get_int() == 16);
   match(Set dst (VectorSlice (Binary src1 src2) origin));
@@ -25251,20 +25251,20 @@ instruct vector_slice_const_origin_GT16B_index16B_reg(vec dst, vec src1, vec src
     int vlen_enc = vector_length_encoding(this);
     // src1 = [v2, v1], src2 = [v4, v3]
     // dst = [v3, v2]
-    __ vperm2i128($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, 0x21);
+    __ vperm2f128($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, 0x21);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_slice_const_origin_GT16B_reg(vec dst, vec src1, vec src2, immI origin, vec xtmp)
+instruct vector_slice_const_origin_GT16B_reg(vec dst, vec src1, vec src2, immI origin)
 %{
   predicate(Matcher::vector_length_in_bytes(n) > 16 && !VM_Version::supports_avx512vlbw() && n->in(2)->get_int() != 16);
   match(Set dst (VectorSlice (Binary src1 src2) origin));
-  effect(TEMP xtmp);
-  format %{ "vector_slice_const_origin $dst, $origin, $src1, $src2 \t!using $xtmp as TEMP" %}
+  effect(TEMP dst);
+  format %{ "vector_slice_const_origin $dst, $origin, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vector_slice_op($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, $origin$$constant, vlen_enc);
+    __ vector_slice_avx($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $origin$$constant, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -25282,15 +25282,30 @@ instruct vector_slice_const_origin_GT16B_index_multiple4_reg_evex(vec dst, vec s
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_slice_const_origin_GT16B_reg_evex(vec dst, vec src1, vec src2, immI origin, vec xtmp)
+instruct vector_slice_const_origin_GT16B_index_GT16_AND_LT48_reg_evex(vec dst, vec src1, vec src2, immI origin, vec xtmp)
 %{
-  predicate(Matcher::vector_length_in_bytes(n) > 16 && VM_Version::supports_avx512vlbw() && (n->in(2)->get_int() & 0x3) != 0);
+  predicate(Matcher::vector_length_in_bytes(n) > 16 && VM_Version::supports_avx512vlbw() &&
+            (n->in(2)->get_int() & 0x3) != 0 && n->in(2)->get_int() > 16 && n->in(2)->get_int() < 48);
   match(Set dst (VectorSlice (Binary src1 src2) origin));
   effect(TEMP dst, TEMP xtmp);
   format %{ "vector_slice_const_origin $dst, $origin, $src1, $src2 \t!using $xtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vector_slice_op($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, $origin$$constant, vlen_enc);
+    __ vector_slice_evex($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, $origin$$constant, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_slice_const_origin_GT16B_index_LT16_OR_GT48_reg_evex(vec dst, vec src1, vec src2, immI origin)
+%{
+  predicate(Matcher::vector_length_in_bytes(n) > 16 && VM_Version::supports_avx512vlbw() &&
+            (n->in(2)->get_int() & 0x3) != 0 && (n->in(2)->get_int() < 16 || n->in(2)->get_int() > 48));
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP dst);
+  format %{ "vector_slice_const_origin $dst, $origin, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vector_slice_evex($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, $origin$$constant, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -572,11 +572,9 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
-  void vector_slice_32B_op(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
+  void vector_slice_evex(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
 
-  void vector_slice_64B_op(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
-
-  void vector_slice_op(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp, int origin, int vlen_enc);
+  void vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMRegister src2, int origin, int vlen_enc);
 
   void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
