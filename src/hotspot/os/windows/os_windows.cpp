@@ -3397,14 +3397,13 @@ static char* reserve_memory_aligned_va2(size_t size, size_t alignment, MemTag me
           PAGE_READWRITE,
           &param, 1);
 
-
   if (aligned_base != nullptr) {
     assert(is_aligned(aligned_base, alignment), "Result must be aligned");
     MemTracker::record_virtual_memory_reserve(aligned_base, size, CALLER_PC, mem_tag);
     return aligned_base;
   }
   log_trace(os)("Aligned allocation via VirtualAlloc2 failed, falling back to retry loop. GetLastError->%lu.", GetLastError());
-  return map_or_reserve_memory_aligned(size, alignment, -1, mem_tag);
+  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 size_t os::commit_memory_limit() {

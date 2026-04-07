@@ -544,7 +544,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
 
 #ifndef AIX
 
-// mmap(PROT_NONE) allocations are inherently splittable.
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   // mmap returns memory that is splittable by default.
   char* base;

@@ -1798,7 +1798,6 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   }
 }
 
-// mmap(PROT_NONE) allocations are inherently splittable.
 os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec, char* addr) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
@@ -1811,7 +1810,7 @@ os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, bool exec,
   return PlaceholderRegion();
 }
 
-os::PlaceholderRegionPair os::pd_split_memory(PlaceholderRegion& orig, size_t offset) {
+os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
   // On AIX, mmap regions are inherently splittable. Just do bookkeeping.
   // pd_reserve_placeholder_memory guarantees mmaped (not shmated) memory.
   char* base = orig.base();

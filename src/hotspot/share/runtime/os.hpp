@@ -552,7 +552,7 @@ class os: AllStatic {
   static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable = false, char* addr = nullptr);
 
   // Split 'orig' at 'offset'. Returns leading and trailing placeholder pieces as a PlaceholderRegionPair.
-  // The caller must not use 'orig' afterward; only 'left' and 'right' describe the OS state.
+  // The caller must not use 'orig' afterward.
   // Offset must be page-aligned.
   // If offset == orig.size(), returns { orig, empty }.
   // On failure, returns {empty, empty}.
