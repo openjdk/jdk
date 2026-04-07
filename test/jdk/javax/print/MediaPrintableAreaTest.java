@@ -22,7 +22,8 @@
  * questions.
  */
 
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.HashPrintJobAttributeSet;
@@ -42,18 +43,41 @@ import javax.print.attribute.standard.MediaSizeName;
 
 public class MediaPrintableAreaTest {
 
+    private static final int LANDSCAPE = 1;
+    private static final int PORTRAIT = 2;
+
     public static void main(String[] args) {
         PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
-
+        List<String> errorList = new ArrayList<>();
+        int testedOrientation = 0;
         for (PrintService ps : printServices) {
-            testPrintService(ps);
+            testedOrientation |= testPrintService(ps, errorList);
+        }
+
+        if (!errorList.isEmpty()) {
+            String errorString = String.join("\r\n", errorList);
+            System.err.println(errorString);
+            throw new RuntimeException();
+        }
+
+        if (testedOrientation == (PORTRAIT | LANDSCAPE)) {
+            // OK, all orientations were tested
+        } else if (testedOrientation == PORTRAIT) {
+            // landscape-oriented paper not found
+            System.out.println("WARNING!!! Landscape-oriented paper not found.");
+        } else if (testedOrientation == LANDSCAPE) {
+            // portrait-oriented paper not found
+            System.out.println("WARNING!!! Portrait-oriented paper not found.");
+        } else {
+            // no paper found
+            System.out.println("WARNING!!! Paper not found.");
         }
     }
 
-    private static void testPrintService(PrintService printServices) {
+    private static int testPrintService(PrintService printServices, List<String> errorList) {
         Media[] medias = (Media[]) printServices.getSupportedAttributeValues(Media.class, null, null);
         PrintJobAttributeSet attrs = new HashPrintJobAttributeSet();
-
+        int testedOrientation = 0;
         for (Media m : medias) {
             if (!(m instanceof MediaSizeName msn)) {
                 continue;
@@ -75,15 +99,17 @@ public class MediaPrintableAreaTest {
                 double mediaHeight = mediaSize.getY(units);
                 double printableWidth = mpa.getX(units) + mpa.getWidth(units);
                 double printableHeight = mpa.getY(units) + mpa.getHeight(units);
+                testedOrientation |= (mediaHeight >= mediaWidth ? PORTRAIT : LANDSCAPE);
                 if ((mediaWidth - printableWidth) < acceptableDiff ||
                         (mediaHeight - printableHeight) < acceptableDiff) {
-                    String msg = String.format("Media %s less than media printable area. %n" +
+                    String errorMsg = String.format("Print service: %s. Media %s less than media printable area. %n" +
                                     "Media size width: %f, height: %f.%nPrintable area: width: %f, height %f",
-                            msn.getName(), mediaWidth, mediaHeight, printableWidth, printableHeight);
-                    throw new RuntimeException(msg);
+                            printServices.getName(), msn.toString(), mediaWidth, mediaHeight, printableWidth, printableHeight);
+                    errorList.add(errorMsg);
                 }
             }
         }
+        return testedOrientation;
     }
 
 }
