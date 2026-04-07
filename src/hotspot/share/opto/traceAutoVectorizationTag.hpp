@@ -40,8 +40,8 @@
   flags(TYPES,                      "Trace VLoopTypes") \
   flags(POINTERS,                   "Trace VLoopVPointers") \
   flags(DEPENDENCY_GRAPH,           "Trace VLoopDependencyGraph") \
+  flags(REJECTIONS,                 "Trace rejections (non vectorization)") \
   flags(SW_ADJACENT_MEMOPS,         "Trace SuperWord::find_adjacent_memop_pairs") \
-  flags(SW_REJECTIONS,              "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,                 "Trace SuperWord packset at different stages") \
   flags(SW_INFO,                    "Trace SuperWord info (equivalent to TraceSuperWord)") \
   flags(SW_VERBOSE,                 "Trace SuperWord verbose (all SW tags enabled)") \
@@ -123,14 +123,14 @@ class TraceAutoVectorizationTagValidator {
       } else if (ALL == tag) {
         _tags.set_range(0, TRACE_AUTO_VECTORIZATION_TAG_NUM);
       } else if (SW_VERBOSE == tag) {
+        _tags.at_put(REJECTIONS, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
-        _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
         _tags.at_put(SW_VERBOSE, set_bit);
       } else if (SW_INFO == tag) {
+        _tags.at_put(REJECTIONS, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
-        _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
       } else {

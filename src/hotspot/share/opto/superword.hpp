@@ -310,20 +310,13 @@ private:
   // Mapping from nodes to their pack: bb_idx -> pack
   GrowableArray<Node_List*> _node_to_pack;
 
-  NOT_PRODUCT(const bool _trace_packset;)
-  NOT_PRODUCT(const bool _trace_rejections;)
-
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
-  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer
-          NOT_PRODUCT(COMMA bool trace_packset COMMA bool trace_rejections)
-          ) :
+  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
     _vloop(vloop_analyzer.vloop()),
     _body(vloop_analyzer.body()),
     _packs(arena, 8, 0, nullptr),
     _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr)
-    NOT_PRODUCT(COMMA _trace_packset(trace_packset))
-    NOT_PRODUCT(COMMA _trace_rejections(trace_rejections))
     {}
 
   // Accessors to iterate over packs.
@@ -385,9 +378,6 @@ public:
 
   void clear() { _packs.clear(); }
 
-private:
-  NOT_PRODUCT(bool is_trace_superword_packset() const { return _trace_packset; })
-  NOT_PRODUCT(bool is_trace_superword_rejections() const { return _trace_rejections; })
 public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
@@ -503,44 +493,6 @@ class SuperWord : public ResourceObj {
   const VPointer& vpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
-
-#ifndef PRODUCT
-  // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_adjacent_memops() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
-  }
-
-  bool is_trace_superword_rejections() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
-  }
-
-  bool is_trace_superword_packset() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
-  }
-
-  bool is_trace_superword_info() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
-  }
-
-  bool is_trace_superword_any() const {
-    return TraceSuperWord ||
-           is_trace_align_vector() ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-
-  bool is_trace_align_vector() const {
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
-#endif
 
   bool     do_vector_loop()        { return _do_vector_loop; }
 

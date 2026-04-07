@@ -174,7 +174,7 @@ bool VTransformGraph::schedule() {
           // and discover that use is also pre_visited but not post_visited. Thus, use
           // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
           // cycle.
-          NOT_PRODUCT(if (_trace._rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
+          NOT_PRODUCT(if (_vloop.is_trace_rejections()) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
           return false;
         }
         stack.push(use);
@@ -883,7 +883,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
             (!region1.is_load() && region2.is_load() && region1.schedule_order() < region2.schedule_order())) {
           // We predict that this leads to a store-to-load-forwarding failure penalty.
 #ifndef PRODUCT
-          if (_trace._rejections) {
+          if (_vloop.is_trace_rejections()) {
             tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
             tty->print_cr("  Partial overlap of store->load. We predict that this leads to");
             tty->print_cr("  a store-to-load-forwarding failure penalty which makes");

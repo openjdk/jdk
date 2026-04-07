@@ -131,23 +131,21 @@ public:
 
 #ifndef PRODUCT
 // Convenience class for tracing flags.
+// TODO: can we remove the trace?
 class VTransformTrace {
 public:
   const bool _verbose;
-  const bool _rejections;
   const bool _align_vector;
   const bool _speculative_aliasing_analysis;
   const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
-                  const bool is_trace_rejections,
                   const bool is_trace_align_vector,
                   const bool is_trace_speculative_aliasing_analysis,
                   const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
     _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
     _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
     _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
     _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
