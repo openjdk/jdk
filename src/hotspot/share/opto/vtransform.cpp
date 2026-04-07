@@ -127,6 +127,7 @@ bool VTransformGraph::schedule() {
 
 #ifndef PRODUCT
   if (_vloop.is_trace_vtransform_verbose()) {
+    tty->print_cr("\nBefore VTransformGraph::schedule:");
     print_vtnodes();
   }
 #endif
@@ -1557,7 +1558,6 @@ void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& 
 
 #ifndef PRODUCT
 void VTransformGraph::print_vtnodes() const {
-  tty->print_cr("\nVTransformGraph::print_vtnodes:");
   for (int i = 0; i < _vtnodes.length(); i++) {
     _vtnodes.at(i)->print();
   }

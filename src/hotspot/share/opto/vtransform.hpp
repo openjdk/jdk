@@ -175,7 +175,9 @@ private:
   void mark_vtnodes_in_loop(VectorSet& in_loop) const;
 
 #ifndef PRODUCT
+public:
   void print_vtnodes() const;
+private:
   void print_schedule() const;
   void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                             const VectorSet& pre_visited,

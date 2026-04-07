@@ -42,15 +42,13 @@ public:
       _vtransform(vtransform)
   {
     assert(!_vtransform.has_graph(), "constructor is passed an empty vtransform");
-    //build();
+    build();
     assert(_vtransform.has_graph(), "vtransform must contain some vtnodes now");
   }
 
 private:
-//  void build();
-//  void build_vector_vtnodes_for_packed_nodes();
-//  void build_scalar_vtnodes_for_non_packed_nodes();
-//  void build_inputs_for_vector_vtnodes(VectorSet& vtn_memory_dependencies);
+  void build();
+  void build_scalar_vtnodes();
 //  void build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies);
 //  void build_uses_after_loop();
 //
@@ -65,19 +63,15 @@ private:
 //    assert(vtn != nullptr, "expect non-null vtnode");
 //    return vtn;
 //  }
-//
-//  void map_node_to_vtnode(Node* n, VTransformNode* vtn) {
-//    assert(vtn != nullptr, "only set non-null vtnodes");
-//    _idx_to_vtnode.put_when_absent(n->_idx, vtn);
-//  }
-//
-//  VTransformVectorNode* make_vector_vtnode_for_pack(const Node_List* pack) const;
-//  VTransformNode* get_or_make_vtnode_vector_input_at_index(const Node_List* pack, const int index);
+
+  void map_node_to_vtnode(Node* n, VTransformNode* vtn) {
+    assert(vtn != nullptr, "only set non-null vtnodes");
+    _idx_to_vtnode.put_when_absent(n->_idx, vtn);
+  }
+
 //  VTransformNode* get_vtnode_or_wrap_as_outer(Node* n);
 //  void init_req_with_scalar(Node* n, VTransformNode* vtn, const int index);
-//  void init_req_with_vector(const Node_List* pack, VTransformNode* vtn, const int index);
 //  void init_all_req_with_scalars(Node* n, VTransformNode* vtn);
-//  void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn);
 //  void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies);
 //  LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
 };
