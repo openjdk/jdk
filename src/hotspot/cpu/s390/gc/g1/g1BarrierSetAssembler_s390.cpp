@@ -315,7 +315,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
   ModRefBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, L_handle_null);
   if (on_oop && on_reference) {
-    assert(tmp2 != noreg, "need a temp register for G1 pre-barrier");
+    assert(tmp1 != noreg && tmp2 != noreg, "need temp registers for G1 pre-barrier");
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     g1_write_barrier_pre(masm, decorators | IS_NOT_NULL,
