@@ -235,6 +235,15 @@ Options
 Description
 :   Generate CDS archive if the runtime image supports the CDS feature.
 
+### Plugin `security-properties`
+
+Options
+:   `--security-properties=*filename*`
+
+Description
+:   Override the security properties in the `java.security` configuration
+    file with the properties in the specified file.
+
 ## jlink Examples
 
 The following command creates a runtime image in the directory `greetingsapp`.
