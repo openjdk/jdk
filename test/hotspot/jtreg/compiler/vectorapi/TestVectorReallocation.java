@@ -301,7 +301,7 @@ public class TestVectorReallocation {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VF, " >0 "})
+    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_SIZE_ANY, " >0 "})
     void floatIdentityWithReallocation() {
         FloatVector v0 = FloatVector.fromArray(F_SPECIES, f_a, 0);
         float zeroSum = 0;
@@ -339,7 +339,7 @@ public class TestVectorReallocation {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VD, " >0 "})
+    @IR(counts = {IRNode.ADD_VD, IRNode.VECTOR_SIZE_ANY, " >0 "})
     void doubleIdentityWithReallocation() {
         DoubleVector v0 = DoubleVector.fromArray(D_SPECIES, d_a, 0);
         double zeroSum = 0;

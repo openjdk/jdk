@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,14 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     );
 
     /**
+     * List of {@link PrimitiveType}s (int, long).
+     */
+    List<PrimitiveType> INT_LONG_TYPES = List.of(
+        ints(),
+        longs()
+    );
+
+    /**
      * List of all subword {@link PrimitiveType}s (byte, char, short).
      */
     List<PrimitiveType> SUBWORD_TYPES = List.of(
@@ -175,5 +183,73 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         doubles(),
         booleans(),
         float16()
+    );
+
+    List<VectorType.Vector> VECTOR_BYTE_VECTOR_TYPES = List.of(
+        VectorType.BYTE_64,
+        VectorType.BYTE_128,
+        VectorType.BYTE_256,
+        VectorType.BYTE_512
+    );
+
+    List<VectorType.Vector> VECTOR_SHORT_VECTOR_TYPES = List.of(
+        VectorType.SHORT_64,
+        VectorType.SHORT_128,
+        VectorType.SHORT_256,
+        VectorType.SHORT_512
+    );
+
+    List<VectorType.Vector> VECTOR_INT_VECTOR_TYPES = List.of(
+        VectorType.INT_64,
+        VectorType.INT_128,
+        VectorType.INT_256,
+        VectorType.INT_512
+    );
+
+    List<VectorType.Vector> VECTOR_LONG_VECTOR_TYPES = List.of(
+        VectorType.LONG_64,
+        VectorType.LONG_128,
+        VectorType.LONG_256,
+        VectorType.LONG_512
+    );
+
+    List<VectorType.Vector> VECTOR_FLOAT_VECTOR_TYPES = List.of(
+        VectorType.FLOAT_64,
+        VectorType.FLOAT_128,
+        VectorType.FLOAT_256,
+        VectorType.FLOAT_512
+    );
+
+    List<VectorType.Vector> VECTOR_DOUBLE_VECTOR_TYPES = List.of(
+        VectorType.DOUBLE_64,
+        VectorType.DOUBLE_128,
+        VectorType.DOUBLE_256,
+        VectorType.DOUBLE_512
+    );
+
+    List<VectorType.Vector> VECTOR_VECTOR_TYPES = Utils.concat(
+        VECTOR_BYTE_VECTOR_TYPES,
+        VECTOR_SHORT_VECTOR_TYPES,
+        VECTOR_INT_VECTOR_TYPES,
+        VECTOR_LONG_VECTOR_TYPES,
+        VECTOR_FLOAT_VECTOR_TYPES,
+        VECTOR_DOUBLE_VECTOR_TYPES
+    );
+
+    List<VectorType.Mask> VECTOR_MASK_TYPES =
+        VECTOR_VECTOR_TYPES.stream().map(t -> t.maskType).toList();
+
+    List<VectorType.Shuffle> VECTOR_SHUFFLE_TYPES =
+        VECTOR_VECTOR_TYPES.stream().map(t -> t.shuffleType).toList();
+
+    List<VectorType> VECTOR_TYPES = Utils.concat(
+        VECTOR_VECTOR_TYPES,
+        VECTOR_MASK_TYPES,
+        VECTOR_SHUFFLE_TYPES
+    );
+
+    List<CodeGenerationDataNameType> ALL_TYPES = Utils.concat(
+        SCALAR_NUMERIC_TYPES,
+        VECTOR_TYPES
     );
 }

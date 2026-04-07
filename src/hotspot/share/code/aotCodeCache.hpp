@@ -25,6 +25,7 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/stubInfo.hpp"
 
@@ -163,29 +164,124 @@ public:
   address address_for_id(int id);
 };
 
+#define AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  do_var(int,   AllocateInstancePrefetchLines)          /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchDistance)               /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchLines)                  /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchStepSize)               /* stubs and nmethods */ \
+  do_var(uint,  CodeEntryAlignment)                     /* array copy stubs and nmethods */ \
+  do_var(bool,  UseCompressedOops)                      /* stubs and nmethods */ \
+  do_var(bool,  EnableContended)                        /* nmethods */ \
+  do_var(intx,  OptoLoopAlignment)                      /* array copy stubs and nmethods */ \
+  do_var(bool,  RestrictContended)                      /* nmethods */ \
+  do_var(bool,  UseAESCTRIntrinsics) \
+  do_var(bool,  UseAESIntrinsics) \
+  do_var(bool,  UseBASE64Intrinsics) \
+  do_var(bool,  UseChaCha20Intrinsics) \
+  do_var(bool,  UseCRC32CIntrinsics) \
+  do_var(bool,  UseCRC32Intrinsics) \
+  do_var(bool,  UseDilithiumIntrinsics) \
+  do_var(bool,  UseGHASHIntrinsics) \
+  do_var(bool,  UseKyberIntrinsics) \
+  do_var(bool,  UseMD5Intrinsics) \
+  do_var(bool,  UsePoly1305Intrinsics) \
+  do_var(bool,  UseSecondarySupersTable) \
+  do_var(bool,  UseSHA1Intrinsics) \
+  do_var(bool,  UseSHA256Intrinsics) \
+  do_var(bool,  UseSHA3Intrinsics) \
+  do_var(bool,  UseSHA512Intrinsics) \
+  do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
+  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
+  do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
+  do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
+  do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
+  // END
+
+#ifdef COMPILER2
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  do_var(intx,  ArrayOperationPartialInlineSize)        /* array copy stubs and nmethods */ \
+  do_var(intx,  MaxVectorSize)                          /* array copy/fill stubs */ \
+  do_var(bool,  UseMontgomeryMultiplyIntrinsic) \
+  do_var(bool,  UseMontgomerySquareIntrinsic) \
+  do_var(bool,  UseMulAddIntrinsic) \
+  do_var(bool,  UseMultiplyToLenIntrinsic) \
+  do_var(bool,  UseSquareToLenIntrinsic) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
+#endif
+
+#if INCLUDE_JVMCI
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun)
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
+  do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
+  do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
+  do_var(bool,  UseBlockZeroing) \
+  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
+  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
+  do_var(bool,  UseSecondarySupersCache) \
+  do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
+  do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
+  do_var(bool,  UseSimpleArrayEquals) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
+#endif
+
+#if defined(X86) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
+  do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
+  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
+  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
+  do_var(bool,  UseLibmIntrinsic) \
+  do_var(bool,  UseIntPolyIntrinsics) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
+#endif
+
+#define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  // END
+
+#define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
+#define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
+
 class AOTCodeCache : public CHeapObj<mtCode> {
 
 // Classes used to describe AOT code cache.
 protected:
   class Config {
-    address _compressedOopBase;
-    uint _compressedOopShift;
-    uint _compressedKlassShift;
-    uint _contendedPaddingWidth;
-    uint _gc;
-    enum Flags {
-      none                     = 0,
-      debugVM                  = 1,
-      compressedOops           = 2,
-      useTLAB                  = 4,
-      systemClassAssertions    = 8,
-      userClassAssertions      = 16,
-      enableContendedPadding   = 32,
-      restrictContendedPadding = 64
-    };
-    uint _flags;
-    uint _cpu_features_offset; // offset in the cache where cpu features are stored
+    AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_DECLARE_VAR, AOTCODECACHE_DECLARE_FUN)
 
+    // Special configs that cannot be checked with macros
+    address _compressedOopBase;
+
+#if defined(X86) && !defined(ZERO)
+    bool _useUnalignedLoadStores;
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+    bool _avoidUnalignedAccesses;
+#endif
+
+    uint _cpu_features_offset; // offset in the cache where cpu features are stored
   public:
     void record(uint cpu_features_offset);
     bool verify_cpu_features(AOTCodeCache* cache) const;
