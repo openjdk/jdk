@@ -1296,16 +1296,17 @@ public class SimpleDateFormat extends DateFormat {
         case PATTERN_ZONE_NAME: // 'z'
             if (current == null) {
                 TimeZone tz = calendar.getTimeZone();
+                String tzid = tz.getID();
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
                 String explicitDstOffset = (String)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
                     .getLocaleResources(Locale.ROOT)
-                    .getTimeZoneNames("metazone.dstoffset." + tz.getID());
+                    .getTimeZoneNames("metazone.dstoffset." + TimeZoneNameUtility.canonicalTZID(tzid).orElse(tzid));
                 boolean daylight = explicitDstOffset != null &&
                     dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 ||
                     dstOffset != zoneOffset;
                 if (formatData.locale == null || formatData.isZoneStringsSet) {
-                    int zoneIndex = formatData.getZoneIndex(tz.getID());
+                    int zoneIndex = formatData.getZoneIndex(tzid);
                     if (zoneIndex == -1) {
                         buffer.append(ZoneInfoFile.toCustomID(dstOffset));
                     } else {

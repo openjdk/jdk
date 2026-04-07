@@ -227,6 +227,8 @@ public class TimeZoneNamesTest {
         return Stream.of(
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Irish Standard Time"),
             Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Greenwich Mean Time"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Irish Standard Time"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Greenwich Mean Time"),
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time"),
             // This needs to change once TZDB adopts -7 offset year round, and CLDR uses explicit dst offset
             // namely, "Pacific Standard Time" -> "Pacific Daylight Time"

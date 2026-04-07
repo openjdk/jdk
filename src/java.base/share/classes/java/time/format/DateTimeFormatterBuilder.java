@@ -4516,7 +4516,7 @@ public final class DateTimeFormatterBuilder {
                     // check explicit metazone dst offsets
                     String dstOffset = (String)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
                         .getLocaleResources(Locale.ROOT)
-                        .getTimeZoneNames("metazone.dstoffset." + zname);
+                        .getTimeZoneNames("metazone.dstoffset." + TimeZoneNameUtility.canonicalTZID(zname).orElse(zname));
                     if (dt.isSupported(OFFSET_SECONDS) && dstOffset != null) {
                         type = ZoneOffset.from(dt).equals(ZoneOffset.of(dstOffset)) ? DST : STD;
                     } else if (dt.isSupported(ChronoField.INSTANT_SECONDS)) {
