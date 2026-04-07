@@ -85,7 +85,8 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
             if (fromLDT.isBefore(now) && toLDT.isAfter(now)) {
                 metazone = attributes.getValue("mzone");
 
-                // explicit dst offsets
+                // Explicit metazone DST offsets. Only the "dst" offset is needed,
+                // as "std" is used by default when it doesn't match.
                 String dstOffset = attributes.getValue("dstOffset");
                 if (dstOffset != null) {
                     CLDRConverter.explicitDstOffsets.put(tzid, dstOffset);

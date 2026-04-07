@@ -173,6 +173,17 @@ public final class TimeZoneNameUtility {
                     .canonicalTZID(id);
     }
 
+    /**
+     * {@return the explicit metazone DST offset for the specified time zone ID, if exists}
+     * @param tzid the time zone ID
+     */
+    public static String explicitDstOffset(String tzid) {
+        return (String)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
+            .getLocaleResources(Locale.ROOT)
+            .getTimeZoneNames("metazone.dstoffset." +
+                TimeZoneNameUtility.canonicalTZID(tzid).orElse(tzid));
+    }
+
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);

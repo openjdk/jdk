@@ -1299,11 +1299,11 @@ public class SimpleDateFormat extends DateFormat {
                 String tzid = tz.getID();
                 int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
                 int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
-                String explicitDstOffset = (String)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
-                    .getLocaleResources(Locale.ROOT)
-                    .getTimeZoneNames("metazone.dstoffset." + TimeZoneNameUtility.canonicalTZID(tzid).orElse(tzid));
-                boolean daylight = explicitDstOffset != null &&
-                    dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 ||
+
+                // Check if an explicit metazone DST offset exists
+                String explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                boolean daylight = explicitDstOffset != null ?
+                    dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 :
                     dstOffset != zoneOffset;
                 if (formatData.locale == null || formatData.isZoneStringsSet) {
                     int zoneIndex = formatData.getZoneIndex(tzid);
