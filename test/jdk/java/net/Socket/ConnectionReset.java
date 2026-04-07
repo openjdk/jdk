@@ -35,6 +35,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConnectionReset {
@@ -46,24 +50,22 @@ public class ConnectionReset {
      */
     @Test
     public void testAvailableBeforeRead1() throws IOException {
-        System.out.println("testAvailableBeforeRead1");
+        System.err.println("testAvailableBeforeRead1");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
             for (int i=0; i<REPEAT_COUNT; i++) {
                 int bytesAvailable = in.available();
-                System.out.format("available => %d%n", bytesAvailable);
-                assertTrue(bytesAvailable == 0);
-                try {
+                System.err.format("available => %d%n", bytesAvailable);
+                assertEquals(0, bytesAvailable);
+                IOException ioe = assertThrows(IOException.class, () -> {
                     int bytesRead = in.read();
                     if (bytesRead == -1) {
-                        System.out.println("read => EOF");
+                        System.err.println("read => EOF");
                     } else {
-                        System.out.println("read => 1 byte");
+                        System.err.println("read => 1 byte");
                     }
-                    assertTrue(false);
-                } catch (IOException ioe) {
-                    System.out.format("read => %s (expected)%n", ioe);
-                }
+                });
+                System.err.format("read => %s (expected)%n", ioe);
             }
         });
     }
@@ -73,27 +75,31 @@ public class ConnectionReset {
      */
     @Test
     public void testAvailableBeforeRead2() throws IOException {
-        System.out.println("testAvailableBeforeRead2");
+        System.err.println("testAvailableBeforeRead2");
         byte[] data = { 1, 2, 3 };
         withResetConnection(data, s -> {
             InputStream in = s.getInputStream();
             int remaining = data.length;
             for (int i=0; i<REPEAT_COUNT; i++) {
                 int bytesAvailable = in.available();
-                System.out.format("available => %d%n", bytesAvailable);
+                System.err.format("available => %d%n", bytesAvailable);
                 assertTrue(bytesAvailable <= remaining);
                 try {
                     int bytesRead = in.read();
+                    // EOF is not expected, we should get an IOException
+                    // before EOF.
                     if (bytesRead == -1) {
-                        System.out.println("read => EOF");
-                        assertTrue(false);
-                    } else {
-                        System.out.println("read => 1 byte");
-                        assertTrue(remaining > 0);
-                        remaining--;
+                        System.err.println("read => EOF");
+                        assertNotEquals(-1, bytesRead);
                     }
+
+                    System.err.println("read => 1 byte");
+                    // we should get an IOException before reading
+                    // the last byte
+                    assertTrue(remaining > 0);
+                    remaining--;
                 } catch (IOException ioe) {
-                    System.out.format("read => %s%n", ioe);
+                    System.err.format("read => %s%n", ioe);
                     remaining = 0;
                 }
             }
@@ -105,24 +111,23 @@ public class ConnectionReset {
      */
     @Test
     public void testReadBeforeAvailable1() throws IOException {
-        System.out.println("testReadBeforeAvailable1");
+        System.err.println("testReadBeforeAvailable1");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
             for (int i=0; i<REPEAT_COUNT; i++) {
-                try {
+                IOException ioe = assertThrows(IOException.class, () -> {
                     int bytesRead = in.read();
                     if (bytesRead == -1) {
-                        System.out.println("read => EOF");
+                        System.err.println("read => EOF");
                     } else {
-                        System.out.println("read => 1 byte");
+                        System.err.println("read => 1 byte");
                     }
-                    assertTrue(false);
-                } catch (IOException ioe) {
-                    System.out.format("read => %s (expected)%n", ioe);
-                }
+                });
+                System.err.format("read => %s (expected)%n", ioe);
+
                 int bytesAvailable = in.available();
-                System.out.format("available => %d%n", bytesAvailable);
-                assertTrue(bytesAvailable == 0);
+                System.err.format("available => %d%n", bytesAvailable);
+                assertEquals(0, bytesAvailable);
             }
         });
     }
@@ -132,7 +137,7 @@ public class ConnectionReset {
      */
     @Test
     public void testReadBeforeAvailable2() throws IOException {
-        System.out.println("testReadBeforeAvailable2");
+        System.err.println("testReadBeforeAvailable2");
         byte[] data = { 1, 2, 3 };
         withResetConnection(data, s -> {
             InputStream in = s.getInputStream();
@@ -140,20 +145,24 @@ public class ConnectionReset {
             for (int i=0; i<REPEAT_COUNT; i++) {
                 try {
                     int bytesRead = in.read();
+                    // EOF is not expected, we should get an IOException
+                    // before EOF.
                     if (bytesRead == -1) {
-                        System.out.println("read => EOF");
-                        assertTrue(false);
-                    } else {
-                        System.out.println("read => 1 byte");
-                        assertTrue(remaining > 0);
-                        remaining--;
+                        System.err.println("read => EOF");
+                        assertNotEquals(-1, bytesRead);
                     }
+
+                    System.err.println("read => 1 byte");
+                    // we should get an IOException before reading
+                    // the last byte
+                    assertTrue(remaining > 0);
+                    remaining--;
                 } catch (IOException ioe) {
-                    System.out.format("read => %s%n", ioe);
+                    System.err.format("read => %s%n", ioe);
                     remaining = 0;
                 }
                 int bytesAvailable = in.available();
-                System.out.format("available => %d%n", bytesAvailable);
+                System.err.format("available => %d%n", bytesAvailable);
                 assertTrue(bytesAvailable <= remaining);
             }
         });
@@ -164,30 +173,21 @@ public class ConnectionReset {
      */
     @Test
     public void testAfterClose() throws IOException {
-        System.out.println("testAfterClose");
+        System.err.println("testAfterClose");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
-            try {
-                in.read();
-                assertTrue(false);
-            } catch (IOException ioe) {
-                // expected
-            }
+            assertThrows(IOException.class, () -> in.read());
             s.close();
-            try {
+            IOException ioe = assertThrows(IOException.class, () -> {
                 int bytesAvailable = in.available();
-                System.out.format("available => %d%n", bytesAvailable);
-                assertTrue(false);
-            } catch (IOException ioe) {
-                System.out.format("available => %s (expected)%n", ioe);
-            }
-            try {
+                System.err.format("available => %d%n", bytesAvailable);
+            });
+            System.err.format("available => %s (expected)%n", ioe);
+            ioe = assertThrows(IOException.class, () -> {
                 int n = in.read();
-                System.out.format("read => %d%n", n);
-                assertTrue(false);
-            } catch (IOException ioe) {
-                System.out.format("read => %s (expected)%n", ioe);
-            }
+                System.err.format("read => %d%n", n);
+            });
+            System.err.format("read => %s (expected)%n", ioe);
         });
     }
 
