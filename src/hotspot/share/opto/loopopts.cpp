@@ -37,6 +37,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/scalarVTransformBuilder.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
@@ -4532,8 +4533,12 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   }
 
   // Capture the (scalar) C2 input graph.
-  VTransform input_vtransform(vloop_analyzer, nullptr, 1);
+  VTransform scalar_vtransform(vloop_analyzer, nullptr, 1);
   // TODO: consider different arguments for nullptr and 1.
+  {
+    ResourceMark rm;
+    ScalarVTransformBuilder builder(scalar_vtransform);
+  }
 
   SuperWord sw(vloop_analyzer);
   if (!sw.transform_loop()) {
