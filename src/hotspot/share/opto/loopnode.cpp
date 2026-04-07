@@ -4549,7 +4549,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //  * stride > 0, is_power_of_2:           (iv - init) >>> log2(stride)
 //  * stride < 0, is_power_of_2(-stride):  (init - iv) >>> log2(-stride)
 //  * sinkable:                            DivL(iv - init, stride)
-//  * inc constant, inc % stride == 0:     ratio approach (no iterations)
+//  * inc constant, inc % stride == 0:     (iv - init) / stride, with * inc from result constant folded
 //  * otherwise:                           no change
 //
 // The unsigned shift is valid because iv - init (or init - iv for negative
@@ -4626,38 +4626,23 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 #endif
 
-    // Check if all uses are outside the loop (except the recurrence, the counted loop node,
-    // and uncommon traps).
-    bool all_outside = true;
-    for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
-      Node* use = phi2->out(j);
-      if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
-        continue;
-      }
-      if (loop->is_member(get_loop(ctrl_or_self(use)))) {
-        all_outside = false;
-        break;
-      }
-    }
     bool cheap_stride = is_power_of_2(stride_con) || is_power_of_2(-stride_con);
     if (!cheap_stride) {
-      // Expensive stride: need to determine sinkability.
-      // Sinkable means all uses are outside the loop AND their dom_lca is also outside. A loop with multiple exits
-      // can have every individual use outside yet their LCA inside.
-      bool sinkable = all_outside;
-      if (sinkable) {
-        Node* use_lca = nullptr;
-        for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
-          Node* use = phi2->out(j);
-          if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
-            continue;
-          }
-          use_lca = (use_lca == nullptr) ? ctrl_or_self(use) : dom_lca(use_lca, ctrl_or_self(use));
+      // Expensive stride: the rewrite introduces a Div, so it is only worth
+      // doing if the result is sinkable out of the loop. Sinkable means the
+      // dom_lca of all real uses is outside the loop. (A loop with multiple
+      // exits can have every individual use outside yet their LCA inside,
+      // which is why we cannot just check use-by-use loop membership.)
+      Node* use_lca = nullptr;
+      for (DUIterator j = phi2->outs(); phi2->has_out(j); j++) {
+        Node* use = phi2->out(j);
+        if (use == incr2 || use == cl || (use->is_CallStaticJava() && use->as_CallStaticJava()->is_uncommon_trap())) {
+          continue;
         }
-        if (use_lca != nullptr && loop->is_member(get_loop(use_lca))) {
-          sinkable = false;
-        }
+        Node* uc = ctrl_or_self(use);
+        use_lca = (use_lca == nullptr) ? uc : dom_lca(use_lca, uc);
       }
+      bool sinkable = (use_lca == nullptr) || !loop->is_member(get_loop(use_lca));
       if (!sinkable) {
         // Not sinkable with expensive stride: use ratio approach for constant Add
         // increments that are exact multiples of stride.
@@ -4703,8 +4688,6 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     // Iterations approach: phi2 = init2 + iterations * inc_val
     // (for Sub, SubNode replaces AddNode).
-    Node* init_converted = insert_convert_node_if_needed(bt, init);
-    Node* phi_converted = insert_convert_node_if_needed(bt, phi);
 
     // Compute iterations = (iv - init) / stride_con.
     // The division is always exact (iv - init = k * stride_con at iteration k).
@@ -4714,19 +4697,40 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // For non-power-of-2 strides, iv - init may overflow the signed int
     // range; since this function only handles T_INT counted loops (line
     // 4555), widening to long is safe and avoids the overflow.
+    //
+    // For power-of-2 strides iterations is computed as int and ConvI2L'd
+    // for long parallel IVs, so mixed-type IVs in the same loop share the
+    // SubI/URShiftI via GVN. The widening uses an unsigned ConvI2L
+    // (AndL with 0xFFFFFFFFL) so that the int subtract's wrap (when the
+    // trip count exceeds INT_MAX, only possible at |stride|=1) is
+    // zero-extended rather than sign-extended; for shift >= 1 the URShift
+    // already clears the high bit and IGVN folds the mask away.
     Node* iterations;
     if (is_power_of_2(stride_con) || is_power_of_2(-stride_con)) {
       // Positive stride: iv >= init, so iv - init is non-negative.
       // Negative stride: init >= iv, so init - iv is non-negative.
-      Node* diff = (stride_con > 0) ? SubNode::make(phi_converted, init_converted, bt)
-                                    : SubNode::make(init_converted, phi_converted, bt);
+      Node* diff = (stride_con > 0) ? (Node*) new SubINode(phi, init)
+                                    : (Node*) new SubINode(init, phi);
       int shift = exact_log2(stride_con > 0 ? stride_con : -stride_con);
       if (shift == 0) {
         iterations = diff;
       } else {
         _igvn.register_new_node_with_optimizer(diff);
         set_ctrl(diff, cl);
-        iterations = URShiftNode::make(diff, integercon(shift, T_INT), bt);
+        iterations = new URShiftINode(diff, integercon(shift, T_INT));
+      }
+      if (bt == T_LONG) {
+        // Unsigned widen: ConvI2L would sign-extend a wrapped SubI at
+        // shift==0 (only possible when |stride|=1 and the trip count
+        // exceeds INT_MAX). The AndL mask preserves the unsigned 32-bit
+        // value; for shift >= 1 the URShift's output type proves the
+        // high bit clear and IGVN folds the mask.
+        _igvn.register_new_node_with_optimizer(iterations);
+        set_ctrl(iterations, cl);
+        iterations = new ConvI2LNode(iterations);
+        _igvn.register_new_node_with_optimizer(iterations);
+        set_ctrl(iterations, cl);
+        iterations = new AndLNode(iterations, integercon(0xFFFFFFFFL, T_LONG));
       }
     } else {
       // Widen to long because int SubI(phi, init) can overflow,

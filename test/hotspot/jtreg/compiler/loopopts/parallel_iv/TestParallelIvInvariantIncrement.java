@@ -156,7 +156,7 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.SUB_L })
     @IR(counts = { IRNode.MUL_I, ">=1" })
     @IR(counts = { IRNode.MUL_L, ">=1" })
     private static long multipleIVs(int stop, int incA, long incB) {
@@ -176,6 +176,30 @@ public class TestParallelIvInvariantIncrement {
         long incB = G.longs().next();
         long expected = (long)(s * incA) + ((long) s * incB);
         Asserts.assertEQ(expected, multipleIVs(s, incA, incB));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.SUB_L, IRNode.URSHIFT_L })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long multipleIVsStride2(int stop, int incA, long incB) {
+        int a = 0;
+        long b = 0;
+        for (int i = 0; i < stop; i += 2) {
+            a += incA;
+            b += incB;
+        }
+        return a + b;
+    }
+
+    @Run(test = "multipleIVsStride2")
+    private static void runMultipleIVsStride2() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 2).next();
+        int incA = G.ints().next();
+        long incB = G.longs().next();
+        int iters = Math.ceilDiv(s, 2);
+        long expected = (long)(iters * incA) + ((long) iters * incB);
+        Asserts.assertEQ(expected, multipleIVsStride2(s, incA, incB));
     }
 
     @Test
@@ -619,5 +643,22 @@ public class TestParallelIvInvariantIncrement {
             a += i * inc;
         }
         return a;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.MUL_L })
+    private static long longStride1FullRange(long inc) {
+        long b = 0;
+        for (int i = Integer.MIN_VALUE; i < Integer.MAX_VALUE; i++) {
+            b += inc;
+        }
+        return b;
+    }
+
+    @Run(test = "longStride1FullRange")
+    private static void runLongStride1FullRange() {
+        long inc = G.longs().next();
+        long iters = (long) Integer.MAX_VALUE - (long) Integer.MIN_VALUE;
+        Asserts.assertEQ(iters * inc, longStride1FullRange(inc));
     }
 }
