@@ -3783,6 +3783,9 @@ void Arguments::set_compact_headers_flags() {
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
     // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
+      if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+        warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders option; ignoring -UseObjectMonitorTable");
+      }
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
 
       // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
