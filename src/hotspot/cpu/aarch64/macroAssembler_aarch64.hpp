@@ -1628,8 +1628,11 @@ public:
           const FloatRegister (&stateVectors)[16], int idx1, int idx2,
           int idx3, int idx4);
 
+  // Rotate using ORR (for identity) or USHR + SLI.  `esize` is the element
+  // width in bits (8, 16, 32, or 64) and `lshift` is the left shift amount,
+  // masked by the caller.
   void neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
-                          FloatRegister src, int lshift, int rshift);
+                          FloatRegister src, int esize, int lshift);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
