@@ -567,14 +567,6 @@ void G1BarrierSetC2::late_barrier_analysis() const {
 void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
   MacroAssembler masm(&cb);
   GrowableArray<G1BarrierStubC2*>* const stubs = barrier_set_state()->stubs();
-
-  // Stub generation counts all stubs as skipped for the sake of inlining policy.
-  // This is important for performance, check it.
-#ifdef ASSERT
-  int offset_before = masm.offset();
-  int skipped_before = cb.total_skipped_instructions_size();
-#endif
-
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
     if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == nullptr) {
@@ -583,16 +575,6 @@ void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     }
     stubs->at(i)->emit_code(masm);
   }
-
-#ifdef ASSERT
-  int offset_after = masm.offset();
-  int skipped_after = cb.total_skipped_instructions_size();
-  assert(offset_after - offset_before == skipped_after - skipped_before,
-         "All stubs are counted as skipped. masm: %d - %d = %d, cb: %d - %d = %d",
-         offset_after, offset_before, offset_after - offset_before,
-         skipped_after, skipped_before, skipped_after - skipped_before);
-#endif
-
   masm.flush();
 }
 

@@ -858,6 +858,12 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 }
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
+#ifdef ASSERT
+  int old_total_skipped = total_skipped_instructions_size();
+  csize_t old_total_content_size = total_content_size();
+  csize_t old_total_relocation_size = total_relocation_size();
+#endif
+
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanding CodeBuffer:");
@@ -953,6 +959,13 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     this->print_on(tty);
   }
 #endif //PRODUCT
+
+  assert(old_total_skipped == total_skipped_instructions_size(),
+         "Should match: %d == %d", old_total_skipped, total_skipped_instructions_size());
+  assert(old_total_content_size == total_content_size(),
+         "Should match: %d == %d", old_total_content_size, total_content_size());
+  assert(old_total_relocation_size == total_relocation_size(),
+         "Should match: %d == %d", old_total_relocation_size, total_relocation_size());
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
