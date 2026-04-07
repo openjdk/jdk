@@ -185,12 +185,12 @@ public:
     return false;
   }
 
-  Node* emit_plain_load(Node* array) {
+  Node* emit_plain_load(Node* array, bool pin_if_range_check = false) {
     const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(_bt);
     DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
-    if (_parse.needs_range_check(array_type->size(), _array_index)) {
+    if (pin_if_range_check && _parse.needs_range_check(array_type->size(), _array_index)) {
       // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
       // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
       // possibly float above the range check at any point.
@@ -217,7 +217,7 @@ public:
     assert(array_type->is_flat() || _parse.control()->in(0)->as_If()->is_flat_array_check(&_gvn),
            "Should be found");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
-    Node* ld = emit_plain_load(casted_array);
+    Node* ld = emit_plain_load(casted_array, true);
     _res_phi->add_req(ld);
     _region->add_req(_parse.control());
     _io_phi->add_req(_parse.i_o());
@@ -231,6 +231,7 @@ public:
     float this_prob = clamp(p, PROB_MIN, PROB_MAX);
     Node* casted_array = nullptr;
     Node* next_ctrl = _parse.type_check_receiver(_array, klass, this_prob, &casted_array);
+    // TODO: pin load
     InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(
       &_parse, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, _array_index);
     Node* null_ctl = _parse.top();
@@ -240,8 +241,10 @@ public:
     _res_phi->add_req(_parse.zerocon(T_OBJECT));
     _region->add_req(null_ctl);
     _io_phi->add_req(_parse.i_o());
-    _mem_phi->add_req(_parse.reset_memory());
-    _parse.set_all_memory(_mem);
+    Node* mem = _parse.reset_memory();
+    _mem_phi->add_req(mem);
+
+    _parse.set_all_memory(mem);
 
     Node* ld = _gvn.transform(vt->buffer(&_parse));
     _res_phi->add_req(ld);
@@ -253,32 +256,60 @@ public:
     _parse.set_i_o(_io);
   }
 
-  void load_from_unknown_flat_array(const TypeOopPtr* element_ptr) {
+  Node* load_from_unknown_flat_array(const TypeOopPtr* element_ptr) {
     Node* ld = nullptr;
+
+    Node* array = _array;
+    ciArrayLoadData* array_load = profile_data();
+    if (array_load != nullptr && array_load->null_free_array() && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+      Node* test = _parse.null_free_array_test(_array, false);
+      IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
+      _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+      {
+        PreserveJVMState pjvms(&_parse);
+        _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+      }
+      _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+      const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
+      array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
+    }
+
     if (element_ptr->is_inlinetypeptr()) {
       ciInlineKlass* vk = element_ptr->inline_klass();
-      Node* flat_array = _parse.cast_to_flat_array(_array, vk);
+      Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
       InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
       ld = vt;
 
-      Node* null_ctl = _parse.top();
-      _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+      if (_region != nullptr) {
+        Node* null_ctl = _parse.top();
+        _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
 
-      _res_phi->add_req(_parse.zerocon(T_OBJECT));
-      _region->add_req(null_ctl);
-      _io_phi->add_req(_parse.i_o());
-      _mem_phi->add_req(_parse.reset_memory());
-      _parse.set_all_memory(_mem);
-
+        _res_phi->add_req(_parse.zerocon(T_OBJECT));
+        _region->add_req(null_ctl);
+        _io_phi->add_req(_parse.i_o());
+        _mem_phi->add_req(_parse.reset_memory());
+        _parse.set_all_memory(_mem);
+      }
     } else {
-      ld = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+      ld = _parse.load_from_unknown_flat_array(array, _array_index, element_ptr);
+      const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+      bool is_null_free = array_type->is_null_free() ||
+        (!UseNullableAtomicValueFlattening && !UseNullableNonAtomicValueFlattening);
+      if (is_null_free) {
+        ld = _parse.cast_not_null(ld);
+      }
     }
 
-    _region->add_req(_parse.control());
-    _res_phi->add_req(ld);
-    _mem_phi->add_req(_parse.reset_memory());
-    _io_phi->add_req(_parse.i_o());
+    if (_region != nullptr) {
+      _region->add_req(_parse.control());
+      _res_phi->add_req(ld);
+      _mem_phi->add_req(_parse.reset_memory());
+      _io_phi->add_req(_parse.i_o());
+      return nullptr;
+    } else {
+      return ld;
+    }
   }
 
   void create_merge_point() {
@@ -293,6 +324,7 @@ public:
 
   void finish_merge_point() {
     _parse.set_control(_gvn.transform(_region));
+    _parse.record_for_igvn(_parse.control());
     _parse.set_all_memory(_gvn.transform(_mem_phi));
     _parse.set_i_o(_gvn.transform(_io_phi));
     Node* ld = _gvn.transform(_res_phi);
@@ -335,10 +367,6 @@ public:
       assert(UseArrayFlattening && is_reference_type(_bt) && element_ptr->can_be_inline_type() &&
              (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()),
              "array can't be flat");
-
-      // if (emit_load_if_known_flat_array(element_ptr)) {
-      //   return true;
-      // }
 
       ciArrayLoadData* array_load = profile_data();
       if (array_load != nullptr) {
@@ -410,7 +438,7 @@ public:
           Node* casted_array = _gvn.transform(
             new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
           _parse.replace_in_map(_array, casted_array);
-          Node* ld = emit_plain_load(casted_array);
+          Node* ld = emit_plain_load(casted_array, true);
           ld = _parse.record_profile_for_speculation_at_array_load(ld);
           _parse.push_node(_bt, ld);
           return true;
@@ -422,9 +450,8 @@ public:
             _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
           }
           assert(!_parse.stopped(), "non flat array should have been caught earlier");
-          Node* ld = _parse.load_from_unknown_flat_array(_array, _array_index, element_ptr);
+          Node* ld = load_from_unknown_flat_array(element_ptr);
           pop_stack();
-          ld = _parse.record_profile_for_speculation_at_array_load(ld);
           _parse.push_node(_bt, ld);
           return true;
         }

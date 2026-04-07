@@ -1655,8 +1655,6 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
     load_klass(tmp, array, rscratch1);
     profile_receiver_type(tmp, mdp, 0);
 
-    set_mdp_flag_at(mdp, ArrayLoadData::flat_array_byte_constant());
-
     jmp(null_free_check);
     bind(not_flat);
     increment_mdp_data_at(mdp, in_bytes(ArrayLoadData::not_flat_count_offset()));

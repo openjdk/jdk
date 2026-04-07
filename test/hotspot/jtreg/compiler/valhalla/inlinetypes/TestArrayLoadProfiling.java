@@ -56,10 +56,13 @@ public class TestArrayLoadProfiling {
     static MyValue1[] array6 = (MyValue1[])ValueClass.newReferenceArray(MyValue1.class, 1);
     static MyValue2[] array7 = (MyValue2[])ValueClass.newReferenceArray(MyValue2.class, 1);
     static MyValue1[] array8 = (MyValue1[])ValueClass.newNullRestrictedAtomicArray(MyValue1.class, 1, new MyValue1((byte)42));
+    static MyValue1[] array9 = (MyValue1[])ValueClass.newNullableAtomicArray(MyValue1.class, 1);
+    static MyValue3[] array10 = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 1, new MyValue3(42));
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
         array8[0] = new MyValue1((byte)42);
+        array9[0] = new MyValue1((byte)42);
     }
     
     @Test
@@ -397,26 +400,84 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "9" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "7" })
     @IR(failOn = IRNode.ALLOC)
-    public static void test22(I[] array) {
-        test22Inline(array[0]);
+    public static void test22() {
+        I[] array = array3;
+        test22Inline(array);
     }
 
     @Run(test = "test22")
     public static void test22Runner() {
-        test22(array1);
-        test22(array3);
-        test22(array6);
-        test22(array8);
-        test22Inline(array2[0]);
-        test22Inline(array4[0]);
-        test22Inline(array5[0]);
+        test22();
+        test22Inline(array2);
+        test22Inline(array4);
     }
 
     @ForceInline
-    static void test22Inline(I i) {
+    static void test22Inline(I[] array) {
+        array[0].m();
+    }
+
+    // @Test
+    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "9" })
+    // @IR(failOn = IRNode.ALLOC)
+    // public static void test22(I[] array) {
+    //     test22Inline(array[0]);
+    // }
+
+    // @Run(test = "test22")
+    // public static void test22Runner() {
+    //     test22(array1);
+    //     test22(array3);
+    //     test22(array6);
+    //     test22(array8);
+    //     test22(array9);
+    //     test22Inline(array2[0]);
+    //     test22Inline(array4[0]);
+    //     test22Inline(array5[0]);
+    // }
+
+    // @ForceInline
+    // static void test22Inline(I i) {
+    //     i.m();
+    // }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test23(I[] array) {
+        test23Inline(array[0]);
+    }
+
+    @Run(test = "test23")
+    public static void test23Runner() {
+        test23(array1);
+        test23(array3);
+        test23(array6);
+        test23(array8);
+        test23(array9);
+        test23Inline(array2[0]);
+        test23Inline(array4[0]);
+        test23Inline(array5[0]);
+    }
+
+    @ForceInline
+    static void test23Inline(I i) {
         i.m();
+    }
+    
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test24(I[] array) {
+        array[0].m();
+    }
+
+    @Run(test = "test24")
+    public static void test24Runner() {
+        test24(array3);
+        test24(array10);
     }
 
     interface I {
@@ -427,10 +488,12 @@ public class TestArrayLoadProfiling {
     static value class MyValue1 implements I {
         byte byteField;
         byte byteField2;
+        int byteField3;
 
         MyValue1(byte byteField) {
             this.byteField = byteField;
             this.byteField2 = byteField;
+            this.byteField3 = byteField;
         }
         
         public void m() {
@@ -442,6 +505,23 @@ public class TestArrayLoadProfiling {
 
         MyValue2(int intField) {
             this.intField = intField;
+        }
+
+        public void m() {
+        }
+    }
+
+    static value class MyValue3 implements I {
+        int intField1;
+        int intField2;
+        int intField3;
+        int intField4;
+
+        MyValue3(int intField) {
+            this.intField1 = intField;
+            this.intField2 = intField;
+            this.intField3 = intField;
+            this.intField4 = intField;
         }
 
         public void m() {

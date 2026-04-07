@@ -71,6 +71,8 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+
+#include "classfile/classPrinter.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -139,6 +141,14 @@ static void print_method_profiling_data() {
     if (count > 0) {
       for (int index = 0; index < count; index++) {
         Method* m = collected_profiled_methods->at(index);
+        {
+          ResourceMark rm;
+          stringStream ss;
+          m->print_short_name(&ss);
+          if (!strcmp(ss.as_string(), " compiler.valhalla.inlinetypes.TestArrayLoadProfiling::test22")) {
+            tty->print_cr("XXX");
+          }
+        }
 
         // Instead of taking tty lock, we collect all lines into a string stream
         // and then print them all at once.

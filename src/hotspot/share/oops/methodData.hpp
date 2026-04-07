@@ -1981,8 +1981,7 @@ public:
 class ArrayLoadData : public ReceiverTypeData {
 private:
   enum {
-    flat_array_flag = BitData::last_bit_data_flag,
-    null_free_array_flag = flat_array_flag + 1,
+    null_free_array_flag = BitData::last_bit_data_flag + 1,
   };
 
   enum {
@@ -2022,9 +2021,6 @@ public:
     return static_cell_count();
   }
 
-  void set_flat_array() { set_flag_at(flat_array_flag); }
-  bool flat_array() const { return flag_at(flat_array_flag); }
-
   void set_null_free_array() { set_flag_at(null_free_array_flag); }
   bool null_free_array() const { return flag_at(null_free_array_flag); }
 
@@ -2033,9 +2029,6 @@ public:
   }
 
   // Code generation support
-  static int flat_array_byte_constant() {
-    return flag_number_to_constant(flat_array_flag);
-  }
 
   static int null_free_array_byte_constant() {
     return flag_number_to_constant(null_free_array_flag);

@@ -683,7 +683,7 @@ bool ciMethod::array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass
         array_type = nullptr; //array_access->array()->valid_type();
         element_type = array_access->element()->valid_type();
         element_ptr = array_access->element()->ptr_kind();
-        flat_array = array_access->flat_array();
+        flat_array = false;
         null_free_array = array_access->null_free_array();
         array_type = nullptr;
         // if (profile.morphism() == 1 && flat_array) {
