@@ -71,7 +71,7 @@ import sun.nio.cs.UTF_8;
  * implemented as instances of this class.
  * <p>
  * Strings are constant; their values cannot be changed after they
- * are created. String buffers support mutable strings.
+ * are created.
  * Because String objects are immutable they can be shared. For example:
  * <blockquote><pre>
  *     String str = "abc";
