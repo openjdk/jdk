@@ -26,6 +26,11 @@ package test2;
 /**
  * Service provider implementation.
  */
-public class Provider2 extends Super implements Service {
+public class Provider2 implements Service {
     public Provider2() {}
+
+    /**
+     * Constructor with a parameter of a type that may not be visible.
+     */
+    public Provider2(Param p) { }
 }

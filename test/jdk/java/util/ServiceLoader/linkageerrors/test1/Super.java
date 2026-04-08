@@ -24,6 +24,7 @@
 package test1;
 
 /**
- * Param for a public constructor in Provider2.
+ * Super class of Provider2.
  */
-public class Param { }
+class Super {
+}

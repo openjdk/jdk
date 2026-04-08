@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8350481 8196182
- * @summary Test ServiceLoader iterating over service providers when linkage error is throw
+ * @bug 8196182 8350481
+ * @summary Test ServiceLoader iterating over service providers when linkage error is thrown
  * @compile test1/Provider1.java test1/Provider2.java
  *          test2/Provider1.java test2/Provider2.java
  * @run junit/othervm ${test.main.class}
@@ -53,16 +53,16 @@ class LinkageErrorsTest {
     }
 
     /**
-     * Test iteration over service providers when finding the public no-arg constructor
-     * of a provider fails with a linkage error.
+     * Test iteration over service providers when loading a service provider class
+     * fails with a linkage error.
      */
     @Test
-    void testFindConstructorThrows() throws Exception {
+    void testLoadClassThrows() throws Exception {
         // create services configuration file that lists two providers
         createServicesonfigFile(test1.Service.class, "test1.Provider1", "test1.Provider2");
 
-        // delete Provider's parameter class, instantiating Provider2 will fail with LinkageError
-        Files.delete(classesDir.resolve("test1", "Param.class"));
+        // delete Provider's super class, load of Provider2 will fail with LinkageError
+        Files.delete(classesDir.resolve("test1", "Super.class"));
 
         // find and collect all service providers and ServiceConfigurationErrors
         var providers = new ArrayList<test1.Service>();
@@ -73,22 +73,22 @@ class LinkageErrorsTest {
         assertEquals(1, providers.size());
         assertEquals("test1.Provider1", providers.get(0).getClass().getName());
 
-        // instantiating test1.Provider2 will have failed with LinkageError
+        // loading test1.Provider2 expected to fail with LinkageError
         assertEquals(1, errors.size());
         assertInstanceOf(LinkageError.class, errors.get(0).getCause());
     }
 
     /**
-     * Test iteration over service providers when loading a service provider class
-     * fails with a linkage error.
+     * Test iteration over service providers when finding the public no-arg constructor
+     * of a provider fails with a linkage error.
      */
     @Test
-    void testLoadClassThrows() throws Exception {
+    void testFindConstructorThrows() throws Exception {
         // create services configuration file that lists two providers
         createServicesonfigFile(test2.Service.class, "test2.Provider1", "test2.Provider2");
 
-        // delete Provider's super class, load of Provider2 will fail with LinkageError
-        Files.delete(classesDir.resolve("test2", "Super.class"));
+        // delete Provider's parameter class, instantiating Provider2 will fail with LinkageError
+        Files.delete(classesDir.resolve("test2", "Param.class"));
 
         // find and collect all service providers and ServiceConfigurationErrors
         var providers = new ArrayList<test2.Service>();
@@ -99,8 +99,7 @@ class LinkageErrorsTest {
         assertEquals(1, providers.size());
         assertEquals("test2.Provider1", providers.get(0).getClass().getName());
 
-        // loading test2.Provider2 will have failed with LinkageError
-        assertEquals(1, errors.size());
+        // instantiating test2.Provider2 expected to fail with LinkageError
         assertEquals(1, errors.size());
         assertInstanceOf(LinkageError.class, errors.get(0).getCause());
     }
