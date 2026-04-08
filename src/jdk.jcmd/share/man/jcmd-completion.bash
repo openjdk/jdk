@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,6 @@
 # Source this file from an interactive shell after bash-completion is loaded:
 #   source /path/to/jcmd-completion.bash
 #
-# Notes:
-# - First argument completes JVM PIDs, main class names, and the trailing
-#   component of the main class name.
-# - Second argument completes the diagnostic commands reported by
-#   `jcmd <target> help`.
 
 if ! type complete >/dev/null 2>&1; then
   return 0 2>/dev/null || exit 0
@@ -54,9 +49,9 @@ function _jcmd__list_processes() {
 
 # query the list of commands known by the target JVM
 _jcmd__list_commands_for_pid() {
-  local -r pid=$1 # can also be a main class name
+  local -r jvm_identifier=$1 # can also be a main class name
 
-  jcmd "${pid}" help 2>/dev/null | awk '
+  jcmd "${jvm_identifier}" help 2>/dev/null | awk '
     /^The following commands are available:/ { in_block=1; next }
     /^For more information/ { in_block=0 }
     in_block && $1 != "" { print $1 }
@@ -67,52 +62,51 @@ _jcmd__list_commands_for_pid() {
 _jcmd__complete_first_arg() {
   local -r cur=$1
 
-  # start with general options
+  # include generic options a well
   local -a candidates=("-l" "--help")
 
-  local line # <pid> <main-class>
-  # -r prevents backslash escaping
   local pid main_class rest
   while read -r pid main_class rest; do
-    candidates+=("$pid" "$main_class")
+    candidates+=("${pid}" "${main_class}")
   done < <(_jcmd__list_processes)
 
   local -r wordlist=$(printf '%s\n' "${candidates[@]}" | _jcmd__dedupe_words | tr '\n' ' ')
-  COMPREPLY=( $(compgen -W "$wordlist" -- "$cur") )
+  COMPREPLY=( $(compgen -W "${wordlist}" -- "${cur}") )
 }
 
 
 _jcmd__complete_command() {
-  local -r target=$1
+  local -r jvm_identifier=$1
   local -r cur=$2
 
+  # include reading commands from file flag
   local -a commands=("-f")
 
   local cmd
   while read -r cmd; do
     [[ -z $cmd ]] && continue
     commands+=("$cmd")
-  done < <(_jcmd__list_commands_for_pid "$target")
+  done < <(_jcmd__list_commands_for_pid "${jvm_identifier}")
 
   printf -v wordlist '%s ' "${commands[@]}"
-  COMPREPLY=( $(compgen -W "$wordlist" -- "$cur") )
+  COMPREPLY=( $(compgen -W "${wordlist}" -- "${cur}") )
 }
 
 
 _jcmd__complete_help_command() {
-  local -r target=$1
+  local -r jvm_identifier=$1
   local -r cur=$2
 
   local -a commands=()
 
   local cmd
   while read -r cmd; do
-    [[ -z $cmd || $cmd == help ]] && continue
-    commands+=("$cmd")
-  done < <(_jcmd__list_commands_for_pid "$target")
+    [[ -z ${cmd} || ${cmd} == help ]] && continue
+    commands+=("${cmd}")
+  done < <(_jcmd__list_commands_for_pid "${jvm_identifier}")
 
   printf -v wordlist '%s ' "${commands[@]}"
-  COMPREPLY=( $(compgen -W "$wordlist" -- "$cur") )
+  COMPREPLY=( $(compgen -W "${wordlist}" -- "${cur}") )
 }
 
 
@@ -134,34 +128,29 @@ _jcmd_completion() {
   #         "jcmd MyApp"    -> COMP_CWORD = 1, cur = "MyApp"
   #         "jcmd MyApp "   -> COMP_CWORD = 2, cur = ""
 
-  # First argument: PID or main class (or -jar TODO(Ivan))
   if [[ ${COMP_CWORD} -eq 1 ]]; then
     _jcmd__complete_first_arg "$cur"
     return 0
   fi
 
-  # target java process ID (always a first argument)
-  # local java_process_pid=${COMP_WORDS[1]}
-  local -r target=${COMP_WORDS[1]}
+  local -r jvm_identifier=${COMP_WORDS[1]}
 
   # Second argument: diagnostic command.
   if [[ ${COMP_CWORD} -eq 2 ]]; then
-    _jcmd__complete_command "$target" "$cur"
+    _jcmd__complete_command "${jvm_identifier}" "${cur}"
     return 0
   fi
-
 
   if [[ ${COMP_CWORD} -eq 3 ]]; then
     if [[ ${COMP_WORDS[2]} == help ]] then
-      _jcmd__complete_help_command "$target" "$cur"
+      _jcmd__complete_help_command "${jvm_identifier}" "${cur}"
     elif [[ ${COMP_WORDS[2]} == "-f" ]]; then
       # autocomplete filename
       compopt -o filenames 2>/dev/null
-      COMPREPLY=( $(compgen -f -- "$cur") )
+      COMPREPLY=( $(compgen -f -- "${cur}") )
     fi
     return 0
   fi
-
 }
 
 
