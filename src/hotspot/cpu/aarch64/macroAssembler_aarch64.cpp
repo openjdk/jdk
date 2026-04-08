@@ -7212,8 +7212,10 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
 
 // Rotate using USHR and SLI instructions (or copy, if rotate count is zero)
 void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
-                                        FloatRegister src, int esize,
-                                        int lshift) {
+                                        FloatRegister src, int lshift) {
+  // Derive element size in bits from `T`.  `esize=8` for `T8B` and `T16B`,
+  // `esize=16` for `T4H` and `T8H`, and so on.
+  int esize = 8 << (T / 2);
   assert(lshift >= 0 && lshift < esize, "shift amount is out of range");
 
   if (lshift == 0) {

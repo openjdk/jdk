@@ -3224,7 +3224,7 @@ instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
     int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
                                       $shift$$constant : -$shift$$constant);
     __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
-                          $src$$FloatRegister, esize, raw_shift & (esize - 1));
+                          $src$$FloatRegister, raw_shift & (esize - 1));
   %}
   ins_pipe(pipe_slow);
 %}
