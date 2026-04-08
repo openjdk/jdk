@@ -357,7 +357,7 @@ source %{
     assert(n->Opcode() == Op_AddVL || n->Opcode() == Op_SubVL ,
            "Invalid opcode: vmlaL/vmlsL are only valid for AddVL/SubVL nodes.");
     // Only apply the chain-length heuristic to 128-bit vectors.
-    if (Matcher::vector_length_in_bytes(n) != 16) {
+    if (!AvoidMLAChain || Matcher::vector_length_in_bytes(n) != 16) {
       return true;
     }
 

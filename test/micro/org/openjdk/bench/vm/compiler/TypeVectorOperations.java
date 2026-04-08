@@ -202,20 +202,6 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
-    public void mulMediumL() {
-        for (int i = 0; i < COUNT; i++) {
-            resL[i] = longsA[i] * longsB[i] * longsC[i];
-        }
-    }
-
-    @Benchmark
-    public void mulBigL() {
-        for (int i = 0; i < COUNT; i++) {
-            resL[i] = longsA[i] * longsB[i] * longsC[i] * longsD[i];
-        }
-    }
-
-    @Benchmark
     public void absL() {
         for (int i = 0; i < COUNT; i++) {
             long a = longsA[i];

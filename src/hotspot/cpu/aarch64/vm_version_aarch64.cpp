@@ -259,6 +259,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
       FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
+    if (FLAG_IS_DEFAULT(AvoidMLAChain)) {
+      FLAG_SET_DEFAULT(AvoidMLAChain, true);
+    }
   }
 
   if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {
