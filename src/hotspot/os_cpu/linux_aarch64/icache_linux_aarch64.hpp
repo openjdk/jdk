@@ -82,7 +82,7 @@ class AArch64ICacheInvalidationContext : StackObj {
   }
 
   ~AArch64ICacheInvalidationContext() {
-    NOT_PRODUCT(_current_context = nullptr);
+    DEBUG_ONLY(_current_context = nullptr);
 
     if (!_has_modified_code || !UseSingleICacheInvalidation) {
       return;
