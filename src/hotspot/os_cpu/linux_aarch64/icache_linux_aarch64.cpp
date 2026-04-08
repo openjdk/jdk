@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
+#include "runtime/icache.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-/*
- * @test
- * @key headful
- * @bug 8054359
- *
- * @summary Check whether FileDialog blocks a non-modal Dialog
- *          created with a hidden Dialog constructor. Also check if other
- *          windows are blocked by the FileDialog too.
- *
- * @library ../helpers /lib/client/
- * @library /test/lib
- * @build ExtendedRobot
- * @build jdk.test.lib.Asserts
- * @build Flag
- * @build TestDialog
- * @build TestFrame
- * @build TestWindow
- * @run main FileDialogNonModal4Test
- */
-
-public class FileDialogNonModal4Test {
-
-    public static void main(String[] args) throws Exception {
-        (new FileDialogFWDTest(null,
-            FileDialogFWDTest.DialogOwner.HIDDEN_DIALOG)).doTest();
-    }
-}
+NOT_PRODUCT(THREAD_LOCAL AArch64ICacheInvalidationContext* AArch64ICacheInvalidationContext::_current_context = nullptr;)
