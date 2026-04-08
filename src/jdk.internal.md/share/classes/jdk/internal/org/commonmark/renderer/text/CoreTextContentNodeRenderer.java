@@ -34,12 +34,7 @@ package jdk.internal.org.commonmark.renderer.text;
 
 import jdk.internal.org.commonmark.node.*;
 import jdk.internal.org.commonmark.renderer.NodeRenderer;
-import jdk.internal.org.commonmark.internal.renderer.text.BulletListHolder;
-import jdk.internal.org.commonmark.internal.renderer.text.ListHolder;
-import jdk.internal.org.commonmark.internal.renderer.text.OrderedListHolder;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -59,7 +54,7 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
 
     @Override
     public Set<Class<? extends Node>> getNodeTypes() {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
                 Document.class,
                 Heading.class,
                 Paragraph.class,
@@ -80,7 +75,7 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
                 HtmlInline.class,
                 SoftLineBreak.class,
                 HardLineBreak.class
-        ));
+        );
     }
 
     @Override
@@ -96,26 +91,24 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
 
     @Override
     public void visit(BlockQuote blockQuote) {
-        textContent.write('\u00ab');
+        // LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+        textContent.write('\u00AB');
         visitChildren(blockQuote);
-        textContent.write('\u00bb');
+        textContent.resetBlock();
+        // RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+        textContent.write('\u00BB');
 
-        writeEndOfLineIfNeeded(blockQuote, null);
+        textContent.block();
     }
 
     @Override
     public void visit(BulletList bulletList) {
-        if (listHolder != null) {
-            writeEndOfLine();
-        }
+        textContent.pushTight(bulletList.isTight());
         listHolder = new BulletListHolder(listHolder, bulletList);
         visitChildren(bulletList);
-        writeEndOfLineIfNeeded(bulletList, null);
-        if (listHolder.getParent() != null) {
-            listHolder = listHolder.getParent();
-        } else {
-            listHolder = null;
-        }
+        textContent.popTight();
+        textContent.block();
+        listHolder = listHolder.getParent();
     }
 
     @Override
@@ -127,31 +120,40 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
 
     @Override
     public void visit(FencedCodeBlock fencedCodeBlock) {
-        if (context.stripNewlines()) {
-            textContent.writeStripped(fencedCodeBlock.getLiteral());
-            writeEndOfLineIfNeeded(fencedCodeBlock, null);
+        var literal = stripTrailingNewline(fencedCodeBlock.getLiteral());
+        if (stripNewlines()) {
+            textContent.writeStripped(literal);
         } else {
-            textContent.write(fencedCodeBlock.getLiteral());
+            textContent.write(literal);
         }
+        textContent.block();
     }
 
     @Override
     public void visit(HardLineBreak hardLineBreak) {
-        writeEndOfLineIfNeeded(hardLineBreak, null);
+        if (stripNewlines()) {
+            textContent.whitespace();
+        } else {
+            textContent.line();
+        }
     }
 
     @Override
     public void visit(Heading heading) {
         visitChildren(heading);
-        writeEndOfLineIfNeeded(heading, ':');
+        if (stripNewlines()) {
+            textContent.write(": ");
+        } else {
+            textContent.block();
+        }
     }
 
     @Override
     public void visit(ThematicBreak thematicBreak) {
-        if (!context.stripNewlines()) {
+        if (!stripNewlines()) {
             textContent.write("***");
         }
-        writeEndOfLineIfNeeded(thematicBreak, null);
+        textContent.block();
     }
 
     @Override
@@ -171,12 +173,13 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
 
     @Override
     public void visit(IndentedCodeBlock indentedCodeBlock) {
-        if (context.stripNewlines()) {
-            textContent.writeStripped(indentedCodeBlock.getLiteral());
-            writeEndOfLineIfNeeded(indentedCodeBlock, null);
+        var literal = stripTrailingNewline(indentedCodeBlock.getLiteral());
+        if (stripNewlines()) {
+            textContent.writeStripped(literal);
         } else {
-            textContent.write(indentedCodeBlock.getLiteral());
+            textContent.write(literal);
         }
+        textContent.block();
     }
 
     @Override
@@ -187,49 +190,56 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
     @Override
     public void visit(ListItem listItem) {
         if (listHolder != null && listHolder instanceof OrderedListHolder) {
-            OrderedListHolder orderedListHolder = (OrderedListHolder) listHolder;
-            String indent = context.stripNewlines() ? "" : orderedListHolder.getIndent();
-            textContent.write(indent + orderedListHolder.getCounter() + orderedListHolder.getDelimiter() + " ");
+            var orderedListHolder = (OrderedListHolder) listHolder;
+            var marker = orderedListHolder.getCounter() + orderedListHolder.getDelimiter();
+            var spaces = " ";
+            textContent.write(marker);
+            textContent.write(spaces);
+            textContent.pushPrefix(repeat(" ", marker.length() + spaces.length()));
             visitChildren(listItem);
-            writeEndOfLineIfNeeded(listItem, null);
+            textContent.block();
+            textContent.popPrefix();
             orderedListHolder.increaseCounter();
         } else if (listHolder != null && listHolder instanceof BulletListHolder) {
             BulletListHolder bulletListHolder = (BulletListHolder) listHolder;
-            if (!context.stripNewlines()) {
-                textContent.write(bulletListHolder.getIndent() + bulletListHolder.getMarker() + " ");
+            if (!stripNewlines()) {
+                var marker = bulletListHolder.getMarker();
+                var spaces = " ";
+                textContent.write(marker);
+                textContent.write(spaces);
+                textContent.pushPrefix(repeat(" ", marker.length() + spaces.length()));
             }
             visitChildren(listItem);
-            writeEndOfLineIfNeeded(listItem, null);
+            textContent.block();
+            if (!stripNewlines()) {
+                textContent.popPrefix();
+            }
         }
     }
 
     @Override
     public void visit(OrderedList orderedList) {
-        if (listHolder != null) {
-            writeEndOfLine();
-        }
+        textContent.pushTight(orderedList.isTight());
         listHolder = new OrderedListHolder(listHolder, orderedList);
         visitChildren(orderedList);
-        writeEndOfLineIfNeeded(orderedList, null);
-        if (listHolder.getParent() != null) {
-            listHolder = listHolder.getParent();
-        } else {
-            listHolder = null;
-        }
+        textContent.popTight();
+        textContent.block();
+        listHolder = listHolder.getParent();
     }
 
     @Override
     public void visit(Paragraph paragraph) {
         visitChildren(paragraph);
-        // Add "end of line" only if its "root paragraph.
-        if (paragraph.getParent() == null || paragraph.getParent() instanceof Document) {
-            writeEndOfLineIfNeeded(paragraph, null);
-        }
+        textContent.block();
     }
 
     @Override
     public void visit(SoftLineBreak softLineBreak) {
-        writeEndOfLineIfNeeded(softLineBreak, null);
+        if (stripNewlines()) {
+            textContent.whitespace();
+        } else {
+            textContent.line();
+        }
     }
 
     @Override
@@ -248,7 +258,7 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
     }
 
     private void writeText(String text) {
-        if (context.stripNewlines()) {
+        if (stripNewlines()) {
             textContent.writeStripped(text);
         } else {
             textContent.write(text);
@@ -287,26 +297,72 @@ public class CoreTextContentNodeRenderer extends AbstractVisitor implements Node
         }
     }
 
-    private void writeEndOfLineIfNeeded(Node node, Character c) {
-        if (context.stripNewlines()) {
-            if (c != null) {
-                textContent.write(c);
-            }
-            if (node.getNext() != null) {
-                textContent.whitespace();
-            }
+    private boolean stripNewlines() {
+        return context.lineBreakRendering() == LineBreakRendering.STRIP;
+    }
+
+    private static String stripTrailingNewline(String s) {
+        if (s.endsWith("\n")) {
+            return s.substring(0, s.length() - 1);
         } else {
-            if (node.getNext() != null) {
-                textContent.line();
-            }
+            return s;
         }
     }
 
-    private void writeEndOfLine() {
-        if (context.stripNewlines()) {
-            textContent.whitespace();
-        } else {
-            textContent.line();
+    // Keep for Android compat (String.repeat only available on Android 12 and later)
+    private static String repeat(String s, int count) {
+        var sb = new StringBuilder(s.length() * count);
+        for (int i = 0; i < count; i++) {
+            sb.append(s);
+        }
+        return sb.toString();
+    }
+
+    private static class BulletListHolder extends ListHolder {
+        private final String marker;
+
+        public BulletListHolder(ListHolder parent, BulletList list) {
+            super(parent);
+            marker = list.getMarker();
+        }
+
+        public String getMarker() {
+            return marker;
+        }
+    }
+
+    private abstract static class ListHolder {
+        private final ListHolder parent;
+
+        ListHolder(ListHolder parent) {
+            this.parent = parent;
+        }
+
+        public ListHolder getParent() {
+            return parent;
+        }
+    }
+
+    private static class OrderedListHolder extends ListHolder {
+        private final String delimiter;
+        private int counter;
+
+        public OrderedListHolder(ListHolder parent, OrderedList list) {
+            super(parent);
+            delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
+            counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
+        }
+
+        public String getDelimiter() {
+            return delimiter;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
+
+        public void increaseCounter() {
+            counter++;
         }
     }
 }

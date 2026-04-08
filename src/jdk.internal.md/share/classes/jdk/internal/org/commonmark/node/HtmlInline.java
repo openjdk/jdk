@@ -35,7 +35,7 @@ package jdk.internal.org.commonmark.node;
 /**
  * Inline HTML element.
  *
- * @see <a href="http://spec.commonmark.org/0.24/#raw-html">CommonMark Spec</a>
+ * @see <a href="http://spec.commonmark.org/0.31.2/#raw-html">CommonMark Spec</a>
  */
 public class HtmlInline extends Node {
 

@@ -35,7 +35,7 @@ package jdk.internal.org.commonmark.node;
 /**
  * HTML block
  *
- * @see <a href="http://spec.commonmark.org/0.18/#html-blocks">CommonMark Spec</a>
+ * @see <a href="http://spec.commonmark.org/0.31.2/#html-blocks">CommonMark Spec</a>
  */
 public class HtmlBlock extends Block {
 

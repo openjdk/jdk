@@ -33,19 +33,21 @@
 package jdk.internal.org.commonmark.parser;
 
 import jdk.internal.org.commonmark.Extension;
+import jdk.internal.org.commonmark.internal.Definitions;
 import jdk.internal.org.commonmark.internal.DocumentParser;
 import jdk.internal.org.commonmark.internal.InlineParserContextImpl;
 import jdk.internal.org.commonmark.internal.InlineParserImpl;
-import jdk.internal.org.commonmark.internal.LinkReferenceDefinitions;
 import jdk.internal.org.commonmark.node.*;
+import jdk.internal.org.commonmark.parser.beta.LinkInfo;
+import jdk.internal.org.commonmark.parser.beta.LinkProcessor;
+import jdk.internal.org.commonmark.parser.beta.InlineContentParserFactory;
+import jdk.internal.org.commonmark.parser.beta.LinkResult;
 import jdk.internal.org.commonmark.parser.block.BlockParserFactory;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -60,7 +62,10 @@ import java.util.Set;
 public class Parser {
 
     private final List<BlockParserFactory> blockParserFactories;
+    private final List<InlineContentParserFactory> inlineContentParserFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
+    private final List<LinkProcessor> linkProcessors;
+    private final Set<Character> linkMarkers;
     private final InlineParserFactory inlineParserFactory;
     private final List<PostProcessor> postProcessors;
     private final IncludeSourceSpans includeSourceSpans;
@@ -69,12 +74,17 @@ public class Parser {
         this.blockParserFactories = DocumentParser.calculateBlockParserFactories(builder.blockParserFactories, builder.enabledBlockTypes);
         this.inlineParserFactory = builder.getInlineParserFactory();
         this.postProcessors = builder.postProcessors;
+        this.inlineContentParserFactories = builder.inlineContentParserFactories;
         this.delimiterProcessors = builder.delimiterProcessors;
+        this.linkProcessors = builder.linkProcessors;
+        this.linkMarkers = builder.linkMarkers;
         this.includeSourceSpans = builder.includeSourceSpans;
 
         // Try to construct an inline parser. Invalid configuration might result in an exception, which we want to
         // detect as soon as possible.
-        this.inlineParserFactory.create(new InlineParserContextImpl(delimiterProcessors, new LinkReferenceDefinitions()));
+        var context = new InlineParserContextImpl(
+                inlineContentParserFactories, delimiterProcessors, linkProcessors, linkMarkers, new Definitions());
+        this.inlineParserFactory.create(context);
     }
 
     /**
@@ -95,9 +105,7 @@ public class Parser {
      * @return the root node
      */
     public Node parse(String input) {
-        if (input == null) {
-            throw new NullPointerException("input must not be null");
-        }
+        Objects.requireNonNull(input, "input must not be null");
         DocumentParser documentParser = createDocumentParser();
         Node document = documentParser.parse(input);
         return postProcess(document);
@@ -122,17 +130,15 @@ public class Parser {
      * @throws IOException when reading throws an exception
      */
     public Node parseReader(Reader input) throws IOException {
-        if (input == null) {
-            throw new NullPointerException("input must not be null");
-        }
-
+        Objects.requireNonNull(input, "input must not be null");
         DocumentParser documentParser = createDocumentParser();
         Node document = documentParser.parse(input);
         return postProcess(document);
     }
 
     private DocumentParser createDocumentParser() {
-        return new DocumentParser(blockParserFactories, inlineParserFactory, delimiterProcessors, includeSourceSpans);
+        return new DocumentParser(blockParserFactories, inlineParserFactory, inlineContentParserFactories,
+                delimiterProcessors, linkProcessors, linkMarkers, includeSourceSpans);
     }
 
     private Node postProcess(Node document) {
@@ -147,8 +153,11 @@ public class Parser {
      */
     public static class Builder {
         private final List<BlockParserFactory> blockParserFactories = new ArrayList<>();
+        private final List<InlineContentParserFactory> inlineContentParserFactories = new ArrayList<>();
         private final List<DelimiterProcessor> delimiterProcessors = new ArrayList<>();
+        private final List<LinkProcessor> linkProcessors = new ArrayList<>();
         private final List<PostProcessor> postProcessors = new ArrayList<>();
+        private final Set<Character> linkMarkers = new HashSet<>();
         private Set<Class<? extends Block>> enabledBlockTypes = DocumentParser.getDefaultBlockParserTypes();
         private InlineParserFactory inlineParserFactory;
         private IncludeSourceSpans includeSourceSpans = IncludeSourceSpans.NONE;
@@ -165,9 +174,7 @@ public class Parser {
          * @return {@code this}
          */
         public Builder extensions(Iterable<? extends Extension> extensions) {
-            if (extensions == null) {
-                throw new NullPointerException("extensions must not be null");
-            }
+            Objects.requireNonNull(extensions, "extensions must not be null");
             for (Extension extension : extensions) {
                 if (extension instanceof ParserExtension) {
                     ParserExtension parserExtension = (ParserExtension) extension;
@@ -196,25 +203,23 @@ public class Parser {
          * E.g., to only parse headings and lists:
          * <pre>
          *     {@code
-         *     Parser.builder().enabledBlockTypes(new HashSet<>(Arrays.asList(Heading.class, ListBlock.class)));
+         *     Parser.builder().enabledBlockTypes(Set.of(Heading.class, ListBlock.class));
          *     }
          * </pre>
          *
          * @param enabledBlockTypes A list of block nodes the parser will parse.
-         * If this list is empty, the parser will not recognize any CommonMark core features.
+         *                          If this list is empty, the parser will not recognize any CommonMark core features.
          * @return {@code this}
          */
         public Builder enabledBlockTypes(Set<Class<? extends Block>> enabledBlockTypes) {
-            if (enabledBlockTypes == null) {
-                throw new NullPointerException("enabledBlockTypes must not be null");
-            }
+            Objects.requireNonNull(enabledBlockTypes, "enabledBlockTypes must not be null");
             DocumentParser.checkEnabledBlockTypes(enabledBlockTypes);
             this.enabledBlockTypes = enabledBlockTypes;
             return this;
         }
 
         /**
-         * Whether to calculate {@link org.commonmark.node.SourceSpan} for {@link Node}.
+         * Whether to calculate source positions for parsed {@link Node Nodes}, see {@link Node#getSourceSpans()}.
          * <p>
          * By default, source spans are disabled.
          *
@@ -228,7 +233,7 @@ public class Parser {
         }
 
         /**
-         * Adds a custom block parser factory.
+         * Add a custom block parser factory.
          * <p>
          * Note that custom factories are applied <em>before</em> the built-in factories. This is so that
          * extensions can change how some syntax is parsed that would otherwise be handled by built-in factories.
@@ -238,35 +243,78 @@ public class Parser {
          * @return {@code this}
          */
         public Builder customBlockParserFactory(BlockParserFactory blockParserFactory) {
-            if (blockParserFactory == null) {
-                throw new NullPointerException("blockParserFactory must not be null");
-            }
+            Objects.requireNonNull(blockParserFactory, "blockParserFactory must not be null");
             blockParserFactories.add(blockParserFactory);
             return this;
         }
 
         /**
-         * Adds a custom delimiter processor.
+         * Add a factory for a custom inline content parser, for extending inline parsing or overriding built-in parsing.
+         * <p>
+         * Note that parsers are triggered based on a special character as specified by
+         * {@link InlineContentParserFactory#getTriggerCharacters()}. It is possible to register multiple parsers for the same
+         * character, or even for some built-in special character such as {@code `}. The custom parsers are tried first
+         * in order in which they are registered, and then the built-in ones.
+         */
+        public Builder customInlineContentParserFactory(InlineContentParserFactory inlineContentParserFactory) {
+            Objects.requireNonNull(inlineContentParserFactory, "inlineContentParser must not be null");
+            inlineContentParserFactories.add(inlineContentParserFactory);
+            return this;
+        }
+
+        /**
+         * Add a custom delimiter processor for inline parsing.
          * <p>
          * Note that multiple delimiter processors with the same characters can be added, as long as they have a
          * different minimum length. In that case, the processor with the shortest matching length is used. Adding more
          * than one delimiter processor with the same character and minimum length is invalid.
+         * <p>
+         * If you want more control over how parsing is done, you might want to use
+         * {@link #customInlineContentParserFactory} instead.
          *
          * @param delimiterProcessor a delimiter processor implementation
          * @return {@code this}
          */
         public Builder customDelimiterProcessor(DelimiterProcessor delimiterProcessor) {
-            if (delimiterProcessor == null) {
-                throw new NullPointerException("delimiterProcessor must not be null");
-            }
+            Objects.requireNonNull(delimiterProcessor, "delimiterProcessor must not be null");
             delimiterProcessors.add(delimiterProcessor);
             return this;
         }
 
+        /**
+         * Add a custom link/image processor for inline parsing.
+         * <p>
+         * Multiple link processors can be added, and will be tried in order in which they were added. If no link
+         * processor applies, the normal behavior applies. That means these can override built-in link parsing.
+         *
+         * @param linkProcessor a link processor implementation
+         * @return {@code this}
+         */
+        public Builder linkProcessor(LinkProcessor linkProcessor) {
+            Objects.requireNonNull(linkProcessor, "linkProcessor must not be null");
+            linkProcessors.add(linkProcessor);
+            return this;
+        }
+
+        /**
+         * Add a custom link marker for link processing. A link marker is a character like {@code !} which, if it
+         * appears before the {@code [} of a link, changes the meaning of the link.
+         * <p>
+         * If a link marker followed by a valid link is parsed, the {@link org.commonmark.parser.beta.LinkInfo}
+         * that is passed to {@link LinkProcessor} will have its {@link LinkInfo#marker()} set. A link processor should
+         * check the {@link Text#getLiteral()} and then do any processing, and will probably want to use {@link LinkResult#includeMarker()}.
+         *
+         * @param linkMarker a link marker character
+         * @return {@code this}
+         */
+        public Builder linkMarker(Character linkMarker) {
+            Objects.requireNonNull(linkMarker, "linkMarker must not be null");
+            linkMarkers.add(linkMarker);
+            return this;
+        }
+
         public Builder postProcessor(PostProcessor postProcessor) {
-            if (postProcessor == null) {
-                throw new NullPointerException("postProcessor must not be null");
-            }
+            Objects.requireNonNull(postProcessor, "postProcessor must not be null");
             postProcessors.add(postProcessor);
             return this;
         }
@@ -297,13 +345,9 @@ public class Parser {
         private InlineParserFactory getInlineParserFactory() {
             if (inlineParserFactory != null) {
                 return inlineParserFactory;
+            } else {
+                return InlineParserImpl::new;
             }
-            return new InlineParserFactory() {
-                @Override
-                public InlineParser create(InlineParserContext inlineParserContext) {
-                    return new InlineParserImpl(inlineParserContext);
-                }
-            };
         }
     }
 

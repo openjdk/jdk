@@ -92,7 +92,7 @@ public class HeadingParser extends AbstractBlockParser {
                 if (!paragraph.isEmpty()) {
                     return BlockStart.of(new HeadingParser(setextHeadingLevel, paragraph))
                             .atIndex(line.getContent().length())
-                            .replaceActiveBlockParser();
+                            .replaceParagraphLines(paragraph.getLines().size());
                 }
             }
 
@@ -101,7 +101,7 @@ public class HeadingParser extends AbstractBlockParser {
     }
 
     // spec: An ATX heading consists of a string of characters, parsed as inline content, between an opening sequence of
-    // 1\u20136 unescaped # characters and an optional closing sequence of any number of unescaped # characters. The opening
+    // 1-6 unescaped # characters and an optional closing sequence of any number of unescaped # characters. The opening
     // sequence of # characters must be followed by a space or by the end of line. The optional closing sequence of #s
     // must be preceded by a space and may be followed by spaces only.
     private static HeadingParser getAtxHeading(SourceLine line) {
@@ -166,16 +166,18 @@ public class HeadingParser extends AbstractBlockParser {
 
     // spec: A setext heading underline is a sequence of = characters or a sequence of - characters, with no more than
     // 3 spaces indentation and any number of trailing spaces.
-    @SuppressWarnings("fallthrough") private static int getSetextHeadingLevel(CharSequence line, int index) {
+    private static int getSetextHeadingLevel(CharSequence line, int index) {
         switch (line.charAt(index)) {
             case '=':
                 if (isSetextHeadingRest(line, index + 1, '=')) {
                     return 1;
                 }
+                break;
             case '-':
                 if (isSetextHeadingRest(line, index + 1, '-')) {
                     return 2;
                 }
+                break;
         }
         return 0;
     }
