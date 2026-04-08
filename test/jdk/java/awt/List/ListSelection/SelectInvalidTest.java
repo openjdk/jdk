@@ -36,6 +36,8 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @summary Test awt list selection of invalid indexes
  * @key headful
  * @library /test/lib
+ * @build jdk.test.lib.Asserts jdk.test.lib.Platform
+ * @run main SelectInvalidTest
  */
 public final class SelectInvalidTest {
 

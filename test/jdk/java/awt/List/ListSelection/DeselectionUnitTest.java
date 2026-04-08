@@ -34,6 +34,8 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @summary Test awt list deselection methods
  * @key headful
  * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ * @run main DeselectionUnitTest
  */
 public final class DeselectionUnitTest {
 
