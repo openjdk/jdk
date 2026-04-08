@@ -1332,7 +1332,6 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
 
     post_init();
-    ICache::invalidate_range(code_begin(), code_size());
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1812,7 +1811,6 @@ nmethod::nmethod(
     init_immutable_data_ref_count();
 
     post_init();
-    ICache::invalidate_range(code_begin(), code_size());
 
     // we use the information of entry points to find out if a method is
     // static or non static
