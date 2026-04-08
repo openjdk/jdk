@@ -859,6 +859,9 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 #ifdef ASSERT
+  // The code below copies contents across temp buffers. The following
+  // sizes relate to buffer contents, and should not be changed by buffer
+  // expansion. This gives us some verification that expansion went correctly.
   int old_total_skipped = total_skipped_instructions_size();
   csize_t old_total_content_size = total_content_size();
   csize_t old_total_relocation_size = total_relocation_size();
