@@ -123,7 +123,7 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
          : null;
      } catch (DebuggerException e) {
        if (linuxDbg().isSignalTrampoline(senderPC)) {
-         // We can through the caller frame if it is signal trampoline.
+         // We can use the caller frame if it is a signal trampoline.
          // getSenderCFA() might fail because DwarfParser cannot find out CFA register.
          return new LinuxAMD64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf, fallback);
        }

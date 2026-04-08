@@ -158,8 +158,8 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
           fallback = true;
         } catch (DebuggerException _) {
           if (linuxDbg().isSignalTrampoline(senderPC)) {
-            // We can through the caller frame if it is signal trampoline.
-            // DWARF processing might be fail because vdso.so does not have .eh_frame .
+            // We can use the caller frame if it is a signal trampoline.
+            // DWARF processing might fail because vdso.so .eh_frame is not required on aarch64.
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
@@ -177,7 +177,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
           : null;
       } catch (DebuggerException e) {
         if (linuxDbg().isSignalTrampoline(senderPC)) {
-          // We can through the caller frame if it is signal trampoline.
+          // We can use the caller frame if it is a signal trampoline.
           // getSenderCFA() might fail because DwarfParser cannot find out CFA register.
           return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf, fallback);
         }
