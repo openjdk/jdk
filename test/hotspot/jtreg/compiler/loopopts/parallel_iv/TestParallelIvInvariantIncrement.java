@@ -39,6 +39,8 @@ import static compiler.lib.generators.Generators.G;
  */
 public class TestParallelIvInvariantIncrement {
 
+    private static final int LOOP_STRIDE_RAND = G.ints().restricted(1, Integer.MAX_VALUE).next();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -65,7 +67,7 @@ public class TestParallelIvInvariantIncrement {
     @Test
     @IR(failOn = { IRNode.MUL_I },        phase = CompilePhase.BEFORE_CLOOPS)
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int intSub(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -84,7 +86,7 @@ public class TestParallelIvInvariantIncrement {
     @Test
     @IR(failOn = { IRNode.MUL_L },        phase = CompilePhase.BEFORE_CLOOPS)
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long longAdd(int stop, long inc) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -103,7 +105,7 @@ public class TestParallelIvInvariantIncrement {
     @Test
     @IR(failOn = { IRNode.MUL_L },        phase = CompilePhase.BEFORE_CLOOPS)
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long longSub(int stop, long inc) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -121,7 +123,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int stride2(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 2) {
@@ -139,7 +141,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int countDown(int stop, int inc) {
         int a = 0;
         for (int i = stop; i > 0; i--) {
@@ -157,8 +159,8 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.SUB_L })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long multipleIVs(int stop, int incA, long incB) {
         int a = 0;
         long b = 0;
@@ -180,8 +182,8 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.SUB_L, IRNode.URSHIFT_L })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long multipleIVsStride2(int stop, int incA, long incB) {
         int a = 0;
         long b = 0;
@@ -204,7 +206,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int nonZeroInit(int stop, int inc) {
         int a = 42;
         for (int i = 0; i < stop; i++) {
@@ -221,8 +223,8 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
+    @IR(counts = { IRNode.MUL_I, "=4" })
     private static int sideEffectLoopAdd(int[] arr, int inc) {
         int a = 0;
         for (int i = 0; i < arr.length; i++) {
@@ -240,8 +242,8 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
+    @IR(counts = { IRNode.MUL_I, "=4" })
     private static int sideEffectLoopSub(int[] arr, int inc) {
         int a = 0;
         for (int i = 0; i < arr.length; i++) {
@@ -259,9 +261,9 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=2" })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
+    @IR(counts = { IRNode.MUL_I, "=8" })
+    @IR(counts = { IRNode.MUL_L, "=4" })
     private static long sideEffectLoopMultiIV(int[] arr, int incA, int incB, long incC) {
         int a = 0;
         int b = 0;
@@ -290,7 +292,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int stride3NonMultiple(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -308,7 +310,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int stride7NonMultiple(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 7) {
@@ -326,7 +328,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int nonZeroIVStart(int start, int stop, int inc) {
         int a = 0;
         for (int i = start; i < stop; i++) {
@@ -345,7 +347,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int nonZeroIVStartStride3(int start, int stop, int inc) {
         int a = 0;
         for (int i = start; i < stop; i += 3) {
@@ -382,7 +384,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int boundaryIncrements(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -408,7 +410,7 @@ public class TestParallelIvInvariantIncrement {
     @Test
     @IR(failOn = { IRNode.MUL_L }, phase = CompilePhase.BEFORE_CLOOPS) // only MulI for pow exists before
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_L, "=2" })
     private static long conditionalAccum(int load, int i) {
         long x = 0;
         long pow = (i % 8) * (i % 16);
@@ -436,7 +438,7 @@ public class TestParallelIvInvariantIncrement {
     // keep the trip count small while still triggering the overflow.
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int largeRangeOverflow(int inc) {
         int a = 0;
         for (int i = -1_500_000_000; i < 1_500_000_000; i += 10007) {
@@ -454,7 +456,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int subStride3(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -472,7 +474,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int countDownStride2(int start, int inc) {
         int a = 0;
         for (int i = start; i > 0; i -= 2) {
@@ -490,7 +492,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long longStride3(int stop, long inc) {
         long a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -507,8 +509,8 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.LSHIFT_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
+    @IR(counts = { IRNode.LSHIFT_I, "=2" })
     private static int usedInsideRatioFallback(int[] arr, int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -526,7 +528,7 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     private static int usedInsideNonConstant(int[] arr, int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -545,7 +547,7 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     private static int usedInsideNonMultiple(int[] arr, int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -563,7 +565,7 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     private static int usedInsideSub(int[] arr, int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += 3) {
@@ -582,7 +584,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=2" })
     private static int countDownStride3(int start, int inc) {
         int a = 0;
         for (int i = start; i > 0; i -= 3) {
@@ -600,7 +602,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_L, ">=1" })
+    @IR(counts = { IRNode.MUL_L, "=1" })
     private static long longStride2(int stop, long inc) {
         long a = 0;
         for (int i = 0; i < stop; i += 2) {
@@ -618,7 +620,7 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_I, "=1" })
     private static int stride8(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i += 8) {
@@ -636,13 +638,69 @@ public class TestParallelIvInvariantIncrement {
 
     @Test
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     private static int loopVariantNotOptimized(int stop, int inc) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
             a += i * inc;
         }
         return a;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    private static int randomLoopStrideConst(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += LOOP_STRIDE_RAND) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "randomLoopStrideConst")
+    private static void runRandomLoopStrideConst() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - LOOP_STRIDE_RAND).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, LOOP_STRIDE_RAND) * inc, randomLoopStrideConst(s, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int multIvNotOptimized(int stop, int inc) {
+        int a = 1;
+        for (int i = 0; i < stop; i++) {
+            a *= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "multIvNotOptimized")
+    private static void runMultIvNotOptimized() {
+        int s = G.ints().restricted(0, 29).next();
+        int inc = G.ints().next();
+        int expected = 1;
+        for (int k = 0; k < s; k++) {
+            expected *= inc;
+        }
+        Asserts.assertEQ(expected, multIvNotOptimized(s, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
+    private static int xorIvNotOptimized(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a ^= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "xorIvNotOptimized")
+    private static void runXorIvNotOptimized() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ((s & 1) == 0 ? 0 : inc, xorIvNotOptimized(s, inc));
     }
 
     @Test

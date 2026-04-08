@@ -53,8 +53,8 @@ public class TestParallelIvMultiExit {
 
     @Test
     @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
+    @IR(counts = { IRNode.MUL_I, "=4" })
     static int addStride1(int limit, int inc, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i++) {
@@ -77,8 +77,8 @@ public class TestParallelIvMultiExit {
 
     @Test
     @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
+    @IR(counts = { IRNode.MUL_I, "=4" })
     static int subStride1(int limit, int inc, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i++) {
@@ -101,8 +101,8 @@ public class TestParallelIvMultiExit {
 
     @Test
     @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
+    @IR(counts = { IRNode.MUL_I, "=4" })
     static int addStride2(int limit, int inc, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i += 2) {
@@ -125,8 +125,8 @@ public class TestParallelIvMultiExit {
 
     @Test
     @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
-    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=3" })
+    @IR(counts = { IRNode.MUL_I, "=5" })
     static int addStrideNeg1(int start, int inc, int[] r) {
         int a = 0;
         for (int i = start; i > 0; i--) {
@@ -148,7 +148,7 @@ public class TestParallelIvMultiExit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     static int addStride3ConstExactRatio(int limit, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
@@ -170,7 +170,7 @@ public class TestParallelIvMultiExit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     static int addStride3NonConstBailout(int limit, int inc, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
@@ -192,7 +192,7 @@ public class TestParallelIvMultiExit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=2" })
     static int addStride3ConstNoExactRatio(int limit, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
