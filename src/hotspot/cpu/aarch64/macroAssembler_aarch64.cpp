@@ -2918,17 +2918,15 @@ void MacroAssembler::increment(Address dst, int value)
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of words pushed
 int MacroAssembler::push(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
   int count = 0;
-
-  if (regset.bits() == 0) {
-    return 0;
-  }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
-
   for (int reg = 0; reg <= 30; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
@@ -2954,17 +2952,15 @@ int MacroAssembler::push(RegSet regset, Register stack) {
 }
 
 int MacroAssembler::pop(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
 
   // Scan bitset to accumulate register pairs
   unsigned char regs[32];
   int count = 0;
-
-  if (regset.bits() == 0) {
-    return 0;
-  }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
-
   for (int reg = 0; reg <= 30; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
@@ -2992,15 +2988,13 @@ int MacroAssembler::pop(RegSet regset, Register stack) {
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of dwords pushed
 int MacroAssembler::push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
-  int words_pushed = 0;
-  bool use_sve = false;
-  int sve_vector_size_in_bytes = 0;
-
   if (regset.bits() == 0) {
     return 0;
   }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
-
+  auto bitset = integer_cast<unsigned int>(regset.bits());
+  int words_pushed = 0;
+  bool use_sve = false;
+  int sve_vector_size_in_bytes = 0;
 
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
@@ -3111,14 +3105,14 @@ int MacroAssembler::push_fp(FloatRegSet regset, Register stack, FpPushPopMode mo
 
 // Return the number of dwords popped
 int MacroAssembler::pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
 
-  if (regset.bits() == 0) {
-    return 0;
-  }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
   sve_vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
@@ -3225,13 +3219,12 @@ int MacroAssembler::pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mod
 
 // Return the number of dwords pushed
 int MacroAssembler::push_p(PRegSet regset, Register stack) {
-  bool use_sve = false;
-  int sve_predicate_size_in_slots = 0;
-
   if (regset.bits() == 0) {
     return 0;
   }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
+  auto bitset = integer_cast<unsigned int>(regset.bits());
+  bool use_sve = false;
+  int sve_predicate_size_in_slots = 0;
 
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
@@ -3267,13 +3260,12 @@ int MacroAssembler::push_p(PRegSet regset, Register stack) {
 
 // Return the number of dwords popped
 int MacroAssembler::pop_p(PRegSet regset, Register stack) {
-  bool use_sve = false;
-  int sve_predicate_size_in_slots = 0;
-
   if (regset.bits() == 0) {
     return 0;
   }
-  auto bitset = checked_cast<unsigned int>(regset.bits());
+  auto bitset = integer_cast<unsigned int>(regset.bits());
+  bool use_sve = false;
+  int sve_predicate_size_in_slots = 0;
 
 #ifdef COMPILER2
   use_sve = Matcher::supports_scalable_vector();
