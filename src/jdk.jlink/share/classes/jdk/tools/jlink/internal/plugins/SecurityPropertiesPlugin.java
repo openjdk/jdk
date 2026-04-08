@@ -45,7 +45,7 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * Creates the java.security configuration file in the output image and 
+ * Creates the java.security configuration file in the output image and
  * overrides the property values with corresponding properties in the
  * specified file.
  */
