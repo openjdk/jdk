@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8308363 8336406 8381450
+* @bug 8308363 8336406 8381617
 * @summary Validate compiler IR for various Float16 scalar operations.
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled

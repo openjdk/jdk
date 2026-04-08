@@ -31,7 +31,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8340093 8342095 8381450
+ * @bug 8340093 8342095 8381617
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReductions P1
@@ -39,7 +39,7 @@
 
 /*
  * @test id=force-vectorization
- * @bug 8340093 8342095 8381450
+ * @bug 8340093 8342095 8381617
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestReductions P2

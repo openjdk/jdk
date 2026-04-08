@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8346236 8381450
+* @bug 8346236 8381617
 * @summary Auto-vectorization support for various Float16 operations
 * @modules jdk.incubator.vector
 * @library /test/lib /
