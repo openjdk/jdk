@@ -50,7 +50,6 @@ public class ConnectionReset {
      */
     @Test
     public void testAvailableBeforeRead1() throws IOException {
-        System.err.println("testAvailableBeforeRead1");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
             for (int i=0; i<REPEAT_COUNT; i++) {
@@ -75,7 +74,6 @@ public class ConnectionReset {
      */
     @Test
     public void testAvailableBeforeRead2() throws IOException {
-        System.err.println("testAvailableBeforeRead2");
         byte[] data = { 1, 2, 3 };
         withResetConnection(data, s -> {
             InputStream in = s.getInputStream();
@@ -86,13 +84,13 @@ public class ConnectionReset {
                 assertTrue(bytesAvailable <= remaining);
                 try {
                     int bytesRead = in.read();
-                    // EOF is not expected, we should get an IOException
-                    // before EOF.
                     assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
-                    // we should get an IOException before reading
-                    // the last byte
+                    // If an IOException was already thrown by in.read(), remaining will be 0,
+                    // and we should not come here as in.read() should throw again. We should
+                    // get an IOException before reading the last byte, so assert that
+                    // remaining > 0
                     assertTrue(remaining > 0);
                     remaining--;
                 } catch (IOException ioe) {
@@ -108,7 +106,6 @@ public class ConnectionReset {
      */
     @Test
     public void testReadBeforeAvailable1() throws IOException {
-        System.err.println("testReadBeforeAvailable1");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
             for (int i=0; i<REPEAT_COUNT; i++) {
@@ -134,7 +131,6 @@ public class ConnectionReset {
      */
     @Test
     public void testReadBeforeAvailable2() throws IOException {
-        System.err.println("testReadBeforeAvailable2");
         byte[] data = { 1, 2, 3 };
         withResetConnection(data, s -> {
             InputStream in = s.getInputStream();
@@ -142,13 +138,13 @@ public class ConnectionReset {
             for (int i=0; i<REPEAT_COUNT; i++) {
                 try {
                     int bytesRead = in.read();
-                    // EOF is not expected, we should get an IOException
-                    // before EOF.
                     assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
-                    // we should get an IOException before reading
-                    // the last byte
+                    // If an IOException was already thrown by in.read(), remaining will be 0,
+                    // and we should not come here as in.read() should throw again. We should
+                    // get an IOException before reading the last byte, so assert that
+                    // remaining > 0
                     assertTrue(remaining > 0);
                     remaining--;
                 } catch (IOException ioe) {
@@ -167,7 +163,6 @@ public class ConnectionReset {
      */
     @Test
     public void testAfterClose() throws IOException {
-        System.err.println("testAfterClose");
         withResetConnection(null, s -> {
             InputStream in = s.getInputStream();
             assertThrows(IOException.class, () -> in.read());
