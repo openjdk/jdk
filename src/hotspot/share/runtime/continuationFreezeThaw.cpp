@@ -2054,10 +2054,12 @@ protected:
   intptr_t* _fastpath;
   bool _barriers;
   bool _preempted_case;
+  bool _caller_deoptimized_on_thaw;
   bool _process_args_at_top;
   intptr_t* _top_unextended_sp_before_thaw;
   int _align_size;
-  DEBUG_ONLY(intptr_t* _top_stack_address);
+  DEBUG_ONLY(intptr_t* _top_stack_address;)
+  DEBUG_ONLY(address _caller_raw_pc;)
 
   // Only used for preemption on ObjectLocker
   ObjectMonitor* _init_lock;
@@ -2479,6 +2481,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   }
 
   frame caller; // the thawed caller on the stack
+  _caller_deoptimized_on_thaw = false;
   recurse_thaw(heap_frame, caller, num_frames, _preempted_case);
   finish_thaw(caller); // caller is now the topmost thawed frame
   _cont.write();
@@ -2561,6 +2564,7 @@ void ThawBase::finalize_thaw(frame& entry, int argsize) {
   assert(entry.sp() == _cont.entrySP(), "");
   assert(Continuation::is_continuation_enterSpecial(entry), "");
   assert(_cont.is_entry_frame(entry), "");
+  DEBUG_ONLY(_caller_raw_pc = entry.pc();)
 }
 
 inline void ThawBase::before_thaw_java_frame(const frame& hf, const frame& caller, bool bottom, int num_frame) {
@@ -2590,10 +2594,11 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
-  } else {
-    // caller might have been deoptimized during thaw but we've overwritten the return address when copying f from the heap.
-    // If the caller is not deoptimized, pc is unchanged.
+  } else if (_caller_deoptimized_on_thaw) {
+    // caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    assert(caller.is_deoptimized_frame(), "");
     ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
+    _caller_deoptimized_on_thaw = false;
   }
 
   patch_pd(f, caller);
@@ -2805,6 +2810,9 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
+  DEBUG_ONLY(address return_pc = ContinuationHelper::InterpretedFrame::return_pc(f);)
+  assert(return_pc == _caller_raw_pc || (is_bottom_frame && return_pc == StubRoutines::cont_returnBarrier()), "wrong return pc");
+  DEBUG_ONLY(_caller_raw_pc = f.pc();)
   caller = f;
 }
 
@@ -2868,6 +2876,8 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     assert(f.is_deoptimized_frame(), "");
     assert(ContinuationHelper::Frame::is_deopt_return(f.raw_pc(), f), "");
     maybe_set_fastpath(f.sp());
+    assert(!_caller_deoptimized_on_thaw, "");
+    _caller_deoptimized_on_thaw = true;
   }
 
   if (!is_bottom_frame) {
@@ -2881,6 +2891,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
+  DEBUG_ONLY(address return_pc = ContinuationHelper::CompiledFrame::return_pc(f);)
+  assert(return_pc == _caller_raw_pc || (is_bottom_frame && return_pc == StubRoutines::cont_returnBarrier()), "wrong return pc");
+  // Unless f was deoptimized above we need to use hf to get the raw pc (see comment above when calling new_stack_frame()).
+  DEBUG_ONLY(_caller_raw_pc = _caller_deoptimized_on_thaw ? f.raw_pc() : hf.raw_pc();)
   caller = f;
 }
 
@@ -2930,6 +2944,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
   _cont.tail()->fix_thawed_frame(caller, &map);
 
   DEBUG_ONLY(after_thaw_java_frame(f, false /*is_bottom_frame*/);)
+  assert(ContinuationHelper::StubFrame::return_pc(f) == _caller_raw_pc, "wrong return pc");
   caller = f;
 }
 
@@ -2979,6 +2994,7 @@ void ThawBase::recurse_thaw_native_frame(const frame& hf, frame& caller, int num
   _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance_no_args());
 
   DEBUG_ONLY(after_thaw_java_frame(f, false /* bottom */);)
+  assert(ContinuationHelper::NativeFrame::return_pc(f) == _caller_raw_pc, "wrong return pc");
   caller = f;
 }
 

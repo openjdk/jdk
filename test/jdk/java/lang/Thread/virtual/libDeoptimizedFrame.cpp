@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include "jvmti.h"
+#include "jni.h"
+
+extern "C" {
+
+static jvmtiEnv *jvmti = nullptr;
+jclass test_class = nullptr;
+jthread test_vthread = nullptr;
+jobject test_monitor = nullptr;
+
+
+JNIEXPORT void JNICALL
+MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject monitor) {
+  if (!jni->IsSameObject(test_vthread, vthread)) {
+    printf("Thread is not the required one\n");
+    return;
+  }
+
+  if (!jni->IsSameObject(test_monitor, monitor)) {
+    printf("Monitor is not the required one\n");
+    return;
+  }
+
+  jmethodID mid = jni->GetStaticMethodID(test_class, "upCall", "()V");
+  if (mid != NULL) {
+    jni->CallStaticVoidMethod(test_class, mid);
+    printf("Called method upCall\n");
+  } else {
+    printf("Method upCall not found\n");
+  }
+}
+
+static
+jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  jint res;
+  jvmtiError err;
+  jvmtiCapabilities caps;
+  jvmtiEventCallbacks callbacks;
+
+  printf("Agent_OnLoad started\n");
+
+  res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION);
+  if (res != JNI_OK || jvmti == nullptr) {
+    printf("Agent_OnLoad: Error in GetEnv: %d\n", res);
+    return JNI_ERR;
+  }
+
+  memset(&caps, 0, sizeof(caps));
+  caps.can_generate_monitor_events = 1;
+  err = jvmti->AddCapabilities(&caps);
+  if (err != JVMTI_ERROR_NONE) {
+    printf("Agent_OnLoad: Error in JVMTI AddCapabilities: %d\n", err);
+    return JNI_ERR;
+  }
+
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.MonitorContendedEnter   = &MonitorContendedEnter;
+  err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
+  if (err != JVMTI_ERROR_NONE) {
+    printf("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", err);
+    return JNI_ERR;
+  }
+
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    printf("Agent_OnLoad: Error in JVMTI SetEventNotificationMode: %d\n", err);
+    return JNI_ERR;
+  }
+
+  printf("Agent_OnLoad finished\n");
+  return JNI_OK;
+}
+
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  return Agent_Initialize(jvm, options, reserved);
+}
+
+JNIEXPORT jint JNICALL
+Java_DeoptimizedFrame_setupReferences(JNIEnv *jni, jclass cls, jthread vthread, jobject monitor) {
+  test_class = (jclass)jni->NewGlobalRef(cls);
+  test_vthread = (jthread)jni->NewGlobalRef(vthread);
+  test_monitor = jni->NewGlobalRef(monitor);
+
+  if (test_class == nullptr || test_vthread == nullptr || test_monitor == nullptr) {
+    printf("GlobalRef null");
+    return JNI_ERR;
+  }
+
+  return JNI_OK;
+}
+
+} // extern "C"
