@@ -327,7 +327,7 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
     G1ConcurrentRefineStats* s = &_stats;
 
     State state_bounded_by_sweeprt = (_state == State::SweepRT || _state == State::CompleteRefineWork)
-                                  ? State::SweepRT : _state;
+                                   ? State::SweepRT : _state;
 
     log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2fms) "
                           "(scanned %zu clean %zu (%.2f%%) not_clean %zu (%.2f%%) not_parsable %zu "
