@@ -39,7 +39,7 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8287984
+ * @bug 8287984 8378737
  * @key randomness
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -322,6 +322,36 @@ public class AllBitsSetVectorMatchRuleTest {
         // Verify results
         for (int i = 0; i < L_SPECIES.length(); i++) {
             Asserts.assertEquals(!ma[i] | !mb[i], mr[i]);
+        }
+    }
+
+    // Tests that mask.not().andNot(other) doesn't match to VMASK_AND_NOT rule on SVE,
+    // and only one MaskAll machine node is generated.
+    @Test
+    @IR(counts = { IRNode.AARCH64_VMASK_ALL_IMM_I, "1", IRNode.VMASK_AND_NOT_I, "0" },
+        applyIfCPUFeature = {"sve", "true"})
+    public static void testSingleMaskAllWithAndNotI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.not().andNot(bvm).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((!ma[i]) & (!mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.AARCH64_VMASK_ALL_IMM_L, "1", IRNode.VMASK_AND_NOT_L, "0" },
+        applyIfCPUFeature = {"sve", "true"})
+    public static void testSingleMaskAllWithAndNotL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.not().andNot(bvm).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals((!ma[i]) & (!mb[i]), mr[i]);
         }
     }
 
