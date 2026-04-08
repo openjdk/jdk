@@ -87,10 +87,6 @@ public class ConnectionReset {
                     assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
-                    // If an IOException was already thrown by in.read(), remaining will be 0,
-                    // and we should not come here as in.read() should throw again. We should
-                    // get an IOException before reading the last byte, so assert that
-                    // remaining > 0
                     assertTrue(remaining > 0);
                     remaining--;
                 } catch (IOException ioe) {
@@ -141,10 +137,6 @@ public class ConnectionReset {
                     assertNotEquals(-1, bytesRead, "EOF not expected");
 
                     System.err.println("read => 1 byte");
-                    // If an IOException was already thrown by in.read(), remaining will be 0,
-                    // and we should not come here as in.read() should throw again. We should
-                    // get an IOException before reading the last byte, so assert that
-                    // remaining > 0
                     assertTrue(remaining > 0);
                     remaining--;
                 } catch (IOException ioe) {
