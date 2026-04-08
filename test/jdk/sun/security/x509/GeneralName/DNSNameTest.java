@@ -41,7 +41,10 @@ import static org.testng.Assert.*;
 public class DNSNameTest {
     @DataProvider(name = "goodNames")
     public Object[][] goodNames() {
-        Object[][] data = {
+        return new Object[][]{
+                {"abc"},
+                {String.join(".", "a".repeat(63), "b".repeat(63),
+                        "c".repeat(63), "d".repeat(61))},
                 {"abc.com"},
                 {"ABC.COM"},
                 {"a12.com"},
@@ -51,12 +54,11 @@ public class DNSNameTest {
                 {"a-b-c.com"}, // hyphens
                 {IDN.toASCII("公司.com")} // IDN punycode
         };
-        return data;
     }
 
     @DataProvider(name = "goodSanNames")
     public Object[][] goodSanNames() {
-        Object[][] data = {
+        return new Object[][]{
                 {"abc.com"},
                 {"ABC.COM"},
                 {"a12.com"},
@@ -68,17 +70,23 @@ public class DNSNameTest {
                 {"*.com"},
                 {IDN.toASCII("公司.江利子")} // IDN punycode
         };
-        return data;
     }
 
     @DataProvider(name = "badNames")
     public Object[][] badNames() {
-        Object[][] data = {
+        return new Object[][]{
+                // DNSName too long
+                {String.join(".", "a".repeat(63), "b".repeat(63),
+                        "c".repeat(63), "d".repeat(62))},
+                // DNSName label too long
+                {"a".repeat(64)},
                 {" 1abc.com"}, // begin with space
                 {"1abc.com "}, // end with space
                 {"1a bc.com "}, // no space allowed
-                {"-abc.com"}, // begin with hyphen
-                {"abc.com-"}, // end with hyphen
+                {"-abc.com"}, // name begins with a hyphen
+                {"abc.com-"}, // name ends with a hyphen
+                {"abc.-com"}, // label begins with a hyphen
+                {"abc-.com"}, // label ends with a hyphen
                 {"a..b"}, // ..
                 {".a"}, // begin with .
                 {"a."}, // end with .
@@ -87,12 +95,11 @@ public class DNSNameTest {
                 {"*.domain.com"}, // wildcard not allowed
                 {"a*.com"}, // only allow letter, digit, or hyphen
         };
-        return data;
     }
 
     @DataProvider(name = "badSanNames")
     public Object[][] badSanNames() {
-        Object[][] data = {
+        return new Object[][]{
                 {" 1abc.com"}, // begin with space
                 {"1abc.com "}, // end with space
                 {"1a bc.com "}, // no space allowed
@@ -104,12 +111,12 @@ public class DNSNameTest {
                 {""}, // empty
                 {"  "},  // space only
                 {"*"}, //  wildcard only
+                {"*."}, //  wildcard with a period
                 {"*a.com"}, // partial wildcard disallowed
                 {"abc.*.com"}, // wildcard not allowed in 2nd level
                 {"*.*.domain.com"}, // double wildcard not allowed
                 {"a*.com"}, // only allow letter, digit, or hyphen
         };
-        return data;
     }
 
 
