@@ -942,7 +942,8 @@ public class JavaCompiler {
             processAnnotations(
                 enterTrees(
                         stopIfError(CompileState.ENTER,
-                                initModules(stopIfError(CompileState.ENTER, parseFiles(sourceFileObjects))))
+                                initModules(stopIfError(CompileState.ENTER,
+                                        parseAndInitDeferredDiags(sourceFileObjects))))
                 ),
                 classnames
             );
@@ -1008,6 +1009,15 @@ public class JavaCompiler {
 
     protected void checkReusable() {
         throw new AssertionError("attempt to reuse JavaCompiler");
+    }
+
+    public List<JCCompilationUnit> parseAndInitDeferredDiags(Iterable<JavaFileObject> fileObjects) {
+        List<JCCompilationUnit> units = parseFiles(fileObjects);
+        if (processAnnotations) {
+            Assert.checkNull(deferredDiagnosticHandler);
+            deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
+        }
+        return units;
     }
 
     /**
@@ -1154,7 +1164,6 @@ public class JavaCompiler {
                 keepComments = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             }
         } else { // free resources
