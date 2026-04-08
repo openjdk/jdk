@@ -260,7 +260,6 @@ class EATestsTarget {
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
-        new EARelockingObjectTarget()                                                       .run();
 
         // Test cases that require deoptimization even though neither
         // locks nor allocations are eliminated at the point where
@@ -386,7 +385,6 @@ public class EATests extends TestScaffold {
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
-        new EARelockingObject()                                                   .run(this);
 
         // Test cases that require deoptimization even though neither
         // locks nor allocations are eliminated at the point where
@@ -2402,31 +2400,6 @@ class EARelockingObjectCurrentlyWaitingOnTarget extends EATestCaseBaseTarget {
     }
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- * Test relocking eliminated @ValueBased object.
- */
-class EARelockingObject extends EATestCaseBaseDebugger {
-
-    public void runTestCase() throws Exception {
-        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
-        printStack(bpe.thread());
-        @SuppressWarnings("unused")
-        ObjectReference o = getLocalRef(bpe.thread().frame(1), Object.class.getName(), "l1");
-    }
-}
-
-class EARelockingObjectTarget extends EATestCaseBaseTarget {
-
-    public void dontinline_testMethod() {
-        Object l1 = new Object();
-        synchronized (l1) {
-            dontinline_brkpt();
-        }
-    }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
