@@ -163,10 +163,9 @@
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
-  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
-  nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
+  nonstatic_field(ArrayKlass,                  _dimension,                                    const int)                             \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
@@ -335,12 +334,11 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
-     static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
-     static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
+     static_field(ThreadLocalAllocBuffer,      _target_num_refills,                           unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_refills,                                  unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_slow_allocations,                         unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
   nonstatic_field(VirtualSpace,                _high_boundary,                                char*)                                 \
   nonstatic_field(VirtualSpace,                _low,                                          char*)                                 \
@@ -408,6 +406,8 @@
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
                                                                                                                                      \
+  static_field(ClassLoaderData,                _the_null_class_loader_data,                   ClassLoaderData*)                      \
+                                                                                                                                     \
   volatile_static_field(ClassLoaderDataGraph, _head,                                          ClassLoaderData*)                      \
                                                                                                                                      \
   /**********/                                                                                                                       \
@@ -474,6 +474,7 @@
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
+     static_field(StubRoutines,                _cont_returnBarrier,                           address)                               \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -785,6 +786,7 @@
   static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
   static_field(Mutex,                          _num_mutex,                                    int)                                   \
   volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)                               \
+  nonstatic_field(ContinuationEntry,           _parent,                                       ContinuationEntry*)                    \
   static_field(ContinuationEntry,              _return_pc,                                    address)
 
 //--------------------------------------------------------------------------------
@@ -1287,6 +1289,12 @@
                                                                           \
   VM_INT_CONSTANTS_GC(declare_constant,                                   \
                       declare_constant_with_value)                        \
+                                                                          \
+  /*****************/                                                     \
+  /* CDS constants */                                                     \
+  /*****************/                                                     \
+                                                                          \
+  CDS_ONLY(declare_constant(AOTCompressedPointers::MetadataOffsetShift))  \
                                                                           \
   /******************/                                                    \
   /* Useful globals */                                                    \
@@ -2135,4 +2143,3 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
-

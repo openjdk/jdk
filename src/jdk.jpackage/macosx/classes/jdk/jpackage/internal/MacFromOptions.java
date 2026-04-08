@@ -27,9 +27,8 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
-import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.OptionUtils.isBundlingOperation;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
@@ -63,6 +62,7 @@ import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
@@ -120,23 +120,39 @@ final class MacFromOptions {
 
         final Optional<SigningIdentityBuilder> pkgSigningIdentityBuilder;
 
-        if (sign && (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
+        if (!sign) {
+            pkgSigningIdentityBuilder = Optional.empty();
+        } else if (hasAppImageSignIdentity(options) && !hasPkgInstallerSignIdentity(options)) {
+            // They explicitly request to sign the app image,
+            // but don't specify signing identity for signing the PKG package.
+            // They want signed app image inside of unsigned PKG.
+            pkgSigningIdentityBuilder = Optional.empty();
+        } else {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_INSTALLER_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
-                } else {
-                    domain = StandardCertificateSelector.PKG_INSTALLER;
-                }
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+            MAC_INSTALLER_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).isPresent()) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
+                            } else {
+                                domain = StandardCertificateSelector.PKG_INSTALLER;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             pkgSigningIdentityBuilder = Optional.of(signingIdentityBuilder);
-        } else {
-            pkgSigningIdentityBuilder = Optional.empty();
         }
 
         ApplicationWithDetails app = null;
@@ -180,17 +196,19 @@ final class MacFromOptions {
         }
     }
 
-    private static ApplicationWithDetails createMacApplicationInternal(Options options) {
+    private static ApplicationBuilder createApplicationBuilder(Options options) {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(options)
                 .map(MacPackage::guessRuntimeLayout);
 
-        predefinedRuntimeLayout.ifPresent(layout -> {
-            validateRuntimeHasJliLib(layout);
-            if (MAC_APP_STORE.containsIn(options)) {
-                validateRuntimeHasNoBinDir(layout);
-            }
-        });
+        predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasJliLib);
+
+        if (MAC_APP_STORE.containsIn(options)) {
+            PREDEFINED_APP_IMAGE.findIn(options)
+                    .map(APPLICATION_LAYOUT::resolveAt)
+                    .ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
+            predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
+        }
 
         final var launcherFromOptions = new LauncherFromOptions().faMapper(MacFromOptions::createMacFa);
 
@@ -216,54 +234,88 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        final var app = superAppBuilder.create();
+        superAppBuilder.derivedVersionNormalizer(MacFromOptions::normalizeVersion);
 
-        final var appBuilder = new MacApplicationBuilder(app);
+        return superAppBuilder;
+    }
 
-        PREDEFINED_APP_IMAGE.findIn(options)
-                .map(MacBundle::new)
-                .map(MacBundle::infoPlistFile)
-                .ifPresent(appBuilder::externalInfoPlistFile);
+    private static ApplicationWithDetails createMacApplicationInternal(Options options) {
+
+        final var appBuilder = new MacApplicationBuilder(createApplicationBuilder(options));
+
+        if (OptionUtils.isRuntimeInstaller(options)) {
+            // Predefined runtime image, if specified, can be a macOS bundle or regular directory.
+            // Notify application builder with the path to the plist file in the predefined runtime image only if the file exists.
+            // If it doesn't, jpackage should keep going.
+            PREDEFINED_RUNTIME_IMAGE.findIn(options)
+                    .flatMap(MacBundle::fromPath)
+                    .map(MacBundle::infoPlistFile)
+                    .ifPresent(appBuilder::externalInfoPlistFile);
+        } else {
+            // Predefined app image, if specified, should always be a valid macOS bundle.
+            // Notify application builder with the path to the plist file in the predefined app image without checking if the file exists.
+            // If it doesn't, the builder should throw and jpackage should exit with error.
+            PREDEFINED_APP_IMAGE.findIn(options)
+                    .map(MacBundle::new)
+                    .map(MacBundle::infoPlistFile)
+                    .ifPresent(appBuilder::externalInfoPlistFile);
+        }
 
         ICON.ifPresentIn(options, appBuilder::icon);
         MAC_BUNDLE_NAME.ifPresentIn(options, appBuilder::bundleName);
         MAC_BUNDLE_IDENTIFIER.ifPresentIn(options, appBuilder::bundleIdentifier);
         MAC_APP_CATEGORY.ifPresentIn(options, appBuilder::category);
 
-        final boolean sign;
+        final boolean sign = MAC_SIGN.getFrom(options);
         final boolean appStore;
 
-        if (PREDEFINED_APP_IMAGE.containsIn(options) && OptionUtils.bundlingOperation(options) != SIGN_MAC_APP_IMAGE) {
-            final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
-            sign = MAC_SIGN.getFrom(appImageFileOptions);
+        if (MAC_APP_STORE.containsIn(options)) {
+            appStore = MAC_APP_STORE.getFrom(options);
+        } else if (PREDEFINED_APP_IMAGE.containsIn(options)) {
+            final var appImageFileOptions = appBuilder.externalApplication().orElseThrow().extra();
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
-            sign = MAC_SIGN.getFrom(options);
-            appStore = MAC_APP_STORE.getFrom(options);
+            appStore = false;
         }
 
         appBuilder.appStore(appStore);
 
-        if (sign && (MAC_APP_IMAGE_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
-            final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_APP_IMAGE_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
-                } else {
-                    domain = StandardCertificateSelector.APP_IMAGE;
-                }
+        final var signOnlyPkgInstaller = sign && (
+                isBundlingOperation(options, CREATE_MAC_PKG)
+                && !hasAppImageSignIdentity(options)
+                && hasPkgInstallerSignIdentity(options));
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+        if (sign && !signOnlyPkgInstaller) {
+            final var signingIdentityBuilder = createSigningIdentityBuilder(options);
+
+            MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options)) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
+                            } else {
+                                domain = StandardCertificateSelector.APP_IMAGE;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             final var signingBuilder = new AppImageSigningConfigBuilder(signingIdentityBuilder);
             if (appStore) {
                 signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresentOrElse(
+            appBuilder.launchers().map(ApplicationLaunchers::mainLauncher).flatMap(Launcher::startupInfo).ifPresentOrElse(
                 signingBuilder::signingIdentifierPrefix,
                 () -> {
                     // Runtime installer does not have the main launcher, use
@@ -278,7 +330,7 @@ final class MacFromOptions {
             appBuilder.signingBuilder(signingBuilder);
         }
 
-        return new ApplicationWithDetails(appBuilder.create(), superAppBuilder.externalApplication());
+        return new ApplicationWithDetails(appBuilder.create(), appBuilder.externalApplication());
     }
 
     private static MacPackageBuilder createMacPackageBuilder(Options options, ApplicationWithDetails app, PackageType type) {
@@ -330,5 +382,20 @@ final class MacFromOptions {
         StandardFaOption.MAC_UTTYPECONFORMSTO.ifPresentIn(options, builder::utTypeConformsTo);
 
         return builder.create(fa);
+    }
+
+    private static boolean hasAppImageSignIdentity(Options options) {
+        return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_APP_IMAGE_SIGN_IDENTITY);
+    }
+
+    private static boolean hasPkgInstallerSignIdentity(Options options) {
+        return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_INSTALLER_SIGN_IDENTITY);
+    }
+
+    private static String normalizeVersion(String version) {
+        // macOS requires 1, 2 or 3 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // We will always normalize to 3 components if needed.
+        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 }

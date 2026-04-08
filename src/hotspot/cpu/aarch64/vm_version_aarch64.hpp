@@ -55,6 +55,9 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
+  // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
+  // implemented as `movi; cpy(imm, merging)`.
+  static constexpr bool _prefer_sve_merging_mode_cpy = true;
 
   static SpinWait _spin_wait;
 
@@ -156,7 +159,9 @@ public:
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
     decl(SVE2,          sve2,          28)    \
-    decl(A53MAC,        a53mac,        31)
+    decl(A53MAC,        a53mac,        31)    \
+    decl(ECV,           ecv,           32)    \
+    decl(WFXT,          wfxt,          33)
 
   enum Feature_Flag {
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
@@ -188,6 +193,8 @@ public:
     return (features & BIT_MASK(flag)) != 0;
   }
 
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
+
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
   static int cpu_model2()                     { return _model2; }
@@ -207,7 +214,7 @@ public:
     return false;
   }
 
-  static bool is_zva_enabled() { return 0 <= _zva_length; }
+  static bool is_zva_enabled() { return 0 < _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
     return _zva_length;
@@ -241,6 +248,8 @@ public:
   static void initialize_cpu_information(void);
 
   static bool use_rop_protection() { return _rop_protection; }
+
+  static bool prefer_sve_merging_mode_cpy() { return _prefer_sve_merging_mode_cpy; }
 
   // For common 64/128-bit unpredicated vector operations, we may prefer
   // emitting NEON instructions rather than the corresponding SVE instructions.

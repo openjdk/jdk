@@ -122,7 +122,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
 #endif
 
 bool ReferenceProcessor::processing_is_mt() const {
-  return ParallelRefProcEnabled && _num_queues > 1;
+  return _num_queues > 1;
 }
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {

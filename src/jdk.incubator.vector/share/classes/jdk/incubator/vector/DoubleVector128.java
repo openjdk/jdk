@@ -31,16 +31,17 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class DoubleVector128 extends DoubleVector {
     static final DoubleSpecies VSPECIES =
         (DoubleSpecies) DoubleVector.SPECIES_128;
@@ -53,6 +54,8 @@ final class DoubleVector128 extends DoubleVector {
     static final int VSIZE = VSPECIES.vectorBitSize();
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
+
+    static final Class<Double> CTYPE = double.class; // carrier type used by the JVM
 
     static final Class<Double> ETYPE = double.class; // used by the JVM
 
@@ -91,6 +94,9 @@ final class DoubleVector128 extends DoubleVector {
     @ForceInline
     @Override
     public final Class<Double> elementType() { return double.class; }
+
+    @ForceInline
+    final Class<Double> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -353,7 +359,7 @@ final class DoubleVector128 extends DoubleVector {
     @Override
     @ForceInline
     public final DoubleShuffle128 toShuffle() {
-        return (DoubleShuffle128) toShuffle(vspecies(), false);
+        return (DoubleShuffle128) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -554,10 +560,11 @@ final class DoubleVector128 extends DoubleVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class DoubleMask128 extends AbstractMask<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Double> ETYPE = double.class; // used by the JVM
+
+        static final Class<Double> CTYPE = double.class; // used by the JVM
 
         DoubleMask128(boolean[] bits) {
             this(bits, 0);
@@ -601,7 +608,7 @@ final class DoubleVector128 extends DoubleVector {
 
         @Override
         DoubleMask128 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -611,7 +618,7 @@ final class DoubleVector128 extends DoubleVector {
 
         @Override
         DoubleMask128 bOp(VectorMask<Double> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((DoubleMask128)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -761,16 +768,16 @@ final class DoubleVector128 extends DoubleVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, DoubleMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((DoubleMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((DoubleMask128)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, DoubleMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((DoubleMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((DoubleMask128)m).getBits()));
         }
 
         @ForceInline
@@ -778,7 +785,7 @@ final class DoubleVector128 extends DoubleVector {
         static DoubleMask128 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(DoubleMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMask128  TRUE_MASK = new DoubleMask128(true);
         private static final DoubleMask128 FALSE_MASK = new DoubleMask128(false);
@@ -786,10 +793,11 @@ final class DoubleVector128 extends DoubleVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class DoubleShuffle128 extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         DoubleShuffle128(long[] indices) {
             super(indices);
@@ -826,7 +834,7 @@ final class DoubleVector128 extends DoubleVector {
         @Override
         @ForceInline
         public DoubleVector128 toVector() {
-            return (DoubleVector128) toBitsVector().castShape(vspecies(), 0);
+            return (DoubleVector128) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -837,7 +845,7 @@ final class DoubleVector128 extends DoubleVector {
 
         @Override
         LongVector128 toBitsVector0() {
-            return ((LongVector128) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVector128) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -911,7 +919,7 @@ final class DoubleVector128 extends DoubleVector {
         @ForceInline
         public final DoubleMask128 laneIsValid() {
             return (DoubleMask128) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -919,7 +927,7 @@ final class DoubleVector128 extends DoubleVector {
         public final DoubleShuffle128 rearrange(VectorShuffle<Double> shuffle) {
             DoubleShuffle128 concreteShuffle = (DoubleShuffle128) shuffle;
             return (DoubleShuffle128) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_128))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -932,7 +940,7 @@ final class DoubleVector128 extends DoubleVector {
                 v = (LongVector128) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (DoubleShuffle128) v.toShuffle(vspecies(), false);
+            return (DoubleShuffle128) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {
