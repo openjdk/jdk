@@ -479,8 +479,8 @@ JvmtiEventControllerPrivate::set_enabled_events_with_lock(JvmtiEnvBase* env, jlo
 // But outside this class, only non-thread-filtered events can be queried..
 jlong
 JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
-  jlong was_enabled = env->env_event_enable()->_event_enabled.get_bits();
-  jlong now_enabled =
+  julong was_enabled = env->env_event_enable()->_event_enabled.get_bits();
+  julong now_enabled =
     env->env_event_enable()->_event_callback_enabled.get_bits() &
     env->env_event_enable()->_event_user_enabled.get_bits();
 
@@ -525,8 +525,8 @@ jlong
 JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* ets, JvmtiThreadState* state) {
   JvmtiEnv *env = ets->get_env();
 
-  jlong was_enabled = ets->event_enable()->_event_enabled.get_bits();
-  jlong now_enabled =  THREAD_FILTERED_EVENT_BITS &
+  julong was_enabled = ets->event_enable()->_event_enabled.get_bits();
+  julong now_enabled = THREAD_FILTERED_EVENT_BITS &
     env->env_event_enable()->_event_callback_enabled.get_bits() &
     (env->env_event_enable()->_event_user_enabled.get_bits() |
      ets->event_enable()->_event_user_enabled.get_bits());
@@ -544,6 +544,11 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
   }
 
   switch (JvmtiEnv::get_phase()) {
+  case JVMTI_PHASE_ONLOAD:
+  case JVMTI_PHASE_PRIMORDIAL:
+  case JVMTI_PHASE_START:
+    now_enabled &= EARLY_EVENT_BITS;
+    break;
   case JVMTI_PHASE_DEAD:
     // no events allowed when dead
     now_enabled = 0;
