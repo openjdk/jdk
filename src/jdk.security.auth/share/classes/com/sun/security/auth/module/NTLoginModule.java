@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.security.auth.module;
 
 import java.util.*;
-import java.io.IOException;
 import javax.security.auth.*;
 import javax.security.auth.callback.*;
 import javax.security.auth.login.*;
@@ -39,6 +38,7 @@ import com.sun.security.auth.NTSidDomainPrincipal;
 import com.sun.security.auth.NTSidPrimaryGroupPrincipal;
 import com.sun.security.auth.NTSidGroupPrincipal;
 import com.sun.security.auth.NTNumericCredential;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * This {@code LoginModule}
@@ -139,19 +139,30 @@ public class NTLoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
+        if (!OperatingSystem.isWindows()) {
+            throw new FailedLoginException
+                    ("Failed in attempt to import " +
+                            "the underlying NT system identity information" +
+                            " on " + System.getProperty("os.name"));
+        }
+
         succeeded = false; // Indicate not yet successful
 
         try {
             ntSystem = new NTSystem(debugNative);
-        } catch (UnsatisfiedLinkError ule) {
+        } catch (ExceptionInInitializerError | UnsatisfiedLinkError ule) {
             if (debug) {
                 System.out.println("\t\t[NTLoginModule] " +
                                    "Failed in NT login");
             }
-            throw new FailedLoginException
+            FailedLoginException error = new FailedLoginException
                 ("Failed in attempt to import the " +
                  "underlying NT system identity information" +
                  " on " + System.getProperty("os.name"));
+            if (ule.getCause() != null) {
+                error.initCause(ule.getCause());
+            }
+            throw error;
         }
 
         if (ntSystem.getName() == null) {
