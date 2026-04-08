@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,11 @@ public:
     uint _ncreate;              // Number of new tasks to create.
   };
 
-  // Called with the length of the array to be processed.  Returns a Step with
-  // _index being the end of the initial chunk, which the caller should
-  // process.  This is also the starting index for the next chunk to process.
+  // Called with the length of the array to be processed and chunk size.
+  // Returns a Step with _index being the end of the initial chunk, which the
+  // caller should process.  This is also the starting index for the next chunk to process.
   // The _ncreate is the number of tasks to enqueue to continue processing the
   // array.  If _ncreate is zero then _index will be length.
-
   inline Step start(size_t length, size_t chunk_size) const;
 
   // Atomically increment state's index by chunk_size() to claim the next

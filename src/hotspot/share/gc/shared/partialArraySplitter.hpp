@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ public:
   //
   // length is their length in elements.
   //
+  // chunk_size the size of a single chunk.
+  //
   // If t is a ScannerTask, queue->push(t) must be a valid expression.  The
   // result of that expression is ignored.
   //
@@ -71,7 +73,6 @@ public:
   // exceed the chunk size then the result will be length, indicating the
   // caller is to process the entire array.  In this case, no tasks will have
   // been added to the queue.
-  // FIXME: chunk_size param
   template<typename Queue>
   size_t start(Queue* queue,
                objArrayOop from_array,
