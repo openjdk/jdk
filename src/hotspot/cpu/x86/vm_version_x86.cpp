@@ -65,8 +65,6 @@ address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 static BufferBlob* stub_blob;
 static const int stub_size = 2550;
 
-int VM_Version::VM_Features::_features_bitmap_size = sizeof(VM_Version::VM_Features::_features_bitmap) / BytesPerLong;
-
 VM_Version::VM_Features VM_Version::_features;
 VM_Version::VM_Features VM_Version::_cpu_features;
 
@@ -1336,7 +1334,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   int max_vector_size = 0;
   if (UseAVX == 0 || !os_supports_avx_vectors()) {
     // 16 byte vectors (in XMM) are supported with SSE2+
@@ -1369,7 +1367,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   }
 
-#if defined(COMPILER2) && defined(ASSERT)
+#ifdef ASSERT
   if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
@@ -1384,7 +1382,7 @@ void VM_Version::get_processor_features() {
       }
     }
   }
-#endif // COMPILER2 && ASSERT
+#endif // ASSERT
 
   if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
@@ -1423,7 +1421,7 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     UseMontgomerySquareIntrinsic = true;
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.

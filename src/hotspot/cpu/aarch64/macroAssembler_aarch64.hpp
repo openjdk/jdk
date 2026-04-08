@@ -693,7 +693,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
