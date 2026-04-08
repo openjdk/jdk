@@ -40,7 +40,7 @@ class PartialArrayState;
 // substantially expand the task queues.
 class PartialArrayTaskStepper {
 public:
-  PartialArrayTaskStepper(uint n_workers, size_t chunk_size);
+  PartialArrayTaskStepper(uint n_workers);
 
   struct Step {
     size_t _index;              // Array index for the step.
@@ -52,7 +52,6 @@ public:
   // process.  This is also the starting index for the next chunk to process.
   // The _ncreate is the number of tasks to enqueue to continue processing the
   // array.  If _ncreate is zero then _index will be length.
-  inline Step start(size_t length) const;
 
   inline Step start(size_t length, size_t chunk_size) const;
 
@@ -62,14 +61,9 @@ public:
   // to enqueue.
   inline Step next(PartialArrayState* state) const;
 
-  // The size of chunks to claim for each task.
-  inline size_t chunk_size() const;
-
   class TestSupport;            // For unit tests
 
 private:
-  // Size (number of elements) of a chunk to process.
-  size_t _chunk_size;
   // Limit on the number of partial array tasks to create for a given array.
   uint _task_limit;
   // Maximum number of new tasks to create when processing an existing task.

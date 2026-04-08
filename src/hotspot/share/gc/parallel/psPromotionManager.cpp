@@ -158,7 +158,7 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads, ParGCArrayScanChunk)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -273,7 +273,7 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   size_t array_length = to_array->length();
   size_t initial_chunk_size =
     // The source array is unused when processing states.
-    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length);
+    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length, ParGCArrayScanChunk);
 
   process_array_chunk(to_array, 0, initial_chunk_size);
 }

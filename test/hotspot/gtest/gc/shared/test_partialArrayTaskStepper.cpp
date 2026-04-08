@@ -46,7 +46,7 @@ static uint simulate(const Stepper* stepper,
                      size_t length,
                      size_t chunk_size,
                      Atomic<size_t>* to_length_addr) {
-  Step init = stepper->start(length);
+  Step init = stepper->start(length, chunk_size);
   to_length_addr->store_relaxed(init._index);
   uint queue_count = init._ncreate;
   uint task = 0;
@@ -59,7 +59,7 @@ static uint simulate(const Stepper* stepper,
 }
 
 static void run_test(size_t length, size_t chunk_size, uint n_workers) {
-  const PartialArrayTaskStepper stepper(n_workers, chunk_size);
+  const PartialArrayTaskStepper stepper(n_workers);
   Atomic<size_t> to_length;
   uint tasks = simulate(&stepper, length, chunk_size, &to_length);
   ASSERT_EQ(length, to_length.load_relaxed());

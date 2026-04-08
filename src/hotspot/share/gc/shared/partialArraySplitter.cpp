@@ -28,10 +28,9 @@
 #include "utilities/macros.hpp"
 
 PartialArraySplitter::PartialArraySplitter(PartialArrayStateManager* manager,
-                                           uint num_workers,
-                                           size_t chunk_size)
+                                           uint num_workers)
   : _allocator(manager),
-    _stepper(num_workers, chunk_size)
+    _stepper(num_workers)
     TASKQUEUE_STATS_ONLY(COMMA _stats())
 {}
 

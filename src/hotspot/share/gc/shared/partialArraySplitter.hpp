@@ -44,8 +44,7 @@ class PartialArraySplitter {
 
 public:
   PartialArraySplitter(PartialArrayStateManager* manager,
-                       uint num_workers,
-                       size_t chunk_size);
+                       uint num_workers);
   ~PartialArraySplitter() = default;
 
   NONCOPYABLE(PartialArraySplitter);
@@ -72,12 +71,7 @@ public:
   // exceed the chunk size then the result will be length, indicating the
   // caller is to process the entire array.  In this case, no tasks will have
   // been added to the queue.
-  template<typename Queue>
-  size_t start(Queue* queue,
-               objArrayOop from_array,
-               objArrayOop to_array,
-               size_t length);
-
+  // FIXME: chunk_size param
   template<typename Queue>
   size_t start(Queue* queue,
                objArrayOop from_array,

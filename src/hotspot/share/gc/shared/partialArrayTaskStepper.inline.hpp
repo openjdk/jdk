@@ -31,14 +31,6 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 
-size_t PartialArrayTaskStepper::chunk_size() const {
-  return _chunk_size;
-}
-
-PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::start(size_t length) const {
-  return start(length, _chunk_size);
-}
 PartialArrayTaskStepper::Step
 PartialArrayTaskStepper::start(size_t length, size_t chunk_size) const {
   size_t end = length % chunk_size; // End of initial chunk.

@@ -58,7 +58,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor,
                                            uint parallel_gc_threads)
-  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads, ObjArrayMarkingStride),
+  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -126,7 +126,7 @@ void ParCompactionManager::push_objArray(oop obj) {
   objArrayOop obj_array = objArrayOop(obj);
   size_t array_length = obj_array->length();
   size_t initial_chunk_size =
-    _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
+    _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length, ObjArrayMarkingStride);
   follow_array(obj_array, 0, initial_chunk_size);
 }
 

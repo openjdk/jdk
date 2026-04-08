@@ -78,7 +78,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers, ParGCArrayScanChunk),
+    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
@@ -253,7 +253,7 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
   size_t array_length = to_array->length();
   size_t initial_chunk_size =
     // The source array is unused when processing states.
-    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
+    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length, ParGCArrayScanChunk);
 
   assert(_scanner.skip_card_mark_set(), "must be");
   // Process the initial chunk.  No need to process the type in the

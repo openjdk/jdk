@@ -39,14 +39,6 @@ template<typename Queue>
 size_t PartialArraySplitter::start(Queue* queue,
                                    objArrayOop source,
                                    objArrayOop destination,
-                                   size_t length) {
-  return start(queue, source, destination, length, _stepper.chunk_size());
-}
-
-template<typename Queue>
-size_t PartialArraySplitter::start(Queue* queue,
-                                   objArrayOop source,
-                                   objArrayOop destination,
                                    size_t length,
                                    size_t chunk_size) {
   precond(chunk_size > 0);

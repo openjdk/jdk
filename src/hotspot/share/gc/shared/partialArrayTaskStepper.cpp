@@ -48,8 +48,7 @@ static uint compute_task_fanout(uint task_limit) {
   return result;
 }
 
-PartialArrayTaskStepper::PartialArrayTaskStepper(uint n_workers, size_t chunk_size) :
-  _chunk_size(chunk_size),
+PartialArrayTaskStepper::PartialArrayTaskStepper(uint n_workers) :
   _task_limit(compute_task_limit(n_workers)),
   _task_fanout(compute_task_fanout(_task_limit))
 {}
