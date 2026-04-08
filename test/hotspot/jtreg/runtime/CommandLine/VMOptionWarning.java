@@ -118,7 +118,7 @@ public class VMOptionWarning {
                 break;
             }
             case "CompactObjectHeaders": {
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompactObjectHeaders", "-XX:-UseObjectMonitorTable", "-version");
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompactObjectHeaders", "-XX:+UnlockDiagnosticVMOptions", "-XX:-UseObjectMonitorTable", "-version");
                 output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
                 output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders option; ignoring -UseObjectMonitorTable");
