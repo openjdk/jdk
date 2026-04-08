@@ -112,7 +112,7 @@ class GetMethodsReturnClones {
             certs[0] = null; // intentionally update the returned array
             certs = je.getCertificates(); // now get the certs again
             assertNotNull(certs, "JarEntry.getCertificates() returned null for " + je.getName());
-            // verify that the newly returned array doesn't have the overwrittent value
+            // verify that the newly returned array doesn't have the overwritten value
             assertNotNull(certs[0], "Internal certiticates array was modified");
         }
     }
@@ -138,6 +138,7 @@ class GetMethodsReturnClones {
             signers[0] = null; // intentionally update the array
             signers = je.getCodeSigners(); // now get the codesigners again
             assertNotNull(signers, "JarEntry.getCodeSigners() returned null for " + je.getName());
+            // verify that the newly returned array doesn't have the overwritten value
             assertNotNull(signers[0], "CodeSigner is null");
         }
     }
