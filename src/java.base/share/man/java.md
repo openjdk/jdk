@@ -2994,8 +2994,6 @@ when they're used.
     -XX:{+|-}TieredCompilation
     -XX:CompilationMode=mode
     -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
     ```
 
 [`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}

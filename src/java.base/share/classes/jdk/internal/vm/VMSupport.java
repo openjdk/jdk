@@ -32,7 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /*
- * Support class used by JVMCI, JVMTI and VM attach mechanism.
+ * Support class used by JVMTI and VM attach mechanism.
  */
 public class VMSupport {
 
