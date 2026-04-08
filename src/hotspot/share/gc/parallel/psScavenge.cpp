@@ -437,10 +437,10 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
         if (young_gen->is_from_to_layout()) {
           size_policy->print_stats(_survivor_overflow);
           heap->resize_after_young_gc(_survivor_overflow);
-          const bool eden_squeezed_by_survivor = young_gen->eden_squeezed_by_survivor();
+          const bool is_eden_squeezed = young_gen->is_eden_squeezed();
           const bool young_can_commit_more =
             young_gen->virtual_space()->uncommitted_size() >= young_gen->virtual_space()->alignment();
-          _tenuring_threshold = size_policy->compute_tenuring_threshold(eden_squeezed_by_survivor,
+          _tenuring_threshold = size_policy->compute_tenuring_threshold(is_eden_squeezed,
                                                                         young_can_commit_more,
                                                                         _tenuring_threshold);
         }

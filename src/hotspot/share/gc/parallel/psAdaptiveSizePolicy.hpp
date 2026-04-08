@@ -46,8 +46,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // with increasing collections.
   uint _young_gen_size_increment_supplement;
 
-  // Count eligible young GCs before raising the tenuring threshold.
-  uint _grace_gc_count;
+  // Count eligible (where eden is not squeezed by survivors) young GCs before
+  // raising the tenuring threshold.
+  uint _tenuring_threshold_gc_count;
 
   size_t decrease_eden_for_minor_pause_time(size_t current_eden_size);
 
@@ -88,7 +89,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size);
 
-  uint compute_tenuring_threshold(bool eden_squeezed_by_survivor,
+  uint compute_tenuring_threshold(bool is_eden_squeezed,
                                   bool young_can_commit_more,
                                   uint tenuring_threshold);
 

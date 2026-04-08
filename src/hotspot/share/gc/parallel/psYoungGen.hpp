@@ -50,7 +50,8 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
-  bool _eden_squeezed_by_survivor;
+  // True if eden is squeezed by survivor (i.e., survivor space is mostly used).
+  bool _is_eden_squeezed;
 
   // Performance counters
   GenerationCounters*   _gen_counters;
@@ -129,7 +130,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t min_gen_size() const { return _min_gen_size; }
   size_t max_gen_size() const { return _max_gen_size; }
 
-  bool eden_squeezed_by_survivor() const { return _eden_squeezed_by_survivor; }
+  bool is_eden_squeezed() const { return _is_eden_squeezed; }
 
   // Allocation
   HeapWord* cas_allocate(size_t word_size) {

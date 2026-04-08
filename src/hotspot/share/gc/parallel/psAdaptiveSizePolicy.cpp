@@ -42,7 +42,7 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t space_alignment,
      _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _space_alignment(space_alignment),
      _young_gen_size_increment_supplement(YoungGenerationSizeSupplement),
-     _grace_gc_count(0) {}
+     _tenuring_threshold_gc_count(0) {}
 
 void PSAdaptiveSizePolicy::major_collection_begin() {
   _major_timer.reset();
@@ -224,7 +224,7 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool eden_squeezed_by_survivor,
+uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool is_eden_squeezed,
                                                       bool young_can_commit_more,
                                                       uint tenuring_threshold) {
   if (!young_gen_policy_is_ready()) {
@@ -237,34 +237,34 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool eden_squeezed_by_surv
 
   const uint original_threshold = tenuring_threshold;
   constexpr uint min_tenuring_threshold = 1;
-  constexpr uint grace_gc_threshold = 5;
+  constexpr uint tenuring_threshold_gc_limit = 5;
 
-  if (eden_squeezed_by_survivor) {
-    _grace_gc_count = 0;
+  if (is_eden_squeezed) {
+    _tenuring_threshold_gc_count = 0;
     if (tenuring_threshold > min_tenuring_threshold) {
       tenuring_threshold--;
     }
   } else if (young_can_commit_more) {
-    if (_grace_gc_count < grace_gc_threshold) {
-      _grace_gc_count++;
+    if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
+      _tenuring_threshold_gc_count++;
     }
 
-    if (_grace_gc_count >= grace_gc_threshold &&
+    if (_tenuring_threshold_gc_count >= tenuring_threshold_gc_limit &&
         tenuring_threshold < MaxTenuringThreshold) {
       tenuring_threshold++;
-      _grace_gc_count = 0;
+      _tenuring_threshold_gc_count = 0;
     }
   } else {
-    _grace_gc_count = 0;
+    _tenuring_threshold_gc_count = 0;
   }
 
-  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, eden squeezed: %s, can commit young: %s, grace gc count: %u)",
+  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, eden squeezed: %s, can commit young: %s, increase gc count: %u)",
                      original_threshold,
                      tenuring_threshold,
                      MaxTenuringThreshold,
-                     eden_squeezed_by_survivor ? "true" : "false",
-                     young_can_commit_more ? "true" : "false",
-                     _grace_gc_count);
+                     BOOL_TO_STR(is_eden_squeezed),
+                     BOOL_TO_STR(young_can_commit_more),
+                     _tenuring_threshold_gc_count);
 
   return tenuring_threshold;
 }
