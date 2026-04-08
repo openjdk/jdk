@@ -219,12 +219,12 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     if (STUBGEN_BLOB_FIELD_NAME(blob_name) == nullptr) {                \
       BlobId blob_id = BlobId:: JOIN3(stubgen, blob_name, id);          \
       int size = _ ## blob_name ## _code_size;                          \
-      int max_aligned_size = 10;                                        \
+      int max_aligned_stubs = StubInfo::stub_count(blob_id);            \
       const char* timer_msg = "StubRoutines generation " # blob_name " stubs"; \
       const char* name = "StubRoutines (" # blob_name " stubs)";        \
       const char* assert_msg = "_" # blob_name "_code_size";            \
       STUBGEN_BLOB_FIELD_NAME(blob_name) =                              \
-        initialize_stubs(blob_id, size, max_aligned_size, timer_msg,    \
+        initialize_stubs(blob_id, size, max_aligned_stubs, timer_msg,   \
                          name, assert_msg);                             \
     }                                                                   \
   }

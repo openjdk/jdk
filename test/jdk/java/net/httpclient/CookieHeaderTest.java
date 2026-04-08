@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,13 @@
  * @summary Test for multiple vs single cookie header for HTTP/2 vs HTTP/1.1
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       CookieHeaderTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -78,26 +74,31 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CookieHeaderTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
-    DummyServer httpDummyServer;
-    DummyServer httpsDummyServer;
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
-    String httpDummy;
-    String httpsDummy;
+    private static HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
+    private static DummyServer httpDummyServer;
+    private static DummyServer httpsDummyServer;
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
+    private static String httpDummy;
+    private static String httpsDummy;
 
     static final String MESSAGE = "Basic CookieHeaderTest message body";
     static final int ITERATIONS = 3;
@@ -110,8 +111,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    @DataProvider(name = "positive")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { httpURI, HTTP_1_1  },
                 { httpsURI, HTTP_1_1  },
@@ -129,7 +129,8 @@ public class CookieHeaderTest implements HttpServerAdapters {
 
     static final AtomicLong requestCounter = new AtomicLong();
 
-    @Test(dataProvider = "positive")
+    @ParameterizedTest
+    @MethodSource("positive")
     void test(String uriString, HttpClient.Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         ConcurrentHashMap<String, List<String>> cookieHeaders
@@ -169,14 +170,15 @@ public class CookieHeaderTest implements HttpServerAdapters {
                     + ", version=" + response.version());
             out.println("  Got body Path: " + response.body());
 
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), MESSAGE);
-            assertEquals(response.headers().allValues("X-Request-Cookie"),
-                    cookies.stream()
-                            .filter(s -> !s.startsWith("LOC"))
-                            .collect(Collectors.toList()));
+            assertEquals(200, response.statusCode());
+            assertEquals(MESSAGE, response.body());
+            List<String> expectedCookieList = cookies.stream()
+                    .filter(s -> !s.startsWith("LOC")).toList();
+            List<String> actualCookieList = response.headers()
+                    .allValues("X-Request-Cookie");
+            assertEquals(expectedCookieList, actualCookieList);
             if (version == HTTP_3 && i > 0) {
-                assertEquals(response.version(), HTTP_3);
+                assertEquals(HTTP_3, response.version());
             }
             requestBuilder = HttpRequest.newBuilder(uri)
                     .header("X-uuid", "uuid-" + requestCounter.incrementAndGet());
@@ -192,8 +194,8 @@ public class CookieHeaderTest implements HttpServerAdapters {
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new CookieValidationHandler(), "/http1/cookie/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/cookie/retry";
@@ -228,8 +230,8 @@ public class CookieHeaderTest implements HttpServerAdapters {
         httpsDummyServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
