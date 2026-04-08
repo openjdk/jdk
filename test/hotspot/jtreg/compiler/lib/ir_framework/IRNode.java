@@ -3132,9 +3132,9 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
-    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16 = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16" + POSTFIX;
+    public static final String X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX" + POSTFIX;
     static {
-        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, "vector_slice_const_origin_GT16B_index16_reg");
+        machOnlyNameRegex(X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, "vector_slice_const_origin_16B_OR_index16_reg_avx");
     }
 
     public static final String X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_MULTIPLE4_EVEX = PREFIX + "X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX_MULTIPLE4_EVEX" + POSTFIX;

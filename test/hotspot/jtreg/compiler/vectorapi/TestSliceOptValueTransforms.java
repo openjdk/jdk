@@ -162,7 +162,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexByte() {
         for (int i = 0; i < B256.loopBound(SIZE); i += B256.length()) {
@@ -249,7 +249,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexShort() {
         for (int i = 0; i < S256.loopBound(SIZE); i += S256.length()) {
@@ -336,7 +336,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexInt() {
         for (int i = 0; i < I256.loopBound(SIZE); i += I256.length()) {
@@ -423,7 +423,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexLong() {
         for (int i = 0; i < L256.loopBound(SIZE); i += L256.length()) {
@@ -510,7 +510,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexFloat() {
         for (int i = 0; i < F256.loopBound(SIZE); i += F256.length()) {
@@ -597,7 +597,7 @@ public class TestSliceOptValueTransforms {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_GT16B_INDEX16, " >0 "},
+    @IR(counts = {IRNode.X86_VECTOR_SLICE_CONST_ORIGIN_16B_OR_INDEX16_AVX, " >0 "},
         phase = {CompilePhase.MATCHING}, applyIfCPUFeatureAnd = {"avx512f", "false", "avx2", "true"})
     public void test16BSliceIndexDouble() {
         for (int i = 0; i < D256.loopBound(SIZE); i += D256.length()) {
