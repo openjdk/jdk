@@ -40,6 +40,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
+#include "os_windows_fileinfo.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -4490,6 +4491,10 @@ size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 // If -Xss is given to the launcher, it will pick 64K as default stack size and pass that.
 size_t os::_os_min_stack_allowed = 64 * K;
 
+// For dynamic lookup of GetFileInformationByName API, since it is not available
+// on older versions of the Windows SDK.
+static PGetFileInformationByName _GetFileInformationByName = nullptr;
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
   const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
@@ -4576,6 +4581,15 @@ jint os::init_2(void) {
   }
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
+  HMODULE hFileInfoMod = ::LoadLibrary(TEXT("api-ms-win-core-file-l2-1-4"));
+  if (hFileInfoMod != nullptr) {
+    _GetFileInformationByName =
+        reinterpret_cast<PGetFileInformationByName>(
+            ::GetProcAddress(hFileInfoMod, "GetFileInformationByName"));
+  }
+
+  log_info(os)("The GetFileInformationByName API is%s available.",
+               _GetFileInformationByName == nullptr ? " not" : "");
 
   return JNI_OK;
 }
@@ -4865,6 +4879,41 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
+  if (_GetFileInformationByName != nullptr) {
+    // Fast path: use `GetFileInformationByName()` to avoid opening file handles
+    errno_t err1;
+    errno_t err2;
+    wchar_t* wide1 = wide_abs_unc_path(native_file1, err1);
+    wchar_t* wide2 = wide_abs_unc_path(native_file2, err2);
+
+    if (wide1 != nullptr && wide2 != nullptr && err1 == 0 && err2 == 0) {
+      FILE_STAT_BASIC_INFORMATION info1, info2;
+      if (_GetFileInformationByName(wide1, FileStatBasicByNameInfo,
+                                    &info1, sizeof(info1)) &&
+          _GetFileInformationByName(wide2, FileStatBasicByNameInfo,
+                                    &info2, sizeof(info2))) {
+        // Only use the fast path result when neither path is a reparse point
+        // (i.e. symbolic links, directory junctions, etc.).
+        if (!(info1.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+            !(info2.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+          bool same = (info1.VolumeSerialNumber.QuadPart ==
+                         info2.VolumeSerialNumber.QuadPart) &&
+                      (memcmp(&info1.FileId128, &info2.FileId128,
+                              sizeof(FILE_ID_128)) == 0);
+          os::free(wide1);
+          os::free(wide2);
+          os::free(native_file1);
+          os::free(native_file2);
+          return same;
+        }
+      }
+    }
+
+    os::free(wide1);
+    os::free(wide2);
+  }
+
+  // Slow path: open handles and check using `GetFileInformationByHandle()`.
   HANDLE handle1 = create_read_only_file_handle(native_file1);
   HANDLE handle2 = create_read_only_file_handle(native_file2);
   bool result = false;

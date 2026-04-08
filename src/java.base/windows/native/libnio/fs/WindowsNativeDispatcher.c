@@ -510,6 +510,74 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFileAttributesEx0(JNIEnv* env, jclass
         throwWindowsException(env, GetLastError());
 }
 
+// SDK-guarded definitions for GetFileInformationByName and related types.
+// Keep in sync with os_windows_fileinfo.hpp.
+#if !defined(NTDDI_WIN10_NI) || !(NTDDI_VERSION >= NTDDI_WIN10_NI)
+
+typedef struct _FILE_STAT_BASIC_INFORMATION {
+    LARGE_INTEGER FileId;
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG         FileAttributes;
+    ULONG         ReparseTag;
+    ULONG         NumberOfLinks;
+    ULONG         DeviceType;
+    ULONG         DeviceCharacteristics;
+    ULONG         Reserved;
+    LARGE_INTEGER VolumeSerialNumber;
+    FILE_ID_128   FileId128;
+} FILE_STAT_BASIC_INFORMATION;
+
+typedef enum _FILE_INFO_BY_NAME_CLASS {
+    FileStatByNameInfo,
+    FileStatLxByNameInfo,
+    FileCaseSensitiveByNameInfo,
+    FileStatBasicByNameInfo,
+    MaximumFileInfoByNameClass
+} FILE_INFO_BY_NAME_CLASS;
+
+#endif /* !defined(NTDDI_WIN10_NI) || !(NTDDI_VERSION >= NTDDI_WIN10_NI) */
+
+typedef BOOL (WINAPI *PGetFileInformationByName)(
+    PCWSTR, FILE_INFO_BY_NAME_CLASS, PVOID, ULONG);
+
+static INIT_ONCE fileInfoByNameInitOnce = INIT_ONCE_STATIC_INIT;
+static PGetFileInformationByName pGetFileInformationByName = NULL;
+
+static BOOL CALLBACK initFileInfoByName(PINIT_ONCE initOnce, PVOID param, PVOID *context) {
+    // API present mentioned in:
+    // https://github.com/MicrosoftDocs/sdk-api/blob/docs/sdk-api-src/content/winbase/nf-winbase-getfileinformationbyname.md.
+    HMODULE hMod = LoadLibraryW(L"api-ms-win-core-file-l2-1-4");
+    if (hMod != NULL) {
+        pGetFileInformationByName =
+            (PGetFileInformationByName)GetProcAddress(hMod, "GetFileInformationByName");
+    }
+    return TRUE;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_GetFileInformationByName0(JNIEnv* env,
+    jclass this, jlong pathAddress, jint infoClass, jlong infoAddress, jint infoSize)
+{
+    LPCWSTR lpFileName = jlong_to_ptr(pathAddress);
+    PVOID pInfo = jlong_to_ptr(infoAddress);
+
+    InitOnceExecuteOnce(&fileInfoByNameInitOnce, initFileInfoByName, NULL, NULL);
+
+    if (pGetFileInformationByName == NULL) {
+        throwWindowsException(env, ERROR_NOT_SUPPORTED);
+        return;
+    }
+
+    if (!pGetFileInformationByName(lpFileName, (FILE_INFO_BY_NAME_CLASS)infoClass,
+                                   pInfo, (ULONG)infoSize)) {
+        throwWindowsException(env, GetLastError());
+    }
+}
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_SetFileTime0(JNIEnv* env, jclass this,
