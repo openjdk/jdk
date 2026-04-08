@@ -115,8 +115,8 @@ public class SendReceiveMaxSize {
 
     private int BUF_LIMIT;
     private InetAddress HOST_ADDR;
-    private final static int IPV4_SNDBUF = 65507;
-    private final static int IPV6_SNDBUF = 65527;
+    private final static int IPV4_SNDBUF = IPSupport.getMaxUDPSendBufSizeIPv4();
+    private final static int IPV6_SNDBUF = IPSupport.getMaxUDPSendBufSizeIPv6();
     private final static Class<IOException> IOE = IOException.class;
     private final static Random random = RandomFactory.getRandom();
 
