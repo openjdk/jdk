@@ -138,13 +138,13 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 #if TASKQUEUE_STATS
 
 void PSPromotionManager::print_and_reset_taskqueue_stats() {
-  stack_array_depth()->print_and_reset_taskqueue_stats("Oop Queue");
+  stack_array_depth()->print_and_reset_taskqueue_stats("Young GC");
 
   auto get_pa_stats = [&](uint i) {
     return manager_array(i)->partial_array_task_stats();
   };
   PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
-                                 "Partial Array Task Stats");
+                                 "Young GC Partial Array");
   for (uint i = 0; i < ParallelGCThreads; ++i) {
     get_pa_stats(i)->reset();
   }

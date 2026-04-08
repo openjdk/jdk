@@ -958,8 +958,6 @@ public:
 
   static bool is_intel_darkmont();
 
-  static int avx3_threshold();
-
   static bool is_intel_tsc_synched_at_init();
 
   static void insert_features_names(VM_Version::VM_Features features, stringStream& ss);
