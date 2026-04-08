@@ -1247,7 +1247,7 @@ class ZipFileSystem extends FileSystem {
 
     final byte[] getBytes(String name) {
         try {
-        return zc.getBytes(name);
+            return zc.getBytes(name);
         } catch (IllegalArgumentException e) {
             throw new InvalidPathException(name, "unmappable character in path name");
         }
