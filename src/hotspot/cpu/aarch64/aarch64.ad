@@ -1182,12 +1182,12 @@ class CallStubImpl {
  public:
   // Size of call trampoline stub.
   static uint size_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return MacroAssembler::max_trampoline_stub_size();
   }
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return 5; // metadata; call dest; trampoline address; trampoline destination; trampoline_owner_metadata
   }
 };
 

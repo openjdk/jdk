@@ -97,9 +97,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
+import java.util.Optional;
 import java.util.Random;
 
 import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -130,7 +132,7 @@ public class SendReceiveMaxSize {
     @BeforeAll
     public static void setUp() throws IOException {
         // skip test if the configuration is not operational
-        IPSupport.diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         HOST_ADDR = PREFER_LOOPBACK ? InetAddress.getLoopbackAddress() : InetAddress.getLocalHost();
         BUF_LIMIT = (HOST_ADDR instanceof Inet6Address) ? IPV6_SNDBUF : IPV4_SNDBUF;
         System.out.printf("Host address: %s, Buffer limit: %d%n", HOST_ADDR, BUF_LIMIT);

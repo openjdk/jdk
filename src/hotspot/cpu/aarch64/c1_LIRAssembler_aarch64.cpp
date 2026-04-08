@@ -42,6 +42,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -520,6 +521,10 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 #if INCLUDE_CDS
       if (AOTCodeCache::is_on_for_dump()) {
         address b = c->as_pointer();
+        if (b == (address)ThreadIdentifier::unsafe_offset()) {
+          __ lea(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
         if (AOTRuntimeConstants::contains(b)) {
           __ load_aotrc_address(dest->as_register_lo(), b);
           break;
