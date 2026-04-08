@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,78 +116,6 @@ public class VMSupport {
      * variables such as java.io.tmpdir.
      */
     public static native String getVMTemporaryDirectory();
-
-    /**
-     * Decodes the exception described by {@code format} and {@code buffer} and throws it.
-     *
-     * @param format specifies how to interpret {@code buffer}:
-     *            <pre>
-     *             0: {@code buffer} was created by {@link #encodeThrowable}
-     *             1: native memory for {@code buffer} could not be allocated
-     *             2: an OutOfMemoryError was thrown while encoding the exception
-     *             3: some other problem occured while encoding the exception. If {@code buffer != 0},
-     *                it contains a {@code struct { u4 len; char[len] desc}} where {@code desc} describes the problem
-     *             4: an OutOfMemoryError thrown from within VM code on a
-     *                thread that cannot call Java (OOME has no stack trace)
-     *            </pre>
-     * @param buffer encoded info about the exception to throw (depends on {@code format})
-     * @param inJVMHeap [@code true} if executing in the JVM heap, {@code false} otherwise
-     * @param debug specifies whether debug stack traces should be enabled in case of translation failure
-     */
-    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap, boolean debug) throws Throwable {
-        if (format != 0) {
-            if (format == 4) {
-                throw new TranslatedException(new OutOfMemoryError("in VM code and current thread cannot call Java"));
-            }
-            String context = String.format("while encoding an exception to translate it %s the JVM heap",
-                    inJVMHeap ? "to" : "from");
-            if (format == 1) {
-                throw new InternalError("native buffer could not be allocated " + context);
-            }
-            if (format == 2) {
-                throw new OutOfMemoryError(context);
-            }
-            if (format == 3 && buffer != 0L) {
-                byte[] bytes = bufferToBytes(buffer);
-                throw new InternalError("unexpected problem occurred " + context + ": " + new String(bytes, StandardCharsets.UTF_8));
-            }
-            throw new InternalError("unexpected problem occurred " + context);
-        }
-        throw TranslatedException.decodeThrowable(bufferToBytes(buffer), debug);
-    }
-
-    private static byte[] bufferToBytes(long buffer) {
-        if (buffer == 0) {
-            return null;
-        }
-        int len = U.getInt(buffer);
-        byte[] bytes = new byte[len];
-        U.copyMemory(null, buffer + 4, bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
-        return bytes;
-    }
-
-    /**
-     * If {@code bufferSize} is large enough, encodes {@code throwable} into a byte array and writes
-     * it to {@code buffer}. The encoding in {@code buffer} can be decoded by
-     * {@link #decodeAndThrowThrowable}.
-     *
-     * @param throwable the exception to encode
-     * @param buffer a native byte buffer
-     * @param bufferSize the size of {@code buffer} in bytes
-     * @return the number of bytes written into {@code buffer} if {@code bufferSize} is large
-     *         enough, otherwise {@code -N} where {@code N} is the value {@code bufferSize} needs to
-     *         be to fit the encoding
-     */
-    public static int encodeThrowable(Throwable throwable, long buffer, int bufferSize) {
-        byte[] encoding = TranslatedException.encodeThrowable(throwable);
-        int requiredSize = 4 + encoding.length;
-        if (bufferSize < requiredSize) {
-            return -requiredSize;
-        }
-        U.putInt(buffer, encoding.length);
-        U.copyMemory(encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, encoding.length);
-        return requiredSize;
-    }
 
     /**
      * Parses {@code rawAnnotations} into a list of {@link Annotation}s and then
