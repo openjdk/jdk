@@ -536,10 +536,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -553,6 +550,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1510,25 +1513,16 @@ void Arguments::set_heap_size() {
   // Check if the user has configured any limit on the amount of RAM we may use.
   bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(MaxRAM);
+                       !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    if (CompilerConfig::should_set_client_emulation_mode_flags()) {
-      // Limit the available memory if client emulation mode is enabled.
-      FLAG_SET_ERGO(MaxRAM, 1ULL*G);
-    } else {
-      // Use the available physical memory on the system.
-      FLAG_SET_ERGO(MaxRAM, os::physical_memory());
-    }
-  }
+  const size_t avail_mem = os::physical_memory();
 
   // If the maximum heap size has not been set with -Xmx, then set it as
   // fraction of the size of physical memory, respecting the maximum and
   // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)MaxRAM * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)MaxRAM * MaxRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
 
     const size_t reasonable_min = clamp_by_size_t_max(min_memory);
     size_t reasonable_max = clamp_by_size_t_max(max_memory);
@@ -1560,7 +1554,7 @@ void Arguments::set_heap_size() {
     }
 
 #ifdef _LP64
-    if (UseCompressedOops || UseCompressedClassPointers) {
+    if (UseCompressedOops) {
       // HeapBaseMinAddress can be greater than default but not less than.
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
@@ -1573,9 +1567,7 @@ void Arguments::set_heap_size() {
           FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
-    }
 
-    if (UseCompressedOops) {
       uintptr_t heap_end = HeapBaseMinAddress + MaxHeapSize;
       uintptr_t max_coop_heap = max_heap_for_compressed_oops();
 
@@ -1615,7 +1607,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)MaxRAM * InitialRAMPercentage) / 100);
+      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
@@ -3788,10 +3780,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
-  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
-    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
-    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-  }
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
     // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
@@ -3804,9 +3792,6 @@ void Arguments::set_compact_headers_flags() {
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
-  }
-  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
 #endif
 }
@@ -3823,9 +3808,7 @@ jint Arguments::apply_ergo() {
 
   set_compact_headers_flags();
 
-  if (UseCompressedClassPointers) {
-    CompressedKlassPointers::pre_initialize();
-  }
+  CompressedKlassPointers::pre_initialize();
 
   CDSConfig::ergo_initialize();
 
@@ -3868,10 +3851,6 @@ jint Arguments::apply_ergo() {
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
     warning("PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output");
     DebugNonSafepoints = true;
-  }
-
-  if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
-    warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
   }
 
   // Treat the odd case where local verification is enabled but remote

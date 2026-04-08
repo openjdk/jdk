@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code float} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class FloatVector extends AbstractVector<Float> {
+public abstract sealed class FloatVector extends AbstractVector<Float>
+         permits FloatVector64, FloatVector128, FloatVector256, FloatVector512, FloatVectorMax {
 
     FloatVector(float[] vec) {
         super(vec);
@@ -724,7 +725,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     FloatVector unaryMathOp(VectorOperators.Unary op) {
-        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), FloatVector::unaryOperations,
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), vspecies(), FloatVector::unaryOperations,
                                              this);
     }
 
@@ -851,7 +852,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     FloatVector binaryMathOp(VectorOperators.Binary op, FloatVector that) {
-        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), FloatVector::binaryOperations,
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), vspecies(), FloatVector::binaryOperations,
                                               this, that);
     }
 

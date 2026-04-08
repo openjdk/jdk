@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ByteVector64 extends ByteVector {
     static final ByteSpecies VSPECIES =
         (ByteSpecies) ByteVector.SPECIES_64;
@@ -53,6 +53,8 @@ final class ByteVector64 extends ByteVector {
     static final int VSIZE = VSPECIES.vectorBitSize();
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
+
+    static final Class<Byte> CTYPE = byte.class; // carrier type used by the JVM
 
     static final Class<Byte> ETYPE = byte.class; // used by the JVM
 
@@ -91,6 +93,9 @@ final class ByteVector64 extends ByteVector {
     @ForceInline
     @Override
     public final Class<Byte> elementType() { return byte.class; }
+
+    @ForceInline
+    final Class<Byte> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -366,7 +371,7 @@ final class ByteVector64 extends ByteVector {
     @Override
     @ForceInline
     public final ByteShuffle64 toShuffle() {
-        return (ByteShuffle64) toShuffle(vspecies(), false);
+        return (ByteShuffle64) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -577,10 +582,11 @@ final class ByteVector64 extends ByteVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ByteMask64 extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         ByteMask64(boolean[] bits) {
             this(bits, 0);
@@ -624,7 +630,7 @@ final class ByteVector64 extends ByteVector {
 
         @Override
         ByteMask64 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -634,7 +640,7 @@ final class ByteVector64 extends ByteVector {
 
         @Override
         ByteMask64 bOp(VectorMask<Byte> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ByteMask64)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -784,16 +790,16 @@ final class ByteVector64 extends ByteVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ByteMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ByteMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ByteMask64)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ByteMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ByteMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ByteMask64)m).getBits()));
         }
 
         @ForceInline
@@ -801,7 +807,7 @@ final class ByteVector64 extends ByteVector {
         static ByteMask64 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ByteMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ByteMask64  TRUE_MASK = new ByteMask64(true);
         private static final ByteMask64 FALSE_MASK = new ByteMask64(false);
@@ -809,10 +815,11 @@ final class ByteVector64 extends ByteVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ByteShuffle64 extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         ByteShuffle64(byte[] indices) {
             super(indices);
@@ -860,7 +867,7 @@ final class ByteVector64 extends ByteVector {
 
         @Override
         ByteVector64 toBitsVector0() {
-            return ((ByteVector64) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ByteVector64) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -911,7 +918,7 @@ final class ByteVector64 extends ByteVector {
         @ForceInline
         public final ByteMask64 laneIsValid() {
             return (ByteMask64) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -919,7 +926,7 @@ final class ByteVector64 extends ByteVector {
         public final ByteShuffle64 rearrange(VectorShuffle<Byte> shuffle) {
             ByteShuffle64 concreteShuffle = (ByteShuffle64) shuffle;
             return (ByteShuffle64) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -932,7 +939,7 @@ final class ByteVector64 extends ByteVector {
                 v = (ByteVector64) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ByteShuffle64) v.toShuffle(vspecies(), false);
+            return (ByteShuffle64) v.toShuffle(VSPECIES, false);
         }
 
         private static byte[] prepare(int[] indices, int offset) {

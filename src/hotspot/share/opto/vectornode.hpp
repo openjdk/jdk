@@ -1798,13 +1798,23 @@ class VectorStoreMaskNode : public VectorNode {
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
 };
 
-// Lane-wise type cast a vector mask to the given vector type. The vector length
-// of the input and output must be the same.
+// Lane-wise type cast a vector mask to the given vector type.
+// The vector length of the input and output must be the same.
+// We can only cast between:
+// - BVectMask and BVectMask (0x00/0x01)
+// - NVectMask and NVectMask (0x0..0/0xF..F of different bit lengths)
+// - PVectMask and PVectMask (specialized predicate/mask registers)
+// Casting N/PVectMask <-> BVectMask needs to be done by
+// VectorStoreMask and VectorLoadMask.
 class VectorMaskCastNode : public VectorNode {
  public:
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
+    assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
+           "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
+    assert((in_vt->isa_vectmask() == nullptr) == (vt->isa_vectmask() == nullptr),
+           "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
@@ -1846,6 +1856,7 @@ class VectorCastNode : public VectorNode {
   static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
+  static bool is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size);
 
   virtual Node* Identity(PhaseGVN* phase);
 };

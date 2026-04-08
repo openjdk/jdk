@@ -84,7 +84,6 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -233,14 +232,10 @@ bool ParallelCompactData::initialize(MemRegion reserved_heap)
 
   assert(region_align_down(_heap_start) == _heap_start,
          "region start not aligned");
+  assert(is_aligned(heap_size, RegionSize), "precondition");
 
-  return initialize_region_data(heap_size);
-}
-
-PSVirtualSpace*
-ParallelCompactData::create_vspace(size_t count, size_t element_size)
-{
-  const size_t raw_bytes = count * element_size;
+  const size_t count = heap_size >> Log2RegionSize;
+  const size_t raw_bytes = count * sizeof(RegionData);
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
   const size_t rs_align = MAX2(page_sz, granularity);
@@ -254,7 +249,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory.
-    return nullptr;
+    return false;
   }
 
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
@@ -262,34 +257,23 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   MemTracker::record_virtual_memory_tag(rs, mtGC);
 
-  PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
+  PSVirtualSpace* region_vspace = new PSVirtualSpace(rs, page_sz);
 
-  if (!vspace->expand_by(_reserved_byte_size)) {
+  if (!region_vspace->expand_by(_reserved_byte_size)) {
     // Failed to commit memory.
 
-    delete vspace;
+    delete region_vspace;
 
     // Release memory reserved in the space.
     MemoryReserver::release(rs);
 
-    return nullptr;
+    return false;
   }
 
-  return vspace;
-}
-
-bool ParallelCompactData::initialize_region_data(size_t heap_size)
-{
-  assert(is_aligned(heap_size, RegionSize), "precondition");
-
-  const size_t count = heap_size >> Log2RegionSize;
-  _region_vspace = create_vspace(count, sizeof(RegionData));
-  if (_region_vspace != nullptr) {
-    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
-    _region_count = count;
-    return true;
-  }
-  return false;
+  _region_vspace = region_vspace;
+  _region_data = (RegionData*)_region_vspace->reserved_low_addr();
+  _region_count = count;
+  return true;
 }
 
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {

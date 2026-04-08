@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ShortVector64 extends ShortVector {
     static final ShortSpecies VSPECIES =
         (ShortSpecies) ShortVector.SPECIES_64;
@@ -53,6 +53,8 @@ final class ShortVector64 extends ShortVector {
     static final int VSIZE = VSPECIES.vectorBitSize();
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
+
+    static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
 
     static final Class<Short> ETYPE = short.class; // used by the JVM
 
@@ -91,6 +93,9 @@ final class ShortVector64 extends ShortVector {
     @ForceInline
     @Override
     public final Class<Short> elementType() { return short.class; }
+
+    @ForceInline
+    final Class<Short> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -366,7 +371,7 @@ final class ShortVector64 extends ShortVector {
     @Override
     @ForceInline
     public final ShortShuffle64 toShuffle() {
-        return (ShortShuffle64) toShuffle(vspecies(), false);
+        return (ShortShuffle64) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -569,10 +574,11 @@ final class ShortVector64 extends ShortVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ShortMask64 extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         ShortMask64(boolean[] bits) {
             this(bits, 0);
@@ -616,7 +622,7 @@ final class ShortVector64 extends ShortVector {
 
         @Override
         ShortMask64 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -626,7 +632,7 @@ final class ShortVector64 extends ShortVector {
 
         @Override
         ShortMask64 bOp(VectorMask<Short> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ShortMask64)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -776,16 +782,16 @@ final class ShortVector64 extends ShortVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ShortMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ShortMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ShortMask64)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ShortMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ShortMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ShortMask64)m).getBits()));
         }
 
         @ForceInline
@@ -793,7 +799,7 @@ final class ShortVector64 extends ShortVector {
         static ShortMask64 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ShortMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ShortMask64  TRUE_MASK = new ShortMask64(true);
         private static final ShortMask64 FALSE_MASK = new ShortMask64(false);
@@ -801,10 +807,11 @@ final class ShortVector64 extends ShortVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ShortShuffle64 extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         ShortShuffle64(short[] indices) {
             super(indices);
@@ -852,7 +859,7 @@ final class ShortVector64 extends ShortVector {
 
         @Override
         ShortVector64 toBitsVector0() {
-            return ((ShortVector64) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ShortVector64) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -891,7 +898,7 @@ final class ShortVector64 extends ShortVector {
         @ForceInline
         public final ShortMask64 laneIsValid() {
             return (ShortMask64) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -899,7 +906,7 @@ final class ShortVector64 extends ShortVector {
         public final ShortShuffle64 rearrange(VectorShuffle<Short> shuffle) {
             ShortShuffle64 concreteShuffle = (ShortShuffle64) shuffle;
             return (ShortShuffle64) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -912,7 +919,7 @@ final class ShortVector64 extends ShortVector {
                 v = (ShortVector64) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ShortShuffle64) v.toShuffle(vspecies(), false);
+            return (ShortShuffle64) v.toShuffle(VSPECIES, false);
         }
 
         private static short[] prepare(int[] indices, int offset) {

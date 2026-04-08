@@ -74,6 +74,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
 import org.junit.jupiter.api.AfterAll;
@@ -81,7 +82,6 @@ import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -219,7 +219,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         int i = 0;
         for (boolean sameClient : List.of(false, true)) {
             for (URI uri : uris()) {
-                HttpClient.Version version = null;
+                final HttpClient.Version version;
                 if (uri.equals(http1URI) || uri.equals(https1URI)) version = HttpClient.Version.HTTP_1_1;
                 else if (uri.equals(http2URI) || uri.equals(https2URI)) version = HttpClient.Version.HTTP_2;
                 else if (uri.equals(http3URI)) version = HTTP_3;
@@ -295,7 +295,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     static List<Long> lengths(long... lengths) {
         return LongStream.of(lengths)
-                .mapToObj(Long::valueOf)
+                .boxed()
                 .collect(Collectors.toList());
     }
 
@@ -446,7 +446,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
         @Override
         public void onComplete() {
-            resultCF.complete(items.stream().collect(Collectors.toUnmodifiableList()));
+            resultCF.complete(items.stream().toList());
         }
 
         public ByteBuffer take() {
@@ -552,7 +552,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         subscriber.subscriptionCF.thenAccept(s -> s.request(Long.MAX_VALUE));
         if (errorPublisher.hasErrors()) {
             CompletionException ce = Assertions.assertThrows(CompletionException.class,
-                    () -> subscriber.resultCF.join());
+                    subscriber.resultCF::join);
             out.println(description + ": got expected " + ce);
             assertEquals(Exception.class, ce.getCause().getClass());
             assertEquals(result, stringFromBytes(subscriber.items.stream()) + "<error>");
@@ -600,7 +600,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 description.replace("null", "length(-1)"));
     }
 
-    private static final Throwable completionCause(CompletionException x) {
+    private static Throwable completionCause(CompletionException x) {
         while (x.getCause() instanceof CompletionException) {
             x = (CompletionException)x.getCause();
         }
@@ -618,7 +618,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         publisher.subscribe(subscriber);
         Subscription subscription = subscriber.subscriptionCF.join();
         subscription.request(n);
-        CompletionException expected = Assertions.assertThrows(CE, () -> subscriber.resultCF.join());
+        CompletionException expected = Assertions.assertThrows(CE, subscriber.resultCF::join);
         Throwable cause = completionCause(expected);
         if (cause instanceof IllegalArgumentException) {
             System.out.printf("Got expected IAE for %d: %s%n", n, cause);
@@ -655,7 +655,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         assertTrue(requestSubscriber1.resultCF().isDone());
         String result1 = stringFromBytes(list1.stream());
         assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", result1);
-        System.out.println("Got expected sentence with one request: \"%s\"".formatted(result1));
+        System.out.printf("Got expected sentence with one request: \"%s\"%n", result1);
 
         // Test that we can split our requests call any which way we want
         // (whether in the 'middle of a publisher' or at the boundaries.
@@ -824,7 +824,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                         .toArray(HttpRequest.BodyPublisher[]::new)
                 );
 
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        HttpRequest request = newRequestBuilder(uri)
                 .version(version)
                 .POST(publisher)
                 .build();
@@ -835,11 +835,19 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             int expectedResponse =  RESPONSE_CODE;
             if (response.statusCode() != expectedResponse)
-                throw new RuntimeException("wrong response code " + Integer.toString(response.statusCode()));
+                throw new RuntimeException("wrong response code " + response.statusCode());
             assertEquals(BODIES.stream().collect(Collectors.joining()), response.body());
         }
         if (!sameClient) client.close();
         System.out.println("test: DONE");
+    }
+
+    private static HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getPath().contains("/http3/")) {
+            builder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
     }
 
     private static URI buildURI(String scheme, String path, int port) {
@@ -882,11 +890,17 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         http3TestServer.start();
     }
 
+    private static void close(AutoCloseable closeable) throws Exception {
+        if (closeable == null) return;
+        out.println("Closing shared client " + closeable);
+        closeable.close();
+    }
+
     @AfterAll
     public static void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
-        sharedClient.close();
+        close(sharedClient);
         sharedClient = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
