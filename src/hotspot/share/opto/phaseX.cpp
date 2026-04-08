@@ -2244,7 +2244,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
           for (uint j = 1; j < n->req(); j++) {
             Node* in = n->in(j);
             if (in != nullptr && !in->is_Phi() && wq.member(in)) {
-              if (n->in(0)->is_top() || n->in(0)->in(j)->is_top()) {
+              if (n->in(0)->is_top() || n->in(0)->in(j) == nullptr || n->in(0)->in(j)->is_top()) {
                 continue;
               }
               if (r == nullptr) {
