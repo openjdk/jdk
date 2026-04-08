@@ -97,7 +97,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
-import java.util.Optional;
 import java.util.Random;
 
 import static java.net.StandardSocketOptions.SO_RCVBUF;
