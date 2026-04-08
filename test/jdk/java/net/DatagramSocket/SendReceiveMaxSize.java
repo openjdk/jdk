@@ -87,6 +87,7 @@
 
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.Platform;
+import jdk.test.lib.net.IPSupport;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
