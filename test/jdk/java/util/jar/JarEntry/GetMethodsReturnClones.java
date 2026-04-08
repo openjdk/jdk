@@ -69,10 +69,10 @@ class GetMethodsReturnClones {
     private static List<JarEntry> jarEntries;
 
     /*
-     * Creates a signed JAR file
+     * Creates a signed JAR file and initializes the "jarEntries"
      */
     @BeforeAll()
-    static void beforeAll() throws Exception {
+    static void setupJarEntries() throws Exception {
         Path unsigned = createJar();
         Path signed = signJar(unsigned);
         System.err.println("created signed JAR file at " + signed.toAbsolutePath());
