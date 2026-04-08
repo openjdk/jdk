@@ -1136,7 +1136,7 @@ void AsmRemarks::clear() {
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
   const char* prefix = " ;; ";
-  const char* remstr = _remarks->lookup(offset);
+  const char* remstr = (_remarks ? _remarks->lookup(offset) : nullptr);
   while (remstr != nullptr) {
     strm->bol();
     strm->print("%s", prefix);

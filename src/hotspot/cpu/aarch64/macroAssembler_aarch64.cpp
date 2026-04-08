@@ -3454,7 +3454,7 @@ void MacroAssembler::subw(Register Rd, Register Rn, RegisterOrConstant decrement
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mov(rheapbase, CompressedOops::base());
     } else {
       lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -5128,7 +5128,8 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
   if (CompressedKlassPointers::base() == nullptr) {
     cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
     return;
-  } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+  } else if (!AOTCodeCache::is_on_for_dump() &&
+             ((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
              && CompressedKlassPointers::shift() == 0) {
     // Only the bottom 32 bits matter
     cmpw(klass, tmp);
@@ -5371,7 +5372,7 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
     encode_klass_not_null_for_aot(dst, src);
     return;
   }
