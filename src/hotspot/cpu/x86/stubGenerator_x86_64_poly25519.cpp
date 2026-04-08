@@ -36,7 +36,7 @@ ATTRIBUTE_ALIGNED(64) constexpr uint64_t X25519_MASK51[] = {
 };
 static address x25519_mask51() {
   return (address)X25519_MASK51;
-} 
+}
 
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t CARRY_ADD[] = {
   0x0004000000000000ULL, 0x0004000000000000ULL,
@@ -46,7 +46,7 @@ ATTRIBUTE_ALIGNED(64) constexpr uint64_t CARRY_ADD[] = {
 };
 static address carry_add() {
   return (address)CARRY_ADD;
-} 
+}
 
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t SHIFT1R[] = {
   0x0000000000000001ULL, 0x0000000000000002ULL,
@@ -195,7 +195,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // We use Acc1 as the upper-limbs to complete the remaining accummulators
   // and we use Acc1L for the lower-limbs that will accumulate the reduction.
   // Move c0..c2 to Acc1L before Acc1 before zeroing respective positions.
-  __ evpermq(Acc1L, permL, permLow, Acc1, false, Assembler::AVX_512bit); 
+  __ evpermq(Acc1L, permL, permLow, Acc1, false, Assembler::AVX_512bit);
 
   // Row 3
   __ vpbroadcastq(B, Address(bLimbs, 24), Assembler::AVX_512bit);
@@ -217,7 +217,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
 
   // Move c3..c4 to Acc1L for accumulation in reduction
-  __ evpermq(Acc1L, permLH, permLowH, Acc1, true, Assembler::AVX_512bit); 
+  __ evpermq(Acc1L, permLH, permLowH, Acc1, true, Assembler::AVX_512bit);
 
   // Pseudo-Marsenne reduction
   // The term is only 5 bits, the limbs 51 bits, and the elements are 64 bits,

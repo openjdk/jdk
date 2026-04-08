@@ -494,9 +494,8 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister YTMP1, const Register rscratch);
 
   address generate_intpoly_montgomeryMult_P256();
-  address generate_intpoly_assign();
-
   address generate_intpoly_mult_25519();
+  address generate_intpoly_assign();
 
   // SHA3 stubs
   void generate_sha3_stubs();

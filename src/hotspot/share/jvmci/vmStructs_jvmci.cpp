@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,6 +394,7 @@
   static_field(StubRoutines,                _chacha20Block,                                   address)                               \
   static_field(StubRoutines,                _poly1305_processBlocks,                          address)                               \
   static_field(StubRoutines,                _intpoly_montgomeryMult_P256,                     address)                               \
+  static_field(StubRoutines,                _intpoly_mult_25519,                              address)                               \
   static_field(StubRoutines,                _intpoly_assign,                                  address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
