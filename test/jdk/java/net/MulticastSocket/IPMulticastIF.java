@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.net.IPSupport;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -36,6 +38,7 @@ import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.net.StandardSocketOptions.IP_MULTICAST_IF;
 import static java.util.stream.Collectors.toList;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -53,7 +56,10 @@ public class IPMulticastIF {
 
     @BeforeTest
     public void sanity() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkipException::new).ifPresent(x -> {
+            throw x;
+        });
         NetworkConfiguration.printSystemConfiguration(out);
     }
 
