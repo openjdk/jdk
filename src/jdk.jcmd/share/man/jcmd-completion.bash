@@ -33,7 +33,7 @@ if ! type complete >/dev/null 2>&1; then
   return 0 2>/dev/null || exit 0
 fi
 
-_jcmd__dedupe_words() {
+function _jcmd__dedupe_words() {
   awk '!seen[$0]++'
 }
 
@@ -48,7 +48,7 @@ function _jcmd__list_processes() {
 }
 
 # query the list of commands known by the target JVM
-_jcmd__list_commands_for_pid() {
+function _jcmd__list_commands_for_pid() {
   local -r jvm_identifier=$1 # can also be a main class name
 
   jcmd "${jvm_identifier}" help 2>/dev/null | awk '
@@ -59,7 +59,7 @@ _jcmd__list_commands_for_pid() {
 }
 
 
-_jcmd__complete_first_arg() {
+function _jcmd__complete_first_arg() {
   local -r cur=$1
 
   # include generic options a well
@@ -75,7 +75,7 @@ _jcmd__complete_first_arg() {
 }
 
 
-_jcmd__complete_command() {
+function _jcmd__complete_command() {
   local -r jvm_identifier=$1
   local -r cur=$2
 
@@ -93,7 +93,7 @@ _jcmd__complete_command() {
 }
 
 
-_jcmd__complete_help_command() {
+function _jcmd__complete_help_command() {
   local -r jvm_identifier=$1
   local -r cur=$2
 
@@ -110,7 +110,7 @@ _jcmd__complete_help_command() {
 }
 
 
-_jcmd_completion() {
+function _jcmd_completion() {
   COMPREPLY=()
 
   # latest argument, potentially incomplete
