@@ -27,6 +27,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.test.lib.NetworkConfiguration;
 import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static java.lang.String.format;

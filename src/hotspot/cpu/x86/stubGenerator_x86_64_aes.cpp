@@ -220,7 +220,7 @@ void StubGenerator::generate_aes_stubs() {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
       StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt_Parallel();
       StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt_Parallel();
-      if (VM_Version::supports_avx2()) {
+      if (VM_Version::supports_avx2() && VM_Version::supports_clmul()) {
           StubRoutines::_galoisCounterMode_AESCrypt = generate_avx2_galoisCounterMode_AESCrypt();
       }
     }
