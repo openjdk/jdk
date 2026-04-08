@@ -1098,6 +1098,7 @@ void VM_Version::get_processor_features() {
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
       UseAPX = false; // by default UseAPX is false
+      _features.clear_feature(CPU_APX_F);
     } else if (!UseAPX) {
       _features.clear_feature(CPU_APX_F);
     }
