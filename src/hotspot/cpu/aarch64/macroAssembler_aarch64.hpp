@@ -33,7 +33,6 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
-#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
