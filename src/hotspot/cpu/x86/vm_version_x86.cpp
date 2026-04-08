@@ -1097,7 +1097,7 @@ void VM_Version::get_processor_features() {
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
-      UseAPX = false; // by default UseAPX is false
+      FLAG_SET_DEFAULT(UseAPX, true); // by default UseAPX is false; enable if supported.
     } else if (!UseAPX) {
       _features.clear_feature(CPU_APX_F);
     }
