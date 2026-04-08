@@ -188,10 +188,6 @@ public class JVMOptionsUtils {
             option.addPrepend("-XX:+UseNUMA");
         }
 
-        if (name.contains("JVMCI")) {
-            option.addPrepend("-XX:+EnableJVMCI");
-        }
-
         switch (name) {
             case "MinHeapFreeRatio":
                 option.addPrepend("-XX:MaxHeapFreeRatio=100");
@@ -226,12 +222,6 @@ public class JVMOptionsUtils {
                 break;
             case "TLABWasteIncrement":
                 option.addPrepend("-XX:+UseParallelGC");
-                break;
-            case "BootstrapJVMCI":
-            case "PrintBootstrap":
-            case "JVMCIThreads":
-            case "JVMCIHostThreads":
-                option.addPrepend("-XX:+UseJVMCICompiler");
                 break;
             default:
                 /* Do nothing */
