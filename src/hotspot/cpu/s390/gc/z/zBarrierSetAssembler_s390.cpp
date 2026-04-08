@@ -49,6 +49,10 @@
 #include "opto/output.hpp"
 #endif // COMPILER2
 
+long load_fubar = 0;
+long load_slow_fubar = 0;
+long store_fubar = 0;
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -130,7 +134,6 @@ public:
 
 // Purpose: The address for the oop is stored in the src, load it in the dst register and check if it is good, if 
 // it is uncolor it else call the runtime
-// Runtime TODO: check where is this function getting called from and what are they storing in temp2
 void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    DecoratorSet decorators,
                                    BasicType type,
@@ -145,15 +148,13 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     return;
   }
 
+  breakpoint();
+
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
-  //Allocte scratch register
-  Register scratch = Z_tmp_1;
-  //if(temp1 == noreg) {
-    //scratch = Z_R1_scratch;
-  //}
-
-  //assert_different_registers(dst, scratch);
+  //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
+  __ z_ldgr(Z_F0, Z_R4);
+  Register scratch = Z_R4;
 
   Label done;
   Label uncolor;
@@ -162,29 +163,27 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // Fast Path
   //
 
+  __ load_const_optimized(scratch, (uintptr_t)&load_fubar);
+  __ z_agsi(0, scratch, 1);
+
   // Load adress
-   __ z_lgr(scratch, src.base());
+  __ z_lgr(scratch, src.base());
 
   // Load oop at address
-  __ z_lg(dst, Address(scratch, 0));
+  __ z_lg(dst, 0, scratch);
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
       (decorators & ON_PHANTOM_OOP_REF) != 0;
 
   // Test Address bad mask
-  Register scratch2 = temp1;
-  if (temp1 == noreg) {
-    scratch2 = Z_tmp_2;
-  }
-
   if (on_non_strong) {
-    __ z_lg(scratch2, mark_bad_mask_from_thread(Z_thread));
+    __ z_ng(dst, mark_bad_mask_from_thread(Z_thread));
   } else {
-    __ z_lg(scratch2, load_bad_mask_from_thread(Z_thread));
+    __ z_ng(dst, load_bad_mask_from_thread(Z_thread));
   }
 
-  __ z_ngr(scratch2, dst);
+  __ z_lg(dst, 0, scratch);
   __ branch_optimized(Assembler::bcondZero, uncolor);
 
   //
@@ -192,17 +191,19 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
 
   {
-
     // Purpose: save all the volatile registers except when dst is Z_R2 because we want dst/oop to be present
     // in the Z_R2.
 
     // Call VM
     ZRuntimeCallSpill rcs(masm, dst);
 
-    __ z_lgr_if_needed(Z_ARG1, dst);
+    __ lgr_if_needed(Z_ARG1, dst);
     __ z_lgr(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
+
+    __ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
+    __ z_agsi(0, Z_R3, 1);
   }
 
   // Slow-path has already uncolored
@@ -222,6 +223,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 
   __ bind(done);
+
+  __ z_lgdr(Z_R4, Z_F0);
 }
 
 // Purpose  we are checking if the address stored at ref_addr is good, bad or null.
@@ -389,7 +392,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                              temp2,
                              slow_path);
     __ bind(slow_path_continuation);
-    __ branch_optimzied(Assembler::bcondAlways, medium_path_continuation);
+    __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
   }
 }
 
@@ -406,6 +409,9 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Register temp2,
                                     Register temp3) {
   BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
+
+  __ load_const_optimized(temp1, (uintptr_t)&store_fubar);
+  __ z_agsi(0, temp1, 1);
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
