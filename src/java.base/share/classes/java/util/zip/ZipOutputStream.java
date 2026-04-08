@@ -114,10 +114,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     public static final int DEFLATED = ZipEntry.DEFLATED;
 
     /**
-     * Creates a new ZIP output stream.
-     *
-     * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used
-     * to encode the entry names and comments.
+     * Creates a new ZIP output stream using the UTF-8
+     * {@link Charset charset} to encode entry names and comments.
      *
      * @param out the actual output stream
      */
@@ -126,12 +124,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Creates a new ZIP output stream.
+     * Creates a new ZIP output stream using the specified
+     * {@link Charset charset} to encode entry names and comments
      *
      * @param out the actual output stream
      *
      * @param charset the {@linkplain java.nio.charset.Charset charset}
-     *                to be used to encode the entry names and comments
+     *                to be used to encode entry names and comments
      *
      * @since 1.7
      */
