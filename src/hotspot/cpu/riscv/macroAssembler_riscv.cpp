@@ -5540,13 +5540,6 @@ void MacroAssembler::decrementw(const Address dst, int32_t value, Register tmp1,
   sw(tmp1, adr);
 }
 
-void MacroAssembler::cmpptr(Register src1, const Address &src2, Label& equal, Register tmp) {
-  assert_different_registers(src1, tmp);
-  assert(src2.getMode() == Address::literal, "must be applied to a literal address");
-  ld(tmp, src2);
-  beq(src1, tmp, equal);
-}
-
 void MacroAssembler::load_method_holder_cld(Register result, Register method) {
   load_method_holder(result, method);
   ld(result, Address(result, InstanceKlass::class_loader_data_offset()));
