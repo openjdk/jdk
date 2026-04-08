@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -48,6 +49,9 @@ public enum JPackageStringBundle {
         } catch (ClassNotFoundException|NoSuchMethodException ex) {
             throw toUnchecked(ex);
         }
+        formatter = (String key, Object[] args) -> {
+            return new FormattedMessage(key, args).value();
+        };
     }
 
     /**
@@ -61,12 +65,8 @@ public enum JPackageStringBundle {
         }
     }
 
-    private String getFormattedString(String key, Object[] args) {
-        return new FormattedMessage(key, args).value();
-    }
-
     public CannedFormattedString cannedFormattedString(String key, Object ... args) {
-        return new CannedFormattedString(this::getFormattedString, key, args);
+        return new CannedFormattedString(formatter, key, List.of(args));
     }
 
     public Pattern cannedFormattedStringAsPattern(String key, Function<Object, Pattern> formatArgMapper, Object ... args) {
@@ -76,6 +76,10 @@ public enum JPackageStringBundle {
         }).orElseGet(() -> {
             return Pattern.compile(Pattern.quote(fm.value()));
         });
+    }
+
+    public Pattern cannedFormattedStringAsPattern(String key, Object ... args) {
+        return cannedFormattedStringAsPattern(key, MATCH_ANY, args);
     }
 
     static Pattern toPattern(MessageFormat mf, Function<Object, Pattern> formatArgMapper, Object ... args) {
@@ -153,4 +157,15 @@ public enum JPackageStringBundle {
 
     private final Class<?> i18nClass;
     private final Method i18nClass_getString;
+    private final BiFunction<String, Object[], String> formatter;
+
+    private static final Function<Object, Pattern> MATCH_ANY = new Function<>() {
+
+        @Override
+        public Pattern apply(Object v) {
+            return PATTERN;
+        }
+
+        private static final Pattern PATTERN = Pattern.compile(".*");
+    };
 }
