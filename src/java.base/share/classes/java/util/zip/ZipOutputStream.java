@@ -125,7 +125,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
     /**
      * Creates a new ZIP output stream using the specified
-     * {@link Charset charset} to encode entry names and comments
+     * {@link Charset charset} to encode entry names and comments.
      *
      * @param out the actual output stream
      *
