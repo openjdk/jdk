@@ -43,6 +43,10 @@ import sun.nio.cs.UTF_8;
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ * <p> A {@code ZipOutputStream} uses a {@linkplain Charset} to encode entry names,
+ * entry comments and ZIP file comments. A stream created without specifying
+ * a {@code Charset} uses UTF-8.
+ *
  * @author      David Connelly
  * @since 1.1
  */
