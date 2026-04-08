@@ -28,7 +28,7 @@
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-
+#include "gc/shared/allocTracer.hpp"
 
 void ShenandoahController::update_gc_id() {
   _gc_id.add_then_fetch((size_t)1);
@@ -46,8 +46,10 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->cancel_gc(cause)) {
-    log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
+    size_t req_byte = req.size() * HeapWordSize;
+    log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
     request_gc(cause);
+    AllocTracer::send_allocation_requiring_gc_event(req_byte, get_gc_id());
   }
 
   if (block) {
