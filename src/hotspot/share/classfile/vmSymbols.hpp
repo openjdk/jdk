@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_VMSYMBOLS_HPP
 
 #include "classfile/vmIntrinsics.hpp"
-#include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/enumIterator.hpp"
@@ -355,9 +354,6 @@ class SerializeClosure;
   template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   template(jdk_internal_foreign_NativeMemorySegmentImpl,             "jdk/internal/foreign/NativeMemorySegmentImpl") \
-                                                                                                  \
-  /* Support for JVMCI */                                                                         \
-  JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   template(java_lang_ClassFrameInfo,                  "java/lang/ClassFrameInfo")                 \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
@@ -778,7 +774,6 @@ ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
   static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);    // exclusive lower limit
   static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive lower limit
