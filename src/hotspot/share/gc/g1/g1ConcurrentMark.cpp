@@ -1134,7 +1134,8 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   //
   // Must not use G1CMRootMemRegions::work_completed() here because we need to get a
   // consistent view of the value containing the number of remaining regions across the
-  // usages below.
+  // usages below. The safepoint/gc may already be running and modifying it
+  // while this code is still executing.
   uint num_remaining = root_regions()->num_remaining_regions();
   bool do_scan = num_remaining > 0 && !has_root_region_scan_aborted();
   if (do_scan) {
