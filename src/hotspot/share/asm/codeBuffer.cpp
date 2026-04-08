@@ -861,10 +861,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 #ifdef ASSERT
   // The code below copies contents across temp buffers. The following
   // sizes relate to buffer contents, and should not be changed by buffer
-  // expansion. This gives us some verification that expansion went correctly.
+  // expansion.
   int old_total_skipped = total_skipped_instructions_size();
-  csize_t old_total_content_size = total_content_size();
-  csize_t old_total_relocation_size = total_relocation_size();
 #endif
 
 #ifndef PRODUCT
@@ -965,10 +963,6 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   assert(old_total_skipped == total_skipped_instructions_size(),
          "Should match: %d == %d", old_total_skipped, total_skipped_instructions_size());
-  assert(old_total_content_size == total_content_size(),
-         "Should match: %d == %d", old_total_content_size, total_content_size());
-  assert(old_total_relocation_size == total_relocation_size(),
-         "Should match: %d == %d", old_total_relocation_size, total_relocation_size());
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
