@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -101,7 +102,7 @@ class GetMethodsReturnClones {
         for (JarEntry je : jarEntries) {
             Certificate[] certs = je.getCertificates();
             System.err.println("Certificates for " + je.getName() + " " + Arrays.toString(certs));
-            if (isSignatureFileEntry(je)) {
+            if (isSignatureRelated(je)) {
                 // we don't expect this entry to be signed
                 assertNull(certs, "JarEntry.getCertificates() returned non-null for " + je.getName());
                 continue;
@@ -113,7 +114,7 @@ class GetMethodsReturnClones {
             certs = je.getCertificates(); // now get the certs again
             assertNotNull(certs, "JarEntry.getCertificates() returned null for " + je.getName());
             // verify that the newly returned array doesn't have the overwritten value
-            assertNotNull(certs[0], "Internal certiticates array was modified");
+            assertNotNull(certs[0], "Internal certificates array was modified");
         }
     }
 
@@ -127,7 +128,7 @@ class GetMethodsReturnClones {
         for (JarEntry je : jarEntries) {
             CodeSigner[] signers = je.getCodeSigners();
             System.err.println("CodeSigners for " + je.getName() + " " + Arrays.toString(signers));
-            if (isSignatureFileEntry(je)) {
+            if (isSignatureRelated(je)) {
                 // we don't expect this entry to be signed
                 assertNull(signers, "JarEntry.getCodeSigners() returned non-null for " + je.getName());
                 continue;
@@ -147,7 +148,7 @@ class GetMethodsReturnClones {
         final Path unsigned = Path.of("unsigned.jar");
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(unsigned))) {
             out.putNextEntry(new JarEntry(ENTRY_NAME));
-            out.write(new byte[]{(byte) 0XCA, (byte) 0XFE, (byte) 0XBA, (byte) 0XBE});
+            out.write("hello world".getBytes(US_ASCII));
         }
         return unsigned;
     }
@@ -174,7 +175,7 @@ class GetMethodsReturnClones {
         return new KeyStore.PrivateKeyEntry(gen.getPrivateKey(), new Certificate[] {cert});
     }
 
-    private static boolean isSignatureFileEntry(final JarEntry entry) {
+    private static boolean isSignatureRelated(final JarEntry entry) {
         final String entryName = entry.getName();
         return entryName.equals("META-INF/" + SIGNER_NAME + ".SF")
                 || entryName.equals("META-INF/" + SIGNER_NAME + ".RSA");
