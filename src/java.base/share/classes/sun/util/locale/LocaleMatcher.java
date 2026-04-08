@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Locale.*;
-import static java.util.Locale.FilteringMode.*;
-import static java.util.Locale.LanguageRange.*;
+import java.util.Locale.FilteringMode;
+import java.util.Locale.LanguageRange;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Objects;
+
+import static java.util.Locale.FilteringMode.AUTOSELECT_FILTERING;
+import static java.util.Locale.FilteringMode.EXTENDED_FILTERING;
+import static java.util.Locale.FilteringMode.MAP_EXTENDED_RANGES;
+import static java.util.Locale.FilteringMode.REJECT_EXTENDED_RANGES;
+import static java.util.Locale.LanguageRange.MAX_WEIGHT;
+import static java.util.Locale.LanguageRange.MIN_WEIGHT;
 
 /**
  * Implementation for BCP47 Locale matching
@@ -47,6 +52,8 @@ public final class LocaleMatcher {
                                       Collection<Locale> locales,
                                       FilteringMode mode) {
         if (priorityList.isEmpty() || locales.isEmpty()) {
+            requireNonNullElements(priorityList);
+            requireNonNullElements(locales);
             return new ArrayList<>(); // need to return a empty mutable List
         }
 
@@ -72,6 +79,8 @@ public final class LocaleMatcher {
                                           Collection<String> tags,
                                           FilteringMode mode) {
         if (priorityList.isEmpty() || tags.isEmpty()) {
+            requireNonNullElements(priorityList);
+            requireNonNullElements(tags);
             return new ArrayList<>(); // need to return a empty mutable List
         }
 
@@ -311,6 +320,8 @@ public final class LocaleMatcher {
     public static Locale lookup(List<LanguageRange> priorityList,
                                 Collection<Locale> locales) {
         if (priorityList.isEmpty() || locales.isEmpty()) {
+            requireNonNullElements(priorityList);
+            requireNonNullElements(locales);
             return null;
         }
 
@@ -333,6 +344,8 @@ public final class LocaleMatcher {
     public static String lookupTag(List<LanguageRange> priorityList,
                                    Collection<String> tags) {
         if (priorityList.isEmpty() || tags.isEmpty()) {
+            requireNonNullElements(priorityList);
+            requireNonNullElements(tags);
             return null;
         }
 
@@ -664,6 +677,12 @@ public final class LocaleMatcher {
         }
 
         return list;
+    }
+
+    private static void requireNonNullElements(Collection<?> vals) {
+        for (var val : vals) {
+            Objects.requireNonNull(val);
+        }
     }
 
     private LocaleMatcher() {}
