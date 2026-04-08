@@ -242,7 +242,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   GrowableArray<int>* vthread_pending_deopts() {
     if (_vthread_pending_deopts == nullptr) {
       _vthread_pending_deopts = new (mtServiceability) GrowableArray<int> (2, mtServiceability);
-      assert(_vthread_pending_deopts != nullptr, "sanity check");
     }
     return _vthread_pending_deopts;
   }
