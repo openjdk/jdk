@@ -40,9 +40,8 @@
 #include "utilities/align.hpp"
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
-// The printer itself makes no assumption about the longevity and validity of its data.
-// It updates fields in the BytecodeTracerData, and it is up to the caller to ensure
-// that the data is valid.
+// An instance of this class is both destructive and ephemeral, intended only to print
+// a single bytecode. All persistent data needs to be in BytecodeTracerData.
 
 class BytecodePrinter {
  private:
@@ -66,7 +65,10 @@ class BytecodePrinter {
 
   // Warning: may be junk or null.
   Method*   method() const              { return _data->current_method(); }
-  void      set_method(Method* current) { _data->set_current_method(current);}
+  void      set_method(Method* current) { _data->set_current_method(current); }
+
+  intptr_t* fp() const               { return _data->current_fp(); }
+  void      set_fp(intptr_t* current)     { _data->set_current_fp(current); }
 
   bool      is_wide() const     { return _data->is_wide(); }
   void      set_wide(bool wide) { _data->set_wide(wide); }
@@ -95,10 +97,12 @@ class BytecodePrinter {
 #ifndef PRODUCT
   // This method is called while executing the raw bytecodes, so none of
   // the adjustments that BytecodeStream performs applies.
-  void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+  void trace(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
-    bool method_changed = this->method() != method();
+    // Method changes can be another method getting called, or a self-recursive call.
+    bool method_changed = (this->method()) != method() || (this->fp() != fp);
     set_method(method());
+    set_fp(fp);
     assert(method->method_holder()->is_linked(),
            "this function must be called on methods that are already executing");
 
@@ -109,7 +113,6 @@ class BytecodePrinter {
       // _current_method pointer happens to have the same bits as
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
-      st->cr();
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
@@ -123,12 +126,11 @@ class BytecodePrinter {
     }
     set_raw_code(code);
     set_next_pc(is_wide() ? bcp+2 : bcp+1);
+    // Is this bytecode terminal -- does it change the method?
+    bool is_terminal = Bytecodes::is_terminal(code);
     // Trace each bytecode unless we're truncating the tracing output, then only print the first
-    // bytecode in every method as well as returns/throws that pop control flow
-    if (!TraceBytecodesTruncated || method_changed ||
-        code == Bytecodes::_athrow ||
-        code == Bytecodes::_return_register_finalizer ||
-        (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
+    // bytecode in every method as well as returns/throws that pop control flow.
+    if (!TraceBytecodesTruncated || method_changed || is_terminal) {
       int bci = (int)(bcp - method->code_base());
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       if (Verbose) {
@@ -143,8 +145,12 @@ class BytecodePrinter {
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     set_wide(code == Bytecodes::_wide);
-    // Finished using the code, recent to illega.
+    // Finished using the code, recent to illegal.
     set_raw_code(Bytecodes::_illegal);
+    // Invalidate the current method to force a signature change.
+    if (is_terminal) {
+      set_method(nullptr);
+    }
 
     if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
       TraceBytecodes = false;
@@ -155,7 +161,6 @@ class BytecodePrinter {
   // Used for Method::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
-    ShouldNotReachHere();
     set_method(method());
     // This may be called during linking after bytecodes are rewritten to point to the cpCache.
     ResourceMark rm;
@@ -185,14 +190,12 @@ class BytecodePrinter {
 };
 
 #ifndef PRODUCT
-void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+void BytecodeTracer::trace_interpreter(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     // Tracing data is thread-local and stored in the Java thread in debug builds.
     BytecodeTracerData* data = JavaThread::current()->bytecode_tracer_data();
     BytecodePrinter printer(data);
-    stringStream buf;
-    printer.trace(method, bcp, tos, tos2, &buf);
-    st->print("%s", buf.freeze());
+    printer.trace(method, fp, bcp, tos, tos2, st);
   }
 }
 #endif

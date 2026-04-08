@@ -42,7 +42,7 @@ class BytecodeClosure;
 // for each bytecode.
 class BytecodeTracer: AllStatic {
  public:
-  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st);)
+  NOT_PRODUCT(static void trace_interpreter(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st);)
   static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered = true);
 };
 
@@ -51,18 +51,22 @@ class BytecodeTracer: AllStatic {
 class BytecodeTracerData : public CHeapObj<mtTracing> {
  private:
   Method*         _current_method;
+  intptr_t*       _current_fp;
   bool            _is_wide;
   Bytecodes::Code _raw_code;
   address         _next_pc;
 
  public:
   BytecodeTracerData() : _current_method(nullptr),
+                         _current_fp(nullptr),
                          _is_wide(false),
                          _raw_code(Bytecodes::Code::_illegal),
                          _next_pc(nullptr) {}
 
   Method*         current_method() const                 { return _current_method; }
   void            set_current_method(Method* current)    { _current_method = current; }
+  intptr_t*       current_fp() const                     { return _current_fp; }
+  void            set_current_fp(intptr_t* current)      { _current_fp = current; }
   bool            is_wide() const                        { return _is_wide; }
   void            set_wide(bool wide)                    { _is_wide = wide; }
   Bytecodes::Code raw_code()                             { return _raw_code; }
