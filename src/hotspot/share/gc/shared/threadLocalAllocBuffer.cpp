@@ -82,7 +82,9 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
     const size_t tlab_capacity = Universe::heap()->tlab_capacity();
     const size_t tlab_used = Universe::heap()->tlab_used();
     if (tlab_used > 0.5 * tlab_capacity) {
-      const float alloc_frac = (float)allocated_since_last_gc / tlab_capacity;
+      // To avoid divide-by-zero
+      const size_t effective_tlab_capacity = MAX2(tlab_capacity, size_t(1));
+      const float alloc_frac = (float)allocated_since_last_gc / effective_tlab_capacity;
       _allocation_fraction.sample(MIN2(alloc_frac, 1.0f));
     }
     stats->update_current_thread_stats(_num_refills,
@@ -409,7 +411,9 @@ void ThreadLocalAllocStats::publish() {
     const size_t tlab_capacity = Universe::heap()->tlab_capacity();
     const size_t tlab_used = Universe::heap()->tlab_used();
     if (tlab_used > 0.5 * tlab_capacity) {
-      const float requested_size_fraction = (float)_total_requested_bytes / tlab_capacity;
+      // To avoid divide-by-zero
+      const size_t effective_tlab_capacity = MAX2(tlab_capacity, size_t(1));
+      const float requested_size_fraction = (float)_total_requested_bytes / effective_tlab_capacity;
       _total_requested_size_fraction.sample(MIN2(requested_size_fraction, 1.0f));
     }
   }
