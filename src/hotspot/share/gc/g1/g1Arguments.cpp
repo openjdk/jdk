@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -148,8 +148,9 @@ void G1Arguments::initialize_card_set_configuration() {
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(G1HeapRegion::LogCardsPerRegion);
+    const JVMTypedFlagLimit<uint>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1RemSetArrayOfCardsEntries))->cast<uint>();
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
+                                                    MIN2(G1RemSetArrayOfCardsEntriesBase << region_size_log_mb, limit->max())));
   }
 
   // Howl card set container globals.
@@ -209,6 +210,17 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(GCTimeRatio, 24);
   }
 
+  // Do not interfere with GC-Pressure driven heap resizing unless the user
+  // explicitly sets otherwise. G1 heap sizing should be free to grow or shrink
+  // the heap based on GC pressure, rather than being forced to satisfy
+  // MinHeapFreeRatio or MaxHeapFreeRatio defaults that the user did not set.
+  if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
+  }
+  if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
+  }
+
   // Below, we might need to calculate the pause time interval based on
   // the pause target. When we do so we are going to give G1 maximum
   // flexibility and allow it to do pauses when it needs to. So, we'll
@@ -229,10 +241,6 @@ void G1Arguments::initialize() {
   // pause time target is the default value).
   if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
     FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
-  }
-
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
 
 #ifdef COMPILER2

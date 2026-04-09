@@ -56,11 +56,14 @@ public class Win8301247Test {
         cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         cmd.executeAndAssertImageCreated();
 
+        var state = TKit.state();
         var f = new CompletableFuture<Process>();
 
         // Launch the app in a separate thread
         new Thread(() -> {
-            HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+            TKit.withState(() -> {
+                HelloApp.assertMainLauncher(cmd).get().processListener(f::complete).execute();
+            }, state);
         }).start();
 
         var mainLauncherProcess = f.get();

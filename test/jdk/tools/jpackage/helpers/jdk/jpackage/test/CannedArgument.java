@@ -22,7 +22,37 @@
  */
 package jdk.jpackage.test;
 
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.function.Supplier;
+
 @FunctionalInterface
 public interface CannedArgument {
+
     public String getValue();
+
+    public static CannedArgument create(Supplier<Object> supplier, String label) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(label);
+        return new CannedArgument() {
+
+            @Override
+            public String getValue() {
+                return supplier.get().toString();
+            }
+
+            @Override
+            public String toString( ) {
+                return label;
+            }
+        };
+    }
+
+    public static Object cannedAbsolutePath(Path v) {
+        return create(v::toAbsolutePath, String.format("AbsolutePath(%s)", v));
+    }
+
+    public static Object cannedAbsolutePath(String v) {
+        return cannedAbsolutePath(Path.of(v));
+    }
 }

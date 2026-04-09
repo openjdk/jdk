@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ class RegisterSaver {
 
   // During deoptimization only the result registers need to be restored
   // all the other values have already been extracted.
-  static void restore_result_registers(MacroAssembler* masm, int frame_size_in_bytes);
+  static void restore_result_registers(MacroAssembler* masm, int frame_size_in_bytes, bool save_vectors);
 
   // Constants and data structures:
 
@@ -349,7 +349,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   }
 
   // Note that generate_oop_map in the following loop is only used for the
-  // polling_page_vectors_safepoint_handler_blob.
+  // polling_page_vectors_safepoint_handler_blob and the deopt_blob.
   // The order in which the vector contents are stored depends on Endianess and
   // the utilized instructions (PowerArchitecturePPC64).
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
@@ -361,6 +361,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
 
       __ stxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
       // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
+      // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
                               RegisterSaver_LiveVecRegs[i LITTLE_ENDIAN_ONLY(+1) ].vmreg);
@@ -380,6 +381,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
         __ stxvd2x(as_VectorRegister(reg_num)->to_vsr(), R31, R1_SP);
       }
       // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
+      // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         VMReg vsr = RegisterSaver_LiveVecRegs[i].vmreg;
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), vsr);
@@ -566,10 +568,14 @@ void RegisterSaver::restore_argument_registers_and_pop_frame(MacroAssembler*masm
 }
 
 // Restore the registers that might be holding a result.
-void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_size_in_bytes) {
+void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_size_in_bytes, bool save_vectors) {
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
-  const int register_save_size   = regstosave_num * reg_size; // VS registers not relevant here.
+  const int vecregstosave_num    = save_vectors ? (sizeof(RegisterSaver_LiveVecRegs) /
+                                                   sizeof(RegisterSaver::LiveRegType))
+                                                : 0;
+  const int register_save_size   = regstosave_num * reg_size + vecregstosave_num * vec_reg_size;
+
   const int register_save_offset = frame_size_in_bytes - register_save_size;
 
   // restore all result registers (ints and floats)
@@ -598,7 +604,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_siz
     offset += reg_size;
   }
 
-  assert(offset == frame_size_in_bytes, "consistency check");
+  assert(offset == frame_size_in_bytes - (save_vectors ? vecregstosave_num * vec_reg_size : 0), "consistency check");
 }
 
 // Is vector's size (in bytes) bigger than a size saved by default?
@@ -775,7 +781,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return stk;
 }
 
-#if defined(COMPILER1) || defined(COMPILER2)
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
@@ -913,7 +918,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return MAX2(arg, 8) * 2 + additional_frame_header_slots;
 #endif
 }
-#endif // COMPILER2
 
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
@@ -1237,26 +1241,24 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
-      __ andi_(R0, R0, JVM_ACC_STATIC);
-      __ beq(CR0, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
+  __ andi_(R0, R0, JVM_ACC_STATIC);
+  __ beq(CR0, L_skip_barrier); // non-static
 
-    Register klass = R11_scratch1;
-    __ load_method_holder(klass, R19_method);
-    __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = R11_scratch1;
+  __ load_method_holder(klass, R19_method);
+  __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
-    __ mtctr(klass);
-    __ bctr();
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
+  __ mtctr(klass);
+  __ bctr();
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
@@ -2210,7 +2212,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
   vep_start_pc = (intptr_t)__ pc();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = r_temp_1;
     // Notify OOP recorder (don't need the relocation)
@@ -2875,7 +2878,6 @@ void SharedRuntime::generate_deopt_blob() {
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
-  int frame_size_in_words;
   OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
 
@@ -2887,6 +2889,9 @@ void SharedRuntime::generate_deopt_blob() {
   const Register exec_mode_reg = R21_tmp1;
 
   const address start = __ pc();
+  int exception_offset = 0;
+  int exception_in_tls_offset = 0;
+  int reexecute_offset = 0;
 
 #if defined(COMPILER1) || defined(COMPILER2)
   // --------------------------------------------------------------------------
@@ -2910,7 +2915,8 @@ void SharedRuntime::generate_deopt_blob() {
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                                    &first_frame_size_in_bytes,
                                                                    /*generate_oop_map=*/ true,
-                                                                   RegisterSaver::return_pc_is_lr);
+                                                                   RegisterSaver::return_pc_is_lr,
+                                                                   /*save_vectors*/ SuperwordUseVSX);
   assert(map != nullptr, "OopMap must have been created");
 
   __ li(exec_mode_reg, Deoptimization::Unpack_deopt);
@@ -2926,7 +2932,7 @@ void SharedRuntime::generate_deopt_blob() {
   // - R3_ARG1: exception oop
   // - R4_ARG2: exception pc
 
-  int exception_offset = __ pc() - start;
+  exception_offset = __ pc() - start;
 
   BLOCK_COMMENT("Prolog for exception case");
 
@@ -2937,21 +2943,20 @@ void SharedRuntime::generate_deopt_blob() {
   __ std(R4_ARG2, _abi0(lr), R1_SP);
 
   // Vanilla deoptimization with an exception pending in exception_oop.
-  int exception_in_tls_offset = __ pc() - start;
+  exception_in_tls_offset = __ pc() - start;
 
   // Push the "unpack frame".
   // Save everything in sight.
   RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                              &first_frame_size_in_bytes,
                                                              /*generate_oop_map=*/ false,
-                                                             RegisterSaver::return_pc_is_pre_saved);
+                                                             RegisterSaver::return_pc_is_pre_saved,
+                                                             /*save_vectors*/ SuperwordUseVSX);
 
   // Deopt during an exception. Save exec mode for unpack_frames.
   __ li(exec_mode_reg, Deoptimization::Unpack_exception);
 
   // fall through
-
-  int reexecute_offset = 0;
 #ifdef COMPILER1
   __ b(exec_mode_initialized);
 
@@ -2961,7 +2966,8 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
                                                              &first_frame_size_in_bytes,
                                                              /*generate_oop_map=*/ false,
-                                                             RegisterSaver::return_pc_is_pre_saved);
+                                                             RegisterSaver::return_pc_is_pre_saved,
+                                                             /*save_vectors*/ SuperwordUseVSX);
   __ li(exec_mode_reg, Deoptimization::Unpack_reexecute);
 #endif
 
@@ -2987,7 +2993,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Restore only the result registers that have been saved
   // by save_volatile_registers(...).
-  RegisterSaver::restore_result_registers(masm, first_frame_size_in_bytes);
+  RegisterSaver::restore_result_registers(masm, first_frame_size_in_bytes, /*save_vectors*/ SuperwordUseVSX);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
   __ lwz(exec_mode_reg, in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset()), unroll_block_reg);
@@ -3069,11 +3075,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Return to the interpreter entry point.
   __ blr();
-  __ flush();
-#else // COMPILER2
+#else // !defined(COMPILER1) && !defined(COMPILER2)
   __ unimplemented("deopt blob needed only with compiler");
-  int exception_offset = __ pc() - start;
-#endif // COMPILER2
+#endif
+
+  // Make sure all code is generated
+  __ flush();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, first_frame_size_in_bytes / wordSize);

@@ -34,21 +34,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 
 public final class Codesign {
 
     public static final class CodesignException extends Exception {
 
-        CodesignException(String[] output) {
-            this.output = output;
+        CodesignException(UnexpectedExitCodeException cause) {
+            super(Objects.requireNonNull(cause));
         }
 
-        String[] getOutput() {
-            return output;
+        @Override
+        public UnexpectedExitCodeException getCause() {
+            return (UnexpectedExitCodeException)super.getCause();
         }
-
-        private final String[] output;
 
         private static final long serialVersionUID = 1L;
     }
@@ -96,9 +95,10 @@ public final class Codesign {
         var exec = Executor.of(cmdline).args(path.toString()).saveOutput(true);
         configureExecutor.ifPresent(configure -> configure.accept(exec));
 
-        var result = exec.execute();
-        if (result.getExitCode() != 0) {
-            throw new CodesignException(result.getOutput().toArray(String[]::new));
+        try {
+            exec.execute().expectExitCode(0);
+        } catch (UnexpectedExitCodeException ex) {
+            throw new CodesignException(ex);
         }
     }
 

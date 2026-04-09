@@ -736,3 +736,9 @@ juint StubRoutines::zarch::_crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE] = {
     }
   #endif
   };
+
+#if INCLUDE_CDS
+// nothing to do for s390
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

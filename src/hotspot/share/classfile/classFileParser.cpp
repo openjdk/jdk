@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
@@ -86,9 +87,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
-#if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
-#endif
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -194,7 +192,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
     // so we don't need bounds-check for reading tag.
     const u1 tag = cfs->get_u1_fast();
     switch (tag) {
-      case JVM_CONSTANT_Class : {
+      case JVM_CONSTANT_Class: {
         cfs->guarantee_more(3, CHECK);  // name_index, tag/access_flags
         const u2 name_index = cfs->get_u2_fast();
         cp->klass_index_at_put(index, name_index);
@@ -943,6 +941,7 @@ public:
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_AOTSafeClassInitializer,
     _method_AOTRuntimeSetup,
+    _jdk_internal_vm_annotation_TrustFinalFields,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1016,7 +1015,8 @@ public:
 };
 
 
-static int skip_annotation_value(const u1*, int, int); // fwd decl
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth); // fwd decl
+static const int max_recursion_depth = 5;
 
 // Safely increment index by val if does not pass limit
 #define SAFE_ADD(index, limit, val) \
@@ -1024,23 +1024,29 @@ if (index >= limit - val) return limit; \
 index += val;
 
 // Skip an annotation.  Return >=limit if there is any problem.
-static int skip_annotation(const u1* buffer, int limit, int index) {
+static int skip_annotation(const u1* buffer, int limit, int index, int recursion_depth = 0) {
   assert(buffer != nullptr, "invariant");
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // annotation := atype:u2 do(nmem:u2) {member:u2 value}
   // value := switch (tag:u1) { ... }
   SAFE_ADD(index, limit, 4); // skip atype and read nmem
   int nmem = Bytes::get_Java_u2((address)buffer + index - 2);
   while (--nmem >= 0 && index < limit) {
     SAFE_ADD(index, limit, 2); // skip member
-    index = skip_annotation_value(buffer, limit, index);
+    index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
   }
   return index;
 }
 
 // Skip an annotation value.  Return >=limit if there is any problem.
-static int skip_annotation_value(const u1* buffer, int limit, int index) {
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth) {
   assert(buffer != nullptr, "invariant");
 
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // value := switch (tag:u1) {
   //   case B, C, I, S, Z, D, F, J, c: con:u2;
   //   case e: e_class:u2 e_name:u2;
@@ -1072,12 +1078,12 @@ static int skip_annotation_value(const u1* buffer, int limit, int index) {
       SAFE_ADD(index, limit, 2); // read nval
       int nval = Bytes::get_Java_u2((address)buffer + index - 2);
       while (--nval >= 0 && index < limit) {
-        index = skip_annotation_value(buffer, limit, index);
+        index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
       }
     }
     break;
     case '@':
-      index = skip_annotation(buffer, limit, index);
+      index = skip_annotation(buffer, limit, index, recursion_depth + 1);
       break;
     default:
       return limit;  //  bad tag byte
@@ -1878,6 +1884,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_TrustFinalFields_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_TrustFinalFields;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
@@ -1991,6 +2002,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
     ik->set_has_aot_safe_initializer();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_TrustFinalFields)) {
+    ik->set_trust_final_fields(true);
   }
 }
 
@@ -4387,14 +4401,14 @@ void ClassFileParser::verify_legal_field_modifiers(jint flags,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  const bool is_public    = (flags & JVM_ACC_PUBLIC)    != 0;
-  const bool is_protected = (flags & JVM_ACC_PROTECTED) != 0;
-  const bool is_private   = (flags & JVM_ACC_PRIVATE)   != 0;
-  const bool is_static    = (flags & JVM_ACC_STATIC)    != 0;
-  const bool is_final     = (flags & JVM_ACC_FINAL)     != 0;
-  const bool is_volatile  = (flags & JVM_ACC_VOLATILE)  != 0;
-  const bool is_transient = (flags & JVM_ACC_TRANSIENT) != 0;
-  const bool is_enum      = (flags & JVM_ACC_ENUM)      != 0;
+  const bool is_public    = (flags & JVM_ACC_PUBLIC)      != 0;
+  const bool is_protected = (flags & JVM_ACC_PROTECTED)   != 0;
+  const bool is_private   = (flags & JVM_ACC_PRIVATE)     != 0;
+  const bool is_static    = (flags & JVM_ACC_STATIC)      != 0;
+  const bool is_final     = (flags & JVM_ACC_FINAL)       != 0;
+  const bool is_volatile  = (flags & JVM_ACC_VOLATILE)    != 0;
+  const bool is_transient = (flags & JVM_ACC_TRANSIENT)   != 0;
+  const bool is_enum      = (flags & JVM_ACC_ENUM)        != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
 
   bool is_illegal = false;
@@ -5240,6 +5254,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   if (!is_internal()) {
     ik->print_class_load_logging(_loader_data, module_entry, _stream);
+    if (CDSConfig::is_dumping_archive()) {
+      SystemDictionaryShared::check_code_source(ik, _stream);
+    }
 
     if (ik->minor_version() == JAVA_PREVIEW_MINOR_VERSION &&
         ik->major_version() == JVM_CLASSFILE_MAJOR_VERSION &&

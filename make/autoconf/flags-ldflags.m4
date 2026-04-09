@@ -80,6 +80,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       if test "x$CXX_IS_USER_SUPPLIED" = xfalse && test "x$CC_IS_USER_SUPPLIED" = xfalse; then
         UTIL_REQUIRE_TOOLCHAIN_PROGS(LLD, lld)
       fi
+
+      if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+        BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
+      fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-blibpath:/usr/lib:lib -Wl,-bnoexpall \

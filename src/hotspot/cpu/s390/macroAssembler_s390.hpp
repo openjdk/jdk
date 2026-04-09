@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -842,8 +842,7 @@ class MacroAssembler: public Assembler {
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
   void load_narrow_klass_compact(Register dst, Register src);
-  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // Compares the narrow Klass pointer of an object to a given narrow Klass
   void cmp_klass(Register klass, Register obj, Register tmp);
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
   // Uses tmp1 and tmp2 as temporary registers.

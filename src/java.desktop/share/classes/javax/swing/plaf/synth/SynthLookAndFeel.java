@@ -60,7 +60,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.swing.DefaultLookup;
 import sun.swing.SwingAccessor;
@@ -101,31 +100,13 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     static final Insets EMPTY_UIRESOURCE_INSETS = new InsetsUIResource(
                                                             0, 0, 0, 0);
 
-    /**
-     * AppContext key to get the current SynthStyleFactory.
-     */
-    private static final Object STYLE_FACTORY_KEY =
-                  new StringBuffer("com.sun.java.swing.plaf.gtk.StyleCache");
+    private static ComponentUI selectedUI;
+    private static int selectedUIStateValue;
 
     /**
-     * AppContext key to get selectedUI.
-     */
-    private static final Object SELECTED_UI_KEY = new StringBuilder("selectedUI");
-
-    /**
-     * AppContext key to get selectedUIState.
-     */
-    private static final Object SELECTED_UI_STATE_KEY = new StringBuilder("selectedUIState");
-
-    /**
-     * The last SynthStyleFactory that was asked for from AppContext
-     * <code>lastContext</code>.
+     * The last SynthStyleFactory that was set.
      */
     private static SynthStyleFactory lastFactory;
-    /**
-     * AppContext lastLAF came from.
-     */
-    private static AppContext lastContext;
 
     /**
      * SynthStyleFactory for the this SynthLookAndFeel.
@@ -141,7 +122,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
     private Handler _handler;
 
     static ComponentUI getSelectedUI() {
-        return (ComponentUI) AppContext.getAppContext().get(SELECTED_UI_KEY);
+        return selectedUI;
     }
 
     /**
@@ -182,23 +163,20 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
             }
         }
 
-        AppContext context = AppContext.getAppContext();
-
-        context.put(SELECTED_UI_KEY, uix);
-        context.put(SELECTED_UI_STATE_KEY, Integer.valueOf(selectedUIState));
+        selectedUI = uix;
+        selectedUIStateValue = selectedUIState;
     }
 
     static int getSelectedUIState() {
-        Integer result = (Integer) AppContext.getAppContext().get(SELECTED_UI_STATE_KEY);
-
-        return result == null ? 0 : result.intValue();
+        return selectedUIStateValue;
     }
 
     /**
      * Clears out the selected UI that was last set in setSelectedUI.
      */
     static void resetSelectedUI() {
-        AppContext.getAppContext().remove(SELECTED_UI_KEY);
+        selectedUI = null;
+        selectedUIStateValue = 0;
     }
 
 
@@ -210,12 +188,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      */
     public static void setStyleFactory(SynthStyleFactory cache) {
         // We assume the setter is called BEFORE the getter has been invoked
-        // for a particular AppContext.
         synchronized(SynthLookAndFeel.class) {
-            AppContext context = AppContext.getAppContext();
             lastFactory = cache;
-            lastContext = context;
-            context.put(STYLE_FACTORY_KEY, cache);
         }
     }
 
@@ -226,13 +200,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      */
     public static SynthStyleFactory getStyleFactory() {
         synchronized(SynthLookAndFeel.class) {
-            AppContext context = AppContext.getAppContext();
-
-            if (lastContext == context) {
-                return lastFactory;
-            }
-            lastContext = context;
-            lastFactory = (SynthStyleFactory) context.get(STYLE_FACTORY_KEY);
             return lastFactory;
         }
     }

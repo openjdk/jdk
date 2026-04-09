@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @requires vm.debug != true
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 100000
+ * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 10000
  */
 
 /*
@@ -36,7 +36,7 @@
  * @requires vm.debug == true
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 50000
+ * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 5000
  */
 
 import java.time.Instant;

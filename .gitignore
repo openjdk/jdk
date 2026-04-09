@@ -16,6 +16,7 @@ NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
 /src/utils/LogCompilation/target/
+/src/utils/LogCompilation/logc.jar
 /.project/
 /.settings/
 /compile_commands.json

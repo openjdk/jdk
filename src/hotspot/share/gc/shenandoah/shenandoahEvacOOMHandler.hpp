@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,7 +37,7 @@
 class ShenandoahEvacOOMCounter {
 private:
   // Combination of a 31-bit counter and 1-bit OOM marker.
-  volatile jint _bits;
+  Atomic<jint> _bits;
 
   // This class must be at least a cache line in size to prevent false sharing.
   shenandoah_padding_minus_size(0, sizeof(jint));

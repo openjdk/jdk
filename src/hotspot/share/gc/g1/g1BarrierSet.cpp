@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,13 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table,
 {}
 
 G1BarrierSet::~G1BarrierSet() {
-  delete _refinement_table;
+  delete refinement_table();
 }
 
 void G1BarrierSet::swap_global_card_table() {
-  G1CardTable* temp = static_cast<G1CardTable*>(_card_table);
-  _card_table = _refinement_table;
-  _refinement_table = temp;
+  G1CardTable* temp = static_cast<G1CardTable*>(card_table());
+  _card_table.store_relaxed(refinement_table());
+  _refinement_table.store_relaxed(temp);
 }
 
 void G1BarrierSet::update_card_table_base(Thread* thread) {
@@ -80,7 +80,7 @@ void G1BarrierSet::update_card_table_base(Thread* thread) {
     assert(thread->is_Java_thread(), "may only update card table base of JavaThreads, not %s", thread->name());
   }
 #endif
-  G1ThreadLocalData::set_byte_map_base(thread, _card_table->byte_map_base());
+  G1ThreadLocalData::set_byte_map_base(thread, card_table()->byte_map_base());
 }
 
 template <class T> void
@@ -135,10 +135,10 @@ void G1BarrierSet::write_region(MemRegion mr) {
   // marks next time.
   // If we write to the old card table (after the switching, then the refinement
   // table) the oncoming handshake will do the memory synchronization.
-  CardTable* card_table = AtomicAccess::load(&_card_table);
+  CardTable* local_card_table = card_table();
 
-  volatile CardValue* byte = card_table->byte_for(mr.start());
-  CardValue* last_byte = card_table->byte_for(mr.last());
+  volatile CardValue* byte = local_card_table->byte_for(mr.start());
+  CardValue* last_byte = local_card_table->byte_for(mr.last());
 
   // Dirty cards only if necessary.
   for (; byte <= last_byte; byte++) {
@@ -190,6 +190,6 @@ void G1BarrierSet::on_thread_detach(Thread* thread) {
 }
 
 void G1BarrierSet::print_on(outputStream* st) const {
-  _card_table->print_on(st, "Card");
-  _refinement_table->print_on(st, "Refinement");
+  card_table()->print_on(st, "Card");
+  refinement_table()->print_on(st, "Refinement");
 }

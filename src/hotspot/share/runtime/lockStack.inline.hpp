@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,7 @@ inline void OMCache::set_monitor(ObjectMonitor *monitor) {
 
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
-  assert(monitor == ObjectSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
+  assert(monitor == ObjectSynchronizer::get_monitor_from_table(obj), "must exist in table");
 
   OMCacheEntry to_insert = {obj, monitor};
 

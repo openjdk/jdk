@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ public:
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -141,7 +140,6 @@ class RethrowNode : public Node {
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint match_edge(uint idx) const;
@@ -687,7 +685,7 @@ class CallGenerator;
 class CallNode : public SafePointNode {
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -736,7 +734,7 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
@@ -950,6 +948,8 @@ public:
   }
   int Opcode() const override;
   Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  CallLeafPureNode* inline_call_leaf_pure_node(Node* control = nullptr) const;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
@@ -1044,7 +1044,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -1101,7 +1101,7 @@ public:
   void compute_MemBar_redundancy(ciMethod* initializer);
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
-  Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+  Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
@@ -1208,7 +1208,7 @@ public:
   bool is_balanced();
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const { return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -1301,4 +1301,19 @@ public:
   JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
+
+//------------------------------PowDNode--------------------------------------
+class PowDNode : public CallLeafPureNode {
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control = nullptr);
+
+public:
+  PowDNode(Compile* C, Node* base, Node* exp);
+  int Opcode() const override;
+  const Type* Value(PhaseGVN* phase) const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+
+  Node* base() const { return in(TypeFunc::Parms + 0); }
+  Node* exp() const  { return in(TypeFunc::Parms + 2); }
+};
+
 #endif // SHARE_OPTO_CALLNODE_HPP

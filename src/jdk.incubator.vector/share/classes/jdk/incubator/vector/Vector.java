@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1170,9 +1170,10 @@ import java.util.Arrays;
  * @param <E> the boxed version of {@code ETYPE},
  *           the element type of a vector
  *
+ * @sealedGraph
  */
 @SuppressWarnings("exports")
-public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> {
+public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> permits AbstractVector {
 
     // This type is sealed within its package.
     // Users cannot roll their own vector types.

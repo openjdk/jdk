@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
     private MediaSizeName[] mediaSizeNames;
     private CustomMediaSizeName[] customMediaSizeNames;
     private int defaultMediaIndex;
-    private int[] rawResolutions = null;
+    private int[] ppdResolutions = null;
     private PrinterResolution[] printerResolutions = null;
     private boolean isCupsPrinter;
     private boolean init;
@@ -205,8 +205,7 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
         OrientationRequested.PORTRAIT,
         new PageRanges(1),
         //PresentationDirection,
-                 // CUPS does not supply printer-resolution attribute
-        //new PrinterResolution(300, 300, PrinterResolution.DPI),
+        new PrinterResolution(300, 300, PrinterResolution.DPI),
         //PrintQuality.NORMAL,
         new RequestingUserName("", Locale.getDefault()),
         //SheetCollate.UNCOLLATED, //CUPS has no sheet collate?
@@ -467,7 +466,9 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
                                 : getSupportedOutputBins();
                         customMediaSizeNames = cps.getCustomMediaSizeNames();
                         defaultMediaIndex = cps.getDefaultMediaIndex();
-                        rawResolutions = cps.getRawResolutions();
+                        if (ppdResolutions == null) {
+                            ppdResolutions = cps.getRawResolutions();
+                        }
                     }
                     urlConnection.disconnect();
                     init = true;
@@ -821,14 +822,7 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
                 }
             }
         } else if (category == PrinterResolution.class) {
-            PrinterResolution[] supportedRes = getPrintResolutions();
-            if (supportedRes == null) {
-                return null;
-            }
-            PrinterResolution []arr =
-                new PrinterResolution[supportedRes.length];
-            System.arraycopy(supportedRes, 0, arr, 0, supportedRes.length);
-            return arr;
+            return getPrintResolutions();
         } else if (category == OutputBin.class) {
             return Arrays.copyOf(outputBins, outputBins.length);
         }
@@ -1137,8 +1131,6 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
             catList.add(Chromaticity.class);
         }
 
-        // CUPS does not report printer resolution via IPP but it
-        // may be gleaned from the PPD.
         PrinterResolution[] supportedRes = getPrintResolutions();
         if (supportedRes != null && (supportedRes.length > 0)) {
             catList.add(PrinterResolution.class);
@@ -1263,7 +1255,6 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
             return null;
         }
     }
-
 
     @Override
     public synchronized PrintServiceAttributeSet getAttributes() {
@@ -1684,9 +1675,7 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
         } else if (category == PrinterResolution.class) {
              PrinterResolution[] supportedRes = getPrintResolutions();
              if ((supportedRes != null) && (supportedRes.length > 0)) {
-                return supportedRes[0];
-             } else {
-                 return new PrinterResolution(300, 300, PrinterResolution.DPI);
+                 return supportedRes[0];
              }
         } else if (category == OutputBin.class) {
             if (attribClass != null) {
@@ -1697,26 +1686,40 @@ public final class IPPPrintService implements PrintService, SunPrinterJobService
         return null;
     }
 
+    /* Called only from contexts that have called initAttributes().
+     * Try IPP first, and if that produces nothing, fall back to the PPD
+    */
     private PrinterResolution[] getPrintResolutions() {
+        int[] rawResolutions = null;
         if (printerResolutions == null) {
-            if (rawResolutions == null) {
-              printerResolutions = new PrinterResolution[0];
-            } else {
-                int numRes = rawResolutions.length / 2;
-                PrinterResolution[] pres = new PrinterResolution[numRes];
-                for (int i=0; i < numRes; i++) {
-                    pres[i] =  new PrinterResolution(rawResolutions[i*2],
-                                                     rawResolutions[i*2+1],
-                                                     PrinterResolution.DPI);
-                }
-                printerResolutions = pres;
+            AttributeClass attribClass = (getAttMap != null) ?
+                getAttMap.get("printer-resolution-supported")
+                : null;
+            if (attribClass != null) {
+                rawResolutions = attribClass.getIntResolutionValue();
             }
+            if (rawResolutions == null) {
+                rawResolutions = ppdResolutions;
+            }
+            if (rawResolutions == null) {
+               rawResolutions = new int[] { 300, 300, 3 } ;
+            }
+            int numRes = rawResolutions.length / 3;
+            PrinterResolution[] pres = new PrinterResolution[numRes];
+            for (int i = 0; i < numRes; i++) {
+                int units = (rawResolutions[i*3+2] == 4) ? PrinterResolution.DPCM : PrinterResolution.DPI;
+                pres[i] = new PrinterResolution(rawResolutions[i*3],
+                                                rawResolutions[i*3+1],
+                                                units);
+            }
+            printerResolutions = pres;
         }
-        return printerResolutions;
+        return printerResolutions.clone();
     }
 
     private boolean isSupportedResolution(PrinterResolution res) {
-        PrinterResolution[] supportedRes = getPrintResolutions();
+        PrinterResolution[] supportedRes =
+            (PrinterResolution[])getSupportedAttributeValues(PrinterResolution.class, null, null);
         if (supportedRes != null) {
             for (int i=0; i<supportedRes.length; i++) {
                 if (res.equals(supportedRes[i])) {

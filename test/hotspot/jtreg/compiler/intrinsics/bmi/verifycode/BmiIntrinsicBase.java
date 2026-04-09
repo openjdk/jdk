@@ -83,7 +83,7 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
         System.out.println(testCase.name());
 
-        if (TIERED_COMPILATION && TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_MAX || Platform.isEmulatedClient()) {
+        if (TIERED_COMPILATION && TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_MAX) {
             System.out.println("TieredStopAtLevel value (" + TIERED_STOP_AT_LEVEL + ") is too low, test SKIPPED");
             return;
         }

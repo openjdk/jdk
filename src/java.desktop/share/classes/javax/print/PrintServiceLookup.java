@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.ServiceLoader;
 
 import javax.print.attribute.AttributeSet;
 
-import sun.awt.AppContext;
 
 /**
  * Implementations of this class provide lookup services for print services
@@ -58,35 +57,14 @@ public abstract class PrintServiceLookup {
     protected PrintServiceLookup() {}
 
     /**
-     * Contains a lists of services.
+     * The list of lookup services.
      */
-    static class Services {
-
-        /**
-         * The list of lookup services.
-         */
-        private ArrayList<PrintServiceLookup> listOfLookupServices = null;
-
-        /**
-         * The list of registered services.
-         */
-        private ArrayList<PrintService> registeredServices = null;
-    }
+    private static ArrayList<PrintServiceLookup> listOfLookupServices = null;
 
     /**
-     * Returns the services from the current appcontext.
-     *
-     * @return the services
+     * The list of registered services.
      */
-    private static Services getServicesForContext() {
-        Services services =
-            (Services)AppContext.getAppContext().get(Services.class);
-        if (services == null) {
-            services = new Services();
-            AppContext.getAppContext().put(Services.class, services);
-        }
-        return services;
-    }
+    private static ArrayList<PrintService> registeredServices = null;
 
     /**
      * Returns the list of lookup services.
@@ -94,7 +72,7 @@ public abstract class PrintServiceLookup {
      * @return the list of lookup services
      */
     private static ArrayList<PrintServiceLookup> getListOfLookupServices() {
-        return getServicesForContext().listOfLookupServices;
+        return listOfLookupServices;
     }
 
     /**
@@ -103,8 +81,7 @@ public abstract class PrintServiceLookup {
      * @return the list of lookup services
      */
     private static ArrayList<PrintServiceLookup> initListOfLookupServices() {
-        ArrayList<PrintServiceLookup> listOfLookupServices = new ArrayList<>();
-        getServicesForContext().listOfLookupServices = listOfLookupServices;
+        listOfLookupServices = new ArrayList<>();
         return listOfLookupServices;
     }
 
@@ -114,7 +91,7 @@ public abstract class PrintServiceLookup {
      * @return the list of registered services
      */
     private static ArrayList<PrintService> getRegisteredServices() {
-        return getServicesForContext().registeredServices;
+        return registeredServices;
     }
 
     /**
@@ -123,8 +100,7 @@ public abstract class PrintServiceLookup {
      * @return the list of registered services
      */
     private static ArrayList<PrintService> initRegisteredServices() {
-        ArrayList<PrintService> registeredServices = new ArrayList<>();
-        getServicesForContext().registeredServices = registeredServices;
+        registeredServices = new ArrayList<>();
         return registeredServices;
     }
 

@@ -105,6 +105,9 @@ public class LocaleResources {
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
 
+    // TimeZoneNamesBundle explicit metazone dst offset prefix
+    private static final String TZNB_METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
+
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
 
@@ -321,7 +324,8 @@ public class LocaleResources {
 
         if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
-            if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (key.startsWith(TZNB_EXCITY_PREFIX) ||
+                key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 if (tznb.containsKey(key)) {
                     val = tznb.getString(key);
                     assert val instanceof String;
@@ -378,7 +382,8 @@ public class LocaleResources {
         Set<String[]> value = new LinkedHashSet<>();
         Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
-            if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (!key.startsWith(TZNB_EXCITY_PREFIX) &&
+                !key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 value.add(rb.getStringArray(key));
                 tzIds.remove(key);
             }

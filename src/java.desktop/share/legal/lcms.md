@@ -1,11 +1,11 @@
-## Little Color Management System (LCMS) v2.17
+## Little Color Management System (LCMS) v2.18
 
 ### LCMS License
 <pre>
 
 MIT License
 
-Copyright (C) 1998-2025 Marti Maria Saguer
+Copyright (C) 1998-2026 Marti Maria Saguer
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the "Software"),

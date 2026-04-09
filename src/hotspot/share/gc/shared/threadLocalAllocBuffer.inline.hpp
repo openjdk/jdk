@@ -82,7 +82,7 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
 
   set_refill_waste_limit(refill_waste_limit() + refill_waste_limit_increment());
 
-  _slow_allocations++;
+  _num_slow_allocations++;
 
   log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
                               " obj: %zu"

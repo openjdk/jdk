@@ -67,6 +67,8 @@ private:
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
+
+  static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
   ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();

@@ -123,6 +123,8 @@ class os::Bsd {
   static int get_node_by_cpu(int cpu_id);
 
   static void print_uptime_info(outputStream* st);
+  static void print_open_file_descriptors(outputStream* st, char* buf, size_t buflen);
+  static void print_open_file_descriptors(outputStream* st);
 };
 
 #endif // OS_BSD_OS_BSD_HPP

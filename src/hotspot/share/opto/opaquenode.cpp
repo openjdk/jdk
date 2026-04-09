@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,15 @@ void OpaqueMultiversioningNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
+const Type* OpaqueConstantBoolNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
+
+#ifndef PRODUCT
+void OpaqueConstantBoolNode::dump_spec(outputStream *st) const {
+  st->print(_constant ? " #true" : " #false");
+}
+#endif
 
 OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
     : Node(nullptr, bol),

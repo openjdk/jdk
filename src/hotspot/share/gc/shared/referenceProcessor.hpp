@@ -366,7 +366,6 @@ private:
 
   // Balances reference queues.
   void balance_queues(DiscoveredList refs_lists[]);
-  bool need_balance_queues(DiscoveredList refs_lists[]);
 
   // If there is need to balance the given queue, do it.
   void maybe_balance_queues(DiscoveredList refs_lists[]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2199,7 +2199,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = Rscratch;
     const Register klass  = Rscratch;
 
@@ -2244,8 +2245,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
   __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = R4_ARG2;
 
     // InterpreterRuntime::resolve_get_put sets field_holder and finally release-stores put_code.
@@ -3488,7 +3489,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   // Get receiver klass.
   __ load_klass_check_null_throw(Rrecv_klass, Rrecv, R11_scratch1);
   __ verify_klass_ptr(Rrecv_klass);
-  __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2, false);
+  __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2);
 
   generate_vtable_call(Rrecv_klass, Rvtableindex_or_method, Rret_addr, R11_scratch1);
 }
@@ -3595,7 +3596,7 @@ void TemplateTable::invokeinterface_object_method(Register Rrecv_klass,
   // Non-final callc case.
   __ bind(LnotFinal);
   __ lhz(Rindex, in_bytes(ResolvedMethodEntry::table_index_offset()), Rcache);
-  __ profile_virtual_call(Rrecv_klass, Rtemp1, Rscratch, false);
+  __ profile_virtual_call(Rrecv_klass, Rtemp1, Rscratch);
   generate_vtable_call(Rrecv_klass, Rindex, Rret, Rscratch);
 }
 
@@ -3663,7 +3664,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ lookup_interface_method(Rrecv_klass, Rinterface_klass, noreg, noreg, Rscratch1, Rscratch2,
                              L_no_such_interface, /*return_method=*/false);
 
-  __ profile_virtual_call(Rrecv_klass, Rscratch1, Rscratch2, false);
+  __ profile_virtual_call(Rrecv_klass, Rscratch1, Rscratch2);
 
   // Find entry point to call.
 

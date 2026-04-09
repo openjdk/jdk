@@ -66,9 +66,6 @@
 #endif
 
 // open(2) flags
-#ifndef O_CLOEXEC
-#define O_CLOEXEC                        02000000
-#endif
 #ifndef O_TMPFILE
 #define O_TMPFILE                        (020000000 | O_DIRECTORY)
 #endif

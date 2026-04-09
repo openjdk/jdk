@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -970,6 +970,10 @@ define SetupRunJtregTestBody
 
   ifneq ($$(findstring --enable-preview, $$(JTREG_ALL_OPTIONS)), )
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
+  endif
+
+  ifneq ($$(findstring -XX:+UseCompactObjectHeaders, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-coh.txt
   endif
 
 

@@ -456,7 +456,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
 
   // Follow array chunk
   ZHeapIteratorOopClosure<false /* VisitReferents */> cl(this, context, obj);
-  ZIterator::oop_iterate_range(obj, &cl, start, end);
+  ZIterator::oop_iterate_elements_range(obj, &cl, start, end);
 }
 
 template <bool VisitWeaks>

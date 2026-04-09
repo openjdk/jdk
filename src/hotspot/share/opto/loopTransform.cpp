@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,6 +524,9 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+  if (LoopPeeling != 1) {
+    return 0;
+  }
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -775,6 +778,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+  assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
@@ -1234,7 +1238,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         continue;
       }
       if (!bol->is_Bool()) {
-        assert(bol->is_OpaqueNotNull() ||
+        assert(bol->is_OpaqueConstantBool() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
                bol->is_OpaqueInitializedAssertionPredicate() ||
                bol->is_OpaqueMultiversioning(),
@@ -2201,6 +2205,15 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
 
   // If loop is tripping an odd number of times, peel odd iteration
   if ((cl->trip_count() & 1) == 1) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("MaxUnroll cancelled since LoopPeeling is always disabled");
+        loop->dump_head();
+      }
+#endif
+      return;
+    }
     do_peeling(loop, old_new);
   }
 
@@ -3243,6 +3256,15 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #endif
 
   if (needs_guard) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Empty loop not removed since LoopPeeling is always disabled");
+        this->dump_head();
+      }
+#endif
+      return false;
+    }
     // Peel the loop to ensure there's a zero trip guard
     Node_List old_new;
     phase->do_peeling(this, old_new);
@@ -3969,7 +3991,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = new AddPNode(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
   // For normal array fills, C2 uses two AddP nodes for array element
   // addressing. But for array fills with Unsafe call, there's only one
@@ -3977,7 +3999,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   assert(offset != nullptr || C->has_unsafe_access(),
          "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
-    from = new AddPNode(base, from, offset);
+    from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
   }
   // Compute the number of elements to copy

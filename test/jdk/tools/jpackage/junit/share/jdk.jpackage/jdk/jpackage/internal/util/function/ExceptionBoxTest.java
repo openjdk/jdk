@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,19 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
+import jdk.jpackage.internal.util.IdentityWrapper;
 import jdk.jpackage.internal.util.Slot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ExceptionBoxTest {
 
@@ -190,6 +196,16 @@ public class ExceptionBoxTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void test_visitUnboxedExceptionsRecursively(Throwable t, List<Exception> expect) {
+        var actual = new ArrayList<Exception>();
+        ExceptionBox.visitUnboxedExceptionsRecursively(t, actual::add);
+        assertEquals(
+                expect.stream().map(IdentityWrapper::new).toList(),
+                actual.stream().map(IdentityWrapper::new).toList());
+    }
+
     public enum InvocationTargetExceptionType {
         CHECKED("throwIOException", t -> {
             return t.getCause();
@@ -224,13 +240,74 @@ public class ExceptionBoxTest {
         throw new Error("Kaput!");
     }
 
-    private static void assertToUnchecked(Exception cause, boolean asis) {
-        Class<? extends Throwable> expectedType;
-        if (asis) {
-            expectedType = cause.getClass();
-        } else {
-            expectedType = ExceptionBox.class;
+    private static Collection<Arguments> test_visitUnboxedExceptionsRecursively() {
+
+        var testCases = new ArrayList<Arguments>();
+
+        testCases.addAll(test_visitUnboxedExceptionsRecursively_example());
+
+        var t = new Exception("A");
+        for (var box : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                ExceptionBox::toUnchecked,
+                InvocationTargetException::new
+        )) {
+            testCases.add(Arguments.of(box.apply(t), List.of(t)));
         }
+
+        // The cause is not traversed.
+        var exWithCause = new Exception("B", t);
+        testCases.add(Arguments.of(exWithCause, List.of(exWithCause)));
+
+        var exWithSuppressed = new Exception("C");
+        exWithSuppressed.addSuppressed(t);
+        exWithSuppressed.addSuppressed(ExceptionBox.toUnchecked(t));
+        exWithSuppressed.addSuppressed(exWithCause);
+        exWithSuppressed.addSuppressed(new InvocationTargetException(exWithCause));
+        var exWithSuppressedExpect = List.of(t, t, exWithCause, exWithCause, exWithSuppressed);
+        testCases.add(Arguments.of(exWithSuppressed, exWithSuppressedExpect));
+
+        for (var box : List.<UnaryOperator<Exception>>of(
+                ExceptionBox::toUnchecked,
+                InvocationTargetException::new
+        )) {
+            // Suppressed exceptions added to ExceptionBox and InvocationTargetException are omitted.
+            var exWithSuppressedBoxed = box.apply(exWithSuppressed);
+            exWithSuppressedBoxed.addSuppressed(exWithSuppressed);
+            testCases.add(Arguments.of(exWithSuppressedBoxed, exWithSuppressedExpect));
+        }
+
+        var exWithSuppressed2 = new Exception("D");
+        exWithSuppressed2.addSuppressed(t);
+        exWithSuppressed2.addSuppressed(exWithSuppressed);
+        exWithSuppressed2.addSuppressed(ExceptionBox.toUnchecked(exWithSuppressed));
+
+        var exWithSuppressed2Expect = new ArrayList<Exception>();
+        exWithSuppressed2Expect.add(t);
+        exWithSuppressed2Expect.addAll(exWithSuppressedExpect);
+        exWithSuppressed2Expect.addAll(exWithSuppressedExpect);
+        exWithSuppressed2Expect.add(exWithSuppressed2);
+        testCases.add(Arguments.of(exWithSuppressed2, exWithSuppressed2Expect));
+
+        return testCases;
+    }
+
+    private static Collection<Arguments> test_visitUnboxedExceptionsRecursively_example() {
+
+        var a = new Exception("A");
+        var b = new Exception("B");
+        var c = new Exception("C");
+        var d = new Exception("D");
+
+        a.addSuppressed(b);
+        a.addSuppressed(c);
+
+        b.addSuppressed(d);
+
+        return List.of(Arguments.of(a, List.of(d, b, c, a)));
+    }
+
+    private static void assertToUnchecked(Exception cause, boolean asis) {
         var unchecked = ExceptionBox.toUnchecked(cause);
         if (asis) {
             assertSame(cause, unchecked);

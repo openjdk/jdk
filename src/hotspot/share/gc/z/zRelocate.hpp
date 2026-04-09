@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zValue.hpp"
+#include "runtime/atomic.hpp"
 
 class ZForwarding;
 class ZGeneration;
@@ -42,8 +43,8 @@ private:
   uint                 _nworkers;
   uint                 _nsynchronized;
   bool                 _synchronize;
-  volatile bool        _is_active;
-  volatile int         _needs_attention;
+  Atomic<bool>         _is_active;
+  Atomic<int>          _needs_attention;
 
   bool needs_attention() const;
   void inc_needs_attention();

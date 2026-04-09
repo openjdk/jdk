@@ -888,6 +888,14 @@ void* os::lookup_function(const char* name) {
   return dlsym(RTLD_DEFAULT, name);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::ftell(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::fseek(file, offset, whence);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }
@@ -906,8 +914,25 @@ FILE* os::fdopen(int fd, const char* mode) {
 
 ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
+#ifdef __APPLE__
+  // macOS fails for individual write operations > 2GB.
+  // See https://gitlab.haskell.org/ghc/ghc/-/issues/17414
+  ssize_t total = 0;
+  while (nBytes > 0) {
+    size_t bytes_to_write = MIN2(nBytes, (size_t)INT_MAX);
+    RESTARTABLE(::write(fd, buf, bytes_to_write), res);
+    if (res == OS_ERR) {
+      return OS_ERR;
+    }
+    buf = (const char*)buf + res;
+    nBytes -= res;
+    total += res;
+  }
+  return total;
+#else
   RESTARTABLE(::write(fd, buf, nBytes), res);
   return res;
+#endif
 }
 
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
@@ -122,9 +121,6 @@ public:
 
 
   static void initialize(MemRegion reserved);
-
-  // Coarsening statistics since VM start.
-  static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }
 
   inline uintptr_t to_card(OopOrNarrowOopStar from) const;
 

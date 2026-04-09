@@ -29,12 +29,15 @@ import static jdk.jpackage.internal.cli.StandardOption.HELP;
 import static jdk.jpackage.internal.cli.StandardOption.VERBOSE;
 import static jdk.jpackage.internal.cli.StandardOption.VERSION;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -48,7 +51,11 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
 import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
@@ -57,14 +64,15 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  */
 public final class Main {
 
-    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier) implements ToolProvider {
+    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, OperatingSystem os) implements ToolProvider {
 
         public Provider {
             Objects.requireNonNull(bundlingEnvSupplier);
+            Objects.requireNonNull(os);
         }
 
         public Provider() {
-            this(DefaultBundlingEnvironmentLoader.INSTANCE);
+            this(DefaultBundlingEnvironmentLoader.INSTANCE, OperatingSystem.current());
         }
 
         @Override
@@ -74,13 +82,13 @@ public final class Main {
 
         @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
-            return Main.run(bundlingEnvSupplier, out, err, args);
+            return Main.run(os, bundlingEnvSupplier, out, err, args);
         }
 
         @Override
         public int run(PrintStream out, PrintStream err, String... args) {
-            PrintWriter outWriter = new PrintWriter(out, true);
-            PrintWriter errWriter = new PrintWriter(err, true);
+            PrintWriter outWriter = toPrintWriter(out);
+            PrintWriter errWriter = toPrintWriter(err);
             try {
                 try {
                     return run(outWriter, errWriter, args);
@@ -98,27 +106,31 @@ public final class Main {
     }
 
     public static void main(String... args) {
-        var out = new PrintWriter(System.out, true);
-        var err = new PrintWriter(System.err, true);
-        System.exit(run(out, err, args));
+        var out = toPrintWriter(System.out);
+        var err = toPrintWriter(System.err);
+        System.exit(run(OperatingSystem.current(), DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args));
     }
 
-    static int run(PrintWriter out, PrintWriter err, String... args) {
-        return run(DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args);
-    }
-
-    static int run(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, PrintWriter out, PrintWriter err, String... args) {
-        return Globals.main(() -> {
-            return runWithGlobals(bundlingEnvSupplier, out, err, args);
-        });
-    }
-
-    private static int runWithGlobals(
+    static int run(
+            OperatingSystem os,
             Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
             PrintWriter out,
             PrintWriter err,
             String... args) {
 
+        return Globals.main(() -> {
+            return runWithGlobals(os, bundlingEnvSupplier, out, err, args);
+        });
+    }
+
+    private static int runWithGlobals(
+            OperatingSystem os,
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
+        Objects.requireNonNull(os);
         Objects.requireNonNull(bundlingEnvSupplier);
         Objects.requireNonNull(args);
         for (String arg : args) {
@@ -127,7 +139,7 @@ public final class Main {
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
-        Log.setPrintWriter(out, err);
+        Globals.instance().loggerOutputStreams(out, err);
 
         final var runner = new Runner(t -> {
             new ErrorReporter(_ -> {
@@ -155,7 +167,7 @@ public final class Main {
 
             final var bundlingEnv = bundlingEnvSupplier.get();
 
-            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(mappedArgs.get());
+            final var parseResult = Utils.buildParser(os, bundlingEnv).create().apply(mappedArgs.get());
 
             return runner.run(() -> {
                 final var parsedOptionsBuilder = parseResult.orElseThrow();
@@ -179,10 +191,10 @@ public final class Main {
                 }
 
                 if (VERBOSE.containsIn(options)) {
-                    Log.setVerbose();
+                    Globals.instance().loggerVerbose();
                 }
 
-                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, bundlingEnv);
+                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, os, bundlingEnv);
 
                 final var validationResult = optionsProcessor.validate();
 
@@ -233,50 +245,68 @@ public final class Main {
         }
 
         void reportError(Throwable t) {
-            if (t instanceof ConfigException cfgEx) {
-                printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
-            } else if (t instanceof ExceptionBox ex) {
-                reportError(ex.getCause());
-            } else if (t instanceof UncheckedIOException ex) {
-                reportError(ex.getCause());
+
+            var unfoldedExceptions = new ArrayList<Exception>();
+            ExceptionBox.visitUnboxedExceptionsRecursively(t, unfoldedExceptions::add);
+
+            unfoldedExceptions.forEach(ex -> {
+                if (ex instanceof ConfigException cfgEx) {
+                    printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
+                } else if (ex instanceof UncheckedIOException) {
+                    printError(ex.getCause(), Optional.empty());
+                } else if (ex instanceof UnexpectedResultException urex) {
+                    printExternalCommandError(urex);
+                } else {
+                    printError(ex, Optional.empty());
+                }
+            });
+        }
+
+        private void printExternalCommandError(UnexpectedResultException ex) {
+            var result = ex.getResult();
+            var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
+            var printableCommandLine = result.execAttrs().printableCommandLine();
+
+            if (verbose) {
+                stackTracePrinter.accept(ex);
+            }
+
+            String msg;
+            if (ex instanceof UnexpectedExitCodeException) {
+                msg = I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), printableCommandLine);
+            } else if (result.exitCode().isPresent()) {
+                msg = I18N.format("error.command-failed-unexpected-output", printableCommandLine);
             } else {
-                printError(t, Optional.empty());
+                msg = I18N.format("error.command-failed-timed-out", printableCommandLine);
+            }
+
+            messagePrinter.accept(I18N.format("message.error-header", msg));
+            messagePrinter.accept(I18N.format("message.failed-command-output-header"));
+            try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                lines.forEach(messagePrinter);
             }
         }
 
         private void printError(Throwable t, Optional<String> advice) {
-            var isAlienException = isAlienExceptionType(t);
+            var isSelfContained = isSelfContained(t);
 
-            if (isAlienException || verbose) {
+            if (!isSelfContained || verbose) {
                 stackTracePrinter.accept(t);
             }
 
             String msg;
-            if (isAlienException) {
-                msg = t.toString();
-            } else {
+            if (isSelfContained) {
                 msg = t.getMessage();
+            } else {
+                msg = t.toString();
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));
             advice.ifPresent(v -> messagePrinter.accept(I18N.format("message.advice-header", v)));
         }
 
-        private static boolean isAlienExceptionType(Throwable t) {
-            switch (t) {
-                case JPackageException _ -> {
-                    return false;
-                }
-                case Utils.ParseException _ -> {
-                    return false;
-                }
-                case StandardOption.AddLauncherIllegalArgumentException _ -> {
-                    return false;
-                }
-                default -> {
-                    return true;
-                }
-            }
+        private static boolean isSelfContained(Throwable t) {
+            return t.getClass().getAnnotation(SelfContainedException.class) != null;
         }
     }
 
@@ -308,6 +338,10 @@ public final class Main {
 
     private static String getVersion() {
         return System.getProperty("java.version");
+    }
+
+    private static PrintWriter toPrintWriter(PrintStream ps) {
+        return new PrintWriter(ps, true, ps.charset());
     }
 
     private enum DefaultBundlingEnvironmentLoader implements Supplier<CliBundlingEnvironment> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,39 @@ static address kyberAvx512ConstsAddr(int offset) {
 }
 
 const Register scratch = r10;
+
+ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Dup[] = {
+// 0 - 63
+    0, 1, 1, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 10, 10, 11, 12, 13, 13, 14, 15, 16,
+    16, 17, 18, 19, 19, 20, 21, 22, 22, 23, 24, 25, 25, 26, 27, 28, 28, 29, 30,
+    31, 31, 32, 33, 34, 34, 35, 36, 37, 37, 38, 39, 40, 40, 41, 42, 43, 43, 44,
+    45, 46, 46, 47
+  };
+
+static address kyberAvx512_12To16DupAddr() {
+  return (address) kyberAvx512_12To16Dup;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Shift[] = {
+// 0 - 31
+    0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0,
+    4, 0, 4, 0, 4, 0, 4
+  };
+
+static address kyberAvx512_12To16ShiftAddr() {
+  return (address) kyberAvx512_12To16Shift;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint64_t kyberAvx512_12To16And[] = {
+// 0 - 7
+    0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF,
+    0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF,
+    0x0FFF0FFF0FFF0FFF, 0x0FFF0FFF0FFF0FFF
+  };
+
+static address kyberAvx512_12To16AndAddr() {
+  return (address) kyberAvx512_12To16And;
+}
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512NttPerms[] = {
 // 0
@@ -367,10 +400,16 @@ static int xmm29_29[] = {29, 29, 29, 29};
 // ntt_zetas (short[256]) = c_rarg1
 address generate_kyberNtt_avx512(StubGenerator *stubgen,
                                  MacroAssembler *_masm) {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberNtt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -454,6 +493,9 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -463,11 +505,16 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
 // ntt_zetas (short[256]) = c_rarg1
 address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
                                         MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -577,6 +624,9 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -588,11 +638,16 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
 // zetas (short[128]) = c_rarg3
 address generate_kyberNttMult_avx512(StubGenerator *stubgen,
                                      MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberNttMult_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -698,6 +753,9 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -708,11 +766,16 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
 // b (short[256]) = c_rarg2
 address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -743,6 +806,9 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -754,11 +820,16 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
 // c (short[256]) = c_rarg3
 address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register result = c_rarg0;
@@ -797,6 +868,9 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -808,11 +882,16 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
 // parsedLength (int) = c_rarg3
 address generate_kyber12To16_avx512(StubGenerator *stubgen,
                                     MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyber12To16_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register condensed = c_rarg0;
@@ -822,9 +901,64 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
 
   const Register perms = r11;
 
-  Label Loop;
+  Label Loop, VBMILoop;
 
   __ addptr(condensed, condensedOffs);
+
+  if (VM_Version::supports_avx512_vbmi()) {
+    // mask load for the first 48 bytes of each vector
+    __ mov64(rax, 0x0000FFFFFFFFFFFF);
+    __ kmovql(k1, rax);
+
+    __ lea(perms, ExternalAddress(kyberAvx512_12To16DupAddr()));
+    __ evmovdqub(xmm20, Address(perms), Assembler::AVX_512bit);
+
+    __ lea(perms, ExternalAddress(kyberAvx512_12To16ShiftAddr()));
+    __ evmovdquw(xmm21, Address(perms), Assembler::AVX_512bit);
+
+    __ lea(perms, ExternalAddress(kyberAvx512_12To16AndAddr()));
+    __ evmovdquq(xmm22, Address(perms), Assembler::AVX_512bit);
+
+    __ align(OptoLoopAlignment);
+    __ BIND(VBMILoop);
+
+      __ evmovdqub(xmm0, k1, Address(condensed, 0), false,
+                   Assembler::AVX_512bit);
+      __ evmovdqub(xmm1, k1, Address(condensed, 48), false,
+                   Assembler::AVX_512bit);
+      __ evmovdqub(xmm2, k1, Address(condensed, 96), false,
+                   Assembler::AVX_512bit);
+      __ evmovdqub(xmm3, k1, Address(condensed, 144), false,
+                   Assembler::AVX_512bit);
+
+      __ evpermb(xmm4, k0, xmm20, xmm0, false, Assembler::AVX_512bit);
+      __ evpermb(xmm5, k0, xmm20, xmm1, false, Assembler::AVX_512bit);
+      __ evpermb(xmm6, k0, xmm20, xmm2, false, Assembler::AVX_512bit);
+      __ evpermb(xmm7, k0, xmm20, xmm3, false, Assembler::AVX_512bit);
+
+      __ evpsrlvw(xmm4, xmm4, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm5, xmm5, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm6, xmm6, xmm21, Assembler::AVX_512bit);
+      __ evpsrlvw(xmm7, xmm7, xmm21, Assembler::AVX_512bit);
+
+      __ evpandq(xmm0, xmm22, xmm4, Assembler::AVX_512bit);
+      __ evpandq(xmm1, xmm22, xmm5, Assembler::AVX_512bit);
+      __ evpandq(xmm2, xmm22, xmm6, Assembler::AVX_512bit);
+      __ evpandq(xmm3, xmm22, xmm7, Assembler::AVX_512bit);
+
+      store4regs(parsed, 0, xmm0_3, _masm);
+
+      __ addptr(condensed, 192);
+      __ addptr(parsed, 256);
+      __ subl(parsedLength, 128);
+      __ jcc(Assembler::greater, VBMILoop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov64(rax, 0); // return 0
+    __ ret(0);
+
+    return start;
+  }
 
   __ lea(perms, ExternalAddress(kyberAvx512_12To16PermsAddr()));
 
@@ -896,6 +1030,9 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -905,11 +1042,16 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
 // coeffs (short[256]) = c_rarg0
 address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
                                            MacroAssembler *_masm) {
-
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(stubgen, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   const Register coeffs = c_rarg0;
@@ -933,6 +1075,9 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   __ mov64(rax, 0); // return 0
   __ ret(0);
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -950,3 +1095,24 @@ void StubGenerator::generate_kyber_stubs() {
     }
   }
 }
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  // use accessors to correctly identify the relevant addresses
+  ADD(kyberAvx512NttPermsAddr());
+  ADD(kyberAvx512InverseNttPermsAddr());
+  ADD(kyberAvx512_nttMultPermsAddr());
+  ADD(kyberAvx512_12To16PermsAddr());
+  ADD(kyberAvx512_12To16DupAddr());
+  ADD(kyberAvx512_12To16ShiftAddr());
+  ADD(kyberAvx512_12To16AndAddr());
+  ADD(kyberAvx512ConstsAddr(qOffset));
+  ADD(kyberAvx512ConstsAddr(qInvModROffset));
+  ADD(kyberAvx512ConstsAddr(dimHalfInverseOffset));
+  ADD(kyberAvx512ConstsAddr(barretMultiplierOffset));
+  ADD(kyberAvx512ConstsAddr(montRSquareModqOffset));
+  ADD(kyberAvx512ConstsAddr(f00Offset));
+#undef ADD
+}
+#endif // INCLUDE_CDS

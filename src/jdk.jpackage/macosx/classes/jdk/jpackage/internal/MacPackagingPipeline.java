@@ -217,6 +217,11 @@ final class MacPackagingPipeline {
 
     enum SignAppImagePackageType implements PackageType {
         VALUE;
+
+        @Override
+        public String label() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     static Package createSignAppImagePackage(MacApplication app, BuildEnv env) {
@@ -495,7 +500,7 @@ final class MacPackagingPipeline {
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
-            toBiConsumer(TempKeychain::withKeychain).accept(unused -> signAction.run(), keychain);
+            toBiConsumer(ActiveKeychainList::withKeychain).accept(unused -> signAction.run(), keychain);
         }, signAction);
     }
 

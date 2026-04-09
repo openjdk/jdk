@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -505,13 +505,10 @@ void Modules::check_archived_module_oop(oop orig_module_obj) {
     ClassLoaderData* loader_data = orig_module_ent->loader_data();
     assert(loader_data->is_builtin_class_loader_data(), "must be");
 
-    if (orig_module_ent->name() != nullptr) {
-      // For each named module, we archive both the java.lang.Module oop and the ModuleEntry.
-      assert(orig_module_ent->has_been_archived(), "sanity");
-    } else {
+    precond(ArchiveBuilder::current()->has_been_archived(orig_module_ent));
+    if (orig_module_ent->name() == nullptr) {
       // We always archive unnamed module oop for boot, platform, and system loaders.
       precond(orig_module_ent->should_be_archived());
-      precond(orig_module_ent->has_been_archived());
 
       if (loader_data->is_boot_class_loader_data()) {
         assert(!_seen_boot_unnamed_module, "only once");
@@ -527,10 +524,6 @@ void Modules::check_archived_module_oop(oop orig_module_obj) {
       }
     }
   }
-}
-
-void Modules::verify_archived_modules() {
-  ModuleEntry::verify_archived_module_entries();
 }
 
 class Modules::ArchivedProperty {

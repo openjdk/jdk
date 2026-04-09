@@ -31,7 +31,7 @@ import java.io.IOException;
  * @key stress
  * @library /
  * @requires vm.gc.G1
- * @requires vm.flavor == "server" & !vm.emulatedClient & os.family != "aix"
+ * @requires vm.flavor == "server" & os.family != "aix"
  * @summary Stress Java heap allocation with AllocateHeapAt flag using GC basher.
  * @run main/othervm/timeout=500 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC -XX:AllocateHeapAt=. gc.stress.gcbasher.TestGCBasherWithAllocateHeapAt 120000
  */

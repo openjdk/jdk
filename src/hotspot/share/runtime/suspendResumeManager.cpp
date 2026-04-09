@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ void SuspendResumeManager::do_owner_suspend() {
   assert(_state_lock->owned_by_self(), "Lock must be held");
   assert(!_target->has_last_Java_frame() || _target->frame_anchor()->walkable(), "should have walkable stack");
   assert(_target->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
+  JVMTI_ONLY(assert(!_target->is_vthread_transition_disabler(), "attempt to suspend a vthread transition disabler");)
 
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_target));

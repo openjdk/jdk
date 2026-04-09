@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
  */
 package jdk.incubator.vector;
 
-import java.util.function.IntFunction;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.IntFunction;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
@@ -115,7 +114,7 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  * operations on individual lane values.
  *
  */
-public abstract class VectorOperators {
+public final class VectorOperators {
     private VectorOperators() { }
 
     /**
@@ -131,12 +130,9 @@ public abstract class VectorOperators {
      * @see VectorOperators.Test Test
      * @see VectorOperators.Conversion Conversion
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Operator {
+    public sealed interface Operator {
         /**
          * Returns the symbolic name of this operator,
          * as a constant in {@link VectorOperators}.
@@ -235,13 +231,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Unary)
      * lanewise}{@code (NEG)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Unary extends Operator {
+    public sealed interface Unary extends Operator {
     }
 
     /**
@@ -252,12 +243,9 @@ public abstract class VectorOperators {
      * Vector#lanewise(VectorOperators.Binary,Vector)
      * lanewise}{@code (ADD, v1)}.
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Binary extends Operator {
+    public sealed interface Binary extends Operator {
     }
 
     /**
@@ -267,13 +255,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Ternary,Vector,Vector)
      * lanewise}{@code (FMA, v1, v2)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Ternary extends Operator {
+    public sealed interface Ternary extends Operator {
     }
 
     /**
@@ -283,13 +266,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code e = v0.}{@link
      * IntVector#reduceLanes(VectorOperators.Associative)
      * reduceLanes}{@code (ADD)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Associative extends Binary {
+    public sealed interface Associative extends Binary {
     }
 
     /**
@@ -299,13 +277,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * FloatVector#test(VectorOperators.Test)
      * test}{@code (IS_FINITE)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Test extends Operator {
+    public sealed interface Test extends Operator {
     }
 
     /**
@@ -315,13 +288,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * Vector#compare(VectorOperators.Comparison,Vector)
      * compare}{@code (LT, v1)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Comparison extends Operator {
+    public sealed interface Comparison extends Operator {
     }
 
     /**
@@ -336,13 +304,8 @@ public abstract class VectorOperators {
      *        domain type (the input lane type)
      * @param <F> the boxed element type for the conversion
      *        range type (the output lane type)
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Conversion<E,F> extends Operator {
+    public sealed interface Conversion<E,F> extends Operator {
         /**
          * The domain of this conversion, a primitive type.
          * @return the domain of this conversion
@@ -817,8 +780,8 @@ public abstract class VectorOperators {
 
     private static <E,F> ConversionImpl<E,F>
     convert(String name, char kind, Class<E> dom, Class<F> ran, int opCode, int flags) {
-        int domran = ((LaneType.of(dom).basicType << VO_DOM_SHIFT) +
-                      (LaneType.of(ran).basicType << VO_RAN_SHIFT));
+        int domran = ((LaneType.of(dom).ordinal() << VO_DOM_SHIFT) +
+                      (LaneType.of(ran).ordinal() << VO_RAN_SHIFT));
         if (opCode >= 0) {
             if ((opCode & VO_DOM_RAN_MASK) == 0) {
                 opCode += domran;
@@ -831,7 +794,7 @@ public abstract class VectorOperators {
                                     kind, dom, ran);
     }
 
-    private abstract static class OperatorImpl implements Operator {
+    private abstract static sealed class OperatorImpl implements Operator {
         private final String symName;
         private final String opName;
         private final int opInfo;
@@ -945,10 +908,10 @@ public abstract class VectorOperators {
 
         @ForceInline
         /*package-private*/
-        boolean compatibleWith(LaneType laneType) {
-            if (laneType.elementKind == 'F') {
+        boolean compatibleWith(LaneType type) {
+            if (type.elementKind == 'F') {
                 return !opKind(VO_NOFP);
-            } else if (laneType.elementKind == 'I') {
+            } else if (type.elementKind == 'I') {
                 return !opKind(VO_ONLYFP);
             } else {
                 throw new AssertionError();
@@ -956,35 +919,35 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class UnaryImpl extends OperatorImpl implements Unary {
+    private static final class UnaryImpl extends OperatorImpl implements Unary {
         private UnaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
         }
     }
 
-    private static class BinaryImpl extends OperatorImpl implements Binary {
+    private static sealed class BinaryImpl extends OperatorImpl implements Binary permits AssociativeImpl {
         private BinaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);
         }
     }
 
-    private static class TernaryImpl extends OperatorImpl implements Ternary {
+    private static final class TernaryImpl extends OperatorImpl implements Ternary {
         private TernaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_TERNARY);
         }
     }
 
-    private static class AssociativeImpl extends BinaryImpl implements Associative {
+    private static final class AssociativeImpl extends BinaryImpl implements Associative {
         private AssociativeImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
         }
     }
 
     /*package-private*/
-    static
+    static final
     class ConversionImpl<E,F> extends OperatorImpl
                               implements Conversion<E,F> {
         private ConversionImpl(String symName, String opName, int opInfo,
@@ -1077,8 +1040,8 @@ public abstract class VectorOperators {
             String name;
             Class<?> domType = dom.elementType;
             Class<?> ranType = ran.elementType;
-            int domCode = (dom.basicType << VO_DOM_SHIFT);
-            int ranCode = (ran.basicType << VO_RAN_SHIFT);
+            int domCode = (dom.ordinal() << VO_DOM_SHIFT);
+            int ranCode = (ran.ordinal() << VO_RAN_SHIFT);
             int opCode = domCode + ranCode;
             switch (kind) {
             case 'I':
@@ -1156,16 +1119,16 @@ public abstract class VectorOperators {
                 switch (conv.kind) {
                 case 'W':
                     int domCode = (opc >> VO_DOM_SHIFT) & 0xF;
-                    dom = LaneType.ofBasicType(domCode);
+                    dom = LaneType.ofLaneTypeOrdinal(domCode);
                     break;
                 case 'N':
                     int ranCode = (opc >> VO_RAN_SHIFT) & 0xF;
-                    ran = LaneType.ofBasicType(ranCode);
+                    ran = LaneType.ofLaneTypeOrdinal(ranCode);
                     break;
                 }
                 assert((opc & VO_DOM_RAN_MASK) ==
-                       ((dom.basicType << VO_DOM_SHIFT) +
-                        (ran.basicType << VO_RAN_SHIFT)));
+                       ((dom.ordinal() << VO_DOM_SHIFT) +
+                        (ran.ordinal() << VO_RAN_SHIFT)));
                 ConversionImpl<?,?>[] cache = cacheOf(conv.kind, dom);
                 int ranKey = ran.switchKey;
                 if (cache[ranKey] != conv) {
@@ -1233,12 +1196,12 @@ public abstract class VectorOperators {
                 break;
             case 'W':
                 doc = "In-place widen {@code _domVal} inside _ran to {@code (_ran)_domVal}";
-                LaneType logdom = LaneType.ofBasicType(domran >> VO_DOM_SHIFT & 0xF);
+                LaneType logdom = LaneType.ofLaneTypeOrdinal(domran >> VO_DOM_SHIFT & 0xF);
                 doc = doc.replace("_dom", logdom.elementType.getSimpleName());
                 break;
             case 'N':
                 doc = "In-place narrow {@code _domVal} to {@code (_ran)_domVal} inside _dom";
-                LaneType logran = LaneType.ofBasicType(domran >> VO_RAN_SHIFT & 0xF);
+                LaneType logran = LaneType.ofLaneTypeOrdinal(domran >> VO_RAN_SHIFT & 0xF);
                 doc = doc.replace("_ran", logran.elementType.getSimpleName());
                 break;
             default:
@@ -1260,7 +1223,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class TestImpl extends OperatorImpl implements Test {
+    private static final class TestImpl extends OperatorImpl implements Test {
         private TestImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
@@ -1272,7 +1235,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class ComparisonImpl extends OperatorImpl implements Comparison {
+    private static final class ComparisonImpl extends OperatorImpl implements Comparison {
         private ComparisonImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);

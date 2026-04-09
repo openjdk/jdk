@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,9 @@ import jtreg.SkippedException;
  * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
- * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
@@ -48,8 +49,9 @@ import jtreg.SkippedException;
  * @test id=xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
- * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
@@ -61,6 +63,7 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compiler1.enabled
  * @library /test/lib
@@ -72,6 +75,7 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @run main/othervm/timeout=1920 ClhsdbFindPC false true

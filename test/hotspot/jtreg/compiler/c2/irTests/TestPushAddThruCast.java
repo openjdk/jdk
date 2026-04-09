@@ -86,7 +86,7 @@ public class TestPushAddThruCast {
     // Test commoning of Casts after loop opts when they are at the same control
     @Test
     @IR(phase = CompilePhase.ITER_GVN1, counts = { IRNode.CAST_II, "4" })
-    @IR(phase = CompilePhase.OPTIMIZE_FINISHED, counts = { IRNode.CAST_II, "2" })
+    @IR(phase = CompilePhase.OPTIMIZE_FINISHED, counts = { IRNode.CAST_II, "3" })
     public static int test3() {
         int j = Objects.checkIndex(i - 3, length);
         j += Objects.checkIndex(i, length);

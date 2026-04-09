@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,11 +81,7 @@ class LinuxCDebugger implements CDebugger {
     String cpu = dbg.getCPU();
     if (cpu.equals("amd64")) {
        AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
-       Address sp  = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
-       if (sp == null) return null;
-       Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
-       if (pc == null) return null;
-       return LinuxAMD64CFrame.getTopFrame(dbg, sp, pc, context);
+       return LinuxAMD64CFrame.getTopFrame(dbg, context);
     }  else if (cpu.equals("ppc64")) {
         PPC64ThreadContext context = (PPC64ThreadContext) thread.getContext();
         Address sp = context.getRegisterAsAddress(PPC64ThreadContext.SP);

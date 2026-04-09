@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,75 +597,6 @@ final class HttpsClient extends HttpClient
         if (http != null) {
             http.closeServer();
         }
-    }
-
-    /**
-     * Returns the cipher suite in use on this connection.
-     */
-    String getCipherSuite() {
-        return session.getCipherSuite();
-    }
-
-    /**
-     * Returns the certificate chain the client sent to the
-     * server, or null if the client did not authenticate.
-     */
-    public java.security.cert.Certificate [] getLocalCertificates() {
-        return session.getLocalCertificates();
-    }
-
-    /**
-     * Returns the certificate chain with which the server
-     * authenticated itself, or throw a SSLPeerUnverifiedException
-     * if the server did not authenticate.
-     */
-    java.security.cert.Certificate [] getServerCertificates()
-            throws SSLPeerUnverifiedException
-    {
-        return session.getPeerCertificates();
-    }
-
-    /**
-     * Returns the principal with which the server authenticated
-     * itself, or throw a SSLPeerUnverifiedException if the
-     * server did not authenticate.
-     */
-    Principal getPeerPrincipal()
-            throws SSLPeerUnverifiedException
-    {
-        Principal principal;
-        try {
-            principal = session.getPeerPrincipal();
-        } catch (AbstractMethodError e) {
-            // if the provider does not support it, fallback to peer certs.
-            // return the X500Principal of the end-entity cert.
-            java.security.cert.Certificate[] certs =
-                        session.getPeerCertificates();
-            principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
-        }
-        return principal;
-    }
-
-    /**
-     * Returns the principal the client sent to the
-     * server, or null if the client did not authenticate.
-     */
-    Principal getLocalPrincipal()
-    {
-        Principal principal;
-        try {
-            principal = session.getLocalPrincipal();
-        } catch (AbstractMethodError e) {
-            principal = null;
-            // if the provider does not support it, fallback to local certs.
-            // return the X500Principal of the end-entity cert.
-            java.security.cert.Certificate[] certs =
-                        session.getLocalCertificates();
-            if (certs != null) {
-                principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
-            }
-        }
-        return principal;
     }
 
     /**

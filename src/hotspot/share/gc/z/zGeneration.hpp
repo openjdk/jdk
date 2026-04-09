@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ThreadClosure;
 class ZForwardingTable;
@@ -70,9 +71,9 @@ protected:
   ZRelocate             _relocate;
   ZRelocationSet        _relocation_set;
 
-  volatile size_t       _freed;
-  volatile size_t       _promoted;
-  volatile size_t       _compacted;
+  Atomic<size_t>        _freed;
+  Atomic<size_t>        _promoted;
+  Atomic<size_t>        _compacted;
 
   Phase                 _phase;
   uint32_t              _seqnum;

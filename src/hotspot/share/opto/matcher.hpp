@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,12 +221,12 @@ public:
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;
+  #ifdef ASSERT
   // Maps from machine register to boolean; true if machine register can
   // be holding a call argument in some signature.
   static bool can_be_java_arg( int reg );
-  // Maps from machine register to boolean; true if machine register holds
-  // a spillable argument.
-  static bool is_spillable_arg( int reg );
+  #endif
+
   // Number of integer live ranges that constitute high register pressure
   static uint int_pressure_limit();
   // Number of float live ranges that constitute high register pressure
@@ -327,6 +327,8 @@ public:
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
+  // Returns true if the platform efficiently implements the given masked vector
+  // operation using predicate features, false otherwise.
   static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
   // Determines if a vector operation needs to be partially implemented with a mask
@@ -427,10 +429,6 @@ public:
   // Register for MODL projection of divmodL
   static const RegMask& modL_proj_mask();
 
-  // Use hardware DIV instruction when it is faster than
-  // a code which use multiply for division by constant.
-  static bool use_asm_for_ldiv_by_con( jlong divisor );
-
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
 
@@ -440,9 +438,6 @@ public:
 
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
-
-  // Interpreter's Frame Pointer Register
-  static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)

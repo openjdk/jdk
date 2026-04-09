@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 
 #include "mlib_image.h"
 #include "mlib_ImageLookUp.h"
+#include "safe_math.h"
 
 /***************************************************************/
 #define MAX_WIDTH  512
@@ -302,6 +303,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_2(const mlib_u8 *src,
   mlib_u8  *buff = (mlib_u8*)buff_lcl, *buffs;
   mlib_u32 val0, val1;
 
+  if (!SAFE_TO_MULT(xsize, 2)) {
+    return MLIB_FAILURE;
+  }
   size = xsize * 2;
 
   if (size > MAX_WIDTH) {
@@ -440,6 +444,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_3(const mlib_u8 *src,
   mlib_u8  *buff = (mlib_u8*)buff_lcl, *buffs;
   mlib_u32 l0, h0, v0, l1, h1, v1, l2, h2, v2;
 
+  if (!SAFE_TO_MULT(3, xsize)) {
+    return MLIB_FAILURE;
+  }
   size = 3 * xsize;
 
   if (size > MAX_WIDTH) {
@@ -583,6 +590,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_4(const mlib_u8 *src,
   mlib_u8  *buff = (mlib_u8*)buff_lcl, *buffs;
   mlib_u32 l, h;
 
+  if (!SAFE_TO_MULT(xsize, 4)) {
+    return MLIB_FAILURE;
+  }
   size = xsize * 4;
 
   if (size > MAX_WIDTH) {

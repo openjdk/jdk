@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 // incoming crypto buffer is null. Validate message type,
                 // check if size is available
                 byte messageType = payload.get(payload.position());
-                if (SSLLogger.isOn()) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("Received message of type 0x" +
                             Integer.toHexString(messageType & 0xFF));
                 }
@@ -660,7 +660,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             }
             Alert alert = ((QuicEngineOutputRecord)
                     conContext.outputRecord).getAlert();
-            throw new QuicTransportException(alert.description, keySpace, 0,
+            throw new QuicTransportException(e.getMessage(), keySpace, 0,
                     BASE_CRYPTO_ERROR + alert.id, e);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -835,7 +835,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         final boolean confirmed = HANDSHAKE_STATE_HANDLE.compareAndSet(this,
                 NEED_SEND_HANDSHAKE_DONE, HANDSHAKE_CONFIRMED);
         if (confirmed) {
-            if (SSLLogger.isOn()) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("QuicTLSEngine (server) marked handshake " +
                         "state as HANDSHAKE_CONFIRMED");
             }
@@ -853,7 +853,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         final boolean confirmed = HANDSHAKE_STATE_HANDLE.compareAndSet(this,
                 NEED_RECV_HANDSHAKE_DONE, HANDSHAKE_CONFIRMED);
         if (confirmed) {
-            if (SSLLogger.isOn()) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine(
                         "QuicTLSEngine (client) received HANDSHAKE_DONE," +
                         " marking state as HANDSHAKE_DONE");

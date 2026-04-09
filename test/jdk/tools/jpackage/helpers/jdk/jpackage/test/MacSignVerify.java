@@ -28,11 +28,15 @@ import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.test.MacHelper.ResolvableCertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateHash;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 
@@ -41,12 +45,10 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
-    public static void verifyAppImageSigned(
-            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyAppImageSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
 
-        cmd.verifyIsOfType(PackageType.MAC);
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
         Objects.requireNonNull(certRequest);
-        Objects.requireNonNull(keychain);
 
         final Path bundleRoot;
         if (cmd.isImagePackageType()) {
@@ -70,13 +72,12 @@ public final class MacSignVerify {
                 String.format("Check [%s] has sign origin as expected", bundleRoot));
     }
 
-    public static void verifyPkgSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyPkgSigned(JPackageCommand cmd, ResolvableCertificateRequest certRequest) {
         cmd.verifyIsOfType(PackageType.MAC_PKG);
-        assertPkgSigned(cmd.outputBundle(), certRequest,
-                Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest)));
+        assertPkgSigned(cmd.outputBundle(), certRequest);
     }
 
-    public static void assertSigned(Path path, CertificateRequest certRequest) {
+    public static void assertSigned(Path path, ResolvableCertificateRequest certRequest) {
         assertSigned(path);
         TKit.assertEquals(certRequest.name(), findCodesignSignOrigin(path).orElse(null),
                 String.format("Check [%s] signed with certificate", path));
@@ -92,8 +93,11 @@ public final class MacSignVerify {
         final var exec = Executor.of(
                 "/usr/bin/codesign",
                 "-d",
-                "--entitlements", "-",
-                "--xml", path.toString()).saveOutput().dumpOutput().binaryOutput();
+                // `--entitlements :-` will print entitlements as XML plist in the stdout and "Executable=..." message to the stderr.
+                // Prefer this option combination to `--entitlements - --xml` as
+                // the latter doesn't work on older macOS releases (Proved unsupported on Catalina 10.15.7).
+                "--entitlements", ":-",
+                path.toString()).saveOutput().dumpOutput().binaryOutput();
         final var result = exec.execute();
         var xml = result.byteStdout();
         if (xml.length == 0) {
@@ -106,6 +110,10 @@ public final class MacSignVerify {
     public static void assertUnsigned(Path path) {
         TKit.assertTrue(findSpctlSignOrigin(SpctlType.EXEC, path).isEmpty(),
                 String.format("Check [%s] unsigned", path));
+    }
+
+    public static void assertPkgSigned(Path path, ResolvableCertificateRequest certRequest) {
+        assertPkgSigned(path, certRequest.certRequest(), certRequest.cert());
     }
 
     public static void assertPkgSigned(Path path, CertificateRequest certRequest, X509Certificate cert) {
@@ -209,10 +217,13 @@ public final class MacSignVerify {
         exec.addArguments("--verify", "--deep", "--strict", "--verbose=2", path.toString());
         final var result = exec.saveOutput().executeWithoutExitCodeCheck();
         if (result.getExitCode() == 0) {
-            TKit.TextStreamVerifier.group()
-                    .add(TKit.assertTextStream(": valid on disk").predicate(String::endsWith))
-                    .add(TKit.assertTextStream(": satisfies its Designated Requirement").predicate(String::endsWith))
-                    .create().accept(result.getOutput().iterator());
+            Stream.of(
+                    ": valid on disk",
+                    ": satisfies its Designated Requirement"
+            ).map(TKit::assertTextStream).map(v -> {
+                Consumer<Iterator<String>> consumer = v.predicate(String::endsWith)::apply;
+                return consumer;
+            }).reduce(Consumer::andThen).orElseThrow().accept(result.getOutput().iterator());
         } else if (!sudo && result.getOutput().stream().findFirst().filter(str -> {
             // By some reason /usr/bin/codesign command fails for some installed bundles.
             // It is known to fail for some AppContentTest test cases and all FileAssociationsTest test cases.

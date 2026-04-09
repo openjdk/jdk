@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,15 @@
 
 /*
  * @test
- * @run testng/othervm -Diters=10   -Xint                                                   VarHandleTestAccessChar
+ * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessChar
  *
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
  *
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessChar
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessChar
- * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessChar
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessChar
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessChar
+ * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessChar
  */
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -43,8 +39,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestAccessChar extends VarHandleBaseTest {
     static final char static_final_v = '\u0123';
 
@@ -108,7 +110,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         return vhs.toArray(new VarHandle[0]);
     }
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
                 VarHandleTestAccessChar.class, "final_v", char.class);
@@ -125,8 +127,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         vhArray = MethodHandles.arrayElementVarHandle(char[].class);
     }
 
-
-    @DataProvider
     public Object[][] varHandlesProvider() throws Exception {
         List<VarHandle> vhs = new ArrayList<>();
         vhs.add(vhField);
@@ -156,7 +156,8 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         }
     }
 
-    @Test(dataProvider = "varHandlesProvider")
+    @ParameterizedTest
+    @MethodSource("varHandlesProvider")
     public void testIsAccessModeSupported(VarHandle vh) {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET));
@@ -194,8 +195,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
-
-    @DataProvider
     public Object[][] typesProvider() throws Exception {
         List<Object[]> types = new ArrayList<>();
         types.add(new Object[] {vhField, Arrays.asList(VarHandleTestAccessChar.class)});
@@ -205,15 +204,15 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         return types.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "typesProvider")
+    @ParameterizedTest
+    @MethodSource("typesProvider")
     public void testTypes(VarHandle vh, List<Class<?>> pts) {
-        assertEquals(vh.varType(), char.class);
+        assertEquals(char.class, vh.varType());
 
-        assertEquals(vh.coordinateTypes(), pts);
+        assertEquals(pts, vh.coordinateTypes());
 
         testTypes(vh);
     }
-
 
     @Test
     public void testLookupInstanceToStatic() {
@@ -241,8 +240,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         });
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -284,7 +281,8 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -297,26 +295,26 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Plain
         {
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "get char value");
+            assertEquals('\u0123', x, "get char value");
         }
 
 
         // Volatile
         {
             char x = (char) vh.getVolatile(recv);
-            assertEquals(x, '\u0123', "getVolatile char value");
+            assertEquals('\u0123', x, "getVolatile char value");
         }
 
         // Lazy
         {
             char x = (char) vh.getAcquire(recv);
-            assertEquals(x, '\u0123', "getRelease char value");
+            assertEquals('\u0123', x, "getRelease char value");
         }
 
         // Opaque
         {
             char x = (char) vh.getOpaque(recv);
-            assertEquals(x, '\u0123', "getOpaque char value");
+            assertEquals('\u0123', x, "getOpaque char value");
         }
     }
 
@@ -346,26 +344,26 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Plain
         {
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "get char value");
+            assertEquals('\u0123', x, "get char value");
         }
 
 
         // Volatile
         {
             char x = (char) vh.getVolatile();
-            assertEquals(x, '\u0123', "getVolatile char value");
+            assertEquals('\u0123', x, "getVolatile char value");
         }
 
         // Lazy
         {
             char x = (char) vh.getAcquire();
-            assertEquals(x, '\u0123', "getRelease char value");
+            assertEquals('\u0123', x, "getRelease char value");
         }
 
         // Opaque
         {
             char x = (char) vh.getOpaque();
-            assertEquals(x, '\u0123', "getOpaque char value");
+            assertEquals('\u0123', x, "getOpaque char value");
         }
     }
 
@@ -396,7 +394,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.set(recv, '\u0123');
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "set char value");
+            assertEquals('\u0123', x, "set char value");
         }
 
 
@@ -404,21 +402,21 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.setVolatile(recv, '\u4567');
             char x = (char) vh.getVolatile(recv);
-            assertEquals(x, '\u4567', "setVolatile char value");
+            assertEquals('\u4567', x, "setVolatile char value");
         }
 
         // Lazy
         {
             vh.setRelease(recv, '\u0123');
             char x = (char) vh.getAcquire(recv);
-            assertEquals(x, '\u0123', "setRelease char value");
+            assertEquals('\u0123', x, "setRelease char value");
         }
 
         // Opaque
         {
             vh.setOpaque(recv, '\u4567');
             char x = (char) vh.getOpaque(recv);
-            assertEquals(x, '\u4567', "setOpaque char value");
+            assertEquals('\u4567', x, "setOpaque char value");
         }
 
         vh.set(recv, '\u0123');
@@ -428,56 +426,56 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean r = vh.compareAndSet(recv, '\u0123', '\u4567');
             assertEquals(r, true, "success compareAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "success compareAndSet char value");
+            assertEquals('\u4567', x, "success compareAndSet char value");
         }
 
         {
             boolean r = vh.compareAndSet(recv, '\u0123', '\u89AB');
             assertEquals(r, false, "failing compareAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "failing compareAndSet char value");
+            assertEquals('\u4567', x, "failing compareAndSet char value");
         }
 
         {
             char r = (char) vh.compareAndExchange(recv, '\u4567', '\u0123');
             assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "success compareAndExchange char value");
+            assertEquals('\u0123', x, "success compareAndExchange char value");
         }
 
         {
             char r = (char) vh.compareAndExchange(recv, '\u4567', '\u89AB');
             assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "failing compareAndExchange char value");
+            assertEquals('\u0123', x, "failing compareAndExchange char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeAcquire(recv, '\u0123', '\u4567');
             assertEquals(r, '\u0123', "success compareAndExchangeAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "success compareAndExchangeAcquire char value");
+            assertEquals('\u4567', x, "success compareAndExchangeAcquire char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeAcquire(recv, '\u0123', '\u89AB');
             assertEquals(r, '\u4567', "failing compareAndExchangeAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "failing compareAndExchangeAcquire char value");
+            assertEquals('\u4567', x, "failing compareAndExchangeAcquire char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeRelease(recv, '\u4567', '\u0123');
             assertEquals(r, '\u4567', "success compareAndExchangeRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "success compareAndExchangeRelease char value");
+            assertEquals('\u0123', x, "success compareAndExchangeRelease char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeRelease(recv, '\u4567', '\u89AB');
             assertEquals(r, '\u0123', "failing compareAndExchangeRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "failing compareAndExchangeRelease char value");
+            assertEquals('\u0123', x, "failing compareAndExchangeRelease char value");
         }
 
         {
@@ -488,14 +486,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "success weakCompareAndSetPlain char value");
+            assertEquals('\u4567', x, "success weakCompareAndSetPlain char value");
         }
 
         {
             boolean success = vh.weakCompareAndSetPlain(recv, '\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetPlain char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "failing weakCompareAndSetPlain char value");
+            assertEquals('\u4567', x, "failing weakCompareAndSetPlain char value");
         }
 
         {
@@ -506,14 +504,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "success weakCompareAndSetAcquire char");
+            assertEquals('\u0123', x, "success weakCompareAndSetAcquire char");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire(recv, '\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "failing weakCompareAndSetAcquire char value");
+            assertEquals('\u0123', x, "failing weakCompareAndSetAcquire char value");
         }
 
         {
@@ -524,14 +522,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "success weakCompareAndSetRelease char");
+            assertEquals('\u4567', x, "success weakCompareAndSetRelease char");
         }
 
         {
             boolean success = vh.weakCompareAndSetRelease(recv, '\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "failing weakCompareAndSetRelease char value");
+            assertEquals('\u4567', x, "failing weakCompareAndSetRelease char value");
         }
 
         {
@@ -542,14 +540,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "success weakCompareAndSet char value");
+            assertEquals('\u0123', x, "success weakCompareAndSet char value");
         }
 
         {
             boolean success = vh.weakCompareAndSet(recv, '\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u0123', "failing weakCompareAndSet char value");
+            assertEquals('\u0123', x, "failing weakCompareAndSet char value");
         }
 
         // Compare set and get
@@ -557,27 +555,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndSet(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndSet char");
+            assertEquals('\u0123', o, "getAndSet char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "getAndSet char value");
+            assertEquals('\u4567', x, "getAndSet char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndSetAcquire(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndSetAcquire char");
+            assertEquals('\u0123', o, "getAndSetAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "getAndSetAcquire char value");
+            assertEquals('\u4567', x, "getAndSetAcquire char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndSetRelease(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndSetRelease char");
+            assertEquals('\u0123', o, "getAndSetRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, '\u4567', "getAndSetRelease char value");
+            assertEquals('\u4567', x, "getAndSetRelease char value");
         }
 
         // get and add, add and get
@@ -585,27 +583,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndAdd(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndAdd char");
+            assertEquals('\u0123', o, "getAndAdd char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAdd char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndAddAcquire(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndAddAcquire char");
+            assertEquals('\u0123', o, "getAndAddAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddAcquire char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndAddRelease(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddReleasechar");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
 
         // get and bitwise or
@@ -613,27 +611,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseOr(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOr char");
+            assertEquals('\u0123', o, "getAndBitwiseOr char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOr char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseOrAcquire(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseOrAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrAcquire char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseOrRelease(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseOrRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrRelease char value");
         }
 
         // get and bitwise and
@@ -641,27 +639,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseAnd(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+            assertEquals('\u0123', o, "getAndBitwiseAnd char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAnd char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseAndAcquire(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseAndAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndAcquire char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseAndRelease(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseAndRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndRelease char value");
         }
 
         // get and bitwise xor
@@ -669,27 +667,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseXor(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXor char");
+            assertEquals('\u0123', o, "getAndBitwiseXor char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXor char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseXorAcquire(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseXorAcquire char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorAcquire char value");
         }
 
         {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndBitwiseXorRelease(recv, '\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseXorRelease char");
             char x = (char) vh.get(recv);
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorRelease char value");
         }
     }
 
@@ -704,7 +702,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.set('\u0123');
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "set char value");
+            assertEquals('\u0123', x, "set char value");
         }
 
 
@@ -712,21 +710,21 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         {
             vh.setVolatile('\u4567');
             char x = (char) vh.getVolatile();
-            assertEquals(x, '\u4567', "setVolatile char value");
+            assertEquals('\u4567', x, "setVolatile char value");
         }
 
         // Lazy
         {
             vh.setRelease('\u0123');
             char x = (char) vh.getAcquire();
-            assertEquals(x, '\u0123', "setRelease char value");
+            assertEquals('\u0123', x, "setRelease char value");
         }
 
         // Opaque
         {
             vh.setOpaque('\u4567');
             char x = (char) vh.getOpaque();
-            assertEquals(x, '\u4567', "setOpaque char value");
+            assertEquals('\u4567', x, "setOpaque char value");
         }
 
         vh.set('\u0123');
@@ -736,56 +734,56 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean r = vh.compareAndSet('\u0123', '\u4567');
             assertEquals(r, true, "success compareAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "success compareAndSet char value");
+            assertEquals('\u4567', x, "success compareAndSet char value");
         }
 
         {
             boolean r = vh.compareAndSet('\u0123', '\u89AB');
             assertEquals(r, false, "failing compareAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "failing compareAndSet char value");
+            assertEquals('\u4567', x, "failing compareAndSet char value");
         }
 
         {
             char r = (char) vh.compareAndExchange('\u4567', '\u0123');
             assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "success compareAndExchange char value");
+            assertEquals('\u0123', x, "success compareAndExchange char value");
         }
 
         {
             char r = (char) vh.compareAndExchange('\u4567', '\u89AB');
             assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "failing compareAndExchange char value");
+            assertEquals('\u0123', x, "failing compareAndExchange char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeAcquire('\u0123', '\u4567');
             assertEquals(r, '\u0123', "success compareAndExchangeAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "success compareAndExchangeAcquire char value");
+            assertEquals('\u4567', x, "success compareAndExchangeAcquire char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeAcquire('\u0123', '\u89AB');
             assertEquals(r, '\u4567', "failing compareAndExchangeAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "failing compareAndExchangeAcquire char value");
+            assertEquals('\u4567', x, "failing compareAndExchangeAcquire char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeRelease('\u4567', '\u0123');
             assertEquals(r, '\u4567', "success compareAndExchangeRelease char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "success compareAndExchangeRelease char value");
+            assertEquals('\u0123', x, "success compareAndExchangeRelease char value");
         }
 
         {
             char r = (char) vh.compareAndExchangeRelease('\u4567', '\u89AB');
             assertEquals(r, '\u0123', "failing compareAndExchangeRelease char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "failing compareAndExchangeRelease char value");
+            assertEquals('\u0123', x, "failing compareAndExchangeRelease char value");
         }
 
         {
@@ -796,14 +794,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetPlain char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "success weakCompareAndSetPlain char value");
+            assertEquals('\u4567', x, "success weakCompareAndSetPlain char value");
         }
 
         {
             boolean success = vh.weakCompareAndSetPlain('\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetPlain char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "failing weakCompareAndSetPlain char value");
+            assertEquals('\u4567', x, "failing weakCompareAndSetPlain char value");
         }
 
         {
@@ -814,14 +812,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "success weakCompareAndSetAcquire char");
+            assertEquals('\u0123', x, "success weakCompareAndSetAcquire char");
         }
 
         {
             boolean success = vh.weakCompareAndSetAcquire('\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "failing weakCompareAndSetAcquire char value");
+            assertEquals('\u0123', x, "failing weakCompareAndSetAcquire char value");
         }
 
         {
@@ -832,14 +830,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSetRelease char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "success weakCompareAndSetRelease char");
+            assertEquals('\u4567', x, "success weakCompareAndSetRelease char");
         }
 
         {
             boolean success = vh.weakCompareAndSetRelease('\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetRelease char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "failing weakCompareAndSetRelease char value");
+            assertEquals('\u4567', x, "failing weakCompareAndSetRelease char value");
         }
 
         {
@@ -850,14 +848,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             }
             assertEquals(success, true, "success weakCompareAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "success weakCompareAndSet char");
+            assertEquals('\u0123', x, "success weakCompareAndSet char");
         }
 
         {
             boolean success = vh.weakCompareAndSet('\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u0123', "failing weakCompareAndSet char value");
+            assertEquals('\u0123', x, "failing weakCompareAndSet char value");
         }
 
         // Compare set and get
@@ -865,27 +863,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndSet('\u4567');
-            assertEquals(o, '\u0123', "getAndSet char");
+            assertEquals('\u0123', o, "getAndSet char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "getAndSet char value");
+            assertEquals('\u4567', x, "getAndSet char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndSetAcquire('\u4567');
-            assertEquals(o, '\u0123', "getAndSetAcquire char");
+            assertEquals('\u0123', o, "getAndSetAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "getAndSetAcquire char value");
+            assertEquals('\u4567', x, "getAndSetAcquire char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndSetRelease('\u4567');
-            assertEquals(o, '\u0123', "getAndSetRelease char");
+            assertEquals('\u0123', o, "getAndSetRelease char");
             char x = (char) vh.get();
-            assertEquals(x, '\u4567', "getAndSetRelease char value");
+            assertEquals('\u4567', x, "getAndSetRelease char value");
         }
 
         // get and add, add and get
@@ -893,27 +891,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndAdd('\u4567');
-            assertEquals(o, '\u0123', "getAndAdd char");
+            assertEquals('\u0123', o, "getAndAdd char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAdd char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndAddAcquire('\u4567');
-            assertEquals(o, '\u0123', "getAndAddAcquire char");
+            assertEquals('\u0123', o, "getAndAddAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddAcquire char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndAddRelease('\u4567');
-            assertEquals(o, '\u0123', "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddReleasechar");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+            assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
 
         // get and bitwise or
@@ -921,27 +919,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseOr('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOr char");
+            assertEquals('\u0123', o, "getAndBitwiseOr char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOr char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseOrAcquire('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseOrAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrAcquire char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseOrRelease('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseOrRelease char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+            assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrRelease char value");
         }
 
         // get and bitwise and
@@ -949,27 +947,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseAnd('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+            assertEquals('\u0123', o, "getAndBitwiseAnd char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAnd char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseAndAcquire('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseAndAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndAcquire char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseAndRelease('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseAndRelease char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+            assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndRelease char value");
         }
 
         // get and bitwise xor
@@ -977,27 +975,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseXor('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXor char");
+            assertEquals('\u0123', o, "getAndBitwiseXor char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXor char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseXorAcquire('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+            assertEquals('\u0123', o, "getAndBitwiseXorAcquire char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorAcquire char value");
         }
 
         {
             vh.set('\u0123');
 
             char o = (char) vh.getAndBitwiseXorRelease('\u4567');
-            assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+            assertEquals('\u0123', o, "getAndBitwiseXorRelease char");
             char x = (char) vh.get();
-            assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+            assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorRelease char value");
         }
     }
 
@@ -1015,7 +1013,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             {
                 vh.set(array, i, '\u0123');
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "get char value");
+                assertEquals('\u0123', x, "get char value");
             }
 
 
@@ -1023,21 +1021,21 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             {
                 vh.setVolatile(array, i, '\u4567');
                 char x = (char) vh.getVolatile(array, i);
-                assertEquals(x, '\u4567', "setVolatile char value");
+                assertEquals('\u4567', x, "setVolatile char value");
             }
 
             // Lazy
             {
                 vh.setRelease(array, i, '\u0123');
                 char x = (char) vh.getAcquire(array, i);
-                assertEquals(x, '\u0123', "setRelease char value");
+                assertEquals('\u0123', x, "setRelease char value");
             }
 
             // Opaque
             {
                 vh.setOpaque(array, i, '\u4567');
                 char x = (char) vh.getOpaque(array, i);
-                assertEquals(x, '\u4567', "setOpaque char value");
+                assertEquals('\u4567', x, "setOpaque char value");
             }
 
             vh.set(array, i, '\u0123');
@@ -1047,56 +1045,56 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 boolean r = vh.compareAndSet(array, i, '\u0123', '\u4567');
                 assertEquals(r, true, "success compareAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "success compareAndSet char value");
+                assertEquals('\u4567', x, "success compareAndSet char value");
             }
 
             {
                 boolean r = vh.compareAndSet(array, i, '\u0123', '\u89AB');
                 assertEquals(r, false, "failing compareAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "failing compareAndSet char value");
+                assertEquals('\u4567', x, "failing compareAndSet char value");
             }
 
             {
                 char r = (char) vh.compareAndExchange(array, i, '\u4567', '\u0123');
                 assertEquals(r, '\u4567', "success compareAndExchange char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "success compareAndExchange char value");
+                assertEquals('\u0123', x, "success compareAndExchange char value");
             }
 
             {
                 char r = (char) vh.compareAndExchange(array, i, '\u4567', '\u89AB');
                 assertEquals(r, '\u0123', "failing compareAndExchange char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "failing compareAndExchange char value");
+                assertEquals('\u0123', x, "failing compareAndExchange char value");
             }
 
             {
                 char r = (char) vh.compareAndExchangeAcquire(array, i, '\u0123', '\u4567');
                 assertEquals(r, '\u0123', "success compareAndExchangeAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "success compareAndExchangeAcquire char value");
+                assertEquals('\u4567', x, "success compareAndExchangeAcquire char value");
             }
 
             {
                 char r = (char) vh.compareAndExchangeAcquire(array, i, '\u0123', '\u89AB');
                 assertEquals(r, '\u4567', "failing compareAndExchangeAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "failing compareAndExchangeAcquire char value");
+                assertEquals('\u4567', x, "failing compareAndExchangeAcquire char value");
             }
 
             {
                 char r = (char) vh.compareAndExchangeRelease(array, i, '\u4567', '\u0123');
                 assertEquals(r, '\u4567', "success compareAndExchangeRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "success compareAndExchangeRelease char value");
+                assertEquals('\u0123', x, "success compareAndExchangeRelease char value");
             }
 
             {
                 char r = (char) vh.compareAndExchangeRelease(array, i, '\u4567', '\u89AB');
                 assertEquals(r, '\u0123', "failing compareAndExchangeRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "failing compareAndExchangeRelease char value");
+                assertEquals('\u0123', x, "failing compareAndExchangeRelease char value");
             }
 
             {
@@ -1107,14 +1105,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "success weakCompareAndSetPlain char value");
+                assertEquals('\u4567', x, "success weakCompareAndSetPlain char value");
             }
 
             {
                 boolean success = vh.weakCompareAndSetPlain(array, i, '\u0123', '\u89AB');
                 assertEquals(success, false, "failing weakCompareAndSetPlain char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "failing weakCompareAndSetPlain char value");
+                assertEquals('\u4567', x, "failing weakCompareAndSetPlain char value");
             }
 
             {
@@ -1125,14 +1123,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "success weakCompareAndSetAcquire char");
+                assertEquals('\u0123', x, "success weakCompareAndSetAcquire char");
             }
 
             {
                 boolean success = vh.weakCompareAndSetAcquire(array, i, '\u4567', '\u89AB');
                 assertEquals(success, false, "failing weakCompareAndSetAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "failing weakCompareAndSetAcquire char value");
+                assertEquals('\u0123', x, "failing weakCompareAndSetAcquire char value");
             }
 
             {
@@ -1143,14 +1141,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "success weakCompareAndSetRelease char");
+                assertEquals('\u4567', x, "success weakCompareAndSetRelease char");
             }
 
             {
                 boolean success = vh.weakCompareAndSetRelease(array, i, '\u0123', '\u89AB');
                 assertEquals(success, false, "failing weakCompareAndSetRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "failing weakCompareAndSetRelease char value");
+                assertEquals('\u4567', x, "failing weakCompareAndSetRelease char value");
             }
 
             {
@@ -1161,14 +1159,14 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 }
                 assertEquals(success, true, "success weakCompareAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "success weakCompareAndSet char");
+                assertEquals('\u0123', x, "success weakCompareAndSet char");
             }
 
             {
                 boolean success = vh.weakCompareAndSet(array, i, '\u4567', '\u89AB');
                 assertEquals(success, false, "failing weakCompareAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u0123', "failing weakCompareAndSet char value");
+                assertEquals('\u0123', x, "failing weakCompareAndSet char value");
             }
 
             // Compare set and get
@@ -1176,27 +1174,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndSet(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndSet char");
+                assertEquals('\u0123', o, "getAndSet char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "getAndSet char value");
+                assertEquals('\u4567', x, "getAndSet char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndSetAcquire(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndSetAcquire char");
+                assertEquals('\u0123', o, "getAndSetAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "getAndSetAcquire char value");
+                assertEquals('\u4567', x, "getAndSetAcquire char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndSetRelease(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndSetRelease char");
+                assertEquals('\u0123', o, "getAndSetRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, '\u4567', "getAndSetRelease char value");
+                assertEquals('\u4567', x, "getAndSetRelease char value");
             }
 
             // get and add, add and get
@@ -1204,27 +1202,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndAdd(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndAdd char");
+                assertEquals('\u0123', o, "getAndAdd char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAdd char value");
+                assertEquals((char)('\u0123' + '\u4567'), x, "getAndAdd char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndAddAcquire(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndAddAcquire char");
+                assertEquals('\u0123', o, "getAndAddAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddAcquire char value");
+                assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddAcquire char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndAddRelease(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndAddReleasechar");
+                assertEquals('\u0123', o, "getAndAddReleasechar");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' + '\u4567'), "getAndAddRelease char value");
+                assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
             }
 
             // get and bitwise or
@@ -1232,27 +1230,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseOr(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseOr char");
+                assertEquals('\u0123', o, "getAndBitwiseOr char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOr char value");
+                assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOr char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseOrAcquire(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseOrAcquire char");
+                assertEquals('\u0123', o, "getAndBitwiseOrAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrAcquire char value");
+                assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrAcquire char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseOrRelease(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseOrRelease char");
+                assertEquals('\u0123', o, "getAndBitwiseOrRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' | '\u4567'), "getAndBitwiseOrRelease char value");
+                assertEquals((char)('\u0123' | '\u4567'), x, "getAndBitwiseOrRelease char value");
             }
 
             // get and bitwise and
@@ -1260,27 +1258,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseAnd(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseAnd char");
+                assertEquals('\u0123', o, "getAndBitwiseAnd char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAnd char value");
+                assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAnd char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseAndAcquire(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseAndAcquire char");
+                assertEquals('\u0123', o, "getAndBitwiseAndAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndAcquire char value");
+                assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndAcquire char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseAndRelease(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseAndRelease char");
+                assertEquals('\u0123', o, "getAndBitwiseAndRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' & '\u4567'), "getAndBitwiseAndRelease char value");
+                assertEquals((char)('\u0123' & '\u4567'), x, "getAndBitwiseAndRelease char value");
             }
 
             // get and bitwise xor
@@ -1288,27 +1286,27 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseXor(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseXor char");
+                assertEquals('\u0123', o, "getAndBitwiseXor char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXor char value");
+                assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXor char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseXorAcquire(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseXorAcquire char");
+                assertEquals('\u0123', o, "getAndBitwiseXorAcquire char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorAcquire char value");
+                assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorAcquire char value");
             }
 
             {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndBitwiseXorRelease(array, i, '\u4567');
-                assertEquals(o, '\u0123', "getAndBitwiseXorRelease char");
+                assertEquals('\u0123', o, "getAndBitwiseXorRelease char");
                 char x = (char) vh.get(array, i);
-                assertEquals(x, (char)('\u0123' ^ '\u4567'), "getAndBitwiseXorRelease char value");
+                assertEquals((char)('\u0123' ^ '\u4567'), x, "getAndBitwiseXorRelease char value");
             }
         }
     }

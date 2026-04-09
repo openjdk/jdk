@@ -4,7 +4,7 @@
  *
  *   TrueType and OpenType colored glyph layer support (body).
  *
- * Copyright (C) 2018-2024 by
+ * Copyright (C) 2018-2025 by
  * David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
  *
  * Originally written by Shao Yu Zhang <shaozhang@fb.com>.
@@ -51,7 +51,7 @@
 #define COLOR_STOP_SIZE                   6U
 #define VAR_IDX_BASE_SIZE                 4U
 #define LAYER_SIZE                        4U
-/* https://docs.microsoft.com/en-us/typography/opentype/spec/colr#colr-header */
+/* https://learn.microsoft.com/typography/opentype/spec/colr#colr-header */
 /* 3 * uint16 + 2 * Offset32 */
 #define COLRV0_HEADER_SIZE               14U
 /* COLRV0_HEADER_SIZE + 5 * Offset32 */
@@ -1749,7 +1749,6 @@
     FT_UInt  x, y;
     FT_Byte  b, g, r, alpha;
 
-    FT_ULong  size;
     FT_Byte*  src;
     FT_Byte*  dst;
 
@@ -1767,13 +1766,9 @@
       dstSlot->bitmap.pitch      = (int)dstSlot->bitmap.width * 4;
       dstSlot->bitmap.num_grays  = 256;
 
-      size = dstSlot->bitmap.rows * (unsigned int)dstSlot->bitmap.pitch;
-
-      error = ft_glyphslot_alloc_bitmap( dstSlot, size );
+      error = ft_glyphslot_alloc_bitmap( dstSlot );
       if ( error )
         return error;
-
-      FT_MEM_ZERO( dstSlot->bitmap.buffer, size );
     }
     else
     {
@@ -1805,8 +1800,7 @@
         FT_Byte*  q;
 
 
-        size  = rows * pitch;
-        if ( FT_ALLOC( buf, size ) )
+        if ( FT_ALLOC_MULT( buf, rows, pitch ) )
           return error;
 
         p = dstSlot->bitmap.buffer;

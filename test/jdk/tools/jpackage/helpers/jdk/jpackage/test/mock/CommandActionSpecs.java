@@ -115,6 +115,13 @@ public record CommandActionSpecs(List<CommandActionSpec> specs) {
             return printToStderr(List.of(str));
         }
 
+        public Builder argsListener(Consumer<List<String>> listener) {
+            Objects.requireNonNull(listener);
+            return action(CommandActionSpec.create("args-listener", context -> {
+                listener.accept(context.args());
+            }));
+        }
+
         public Builder exit(int exitCode) {
             return action(CommandActionSpec.create(String.format("exit(%d)", exitCode), () -> {
                 return exitCode;

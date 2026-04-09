@@ -56,7 +56,7 @@ public class IntrinsicPredicates {
                 "TieredStopAtLevel");
         boolean maxLevelIsReachable = (tieredMaxLevel
                 == IntrinsicPredicates.TIERED_MAX_LEVEL);
-        return Platform.isServer() && !Platform.isEmulatedClient() && (!isTiered || maxLevelIsReachable);
+        return Platform.isServer() && (!isTiered || maxLevelIsReachable);
     };
 
     public static final BooleanSupplier MD5_INSTRUCTION_AVAILABLE
@@ -106,6 +106,12 @@ public class IntrinsicPredicates {
     public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
             // sha3 is only implemented on aarch64 and avx512 for now
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"               }, null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
+                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
+
+    public static final BooleanSupplier SHA3_INTRINSIC_AVAILABLE
+            // AArch64 has both SHA3-based and GPR-based implementations of the SHA3 intrinsic. No need for the SHA3 capability.
+            = new OrPredicate(new CPUSpecificPredicate("aarch64.*", null, null),
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
                               new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
 

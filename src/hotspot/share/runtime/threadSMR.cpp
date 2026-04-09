@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -726,7 +726,8 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
         }
       }
     }
-  } else if (!thread->is_exiting()) {
+  } else if (includes(thread) && !thread->is_exiting()) {
+    // The thread is protected by this list and has not yet exited
     return thread;
   }
   return nullptr;
@@ -883,7 +884,7 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 
   ThreadsList *old_list = xchg_java_thread_list(new_list);
   free_list(old_list);
-  if (ThreadIdTable::is_initialized()) {
+  if (ThreadIdTable::is_initialized_acquire()) {
     jlong tid = SharedRuntime::get_java_tid(thread);
     ThreadIdTable::add_thread(tid, thread);
   }

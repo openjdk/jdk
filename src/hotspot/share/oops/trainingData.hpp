@@ -310,7 +310,7 @@ private:
   static void iterate(Function& fn) { // lambda enabled API
     TrainingDataLocker l;
     if (have_data()) {
-      archived_training_data_dictionary()->iterate(fn);
+      archived_training_data_dictionary()->iterate_all(fn);
     }
     if (need_data()) {
       training_data_set()->iterate(fn);
@@ -431,6 +431,8 @@ private:
     }
     return nullptr;
   }
+
+  static void cleanup_after_redefinition();
 };
 
 // Training data that is associated with an InstanceKlass

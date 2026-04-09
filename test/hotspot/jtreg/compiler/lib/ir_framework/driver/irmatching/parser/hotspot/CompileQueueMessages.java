@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
 
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.parser.IREncodingParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.ApplicableIRRulesParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.TestMethods;
 
 import java.util.HashMap;
@@ -34,9 +34,9 @@ import java.util.regex.Pattern;
 
 /**
  * This class parses compile queue messages found in the hotspot_pid* files and keeps track of those that need to be
- * IR matched (i.e. identified by {@link IREncodingParser}.
+ * IR matched (i.e. identified by {@link ApplicableIRRulesParser}.
  *
- * @see IREncodingParser
+ * @see ApplicableIRRulesParser
  */
 class CompileQueueMessages {
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");

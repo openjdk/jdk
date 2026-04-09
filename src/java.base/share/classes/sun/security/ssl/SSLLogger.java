@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,42 +49,90 @@ import static sun.security.ssl.Utilities.LINE_SEP;
 
 /**
  * Implementation of SSL logger.
- *
+ * <p>
  * If the system property "javax.net.debug" is not defined, the debug logging
  * is turned off.  If the system property "javax.net.debug" is defined as
  * empty, the debug logger is specified by System.getLogger("javax.net.ssl"),
  * and applications can customize and configure the logger or use external
  * logging mechanisms.  If the system property "javax.net.debug" is defined
- * and non-empty, a private debug logger implemented in this class is used.
+ * and non-empty, a private debug logger which logs to System.err is used.
  */
 public final class SSLLogger implements System.Logger {
     private static final System.Logger logger;
-    private static final String property;
-    private static final boolean isOn;
+    // High level boolean to track whether logging is active (i.e. all/ssl).
+    // Further checks may be necessary to determine if data is logged.
+    private static final boolean logging;
 
     private final String loggerName;
     private final boolean useCompactFormat;
-
 
     static {
         String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
-                property = "";
                 logger = System.getLogger("javax.net.ssl");
+                Opt.ALL.on = true;
             } else {
-                property = p.toLowerCase(Locale.ENGLISH);
-                if (property.equals("help")) {
+                p = p.toLowerCase(Locale.ENGLISH);
+                if (p.contains("help")) {
+                    // help option calls exit(0)
                     help();
                 }
-
+                // configure expanded logging mode in constructor
                 logger = new SSLLogger("javax.net.ssl", p);
+                if (p.contains("all")) {
+                    Opt.ALL.on = true;
+                } else {
+                    for (Opt o : Opt.values()) {
+                        // deal with special "_" options later
+                        if (o.component.contains("_")) {
+                            continue;
+                        }
+
+                        if (p.contains(o.component)) {
+                            o.on = true;
+                            // remove pattern to avoid it being reused
+                            // e.g. "ssl,sslctx" parsing
+                            p = p.replaceFirst(o.component, "");
+                        }
+                    }
+
+                    // "record" and "handshake" subcomponents allow
+                    // extra configuration options
+                    if (Opt.HANDSHAKE.on && p.contains("verbose")) {
+                        Opt.HANDSHAKE_VERBOSE.on = true;
+                    }
+
+                    if (Opt.RECORD.on) {
+                        if (p.contains("packet")) {
+                            Opt.RECORD_PACKET.on = true;
+                        }
+                        if (p.contains("plaintext")) {
+                            Opt.RECORD_PLAINTEXT.on = true;
+                        }
+                    }
+                    // finally, if only "ssl" component is declared, then
+                    // enable all subcomponents. "ssl" logs all activity
+                    // except for the "data" and "packet" categories
+                    if (Opt.SSL.on &&
+                            EnumSet.allOf(Opt.class)
+                                    .stream()
+                                    .noneMatch(o -> o.on && o.isSubComponent)) {
+                        for (Opt opt : Opt.values()) {
+                            if (opt.isSubComponent) {
+                                opt.on = true;
+                            }
+                        }
+                    }
+                }
             }
-            isOn = true;
+
+            // javax.net.debug would be misconfigured property with respect
+            // to logging if value didn't contain "all" or "ssl"
+            logging = Opt.ALL.on || Opt.SSL.on;
         } else {
-            property = null;
             logger = null;
-            isOn = false;
+            logging = false;
         }
     }
 
@@ -94,52 +142,17 @@ public final class SSLLogger implements System.Logger {
         this.useCompactFormat = !options.contains("expand");
     }
 
-    /**
-     * Return true if the "javax.net.debug" property contains the
-     * debug check points, or System.Logger is used.
-     */
-    public static boolean isOn(String checkPoints) {
-        if (property == null) {              // debugging is turned off
-            return false;
-        } else if (property.isEmpty()) {     // use System.Logger
-            return true;
-        }                                   // use provider logger
-
-        String[] options = checkPoints.split(",");
-        for (String option : options) {
-            option = option.trim();
-            if (!SSLLogger.hasOption(option)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     @ForceInline
     public static boolean isOn() {
-        return isOn;
+        return logging;
     }
 
-    private static boolean hasOption(String option) {
-        option = option.toLowerCase(Locale.ENGLISH);
-        if (property.contains("all")) {
-            return true;
-        } else {
-            // remove first occurrence of "sslctx" since
-            // it interferes with search for "ssl"
-            String modified = property.replaceFirst("sslctx", "");
-            if (modified.contains("ssl")) {
-                // don't enable data and plaintext options by default
-                if (!(option.equals("data")
-                        || option.equals("packet")
-                        || option.equals("plaintext"))) {
-                    return true;
-                }
-            }
-        }
+    /**
+     * Return true if the specific DebugOption is enabled or ALL is enabled
+     */
 
-        return property.contains(option);
+    public static boolean isOn(Opt option) {
+        return Opt.ALL.on || option.on;
     }
 
     public static void severe(String msg, Object... params) {
@@ -188,33 +201,42 @@ public final class SSLLogger implements System.Logger {
     }
 
     private static void help() {
-        System.err.println();
-        System.err.println("help           print the help messages");
-        System.err.println("expand         expand debugging information");
-        System.err.println();
-        System.err.println("all            turn on all debugging");
-        System.err.println("ssl            turn on ssl debugging");
-        System.err.println();
-        System.err.println("The following can be used with ssl:");
-        System.err.println("\trecord       enable per-record tracing");
-        System.err.println("\thandshake    print each handshake message");
-        System.err.println("\tkeygen       print key generation data");
-        System.err.println("\tsession      print session activity");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\tsslctx       print SSLContext tracing");
-        System.err.println("\tsessioncache print session cache tracing");
-        System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\ttrustmanager print trust manager tracing");
-        System.err.println("\tpluggability print pluggability tracing");
-        System.err.println();
-        System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tdata         hex dump of each handshake message");
-        System.err.println("\tverbose      verbose handshake message printing");
-        System.err.println();
-        System.err.println("\trecord debugging can be widened with:");
-        System.err.println("\tplaintext    hex dump of record plaintext");
-        System.err.println("\tpacket       print raw SSL/TLS packets");
-        System.err.println();
+        System.err.printf("%n%-16s %s%n", "help",
+                "print this help message and exit");
+        System.err.printf("%-16s %s%n%n", "expand",
+                "expanded (less compact) output format");
+        System.err.printf("%-16s %s%n", "all", "turn on all debugging");
+        System.err.printf("%-16s %s%n%n", "ssl", "turn on ssl debugging");
+        System.err.printf("The following filters can be used with ssl:%n%n");
+        System.err.printf("    %-14s %s%n", "defaultctx",
+                "print default SSL initialization");
+        System.err.printf("    %-14s %s%n", "handshake",
+                "print each handshake message");
+        System.err.printf("      %-12s   %s%n", "verbose",
+                "verbose handshake message printing (widens handshake)");
+        System.err.printf("    %-14s %s%n", "keymanager",
+                "print key manager tracing");
+        System.err.printf("    %-14s %s%n", "record",
+                "enable per-record tracing");
+        System.err.printf("      %-12s   %s%n", "packet",
+                "print raw SSL/TLS packets (widens record)");
+        System.err.printf("      %-12s   %s%n", "plaintext",
+                "hex dump of record plaintext (widens record)");
+        System.err.printf("    %-14s %s%n", "respmgr",
+                "print OCSP response tracing");
+        System.err.printf("    %-14s %s%n", "session",
+                "print session activity");
+        System.err.printf("    %-14s %s%n", "sessioncache",
+                "print session cache tracing");
+        System.err.printf("    %-14s %s%n", "sslctx",
+                "print SSLContext tracing");
+        System.err.printf("    %-14s %s%n", "trustmanager",
+                "print trust manager tracing");
+        System.err.printf("%nIf \"ssl\" is specified by itself," +
+                " all non-widening filters are enabled.%n");
+        System.err.printf("%nSpecifying \"ssl\" with additional filter" +
+                " options produces general%nSSL debug messages plus just" +
+                " the selected categories.%n%n");
         System.exit(0);
     }
 
@@ -228,8 +250,8 @@ public final class SSLLogger implements System.Logger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(String option, String s) {
-        if (SSLLogger.isOn() && SSLLogger.isOn(option)) {
+    static boolean logWarning(Opt option, String s) {
+        if (SSLLogger.isOn() && option.on) {
             SSLLogger.warning(s);
         }
         return false;
@@ -238,11 +260,6 @@ public final class SSLLogger implements System.Logger {
     @Override
     public String getName() {
         return loggerName;
-    }
-
-    @Override
-    public boolean isLoggable(Level level) {
-        return level != Level.OFF;
     }
 
     @Override
@@ -273,11 +290,59 @@ public final class SSLLogger implements System.Logger {
         }
     }
 
+    @Override
+    public boolean isLoggable(Level level) {
+        return level != Level.OFF;
+    }
+
+    /**
+     * Enum representing possible debug options for JSSE debugging.
+     * <p>
+     * ALL and SSL are considered master components. Entries without an
+     * underscore ("_"), and not ALL or SSL, are subcomponents. Entries
+     * with an underscore ("_") denote options specific to subcomponents.
+     * <p>
+     * Fields:
+     * - 'component': Lowercase name of the option.
+     * - 'isSubComponent': True for subcomponents.
+     * - 'on': Indicates whether the option is enabled. Some rule based logic
+     *         is used to determine value of this field.
+     * <p>
+     * Enabling subcomponents fine-tunes (filters) debug output.
+     */
+    public enum Opt {
+        ALL,
+        DEFAULTCTX,
+        HANDSHAKE,
+        HANDSHAKE_VERBOSE,
+        KEYMANAGER,
+        RECORD,
+        RECORD_PACKET,
+        RECORD_PLAINTEXT,
+        RESPMGR,
+        SESSION,
+        SESSIONCACHE, // placeholder for 8344685
+        SSLCTX,
+        TRUSTMANAGER,
+        SSL; // define ssl last, helps with sslctx matching later.
+
+        final String component;
+        final boolean isSubComponent;
+        boolean on;
+
+        Opt() {
+            this.component = this.toString().toLowerCase(Locale.ENGLISH);
+            this.isSubComponent = !(component.contains("_") ||
+                    component.equals("all") ||
+                    component.equals("ssl"));
+        }
+    }
+
     private static class SSLSimpleFormatter {
         private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
         private static final DateTimeFormatter dateTimeFormat =
                 DateTimeFormatter.ofPattern(PATTERN, Locale.ENGLISH)
-                .withZone(ZoneId.systemDefault());
+                        .withZone(ZoneId.systemDefault());
 
         private static final MessageFormat basicCertFormat = new MessageFormat(
                 """
@@ -293,68 +358,68 @@ public final class SSLLogger implements System.Logger {
                 Locale.ENGLISH);
 
         private static final MessageFormat extendedCertFormat =
-                new MessageFormat(
-                        """
-                                "version"            : "v{0}",
-                                "serial number"      : "{1}",
-                                "signature algorithm": "{2}",
-                                "issuer"             : "{3}",
-                                "not before"         : "{4}",
-                                "not  after"         : "{5}",
-                                "subject"            : "{6}",
-                                "subject public key" : "{7}",
-                                "extensions"         : [
-                                {8}
-                                ]
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            "version"            : "v{0}",
+                            "serial number"      : "{1}",
+                            "signature algorithm": "{2}",
+                            "issuer"             : "{3}",
+                            "not before"         : "{4}",
+                            "not  after"         : "{5}",
+                            "subject"            : "{6}",
+                            "subject public key" : "{7}",
+                            "extensions"         : [
+                            {8}
+                            ]
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageFormatNoParas =
-                new MessageFormat(
-                        """
-                                '{'
-                                  "logger"      : "{0}",
-                                  "level"       : "{1}",
-                                  "thread id"   : "{2}",
-                                  "thread name" : "{3}",
-                                  "time"        : "{4}",
-                                  "caller"      : "{5}",
-                                  "message"     : "{6}"
-                                '}'
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            '{'
+                              "logger"      : "{0}",
+                              "level"       : "{1}",
+                              "thread id"   : "{2}",
+                              "thread name" : "{3}",
+                              "time"        : "{4}",
+                              "caller"      : "{5}",
+                              "message"     : "{6}"
+                            '}'
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatNoParas =
-                new MessageFormat(
-                        "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
-                new MessageFormat(
-                        """
-                                '{'
-                                  "logger"      : "{0}",
-                                  "level"       : "{1}",
-                                  "thread id"   : "{2}",
-                                  "thread name" : "{3}",
-                                  "time"        : "{4}",
-                                  "caller"      : "{5}",
-                                  "message"     : "{6}",
-                                  "specifics"   : [
-                                {7}
-                                  ]
-                                '}'
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            '{'
+                              "logger"      : "{0}",
+                              "level"       : "{1}",
+                              "thread id"   : "{2}",
+                              "thread name" : "{3}",
+                              "time"        : "{4}",
+                              "caller"      : "{5}",
+                              "message"     : "{6}",
+                              "specifics"   : [
+                            {7}
+                              ]
+                            '}'
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat messageCompactFormatWithParas =
-                new MessageFormat(
-                        """
-                                {0}|{1}|{2}|{3}|{4}|{5}|{6} (
-                                {7}
-                                )
-                                """,
-                        Locale.ENGLISH);
+            new MessageFormat(
+                    """
+                            {0}|{1}|{2}|{3}|{4}|{5}|{6} (
+                            {7}
+                            )
+                            """,
+                Locale.ENGLISH);
 
         private static final MessageFormat keyObjectFormat = new MessageFormat(
                 """
@@ -368,7 +433,7 @@ public final class SSLLogger implements System.Logger {
         //     log message
         //     ...
         private static String format(SSLLogger logger, Level level,
-                                     String message, Object... parameters) {
+                    String message, Object ... parameters) {
 
             if (parameters == null || parameters.length == 0) {
                 Object[] messageFields = {
@@ -417,7 +482,7 @@ public final class SSLLogger implements System.Logger {
                 .findFirst().orElse("unknown caller"));
         }
 
-        private static String formatParameters(Object... parameters) {
+        private static String formatParameters(Object ... parameters) {
             StringBuilder builder = new StringBuilder(512);
             boolean isFirst = true;
             for (Object parameter : parameters) {
@@ -427,22 +492,21 @@ public final class SSLLogger implements System.Logger {
                     builder.append("," + LINE_SEP);
                 }
 
-                if (parameter instanceof Throwable) {
-                    builder.append(formatThrowable((Throwable) parameter));
-                } else if (parameter instanceof Certificate) {
-                    builder.append(formatCertificate((Certificate) parameter));
-                } else if (parameter instanceof ByteArrayInputStream) {
+                if (parameter instanceof Throwable t) {
+                    builder.append(formatThrowable(t));
+                } else if (parameter instanceof Certificate c) {
+                    builder.append(formatCertificate(c));
+                } else if (parameter instanceof ByteArrayInputStream bis) {
+                    builder.append(formatByteArrayInputStream(bis));
+                } else if (parameter instanceof ByteBuffer bb) {
+                    builder.append(formatByteBuffer((bb)));
+                } else if (parameter instanceof byte[] bytes) {
                     builder.append(formatByteArrayInputStream(
-                            (ByteArrayInputStream) parameter));
-                } else if (parameter instanceof ByteBuffer) {
-                    builder.append(formatByteBuffer((ByteBuffer) parameter));
-                } else if (parameter instanceof byte[]) {
-                    builder.append(formatByteArrayInputStream(
-                            new ByteArrayInputStream((byte[]) parameter)));
+                        new ByteArrayInputStream(bytes)));
                 } else if (parameter instanceof Map.Entry) {
                     @SuppressWarnings("unchecked")
                     Map.Entry<String, ?> mapParameter =
-                            (Map.Entry<String, ?>) parameter;
+                        (Map.Entry<String, ?>)parameter;
                     builder.append(formatMapEntry(mapParameter));
                 } else {
                     builder.append(formatObject(parameter));
@@ -592,15 +656,15 @@ public final class SSLLogger implements System.Logger {
                 builder.append("      ]");
 
                 formatted = builder.toString();
-            } else if (value instanceof byte[]) {
+            } else if (value instanceof byte[] bytes) {
                 formatted = "\"" + key + "\": \"" +
-                        Utilities.toHexString((byte[]) value) + "\"";
-            } else if (value instanceof Byte) {
+                    Utilities.toHexString((bytes)) + "\"";
+            } else if (value instanceof Byte b) {
                 formatted = "\"" + key + "\": \"" +
-                        HexFormat.of().toHexDigits((byte) value) + "\"";
+                    HexFormat.of().toHexDigits(b) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
-                        "\"" + value.toString() + "\"";
+                    "\"" + value.toString() + "\"";
             }
 
             return Utilities.indent(formatted);

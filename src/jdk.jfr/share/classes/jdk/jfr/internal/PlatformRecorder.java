@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public final class PlatformRecorder {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
-    public synchronized PlatformRecording newRecording(Map<String, String> settings) {
-        return newRecording(settings, ++recordingCounter);
+    public synchronized PlatformRecording newRecording(RecordingState state, Map<String, String> settings) {
+        return newRecording(state, settings, ++recordingCounter);
     }
 
     // To be used internally when doing dumps.
@@ -92,15 +92,17 @@ public final class PlatformRecorder {
         if(!Thread.holdsLock(this)) {
             throw new InternalError("Caller must have recorder lock");
         }
-        return newRecording(new HashMap<>(), 0);
+        return newRecording(RecordingState.NEW, new HashMap<>(), 0);
     }
 
-    private synchronized PlatformRecording newRecording(Map<String, String> settings, long id) {
+    private synchronized PlatformRecording newRecording(RecordingState state, Map<String, String> settings, long id) {
         PlatformRecording recording = new PlatformRecording(this, id);
         if (!settings.isEmpty()) {
             recording.setSettings(settings);
         }
-        recordings.add(recording);
+        if (state != RecordingState.CLOSED) {
+            recordings.add(recording);
+        }
         return recording;
     }
 
@@ -545,8 +547,10 @@ public final class PlatformRecorder {
     }
 
     synchronized Recording newCopy(PlatformRecording r, boolean stop) {
-        Recording newRec = new Recording();
-        PlatformRecording copy = PrivateAccess.getInstance().getPlatformRecording(newRec);
+        PrivateAccess pr = PrivateAccess.getInstance();
+        boolean closed = r.getState() == RecordingState.CLOSED;
+        Recording newRec = closed ? pr.newRecording(RecordingState.CLOSED) : new Recording();
+        PlatformRecording copy = pr.getPlatformRecording(newRec);
         copy.setSettings(r.getSettings());
         copy.setMaxAge(r.getMaxAge());
         copy.setMaxSize(r.getMaxSize());

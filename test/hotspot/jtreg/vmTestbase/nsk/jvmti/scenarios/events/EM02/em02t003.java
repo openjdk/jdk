@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,21 @@ public class em02t003 extends DebugeeClass {
 
             if (!invokeMethod(loadedClass, thrd, "join")) {
                 return Consts.TEST_FAILED;
+            }
+
+            while (thrd.isAlive()) {
+                logger.display("Thread state: " + thrd.getState()
+                    + " - waiting for completion.");
+                try {
+                    // small delay to avoid produce huge amount of output
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+            }
+            try {
+                // give some time wait thread to exit completely
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
             }
 
             logger.display("MethodCompiling:: Provoke unloading compiled method - "

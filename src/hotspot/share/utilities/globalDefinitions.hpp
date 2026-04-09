@@ -168,6 +168,29 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
+
+template<size_t N>
+constexpr auto sizeof_auto_impl() {
+  if constexpr (N <= std::numeric_limits<uint8_t>::max()) return uint8_t(N);
+  else if constexpr (N <= std::numeric_limits<uint16_t>::max()) return uint16_t(N);
+  else if constexpr (N <= std::numeric_limits<uint32_t>::max()) return uint32_t(N);
+  else return uint64_t(N);
+}
+
+// Yields the size (in bytes) of the operand, using the smallest
+// unsigned type that can represent the size value. The operand may be
+// an expression, which is an unevaluated operand, or it may be a
+// type. All of the restrictions for sizeof operands apply to the
+// operand. The result is a constant expression.
+//
+// Example of correct usage of sizeof/sizeof_auto:
+//   // this will wrap using sizeof_auto, use sizeof to ensure computation using size_t
+//   size_t size = std::numeric_limits<uint32_t>::max() * sizeof(uint16_t);
+//   // implicit narrowing conversion or compiler warning/error using stricter compiler flags when using sizeof
+//   int count = 42 / sizeof_auto(uint16_t);
+
+#define sizeof_auto(...) sizeof_auto_impl<sizeof(__VA_ARGS__)>()
+
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
@@ -433,7 +456,8 @@ typedef unsigned char u_char;
 typedef u_char*       address;
 typedef const u_char* const_address;
 
-// Pointer subtraction.
+// Pointer subtraction, calculating high - low. Asserts on underflow.
+//
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
 // the range we might need to find differences from one end of the heap
 // to the other.
@@ -444,28 +468,28 @@ typedef const u_char* const_address;
 // and then additions like
 //       ... top() + size ...
 // are safe because we know that top() is at least size below end().
-inline size_t pointer_delta(const volatile void* left,
-                            const volatile void* right,
+inline size_t pointer_delta(const volatile void* high,
+                            const volatile void* low,
                             size_t element_size) {
-  assert(left >= right, "avoid underflow - left: " PTR_FORMAT " right: " PTR_FORMAT, p2i(left), p2i(right));
-  return (((uintptr_t) left) - ((uintptr_t) right)) / element_size;
+  assert(high >= low, "avoid underflow - high address: " PTR_FORMAT " low address: " PTR_FORMAT, p2i(high), p2i(low));
+  return (((uintptr_t) high) - ((uintptr_t) low)) / element_size;
 }
 
 // A version specialized for HeapWord*'s.
-inline size_t pointer_delta(const HeapWord* left, const HeapWord* right) {
-  return pointer_delta(left, right, sizeof(HeapWord));
+inline size_t pointer_delta(const HeapWord* high, const HeapWord* low) {
+  return pointer_delta(high, low, sizeof(HeapWord));
 }
 // A version specialized for MetaWord*'s.
-inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
-  return pointer_delta(left, right, sizeof(MetaWord));
+inline size_t pointer_delta(const MetaWord* high, const MetaWord* low) {
+  return pointer_delta(high, low, sizeof(MetaWord));
 }
 
 // pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
 // returns a non-negative int, usually used as a size of a code buffer range.
 // This scales to sizeof(T).
 template <typename T>
-inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
-  size_t delta = pointer_delta(left, right, sizeof(T));
+inline int pointer_delta_as_int(const volatile T* high, const volatile T* low) {
+  size_t delta = pointer_delta(high, low, sizeof(T));
   assert(delta <= size_t(INT_MAX), "pointer delta out of range: %zu", delta);
   return static_cast<int>(delta);
 }
@@ -1048,18 +1072,26 @@ const intptr_t NoBits     =  0; // no bits set in a word
 const jlong    NoLongBits =  0; // no bits set in a long
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 
-// get a word with the n.th or the right-most or left-most n bits set
-// (note: #define used only so that they can be used in enum constant definitions)
-#define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
-#define right_n_bits(n)   (nth_bit(n) - 1)
-
-// same as nth_bit(n), but allows handing in a type as template parameter. Allows
-// us to use nth_bit with 64-bit types on 32-bit platforms
-template<class T> inline T nth_bit_typed(int n) {
-  return ((T)1) << n;
+// Return a value of type T with the n.th bit set and all other bits zero.
+// T must be an integral or enum type. n must be non-negative. If n is at
+// least the bitwise size of T then all bits in the result are zero.
+template<typename T = intptr_t>
+constexpr T nth_bit(int n) {
+  assert(n >= 0, "n must be non-negative");
+  using U = std::make_unsigned_t<T>;
+  constexpr size_t size = sizeof(U) * BitsPerByte;
+  return T((size_t(n) >= size) ? U(0) : (U(1) << n));
 }
-template<class T> inline T right_n_bits_typed(int n) {
-  return nth_bit_typed<T>(n) - 1;
+
+// Return a value of type T with all bits below the n.th bit set and all
+// other bits zero. T must be an integral or enum type. n must be
+// non-negative. If n is at least the bitwise size of T then all bits in
+// the result are set.
+template<typename T = intptr_t>
+constexpr T right_n_bits(int n) {
+  assert(n >= 0, "n must be non-negative");
+  using U = std::make_unsigned_t<T>;
+  return T(nth_bit<U>(n) - 1);
 }
 
 // bit-operations using a mask m

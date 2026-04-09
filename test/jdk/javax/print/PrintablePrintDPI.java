@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,7 +54,7 @@ import java.awt.print.PrinterJob;
 
 /*
  * @test
- * @bug 8251928
+ * @bug 8251928 8375221
  * @key printer
  * @summary Printable.print method should reflect printer's DPI
  * @library /java/awt/regtesthelpers
@@ -201,7 +201,9 @@ public class PrintablePrintDPI implements Printable {
             attributeSet.add(OrientationRequested.PORTRAIT);
             job.setPrintService(printService);
             job.setPrintable(this);
-            job.print(attributeSet);
+            if (job.printDialog(attributeSet)) {
+                job.print(attributeSet);
+            }
         } catch (PrinterException ex) {
             throw new RuntimeException(ex);
         }

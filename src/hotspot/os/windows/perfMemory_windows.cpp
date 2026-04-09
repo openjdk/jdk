@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1682,12 +1682,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     return;
   }
 
-  if (MemTracker::enabled()) {
-    // it does not go through os api, the operation has to record from here
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    remove_file_mapping(addr);
-    MemTracker::record_virtual_memory_release(addr, bytes);
-  } else {
-    remove_file_mapping(addr);
-  }
+  // it does not go through os api, the operation has to record from here
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  remove_file_mapping(addr);
 }

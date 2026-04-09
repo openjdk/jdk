@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,6 @@ import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import javax.print.attribute.*;
-
-import sun.awt.AppContext;
-
 
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
@@ -1097,22 +1094,16 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         return getKeymapTable().get(nm);
     }
 
-    private static HashMap<String,Keymap> getKeymapTable() {
-        synchronized (KEYMAP_TABLE) {
-            AppContext appContext = AppContext.getAppContext();
-            @SuppressWarnings("unchecked")
-            HashMap<String,Keymap> keymapTable =
-                (HashMap<String,Keymap>)appContext.get(KEYMAP_TABLE);
-            if (keymapTable == null) {
-                keymapTable = new HashMap<String,Keymap>(17);
-                appContext.put(KEYMAP_TABLE, keymapTable);
-                //initialize default keymap
-                Keymap binding = addKeymap(DEFAULT_KEYMAP, null);
-                binding.setDefaultAction(new
-                                         DefaultEditorKit.DefaultKeyTypedAction());
-            }
-            return keymapTable;
+    private static HashMap<String,Keymap> keymapTable;
+
+    private static synchronized HashMap<String,Keymap> getKeymapTable() {
+        if (keymapTable == null) {
+            keymapTable = new HashMap<String,Keymap>(17);
+            //initialize default keymap
+            Keymap binding = addKeymap(DEFAULT_KEYMAP, null);
+            binding.setDefaultAction(new DefaultEditorKit.DefaultKeyTypedAction());
         }
+        return keymapTable;
     }
 
     /**
@@ -1190,7 +1181,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         Hashtable<String, Action> h = new Hashtable<String, Action>();
         for (Action a : actions) {
             String value = (String)a.getValue(Action.NAME);
-            h.put((value!=null ? value:""), a);
+            h.put((value != null ? value : ""), a);
         }
         for (KeyBinding binding : bindings) {
             Action a = h.get(binding.actionName);
@@ -1653,7 +1644,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     public void removeNotify() {
         super.removeNotify();
         if (getFocusedComponent() == this) {
-            AppContext.getAppContext().remove(FOCUSED_COMPONENT);
+            focusedComponent = null;
         }
     }
 
@@ -4084,13 +4075,14 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         }
     }
 
+    private static JTextComponent focusedComponent;
+
     /**
      * Returns the JTextComponent that most recently had focus. The returned
      * value may currently have focus.
      */
     static final JTextComponent getFocusedComponent() {
-        return (JTextComponent)AppContext.getAppContext().
-            get(FOCUSED_COMPONENT);
+        return focusedComponent;
     }
 
     @SuppressWarnings("deprecation")
@@ -4104,9 +4096,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         }
         return modifiers;
     }
-
-    private static final Object KEYMAP_TABLE =
-        new StringBuilder("JTextComponent_KeymapTable");
 
     //
     // member variables used for on-the-spot input method
@@ -4438,9 +4427,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         }
     }
 
-    private static final Object FOCUSED_COMPONENT =
-        new StringBuilder("JTextComponent_FocusedComponent");
-
     /**
      * The default keymap that will be shared by all
      * <code>JTextComponent</code> instances unless they
@@ -4493,8 +4479,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
         // --- FocusListener methods -----------------------------------
         public void focusGained(FocusEvent fe) {
-            AppContext.getAppContext().put(FOCUSED_COMPONENT,
-                                           fe.getSource());
+            focusedComponent = (JTextComponent)fe.getSource();
         }
 
         public void focusLost(FocusEvent fe) {

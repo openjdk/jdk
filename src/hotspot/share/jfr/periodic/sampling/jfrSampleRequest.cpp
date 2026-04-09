@@ -58,27 +58,20 @@ static inline bool in_stack(intptr_t* ptr, JavaThread* jt) {
   return jt->is_in_full_stack_checked(reinterpret_cast<address>(ptr));
 }
 
+#ifdef ASSERT
 static inline bool sp_in_stack(const JfrSampleRequest& request, JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request._sample_sp), jt);
 }
+#endif // ASSERT
 
 static inline bool fp_in_stack(const JfrSampleRequest& request, JavaThread* jt) {
   return in_stack(static_cast<intptr_t*>(request._sample_bcp), jt);
-}
-
-static inline void update_interpreter_frame_sender_pc(JfrSampleRequest& request, intptr_t* fp) {
-  request._sample_pc = frame::interpreter_return_address(fp);
 }
 
 static inline void update_interpreter_frame_pc(JfrSampleRequest& request, JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
   assert(is_interpreter(request), "invariant");
   request._sample_pc = frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
-}
-
-static inline address interpreter_frame_return_address(const JfrSampleRequest& request) {
-  assert(is_interpreter(request), "invariant");
-  return frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
 }
 
 static inline intptr_t* frame_sender_sp(const JfrSampleRequest& request, JavaThread* jt) {
@@ -90,27 +83,8 @@ static inline void update_frame_sender_sp(JfrSampleRequest& request, JavaThread*
   request._sample_sp = frame_sender_sp(request, jt);
 }
 
-static inline void update_frame_sender_sp(JfrSampleRequest& request, intptr_t* fp) {
-  request._sample_sp = frame::sender_sp(fp);
-}
-
 static inline intptr_t* frame_link(const JfrSampleRequest& request) {
   return frame::link(static_cast<intptr_t*>(request._sample_bcp));
-}
-
-static inline void update_sp(JfrSampleRequest& request, int frame_size) {
-  assert(frame_size >= 0, "invariant");
-  request._sample_sp = static_cast<intptr_t*>(request._sample_sp) + frame_size;
-}
-
-static inline void update_pc(JfrSampleRequest& request) {
-  assert(request._sample_sp != nullptr, "invariant");
-  request._sample_pc = frame::return_address(static_cast<intptr_t*>(request._sample_sp));
-}
-
-static inline void update_fp(JfrSampleRequest& request) {
-  assert(request._sample_sp != nullptr, "invariant");
-  request._sample_bcp = is_interpreter(request) ? frame::fp(static_cast<intptr_t*>(request._sample_sp)) : nullptr;
 }
 
 // Less extensive sanity checks for an interpreter frame.

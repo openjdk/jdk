@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,21 @@
  *
  */
 
+#include "cds/aotGrowableArray.hpp"
+#include "classfile/packageEntry.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.hpp"
+#include "oops/instanceKlass.hpp"
+
+// Sanity checks
+static_assert(!HAS_METASPACE_POINTERS_DO(int));
+
+static_assert(HAS_METASPACE_POINTERS_DO(Array<int>));
+static_assert(HAS_METASPACE_POINTERS_DO(Array<InstanceKlass*>));
+static_assert(HAS_METASPACE_POINTERS_DO(InstanceKlass));
+static_assert(HAS_METASPACE_POINTERS_DO(PackageEntry));
+static_assert(HAS_METASPACE_POINTERS_DO(AOTGrowableArray<int>));
+static_assert(HAS_METASPACE_POINTERS_DO(AOTGrowableArray<PackageEntry*>));
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_enclosing_ref != nullptr) {

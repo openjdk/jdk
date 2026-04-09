@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,20 +138,25 @@ public final class SealedGraph implements Taglet {
 
         // Generates a graph in DOT format
         String graph(TypeElement rootClass, Set<String> exports) {
+            if (!isInPublicApi(rootClass, exports)) {
+                // Alternatively we can return "" for the graph since there is no single root to render
+                throw new IllegalArgumentException("Root not in public API: " + rootClass.getQualifiedName());
+            }
             final State state = new State(rootClass);
             traverse(state, rootClass, exports);
             return state.render();
         }
 
         static void traverse(State state, TypeElement node, Set<String> exports) {
+            if (!isInPublicApi(node, exports)) {
+                throw new IllegalArgumentException("Bad request, not in public API: " + node.getQualifiedName());
+            }
             state.addNode(node);
             if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                 state.addNonSealedEdge(node);
             } else {
                 for (TypeElement subNode : permittedSubclasses(node, exports)) {
-                    if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
-                        state.addEdge(node, subNode);
-                    }
+                    state.addEdge(node, subNode);
                     traverse(state, subNode, exports);
                 }
             }
@@ -292,14 +297,30 @@ public final class SealedGraph implements Taglet {
         }
 
         private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
-            return node.getPermittedSubclasses().stream()
-                    .filter(DeclaredType.class::isInstance)
-                    .map(DeclaredType.class::cast)
-                    .map(DeclaredType::asElement)
-                    .filter(TypeElement.class::isInstance)
-                    .map(TypeElement.class::cast)
-                    .filter(te -> isInPublicApi(te, exports))
-                    .toList();
+            List<TypeElement> dfsStack = new ArrayList<TypeElement>().reversed(); // Faster operations to head
+            SequencedCollection<TypeElement> result = new LinkedHashSet<>(); // Deduplicate diamond interface inheritance
+            // The starting node may be in the public API - still expand it
+            prependSubclasses(node, dfsStack);
+
+            while (!dfsStack.isEmpty()) {
+                TypeElement now = dfsStack.removeFirst();
+                if (isInPublicApi(now, exports)) {
+                    result.addLast(now);
+                } else {
+                    // Skip the non-exported classes in the hierarchy
+                    prependSubclasses(now, dfsStack);
+                }
+            }
+
+            return List.copyOf(result);
+        }
+
+        private static void prependSubclasses(TypeElement node, List<TypeElement> dfs) {
+            for (var e : node.getPermittedSubclasses().reversed()) {
+                if (e instanceof DeclaredType dt && dt.asElement() instanceof TypeElement te) {
+                    dfs.addFirst(te);
+                }
+            }
         }
 
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {

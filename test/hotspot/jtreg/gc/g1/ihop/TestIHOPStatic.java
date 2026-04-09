@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,6 @@ public class TestIHOPStatic {
         System.out.println("  MaxHeapSize : " + heapSize);
         System.out.println("  Expect for concurrent cycle initiation message : " + expectInitiationMessage);
         List<String> options = new ArrayList<>();
-        Collections.addAll(options, Utils.getTestJavaOpts());
         Collections.addAll(options,
                 "-XX:InitiatingHeapOccupancyPercent=" + ihop,
                 "-Dmemory.fill=" + (heapSize * 1024 * 1024 * pctToFill / 100),

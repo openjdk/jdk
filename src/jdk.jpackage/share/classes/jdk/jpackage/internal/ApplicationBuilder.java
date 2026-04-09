@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,17 +36,45 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.model.RuntimeBuilder;
+import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class ApplicationBuilder {
+
+    ApplicationBuilder() {
+    }
+
+    ApplicationBuilder(ApplicationBuilder other) {
+        name = other.name;
+        description = other.description;
+        version = other.version;
+        vendor = other.vendor;
+        copyright = other.copyright;
+        appDirSources = other.appDirSources;
+        externalApp = other.externalApp;
+        contentDirSources = other.contentDirSources;
+        appImageLayout = other.appImageLayout;
+        runtimeBuilder = other.runtimeBuilder;
+        launchers = other.launchers;
+        runtimeReleaseFile = other.runtimeReleaseFile;
+        derivedVersionNormalizer = other.derivedVersionNormalizer;
+    }
+
+    ApplicationBuilder copy() {
+        return new ApplicationBuilder(this);
+    }
 
     Application create() {
         Objects.requireNonNull(appImageLayout);
@@ -62,11 +91,11 @@ final class ApplicationBuilder {
         return new Application.Stub(
                 effectiveName,
                 Optional.ofNullable(description).orElse(effectiveName),
-                Optional.ofNullable(version).orElseGet(DEFAULTS::version),
+                validatedVersion(),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                Optional.ofNullable(srcDir),
-                Optional.ofNullable(contentDirs).orElseGet(List::of),
+                Optional.ofNullable(appDirSources).orElseGet(List::of),
+                Optional.ofNullable(contentDirSources).orElseGet(List::of),
                 appImageLayout,
                 Optional.ofNullable(runtimeBuilder),
                 launchersAsList,
@@ -101,6 +130,11 @@ final class ApplicationBuilder {
         return this;
     }
 
+    boolean isRuntime() {
+        return Optional.ofNullable(appImageLayout)
+                .orElseThrow(IllegalStateException::new) instanceof RuntimeLayout;
+    }
+
     ApplicationBuilder name(String v) {
         name = v;
         return this;
@@ -116,6 +150,15 @@ final class ApplicationBuilder {
         return this;
     }
 
+    Optional<String> version() {
+        return Optional.ofNullable(version);
+        }
+
+    ApplicationBuilder runtimeReleaseFile(Path v) {
+        runtimeReleaseFile = v;
+        return this;
+    }
+
     ApplicationBuilder vendor(String v) {
         vendor = v;
         return this;
@@ -126,14 +169,62 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder srcDir(Path v) {
-        srcDir = v;
+    ApplicationBuilder appDirSources(Collection<RootedPath> v) {
+        appDirSources = v;
         return this;
     }
 
-    ApplicationBuilder contentDirs(List<Path> v) {
-        contentDirs = v;
+    ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
+        contentDirSources = v;
         return this;
+    }
+
+    ApplicationBuilder derivedVersionNormalizer(UnaryOperator<String> v) {
+        derivedVersionNormalizer = v;
+        return this;
+    }
+
+    private String validatedVersion() {
+        return Optional.ofNullable(version).or(() -> {
+            // Application version has not been specified explicitly. Derive it.
+            var derivedVersion = derivedVersion();
+            if (derivedVersionNormalizer != null) {
+                derivedVersion = derivedVersion.map(v -> {
+                    var mappedVersion = derivedVersionNormalizer.apply(v);
+                    if (!mappedVersion.equals(v)) {
+                        Log.verbose(I18N.format("message.version-normalized", mappedVersion, v));
+                    }
+                    return mappedVersion;
+                });
+            }
+            return derivedVersion;
+        }).orElseGet(DEFAULTS::version);
+    }
+
+    private Optional<String> derivedVersion() {
+        if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
+            try {
+                var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
+                Log.verbose(I18N.format("message.release-version", releaseVersion));
+                return Optional.of(releaseVersion);
+            } catch (Exception ex) {
+                Log.verbose(ex);
+                return Optional.empty();
+            }
+        } else if (launchers != null) {
+            return launchers.mainLauncher().startupInfo()
+                    .filter(LauncherModularStartupInfo.class::isInstance)
+                    .map(LauncherModularStartupInfo.class::cast)
+                    .flatMap(modularStartupInfo -> {
+                        var moduleVersion = modularStartupInfo.moduleVersion();
+                        moduleVersion.ifPresent(v -> {
+                            Log.verbose(I18N.format("message.module-version", v, modularStartupInfo.moduleName()));
+                        });
+                        return moduleVersion;
+                    });
+        } else {
+            return Optional.empty();
+        }
     }
 
     static <T extends Launcher> ApplicationLaunchers normalizeIcons(
@@ -246,8 +337,8 @@ final class ApplicationBuilder {
                 app.version(),
                 app.vendor(),
                 app.copyright(),
-                app.srcDir(),
-                app.contentDirs(),
+                app.appDirSources(),
+                app.contentDirSources(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -294,12 +385,14 @@ final class ApplicationBuilder {
     private String version;
     private String vendor;
     private String copyright;
-    private Path srcDir;
+    private Collection<RootedPath> appDirSources;
     private ExternalApplication externalApp;
-    private List<Path> contentDirs;
+    private Collection<RootedPath> contentDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
+    private Path runtimeReleaseFile;
+    private UnaryOperator<String> derivedVersionNormalizer;
 
     private static final Defaults DEFAULTS = new Defaults(
             "1.0",

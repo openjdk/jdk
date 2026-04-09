@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,6 @@ public class AddReads {
         "[class,load] com.norequires.Main source: shared objects file";
     private static final String sharedClassB =
         "[class,load] org.astro.World source: shared objects file";
-    private static final String fmgEnabled = "full module graph: enabled";
-    private static final String fmgDisabled = "full module graph: disabled";
     private static final String cannotAccess =
         "class com.norequires.Main (in module com.norequires) cannot access class org.astro.World (in module org.astro)";
 
@@ -166,8 +164,8 @@ public class AddReads {
                 out.shouldContain("full module graph: disabled");
                 out.shouldContain("Mismatched values for property jdk.module.addreads: runtime com.norequires=ALL-UNNAMED dump time com.norequires=org.astro");
             } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("full module graph: enabled");
-            } else {
+                out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
+             } else {
                 out.shouldHaveExitValue(0);
             }
         }

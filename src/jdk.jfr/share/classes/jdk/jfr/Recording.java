@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
@@ -100,11 +101,16 @@ public final class Recording implements Closeable {
      * @since 11
      */
     public Recording(Map<String, String> settings) {
+        this(RecordingState.NEW, settings);
+    }
+
+    // package private
+    Recording(RecordingState state, Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
-            this.internal = r.newRecording(sanitized);
+            this.internal = r.newRecording(state, sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
                 throw new InternalError("Internal recording not properly setup");

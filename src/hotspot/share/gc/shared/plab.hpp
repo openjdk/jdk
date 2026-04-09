@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward declarations.
@@ -146,37 +147,37 @@ public:
 
 // PLAB book-keeping.
 class PLABStats : public CHeapObj<mtGC> {
+  Atomic<size_t> _allocated;          // Total allocated
+  Atomic<size_t> _wasted;             // of which wasted (internal fragmentation)
+  Atomic<size_t> _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
+  Atomic<size_t> _unused;             // Unused in last buffer
+
 protected:
   const char* _description;   // Identifying string.
 
-  size_t _allocated;          // Total allocated
-  size_t _wasted;             // of which wasted (internal fragmentation)
-  size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
-  size_t _unused;             // Unused in last buffer
-
   virtual void reset() {
-    _allocated   = 0;
-    _wasted      = 0;
-    _undo_wasted = 0;
-    _unused      = 0;
+    _allocated.store_relaxed(0);
+    _wasted.store_relaxed(0);
+    _undo_wasted.store_relaxed(0);
+    _unused.store_relaxed(0);
   }
 
 public:
   PLABStats(const char* description) :
-    _description(description),
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
-    _unused(0)
+    _unused(0),
+    _description(description)
   { }
 
   virtual ~PLABStats() { }
 
-  size_t allocated() const { return _allocated; }
-  size_t wasted() const { return _wasted; }
-  size_t unused() const { return _unused; }
+  size_t allocated() const { return _allocated.load_relaxed(); }
+  size_t wasted() const { return _wasted.load_relaxed(); }
+  size_t undo_wasted() const { return _undo_wasted.load_relaxed(); }
+  size_t unused() const { return _unused.load_relaxed(); }
   size_t used() const { return allocated() - (wasted() + unused()); }
-  size_t undo_wasted() const { return _undo_wasted; }
 
   static size_t min_size() {
     return PLAB::min_size();

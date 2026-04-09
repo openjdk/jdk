@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         super(filechooser);
     }
 
+    @Override
     public String getFileName() {
         if(filenameTextField != null) {
             return filenameTextField.getText();
@@ -149,30 +150,37 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @Override
     public void setFileName(String filename) {
         if(filenameTextField != null) {
             filenameTextField.setText(filename);
         }
     }
 
+    @Override
     public String getDirectoryName() {
         return pathField.getText();
     }
 
+    @Override
     public void setDirectoryName(String dirname) {
         pathField.setText(dirname);
     }
 
+    @Override
     public void ensureFileIsVisible(JFileChooser fc, File f) {
         // PENDING(jeff)
     }
 
+    @Override
     public void rescanCurrentDirectory(JFileChooser fc) {
         getModel().validateFileCache();
     }
 
+    @Override
     public PropertyChangeListener createPropertyChangeListener(JFileChooser fc) {
         return new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent e) {
                 String prop = e.getPropertyName();
                 if(prop.equals(JFileChooser.SELECTED_FILE_CHANGED_PROPERTY)) {
@@ -266,10 +274,12 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         return new MotifFileChooserUI((JFileChooser)c);
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         c.removePropertyChangeListener(filterComboBoxModel);
         approveButton.removeActionListener(getApproveSelectionAction());
@@ -277,11 +287,13 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         super.uninstallUI(c);
     }
 
+    @Override
     public void installComponents(JFileChooser fc) {
         fc.setLayout(new BorderLayout(10, 10));
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
 
         JPanel interior = new JPanel() {
+            @Override
             public Insets getInsets() {
                 return insets;
             }
@@ -305,6 +317,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
 
         JTextField tmp1 = new JTextField(curDirName, 35) {
+            @Override
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -340,6 +353,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         leftPanel.add(l);
 
         JComboBox<FileFilter> tmp2 = new JComboBox<FileFilter>() {
+            @Override
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -417,6 +431,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         interior.add(fileNameLabel);
 
         JTextField tmp3 = new JTextField(35) {
+            @Override
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -441,6 +456,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(Box.createGlue());
 
         JButton tmp4 = new JButton(getApproveButtonText(fc)) {
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
             }
@@ -456,6 +472,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(Box.createGlue());
 
         JButton updateButton = new JButton(updateButtonText) {
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
             }
@@ -470,6 +487,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(Box.createGlue());
 
         JButton cancelButton = new JButton(cancelButtonText) {
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
             }
@@ -484,6 +502,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         buttonPanel.add(Box.createGlue());
 
         JButton helpButton = new JButton(helpButtonText) {
+            @Override
             public Dimension getMaximumSize() {
                 return new Dimension(MAX_SIZE.width, this.getPreferredSize().height);
             }
@@ -520,6 +539,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @Override
     public void uninstallComponents(JFileChooser fc) {
         fc.removeAll();
         bottomPanel = null;
@@ -528,6 +548,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @Override
     protected void installStrings(JFileChooser fc) {
         super.installStrings(fc);
 
@@ -555,11 +576,13 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         return SwingUtilities2.getUIDefaultsInt(key, l);
     }
 
+    @Override
     protected void installIcons(JFileChooser fc) {
         // Since motif doesn't have button icons, leave this empty
         // which overrides the supertype icon loading
     }
 
+    @Override
     protected void uninstallIcons(JFileChooser fc) {
         // Since motif doesn't have button icons, leave this empty
         // which overrides the supertype icon loading
@@ -580,6 +603,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         fileList.addListSelectionListener(createListSelectionListener(getFileChooser()));
         fileList.addMouseListener(createDoubleClickListener(getFileChooser(), fileList));
         fileList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 JFileChooser chooser = getFileChooser();
                 if (SwingUtilities.isLeftMouseButton(e) && !chooser.isMultiSelectionEnabled()) {
@@ -650,6 +674,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileCellRenderer extends DefaultListCellRenderer  {
+        @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
@@ -665,6 +690,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryCellRenderer extends DefaultListCellRenderer  {
+        @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
@@ -684,18 +710,22 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             getModel().addListDataListener(this);
         }
 
+        @Override
         public int getSize() {
             return getModel().getDirectories().size();
         }
 
+        @Override
         public File getElementAt(int index) {
             return getModel().getDirectories().elementAt(index);
         }
 
+        @Override
         public void intervalAdded(ListDataEvent e) {
             fireIntervalAdded(this, e.getIndex0(), e.getIndex1());
         }
 
+        @Override
         public void intervalRemoved(ListDataEvent e) {
             fireIntervalRemoved(this, e.getIndex0(), e.getIndex1());
         }
@@ -709,6 +739,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
         // PENDING(jeff) - fire the correct interval changed - currently sending
         // out that everything has changed
+        @Override
         public void contentsChanged(ListDataEvent e) {
             fireContentsChanged();
         }
@@ -721,6 +752,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             getModel().addListDataListener(this);
         }
 
+        @Override
         public int getSize() {
             return getModel().getFiles().size();
         }
@@ -733,14 +765,17 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             return getModel().getFiles().indexOf(o);
         }
 
+        @Override
         public File getElementAt(int index) {
             return getModel().getFiles().elementAt(index);
         }
 
+        @Override
         public void intervalAdded(ListDataEvent e) {
             fireIntervalAdded(this, e.getIndex0(), e.getIndex1());
         }
 
+        @Override
         public void intervalRemoved(ListDataEvent e) {
             fireIntervalRemoved(this, e.getIndex0(), e.getIndex1());
         }
@@ -753,6 +788,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
 
         // PENDING(jeff) - fire the interval changed
+        @Override
         public void contentsChanged(ListDataEvent e) {
             fireContentsChanged();
         }
@@ -779,6 +815,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
+        @Override
         public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
             boolean cellHasFocus) {
@@ -805,6 +842,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             filters = getFileChooser().getChoosableFileFilters();
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if(prop.equals(JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY)) {
@@ -815,6 +853,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             }
         }
 
+        @Override
         public void setSelectedItem(Object filter) {
             if(filter != null) {
                 getFileChooser().setFileFilter((FileFilter) filter);
@@ -822,6 +861,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             }
         }
 
+        @Override
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
             // NOTE: we shouldn't have to do this, since JFileChooser adds
@@ -843,6 +883,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             return getFileChooser().getFileFilter();
         }
 
+        @Override
         public int getSize() {
             if(filters != null) {
                 return filters.length;
@@ -851,6 +892,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             }
         }
 
+        @Override
         public FileFilter getElementAt(int index) {
             if(index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
@@ -864,6 +906,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
     }
 
+    @Override
     protected JButton getApproveButton(JFileChooser fc) {
         return approveButton;
     }

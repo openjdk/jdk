@@ -4276,7 +4276,9 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
     !strcmp(_opType,"StoreStoreFence") ||
+    !strcmp(_opType,"MemBarStoreLoad") ||
     !strcmp(_opType,"MemBarVolatile") ||
+    !strcmp(_opType,"MemBarFull") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
     !strcmp(_opType,"OnSpinWait");

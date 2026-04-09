@@ -28,7 +28,6 @@
 #include "memory/arena.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

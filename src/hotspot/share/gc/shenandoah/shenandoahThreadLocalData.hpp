@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -62,24 +63,7 @@ private:
   // Used both by mutator threads and by GC worker threads
   // for evacuations within the old generation and
   // for promotions from the young generation into the old generation.
-  PLAB* _plab;
-
-  // Heuristics will grow the desired size of plabs.
-  size_t _plab_desired_size;
-
-  // Once the plab has been allocated, and we know the actual size, we record it here.
-  size_t _plab_actual_size;
-
-  // As the plab is used for promotions, this value is incremented. When the plab is
-  // retired, the difference between 'actual_size' and 'promoted' will be returned to
-  // the old generation's promotion reserve (i.e., it will be 'unexpended').
-  size_t _plab_promoted;
-
-  // If false, no more promotion by this thread during this evacuation phase.
-  bool   _plab_allows_promotion;
-
-  // If true, evacuations may attempt to allocate a smaller plab if the original size fails.
-  bool   _plab_retries_enabled;
+  ShenandoahPLAB* _shenandoah_plab;
 
   ShenandoahEvacuationStats* _evacuation_stats;
 
@@ -141,8 +125,7 @@ public:
     data(thread)->_gclab_size = 0;
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      data(thread)->_plab = new PLAB(align_up(PLAB::min_size(), CardTable::card_size_in_words()));
-      data(thread)->_plab_desired_size = 0;
+      data(thread)->_shenandoah_plab = new ShenandoahPLAB();
     }
   }
 
@@ -170,65 +153,8 @@ public:
     return data(thread)->_evacuation_stats;
   }
 
-  static PLAB* plab(Thread* thread) {
-    return data(thread)->_plab;
-  }
-
-  static size_t plab_size(Thread* thread) {
-    return data(thread)->_plab_desired_size;
-  }
-
-  static void set_plab_size(Thread* thread, size_t v) {
-    data(thread)->_plab_desired_size = v;
-  }
-
-  static void enable_plab_retries(Thread* thread) {
-    data(thread)->_plab_retries_enabled = true;
-  }
-
-  static void disable_plab_retries(Thread* thread) {
-    data(thread)->_plab_retries_enabled = false;
-  }
-
-  static bool plab_retries_enabled(Thread* thread) {
-    return data(thread)->_plab_retries_enabled;
-  }
-
-  static void enable_plab_promotions(Thread* thread) {
-    data(thread)->_plab_allows_promotion = true;
-  }
-
-  static void disable_plab_promotions(Thread* thread) {
-    data(thread)->_plab_allows_promotion = false;
-  }
-
-  static bool allow_plab_promotions(Thread* thread) {
-    return data(thread)->_plab_allows_promotion;
-  }
-
-  static void reset_plab_promoted(Thread* thread) {
-    data(thread)->_plab_promoted = 0;
-  }
-
-  static void add_to_plab_promoted(Thread* thread, size_t increment) {
-    data(thread)->_plab_promoted += increment;
-  }
-
-  static void subtract_from_plab_promoted(Thread* thread, size_t increment) {
-    assert(data(thread)->_plab_promoted >= increment, "Cannot subtract more than remaining promoted");
-    data(thread)->_plab_promoted -= increment;
-  }
-
-  static size_t get_plab_promoted(Thread* thread) {
-    return data(thread)->_plab_promoted;
-  }
-
-  static void set_plab_actual_size(Thread* thread, size_t value) {
-    data(thread)->_plab_actual_size = value;
-  }
-
-  static size_t get_plab_actual_size(Thread* thread) {
-    return data(thread)->_plab_actual_size;
+  static ShenandoahPLAB* shenandoah_plab(Thread* thread) {
+    return data(thread)->_shenandoah_plab;
   }
 
   // Evacuation OOM handling

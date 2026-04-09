@@ -84,6 +84,7 @@ public:
   constexpr bool operator>(intn_t o) const { return int(*this) > int(o); }
   constexpr bool operator<=(intn_t o) const { return int(*this) <= int(o); }
   constexpr bool operator>=(intn_t o) const { return int(*this) >= int(o); }
+  constexpr intn_t operator>>(unsigned int s) const { return intn_t(int(*this) >> s); }
 };
 
 template <unsigned int nbits>
@@ -162,5 +163,36 @@ template <unsigned int nbits>
 inline unsigned count_leading_zeros(uintn_t<nbits> v) {
   return count_leading_zeros<unsigned int>(v._v & uintn_t<nbits>::_mask) - (32 - nbits);
 }
+
+class HotSpotNumerics {
+private:
+  template <typename T>
+  static constexpr int type_width_impl(T value) {
+    // Count the number of 1s in `value`.  We can't use population_count() from
+    // utilities/population_count.hpp, since it requires `std::is_integral`, which
+    // fails for `uintn_t<N>`.  Since this is a constexpr function, this function
+    // does not impose a runtime performance overhead.
+    return value == T(0) ? 0 : 1 + type_width_impl(value >> 1);
+  }
+
+public:
+  // Returns true if T is a signed type.  We can't rely on std::is_signed
+  // because it returns false for intn_t<N>, which is not a standard integral
+  // type.  Instead, we check whether T(-1) is less than T(0).
+  template <typename T>
+  static constexpr bool is_signed() {
+    return T(-1) < T(0);
+  }
+
+  // Returns the bit width of the unsigned type T.  We can't use sizeof() on T,
+  // since sizeof(uintn_t<N>) returns the size of the underlying storage rather
+  // than the logical type width.  So we instead compute the number of 1s in the
+  // maximum value.
+  template <typename T>
+  static constexpr int type_width() {
+    static_assert(!is_signed<T>(), "type_width requires an unsigned type");
+    return type_width_impl(std::numeric_limits<T>::max());
+  }
+};
 
 #endif // SHARE_UTILITIES_INTN_T_HPP

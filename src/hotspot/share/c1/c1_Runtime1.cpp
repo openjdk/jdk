@@ -278,11 +278,9 @@ bool Runtime1::initialize(BufferBlob* blob) {
     if (!generate_blob_for(blob, id)) {
       return false;
     }
-    if (id == StubId::c1_forward_exception_id) {
-      // publish early c1 stubs at this point so later stubs can refer to them
-      AOTCodeCache::init_early_c1_table();
-    }
   }
+  // disallow any further c1 stub generation
+  AOTCodeCache::set_c1_stubs_complete();
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
@@ -541,6 +539,7 @@ extern void vm_exit(int code);
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
 JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* current, oopDesc* ex, address pc, nmethod*& nm))
+  MACOS_AARCH64_ONLY(current->wx_enable_write());
   Handle exception(current, ex);
 
   // This function is called when we are about to throw an exception. Therefore,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7938,7 +7938,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             (this, temporary, focusedWindowChangeAllowed, time, cause);
         if (!success) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager
-                (appContext).dequeueKeyEvents(time, this);
+                ().dequeueKeyEvents(time, this);
             if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
                 focusLog.finest("Peer request failed");
             }

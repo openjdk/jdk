@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2025 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.17
+// Version 2.18
 //
 
 #ifndef _lcms2_H
@@ -116,7 +116,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2170
+#define LCMS_VERSION        2180
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED

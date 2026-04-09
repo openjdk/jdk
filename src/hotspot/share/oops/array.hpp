@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "utilities/ostream.hpp"
 
 // Array for metadata allocation
+
+class MetaspaceClosure;
 
 template <typename T>
 class Array: public MetaspaceObj {
@@ -156,6 +158,9 @@ protected:
   void print_value_on(outputStream* st) const {
     st->print("Array<T>(" PTR_FORMAT ")", p2i(this));
   }
+
+  // This function does nothing. The iteration of the elements are done inside metaspaceClosure.hpp
+  void metaspace_pointers_do(MetaspaceClosure* it) {}
 
 #ifndef PRODUCT
   void print(outputStream* st) {

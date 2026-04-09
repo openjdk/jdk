@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -94,7 +95,13 @@ public class PkgScriptsTest {
                             "message.no-default-resource",
                             String.format("[%s]", role.resourceCategory()),
                             role.scriptName());
-                }).forEach(cmd::validateOutput);
+                }).forEach(str -> {
+                    new JPackageOutputValidator()
+                            .expectMatchingStrings(str)
+                            .matchTimestamps()
+                            .stripTimestamps()
+                            .applyTo(cmd);
+                });
             }).addInstallVerifier(cmd -> {
                 customScripts.forEach(customScript -> {
                     customScript.verify(cmd);

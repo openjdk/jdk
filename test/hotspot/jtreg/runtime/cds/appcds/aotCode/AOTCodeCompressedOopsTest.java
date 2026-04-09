@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,12 +201,18 @@ public class AOTCodeCompressedOopsTest {
                  if (aotCacheShift == -1 || currentShift == -1 || aotCacheBase == -1 || currentBase == -1) {
                      throw new RuntimeException("Failed to find CompressedOops settings");
                  }
+
+                 // Changes in compressed oop encoding could randomly affect flags like AllocatePrefetchDistance
+                 // due to the OS-assigned range of the Java heap. If that happens, the exact error message may vary
+                 String disabledMsg = "AOT Code Cache disabled:";
                  if (aotCacheShift != currentShift) {
-                     out.shouldContain("AOT Code Cache disabled: it was created with different CompressedOops::shift()");
+                     out.shouldContain(disabledMsg);
                  } else if ((aotCacheBase == 0 || currentBase == 0) && (aotCacheBase != currentBase)) {
-                     out.shouldContain("AOTStubCaching is disabled: incompatible CompressedOops::base()");
+                     out.shouldContain(disabledMsg);
                  } else {
-                     out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     if (!out.contains(disabledMsg)) {
+                         out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     }
                  }
             }
         }

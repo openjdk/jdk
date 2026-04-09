@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -101,12 +102,14 @@ inline void SingleWriterSynchronizer::exit(uint enter_value) {
 }
 
 class SingleWriterSynchronizer::CriticalSection : public StackObj {
+  NoSafepointVerifier _nsv;
   SingleWriterSynchronizer* _synchronizer;
   uint _enter_value;
 
 public:
   // Enter synchronizer's critical section.
   explicit CriticalSection(SingleWriterSynchronizer* synchronizer) :
+    _nsv(),
     _synchronizer(synchronizer),
     _enter_value(synchronizer->enter())
   {}

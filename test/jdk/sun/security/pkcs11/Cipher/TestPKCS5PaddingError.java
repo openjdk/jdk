@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6687725
+ * @bug 6687725 8365883
  * @summary Test internal PKCS5Padding impl with various error conditions.
  * @author Valerie Peng
  * @library /test/lib ..
@@ -34,6 +34,8 @@
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.Security;
+import java.util.Arrays;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -63,21 +65,35 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     };
 
     private static StringBuffer debugBuf = new StringBuffer();
+    private static final String sunJCEProvider =
+            System.getProperty("test.provider.name", "SunJCE");
 
     @Override
     public void main(Provider p) throws Exception {
-        try {
-            byte[] plainText = new byte[200];
 
-            for (int i = 0; i < TEST_LIST.length; i++) {
-                CI currTest = TEST_LIST[i];
+        // Checking for SunJCE first
+        System.out.println("Checking " + sunJCEProvider + " provider");
+        doTest(Security.getProvider(sunJCEProvider));
+
+        System.out.printf("Checking %s provider%n", p.getName());
+        doTest(p);
+    }
+
+    private void doTest(final Provider p) throws Exception {
+        try {
+            byte[] plainText = "testtexttesttext".getBytes(); // 16 bytes text
+
+            for (CI currTest : TEST_LIST) {
                 System.out.println("===" + currTest.transformation + "===");
                 try {
                     KeyGenerator kg =
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
-                    Cipher c1 = Cipher.getInstance(currTest.transformation,
-                               System.getProperty("test.provider.name", "SunJCE"));
+                    // Encrypting without padding to guarantee bad padding
+                    // exception when decrypting
+                    Cipher c1 = Cipher.getInstance(currTest.transformation
+                                    .replace("/PKCS5Padding", "/NoPadding"),
+                            sunJCEProvider);
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();
@@ -85,30 +101,42 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     c2.init(Cipher.DECRYPT_MODE, key, params);
 
                     // 1st test: wrong output length
-                    // NOTE: Skip NSS since it reports CKR_DEVICE_ERROR when
-                    // the data passed to its EncryptUpdate/DecryptUpdate is
-                    // not multiple of blocks
+                    // NOTE: Skip NSS since it reports CKR_DEVICE_ERROR when the
+                    // data passed to its EncryptUpdate and
+                    // CKR_ENCRYPTED_DATA_LEN_RANGE when passed through
+                    // DecryptUpdate are not multiple of blocks
                     if (!p.getName().equals("SunPKCS11-NSS")) {
                         try {
                             System.out.println("Testing with wrong cipherText length");
                             c2.doFinal(cipherText, 0, cipherText.length - 2);
+                            throw new RuntimeException(
+                                    "Expected IBSE NOT thrown");
                         } catch (IllegalBlockSizeException ibe) {
                             // expected
                         } catch (Exception ex) {
                             System.out.println("Error: Unexpected Ex " + ex);
-                            ex.printStackTrace();
+                            throw ex;
                         }
                     }
                     // 2nd test: wrong padding value
                     try {
                         System.out.println("Testing with wrong padding bytes");
-                        cipherText[cipherText.length - 1]++;
-                        c2.doFinal(cipherText);
+                        byte[] result = c2.doFinal(cipherText);
+
+                        final String errorDescription =
+                                "Decrypted text " + Arrays.toString(result);
+                        if (Arrays.equals(result, plainText)) {
+                            System.out.println("WARNING: initial text and " +
+                                               "decoded text are the same");
+                        }
+                        System.out.println(errorDescription);
+                        throw new RuntimeException(
+                                "Expected BPE NOT thrown \n" + errorDescription);
                     } catch (BadPaddingException bpe) {
                         // expected
                     } catch (Exception ex) {
                         System.out.println("Error: Unexpected Ex " + ex);
-                        ex.printStackTrace();
+                        throw ex;
                     }
                     System.out.println("DONE");
                 } catch (NoSuchAlgorithmException nsae) {
@@ -119,13 +147,12 @@ public class TestPKCS5PaddingError extends PKCS11Test {
         } catch (Exception ex) {
             // print out debug info when exception is encountered
             if (debugBuf != null) {
-                System.out.println(debugBuf.toString());
+                System.out.println(debugBuf);
                 debugBuf = new StringBuffer();
             }
             throw ex;
         }
     }
-
     public static void main(String[] args) throws Exception {
         main(new TestPKCS5PaddingError(), args);
     }

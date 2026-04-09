@@ -54,7 +54,6 @@
 //
 //  - the two lock bits are used to describe three states: locked/unlocked and monitor.
 //
-//    [ptr             | 00]  locked             ptr points to real header on stack (stack-locking in use)
 //    [header          | 00]  locked             locked regular object header (fast-locking in use)
 //    [header          | 01]  unlocked           regular object header
 //    [ptr             | 10]  monitor            inflated lock (header is swapped out, UseObjectMonitorTable == false)

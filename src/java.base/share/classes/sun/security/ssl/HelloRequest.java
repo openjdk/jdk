@@ -101,7 +101,7 @@ final class HelloRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             HelloRequestMessage hrm = new HelloRequestMessage(shc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced HelloRequest handshake message", hrm);
             }
 
@@ -137,7 +137,7 @@ final class HelloRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             HelloRequestMessage hrm = new HelloRequestMessage(shc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced HelloRequest handshake message", hrm);
             }
 
@@ -177,7 +177,7 @@ final class HelloRequest {
             // be sent by the server at any time.  Please don't clean up this
             // handshake consumer.
             HelloRequestMessage hrm = new HelloRequestMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming HelloRequest handshake message", hrm);
             }
@@ -190,7 +190,8 @@ final class HelloRequest {
                 }
 
                 if (!chc.conContext.secureRenegotiation) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                                 "Continue with insecure renegotiation");
                     }
@@ -206,7 +207,8 @@ final class HelloRequest {
                 //
                 SSLHandshake.CLIENT_HELLO.produce(context, hrm);
             } else {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore HelloRequest, handshaking is in progress");
                 }

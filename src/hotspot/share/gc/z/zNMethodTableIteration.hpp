@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 #define SHARE_GC_Z_ZNMETHODTABLEITERATION_HPP
 
 #include "gc/z/zGlobals.hpp"
+#include "runtime/atomic.hpp"
 
 class NMethodClosure;
 class ZNMethodTableEntry;
 
 class ZNMethodTableIteration {
 private:
-  ZNMethodTableEntry*            _table;
-  size_t                         _size;
-  ZCACHE_ALIGNED volatile size_t _claimed;
+  ZNMethodTableEntry*           _table;
+  size_t                        _size;
+  ZCACHE_ALIGNED Atomic<size_t> _claimed;
 
   bool in_progress() const;
 

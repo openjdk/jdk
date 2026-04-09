@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2216,7 +2216,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ cmpl(temp, code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = temp;
     const Register klass  = temp;
 
@@ -2264,8 +2265,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ cmpl(temp, code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = temp;
 
     __ jcc(Assembler::notEqual, L_clinit_barrier_slow);

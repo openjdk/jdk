@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Red Hat, Inc.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @library /test/lib
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -40,6 +42,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -53,6 +57,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -66,6 +72,8 @@
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
+ * @comment This test relies on crashing which conflicts with ASAN checks
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

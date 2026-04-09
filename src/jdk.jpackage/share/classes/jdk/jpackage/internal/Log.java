@@ -61,16 +61,6 @@ public class Log {
             this.err = err;
         }
 
-        public void flush() {
-            if (out != null) {
-                out.flush();
-            }
-
-            if (err != null) {
-                err.flush();
-            }
-        }
-
         public void info(String msg) {
             if (out != null) {
                 out.println(msg);
@@ -111,46 +101,27 @@ public class Log {
         }
     }
 
-    private static final InheritableThreadLocal<Logger> instance =
-            new InheritableThreadLocal<Logger>() {
-                @Override protected Logger initialValue() {
-                    return new Logger();
-                }
-            };
-
-    public static void setPrintWriter (PrintWriter out, PrintWriter err) {
-        instance.get().setPrintWriter(out, err);
-    }
-
-    public static void flush() {
-        instance.get().flush();
-    }
-
     public static void info(String msg) {
-        instance.get().info(msg);
+        Globals.instance().logger().info(msg);
     }
 
     public static void fatalError(String msg) {
-        instance.get().fatalError(msg);
+        Globals.instance().logger().fatalError(msg);
     }
 
     public static void error(String msg) {
-        instance.get().error(msg);
-    }
-
-    public static void setVerbose() {
-        instance.get().setVerbose();
+        Globals.instance().logger().error(msg);
     }
 
     public static boolean isVerbose() {
-        return instance.get().isVerbose();
+        return Globals.instance().logger().isVerbose();
     }
 
     public static void verbose(String msg) {
-       instance.get().verbose(msg);
+        Globals.instance().logger().verbose(msg);
     }
 
     public static void verbose(Throwable t) {
-       instance.get().verbose(t);
+        Globals.instance().logger().verbose(t);
     }
 }

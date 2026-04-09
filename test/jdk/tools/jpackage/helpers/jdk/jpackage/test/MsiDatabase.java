@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +44,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
-final class MsiDatabase {
+public final class MsiDatabase {
 
     static MsiDatabase load(Path msiFile, Path idtFileOutputDir, Set<Table> tableNames) {
         try {
@@ -61,7 +64,7 @@ final class MsiDatabase {
                     .execute(0);
 
             var tables = orderedTableNames.stream().map(tableName -> {
-                return Map.entry(tableName, idtFileOutputDir.resolve(tableName + ".idt"));
+                return Map.entry(tableName, idtFileOutputDir.resolve(tableName.tableName() + ".idt"));
             }).filter(e -> {
                 return Files.exists(e.getValue());
             }).collect(Collectors.toMap(Map.Entry::getKey, e -> {
@@ -81,6 +84,8 @@ final class MsiDatabase {
         FILE("File"),
         PROPERTY("Property"),
         SHORTCUT("Shortcut"),
+        CONTROL_EVENT("ControlEvent"),
+        INSTALL_UI_SEQUENCE("InstallUISequence"),
         ;
 
         Table(String name) {
@@ -95,6 +100,7 @@ final class MsiDatabase {
 
         static final Set<Table> FIND_PROPERTY_REQUIRED_TABLES = Set.of(PROPERTY);
         static final Set<Table> LIST_SHORTCUTS_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, SHORTCUT);
+        static final Set<Table> UI_ALTERATIONS_REQUIRED_TABLES = Set.of(CONTROL_EVENT, INSTALL_UI_SEQUENCE);
     }
 
 
@@ -120,17 +126,59 @@ final class MsiDatabase {
     }
 
     Collection<Shortcut> listShortcuts() {
-        var shortcuts = tables.get(Table.SHORTCUT);
-        if (shortcuts == null) {
-            return List.of();
-        }
-        return IntStream.range(0, shortcuts.rowCount()).mapToObj(i -> {
-            var row = shortcuts.row(i);
+        return rows(Table.SHORTCUT).map(row -> {
             var shortcutPath = directoryPath(row.apply("Directory_")).resolve(fileNameFromFieldValue(row.apply("Name")));
             var workDir = directoryPath(row.apply("WkDir"));
             var shortcutTarget = Path.of(expandFormattedString(row.apply("Target")));
             return new Shortcut(shortcutPath, shortcutTarget, workDir);
         }).toList();
+    }
+
+    UIAlterations uiAlterations() {
+
+        var includeActions = Set.of("WelcomeEulaDlg", "WelcomeDlg");
+        var actions = actionSequence(Table.INSTALL_UI_SEQUENCE).filter(action -> {
+            return includeActions.contains(action.action());
+        }).sorted(Comparator.comparing(Action::sequence)).toList();
+
+        // Custom jpackage dialogs.
+        var jpackageDialogs = Set.of("InstallDirNotEmptyDlg", "ShortcutPromptDlg");
+
+        var includeControls = Set.of("Next", "Back");
+        var controlEvents = rows(Table.CONTROL_EVENT).map(row -> {
+            return new ControlEvent(
+                    row.apply("Dialog_"),
+                    row.apply("Control_"),
+                    row.apply("Event"),
+                    row.apply("Argument"),
+                    row.apply("Condition"),
+                    Integer.parseInt(row.apply("Ordering")));
+        }).filter(controlEvent -> {
+            if (jpackageDialogs.contains(controlEvent.dialog())) {
+                // Include controls of all custom jpackage dialogs.
+                return true;
+            }
+
+            if (controlEvent.ordering() >= 6) {
+                // jpackage assumes the standard WiX UI doesn't define control events
+                // for dialog sequences it alters with the order higher than 6.
+                // Include all such items.
+
+                if (includeControls.contains(controlEvent.control())) {
+                    // Include only specific controls that jpackage alters.
+                    return true;
+                }
+            }
+
+            return false;
+        }).sorted(Comparator.comparing(ControlEvent::dialog)
+                .thenComparing(ControlEvent::control)
+                .thenComparing(ControlEvent::event)
+                .thenComparing(ControlEvent::argument)
+                .thenComparing(ControlEvent::condition)
+                .thenComparing(Comparator.comparingInt(ControlEvent::ordering))).toList();
+
+        return new UIAlterations(actions, controlEvents);
     }
 
     record Shortcut(Path path, Path target, Path workDir) {
@@ -146,6 +194,49 @@ final class MsiDatabase {
             TKit.assertEquals(expected.target, target, "Check the shortcut target");
             TKit.assertEquals(expected.workDir, workDir, "Check the shortcut work directory");
         }
+    }
+
+    public record Action(String action, String condition, int sequence) {
+        public Action {
+            Objects.requireNonNull(action);
+            Objects.requireNonNull(condition);
+        }
+    }
+
+    public record ControlEvent(
+            String dialog,
+            String control,
+            String event,
+            String argument,
+            String condition,
+            int ordering) {
+
+        public ControlEvent {
+            Objects.requireNonNull(dialog);
+            Objects.requireNonNull(control);
+            Objects.requireNonNull(event);
+            Objects.requireNonNull(argument);
+            Objects.requireNonNull(condition);
+        }
+    }
+
+    public record UIAlterations(Collection<Action> installUISequence, Collection<ControlEvent> controlEvents) {
+
+        public UIAlterations {
+            Objects.requireNonNull(installUISequence);
+        }
+    }
+
+    private Stream<Action> actionSequence(Table tableName) {
+        return rows(tableName).map(row -> {
+            return new Action(row.apply("Action"), row.apply("Condition"), Integer.parseInt(row.apply("Sequence")));
+        });
+    }
+
+    private Stream<Function<String, String>> rows(Table tableName) {
+        return Optional.ofNullable(tables.get(tableName)).stream().flatMap(table -> {
+            return IntStream.range(0, table.rowCount()).mapToObj(table::row);
+        });
     }
 
     private Path directoryPath(String directoryId) {
@@ -339,19 +430,27 @@ final class MsiDatabase {
 
                 var columns = headerLines.get(0).split("\t");
 
-                var header = headerLines.get(2).split("\t", 4);
-                if (header.length == 3) {
-                    if (Pattern.matches("^[1-9]\\d+$", header[0])) {
-                        charset = Charset.forName(header[0]);
-                    } else {
-                        throw new IllegalArgumentException(String.format(
-                                "Unexpected charset name [%s] in [%s] file", header[0], idtFile));
-                    }
-                } else if (header.length != 2) {
+                int tableNameIdx;
+
+                var header = headerLines.get(2).split("\t");
+                if (Pattern.matches("^[1-9]\\d+$", header[0])) {
+                    charset = Charset.forName(header[0]);
+                    tableNameIdx = 1;
+                } else {
+                    tableNameIdx = 0;
+                }
+
+                if (header.length < (tableNameIdx + 2)) {
                     throw new IllegalArgumentException(String.format(
                             "Unexpected number of fields (%d) in the 3rd line of [%s] file",
                             header.length, idtFile));
                 }
+
+                var tableName = header[tableNameIdx];
+                List<String> primaryKeys = Arrays.asList(header).subList(tableNameIdx + 1, header.length);
+
+                TKit.trace(String.format("Table in [%s] file: charset=%s; name=%s; primary keys=%s",
+                        idtFile, charset, tableName, primaryKeys));
 
                 return new IdtFileHeader(charset, List.of(columns));
 

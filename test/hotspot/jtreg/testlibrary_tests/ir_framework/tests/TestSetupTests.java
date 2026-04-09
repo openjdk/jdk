@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;
-import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -360,10 +359,11 @@ class TestSetupTestsWithExpectedExceptions {
     public void checkThrowInCheck(int x) {
         throw new BadCheckedTestException("expected check");
     }
-}
 
-class BadCheckedTestException extends RuntimeException {
-    BadCheckedTestException(String s) {
-        super(s);
+
+    static class BadCheckedTestException extends RuntimeException {
+        BadCheckedTestException(String s) {
+            super(s);
+        }
     }
 }

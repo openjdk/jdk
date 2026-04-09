@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,28 @@
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.PackageFile;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 /*
  * @test
@@ -74,25 +76,6 @@ public final class InOutPathTest {
         }
 
         return data;
-    }
-
-    @Parameters(ifNotOS = OperatingSystem.MACOS)
-    public static Collection<Object[]> appContentInputOther() {
-        return List.of(new Object[][]{
-            {PackageTypeAlias.IMAGE, wrap(cmd -> {
-                additionalContent(cmd, "--app-content", cmd.outputBundle());
-            }, "--app-content same as output bundle")},
-        });
-    }
-
-    @Parameters(ifOS = OperatingSystem.MACOS)
-    public static Collection<Object[]> appContentInputOSX() {
-        var contentsFolder = "Contents/MacOS";
-        return List.of(new Object[][]{
-            {PackageTypeAlias.IMAGE, wrap(cmd -> {
-                additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
-            }, String.format("--app-content same as the \"%s\" folder in the output bundle", contentsFolder))},
-        });
     }
 
     @Parameters(ifOS = OperatingSystem.MACOS)
@@ -146,67 +129,54 @@ public final class InOutPathTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         runTest(packageTypes, configure);
     }
 
     private static Envelope wrap(ThrowingConsumer<JPackageCommand, ? extends Exception> v, String label) {
-        return new Envelope(v, label);
-    }
-
-    private static boolean isAppImageValid(JPackageCommand cmd) {
-        return !cmd.hasArgument("--app-content") && !cmd.hasArgument("--mac-dmg-content");
+        return new Envelope(ThrowingConsumer.toConsumer(v), label);
     }
 
     private static void runTest(Set<PackageType> packageTypes,
-            ThrowingConsumer<JPackageCommand, ? extends Exception> configure) throws Exception {
-        ThrowingConsumer<JPackageCommand, Exception> configureWrapper = cmd -> {
+            Consumer<JPackageCommand> configure) {
+
+        ConfigurationTarget cfg;
+        if (packageTypes.contains(PackageType.IMAGE)) {
+            cfg = new ConfigurationTarget(
+                    JPackageCommand.helloAppImage(JAR_PATH.toString() + ":"));
+        } else {
+            cfg = new ConfigurationTarget(new PackageTest()
+                    .forTypes(packageTypes)
+                    .configureHelloApp(JAR_PATH.toString() + ":"));
+        }
+
+        var verifier = new AppDirContentVerifier();
+
+        cfg.addInitializer(cmd -> {
             // Make sure the input directory is empty in every test run.
             // This is needed because jpackage output directories in this test
             // are subdirectories of the input directory.
             cmd.setInputToEmptyDirectory();
             configure.accept(cmd);
             if (cmd.hasArgument("--temp") && cmd.isImagePackageType()) {
-                // Request to build app image wit user supplied temp directory,
+                // Request to build app image with user supplied temp directory,
                 // ignore external runtime if any to make use of the temp directory
                 // for runtime generation.
                 cmd.ignoreDefaultRuntime(true);
             } else {
                 cmd.setFakeRuntime();
             }
+        })
+        .addInitializer(JPackageCommand::executePrerequisiteActions)
+        .addInitializer(verifier::captureInputDir);
 
-            if (!isAppImageValid(cmd)) {
-                // Standard asserts for .jpackage.xml fail in messed up app image. Disable them.
-                // Other standard asserts for app image contents should pass.
-                cmd.excludeStandardAsserts(StandardAssert.APP_IMAGE_FILE);
-            }
-        };
+        cfg.cmd().ifPresent(JPackageCommand::executeAndAssertHelloAppImageCreated);
 
-        if (packageTypes.contains(PackageType.IMAGE)) {
-            JPackageCommand cmd = JPackageCommand.helloAppImage(JAR_PATH.toString() + ":");
-            configureWrapper.accept(cmd);
-            cmd.executeAndAssertHelloAppImageCreated();
-            if (isAppImageValid(cmd)) {
-                verifyAppImage(cmd);
-            }
+        cfg.addInstallVerifier(verifier::verify);
 
-            if (cmd.hasArgument("--app-content")) {
-                // `--app-content` can be set to the app image directory which
-                // should not exist before jpackage is executed:
-                //  jpackage --name Foo --dest output --app-content output/Foo
-                // Verify the directory exists after jpackage execution.
-                // At least this will catch the case when the value of
-                // `--app-content` option refers to a path unrelated to jpackage I/O.
-                TKit.assertDirectoryExists(Path.of(cmd.getArgumentValue("--app-content")));
-            }
-        } else {
-            new PackageTest()
-                    .forTypes(packageTypes)
-                    .configureHelloApp(JAR_PATH.toString() + ":")
-                    .addInitializer(configureWrapper)
-                    .addInstallVerifier(InOutPathTest::verifyAppImage)
-                    .run(CREATE_AND_UNPACK);
-        }
+        cfg.test().ifPresent(pkg -> {
+            pkg.run(CREATE_AND_UNPACK);
+        });
     }
 
     private static void outputDirInInputDir(JPackageCommand cmd) throws
@@ -217,8 +187,7 @@ public final class InOutPathTest {
         cmd.setArgumentValue("--dest", outputDir);
     }
 
-    private static void outputDirSameAsInputDir(JPackageCommand cmd) throws
-            IOException {
+    private static void outputDirSameAsInputDir(JPackageCommand cmd) {
         // Set output dir the same as the input dir
         cmd.setArgumentValue("--dest", cmd.inputDir());
     }
@@ -238,38 +207,7 @@ public final class InOutPathTest {
         cmd.addArguments(argName, appContentFile.getParent());
     }
 
-    private static void verifyAppImage(JPackageCommand cmd) throws IOException {
-        if (!isAppImageValid(cmd)) {
-            // Don't verify the contents of app image as it is invalid.
-            // jpackage exited without getting stuck in infinite spiral.
-            // No more expectations from the tool for the give arguments.
-            return;
-        }
-
-        final Path rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.pathToUnpackedPackageFile(
-                cmd.appInstallationDirectory());
-        final Path appDir = ApplicationLayout.platformAppImage().resolveAt(
-                rootDir).appDirectory();
-
-        final var knownFiles = Set.of(
-                JAR_PATH.getName(0).toString(),
-                PackageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
-                AppImageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
-                cmd.name() + ".cfg"
-        );
-
-        TKit.assertFileExists(appDir.resolve(JAR_PATH));
-
-        try (Stream<Path> actualFilesStream = Files.list(appDir)) {
-            var unexpectedFiles = actualFilesStream.map(path -> {
-                return path.getFileName().toString();
-            }).filter(Predicate.not(knownFiles::contains)).toList();
-            TKit.assertStringListEquals(List.of(), unexpectedFiles,
-                    "Check there are no unexpected files in `app` folder");
-        }
-    }
-
-    private static final record Envelope(ThrowingConsumer<JPackageCommand, ? extends Exception> value, String label) {
+    private record Envelope(Consumer<JPackageCommand> value, String label) {
         @Override
         public String toString() {
             // Will produce the same test description for the same label every
@@ -291,8 +229,49 @@ public final class InOutPathTest {
         private final Set<PackageType> packageTypes;
     }
 
+    private static final class AppDirContentVerifier {
+
+        void captureInputDir(JPackageCommand cmd) {
+            var root = Path.of(cmd.getArgumentValue("--input"));
+            try (var walk = Files.walk(root)) {
+                inputDirFiles = walk.map(root::relativize).toList();
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        void verify(JPackageCommand cmd) {
+            var expectedContent = new HashSet<>(inputDirFiles);
+
+            expectedContent.add(Path.of(cmd.name() + ".cfg"));
+            if (cmd.isImagePackageType()) {
+                expectedContent.add(AppImageFile.getPathInAppImage(Path.of("")).getFileName());
+            } else {
+                expectedContent.add(PackageFile.getPathInAppImage(Path.of("")).getFileName());
+            }
+
+            final var rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.pathToUnpackedPackageFile(
+                    cmd.appInstallationDirectory());
+            final var appDir = ApplicationLayout.platformAppImage().resolveAt(rootDir).appDirectory();
+
+            try (var walk = Files.walk(appDir)) {
+                var unexpectedFiles = walk
+                        .map(appDir::relativize)
+                        .filter(Predicate.not(expectedContent::contains))
+                        .map(Path::toString)
+                        .toList();
+                TKit.assertStringListEquals(List.of(), unexpectedFiles,
+                        "Check there are no unexpected files in `app` folder");
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private Collection<Path> inputDirFiles;
+    }
+
     private final Set<PackageType> packageTypes;
-    private final ThrowingConsumer<JPackageCommand, ? extends Exception> configure;
+    private final Consumer<JPackageCommand> configure;
 
     // Placing jar file in the "Resources" subdir of the input directory would allow
     // to use the input directory with `--app-content` on OSX.

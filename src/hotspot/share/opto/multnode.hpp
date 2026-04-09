@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public:
   virtual const Type *bottom_type() const = 0;
   virtual bool       is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual const RegMask &out_RegMask() const;
   virtual Node *match( const ProjNode *proj, const Matcher *m );
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -176,8 +175,7 @@ public:
   const bool _is_io_use;        // Used to distinguish between the projections
                                 // used on the control and io paths from a macro node
   virtual int Opcode() const;
-  virtual bool      is_CFG() const;
-  virtual bool depends_only_on_test() const { return false; }
+  virtual bool is_CFG() const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;

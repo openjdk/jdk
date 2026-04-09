@@ -110,6 +110,11 @@ private:
     _completed = true;
   }
 
+#if INCLUDE_CDS
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
+
+
 private:
   static uint16_t  _kyberConsts[];
   static uint32_t _dilithiumConsts[];

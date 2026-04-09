@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,7 +750,7 @@ public class WeakAlg {
             oa.shouldNotContain("Warning");
         } else {
             oa.shouldContain("Warning")
-                    .shouldMatch("The certificate.*" + bad + ".*is disabled");
+                    .shouldMatch("uses.*" + bad + ".*is disabled");
         }
 
         // With cert content
@@ -770,7 +770,7 @@ public class WeakAlg {
         } else {
             oa.shouldContain("Warning")
                     .shouldContain(bad + " (disabled)")
-                    .shouldMatch("The certificate.*" + bad + ".*is disabled");
+                    .shouldMatch("uses.*" + bad + ".*is disabled");
         }
     }
 
@@ -844,11 +844,11 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
+                        .shouldMatch("uses.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
                 oa.shouldContain("Warning")
-                        .shouldMatch("The certificate.*" + bad + ".*will be disabled");
+                        .shouldMatch("uses.*" + bad + ".*will be disabled");
                 break;
         }
 
@@ -879,12 +879,12 @@ public class WeakAlg {
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
+                        .shouldMatch("uses.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldMatch("The certificate.*" + bad + ".*will be disabled");
+                        .shouldMatch("uses.*" + bad + ".*will be disabled");
                 break;
         }
     }

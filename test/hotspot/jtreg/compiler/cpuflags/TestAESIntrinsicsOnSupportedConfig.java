@@ -26,7 +26,6 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires (vm.cpu.features ~= ".*aes.*" | vm.cpu.features ~= ".*zvkn.*") & !vm.graal.enabled
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=600 -Xbootclasspath/a:.
@@ -76,7 +75,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES, true)));
         final String errorMessage = "Case testUseAES failed";
-        if (Platform.isServer() && !Platform.isEmulatedClient() && isTieredLevelGreaterThan(3)) {
+        if (Platform.isServer() && isTieredLevelGreaterThan(3)) {
             verifyOutput(new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                     AESIntrinsicsBase.AES_INTRINSIC}, null, errorMessage,
                     outputAnalyzer);

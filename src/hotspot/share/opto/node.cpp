@@ -1151,15 +1151,19 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
-// these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
+// these Ideal calls need to hold. Some of the flag bits for '-XX:VerifyIterativeGVN'
+// can help with validating these invariants, although they are too slow to have on by default:
+//    - '-XX:VerifyIterativeGVN=1' checks the def-use info
+//    - '-XX:VerifyIterativeGVN=100000' checks the return value
+// If you are hacking an Ideal call, be sure to use these.
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
 // graph - even if the root is the same Node.  Example: swapping the inputs
 // to an AddINode gives the same answer and same root, but you still have to
-// return the 'this' pointer instead of null.
+// return the 'this' pointer instead of null. If the node was already dead
+// before the Ideal call, this rule does not apply, and it is fine to return
+// nullptr even if modifications were made.
 //
 // You cannot return an OLD Node, except for the 'this' pointer.  Use the
 // Identity call to return an old Node; basically if Identity can find

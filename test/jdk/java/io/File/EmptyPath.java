@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,17 +283,6 @@ public class EmptyPath {
             .map(Path::toString)
             .collect(Collectors.toSet());
         assertEquals(nioSet, ioSet);
-    }
-
-    @Test
-    public void listRoots() {
-        Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
-        Set<String> actual = Arrays.stream(f.listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
-        assertEquals(expected, actual);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,19 @@
  */
 package jdk.incubator.vector;
 
-import java.util.Objects;
-
-import jdk.internal.vm.annotation.ForceInline;
-
 import jdk.internal.misc.Unsafe;
-
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
-abstract class AbstractMask<E> extends VectorMask<E> {
+abstract sealed class AbstractMask<E> extends VectorMask<E>
+        permits ByteVector64.ByteMask64, ByteVector128.ByteMask128, ByteVector256.ByteMask256, ByteVector512.ByteMask512, ByteVectorMax.ByteMaskMax,
+        DoubleVector64.DoubleMask64, DoubleVector128.DoubleMask128, DoubleVector256.DoubleMask256, DoubleVector512.DoubleMask512, DoubleVectorMax.DoubleMaskMax,
+        FloatVector64.FloatMask64, FloatVector128.FloatMask128, FloatVector256.FloatMask256, FloatVector512.FloatMask512, FloatVectorMax.FloatMaskMax,
+        IntVector64.IntMask64, IntVector128.IntMask128, IntVector256.IntMask256, IntVector512.IntMask512, IntVectorMax.IntMaskMax,
+        LongVector64.LongMask64, LongVector128.LongMask128, LongVector256.LongMask256, LongVector512.LongMask512, LongVectorMax.LongMaskMax,
+        ShortVector64.ShortMask64, ShortVector128.ShortMask128, ShortVector256.ShortMask256, ShortVector512.ShortMask512, ShortVectorMax.ShortMaskMax {
     AbstractMask(boolean[] bits) {
         super(bits);
     }
@@ -73,7 +75,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         int laneCount = vsp.laneCount();
         i = VectorIntrinsics.checkFromIndexSize(i, laneCount, bits.length);
         VectorSupport.store(
-            vsp.maskType(), vsp.elementType(), laneCount,
+            vsp.maskType(), vsp.laneTypeOrdinal(), laneCount,
             bits, (long) i + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, false,
             this, bits, i,
             (c, idx, s) -> System.arraycopy(s.getBits(), 0, c, (int) idx, s.length()));

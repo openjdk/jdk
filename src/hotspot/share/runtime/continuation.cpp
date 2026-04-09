@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,8 @@ class UnmountBeginMark : public StackObj {
     }
   }
   ~UnmountBeginMark() {
-    assert(!_current->is_suspended(), "must be");
+    assert(!_current->is_suspended()
+           JVMTI_ONLY(|| (_current->is_vthread_transition_disabler() && _result != freeze_ok)), "must be");
     assert(_current->is_in_vthread_transition(), "must be");
 
     if (_result != freeze_ok) {

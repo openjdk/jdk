@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,6 +81,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -734,14 +735,14 @@ public:
 
 private:
   bool _is_in_vthread_transition;                    // thread is in virtual thread mount state transition
-  DEBUG_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
+  JVMTI_ONLY(bool _is_vthread_transition_disabler;)  // thread currently disabled vthread transitions
   DEBUG_ONLY(bool _is_disabler_at_start;)            // thread at process of disabling vthread transitions
 public:
   bool is_in_vthread_transition() const;
   void set_is_in_vthread_transition(bool val);
+  JVMTI_ONLY(bool is_vthread_transition_disabler() const { return _is_vthread_transition_disabler; })
+  JVMTI_ONLY(void set_is_vthread_transition_disabler(bool val);)
 #ifdef ASSERT
-  bool is_vthread_transition_disabler() const       { return _is_vthread_transition_disabler; }
-  void set_is_vthread_transition_disabler(bool val);
   bool is_disabler_at_start() const                 { return _is_disabler_at_start; }
   void set_is_disabler_at_start(bool val);
 #endif
@@ -1288,6 +1289,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#ifdef MACOS_AARCH64
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 

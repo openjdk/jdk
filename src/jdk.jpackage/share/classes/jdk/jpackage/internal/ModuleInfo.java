@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReference;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
-import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 record ModuleInfo(String name, Optional<String> version, Optional<String> mainClass, Optional<URI> location) {
 
@@ -57,40 +52,16 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
         // We can't extract info about version and main class of a module
         // linked in external runtime without running ModuleFinder in that
         // runtime. But this is too much work as the runtime might have been
-        // coocked without native launchers. So just make sure the module
-        // is linked in the runtime by simply analysing the data
+        // cooked without native launchers. So just make sure the module
+        // is linked in the runtime by simply analyzing the data
         // of `release` file.
 
-        final Path releaseFile;
-        if (!OperatingSystem.isMacOS()) {
-            releaseFile = cookedRuntime.resolve("release");
-        } else {
-            // On Mac `cookedRuntime` can be runtime root or runtime home.
-            Path runtimeHome = cookedRuntime.resolve("Contents/Home");
-            if (!Files.isDirectory(runtimeHome)) {
-                runtimeHome = cookedRuntime;
-            }
-            releaseFile = runtimeHome.resolve("release");
-        }
-
-        try (Reader reader = Files.newBufferedReader(releaseFile)) {
-            Properties props = new Properties();
-            props.load(reader);
-            String moduleList = props.getProperty("MODULES");
-            if (moduleList == null) {
+        try {
+            var cookedRuntimeModules = RuntimeReleaseFile.loadFromRuntime(cookedRuntime).getModules();
+            if (!cookedRuntimeModules.contains(moduleName)) {
                 return Optional.empty();
             }
-
-            if ((moduleList.startsWith("\"") && moduleList.endsWith("\""))
-                    || (moduleList.startsWith("\'") && moduleList.endsWith(
-                    "\'"))) {
-                moduleList = moduleList.substring(1, moduleList.length() - 1);
-            }
-
-            if (!List.of(moduleList.split("\\s+")).contains(moduleName)) {
-                return Optional.empty();
-            }
-        } catch (IOException|IllegalArgumentException ex) {
+        } catch (Exception ex) {
             Log.verbose(ex);
             return Optional.empty();
         }
