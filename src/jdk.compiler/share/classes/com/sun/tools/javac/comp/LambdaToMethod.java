@@ -684,7 +684,7 @@ public class LambdaToMethod extends TreeTranslator {
                 sw,
                 fallback));
         JCMethodDecl deser = make.MethodDef(make.Modifiers(deserMethodSym.flags()),
-                names.deserializeLambda,
+                deserMethodSym.name,
                 make.QualIdent(deserMethodSym.getReturnType().tsym),
                 List.nil(),
                 List.of(make.VarDef(deserParamSym, null)),

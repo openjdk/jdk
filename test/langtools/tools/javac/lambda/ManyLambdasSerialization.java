@@ -47,7 +47,7 @@ public class ManyLambdasSerialization {
     private final ToolBox tb = new ToolBox();
 
     @Test
-    public void testManySerializableLambdas() {
+    public void testManySerializableLambdasDifferentImplMethodName() {
         List<String> lambdaMethods = new ArrayList<>();
         List<String> tests = new ArrayList<>();
 
@@ -84,6 +84,82 @@ public class ManyLambdasSerialization {
                                 if (expectedResult != actual) {
                                     throw new AssertionError("Expected: " + expectedResult + ", actual: " + actual);
                                 }
+                            }
+                        }
+
+                        public static void main() throws Exception {
+                    """);
+
+        tests.forEach(code::append);
+
+        code.append("""
+                            System.err.println("OK");
+                        }
+                    }
+                    """);
+
+        new JavacTask(tb)
+                .sources(code.toString())
+                .outdir(".")
+                .run()
+                .writeAll();
+
+        List<String> output = new JavaTask(tb)
+                .classpath(".")
+                .className("Test")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDERR);
+
+        tb.checkEqual(List.of("OK"), output);
+    }
+
+    @Test
+    public void testManySerializableLambdasSameImplMethodName() {
+        List<String> lambdaMethods = new ArrayList<>();
+        List<String> tests = new ArrayList<>();
+
+        for (int i = 0; i < LAMBDA_COUNT; i++) {
+            String index = Integer.toString(i);
+
+            lambdaMethods.add("""
+                                  private static Function<Box${INDEX}, Box${INDEX}> create${INDEX}() {
+                                      return (Function<Box${INDEX}, Box${INDEX}> & Serializable) Test::id;
+                                  }
+                                  record Box${INDEX}(int i) {}
+                              """.replace("${INDEX}", index));
+            tests.add("""
+                              runTest(create${INDEX}(), t -> {
+                                  int expectedResult = ${INDEX};
+                                  //in case of a bad deserialization, the implicit cast here would fail:
+                                  int actual = t.apply(new Box${INDEX}(expectedResult)).i();
+                                  if (expectedResult != actual) {
+                                      throw new AssertionError("Expected: " + expectedResult + ", actual: " + actual);
+                                  }
+                              });
+                      """.replace("${INDEX}", index));
+        }
+
+        StringBuilder code = new StringBuilder();
+        code.append("""
+                    import java.io.*;
+                    import java.util.function.*;
+                    class Test {
+                    """);
+
+        lambdaMethods.forEach(code::append);
+
+        code.append("""
+                        private static <T> T id(T t) { return t; }
+                        private static <T> void runTest(Function<T, T> testInstance, Consumer<Function<T, T>> checker) throws Exception {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                                oos.writeObject(testInstance);
+                                oos.close();
+                            }
+                            try (ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+                                 ObjectInputStream ois = new ObjectInputStream(in)) {
+                                checker.accept((Function<T, T>) ois.readObject());
                             }
                         }
 
