@@ -277,7 +277,6 @@ class JavaThread: public Thread {
 #ifdef ASSERT
  private:
   volatile uint64_t _visited_for_critical_count;
-  BytecodeTracerData*  _bytecode_tracer_data;
 
  public:
   void set_visited_for_critical_count(uint64_t safepoint_id) {
@@ -292,12 +291,18 @@ class JavaThread: public Thread {
   bool was_visited_for_critical_count(uint64_t safepoint_id) const {
     return _visited_for_critical_count == safepoint_id;
   }
+#endif // ASSERT
 
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData*  _bytecode_tracer_data;
+
+ public:
   BytecodeTracerData* bytecode_tracer_data() {
     assert(_bytecode_tracer_data != nullptr, "_bytecode_tracer_data should be initialized");
     return _bytecode_tracer_data;
   }
-#endif // ASSERT
+#endif // PRODUCT
 
   // JavaThread termination support
  public:

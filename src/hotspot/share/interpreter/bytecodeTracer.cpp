@@ -41,7 +41,7 @@
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
 // An instance of this class is both destructive and ephemeral, intended only to print
-// a single bytecode. All persistent data needs to be in BytecodeTracerData.
+// a single bytecode. All state shared between multiple bytecodes needs to be in BytecodeTracerData.
 
 class BytecodePrinter {
  private:
@@ -191,7 +191,6 @@ class BytecodePrinter {
 #ifndef PRODUCT
 void BytecodeTracer::trace_interpreter(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
-    // Tracing data is thread-local and stored in the Java thread in debug builds.
     BytecodeTracerData* data = JavaThread::current()->bytecode_tracer_data();
     BytecodePrinter printer(data);
     printer.trace(method, fp, bcp, tos, tos2, st);
@@ -200,8 +199,9 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, intptr_t* fp,
 #endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered) {
-  // Create a temporary structure on the stack for the printing data.
-  // The printer will fill it with metadata, but this can be disregarded.
+  // Debug builds can't re-use the data in the Java Thread as that is used for tracing
+  // the current bytecodes, rather than to print diagnostic information as is the
+  // case here. Always stack-allocate for this printing.
   BytecodeTracerData data;
   BytecodePrinter method_printer(&data, flags);
   BytecodeStream s(method);

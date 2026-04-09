@@ -46,33 +46,33 @@ class BytecodeTracer: AllStatic {
   static void print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered = true);
 };
 
-// Provides tracing-centric context on the current method and bytecode that
-// the thread is interpreting.
+// Provides tracing-centric context whose lifespan exceeds the printing of
+// a single bytecode. For instance, it is needed to determine method switches
+// in order to print the appropriate signature once a switch happens.
 class BytecodeTracerData : public CHeapObj<mtTracing> {
  private:
-  Method*         _current_method;
-  intptr_t*       _current_fp;
-  bool            _is_wide;
-  Bytecodes::Code _raw_code;
-  address         _next_pc;
+  Method*         _current_method; // for method switches
+  intptr_t*       _current_fp;     // for self-recursion
+  bool            _is_wide;        // to parse the next bytecode properly
 
  public:
   BytecodeTracerData() : _current_method(nullptr),
                          _current_fp(nullptr),
-                         _is_wide(false),
-                         _raw_code(Bytecodes::Code::_illegal),
-                         _next_pc(nullptr) {}
+                         _is_wide(false) {}
 
+  // This field is not GC-ed, and so can contain garbage
+  // between critical sections.  Use only pointer-comparison
+  // operations on the pointer, except within a critical section.
   Method*         current_method() const                 { return _current_method; }
   void            set_current_method(Method* current)    { _current_method = current; }
+
+  // This field should only ever be used for pointer comparison
+  // not be dereferenced.
   intptr_t*       current_fp() const                     { return _current_fp; }
   void            set_current_fp(intptr_t* current)      { _current_fp = current; }
+
   bool            is_wide() const                        { return _is_wide; }
   void            set_wide(bool wide)                    { _is_wide = wide; }
-  Bytecodes::Code raw_code()                             { return _raw_code; }
-  void            set_raw_code(Bytecodes::Code raw_code) { _raw_code = Bytecodes::Code(raw_code); }
-  address         next_pc() const                        { return _next_pc; }
-  void            set_next_pc(address next_pc)           { _next_pc = next_pc; }
 };
 
 #endif // SHARE_INTERPRETER_BYTECODETRACER_HPP

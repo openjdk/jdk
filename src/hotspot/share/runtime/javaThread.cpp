@@ -431,8 +431,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #ifdef ASSERT
   _no_safepoint_count(0),
   _visited_for_critical_count(false),
-  _bytecode_tracer_data(new BytecodeTracerData()),
 #endif
+
+  NOT_PRODUCT(_bytecode_tracer_data(new BytecodeTracerData()) COMMA)
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),
