@@ -27,9 +27,6 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
-#include "opto/subnode.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Method;
