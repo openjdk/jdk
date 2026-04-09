@@ -456,8 +456,14 @@ ATTRIBUTE_ALIGNED(8) static const juint _QQ_2_tan[] =
 
 address StubGenerator::generate_libmTan() {
   StubId stub_id = StubId::stubgen_dtan_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1, L_2TAG_PACKET_7_0_1;
@@ -1025,7 +1031,33 @@ address StubGenerator::generate_libmTan() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_tan(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_MUL16);
+  ADD(_sign_mask_tan);
+  ADD(_PI32INV_tan);
+  ADD(_P_1_tan);
+  ADD(_P_2_tan);
+  ADD(_P_3_tan);
+  ADD(_Ctable_tan);
+  ADD(_MASK_35_tan);
+  ADD(_Q_11_tan);
+  ADD(_Q_9_tan);
+  ADD(_Q_7_tan);
+  ADD(_Q_5_tan);
+  ADD(_Q_3_tan);
+  ADD(_PI_4_tan);
+  ADD(((address)_PI_4_tan+8));
+  ADD(_QQ_2_tan);
+#undef ADD
+}
+#endif // INCLUDE_CDS

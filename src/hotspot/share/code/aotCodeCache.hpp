@@ -25,8 +25,10 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/stubInfo.hpp"
+#include "utilities/hashTable.hpp"
 
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
@@ -38,6 +40,7 @@
 class CodeBuffer;
 class RelocIterator;
 class AOTCodeCache;
+class AOTCodeReader;
 class AdapterBlob;
 class ExceptionBlob;
 class ImmutableOopMapSet;
@@ -53,6 +56,7 @@ enum CompLevel : signed char;
   Fn(SharedBlob) \
   Fn(C1Blob) \
   Fn(C2Blob) \
+  Fn(StubGenBlob) \
 
 // Descriptor of AOT Code Cache's entry
 class AOTCodeEntry {
@@ -114,48 +118,57 @@ public:
   address dumptime_content_start_addr() const { return _dumptime_content_start_addr; }
 
   static bool is_valid_entry_kind(Kind kind) { return kind > None && kind < Kind_count; }
-  static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
+  static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob || kind == StubGenBlob; }
+  static bool is_single_stub_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
+  static bool is_multi_stub_blob(Kind kind) { return kind == StubGenBlob; }
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
+
+// we use a hash table to speed up translation of external addresses
+// or stub addresses to their corresponding indexes when dumping stubs
+// or nmethods to the AOT code cache.
+class AOTCodeAddressHashTable : public HashTable<
+  address,
+  int,
+  36137, // prime number
+  AnyObj::C_HEAP,
+  mtCode> {};
 
 // Addresses of stubs, blobs and runtime finctions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   address* _extrs_addr;
   address* _stubs_addr;
-  address* _shared_blobs_addr;
-  address* _C1_blobs_addr;
   uint     _extrs_length;
-  uint     _stubs_length;
-  uint     _shared_blobs_length;
-  uint     _C1_blobs_length;
 
   bool _extrs_complete;
-  bool _early_stubs_complete;
-  bool _shared_blobs_complete;
-  bool _early_c1_complete;
-  bool _complete;
+  bool _shared_stubs_complete;
+  bool _c1_stubs_complete;
+  bool _c2_stubs_complete;
+  bool _stubgen_stubs_complete;
+  AOTCodeAddressHashTable* _hash_table;
 
+  void hash_address(address addr, int idx);
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
     _stubs_addr(nullptr),
-    _shared_blobs_addr(nullptr),
-    _C1_blobs_addr(nullptr),
     _extrs_length(0),
-    _stubs_length(0),
-    _shared_blobs_length(0),
-    _C1_blobs_length(0),
     _extrs_complete(false),
-    _early_stubs_complete(false),
-    _shared_blobs_complete(false),
-    _early_c1_complete(false),
-    _complete(false)
+    _shared_stubs_complete(false),
+    _c1_stubs_complete(false),
+    _c2_stubs_complete(false),
+    _stubgen_stubs_complete(false),
+    _hash_table(nullptr)
   { }
   void init_extrs();
-  void init_early_stubs();
-  void init_shared_blobs();
-  void init_early_c1();
+  void init_extrs2();
+  void add_stub_entry(EntryId entry_id, address entry);
+  void add_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
+  void set_shared_stubs_complete();
+  void set_c1_stubs_complete();
+  void set_c2_stubs_complete();
+  void set_stubgen_stubs_complete();
   const char* add_C_string(const char* str);
   int  id_for_C_string(address str);
   address address_for_C_string(int idx);
@@ -163,120 +176,214 @@ public:
   address address_for_id(int id);
 };
 
+// Auxiliary class used by AOTStubData to locate addresses owned by a
+// stub in the _address_array.
+
+class StubAddrRange {
+private:
+  // Index of the first address owned by a stub or -1 if none present
+  int _start_index;
+  // Total number of addresses owned by a stub, including in order:
+  // start address for stub code and first entry, (exclusive) end
+  // address for stub code, all secondary entry addresses, any
+  // auxiliary addresses
+  uint _naddr;
+ public:
+  StubAddrRange() : _start_index(-1), _naddr(0) {}
+  int start_index() { return _start_index; }
+  int count() { return _naddr; }
+
+  void default_init() {
+    _start_index = -1;
+    _naddr = 0;
+  }
+
+  void init_entry(int start_index, int naddr) {
+    _start_index = start_index;
+    _naddr = naddr;
+  }
+};
+
+// class used to save and restore details of stubs embedded in a
+// multi-stub (StubGen) blob
+
+class AOTStubData : public StackObj {
+  friend class AOTCodeCache;
+  friend class AOTCodeReader;
+private:
+  BlobId _blob_id; // must be a stubgen blob id
+  // whatever buffer blob was successfully loaded from the AOT cache
+  // following a call to load_code_blob or nullptr
+  CodeBlob *_cached_blob;
+  // Array of addresses owned by stubs. Each stub appends addresses to
+  // this array as a block, whether at the end of generation or at the
+  // end of restoration from the cache. The first two addresses in
+  // each block are the "start" and "end2 address of the stub. Any
+  // other visible addresses located within the range [start,end)
+  // follow, either extra entries, data addresses or SEGV-protected
+  // subrange start, end and handler addresses. In the special case
+  // that the SEGV handler address is the (external) common address
+  // handler the array will hold value nullptr.
+  GrowableArray<address> _address_array;
+  // count of how many stubs exist in the current blob (not all of
+  // which may actually be generated)
+  int _stub_cnt;
+  // array identifying range of entries in _address_array for each stub
+  // indexed by offset of stub in blob
+  StubAddrRange* _ranges;
+
+  // flags indicating whether the AOT code cache is open and, if so,
+  // whether we are loading or storing stubs or have encountered any
+  // invalid stubs.
+  enum Flags {
+    USING   = 1 << 0,            // open and loading stubs
+    DUMPING = 1 << 1,            // open and storing stubs
+    INVALID = 1 << 2,            // found invalid stub when loading
+  };
+
+  uint32_t _flags;
+
+  void set_invalid() { _flags |= INVALID; }
+
+  StubAddrRange& get_range(int idx) const { return _ranges[idx]; }
+  GrowableArray<address>& address_array() { return _address_array; }
+  // accessor for entry/auxiliary addresses defaults to start entry
+public:
+  AOTStubData(BlobId blob_id) NOT_CDS({});
+
+  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
+
+  bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
+
+  BlobId blob_id() { return _blob_id; }
+  bool load_code_blob() NOT_CDS_RETURN_(true);
+  bool store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) NOT_CDS_RETURN_(true);
+
+  address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
+  void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
+
+  const AOTStubData* as_const() { return (const AOTStubData*)this; }
+};
+
+#define AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun)                 \
+  do_var(int,   AllocateInstancePrefetchLines)          /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchDistance)               /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchLines)                  /* stubs and nmethods */ \
+  do_var(int,   AllocatePrefetchStepSize)               /* stubs and nmethods */ \
+  do_var(uint,  CodeEntryAlignment)                     /* array copy stubs and nmethods */ \
+  do_var(bool,  UseCompressedOops)                      /* stubs and nmethods */ \
+  do_var(bool,  EnableContended)                        /* nmethods */ \
+  do_var(intx,  OptoLoopAlignment)                      /* array copy stubs and nmethods */ \
+  do_var(bool,  RestrictContended)                      /* nmethods */ \
+  do_var(bool,  UseAESCTRIntrinsics) \
+  do_var(bool,  UseAESIntrinsics) \
+  do_var(bool,  UseBASE64Intrinsics) \
+  do_var(bool,  UseChaCha20Intrinsics) \
+  do_var(bool,  UseCRC32CIntrinsics) \
+  do_var(bool,  UseCRC32Intrinsics) \
+  do_var(bool,  UseDilithiumIntrinsics) \
+  do_var(bool,  UseGHASHIntrinsics) \
+  do_var(bool,  UseKyberIntrinsics) \
+  do_var(bool,  UseMD5Intrinsics) \
+  do_var(bool,  UsePoly1305Intrinsics) \
+  do_var(bool,  UseSecondarySupersTable) \
+  do_var(bool,  UseSHA1Intrinsics) \
+  do_var(bool,  UseSHA256Intrinsics) \
+  do_var(bool,  UseSHA3Intrinsics) \
+  do_var(bool,  UseSHA512Intrinsics) \
+  do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
+  do_fun(int,   CompressedOops_shift,                   CompressedOops::shift()) \
+  do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
+  do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
+  do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
+  // END
+
+#ifdef COMPILER2
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  do_var(intx,  ArrayOperationPartialInlineSize)        /* array copy stubs and nmethods */ \
+  do_var(intx,  MaxVectorSize)                          /* array copy/fill stubs */ \
+  do_var(bool,  UseMontgomeryMultiplyIntrinsic) \
+  do_var(bool,  UseMontgomerySquareIntrinsic) \
+  do_var(bool,  UseMulAddIntrinsic) \
+  do_var(bool,  UseMultiplyToLenIntrinsic) \
+  do_var(bool,  UseSquareToLenIntrinsic) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
+#endif
+
+#if INCLUDE_JVMCI
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  do_var(bool,  EnableJVMCI)                            /* adapters and nmethods */ \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun)
+#endif
+
+#if defined(AARCH64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array fill stubs */ \
+  do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
+  do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
+  do_var(bool,  UseBlockZeroing) \
+  do_var(bool,  UseLSE)                                 /* stubs and nmethods */ \
+  do_var(uint,  UseSVE)                                 /* stubs and nmethods */ \
+  do_var(bool,  UseSecondarySupersCache) \
+  do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
+  do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
+  do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
+  do_var(bool,  UseSimpleArrayEquals) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
+#endif
+
+#if defined(X86) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
+  do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
+  do_var(int,   UseAVX)                                 /* array copy stubs and nmethods */ \
+  do_var(bool,  UseAPX)                                 /* nmethods and stubs */ \
+  do_var(bool,  UseLibmIntrinsic) \
+  do_var(bool,  UseIntPolyIntrinsics) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
+#endif
+
+#define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_JVMCI_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  // END
+
+#define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
+#define AOTCODECACHE_DECLARE_FUN(type, name, func) type _saved_ ## name;
+
 class AOTCodeCache : public CHeapObj<mtCode> {
 
 // Classes used to describe AOT code cache.
 protected:
   class Config {
+    AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_DECLARE_VAR, AOTCODECACHE_DECLARE_FUN)
+
+    // Special configs that cannot be checked with macros
     address _compressedOopBase;
-    uint _compressedOopShift;
-    uint _compressedKlassShift;
-    uint _contendedPaddingWidth;
-    uint _gc;
-    uint _optoLoopAlignment;
-    uint _codeEntryAlignment;
-    uint _allocatePrefetchLines;
-    uint _allocateInstancePrefetchLines;
-    uint _allocatePrefetchDistance;
-    uint _allocatePrefetchStepSize;
-#ifdef COMPILER2
-    uint _maxVectorSize;
-    uint _arrayOperationPartialInlineSize;
-#endif // COMPILER2
-    enum Flags {
-      none                     = 0,
-      debugVM                  = 1,
-      compressedOops           = 2,
-      useTLAB                  = 4,
-      systemClassAssertions    = 8,
-      userClassAssertions      = 16,
-      enableContendedPadding   = 32,
-      restrictContendedPadding = 64
-    };
-    uint _flags;
-    enum IntrinsicsUseFlags {
-      use_none                = 0,
-      useCRC32                = 1 << 0,
-      useCRC32C               = 1 << 1,
-      useMultiplyToLen        = 1 << 2,
-      useSquareToLen          = 1 << 3,
-      useMulAdd               = 1 << 4,
-      useMontgomeryMultiply   = 1 << 5,
-      useMontgomerySquare     = 1 << 6,
-      useChaCha20             = 1 << 7,
-      useDilithium            = 1 << 8,
-      useKyber                = 1 << 9,
-      useBASE64               = 1 << 10,
-      useAdler32              = 1 << 11,
-      useAES                  = 1 << 12,
-      useAESCTR               = 1 << 13,
-      useGHASH                = 1 << 14,
-      useMD5                  = 1 << 15,
-      useSHA1                 = 1 << 16,
-      useSHA256               = 1 << 17,
-      useSHA512               = 1 << 18,
-      useSHA3                 = 1 << 19,
-      usePoly1305             = 1 << 20,
-      useVectorizedMismatch   = 1 << 21,
-      useSecondarySupersTable = 1 << 22,
-    };
-    uint _use_intrinsics_flags;
-    bool test_flag(enum Flags flag) const { return (_flags & flag) != 0; }
-    bool test_use_flag(enum IntrinsicsUseFlags flag) const { return (_use_intrinsics_flags & flag) != 0; }
-    void set_flag(enum Flags flag) { _flags |= flag; }
-    void set_use_flag(enum IntrinsicsUseFlags flag) { _use_intrinsics_flags |= flag; }
+
 #if defined(X86) && !defined(ZERO)
-    uint _avx3threshold;
-    uint _useAVX;
-    enum X86Flags {
-      x86_none                   = 0,
-      x86_enableX86ECoreOpts     = 1,
-      x86_useUnalignedLoadStores = 2,
-      x86_useAPX                 = 4
-    };
-    uint _x86_flags;
-    enum X86IntrinsicsUseFlags {
-      x86_use_none              = 0,
-      x86_useLibm               = 1 << 1,
-      x86_useIntPoly            = 1 << 2,
-    };
-    uint _x86_use_intrinsics_flags;
-    bool test_x86_flag(enum X86Flags flag) const { return (_x86_flags & flag) != 0; }
-    bool test_x86_use_flag(enum X86IntrinsicsUseFlags flag) const { return (_x86_use_intrinsics_flags & flag) != 0; }
-    void set_x86_flag(enum X86Flags flag) { _x86_flags |= flag; }
-    void set_x86_use_flag(enum X86IntrinsicsUseFlags flag) { _x86_use_intrinsics_flags |= flag; }
-#endif // defined(X86) && !defined(ZERO)
+    bool _useUnalignedLoadStores;
+#endif
+
 #if defined(AARCH64) && !defined(ZERO)
-    // this is global but x86 does not use it and aarch64 does
-    uint _prefetchCopyIntervalInBytes;
-    uint _blockZeroingLowLimit;
-    uint _softwarePrefetchHintDistance;
-    uint _useSVE;
-    enum AArch64Flags {
-      aarch64_none = 0,
-      aarch64_avoidUnalignedAccesses = 1,
-      aarch64_useSIMDForMemoryOps    = 2,
-      aarch64_useSIMDForArrayEquals  = 4,
-      aarch64_useSIMDForSHA3         = 8,
-      aarch64_useLSE                 = 16,
-    };
-    uint _aarch64_flags;
-    enum AArch64IntrinsicsUseFlags {
-      aarch64_use_none                  = 0,
-      aarch64_useBlockZeroing           = 1 << 0,
-      aarch64_useSIMDForBigIntegerShift = 1 << 1,
-      aarch64_useSimpleArrayEquals      = 1 << 2,
-      aarch64_useSecondarySupersCache   = 1 << 3,
-    };
-    uint _aarch64_use_intrinsics_flags;
-    bool test_aarch64_flag(enum AArch64Flags flag) const { return (_aarch64_flags & flag) != 0; }
-    bool test_aarch64_use_flag(enum AArch64IntrinsicsUseFlags flag) const { return (_aarch64_use_intrinsics_flags & flag) != 0; }
-    void set_aarch64_flag(enum AArch64Flags flag) { _aarch64_flags |= flag; }
-    void set_aarch64_use_flag(enum AArch64IntrinsicsUseFlags flag) { _aarch64_use_intrinsics_flags |= flag; }
-#endif // defined(AARCH64) && !defined(ZERO)
-#if INCLUDE_JVMCI
-    uint _enableJVMCI;
-#endif // INCLUDE_JVMCI
+    bool _avoidUnalignedAccesses;
+#endif
+
     uint _cpu_features_offset; // offset in the cache where cpu features are stored
   public:
     void record(uint cpu_features_offset);
@@ -297,17 +404,18 @@ protected:
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _adapters_count;
     uint   _shared_blobs_count;
+    uint   _stubgen_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
     Config _config; // must be the last element as there is trailing data stored immediately after Config
 
   public:
     void init(uint cache_size,
-              uint strings_count,  uint strings_offset,
-              uint entries_count,  uint entries_offset,
-              uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count,
-              uint cpu_features_offset) {
+              uint strings_count,       uint strings_offset,
+              uint entries_count,       uint entries_offset,
+              uint adapters_count,      uint shared_blobs_count,
+              uint stubgen_blobs_count, uint C1_blobs_count,
+              uint C2_blobs_count,      uint cpu_features_offset) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -316,6 +424,7 @@ protected:
       _entries_offset = entries_offset;
       _adapters_count = adapters_count;
       _shared_blobs_count = shared_blobs_count;
+      _stubgen_blobs_count = stubgen_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
       _config.record(cpu_features_offset);
@@ -328,6 +437,7 @@ protected:
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint adapters_count() const { return _adapters_count; }
+    uint stubgen_blobs_count()   const { return _stubgen_blobs_count; }
     uint shared_blobs_count()    const { return _shared_blobs_count; }
     uint C1_blobs_count() const { return _C1_blobs_count; }
     uint C2_blobs_count() const { return _C2_blobs_count; }
@@ -377,6 +487,7 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
+  void add_stub_entry(EntryId entry_id, address entry) NOT_CDS_RETURN;
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
 
@@ -392,9 +503,12 @@ public:
   void load_strings();
   int store_strings();
 
-  static void init_early_stubs_table() NOT_CDS_RETURN;
-  static void init_shared_blobs_table() NOT_CDS_RETURN;
-  static void init_early_c1_table() NOT_CDS_RETURN;
+  static void set_shared_stubs_complete() NOT_CDS_RETURN;
+  static void set_c1_stubs_complete() NOT_CDS_RETURN ;
+  static void set_c2_stubs_complete() NOT_CDS_RETURN;
+  static void set_stubgen_stubs_complete() NOT_CDS_RETURN;
+
+  void add_stub_entries(StubId stub_id, address start, GrowableArray<address> *entries = nullptr, int offset = -1) NOT_CDS_RETURN;
 
   address address_for_C_string(int idx) const { return _table->address_for_C_string(idx); }
   address address_for_id(int id) const { return _table->address_for_id(id); }
@@ -414,28 +528,63 @@ public:
 
   bool finish_write();
 
-  bool write_relocations(CodeBlob& code_blob);
+  bool write_relocations(CodeBlob& code_blob, RelocIterator& iter);
   bool write_oop_map_set(CodeBlob& cb);
+  bool write_stub_data(CodeBlob& blob, AOTStubData *stub_data);
 #ifndef PRODUCT
   bool write_asm_remarks(CodeBlob& cb);
   bool write_dbg_strings(CodeBlob& cb);
 #endif // PRODUCT
 
+private:
+  // internal private API to save and restore blobs
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind entry_kind,
+                              uint id,
+                              const char* name,
+                              AOTStubData* stub_data,
+                              CodeBuffer* code_buffer) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  uint id,
+                                  const char* name,
+                                  AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
+
+public:
   // save and restore API for non-enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
-                              uint id, const char* name) NOT_CDS_RETURN_(false);
+                              uint id,
+                              const char* name) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   uint id, const char* name) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API for enumerable code blobs
+
+  // API for single-stub blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
                               BlobId id) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   BlobId id) NOT_CDS_RETURN_(nullptr);
+
+  // API for multi-stub blobs -- for use by class StubGenerator.
+
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind kind,
+                              BlobId id,
+                              AOTStubData* stub_data,
+                              CodeBuffer *code_buffer) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  BlobId id,
+                                  AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
+
+  static void publish_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
+  // publish all entries for a code blob in code cache address table
+  static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -458,9 +607,14 @@ private:
     return true;
   }
 public:
+  // marker used where an address offset needs to be stored for later
+  // retrieval and the address turns out to be null
+  static const uint NULL_ADDRESS_MARKER = UINT_MAX;
+
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
+  static void init3() NOT_CDS_RETURN;
   static void dump() NOT_CDS_RETURN;
   static bool is_on() CDS_ONLY({ return cache() != nullptr; }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
@@ -481,7 +635,7 @@ public:
 // Concurent AOT code reader
 class AOTCodeReader {
 private:
-  const AOTCodeCache*  _cache;
+  AOTCodeCache*  _cache;
   const AOTCodeEntry*  _entry;
   const char*          _load_buffer; // Loaded cached code buffer
   uint  _read_position;              // Position in _load_buffer
@@ -498,13 +652,18 @@ private:
   // They should be set before calling it.
   const char*         _name;
   address             _reloc_data;
+  int                 _reloc_count;
   ImmutableOopMapSet* _oop_maps;
+  AOTCodeEntry::Kind  _entry_kind;
+  int                 _id;
+  AOTStubData*        _stub_data;
 
   AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
 
   ImmutableOopMapSet* read_oop_map_set();
+  void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
 
-  void fix_relocations(CodeBlob* code_blob);
+  void fix_relocations(CodeBlob* code_blob, RelocIterator& iter);
 #ifndef PRODUCT
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
@@ -513,7 +672,7 @@ private:
 public:
   AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
 
-  CodeBlob* compile_code_blob(const char* name);
+  CodeBlob* compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data = nullptr);
 
   void restore(CodeBlob* code_blob);
 };
