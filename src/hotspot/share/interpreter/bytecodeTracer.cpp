@@ -100,19 +100,14 @@ class BytecodePrinter {
   void trace(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
     // Method changes can be another method getting called, or a self-recursive call.
-    bool method_changed = (this->method()) != method() || (this->fp() != fp);
+    bool method_changed = (this->method() != method()) || (this->fp() != fp);
     set_method(method());
     set_fp(fp);
     assert(method->method_holder()->is_linked(),
            "this function must be called on methods that are already executing");
-
+    // If the method changed (new method call, return to previous method after call finishes),
+    // the signature needs to be re-printed for interpretability.
     if (method_changed) {
-      // Note 1: This code will not work as expected with true MT/MP.
-      //         Need an explicit lock or a different solution.
-      // It is possible for this block to be skipped, if a garbage
-      // _current_method pointer happens to have the same bits as
-      // the incoming method.  We could lose a line of trace output.
-      // This is acceptable in a debug-only feature.
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
@@ -126,7 +121,7 @@ class BytecodePrinter {
     }
     set_raw_code(code);
     set_next_pc(is_wide() ? bcp+2 : bcp+1);
-    // Is this bytecode terminal -- does it change the method?
+
     bool is_terminal = Bytecodes::is_terminal(code);
     // Trace each bytecode unless we're truncating the tracing output, then only print the first
     // bytecode in every method as well as returns/throws that pop control flow.
@@ -147,7 +142,10 @@ class BytecodePrinter {
     set_wide(code == Bytecodes::_wide);
     // Finished using the code, recent to illegal.
     set_raw_code(Bytecodes::_illegal);
-    // Invalidate the current method to force a signature change.
+
+    // Invalidate the current method to force a signature change. In some
+    // rare cases, the method and frame pointers aren't enough to determine
+    // a new method invocation, so this ensures the signature is re-printed.
     if (is_terminal) {
       set_method(nullptr);
     }
