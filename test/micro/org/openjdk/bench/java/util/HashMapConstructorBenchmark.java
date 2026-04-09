@@ -2,6 +2,7 @@ package org.openjdk.bench.java.util;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +12,9 @@ import java.util.concurrent.TimeUnit;
  *
  * Tests HashMap.<init>(Map) performance across different source map types, with and without
  * call site poisoning to simulate real-world megamorphic conditions.
+ *
+ * Uses BigInteger keys whose hashCode() is not cached and scales with magnitude,
+ * exposing the cost of hash recomputation in non-optimized paths.
  *
  * The setup poisons polymorphic call sites by using five different map types
  * in both the constructor and manual iteration patterns to ensure megamorphic behavior.
@@ -25,7 +29,7 @@ public class HashMapConstructorBenchmark {
 
     private static final int POISON_ITERATIONS = 40000;
 
-    @Param({"0", "5", "25"})
+    @Param({"0", "5", "25", "150"})
     private int mapSize;
 
     @Param({"true", "false"})
@@ -34,19 +38,20 @@ public class HashMapConstructorBenchmark {
     @Param({"HashMap", "TreeMap", "ConcurrentHashMap", "UnmodifiableMap(HashMap)", "UnmodifiableMap(TreeMap)"})
     private String inputType;
 
-    private HashMap<String, Integer> inputHashMap;
-    private TreeMap<String, Integer> inputTreeMap;
-    private LinkedHashMap<String, Integer> inputLinkedHashMap;
-    private ConcurrentHashMap<String, Integer> inputConcurrentHashMap;
-    private WeakHashMap<String, Integer> inputWeakHashMap;
-    private Map<String, Integer> inputUnmodifiableMap;
-    private Map<String, Integer> inputUnmodifiableTreeMap;
+    private HashMap<BigInteger, Integer> inputHashMap;
+    private TreeMap<BigInteger, Integer> inputTreeMap;
+    private LinkedHashMap<BigInteger, Integer> inputLinkedHashMap;
+    private ConcurrentHashMap<BigInteger, Integer> inputConcurrentHashMap;
+    private WeakHashMap<BigInteger, Integer> inputWeakHashMap;
+    private Map<BigInteger, Integer> inputUnmodifiableMap;
+    private Map<BigInteger, Integer> inputUnmodifiableTreeMap;
 
-    private Map<String, Integer> sourceMap;
+    private Map<BigInteger, Integer> sourceMap;
 
     @Setup(Level.Trial)
     public void setup() {
-        // Create test data with identical contents
+        Random rng = new Random(0);
+
         inputHashMap = new HashMap<>();
         inputTreeMap = new TreeMap<>();
         inputLinkedHashMap = new LinkedHashMap<>();
@@ -54,7 +59,7 @@ public class HashMapConstructorBenchmark {
         inputWeakHashMap = new WeakHashMap<>();
 
         for (int i = 0; i < mapSize; i++) {
-            String key = "key" + i;
+            BigInteger key = new BigInteger(128, rng);
             Integer value = i;
             inputHashMap.put(key, value);
             inputTreeMap.put(key, value);
@@ -63,11 +68,9 @@ public class HashMapConstructorBenchmark {
             inputWeakHashMap.put(key, value);
         }
 
-        // Create wrapper maps for poisoning
         inputUnmodifiableMap = Collections.unmodifiableMap(new HashMap<>(inputHashMap));
         inputUnmodifiableTreeMap = Collections.unmodifiableMap(new TreeMap<>(inputTreeMap));
 
-        // Set source map based on inputType parameter
         sourceMap = switch (inputType) {
             case "HashMap" -> inputHashMap;
             case "TreeMap" -> inputTreeMap;
@@ -84,22 +87,22 @@ public class HashMapConstructorBenchmark {
 
     private void poisonCallSites() {
         @SuppressWarnings("unchecked")
-        Map<String, Integer>[] sources = new Map[] { inputHashMap, inputTreeMap, inputLinkedHashMap,
+        Map<BigInteger, Integer>[] sources = new Map[] { inputHashMap, inputTreeMap, inputLinkedHashMap,
                 inputConcurrentHashMap, inputWeakHashMap };
 
         // Poison HashMap.<init>(Map) call site
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<String, Integer> source = sources[i % sources.length];
-            HashMap<String, Integer> temp = new HashMap<>(source);
+            Map<BigInteger, Integer> source = sources[i % sources.length];
+            HashMap<BigInteger, Integer> temp = new HashMap<>(source);
             if (temp.size() != mapSize)
                 throw new RuntimeException();
         }
 
         // Poison entrySet iteration call sites
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<String, Integer> source = sources[i % sources.length];
-            HashMap<String, Integer> temp = new HashMap<>(source.size());
-            for (Map.Entry<String, Integer> entry : source.entrySet()) {
+            Map<BigInteger, Integer> source = sources[i % sources.length];
+            HashMap<BigInteger, Integer> temp = new HashMap<>(source.size());
+            for (Map.Entry<BigInteger, Integer> entry : source.entrySet()) {
                 temp.put(entry.getKey(), entry.getValue());
             }
             if (temp.size() != mapSize)
@@ -108,7 +111,7 @@ public class HashMapConstructorBenchmark {
 
         // Poison UnmodifiableMap call sites
         @SuppressWarnings("unchecked")
-        Map<String, Integer>[] umSources = new Map[]{
+        Map<BigInteger, Integer>[] umSources = new Map[]{
             Collections.unmodifiableMap(inputHashMap),
             Collections.unmodifiableMap(inputTreeMap),
             Collections.unmodifiableMap(inputLinkedHashMap),
@@ -117,16 +120,16 @@ public class HashMapConstructorBenchmark {
         };
 
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<String, Integer> source = umSources[i % umSources.length];
-            HashMap<String, Integer> temp = new HashMap<>(source);
+            Map<BigInteger, Integer> source = umSources[i % umSources.length];
+            HashMap<BigInteger, Integer> temp = new HashMap<>(source);
             if (temp.size() != mapSize)
                 throw new RuntimeException();
         }
 
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<String, Integer> source = umSources[i % umSources.length];
-            HashMap<String, Integer> temp = new HashMap<>(source.size());
-            for (Map.Entry<String, Integer> entry : source.entrySet()) {
+            Map<BigInteger, Integer> source = umSources[i % umSources.length];
+            HashMap<BigInteger, Integer> temp = new HashMap<>(source.size());
+            for (Map.Entry<BigInteger, Integer> entry : source.entrySet()) {
                 temp.put(entry.getKey(), entry.getValue());
             }
             if (temp.size() != mapSize) throw new RuntimeException();
@@ -138,7 +141,7 @@ public class HashMapConstructorBenchmark {
      * Performance varies based on source map type and call site polymorphism.
      */
     @Benchmark
-    public HashMap<String, Integer> hashMapConstructor() {
+    public HashMap<BigInteger, Integer> hashMapConstructor() {
         return new HashMap<>(sourceMap);
     }
 
@@ -147,9 +150,9 @@ public class HashMapConstructorBenchmark {
      * This approach bypasses bulk operations and their polymorphic call sites.
      */
     @Benchmark
-    public HashMap<String, Integer> manualEntrySetLoop() {
-        HashMap<String, Integer> result = new HashMap<>();
-        for (Map.Entry<String, Integer> entry : sourceMap.entrySet()) {
+    public HashMap<BigInteger, Integer> manualEntrySetLoop() {
+        HashMap<BigInteger, Integer> result = new HashMap<>();
+        for (Map.Entry<BigInteger, Integer> entry : sourceMap.entrySet()) {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
