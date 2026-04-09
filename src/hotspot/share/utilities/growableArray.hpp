@@ -300,6 +300,11 @@ public:
     }
     tty->print("}\n");
   }
+
+  // MetaspaceClosure support
+  E** data_addr() {
+    return &_data;
+  }
 };
 
 template <typename E>
@@ -819,11 +824,7 @@ public:
     }
   }
 
-  // methods required by MetaspaceClosure
-  void metaspace_pointers_do(MetaspaceClosure* it);
-  int size_in_heapwords() const { return (int)heap_word_size(sizeof(*this)); }
-  MetaspaceClosureType type() const { return MetaspaceClosureType::GrowableArrayType; }
-  static bool is_read_only_by_default() { return false; }
+  void assert_on_C_heap() { assert(on_C_heap(), "must be on C heap"); }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.

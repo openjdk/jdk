@@ -89,7 +89,9 @@ public:
   //         int size_in_heapwords() const;
   //
   // Currently, the iterable types include all subtypes of MetsapceObj, as well
-  // as GrowableArray, ModuleEntry and PackageEntry.
+  // as GrowableArray (C-heap allocated only), ModuleEntry, and PackageEntry.
+  //
+  // (Note that GrowableArray is supported specially and does not require the above functions.)
   //
   // Calling these functions would be trivial if these were virtual functions.
   // However, to save space, MetaspaceObj has NO vtable. The vtable is introduced
@@ -305,6 +307,37 @@ private:
   // Support for GrowableArray<T>
   //--------------------------------
 
+  // GrowableArrayRef -- iterate an instance of GrowableArray<T>.
+  template <class T> class GrowableArrayRef : public Ref {
+    GrowableArray<T>** _mpp;
+
+  public:
+    GrowableArrayRef(GrowableArray<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
+
+    GrowableArray<T>* dereference() const {
+      return *_mpp;
+    }
+    virtual void** mpp() const {
+      return (void**)_mpp;
+    }
+
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+      metaspace_pointers_do_at_impl(it, dereference());
+    }
+
+  private:
+    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, GrowableArray<T>* array) const {
+      log_trace(aot)("Iter(GA): %p [%d]", array, array->length());
+      array->assert_on_C_heap();
+      it->push_c_array(array->data_addr(), array->capacity());
+    }
+
+    virtual bool is_read_only_by_default() const { return false; }
+    virtual bool not_null()                const { return dereference() != nullptr;  }
+    virtual int size()                     const { return (int)heap_word_size(sizeof(*dereference())); }
+    virtual MetaspaceClosureType type()    const { return MetaspaceClosureType::GrowableArrayType; }
+  };
+
   // Abstract base class for MSOCArrayRef, MSOPointerCArrayRef and OtherCArrayRef.
   // These are used for iterating the buffer held by GrowableArray<T>.
   template <class T> class CArrayRef : public Ref {
@@ -441,9 +474,9 @@ public:
   //
   // GrowableArrays have a separate "C array" buffer, so they are scanned in two steps:
   //
-  // GrowableArray<jlong>*      ga1 = ...;  it->push(&ga1);  => MSORef => OtherCArrayRef
-  // GrowableArray<Annotation>* ga2 = ...;  it->push(&ga2);  => MSORef => MSOCArrayRef
-  // GrowableArray<Klass*>*     ga3 = ...;  it->push(&ga3);  => MSORef => MSOPointerCArrayRef
+  // GrowableArray<jlong>*      ga1 = ...;  it->push(&ga1);  => GrowableArrayRef => OtherCArrayRef
+  // GrowableArray<Annotation>* ga2 = ...;  it->push(&ga2);  => GrowableArrayRef => MSOCArrayRef
+  // GrowableArray<Klass*>*     ga3 = ...;  it->push(&ga3);  => GrowableArrayRef => MSOPointerCArrayRef
   //
   // Note that the following will fail to compile:
   //
@@ -473,6 +506,11 @@ public:
   void push(Array<T*>** mpp, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
+  }
+
+  template <typename T>
+  void push(GrowableArray<T>** mpp, Writability w = _default) {
+    push_with_ref<GrowableArrayRef<T>>(mpp, w);
   }
 
   // --- The buffer of GrowableArray<T>

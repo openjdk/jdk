@@ -39,7 +39,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.inline.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
