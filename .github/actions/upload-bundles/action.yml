@@ -87,7 +87,7 @@ runs:
       shell: bash
 
     - name: 'Upload bundles artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}${{ inputs.bundle-suffix }}
         path: bundles

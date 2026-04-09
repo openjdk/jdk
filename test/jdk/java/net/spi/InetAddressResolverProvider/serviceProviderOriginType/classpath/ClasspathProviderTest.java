@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,17 @@
  * questions.
  */
 
+import org.junit.jupiter.api.Test;
+
 import java.net.InetAddress;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertThrows;
 
 /*
  * @test
  * @summary Test that InetAddressResolverProvider implementation can be installed to a class path.
  * @library ../../lib
  * @build test.library/testlib.ResolutionRegistry ClasspathResolverProviderImpl
- * @run testng/othervm ClasspathProviderTest
+ * @run junit/othervm ClasspathProviderTest
  */
 
 public class ClasspathProviderTest {

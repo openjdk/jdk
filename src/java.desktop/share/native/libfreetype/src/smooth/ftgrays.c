@@ -1804,7 +1804,7 @@ typedef ptrdiff_t  FT_PtrDist;
           FT_FILL_RULE( coverage, cover, fill );
 
           span[n].coverage = (unsigned char)coverage;
-          span[n].x        = (short)x;
+          span[n].x        = (unsigned short)x;
           span[n].len      = (unsigned short)( cell->x - x );
 
           if ( ++n == FT_MAX_GRAY_SPANS )
@@ -1823,7 +1823,7 @@ typedef ptrdiff_t  FT_PtrDist;
           FT_FILL_RULE( coverage, area, fill );
 
           span[n].coverage = (unsigned char)coverage;
-          span[n].x        = (short)cell->x;
+          span[n].x        = (unsigned short)cell->x;
           span[n].len      = 1;
 
           if ( ++n == FT_MAX_GRAY_SPANS )

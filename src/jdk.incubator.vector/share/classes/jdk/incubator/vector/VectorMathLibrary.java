@@ -42,7 +42,7 @@ import static jdk.internal.vm.vector.Utils.debug;
  * A wrapper for native vector math libraries bundled with the JDK (SVML and SLEEF).
  * Binds vector operations to native implementations provided by the libraries.
  */
-/*package-private*/ class VectorMathLibrary {
+/*package-private*/ final class VectorMathLibrary {
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     interface Library {
