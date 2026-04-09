@@ -69,7 +69,7 @@ class PartialArrayState {
 
   PartialArrayState(oop src, oop dst,
                     size_t index, size_t length,
-                    size_t stride, size_t initial_refcount);
+                    size_t chunk_size, size_t initial_refcount);
 
 public:
   // Deleted to require management by allocator object.
