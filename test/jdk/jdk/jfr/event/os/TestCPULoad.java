@@ -24,7 +24,8 @@
 package jdk.jfr.event.os;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
@@ -40,45 +41,19 @@ import jdk.test.lib.jfr.Events;
  */
 public class TestCPULoad {
     private final static String EVENT_NAME = EventNames.CPULoad;
-    public static int primeCount;
 
     public static void main(String... args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
-            AtomicReference<RecordedEvent> cpuEvent = new AtomicReference<>();
+            BlockingQueue<RecordedEvent> cpuEvent = new ArrayBlockingQueue<>(1);
             rs.setReuse(false);
             rs.enable(EVENT_NAME).withPeriod(Duration.ofMillis(100));
-            rs.onEvent(cpuEvent::set);
+            rs.onEvent(cpuEvent::offer);
             rs.startAsync();
-            while (cpuEvent.get() == null) {
-                primeCount = burnCPUCycles(2_500_000);
-            }
-            RecordedEvent event = cpuEvent.get();
+            RecordedEvent event = cpuEvent.take();
             System.out.println(event);
             Events.assertField(event, "jvmUser").atLeast(0.0f).atMost(1.0f);
             Events.assertField(event, "jvmSystem").atLeast(0.0f).atMost(1.0f);
             Events.assertField(event, "machineTotal").atLeast(0.0f).atMost(1.0f);
         }
-    }
-
-    private static int burnCPUCycles(int limit) {
-        int primeCount = 0;
-        for (int i = 2; i < limit; i++) {
-            if (isPrime(i)) {
-                primeCount++;
-            }
-        }
-        return primeCount;
-    }
-
-    private static boolean isPrime(int number) {
-        if (number <= 1) {
-            return false;
-        }
-        for (int i = 2; i <= Math.sqrt(number); i++) {
-            if (number % i == 0) {
-                return false;
-            }
-        }
-        return true;
     }
 }
