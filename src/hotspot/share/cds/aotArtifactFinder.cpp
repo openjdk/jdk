@@ -115,10 +115,6 @@ void AOTArtifactFinder::find_artifacts() {
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
-    if (ik->name()->equals("java/lang/constant/ConstantDescs")) {
-      tty->print_cr("Hello1");
-    }
-
     bool skip = info.is_excluded();
     if (info.is_aot_tooling_class()) {
       // Avoid including classes that were loaded only by AOT tooling, as they

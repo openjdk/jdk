@@ -733,9 +733,6 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->allocate_info(k);
-  if (k->name()->equals("java/lang/constant/ConstantDescs")) {
-    tty->print_cr("Hello2");
-  }
   if (AOTClassFilter::is_aot_tooling_class(k)) {
     info->set_is_aot_tooling_class();
   }
