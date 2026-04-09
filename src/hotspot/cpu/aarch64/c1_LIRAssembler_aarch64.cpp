@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -933,14 +933,10 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
     return;
   }
 
-  if (info != nullptr) {
-    add_debug_info_for_null_check_here(info);
-  }
-
   if (is_volatile) {
-    load_volatile(from_addr, dest, type);
+    load_volatile(from_addr, dest, type, info);
   } else {
-    load_relaxed(from_addr, dest, type, wide);
+    load_unordered(from_addr, dest, type, wide, info);
   }
 
   if (is_reference_type(type)) {
@@ -952,8 +948,12 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   }
 }
 
-void LIR_Assembler::load_relaxed(LIR_Address *from_addr, LIR_Opr dest,
-                                 BasicType type, bool wide) {
+void LIR_Assembler::load_unordered(LIR_Address *from_addr, LIR_Opr dest,
+                                   BasicType type, bool wide, CodeEmitInfo* info) {
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
+  }
+
   switch (type) {
     case T_FLOAT: {
       __ ldrs(dest->as_float_reg(), as_Address(from_addr));
@@ -1014,13 +1014,17 @@ void LIR_Assembler::load_relaxed(LIR_Address *from_addr, LIR_Opr dest,
 }
 
 void LIR_Assembler::load_volatile(LIR_Address *from_addr, LIR_Opr dest,
-                                  BasicType type) {
+                                  BasicType type, CodeEmitInfo* info) {
   __ lea(rscratch1, as_Address(from_addr));
 
   Register dest_reg = rscratch2;
   if (!is_floating_point_type(type)) {
     dest_reg = (dest->is_single_cpu()
                 ? dest->as_register() : dest->as_register_lo());
+  }
+
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
   }
 
   // Uses LDAR to ensure memory ordering.

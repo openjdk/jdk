@@ -60,8 +60,8 @@ friend class ArrayCopyStub;
   void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
                LIR_PatchCode patch_code,
                CodeEmitInfo* info, bool wide, bool is_volatile);
-  void load_relaxed(LIR_Address *from_addr, LIR_Opr dest, BasicType type, bool wide);
-  void load_volatile(LIR_Address *from_addr, LIR_Opr dest, BasicType type);
+  void load_unordered(LIR_Address *from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
+  void load_volatile(LIR_Address *from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
 
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];

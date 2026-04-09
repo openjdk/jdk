@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1397,8 +1396,7 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
   __ volatile_store_mem_reg(value, address, info);
 }
 
-bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
+void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   __ volatile_load_mem_reg(address, result, info);
-  return false;
 }
