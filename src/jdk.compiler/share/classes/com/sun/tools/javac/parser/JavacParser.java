@@ -772,7 +772,7 @@ public class JavacParser implements Parser {
             }
         } else if (token.kind == UNDERSCORE) {
             if (Feature.UNDERSCORE_IDENTIFIER.allowedInSource(source)) {
-                log.warning(token.pos, Warnings.UnderscoreAsIdentifier);
+                log.warning(DiagnosticFlag.SYNTAX, token.pos, Warnings.UnderscoreAsIdentifier);
             } else if (asVariable) {
                 checkSourceLevel(Feature.UNNAMED_VARIABLES);
                 if (peekToken(LBRACKET)) {
@@ -2339,7 +2339,7 @@ public class JavacParser implements Parser {
             if (allowYieldStatement) {
                 return true;
             } else {
-                log.warning(pos, Warnings.InvalidYield);
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.InvalidYield);
             }
         }
         return false;
@@ -3858,35 +3858,35 @@ public class JavacParser implements Parser {
             if (Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source)) {
                 return Source.JDK10;
             } else if (shouldWarn) {
-                log.warning(pos, Warnings.RestrictedTypeNotAllowed(name, Source.JDK10));
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowed(name, Source.JDK10));
             }
         }
         if (name == names.yield) {
             if (allowYieldStatement) {
                 return Source.JDK14;
             } else if (shouldWarn) {
-                log.warning(pos, Warnings.RestrictedTypeNotAllowed(name, Source.JDK14));
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowed(name, Source.JDK14));
             }
         }
         if (name == names.record) {
             if (allowRecords) {
                 return Source.JDK14;
             } else if (shouldWarn) {
-                log.warning(pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK14));
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK14));
             }
         }
         if (name == names.sealed) {
             if (allowSealedTypes) {
                 return Source.JDK15;
             } else if (shouldWarn) {
-                log.warning(pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK15));
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK15));
             }
         }
         if (name == names.permits) {
             if (allowSealedTypes) {
                 return Source.JDK15;
             } else if (shouldWarn) {
-                log.warning(pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK15));
+                log.warning(DiagnosticFlag.SYNTAX, pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK15));
             }
         }
         return null;
@@ -4057,7 +4057,7 @@ public class JavacParser implements Parser {
                     if (source.compareTo(Source.JDK21) >= 0)
                         reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
                     else
-                        log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                        log.warning(DiagnosticFlag.SYNTAX, semiList.first().pos, Warnings.ExtraneousSemicolon);
                 }
                 seenImport = true;
                 defs.append(importDeclaration());
@@ -4074,7 +4074,7 @@ public class JavacParser implements Parser {
                         if (source.compareTo(Source.JDK21) >= 0)
                             reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
                         else
-                            log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                            log.warning(DiagnosticFlag.SYNTAX, semiList.first().pos, Warnings.ExtraneousSemicolon);
                     }
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
@@ -5616,7 +5616,7 @@ public class JavacParser implements Parser {
             log.error(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            preview.warnPreview(DiagnosticFlag.SYNTAX, pos, feature);
         }
     }
 

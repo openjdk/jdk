@@ -33,18 +33,23 @@
  * @run junit ${test.main.class}
  */
 
-
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -125,10 +130,73 @@ public class TestParserWarnings {
         tb.checkEqual(expected, log);
     }
 
+    @Test
+    public void testAPGeneratedSource() throws Exception {
+        tb.writeJavaFiles(src, """
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Target;
+
+                @A
+                class Test {}
+
+                @Target(ElementType.TYPE)
+                @interface A {}
+                """);
+
+        List<String> log = new JavacTask(tb)
+                .options("-Xlint:text-blocks",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(src))
+                .outdir(classes)
+                .processors(new ProcessorImpl())
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Generated.java:3:16: compiler.warn.inconsistent.white.space.indentation",
+                "Generated.java:3:16: compiler.warn.trailing.white.space.will.be.removed",
+                "2 warnings"
+        );
+
+        tb.checkEqual(expected, log);
+    }
+
     @SupportedAnnotationTypes("*")
     private static class ProcessorImpl extends AbstractProcessor {
+        private boolean done = false;
+        private Filer filer;
+        private Messager msgr;
+
+        @Override
+        public void init(ProcessingEnvironment env) {
+            filer = env.getFiler();
+            msgr = env.getMessager();
+        }
+
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (!done && !annotations.isEmpty()) {
+                try (Writer pw = filer.createSourceFile("Generated").openWriter()) {
+                    pw.write("""
+                             public class Generated {
+                                 String m() {
+                                     return ""\"
+                             \\u0009\\u0009\\u0009\\u0009tab indentation
+                             \\u0020\\u0020\\u0020\\u0020space indentation and trailing space\\u0020
+                             \\u0020\\u0020\\u0020\\u0020""\";
+                                 }
+                             }
+                             """);
+                    pw.flush();
+                    pw.close();
+                    done = true;
+                } catch (IOException ioe) {
+                    msgr.printError(ioe.getMessage());
+                    return false;
+                }
+                return true;
+            }
             return false;
         }
 
