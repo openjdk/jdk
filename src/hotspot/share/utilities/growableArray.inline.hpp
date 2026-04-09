@@ -31,7 +31,7 @@
 
 template <typename E>
 void GrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array(GrowableArray<E>::data_addr(), GrowableArray<E>::capacity());
+  it->push_c_array((E**)&(GrowableArray<E>::_data), GrowableArray<E>::capacity());
 }
 
 #endif // SHARE_UTILITIES_GROWABLEARRAY_INLINE_HPP
