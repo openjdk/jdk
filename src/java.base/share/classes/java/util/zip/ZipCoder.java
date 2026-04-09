@@ -251,8 +251,6 @@ class ZipCoder {
         int asciiLen = JLA.countPositives(a, off, len);
         if (asciiLen != len) {
             // Non-ASCII, fall back to decoding a String
-            // We avoid using decoder() here since the UTF8ZipCoder is
-            // shared and that decoder is not thread safe.
             return hash(toString(a, off, len));
         }
         int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
