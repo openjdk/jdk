@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,20 +32,12 @@ import java.awt.geom.Point2D;
 
 public abstract class FontStrike {
 
-
     protected FontStrikeDisposer disposer;
     protected FontStrikeDesc desc;
     protected StrikeMetrics strikeMetrics;
     protected boolean algoStyle = false;
     protected float boldness = 1f;
     protected float italic = 0f;
-    /*
-     * lastLookupTime is updated by Font2D.getStrike and can be used to
-     * choose strikes that have not been newly referenced for purging when
-     * memory usage gets too high. Active strikes will never be purged
-     * because purging is via GC of WeakReferences.
-     */
-    //protected long lastlookupTime/* = System.currentTimeMillis()*/;
 
     public abstract int getNumGlyphs();
 
@@ -70,11 +62,5 @@ public abstract class FontStrike {
 
     abstract Rectangle2D.Float getGlyphOutlineBounds(int glyphCode);
 
-    abstract GeneralPath
-        getGlyphOutline(int glyphCode, float x, float y);
-
-    abstract GeneralPath
-        getGlyphVectorOutline(int[] glyphs, float x, float y);
-
-
+    abstract GeneralPath getGlyphOutline(int glyphCode, float x, float y);
 }

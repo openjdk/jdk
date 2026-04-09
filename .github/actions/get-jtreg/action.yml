@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ runs:
 
     - name: 'Download JTReg artifact'
       id: download-jtreg
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: bundles-jtreg-${{ steps.version.outputs.value }}
         path: jtreg/installed

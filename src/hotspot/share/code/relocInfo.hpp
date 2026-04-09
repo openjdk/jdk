@@ -25,14 +25,13 @@
 #ifndef SHARE_CODE_RELOCINFO_HPP
 #define SHARE_CODE_RELOCINFO_HPP
 
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <new>
 
 class CodeBlob;
 class Metadata;
@@ -988,8 +987,6 @@ class oop_Relocation : public DataRelocation {
   // oop_index is packed in "1_int" format:  [n] or [Nn]
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
-
-  void fix_oop_relocation();        // reasserts oop value
 
   void verify_oop_relocation();
 

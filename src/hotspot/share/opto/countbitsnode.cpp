@@ -26,97 +26,114 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 #include "utilities/population_count.hpp"
+
+static int count_leading_zeros_int(jint i) {
+  return i == 0 ? BitsPerInt : count_leading_zeros(i);
+}
+
+static int count_leading_zeros_long(jlong l) {
+  return l == 0 ? BitsPerLong : count_leading_zeros(l);
+}
+
+static int count_trailing_zeros_int(jint i) {
+  return i == 0 ? BitsPerInt : count_trailing_zeros(i);
+}
+
+static int count_trailing_zeros_long(jlong l) {
+  return l == 0 ? BitsPerLong : count_trailing_zeros(l);
+}
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeInt* ti = t->isa_int();
-  if (ti && ti->is_con()) {
-    jint i = ti->get_con();
-    // HD, Figure 5-6
-    if (i == 0)
-    return TypeInt::make(BitsPerInt);
-    int n = 1;
-    unsigned int x = i;
-    if (x >> 16 == 0) { n += 16; x <<= 16; }
-    if (x >> 24 == 0) { n +=  8; x <<=  8; }
-    if (x >> 28 == 0) { n +=  4; x <<=  4; }
-    if (x >> 30 == 0) { n +=  2; x <<=  2; }
-    n -= x >> 31;
-    return TypeInt::make(n);
+  if (t == Type::TOP) {
+    return Type::TOP;
   }
-  return TypeInt::INT;
+
+  // To minimize `count_leading_zeros(x)`, we should make the highest 1 bit in x
+  // as far to the left as possible. A bit in x can be 1 iff this bit is not
+  // forced to be 0, i.e. the corresponding bit in `x._bits._zeros` is 0. Thus:
+  //   min(clz(x)) = number of bits to the left of the highest 0 bit in x._bits._zeros
+  //               = count_leading_ones(x._bits._zeros) = clz(~x._bits._zeros)
+  //
+  // To maximize `count_leading_zeros(x)`, we should make the leading zeros as
+  // many as possible. A bit in x can be 0 iff this bit is not forced to be 1,
+  // i.e. the corresponding bit in `x._bits._ones` is 0. Thus:
+  //   max(clz(x)) = clz(x._bits._ones)
+  //
+  // Therefore, the range of `count_leading_zeros(x)` is:
+  //   [clz(~x._bits._zeros), clz(x._bits._ones)]
+  //
+  // A more detailed proof using Z3 can be found at:
+  //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
+  const TypeInt* ti = t->is_int();
+  return TypeInt::make(count_leading_zeros_int(~ti->_bits._zeros),
+                       count_leading_zeros_int(ti->_bits._ones),
+                       ti->_widen);
 }
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeLong* tl = t->isa_long();
-  if (tl && tl->is_con()) {
-    jlong l = tl->get_con();
-    // HD, Figure 5-6
-    if (l == 0)
-    return TypeInt::make(BitsPerLong);
-    int n = 1;
-    unsigned int x = (((julong) l) >> 32);
-    if (x == 0) { n += 32; x = (int) l; }
-    if (x >> 16 == 0) { n += 16; x <<= 16; }
-    if (x >> 24 == 0) { n +=  8; x <<=  8; }
-    if (x >> 28 == 0) { n +=  4; x <<=  4; }
-    if (x >> 30 == 0) { n +=  2; x <<=  2; }
-    n -= x >> 31;
-    return TypeInt::make(n);
+  if (t == Type::TOP) {
+    return Type::TOP;
   }
-  return TypeInt::INT;
+
+  // The proof of correctness is same as the above comments
+  // in `CountLeadingZerosINode::Value`.
+  const TypeLong* tl = t->is_long();
+  return TypeInt::make(count_leading_zeros_long(~tl->_bits._zeros),
+                       count_leading_zeros_long(tl->_bits._ones),
+                       tl->_widen);
 }
 
 //------------------------------Value------------------------------------------
 const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeInt* ti = t->isa_int();
-  if (ti && ti->is_con()) {
-    jint i = ti->get_con();
-    // HD, Figure 5-14
-    int y;
-    if (i == 0)
-    return TypeInt::make(BitsPerInt);
-    int n = 31;
-    y = i << 16; if (y != 0) { n = n - 16; i = y; }
-    y = i <<  8; if (y != 0) { n = n -  8; i = y; }
-    y = i <<  4; if (y != 0) { n = n -  4; i = y; }
-    y = i <<  2; if (y != 0) { n = n -  2; i = y; }
-    y = i <<  1; if (y != 0) { n = n -  1; }
-    return TypeInt::make(n);
+  if (t == Type::TOP) {
+    return Type::TOP;
   }
-  return TypeInt::INT;
+
+  // To minimize `count_trailing_zeros(x)`, we should make the lowest 1 bit in x
+  // as far to the right as possible. A bit in x can be 1 iff this bit is not
+  // forced to be 0, i.e. the corresponding bit in `x._bits._zeros` is 0. Thus:
+  //   min(ctz(x)) = number of bits to the right of the lowest 0 bit in x._bits._zeros
+  //               = count_trailing_ones(x._bits._zeros) = ctz(~x._bits._zeros)
+  //
+  // To maximize `count_trailing_zeros(x)`, we should make the trailing zeros as
+  // many as possible. A bit in x can be 0 iff this bit is not forced to be 1,
+  // i.e. the corresponding bit in `x._bits._ones` is 0. Thus:
+  //   max(ctz(x)) = ctz(x._bits._ones)
+  //
+  // Therefore, the range of `count_trailing_zeros(x)` is:
+  //   [ctz(~x._bits._zeros), ctz(x._bits._ones)]
+  //
+  // A more detailed proof using Z3 can be found at:
+  //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
+  const TypeInt* ti = t->is_int();
+  return TypeInt::make(count_trailing_zeros_int(~ti->_bits._zeros),
+                       count_trailing_zeros_int(ti->_bits._ones),
+                       ti->_widen);
 }
 
 //------------------------------Value------------------------------------------
 const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeLong* tl = t->isa_long();
-  if (tl && tl->is_con()) {
-    jlong l = tl->get_con();
-    // HD, Figure 5-14
-    int x, y;
-    if (l == 0)
-    return TypeInt::make(BitsPerLong);
-    int n = 63;
-    y = (int) l; if (y != 0) { n = n - 32; x = y; } else x = (((julong) l) >> 32);
-    y = x << 16; if (y != 0) { n = n - 16; x = y; }
-    y = x <<  8; if (y != 0) { n = n -  8; x = y; }
-    y = x <<  4; if (y != 0) { n = n -  4; x = y; }
-    y = x <<  2; if (y != 0) { n = n -  2; x = y; }
-    y = x <<  1; if (y != 0) { n = n -  1; }
-    return TypeInt::make(n);
+  if (t == Type::TOP) {
+    return Type::TOP;
   }
-  return TypeInt::INT;
+
+  // The proof of correctness is same as the above comments
+  // in `CountTrailingZerosINode::Value`.
+  const TypeLong* tl = t->is_long();
+  return TypeInt::make(count_trailing_zeros_long(~tl->_bits._zeros),
+                       count_trailing_zeros_long(tl->_bits._ones),
+                       tl->_widen);
 }
+
 // We use the KnownBits information from the integer types to derive how many one bits
 // we have at least and at most.
 // From the definition of KnownBits, we know:

@@ -22,18 +22,19 @@
  */
 
 /*
-* @test
-* @bug 8356760
-* @library /test/lib /
-* @summary Optimize VectorMask.fromLong for all-true/all-false cases
-* @modules jdk.incubator.vector
-*
-* @run driver compiler.vectorapi.VectorMaskToLongTest
-*/
+ * @test
+ * @bug 8356760 8367292
+ * @library /test/lib /
+ * @summary IR test for VectorMask.toLong()
+ * @modules jdk.incubator.vector
+ *
+ * @run driver compiler.vectorapi.VectorMaskToLongTest
+ */
 
 package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
+import java.util.Arrays;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
@@ -45,11 +46,20 @@ public class VectorMaskToLongTest {
     static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
     static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
 
+    private static boolean[] m;
+
+    static {
+        m = new boolean[B_SPECIES.length()];
+        Arrays.fill(m, true);
+    }
+
     @DontInline
     public static void verifyMaskToLong(VectorSpecies<?> species, long inputLong, long got) {
         long expected = inputLong & (-1L >>> (64 - species.length()));
         Asserts.assertEquals(expected, got, "for input long " + inputLong);
     }
+
+    // Tests for "VectorMaskToLong(MaskAll(0/-1)) => ((0/-1) & (-1ULL >> (64 - vlen)))"
 
     @ForceInline
     public static void testMaskAllToLong(VectorSpecies<?> species) {
@@ -173,12 +183,12 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongByte() {
-        // Test the case where some but not all bits are set.
+       // Test the case where some but not all bits are set.
        long inputLong = (-1L >>> (64 - B_SPECIES.length()))-1;
        long got = VectorMask.fromLong(B_SPECIES, inputLong).toLong();
        verifyMaskToLong(B_SPECIES, inputLong, got);
@@ -187,10 +197,10 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongShort() {
         // Test the case where some but not all bits are set.
         long inputLong = (-1L >>> (64 - S_SPECIES.length()))-1;
@@ -201,10 +211,10 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongInt() {
         // Test the case where some but not all bits are set.
         long inputLong = (-1L >>> (64 - I_SPECIES.length()))-1;
@@ -215,10 +225,10 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 0" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongLong() {
         // Test the case where some but not all bits are set.
         long inputLong = (-1L >>> (64 - L_SPECIES.length()))-1;
@@ -229,10 +239,10 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongFloat() {
         // Test the case where some but not all bits are set.
         long inputLong = (-1L >>> (64 - F_SPECIES.length()))-1;
@@ -243,15 +253,109 @@ public class VectorMaskToLongTest {
     @Test
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "sve2", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
+        applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
     public static void testFromLongToLongDouble() {
         // Test the case where some but not all bits are set.
         long inputLong = (-1L >>> (64 - D_SPECIES.length()))-1;
         long got = VectorMask.fromLong(D_SPECIES, inputLong).toLong();
         verifyMaskToLong(D_SPECIES, inputLong, got);
+    }
+
+    // General cases for VectorMask.toLong(). The main purpose is to test the IRs
+    // for API VectorMask.toLong(). To avoid the IRs being optimized out by compiler,
+    // we insert a VectorMask.not() before toLong().
+
+    @ForceInline
+    public static void testToLongGeneral(VectorSpecies<?> species) {
+        long got = VectorMask.fromArray(species, m, 0).not().toLong();
+        verifyMaskToLong(species, 0, got);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testToLongByte() {
+        testToLongGeneral(B_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testToLongShort() {
+        testToLongGeneral(S_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testToLongInt() {
+        testToLongGeneral(I_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testToLongLong() {
+        testToLongGeneral(L_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    public static void testToLongFloat() {
+        testToLongGeneral(F_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 1",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeature = { "asimd", "true" })
+    public static void testToLongDouble() {
+        testToLongGeneral(D_SPECIES);
     }
 
     public static void main(String[] args) {

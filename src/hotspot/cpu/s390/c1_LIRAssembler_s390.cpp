@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -272,14 +272,27 @@ int LIR_Assembler::emit_deopt_handler() {
     // Not enough space left for the handler.
     bailout("deopt handler overflow");
     return -1;
-  }  int offset = code_offset();
+  }
+
+  int offset = code_offset();
+
+  Label start;
+  __ bind(start);
+
   // Size must be constant (see HandlerImpl::emit_deopt_handler).
   __ load_const(Z_R1_scratch, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1_scratch);
+
+  int entry_offset = __ offset();
+
+  __ z_bru(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
@@ -2238,9 +2251,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     NearLabel known_ok, halt;
     metadata2reg(default_type->constant_encoding(), tmp);
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
+    __ encode_klass_not_null(tmp);
 
     if (basic_type != T_OBJECT) {
       __ cmp_klass(tmp, dst, Z_R1_scratch);
@@ -2527,13 +2538,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   // Get object class.
   // Not a safepoint as obj null check happens earlier.
   if (op->fast_check()) {
-    if (UseCompressedClassPointers) {
-      __ load_klass(klass_RInfo, obj);
-      __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
-    } else {
-      __ z_cg(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-      __ branch_optimized(Assembler::bcondNotEqual, *failure_target);
-    }
+    __ load_klass(klass_RInfo, obj);
+    __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
     // Successful cast, fall through to profile or jump.
   } else {
     bool need_slow_path = !k->is_loaded() ||

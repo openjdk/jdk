@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,68 +22,79 @@
  */
 package jdk.jpackage.test;
 
-import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, Object[] args) {
+public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, List<Object> args) implements CannedArgument {
 
-    @FunctionalInterface
-    public interface CannedArgument {
-        public String value();
-    }
-
-    public static Object cannedArgument(Supplier<Object> supplier, String label) {
-        Objects.requireNonNull(supplier);
-        Objects.requireNonNull(label);
-        return new CannedArgument() {
-
-            @Override
-            public String value() {
-                return supplier.get().toString();
-            }
-
-            @Override
-            public String toString( ) {
-                return label;
-            }
-        };
-    }
-
-    public static Object cannedAbsolutePath(Path v) {
-        return cannedArgument(() -> v.toAbsolutePath(), String.format("AbsolutePath(%s)", v));
-    }
-
-    public static Object cannedAbsolutePath(String v) {
-        return cannedAbsolutePath(Path.of(v));
+    public CannedFormattedString mapArgs(UnaryOperator<Object> mapper) {
+        return new CannedFormattedString(formatter, key, args.stream().map(mapper).toList());
     }
 
     public CannedFormattedString {
         Objects.requireNonNull(formatter);
         Objects.requireNonNull(key);
         Objects.requireNonNull(args);
-        List.of(args).forEach(Objects::requireNonNull);
+        args.forEach(Objects::requireNonNull);
     }
 
+    @Override
     public String getValue() {
-        return formatter.apply(key, Stream.of(args).map(arg -> {
+        return formatter.apply(key, args.stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
-                return cannedArg.value();
+                return cannedArg.getValue();
             } else {
                 return arg;
             }
         }).toArray());
     }
 
+    public CannedFormattedString addPrefix(String prefixKey) {
+        return new CannedFormattedString(
+                new AddPrefixFormatter(formatter), prefixKey, Stream.concat(Stream.of(key), args.stream()).toList());
+    }
+
     @Override
     public String toString() {
-        if (args.length == 0) {
+        if (args.isEmpty()) {
             return String.format("%s", key);
         } else {
-            return String.format("%s+%s", key, List.of(args));
+            return String.format("%s+%s", key, args);
+        }
+    }
+
+    public interface Spec {
+
+        String format();
+        List<Object> modelArgs();
+
+        default CannedFormattedString asCannedFormattedString(Object ... args) {
+            if (args.length != modelArgs().size()) {
+                throw new IllegalArgumentException();
+            }
+            return JPackageStringBundle.MAIN.cannedFormattedString(format(), args);
+        }
+
+        default Pattern asPattern() {
+            return JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(format(), modelArgs().toArray());
+        }
+    }
+
+    private record AddPrefixFormatter(BiFunction<String, Object[], String> formatter) implements BiFunction<String, Object[], String> {
+
+        AddPrefixFormatter {
+            Objects.requireNonNull(formatter);
+        }
+
+        @Override
+        public String apply(String format, Object[] formatArgs) {
+            var str = formatter.apply((String)formatArgs[0], Arrays.copyOfRange(formatArgs, 1, formatArgs.length));
+            return formatter.apply(format, new Object[] {str});
         }
     }
 }

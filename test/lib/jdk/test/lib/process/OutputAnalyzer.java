@@ -56,8 +56,23 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process, Charset cs) throws IOException {
-        buffer = OutputBuffer.of(process, cs);
+        this(process, cs, true);
     }
+
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process, with a configurable verbosity level.
+     *
+     * @param process Process to analyze
+     * @param cs The charset used to convert stdout/stderr from bytes to chars
+     *           or null for the default charset.
+     * @param verbose Set to false to limit logging to stdout.
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, Charset cs, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, cs, verbose);
+    }
+
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process
@@ -66,7 +81,19 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process) throws IOException {
-        buffer = OutputBuffer.of(process);
+        this(process, true);
+    }
+
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process, with a configurable verbosity level.
+     *
+     * @param process Process to analyze
+     * @param verbose Set to false to limit logging to stdout.
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, verbose);
     }
 
     /**
@@ -355,24 +382,43 @@ public final class OutputAnalyzer {
     }
 
     /**
+     * Returns true if the pattern can be found in the given string(s).
+     *
+     * NOTE: The meaning of "match" in OutputAnalyzer is NOT the same as String.matches().
+     * Rather it means "can the pattern be found in stdout and/or stderr".
+     *
+     * The pattern is comiled with MULTILINE but without DOTALL, so "." doesn't match newline, but
+     * "^" and "$" matches just after or just before, respectively, a newline.
+     */
+    private boolean findPattern(String regexp, String... strings) {
+        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+        for (String s : strings) {
+            if (pattern.matcher(s).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns true if stdout matches the given pattern
      */
     public boolean stdoutMatches(String regexp) {
-        return getStdout().matches(regexp);
+        return findPattern(regexp, getStdout());
     }
 
     /**
      * Returns true if stderr matches the given pattern
      */
     public boolean stderrMatches(String regexp) {
-        return getStderr().matches(regexp);
+        return findPattern(regexp, getStderr());
     }
 
     /**
      * Returns true if either stdout or stderr matches the given pattern
      */
     public boolean matches(String regexp) {
-        return stdoutMatches(regexp) || stderrMatches(regexp);
+        return findPattern(regexp, getStdout(), getStderr());
     }
 
     /**
@@ -383,12 +429,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer shouldMatch(String regexp) {
-        String stdout = getStdout();
-        String stderr = getStderr();
-        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
-        Matcher stdoutMatcher = pattern.matcher(stdout);
-        Matcher stderrMatcher = pattern.matcher(stderr);
-        if (!stdoutMatcher.find() && !stderrMatcher.find()) {
+        if (!matches(regexp)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + regexp
                   + "' missing from stdout/stderr");
@@ -404,9 +445,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stdoutShouldMatch(String regexp) {
-        String stdout = getStdout();
-        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stdout);
-        if (!matcher.find()) {
+        if (!stdoutMatches(regexp)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + regexp
                   + "' missing from stdout");
@@ -421,12 +460,10 @@ public final class OutputAnalyzer {
      * @param pattern
      * @throws RuntimeException If the pattern was not found
      */
-    public OutputAnalyzer stderrShouldMatch(String pattern) {
-        String stderr = getStderr();
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
-        if (!matcher.find()) {
+    public OutputAnalyzer stderrShouldMatch(String regexp) {
+        if (!stderrMatches(regexp)) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                   + "' missing from stderr");
         }
         return this;
@@ -468,9 +505,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was found
      */
     public OutputAnalyzer stdoutShouldNotMatch(String regexp) {
-        String stdout = getStdout();
-        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stdout);
-        if (matcher.find()) {
+        if (stdoutMatches(regexp)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + regexp
                     + "' found in stdout");
@@ -486,9 +521,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was found
      */
     public OutputAnalyzer stderrShouldNotMatch(String regexp) {
-        String stderr = getStderr();
-        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stderr);
-        if (matcher.find()) {
+        if (stderrMatches(regexp)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + regexp
                     + "' found in stderr");

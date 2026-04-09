@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   cmp2->set_req(2,con2);
   const Type *t = cmp2->Value(igvn);
   // This compare is dead, so whack it!
-  igvn->remove_dead_node(cmp2);
+  igvn->remove_dead_node(cmp2, PhaseIterGVN::NodeOrigin::Speculative);
   if( !t->singleton() ) return nullptr;
 
   // No intervening control, like a simple Call
@@ -443,7 +443,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       }
       l -= uses_found;    // we deleted 1 or more copies of this edge
     }
-    igvn->remove_dead_node(p);
+    igvn->remove_dead_node(p, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // Force the original merge dead
@@ -455,14 +455,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       r->set_req(0, nullptr);
     } else {
       assert(u->outcnt() == 0, "only dead users");
-      igvn->remove_dead_node(u);
+      igvn->remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
     }
     l -= 1;
   }
-  igvn->remove_dead_node(r);
+  igvn->remove_dead_node(r, PhaseIterGVN::NodeOrigin::Graph);
 
   // Now remove the bogus extra edges used to keep things alive
-  igvn->remove_dead_node( hook );
+  igvn->remove_dead_node(hook, PhaseIterGVN::NodeOrigin::Speculative);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -487,7 +487,7 @@ IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node
 
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
-ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
+IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) const {
   if (outcnt() != 2) {
     return nullptr;
   }
@@ -515,8 +515,10 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
   //  Flip 2:  If (Bool[<=] CmpU(LoadRange, l)) ...
 
-  ProjNode* iftrap = proj_out_or_null(flip_test == 2 ? true : false);
-  return iftrap;
+  if (flip_test == 2) {
+    return true_proj_or_null();
+  }
+  return false_proj_or_null();
 }
 
 
@@ -528,7 +530,7 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   int flip_test = 0;
   Node* l = nullptr;
   Node* r = nullptr;
-  ProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
+  IfProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
 
   if (iftrap == nullptr) {
     return 0;
@@ -602,7 +604,7 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   // at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts do not float above any of the
   // dominating checks (even when the lowest dominating check is later replaced by yet another dominating check), we
   // need to pin them at the lowest dominating check.
-  proj->pin_array_access_nodes(igvn);
+  proj->pin_dependent_nodes(igvn);
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -769,7 +771,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 // Is a dominating control suitable for folding with this if?
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
-    ctrl->is_Proj() &&
+    ctrl->is_IfProj() &&
     ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
@@ -782,8 +784,8 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 }
 
 // Do this If and the dominating If share a region?
-bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
   RegionNode* region = (otherproj_ctrl_use != nullptr && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : nullptr;
   success = nullptr;
@@ -791,13 +793,14 @@ bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fa
 
   if (otherproj->outcnt() == 1 && region != nullptr && !region->has_phi()) {
     for (int i = 0; i < 2; i++) {
-      ProjNode* proj = proj_out(i);
-      if (success == nullptr && proj->outcnt() == 1 && proj->unique_out() == region) {
-        success = proj;
+      IfProjNode* next_proj = proj_out(i)->as_IfProj();
+      if (success == nullptr && next_proj->outcnt() == 1 && next_proj->unique_out() == region) {
+        success = next_proj;
       } else if (fail == nullptr) {
-        fail = proj;
+        fail = next_proj;
       } else {
-        success = fail = nullptr;
+        success = nullptr;
+        fail = nullptr;
       }
     }
   }
@@ -848,8 +851,8 @@ ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::
 }
 
 // Do this If and the dominating If both branch out to an uncommon trap
-bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
 
   if (otherproj->outcnt() == 1 && dom_unc != nullptr) {
@@ -886,8 +889,8 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
           !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
           // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
           igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
-        success = unc_proj;
-        fail = unc_proj->other_if_proj();
+        success = unc_proj->as_IfProj();
+        fail = unc_proj->as_IfProj()->other_if_proj();
         return true;
       }
     }
@@ -896,15 +899,16 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
 }
 
 // Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
-bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* this_cmp = in(1)->in(1);
   BoolNode* this_bool = in(1)->as_Bool();
   IfNode* dom_iff = proj->in(0)->as_If();
   BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
   Node* lo = dom_iff->in(1)->in(1)->in(2);
+  Node* orig_lo = lo;
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
 
   const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
   const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
@@ -913,6 +917,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
+  PhaseTransform::SpeculativeProgressGuard progress_guard(igvn);
   // convert:
   //
   //          dom_bool = x {<,<=,>,>=} a
@@ -1050,6 +1055,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+          progress_guard.commit();
           return true;
         }
       }
@@ -1084,11 +1090,14 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     // min(limit, max(-2 + min_jint + 1, min_jint))
     // = min(limit, min_jint)
     // = min_jint
+    if (lo != orig_lo && lo->outcnt() == 0) {
+      igvn->remove_dead_node(lo, PhaseIterGVN::NodeOrigin::Speculative);
+    }
     if (adjusted_val->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_val);
+      igvn->remove_dead_node(adjusted_val, PhaseIterGVN::NodeOrigin::Speculative);
     }
     if (adjusted_lim->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_lim);
+      igvn->remove_dead_node(adjusted_lim, PhaseIterGVN::NodeOrigin::Speculative);
     }
     igvn->C->record_for_post_loop_opts_igvn(this);
     return false;
@@ -1100,17 +1109,18 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
   igvn->replace_input_of(this, 1, newbool);
 
+  progress_guard.commit();
   return true;
 }
 
 // Merge the branches that trap for this If and the dominating If into
 // a single region that branches to the uncommon trap for the
 // dominating If
-Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+Node* IfNode::merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* res = this;
   assert(success->in(0) == this, "bad projection");
 
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
 
   CallStaticJavaNode* unc = success->is_uncommon_trap_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
@@ -1237,7 +1247,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
 #endif
 }
 
-bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
+bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
   if (in(1) != nullptr &&
       in(1)->in(1) != nullptr &&
       in(1)->in(1)->in(2) != nullptr) {
@@ -1256,7 +1266,7 @@ bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
   return false;
 }
 
-bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   Node* other = in(1)->in(1)->in(2);
   if (other->in(MemNode::Address) != nullptr &&
       proj->in(0)->in(1) != nullptr &&
@@ -1273,7 +1283,7 @@ bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
 
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
-bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {
   if (proj == nullptr) {
     return false;
   }
@@ -1313,9 +1323,9 @@ bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
 // won't be guarded by the first CmpI anymore. It can trap in cases
 // where the first CmpI would have prevented it from executing: on a
 // trap, we need to restart execution at the state of the first CmpI
-void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn) {
+void IfNode::reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj, PhaseIterGVN* igvn) {
   CallStaticJavaNode* dom_unc = dom_proj->is_uncommon_trap_if_pattern();
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
   Node* call_proj = dom_unc->unique_ctrl_out();
   Node* halt = call_proj->unique_ctrl_out();
@@ -1346,9 +1356,9 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
     if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
-      ProjNode* dom_cmp = ctrl->as_Proj();
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
+      IfProjNode* dom_cmp = ctrl->as_IfProj();
       if (has_shared_region(dom_cmp, success, fail) &&
           // Next call modifies graph so must be last
           fold_compares_helper(dom_cmp, success, fail, igvn)) {
@@ -1362,11 +1372,11 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
       return nullptr;
     } else if (ctrl->in(0) != nullptr &&
                ctrl->in(0)->in(0) != nullptr) {
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
       Node* dom = ctrl->in(0)->in(0);
-      ProjNode* dom_cmp = dom->isa_Proj();
-      ProjNode* other_cmp = ctrl->isa_Proj();
+      IfProjNode* dom_cmp = dom->isa_IfProj();
+      IfProjNode* other_cmp = ctrl->isa_IfProj();
 
       // Check if it's an integer comparison dominated by another
       // integer comparison with another test in between
@@ -1536,7 +1546,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not_imply_this) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
@@ -1567,20 +1577,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
-        // For control producers.
-        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+      if (s->depends_only_on_test()) {
+        // For control producers
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
-        if (pin_array_access_nodes && data_target != top) {
-          // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this
-          // range check (that is about to be removed) now depend on multiple dominating range checks. After the removal
-          // of this range check, these control dependent nodes end up at the lowest/nearest dominating check in the
-          // graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
-          // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the
-          // lowest dominating check.
-          Node* clone = s->pin_array_access_node();
+        if (prev_dom_not_imply_this && data_target != top) {
+          // If prev_dom_not_imply_this, s now depends on multiple tests with prev_dom being the
+          // lowest dominating one. As a result, it must be pinned there. Otherwise, it can be
+          // incorrectly moved to a dominating test equivalent to the lowest one here.
+          Node* clone = s->pin_node_under_control();
           if (clone != nullptr) {
-            clone = igvn->transform(clone);
+            igvn->register_new_node_with_optimizer(clone, s);
             igvn->replace_node(s, clone);
           }
         }
@@ -1593,11 +1599,11 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
       }
     } // End for each child of a projection
 
-    igvn->remove_dead_node(ifp);
+    igvn->remove_dead_node(ifp, PhaseIterGVN::NodeOrigin::Graph);
   } // End for each IfTrue/IfFalse child of If
 
   // Kill the IfNode
-  igvn->remove_dead_node(this);
+  igvn->remove_dead_node(this, PhaseIterGVN::NodeOrigin::Graph);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -1759,7 +1765,7 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   }
 
   if (bol->outcnt() == 0) {
-    igvn->remove_dead_node(bol);    // Kill the BoolNode.
+    igvn->remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);    // Kill the BoolNode.
   }
   return this;
 }
@@ -1828,16 +1834,15 @@ bool IfNode::is_zero_trip_guard() const {
   return false;
 }
 
-void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
+void IfProjNode::pin_dependent_nodes(PhaseIterGVN* igvn) {
   for (DUIterator i = outs(); has_out(i); i++) {
     Node* u = out(i);
     if (!u->depends_only_on_test()) {
       continue;
     }
-    Node* clone = u->pin_array_access_node();
+    Node* clone = u->pin_node_under_control();
     if (clone != nullptr) {
-      clone = igvn->transform(clone);
-      assert(clone != u, "shouldn't common");
+      igvn->register_new_node_with_optimizer(clone, u);
       igvn->replace_node(u, clone);
       --i;
     }
@@ -1875,8 +1880,8 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   assert(iff->in(0) != nullptr, "If must be live");
 
   if (iff->outcnt() != 2)  return nullptr; // Malformed projections.
-  Node* old_if_f = iff->proj_out(false);
-  Node* old_if_t = iff->proj_out(true);
+  IfFalseNode* old_if_f = iff->false_proj();
+  IfTrueNode* old_if_t = iff->true_proj();
 
   // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
@@ -1905,7 +1910,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   Node *prior = igvn->hash_find_insert(iff);
   if( prior ) {
-    igvn->remove_dead_node(iff);
+    igvn->remove_dead_node(iff, PhaseIterGVN::NodeOrigin::Graph);
     iff = (IfNode*)prior;
   } else {
     // Cannot call transform on it just yet
@@ -2192,7 +2197,7 @@ void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
-  ParsePredicateUncommonProj* uncommon_proj = proj_out(0)->as_IfFalse();
+  ParsePredicateUncommonProj* uncommon_proj = false_proj();
   Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
   assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
   return uct_region_or_call;

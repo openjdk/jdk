@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -168,6 +168,7 @@ class MacroAssembler: public Assembler {
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
+    Label*   return_pc,                // to set up last_Java_frame; use nullptr otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
     bool     check_exceptions          // whether to check for pending exceptions after return
@@ -197,7 +198,12 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
-  void cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal);
+  void cmp_klass_beq(Register obj, Register klass,
+                     Register tmp1, Register tmp2,
+                     Label &L, bool is_far = false);
+  void cmp_klass_bne(Register obj, Register klass,
+                     Register tmp1, Register tmp2,
+                     Label &L, bool is_far = false);
 
   void encode_klass_not_null(Register r, Register tmp = t0);
   void decode_klass_not_null(Register r, Register tmp = t0);
@@ -388,6 +394,8 @@ class MacroAssembler: public Assembler {
                            Label& L_success);
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
+
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
 
   // only if +VerifyOops
   void _verify_oop(Register reg, const char* s, const char* file, int line);
@@ -663,6 +671,24 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
+  void cmov_fp_eq(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ne(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_le(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_leu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ge(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_geu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_lt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ltu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gtu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single);
+
+  void cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
 
  public:
   // We try to follow risc-v asm menomics.
@@ -1327,9 +1353,8 @@ public:
   void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
   void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void cmpptr(Register src1, const Address &src2, Label& equal, Register tmp = t0);
-
   void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
+
   void load_method_holder_cld(Register result, Register method);
   void load_method_holder(Register holder, Register method);
 
@@ -1638,8 +1663,8 @@ private:
   void store_conditional(Register dst, Register new_val, Register addr, Assembler::operand_size size, Assembler::Aqrl release);
 
 public:
-  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
-  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void fast_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
 
 public:
   enum {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,4 +72,49 @@ public interface QuicCongestionController {
      */
     void packetDiscarded(Collection<QuicPacket> discardedPackets);
 
+    /**
+     * {@return the current size of the congestion window in bytes}
+     */
+    long congestionWindow();
+
+    /**
+     * {@return the initial window size in bytes}
+     */
+    long initialWindow();
+
+    /**
+     * {@return maximum datagram size}
+     */
+    long maxDatagramSize();
+
+    /**
+     * {@return true if the connection is in slow start phase}
+     */
+    boolean isSlowStart();
+
+    /**
+     * Update the pacer with the current time
+     * @param now the current time
+     */
+    void updatePacer(Deadline now);
+
+    /**
+     * {@return true if sending is blocked by pacer}
+     */
+    boolean isPacerLimited();
+
+    /**
+     * {@return true if sending is blocked by congestion window}
+     */
+    boolean isCwndLimited();
+
+    /**
+     * {@return deadline when pacer will unblock sending}
+     */
+    Deadline pacerDeadline();
+
+    /**
+     * Notify the congestion controller that sending is app-limited
+     */
+    void appLimited();
 }

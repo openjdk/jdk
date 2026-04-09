@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLay
 
 import java.nio.file.Files;
 import java.util.Objects;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
@@ -49,7 +48,7 @@ final class MacPackageBuilder {
         return pkgBuilder;
     }
 
-    MacPackage create() throws ConfigException {
+    MacPackage create() {
 
         final var app = (MacApplication)pkgBuilder.app();
 
@@ -66,7 +65,7 @@ final class MacPackageBuilder {
     }
 
     private static void validatePredefinedAppImage(MacPackage pkg) {
-        if (pkg.predefinedAppImageSigned().orElse(false)) {
+        if (pkg.predefinedAppImageSigned().orElse(false) && !pkg.isRuntimeInstaller()) {
             pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
                 var thePackageFile = PackageFile.getPathInAppImage(APPLICATION_LAYOUT);
                 if (!Files.exists(predefinedAppImage.resolve(thePackageFile))) {

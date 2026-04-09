@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.qpack.writers.IntegerWriter;
 import jdk.internal.net.http.qpack.StaticTable;
 import jdk.internal.net.http.qpack.writers.StringWriter;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,7 +38,11 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -51,8 +53,9 @@ import static org.testng.Assert.*;
  *          java.net.http/jdk.internal.net.http.http3.streams
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
- * @run testng/othervm DecoderTest
+ * @run junit/othervm DecoderTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DecoderTest {
 
     private final Random random = new Random();
@@ -78,7 +81,6 @@ public class DecoderTest {
         return null;
     }
 
-    @DataProvider(name = "indexProvider")
     public Object[][] indexProvider() {
         AtomicInteger tableIndex = new AtomicInteger();
         return StaticTable.HTTP3_HEADER_FIELDS.stream()
@@ -87,7 +89,6 @@ public class DecoderTest {
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "nameReferenceProvider")
     public Object[][] nameReferenceProvider() {
         AtomicInteger tableIndex = new AtomicInteger();
         return StaticTable.HTTP3_HEADER_FIELDS.stream()
@@ -95,7 +96,6 @@ public class DecoderTest {
                 .map(List::toArray).toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "literalProvider")
     public Object[][] literalProvider() {
         var output = new String[100][];
         for (int i = 0; i < 100; i++) {
@@ -104,7 +104,8 @@ public class DecoderTest {
         return output;
     }
 
-    @Test(dataProvider = "indexProvider")
+    @ParameterizedTest
+    @MethodSource("indexProvider")
     public void testIndexedOnStaticTable(int index, HeaderField h) throws IOException {
         var actual = writeIndex(index);
         var callback = new TestingCallBack(index, h.name(), h.value());
@@ -112,7 +113,8 @@ public class DecoderTest {
         dr.decoder().decodeHeader(actual, true, dr.reader());
     }
 
-    @Test(dataProvider = "nameReferenceProvider")
+    @ParameterizedTest
+    @MethodSource("nameReferenceProvider")
     public void testLiteralWithNameReferenceOnStaticTable(int index, String name, String value) throws IOException {
         boolean sensitive = random.nextBoolean();
 
@@ -122,7 +124,8 @@ public class DecoderTest {
         dr.decoder().decodeHeader(actual, true, dr.reader());
     }
 
-    @Test(dataProvider = "literalProvider")
+    @ParameterizedTest
+    @MethodSource("literalProvider")
     public void testLiteralWithLiteralNameOnStaticTable(String name, String value) throws IOException {
         boolean sensitive = random.nextBoolean();
 
@@ -345,30 +348,30 @@ public class DecoderTest {
 
         @Override
         public void onIndexed(long index, CharSequence name, CharSequence value) {
-            assertEquals(this.index, index);
-            assertEquals(this.name, name.toString());
-            assertEquals(this.value, value.toString());
+            assertEquals(index, this.index);
+            assertEquals(name.toString(), this.name);
+            assertEquals(value.toString(), this.value);
         }
 
         @Override
         public void onLiteralWithNameReference(long index, CharSequence name,
                                                CharSequence value, boolean huffmanValue,
                                                boolean sensitive) {
-            assertEquals(this.index, index);
-            assertEquals(this.value, value.toString());
-            assertEquals(this.huffmanValue, huffmanValue);
-            assertEquals(this.sensitive, sensitive);
+            assertEquals(index, this.index);
+            assertEquals(value.toString(), this.value);
+            assertEquals(huffmanValue, this.huffmanValue);
+            assertEquals(sensitive, this.sensitive);
         }
 
         @Override
         public void onLiteralWithLiteralName(CharSequence name, boolean huffmanName,
                                              CharSequence value, boolean huffmanValue,
                                              boolean sensitive) {
-            assertEquals(this.name, name.toString());
-            assertEquals(this.huffmanName, huffmanName);
-            assertEquals(this.value, value.toString());
-            assertEquals(this.huffmanValue, huffmanValue);
-            assertEquals(this.sensitive, sensitive);
+            assertEquals(name.toString(), this.name);
+            assertEquals(huffmanName, this.huffmanName);
+            assertEquals(value.toString(), this.value);
+            assertEquals(huffmanValue, this.huffmanValue);
+            assertEquals(sensitive, this.sensitive);
         }
 
         @Override

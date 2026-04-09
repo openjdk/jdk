@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -938,7 +939,8 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
-    method()->print_codes_on(&ss);
+    // Buffering to a stringStream, disable internal buffering so it's not done twice.
+    method()->print_codes_on(&ss, 0, false);
     print_code_on(&ss);
     print_pcs_on(&ss);
     tty->print("%s", ss.as_string()); // print all at once
@@ -1147,12 +1149,12 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()           , oopSize)
-    + ImmutableDataReferencesCounterSize;
+    + align_up(debug_info->data_size()           , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
   if (immutable_data_size > 0) {
+    immutable_data_size += ImmutableDataRefCountSize;
     immutable_data = (address)os::malloc(immutable_data_size, mtCode);
     if (immutable_data == nullptr) {
       vm_exit_out_of_memory(immutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
@@ -1252,6 +1254,9 @@ void nmethod::post_init() {
 
   finalize_relocations();
 
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
+
   Universe::heap()->register_nmethod(this);
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
@@ -1302,12 +1307,10 @@ nmethod::nmethod(
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_offset    = 0;
+    _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
@@ -1323,12 +1326,13 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
-    _immutable_data_reference_counter_offset = 0;
+    _immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1442,10 +1446,9 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _skipped_instructions_size    = nm._skipped_instructions_size;
   _stub_offset                  = nm._stub_offset;
   _exception_offset             = nm._exception_offset;
-  _deopt_handler_offset         = nm._deopt_handler_offset;
+  _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
-  _oops_size                    = nm._oops_size;
 #if INCLUDE_JVMCI
   _metadata_size                = nm._metadata_size;
 #endif
@@ -1456,12 +1459,12 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 #if INCLUDE_JVMCI
   _speculations_offset          = nm._speculations_offset;
 #endif
-  _immutable_data_reference_counter_offset = nm._immutable_data_reference_counter_offset;
+  _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
   if (_immutable_data_size > 0) {
     _immutable_data             = nm._immutable_data;
-    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
+    inc_immutable_data_ref_count();
   } else {
     _immutable_data             = blob_end();
   }
@@ -1498,6 +1501,40 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   //   - OOP table
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
+  // Fix relocation
+  RelocIterator iter(this);
+  CodeBuffer src(&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+    // After an nmethod is moved, some direct call sites may end up out of range.
+    // CallRelocation::fix_relocation_after_move() assumes the target is always
+    // reachable and does not check branch range. Calling it without range checks
+    // could cause us to write an offset too large for the instruction.
+    //
+    // If a call site has a trampoline, we skip the normal call relocation. The
+    // associated trampoline_stub_Relocation will handle the call and the
+    // trampoline, including range checks and updating the branch as needed.
+    //
+    // If no trampoline exists, we can assume the call target is always
+    // reachable and therefore within direct branch range, so calling
+    // CallRelocation::fix_relocation_after_move() is safe.
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    clear_inline_caches();
+  }
+
   post_init();
 }
 
@@ -1519,25 +1556,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
   if (nm_copy == nullptr) {
     return nullptr;
-  }
-
-  // Fix relocation
-  RelocIterator iter(nm_copy);
-  CodeBuffer src(this);
-  CodeBuffer dst(nm_copy);
-  while (iter.next()) {
-#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-    // Direct calls may no longer be in range and the use of a trampoline may now be required.
-    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
-    if (iter.reloc()->is_call()) {
-      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
-      if (trampoline != nullptr) {
-        continue;
-      }
-    }
-#endif
-
-    iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
   // To make dependency checking during class loading fast, record
@@ -1569,16 +1587,12 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   if (!is_marked_for_deoptimization() && is_in_use()) {
     assert(method() != nullptr && method()->code() == this, "should be if is in use");
 
-    nm_copy->clear_inline_caches();
-
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
-      ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
-
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
-      make_not_used();
+      make_not_entrant(InvalidationReason::RELOCATED);
 
       nm_copy->post_compiled_method_load_event();
 
@@ -1704,19 +1718,26 @@ nmethod::nmethod(
         _exception_offset        = -1;
       }
       if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
+        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
       } else {
-        _deopt_handler_offset    = -1;
+        _deopt_handler_entry_offset    = -1;
       }
     } else
 #endif
     {
       // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
       assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-      _exception_offset          = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-      _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
+      bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
+      assert(has_exception_handler == (compiler->type() != compiler_c2),
+             "C2 compiler doesn't provide exception handler stub code.");
+      if (has_exception_handler) {
+        _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
+      } else {
+        _exception_offset = -1;
+      }
+
+      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
@@ -1728,9 +1749,7 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
     assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
@@ -1754,12 +1773,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _immutable_data_reference_counter_offset = _speculations_offset + align_up(speculations_len, oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _speculations_offset + align_up(speculations_len, oopSize);
 #else
-    _immutable_data_reference_counter_offset =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
 #endif
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
@@ -1791,9 +1809,10 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
-    set_immutable_data_references_counter(1);
+    init_immutable_data_ref_count();
 
     post_init();
+    ICache::invalidate_range(code_begin(), code_size());
 
     // we use the information of entry points to find out if a method is
     // static or non static
@@ -2021,7 +2040,7 @@ void nmethod::copy_values(GrowableArray<jobject>* array) {
   // The code and relocations have already been initialized by the
   // CodeBlob constructor, so it is valid even at this early point to
   // iterate over relocations and patch the code.
-  fix_oop_relocations(nullptr, nullptr, /*initialize_immediates=*/ true);
+  fix_oop_relocations(/*initialize_immediates=*/ true);
 }
 
 void nmethod::copy_values(GrowableArray<Metadata*>* array) {
@@ -2033,23 +2052,41 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+bool nmethod::fix_oop_relocations(bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this, begin, end);
+  RelocIterator iter(this);
+  bool modified_code = false;
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
-      if (initialize_immediates && reloc->oop_is_immediate()) {
+      if (!reloc->oop_is_immediate()) {
+        // Refresh the oop-related bits of this instruction.
+        reloc->set_value(reloc->value());
+        modified_code = true;
+      } else if (initialize_immediates) {
         oop* dest = reloc->oop_addr();
         jobject obj = *reinterpret_cast<jobject*>(dest);
         initialize_immediate_oop(dest, obj);
       }
-      // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
+      modified_code |= !reloc->metadata_is_immediate();
     }
+  }
+  return modified_code;
+}
+
+void nmethod::fix_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_oop_relocations(&icic);
+}
+
+void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
+  assert(icic != nullptr, "must provide context to track if code was modified");
+  bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
+  if (modified_code) {
+    icic->set_has_modified_code();
   }
 }
 
@@ -2117,6 +2154,9 @@ void nmethod::make_deoptimized() {
 
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
+
+  // Assume there will be some calls to make deoptimized.
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   while (iter.next()) {
 
@@ -2194,6 +2234,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   AtomicAccess::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2285,6 +2326,8 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // No need for fencing either.
     return false;
   }
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   {
     // Enter critical section.  Does not block for safepoint.
@@ -2424,12 +2467,8 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    int reference_count = get_immutable_data_references_counter();
-    assert(reference_count > 0, "immutable data has no references");
-
-    set_immutable_data_references_counter(reference_count - 1);
-    // Free memory if this is the last nmethod referencing immutable data
-    if (reference_count == 0) {
+    // Free memory if this was the last nmethod referencing immutable data
+    if (dec_immutable_data_ref_count() == 0) {
       os::free(_immutable_data);
     }
 
@@ -2724,6 +2763,8 @@ bool nmethod::is_unloading() {
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Note that if an nmethod has dead oops, everyone will agree that the
   // nmethod is_unloading. However, the is_cold heuristics can yield
@@ -4029,7 +4070,7 @@ const char* nmethod::nmethod_section_label(address pos) const {
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
   if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_offset != -1 &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
   return label;
 }
 

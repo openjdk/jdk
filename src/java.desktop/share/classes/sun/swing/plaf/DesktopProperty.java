@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
 
-import sun.awt.AppContext;
-
 /**
  * Wrapper for a value from the desktop. The value is lazily looked up, and
  * can be accessed using the <code>UIManager.ActiveValue</code> method
@@ -52,8 +50,6 @@ import sun.awt.AppContext;
  * <code>invalidate</code> to force the value to be fetched again.
  */
 public class DesktopProperty implements UIDefaults.ActiveValue {
-    private static final StringBuilder DESKTOP_PROPERTY_UPDATE_PENDING_KEY =
-            new StringBuilder("DesktopPropertyUpdatePending");
 
     /**
      * ReferenceQueue of unreferenced WeakPCLs.
@@ -88,23 +84,6 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
         while ((pcl = (WeakPCL)queue.poll()) != null) {
             pcl.dispose();
         }
-    }
-
-
-    /**
-     * Sets whether or not an updateUI call is pending.
-     */
-    private static synchronized void setUpdatePending(boolean update) {
-        AppContext.getAppContext()
-                .put(DESKTOP_PROPERTY_UPDATE_PENDING_KEY, update);
-    }
-
-    /**
-     * Returns true if a UI update is pending.
-     */
-    private static synchronized boolean isUpdatePending() {
-        return Boolean.TRUE.equals(AppContext.getAppContext()
-                .get(DESKTOP_PROPERTY_UPDATE_PENDING_KEY));
     }
 
     /**
@@ -202,6 +181,8 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
         value = null;
     }
 
+   private static volatile boolean updatePending;
+
     /**
      * Requests that all components in the GUI hierarchy be updated
      * to reflect dynamic changes in this {@literal look&feel}. This update occurs
@@ -210,14 +191,14 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * many desktop properties will change at once.
      */
     protected void updateUI() {
-        if (!isUpdatePending()) {
-            setUpdatePending(true);
+        if (!updatePending) {
+            updatePending = true;
             Runnable uiUpdater = new Runnable() {
                 public void run() {
                     try {
                         updateAllUIs();
                     } finally {
-                        setUpdatePending(false);
+                        updatePending = false;
                     }
                 }
             };

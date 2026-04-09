@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -90,8 +91,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
                                                              DecoratorSet decorators,
                                                              Register start,
                                                              Register count,
-                                                             Register scratch,
-                                                             RegSet saved_regs) {
+                                                             Register scratch) {
 
   Label done;
   Label loop;
@@ -244,9 +244,25 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg, rscratch1);
 
   // Does store cross heap regions?
-  __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
-  __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ cbz(tmp1, done);
+ #if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    address grain_shift_address = (address)AOTRuntimeConstants::grain_shift_address();
+    __ eor(tmp1, store_addr, new_val);
+    __ lea(tmp2, ExternalAddress(grain_shift_address));
+    __ ldrb(tmp2, tmp2);
+    __ lsrv(tmp1, tmp1, tmp2);
+    __ cbz(tmp1, done);
+  } else
+#endif
+  {
+    __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
+    __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ cbz(tmp1, done);
+  }
+
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
     __ cbz(new_val, done);
@@ -347,7 +363,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   if (on_oop && on_reference) {
     // LR is live.  It must be saved around calls.
     __ enter(/*strip_ret_addr*/true); // barrier may call runtime

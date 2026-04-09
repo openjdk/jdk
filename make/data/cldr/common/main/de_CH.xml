@@ -41,9 +41,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="ms">Mass-System</key>
 		</keys>
 		<types>
+			<type key="calendar" type="buddhist" scope="core">Buddhistisch</type>
+			<type key="calendar" type="chinese" scope="core">Chinesisch</type>
+			<type key="calendar" type="coptic" scope="core">Koptisch</type>
+			<type key="calendar" type="ethiopic" scope="core">Äthiopisch</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Äthiopisch Amäta Aläm</type>
+			<type key="calendar" type="gregorian" scope="core">Gregorianisch</type>
+			<type key="calendar" type="hebrew" scope="core">Hebräisch</type>
+			<type key="calendar" type="japanese" scope="core">Japanisch</type>
+			<type key="calendar" type="persian" scope="core">Persisch</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Grossbuchstaben zuerst aufführen</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ohne Gross-/Kleinschreibung sortieren</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Nach Gross-/Kleinschreibung sortieren</type>
+			<type key="collation" type="dictionary" scope="core">Lexikografisch</type>
+			<type key="collation" type="ducet" scope="core">Unicode (Standard)</type>
+			<type key="collation" type="phonetic" scope="core">Phonetisch</type>
+			<type key="collation" type="stroke" scope="core">Strichfolge</type>
+			<type key="collation" type="traditional" scope="core">Traditionell</type>
 			<type key="ms" type="uksystem">britisches Mass-System</type>
 			<type key="ms" type="ussystem">US Mass-System</type>
 		</types>
@@ -73,7 +87,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, MM.dd.Y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="M">
@@ -137,7 +153,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
-			<group>’</group>
+			<group>'</group>
 		</symbols>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
@@ -150,6 +166,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="noCurrency" draft="contributed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber" draft="contributed">¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="100000" count="one" alt="alphaNextToNumber">0</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">0</pattern>
+					<pattern type="1000000" count="one">¤ 0 Mio'.'</pattern>
+					<pattern type="1000000" count="other">¤ 0 Mio'.'</pattern>
+					<pattern type="10000000" count="one">¤ 00 Mio'.'</pattern>
+					<pattern type="10000000" count="other">¤ 00 Mio'.'</pattern>
+					<pattern type="100000000" count="one">¤ 000 Mio'.'</pattern>
+					<pattern type="100000000" count="other">¤ 000 Mio'.'</pattern>
+					<pattern type="1000000000" count="one">¤ 0 Mrd'.'</pattern>
+					<pattern type="1000000000" count="other">¤ 0 Mrd'.'</pattern>
+					<pattern type="10000000000" count="one">¤ 00 Mrd'.'</pattern>
+					<pattern type="10000000000" count="other">¤ 00 Mrd'.'</pattern>
+					<pattern type="100000000000" count="one">¤ 000 Mrd'.'</pattern>
+					<pattern type="100000000000" count="other">¤ 000 Mrd'.'</pattern>
+					<pattern type="1000000000000" count="one">¤ 0 Bio'.'</pattern>
+					<pattern type="1000000000000" count="other">¤ 0 Bio'.'</pattern>
+					<pattern type="10000000000000" count="one">¤ 00 Bio'.'</pattern>
+					<pattern type="10000000000000" count="other">¤ 00 Bio'.'</pattern>
+					<pattern type="100000000000000" count="one">¤ 000 Bio'.'</pattern>
+					<pattern type="100000000000000" count="other">¤ 000 Bio'.'</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -173,6 +219,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">São-toméischer Dobra (2018)</displayName>
 				<displayName count="other">São-toméischer Dobra (2018)</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName count="one" draft="contributed">Karibischer Gulden</displayName>
+				<displayName count="other" draft="contributed">Karibischer Gulden</displayName>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
@@ -184,6 +234,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Quadratfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Quadratfuss</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>Punkte</displayName>
+				<unitPattern count="one">{0} Punkt</unitPattern>
+				<unitPattern count="other">{0} Punkte</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one" case="accusative">{0} Mol</unitPattern>
+				<unitPattern count="one" case="dative">{0} Mol</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Mol</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Mole</unitPattern>
+				<unitPattern count="other" case="dative">{0} Molen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Mole</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName draft="contributed">Glucose</displayName>
+				<unitPattern count="one" draft="contributed">{0} Glucose</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Glucose</unitPattern>
+			</unit>
 			<unit type="duration-quarter">
 				<displayName>Quartal</displayName>
 			</unit>
@@ -193,6 +261,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Fuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Fuss</unitPattern>
 				<perUnitPattern>{0} pro Fuss</perUnitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName draft="contributed">Quecksilbersäule</displayName>
+				<unitPattern count="one" draft="contributed">{0} Quecksilbersäule</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Quecksilbersäule</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
 				<unitPattern count="one">{0} Beaufort</unitPattern>
@@ -209,17 +282,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Kubikfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Kubikfuss</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<unitPattern count="one" draft="contributed">{0} Steradiant</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Steradianten</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName draft="contributed">Coulombs</displayName>
+				<unitPattern count="one" draft="contributed">{0} Coulomb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Coulombs</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName draft="contributed">Kalorie [IT]</displayName>
+				<unitPattern count="one" draft="contributed">{0} Kalorie [IT]</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Kalorien [IT]</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName draft="contributed">Kilogrammkraft</displayName>
+				<unitPattern count="one" draft="contributed">{0} Kilogrammkraft</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Kilogrammkraft</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="concentr-part">
+				<displayName>Punkt</displayName>
+				<unitPattern count="one">{0} Punkt</unitPattern>
+				<unitPattern count="other">{0} Punkte</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<unitPattern count="one" draft="contributed">{0} Glc</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Glc</unitPattern>
+			</unit>
 			<unit type="duration-quarter">
 				<displayName>Quartal</displayName>
 			</unit>
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
+			<unit type="pressure-ofhg">
+				<unitPattern count="one" draft="contributed">{0} Hg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Hg</unitPattern>
+			</unit>
 			<unit type="speed-beaufort">
 				<unitPattern count="one">{0} Bft</unitPattern>
 				<unitPattern count="other">{0} Bft</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<unitPattern count="one">{0} m. fl. oz.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m. fl. oz.</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>Dram</displayName>
@@ -234,6 +343,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-pinch">
 				<unitPattern count="one">{0} Prise</unitPattern>
 				<unitPattern count="other">{0} Prise</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one" draft="contributed">{0} kat</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kat</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName draft="contributed">kcal [IT]</displayName>
+				<unitPattern count="one">{0} kcal [IT]</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kcal [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<unitPattern count="one" draft="contributed">{0} Bq</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Bq</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="concentr-part">
+				<displayName>Punkt</displayName>
+				<unitPattern count="one">{0} Punkt</unitPattern>
+				<unitPattern count="other">{0} Punkte</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<unitPattern count="one">{0} m. fl. oz.</unitPattern>
+				<unitPattern count="other">{0} m. fl. oz.</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<unitPattern count="one" draft="contributed">{0} kat</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kat</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>kcal [IT]</displayName>
+				<unitPattern count="one" draft="contributed">{0} kcal [IT]</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kcal [IT]</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

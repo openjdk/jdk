@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public abstract class Frame implements Cloneable {
       CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
       if (cb != null && cb.isJavaMethod()) {
         NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerBegin())) {
+        if (pc.equals(nm.deoptHandlerEntry())) {
           if (Assert.ASSERTS_ENABLED) {
             Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
           }
@@ -138,6 +138,7 @@ public abstract class Frame implements Cloneable {
   }
 
   public abstract Address getSP();
+  public abstract void setSP(Address newSP);
   public abstract Address getID();
   public abstract Address getFP();
 

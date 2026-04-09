@@ -69,6 +69,7 @@ class Handshake : public AllStatic {
   // This version of execute() relies on a ThreadListHandle somewhere in
   // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl, oop vthread);
   // This version of execute() is used when you have a ThreadListHandle in
   // hand and are using it to protect target. If tlh == nullptr, then we
   // sanity check for a ThreadListHandle somewhere in the caller's context

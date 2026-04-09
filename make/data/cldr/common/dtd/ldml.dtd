@@ -42,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "47" >
+<!ATTLIST version cldrVersion CDATA #FIXED "48" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -64,6 +64,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:validity/locale-for-names-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/long, secondary, short, variant, menu, official-->
+<!ATTLIST language menu NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/core, extension-->
 <!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -277,6 +279,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:bcp47/anykey-->
 <!ATTLIST type type NMTOKEN #REQUIRED >
     <!--@MATCH:bcp47/anyvalue-->
+<!ATTLIST type scope NMTOKEN #IMPLIED >
+    <!--@MATCH:literal/core-->
 <!ATTLIST type alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/short, variant-->
 <!ATTLIST type draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -456,7 +460,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@DEPRECATED-->
 
 <!ELEMENT exemplarCharacters ( #PCDATA | cp )* >
-<!ATTLIST exemplarCharacters type (auxiliary | standard | punctuation | currencySymbol | index | numbers) #IMPLIED >
+<!ATTLIST exemplarCharacters type (standard | auxiliary | numbers | numbers-auxiliary | punctuation | punctuation-auxiliary | punctuation-person | index | currencySymbol) #IMPLIED >
     <!--@DEPRECATED:currencySymbol-->
 <!ATTLIST exemplarCharacters alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
@@ -1528,7 +1532,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT dateTimeFormat ( alias | ( pattern*, displayName*, special* ) ) >
 <!ATTLIST dateTimeFormat type NMTOKEN "standard" >
-    <!--@MATCH:literal/standard, atTime-->
+    <!--@MATCH:literal/standard, atTime, relative-->
 <!ATTLIST dateTimeFormat alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST dateTimeFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1718,7 +1722,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST relativePeriod draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT timeZoneNames ( alias | ( hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special* ) ) >
+<!ELEMENT timeZoneNames ( alias | ( hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, gmtUnknownFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special* ) ) >
 <!ATTLIST timeZoneNames draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -1763,6 +1767,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
 <!ATTLIST gmtZeroFormat references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT gmtUnknownFormat ( #PCDATA ) >
+<!ATTLIST gmtUnknownFormat alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST gmtUnknownFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST gmtUnknownFormat references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT regionFormat ( #PCDATA ) >
@@ -1963,7 +1976,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!-- ######################################################### -->
 
-<!ELEMENT numbers ( alias | ( defaultNumberingSystem*, otherNumberingSystems*, minimumGroupingDigits*, symbols*, decimalFormats*, scientificFormats*, percentFormats*, currencyFormats*, currencies?, miscPatterns*, minimalPairs*, special* ) ) >
+<!ELEMENT numbers ( alias | ( defaultNumberingSystem*, otherNumberingSystems*, minimumGroupingDigits*, symbols*, decimalFormats*, rationalFormats*, scientificFormats*, percentFormats*, currencyFormats*, currencies?, miscPatterns*, minimalPairs*, special* ) ) >
 <!ATTLIST numbers alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST numbers draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -2266,6 +2279,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST decimalFormat validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT rationalFormats ( alias | ( rationalPattern*, integerAndRationalPattern*, rationalUsage*, special* ) ) >
+<!ATTLIST rationalFormats numberSystem CDATA #REQUIRED >
+    <!--@MATCH:bcp47/nu-->
+
+<!ELEMENT rationalPattern ( #PCDATA ) >
+<!ATTLIST rationalPattern alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST rationalPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT integerAndRationalPattern ( #PCDATA ) >
+<!ATTLIST integerAndRationalPattern alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/superSub-->
+<!ATTLIST integerAndRationalPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT rationalUsage ( #PCDATA ) >
+<!ATTLIST rationalUsage alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST rationalUsage draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT scientificFormats ( alias | ( default*, scientificFormatLength*, special* ) ) >
 <!ATTLIST scientificFormats draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -3100,11 +3135,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT rbnf ( alias | ( rulesetGrouping*, special* ) ) >
 
-<!ELEMENT rulesetGrouping ( alias | ( ruleset*, special* ) ) >
+<!ELEMENT rulesetGrouping ( alias | ( rbnfRules?, ruleset*, special* ) ) >
 <!ATTLIST rulesetGrouping type NMTOKEN #REQUIRED >
     <!--@MATCH:literal/NumberingSystemRules, OrdinalRules, SpelloutRules-->
 <!ATTLIST rulesetGrouping draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
+
+<!ELEMENT rbnfRules ( #PCDATA ) >
+    <!--@CDATA-->
+<!ATTLIST rbnfRules alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST rbnfRules draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
 
 <!ELEMENT ruleset ( alias | ( rbnfrule*, special* ) ) >
     <!--@ORDERED-->

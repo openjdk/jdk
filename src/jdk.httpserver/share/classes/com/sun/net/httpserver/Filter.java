@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public abstract class Filter {
     /**
      * Constructor for subclasses to call.
      */
-    protected Filter () {}
+    protected Filter() {}
 
     /**
      * A chain of filters associated with a {@link HttpServer}.
@@ -76,7 +76,7 @@ public abstract class Filter {
          * @param handler the {@link HttpHandler} that will be invoked after
          *                the final {@code Filter} has finished
          */
-        public Chain (List<Filter> filters, HttpHandler handler) {
+        public Chain(List<Filter> filters, HttpHandler handler) {
             iter = filters.listIterator();
             this.handler = handler;
         }
@@ -93,12 +93,12 @@ public abstract class Filter {
          * @throws IOException if an I/O error occurs
          * @throws NullPointerException if exchange is {@code null}
          */
-        public void doFilter (HttpExchange exchange) throws IOException {
+        public void doFilter(HttpExchange exchange) throws IOException {
             if (!iter.hasNext()) {
-                handler.handle (exchange);
+                handler.handle(exchange);
             } else {
                 Filter f = iter.next();
-                f.doFilter (exchange, this);
+                f.doFilter(exchange, this);
             }
         }
     }
@@ -135,14 +135,14 @@ public abstract class Filter {
      * must be rethrown again
      * @throws NullPointerException if either exchange or chain are {@code null}
      */
-    public abstract void doFilter (HttpExchange exchange, Chain chain)
+    public abstract void doFilter(HttpExchange exchange, Chain chain)
         throws IOException;
     /**
      * Returns a short description of this {@code Filter}.
      *
      * @return a {@code String} describing the {@code Filter}
      */
-    public abstract String description ();
+    public abstract String description();
 
     /**
      * Returns a pre-processing {@code Filter} with the given description and

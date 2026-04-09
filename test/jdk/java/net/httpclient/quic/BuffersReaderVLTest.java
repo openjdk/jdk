@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,26 @@ import java.util.List;
 import jdk.internal.net.http.quic.BuffersReader;
 import jdk.internal.net.http.quic.BuffersReader.ListBuffersReader;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
-import jtreg.SkippedException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.quic
- * @run testng/othervm BuffersReaderVLTest
+ * @run junit/othervm BuffersReaderVLTest
  * @summary Tests to check quic/util methods encode/decodeVariableLength methods
  *  work as expected.
  */
 public class BuffersReaderVLTest {
     static final Class<? extends Throwable> IAE = IllegalArgumentException.class;
 
-    @DataProvider(name = "decode invariants")
-    public Object[][] decodeInvariants() {
+    public static Object[][] decodeInvariants() {
         return new Object[][]
             {
                 { new byte[]{7},                                                        7, 1 }, // 00
@@ -61,8 +58,7 @@ public class BuffersReaderVLTest {
                 { new byte[]{-65},                                                     -1, 0 },
             };
     }
-    @DataProvider(name = "prefix invariants")
-    public Object[][] prefixInvariants() {
+    public static Object[][] prefixInvariants() {
         return new Object[][]
             {
                 { Long.MAX_VALUE,          0, IAE  },
@@ -101,44 +97,47 @@ public class BuffersReaderVLTest {
             };
     }
 
-    @Test(dataProvider = "decode invariants")
+    @ParameterizedTest
+    @MethodSource("decodeInvariants")
     public void testDecode(byte[] values, long expectedLength, int expectedPosition) {
         ByteBuffer bb = ByteBuffer.wrap(values);
         BuffersReader br = BuffersReader.list(bb);
         var actualLength = VariableLengthEncoder.decode(br);
-        assertEquals(actualLength, expectedLength);
+        assertEquals(expectedLength, actualLength);
 
         var actualPosition = bb.position();
-        assertEquals(actualPosition, expectedPosition);
-        assertEquals(br.position(), expectedPosition);
+        assertEquals(expectedPosition, actualPosition);
+        assertEquals(expectedPosition, br.position());
         br.release();
-        assertEquals(br.read(), expectedPosition);
+        assertEquals(expectedPosition, br.read());
     }
 
-    @Test(dataProvider = "decode invariants")
+    @ParameterizedTest
+    @MethodSource("decodeInvariants")
     public void testPeek(byte[] values, long expectedLength, int expectedPosition) {
         ByteBuffer bb = ByteBuffer.wrap(values);
         BuffersReader br = BuffersReader.list(bb);
         var actualLength = VariableLengthEncoder.peekEncodedValue(br, 0);
-        assertEquals(actualLength, expectedLength);
+        assertEquals(expectedLength, actualLength);
 
         var actualPosition = bb.position();
-        assertEquals(actualPosition, 0);
-        assertEquals(br.position(), 0);
+        assertEquals(0, actualPosition);
+        assertEquals(0, br.position());
         br.release();
-        assertEquals(br.read(), 0);
+        assertEquals(0, br.read());
     }
 
     // Encode the given length and then decodes it and compares
     // the results, asserting various invariants along the way.
-    @Test(dataProvider = "prefix invariants")
+    @ParameterizedTest
+    @MethodSource("prefixInvariants")
     public void testEncodeDecode(long length, int expectedPrefix,  Class<? extends Exception> exception) {
         if (exception != null) {
             assertThrows(exception, () -> VariableLengthEncoder.getEncodedSize(length));
             assertThrows(exception, () -> VariableLengthEncoder.encode(ByteBuffer.allocate(16), length));
         } else {
             var actualSize = VariableLengthEncoder.getEncodedSize(length);
-            assertEquals(actualSize, 1 << expectedPrefix);
+            assertEquals(1 << expectedPrefix, actualSize);
             assertTrue(actualSize > 0, "length is negative or zero: " + actualSize);
             assertTrue(actualSize < 9, "length is too big: " + actualSize);
 
@@ -158,33 +157,33 @@ public class BuffersReaderVLTest {
                 longer.position(offset);
 
                 // attempt to encode with a buffer too short
-                expectThrows(IAE, () -> VariableLengthEncoder.encode(shorter, length));
-                assertEquals(shorter.position(), offset);
-                assertEquals(shorter.limit(), shorter.capacity());
+                assertThrows(IAE, () -> VariableLengthEncoder.encode(shorter, length));
+                assertEquals(offset, shorter.position());
+                assertEquals(shorter.capacity(), shorter.limit());
 
-                assertEquals(shorter.mismatch(shorterref), -1);
-                assertEquals(shorterref.mismatch(shorter), -1);
+                assertEquals(-1, shorter.mismatch(shorterref));
+                assertEquals(-1, shorterref.mismatch(shorter));
 
                 // attempt to encode with a buffer that has the exact size
                 var exactres = VariableLengthEncoder.encode(exact, length);
-                assertEquals(exactres, actualSize);
-                assertEquals(exact.position(), actualSize + offset);
+                assertEquals(actualSize, exactres);
+                assertEquals(actualSize + offset, exact.position());
                 assertFalse(exact.hasRemaining());
 
                 // attempt to encode with a buffer that has more bytes
                 var longres = VariableLengthEncoder.encode(longer, length);
-                assertEquals(longres, actualSize);
-                assertEquals(longer.position(), offset + actualSize);
-                assertEquals(longer.limit(), longer.capacity());
-                assertEquals(longer.remaining(), 10);
+                assertEquals(actualSize, longres);
+                assertEquals(offset + actualSize, longer.position());
+                assertEquals(longer.capacity(), longer.limit());
+                assertEquals(10, longer.remaining());
 
                 // compare encodings
 
                 // first reset buffer positions for reading.
                 exact.position(offset);
                 longer.position(offset);
-                assertEquals(longer.mismatch(exact), actualSize);
-                assertEquals(exact.mismatch(longer), actualSize);
+                assertEquals(actualSize, longer.mismatch(exact));
+                assertEquals(actualSize, exact.mismatch(longer));
 
                 // decode with a buffer that is missing the last
                 // byte...
@@ -193,23 +192,23 @@ public class BuffersReaderVLTest {
                 shortSlice.limit(offset + actualSize -1);
                 ListBuffersReader br = BuffersReader.list(shortSlice);
                 var actualLength = VariableLengthEncoder.decode(br);
-                assertEquals(actualLength, -1L);
-                assertEquals(shortSlice.position(), offset);
-                assertEquals(shortSlice.limit(), offset + actualSize - 1);
-                assertEquals(br.position(), offset);
-                assertEquals(br.limit(), offset + actualSize - 1);
+                assertEquals(-1L, actualLength);
+                assertEquals(offset, shortSlice.position());
+                assertEquals(offset + actualSize - 1, shortSlice.limit());
+                assertEquals(offset, br.position());
+                assertEquals(offset + actualSize - 1, br.limit());
                 br.release();
 
                 // decode with the exact buffer
                 br = BuffersReader.list(exact);
                 actualLength = VariableLengthEncoder.decode(br);
-                assertEquals(actualLength, length);
-                assertEquals(exact.position(), offset + actualSize);
+                assertEquals(length, actualLength);
+                assertEquals(offset + actualSize, exact.position());
                 assertFalse(exact.hasRemaining());
-                assertEquals(br.position(), offset + actualSize);
+                assertEquals(offset + actualSize, br.position());
                 assertFalse(br.hasRemaining());
                 br.release();
-                assertEquals(br.read(), actualSize);
+                assertEquals(actualSize, br.read());
                 assertFalse(br.hasRemaining());
 
 
@@ -217,14 +216,14 @@ public class BuffersReaderVLTest {
                 long read = br.read();
                 br.add(longer);
                 actualLength = VariableLengthEncoder.decode(br);
-                assertEquals(actualLength, length);
-                assertEquals(longer.position(), offset + actualSize);
-                assertEquals(longer.remaining(), 10);
-                assertEquals(br.position(), offset + actualSize);
-                assertEquals(br.remaining(), 10);
+                assertEquals(length, actualLength);
+                assertEquals(offset + actualSize, longer.position());
+                assertEquals(10, longer.remaining());
+                assertEquals(offset + actualSize, br.position());
+                assertEquals(10, br.remaining());
                 br.release();
-                assertEquals(br.read() - read, actualSize);
-                assertEquals(br.remaining(), 10);
+                assertEquals(actualSize, br.read() - read);
+                assertEquals(10, br.remaining());
             }
 
         }
@@ -232,7 +231,8 @@ public class BuffersReaderVLTest {
 
     // Encode the given length and then peeks it and compares
     // the results, asserting various invariants along the way.
-    @Test(dataProvider = "prefix invariants")
+    @ParameterizedTest
+    @MethodSource("prefixInvariants")
     public void testEncodePeek(long length, int expectedPrefix,  Class<? extends Exception> exception) {
         if (exception != null) {
             assertThrows(exception, () -> VariableLengthEncoder.getEncodedSize(length));
@@ -241,7 +241,7 @@ public class BuffersReaderVLTest {
         }
 
         var actualSize = VariableLengthEncoder.getEncodedSize(length);
-        assertEquals(actualSize, 1 << expectedPrefix);
+        assertEquals(1 << expectedPrefix, actualSize);
         assertTrue(actualSize > 0, "length is negative or zero: " + actualSize);
         assertTrue(actualSize < 9, "length is too big: " + actualSize);
 
@@ -258,24 +258,24 @@ public class BuffersReaderVLTest {
 
             // attempt to encode with a buffer that has the exact size
             var exactres = VariableLengthEncoder.encode(exact, length);
-            assertEquals(exactres, actualSize);
-            assertEquals(exact.position(), actualSize + offset);
+            assertEquals(actualSize, exactres);
+            assertEquals(actualSize + offset, exact.position());
             assertFalse(exact.hasRemaining());
 
             // attempt to encode with a buffer that has more bytes
             var longres = VariableLengthEncoder.encode(longer, length);
-            assertEquals(longres, actualSize);
-            assertEquals(longer.position(), offset + actualSize);
-            assertEquals(longer.limit(), longer.capacity());
-            assertEquals(longer.remaining(), 10);
+            assertEquals(actualSize, longres);
+            assertEquals(offset + actualSize, longer.position());
+            assertEquals(longer.capacity(), longer.limit());
+            assertEquals(10, longer.remaining());
 
             // compare encodings
 
             // first reset buffer positions for reading.
             exact.position(offset);
             longer.position(offset);
-            assertEquals(longer.mismatch(exact), actualSize);
-            assertEquals(exact.mismatch(longer), actualSize);
+            assertEquals(actualSize, longer.mismatch(exact));
+            assertEquals(actualSize, exact.mismatch(longer));
             exact.position(0);
             longer.position(0);
             exact.limit(exact.capacity());
@@ -288,38 +288,26 @@ public class BuffersReaderVLTest {
             shortSlice.limit(offset + actualSize - 1);
             // need at least one byte to decode the size len...
             var expectedSize = shortSlice.limit() <= offset ? -1 : actualSize;
-            assertEquals(VariableLengthEncoder.peekEncodedValueSize(shortSlice, offset), expectedSize);
+            assertEquals(expectedSize, VariableLengthEncoder.peekEncodedValueSize(shortSlice, offset));
             var actualLength = VariableLengthEncoder.peekEncodedValue(shortSlice, offset);
-            assertEquals(actualLength, -1L);
-            assertEquals(shortSlice.position(), 0);
-            assertEquals(shortSlice.limit(), offset + actualSize - 1);
+            assertEquals(-1L, actualLength);
+            assertEquals(0, shortSlice.position());
+            assertEquals(offset + actualSize - 1, shortSlice.limit());
 
             // decode with the exact buffer
-            assertEquals(VariableLengthEncoder.peekEncodedValueSize(exact, offset), actualSize);
+            assertEquals(actualSize, VariableLengthEncoder.peekEncodedValueSize(exact, offset));
             actualLength = VariableLengthEncoder.peekEncodedValue(exact, offset);
-            assertEquals(actualLength, length);
-            assertEquals(exact.position(), 0);
-            assertEquals(exact.limit(), exact.capacity());
+            assertEquals(length, actualLength);
+            assertEquals(0, exact.position());
+            assertEquals(exact.capacity(), exact.limit());
 
             // decode with the longer buffer
-            assertEquals(VariableLengthEncoder.peekEncodedValueSize(longer, offset), actualSize);
+            assertEquals(actualSize, VariableLengthEncoder.peekEncodedValueSize(longer, offset));
             actualLength = VariableLengthEncoder.peekEncodedValue(longer, offset);
-            assertEquals(actualLength, length);
-            assertEquals(longer.position(), 0);
-            assertEquals(longer.limit(), longer.capacity());
+            assertEquals(length, actualLength);
+            assertEquals(0, longer.position());
+            assertEquals(longer.capacity(), longer.limit());
         }
 
-    }
-
-
-    private ByteBuffer getTestBuffer(long length, int capacity) {
-        return switch (capacity) {
-            case 0 -> ByteBuffer.allocate(1).put((byte) length);
-            case 1 -> ByteBuffer.allocate(capacity).put((byte) length);
-            case 2 -> ByteBuffer.allocate(capacity).putShort((short) length);
-            case 4 -> ByteBuffer.allocate(capacity).putInt((int) length);
-            case 8 -> ByteBuffer.allocate(capacity).putLong(length);
-            default -> throw new SkippedException("bad value used for capacity");
-        };
     }
 }

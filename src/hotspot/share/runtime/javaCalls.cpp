@@ -58,6 +58,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
   assert(!thread->owns_locks(), "must release all locks when leaving VM");
   guarantee(thread->can_call_java(), "cannot make java calls from the native compiler");
+  assert(!thread->preempting(), "Unexpected Java upcall whilst processing preemption");
   _result   = result;
 
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java_or_stub,
@@ -93,15 +94,11 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
 
   DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
-
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
-
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();
@@ -242,7 +239,7 @@ void JavaCalls::call_special(JavaValue* result, Handle receiver, Klass* klass, S
 void JavaCalls::call_static(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   LinkInfo link_info(klass, name, signature);
-  LinkResolver::resolve_static_call(callinfo, link_info, true, CHECK);
+  LinkResolver::resolve_static_call(callinfo, link_info, ClassInitMode::init, CHECK);
   methodHandle method(THREAD, callinfo.selected_method());
   assert(method.not_null(), "should have thrown exception");
 
@@ -412,17 +409,20 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 #endif
         }
       }
-      StubRoutines::call_stub()(
-        (address)&link,
-        // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
-        result_val_address,          // see NOTE above (compiler problem)
-        result_type,
-        method(),
-        entry_point,
-        parameter_address,
-        args->size_of_parameters(),
-        CHECK
-      );
+      {
+        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+        StubRoutines::call_stub()(
+          (address)&link,
+          // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
+          result_val_address,          // see NOTE above (compiler problem)
+          result_type,
+          method(),
+          entry_point,
+          parameter_address,
+          args->size_of_parameters(),
+          CHECK
+        );
+      }
 
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points

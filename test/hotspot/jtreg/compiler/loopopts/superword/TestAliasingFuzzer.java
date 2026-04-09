@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.generators.Generators;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 
@@ -333,7 +333,7 @@ public class TestAliasingFuzzer {
         }
 
         public TemplateToken index(String invar0, String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("con", con),
                 let("ivScale", ivScale),
                 let("invar0Scale", invar0Scale),
@@ -349,7 +349,7 @@ public class TestAliasingFuzzer {
         // MemorySegment need to be long-addressed, otherwise there can be int-overflow
         // in the index, and that prevents RangeCheck Elimination and Vectorization.
         public TemplateToken indexLong(String invar0, String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("con", con),
                 let("ivScale", ivScale),
                 let("invar0Scale", invar0Scale),
@@ -365,7 +365,7 @@ public class TestAliasingFuzzer {
 
     // Mirror the IndexForm from the generator to the test.
     public static TemplateToken generateIndexForm() {
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             """
             private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -610,7 +610,7 @@ public class TestAliasingFuzzer {
                 for (int i = 0; i < indexFormNames.length; i++) {
                     indexFormNames[i] = $("index" + i);
                 }
-                return body(
+                return scope(
                     """
                     // --- $test start ---
                     """,
@@ -662,7 +662,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateArrayField(String name, MyType type) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("size", containerByteSize / type.byteSize()),
                 let("name", name),
                 let("type", type),
@@ -676,7 +676,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateMemorySegmentField(String name, MyType type) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("size", containerByteSize / type.byteSize()),
                 let("byteSize", containerByteSize),
                 let("name", name),
@@ -698,7 +698,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIndexField(String name, IndexForm form) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("name", name),
                 let("form", form.generate()),
                 """
@@ -709,7 +709,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateTestFields(String[] invarRest, String[] containerNames, String[] indexFormNames) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("ivType", isLongIvType ? "long" : "int"),
                 """
                 // invarRest fields:
@@ -741,7 +741,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateContainerInitArray(String name) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("size", containerByteSize / containerElementType.byteSize()),
                 let("name", name),
                 """
@@ -753,7 +753,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateContainerInitMemorySegment(String name) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("size", containerByteSize / containerElementType.byteSize()),
                 let("name", name),
                 """
@@ -765,7 +765,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateContainerInit(String[] containerNames) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 """
                 // Init containers from original data:
                 """,
@@ -784,7 +784,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateContainerAliasingAssignment(int i, String name1, String name2, String iterations) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("i", i),
                 let("name1", name1),
                 let("name2", name2),
@@ -798,7 +798,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateContainerAliasing(String[] containerNames, String iterations) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 """
                 // Container aliasing:
                 """,
@@ -832,7 +832,7 @@ public class TestAliasingFuzzer {
 
             if (accessIndexForm.length != 2) { throw new RuntimeException("not yet implemented"); }
 
-            var templateSplitRanges = Template.make(() -> body(
+            var templateSplitRanges = Template.make(() -> scope(
                 let("size", size),
                 """
                 int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
@@ -865,7 +865,7 @@ public class TestAliasingFuzzer {
                 """
             ));
 
-            var templateWholeRanges = Template.make(() -> body(
+            var templateWholeRanges = Template.make(() -> scope(
                 let("size", size),
                 """
                 var r0 = new IndexForm.Range(0, #size);
@@ -873,7 +873,7 @@ public class TestAliasingFuzzer {
                 """
             ));
 
-            var templateRandomRanges = Template.make(() -> body(
+            var templateRandomRanges = Template.make(() -> scope(
                 let("size", size),
                 """
                 int lo0 = RANDOM.nextInt(0, #size * 3 / 4);
@@ -883,7 +883,7 @@ public class TestAliasingFuzzer {
                 """
             ));
 
-            var templateSmallOverlapRanges = Template.make(() -> body(
+            var templateSmallOverlapRanges = Template.make(() -> scope(
                 // Idea: same size ranges, with size "range". A small overlap,
                 //       so that bad runtime checks would create wrong results.
                 let("size", size),
@@ -907,7 +907,7 @@ public class TestAliasingFuzzer {
                 // -> safe with rnd = size/10
             ));
 
-            var templateAnyRanges = Template.make(() -> body(
+            var templateAnyRanges = Template.make(() -> scope(
                 switch(RANDOM.nextInt(4)) {
                     case 0 -> templateSplitRanges.asToken();
                     case 1 -> templateWholeRanges.asToken();
@@ -917,7 +917,7 @@ public class TestAliasingFuzzer {
                 }
             ));
 
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 """
                 // Generate ranges:
                 """,
@@ -941,7 +941,7 @@ public class TestAliasingFuzzer {
             // We want there to be at least 1000 iterations.
             final int minIvRange = ivStrideAbs * 1000;
 
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("containerByteSize", containerByteSize),
                 """
                 // Compute loop bounds and loop invariants.
@@ -949,7 +949,7 @@ public class TestAliasingFuzzer {
                 int ivHi = ivLo + #containerByteSize;
                 """,
                 IntStream.range(0, indexFormNames.length).mapToObj(i ->
-                    Template.make(() -> body(
+                    Template.make(() -> scope(
                         let("i", i),
                         let("form", indexFormNames[i]),
                         """
@@ -990,7 +990,7 @@ public class TestAliasingFuzzer {
                         """,
                         IntStream.range(0, indexFormNames.length).mapToObj(i1 ->
                             IntStream.range(0, i1).mapToObj(i2 ->
-                                Template.make(() -> body(
+                                Template.make(() -> scope(
                                     let("i1", i1),
                                     let("i2", i2),
                                     // i1 < i2 or i1 > i2
@@ -1021,7 +1021,7 @@ public class TestAliasingFuzzer {
 
 
         private TemplateToken generateCallMethod(String output, String methodName, String containerPrefix) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("output", output),
                 let("methodName", methodName),
                 "var #output = #methodName(",
@@ -1034,7 +1034,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIRRules() {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 switch (containerKind) {
                     case ContainerKind.ARRAY ->
                         generateIRRulesArray();
@@ -1052,35 +1052,20 @@ public class TestAliasingFuzzer {
                     case Aliasing.CONTAINER_DIFFERENT,
                          Aliasing.CONTAINER_SAME_ALIASING_NEVER,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
-                        // We would have liked to check that there is no multiversioning.
-                        //
-                        // But sadly there are some cases that have issues with RCE and/or
-                        // predicates, and so we end up using multiversioning anyway. We
-                        // should fix those cases eventually, to strengthen the checks here.
-                        //
-                        // The array cases are a little more tame, and do not have the same
-                        // issues as the MemorySegment cases.
-                        (containerKind == ContainerKind.ARRAY)
-                        ? """
-                          // Aliasing check should never fail at runtime, so the predicate
-                          // should never fail, and we do not have to use multiversioning.
-                          // Failure could have a few causes:
-                          // - issues with doing RCE / missing predicates
-                          //   -> other loop-opts need to be fixed
-                          // - predicate fails: recompile with multiversioning
-                          //   -> logic in runtime check may be wrong
-                          @IR(counts = {".*multiversion.*", "= 0"},
-                              phase = CompilePhase.PRINT_IDEAL,
-                              applyIf = {"UseAutoVectorizationPredicate", "true"},
-                              applyIfPlatform = {"64-bit", "true"},
-                              applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                          """
-                        : """
-                          // Due to cases like JDK-8360204 and JDK-8365982, there can be issues
-                          // with RCE leading cases where we remove predicates and then unroll again
-                          // and then end up multiversioning. These cases seem relatively rare but
-                          // prevent us from asserting that there is never multiversioning in these cases.
-                          """;
+                            """
+                            // Aliasing check should never fail at runtime, so the predicate
+                            // should never fail, and we do not have to use multiversioning.
+                            // Failure could have a few causes:
+                            // - issues with doing RCE / missing predicates
+                            //   -> other loop-opts need to be fixed
+                            // - predicate fails: recompile with multiversioning
+                            //   -> logic in runtime check may be wrong
+                            @IR(counts = {".*multiversion.*", "= 0"},
+                                phase = CompilePhase.PRINT_IDEAL,
+                                applyIf = {"UseAutoVectorizationPredicate", "true"},
+                                applyIfPlatform = {"64-bit", "true"},
+                                applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                            """;
                    case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                             """
@@ -1094,7 +1079,7 @@ public class TestAliasingFuzzer {
         // Regular array-accesses are vectorized quite predictably, and we can create nice
         // IR rules - even for cases where we do not expect vectorization.
         private TemplateToken generateIRRulesArray() {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("T", containerElementType.letter()),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
@@ -1145,7 +1130,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIRRulesMemorySegmentAtIndex() {
-           var template = Template.make(() -> body(
+           var template = Template.make(() -> scope(
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
@@ -1158,7 +1143,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIRRulesMemorySegmentLongAdrStride() {
-           var template = Template.make(() -> body(
+           var template = Template.make(() -> scope(
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
@@ -1169,7 +1154,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateIRRulesMemorySegmentLongAdrScale() {
-           var template = Template.make(() -> body(
+           var template = Template.make(() -> scope(
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
                 // The cases are currently quite unpredictable, so we cannot create any IR
@@ -1180,7 +1165,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateTestMethod(String methodName, String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("methodName", methodName),
                 let("containerElementType", containerElementType),
                 let("ivStrideAbs", ivStrideAbs),
@@ -1230,7 +1215,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateTestLoopIterationArray(String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("type", containerElementType),
                 switch (accessScenario) {
                     case COPY_LOAD_STORE ->
@@ -1245,7 +1230,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateTestLoopIterationMemorySegmentAtIndex(String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("type0", accessType[0]),
                 let("type1", accessType[1]),
                 let("type0Layout", accessType[0].layout()),
@@ -1265,7 +1250,7 @@ public class TestAliasingFuzzer {
         }
 
         private TemplateToken generateTestLoopIterationMemorySegmentLongAdr(String[] invarRest) {
-            var template = Template.make(() -> body(
+            var template = Template.make(() -> scope(
                 let("type0", accessType[0]),
                 let("type1", accessType[1]),
                 let("type0Layout", accessType[0].layout()),

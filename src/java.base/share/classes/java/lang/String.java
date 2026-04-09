@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,9 +117,38 @@ import sun.nio.cs.UTF_8;
  * Unicode code points (i.e., characters), in addition to those for
  * dealing with Unicode code units (i.e., {@code char} values).
  *
- * <p>Unless otherwise noted, methods for comparing Strings do not take locale
- * into account.  The {@link java.text.Collator} class provides methods for
- * finer-grain, locale-sensitive String comparison.
+ * <p><b>String comparison and case-insensitive matching</b>
+ *
+ * <p>There are several related ways to compare {@code String} values; choose
+ * the one whose semantics fit your purpose:
+ *
+ * <ul>
+ *   <li><b>Exact content equality</b> — {@link #equals(Object)} checks that two
+ *       strings contain the identical char sequence of UTF-16 code units. This is
+ *       a strict, case-sensitive comparison suitable for exact matching, hashing
+ *       and any situation that requires bit-for-bit stability.</li>
+ *
+ *   <li><b>Simple case-insensitive equality</b> — {@link #equalsIgnoreCase(String)}
+ *       (and the corresponding {@link #compareToIgnoreCase(String)} and {@link #CASE_INSENSITIVE_ORDER})
+ *       performs a per-code-point, locale-independent comparison using
+ *       {@link Character#toUpperCase(int)} and {@link Character#toLowerCase(int)}.
+ *       It is convenient for many common case-insensitive checks.</li>
+ *
+ *   <li><b>Unicode case-folded equivalence</b> — {@link #equalsFoldCase(String)}
+ *       (and the corresponding {@link #compareToFoldCase(String)} and {@link #UNICODE_CASEFOLD_ORDER})
+ *       implement the Unicode <em>{@index "full case folding"}</em> rules defined in
+ *       <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">Unicode CaseFolding.txt</a>.
+ *       Case folding is locale-independent and language-neutral and may map a single code
+ *       point to multiple code points (1:M mappings). For example, the German sharp
+ *       s ({@code U+00DF}) is folded to the sequence {@code "ss"}.
+ *       Use these methods when you need Unicode-compliant
+ *       <a href="https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790">
+ *       caseless matching</a>, searching, or ordering.</li>
+ * </ul>
+ *
+ * <p>Unless otherwise noted, methods for comparing Strings do not take locale into
+ * account. The {@link java.text.Collator} class provides methods for finer-grain,
+ * locale-sensitive String comparison.
  *
  * @implNote The implementation of the string concatenation operator is left to
  * the discretion of a Java compiler, as long as the compiler ultimately conforms
@@ -1104,6 +1133,34 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    // This follows the implementation of encodeASCII and encode8859_1
+    private static int encodedLengthASCIIor8859_1(byte coder, byte[] val) {
+        if (coder == LATIN1) {
+            return val.length;
+        }
+        int len = val.length >> 1;
+        int dp = 0;
+        int sp = 0;
+        int sl = len;
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= Character.MIN_HIGH_SURROGATE) {
+                break;
+            }
+            dp++;
+            sp++;
+        }
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (Character.isHighSurrogate(c) && sp < sl &&
+                    Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
+                sp++;
+            }
+            dp++;
+        }
+        return dp;
+    }
+
     //------------------------------ utf8 ------------------------------------
 
     /**
@@ -1438,6 +1495,27 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    // This follows the implementation of encodeUTF8
+    private static int encodedLengthUTF8(byte coder, byte[] val) {
+        if (coder == UTF16) {
+            return encodedLengthUTF8_UTF16(val, null);
+        }
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
+            return positives;
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
+            if (c < 0) {
+                dp += 2;
+            } else {
+                dp++;
+            }
+        }
+        return dp;
+    }
+
     /**
      * {@return the byte array obtained by first decoding {@code val} with
      * UTF-16, and then encoding the result with UTF-8}
@@ -1455,11 +1533,8 @@ public final class String
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, exClass) : sl * 3;
-        if (allocLen > (long)Integer.MAX_VALUE) {
-            throw new OutOfMemoryError("Required length exceeds implementation limit");
-        }
-        byte[] dst = new byte[(int) allocLen];
+        int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
+        byte[] dst = new byte[allocLen];
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1518,11 +1593,20 @@ public final class String
      * @param <E> The exception type parameter to enable callers to avoid
      *           having to declare the exception
      */
-    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
+    private static <E extends Exception> int encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
 
+        while (sp < sl) {
+            // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
+            dp++;
+            sp++;
+        }
         while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
@@ -1551,7 +1635,10 @@ public final class String
                 dp += 3;
             }
         }
-        return dp;
+        if (dp > (long)Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) dp;
     }
 
     /**
@@ -2016,19 +2103,49 @@ public final class String
         return encode(Charset.defaultCharset(), coder(), value);
     }
 
-    boolean bytesCompatible(Charset charset) {
+    /**
+     * {@return the length in bytes of this {@code String} encoded with the given {@link Charset}}
+     *
+     * <p>The returned length accounts for the replacement of malformed-input and unmappable-character
+     * sequences with the charset's default replacement byte array. The result will be the same value
+     * as {@link #getBytes(Charset) getBytes(cs).length}.
+     *
+     * @apiNote This method provides equivalent or better performance than {@link #getBytes(Charset)
+     *          getBytes(cs).length}.
+     *
+     * @param cs The {@link Charset} used to the compute the length
+     * @since 27
+     */
+    public int encodedLength(Charset cs) {
+        Objects.requireNonNull(cs);
+        if (cs == UTF_8.INSTANCE) {
+            return encodedLengthUTF8(coder, value);
+        } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
+            return encodedLengthASCIIor8859_1(coder, value);
+        }
+        return getBytes(cs).length;
+    }
+
+    boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {
                 return true; // ok, same encoding
             } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
-                return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
+                return !StringCoding.hasNegatives(value, srcIndex, numChars); // ok, if ASCII-compatible
             }
         }
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset) {
-        MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
+    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        if (!isLatin1()) {
+            // This method is intended to be used together with bytesCompatible, which currently only supports
+            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
+            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
+            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
+            throw new IllegalStateException("This string does not support copyToSegmentRaw");
+        }
+        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
     }
 
     /**
@@ -2179,6 +2296,7 @@ public final class String
      *          false} otherwise
      *
      * @see  #equals(Object)
+     * @see  #equalsFoldCase(String)
      * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
@@ -2186,6 +2304,57 @@ public final class String
                 : (anotherString != null)
                 && (anotherString.length() == length())
                 && regionMatches(true, 0, anotherString, 0, length());
+    }
+
+    /**
+     * Compares this {@code String} to another {@code String} for equality,
+     * using <em>{@index "Unicode case folding"}</em>. Two strings are considered equal
+     * by this method if their case-folded forms are identical.
+     * <p>
+     * Case folding is defined by the Unicode Standard in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
+     * including 1:M mappings. For example, {@code "Fuß".equalsFoldCase("FUSS")}
+     * returns {@code true}, since the character {@code U+00DF} (sharp s) folds
+     * to {@code "ss"}.
+     * <p>
+     * Case folding is locale-independent and language-neutral, unlike
+     * locale-sensitive transformations such as {@link #toLowerCase()} or
+     * {@link #toUpperCase()}. It is intended for caseless matching,
+     * searching, and indexing.
+     *
+     * @apiNote
+     * This method is the Unicode-compliant alternative to
+     * {@link #equalsIgnoreCase(String)}. It implements full case folding as
+     * defined by the Unicode Standard, which may differ from the simpler
+     * per-character mapping performed by {@code equalsIgnoreCase}.
+     * For example:
+     * {@snippet lang=java :
+     * String a = "Fuß";
+     * String b = "FUSS";
+     * boolean equalsFoldCase = a.equalsFoldCase(b);       // returns true
+     * boolean equalsIgnoreCase = a.equalsIgnoreCase(b);   // returns false
+     * }
+     *
+     * @param  anotherString
+     *         The {@code String} to compare this {@code String} against
+     *
+     * @return  {@code true} if the given object is not {@code null} and represents
+     *          the same sequence of characters as this string under Unicode case
+     *          folding; {@code false} otherwise.
+     *
+     * @spec    https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790 Unicode Caseless Matching
+     * @see     #compareToFoldCase(String)
+     * @see     #equalsIgnoreCase(String)
+     * @since   26
+     */
+    public boolean equalsFoldCase(String anotherString) {
+        if (this == anotherString) {
+            return true;
+        }
+        if (anotherString == null) {
+            return false;
+        }
+        return UNICODE_CASEFOLD_ORDER.compare(this, anotherString) == 0;
     }
 
     /**
@@ -2303,10 +2472,84 @@ public final class String
      *          than this String, ignoring case considerations.
      * @see     java.text.Collator
      * @see     #codePoints()
+     * @see     #compareToFoldCase(String)
      * @since   1.2
      */
     public int compareToIgnoreCase(String str) {
         return CASE_INSENSITIVE_ORDER.compare(this, str);
+    }
+
+    /**
+     * A Comparator that orders {@code String} objects as by
+     * {@link #compareToFoldCase(String) compareToFoldCase()}.
+     *
+     * @see     #compareToFoldCase(String)
+     * @since   26
+     */
+    public static final Comparator<String> UNICODE_CASEFOLD_ORDER
+            = new FoldCaseComparator();
+
+    private static class FoldCaseComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String s1, String s2) {
+            byte[] v1 = s1.value;
+            byte[] v2 = s2.value;
+            if (s1.coder == s2.coder()) {
+                return s1.coder == LATIN1 ? StringLatin1.compareToFC(v1, v2)
+                                          : StringUTF16.compareToFC(v1, v2);
+            }
+            return s1.coder == LATIN1 ? StringLatin1.compareToFC_UTF16(v1, v2)
+                                      : StringUTF16.compareToFC_Latin1(v1, v2);
+        }
+    }
+
+    /**
+     * Compares two strings lexicographically using <em>{@index "Unicode case folding"}</em>.
+     * This method returns an integer whose sign is that of calling {@code compareTo}
+     * on the Unicode case folded version of the strings. Unicode Case folding
+     * eliminates differences in case according to the Unicode Standard, using the
+     * mappings defined in
+     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
+     * including 1:M mappings, such as {@code"ß"} → {@code }"ss"}.
+     * <p>
+     * Case folding is a locale-independent, language-neutral form of case mapping,
+     * primarily intended for caseless matching. Unlike {@link #compareToIgnoreCase(String)},
+     * which applies a simpler locale-insensitive uppercase mapping. This method
+     * follows the Unicode <em>{@index "full"}</em> case folding, providing stable and
+     * consistent results across all environments.
+     * <p>
+     * Note that this method does <em>not</em> take locale into account, and may
+     * produce results that differ from locale-sensitive ordering. Use
+     * {@link java.text.Collator} for locale-sensitive comparison.
+     *
+     * @apiNote
+     * This method is the Unicode-compliant alternative to
+     * {@link #compareToIgnoreCase(String)}. It implements the
+     * <em>{@index "full case folding"}</em> as defined by the Unicode Standard, which
+     * may differ from the simpler per-character mapping performed by
+     * {@code compareToIgnoreCase}.
+     * For example:
+     * {@snippet lang=java :
+     * String a = "Fuß";
+     * String b = "FUSS";
+     * int cmpFoldCase = a.compareToFoldCase(b);     // returns 0
+     * int cmpIgnoreCase = a.compareToIgnoreCase(b); // returns > 0
+     * }
+     *
+     * @param   str   the {@code String} to be compared.
+     * @return  a negative integer, zero, or a positive integer as the specified
+     *          String is greater than, equal to, or less than this String,
+     *          ignoring case considerations by case folding.
+     *
+     * @spec    https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790 Unicode Caseless Matching
+     * @see     java.text.Collator
+     * @see     #compareToIgnoreCase(String)
+     * @see     #equalsFoldCase(String)
+     * @since   26
+     */
+    public int compareToFoldCase(String str) {
+        return UNICODE_CASEFOLD_ORDER.compare(this, str);
     }
 
     /**

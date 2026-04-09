@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,13 +206,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     Universe_narrow_oop_base = nullptr;
     Universe_narrow_oop_shift = 0;
   }
-  if (UseCompressedClassPointers) {
-    Universe_narrow_klass_base = CompressedKlassPointers::base();
-    Universe_narrow_klass_shift = CompressedKlassPointers::shift();
-  } else {
-    Universe_narrow_klass_base = nullptr;
-    Universe_narrow_klass_shift = 0;
-  }
+  Universe_narrow_klass_base = CompressedKlassPointers::base();
+  Universe_narrow_klass_shift = CompressedKlassPointers::shift();
   Universe_non_oop_bits = Universe::non_oop_word();
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();
@@ -236,16 +231,23 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   JVMTI_ONLY( _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc; )
 
   BarrierSet* bs = BarrierSet::barrier_set();
+#if INCLUDE_G1GC
+  if (bs->is_a(BarrierSet::G1BarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
+  } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
+  } else
+#endif
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    CardTable::CardValue* base = ci_card_table_address();
+    CardTable::CardValue* base = ci_card_table_address_const();
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
-#if INCLUDE_SHENANDOAHGC
-  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
-    cardtable_start_address = nullptr;
-    cardtable_shift = CardTable::card_shift();
-#endif
   } else {
     // No card mark barriers
     cardtable_start_address = nullptr;
@@ -348,7 +350,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   return vmIntrinsics;
 }
 
-#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
+#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_uint_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
   do_int_flag(AllocateInstancePrefetchLines)                               \
   do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
@@ -360,7 +362,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
   do_size_t_flag(CodeCacheSegmentSize)                                     \
-  do_intx_flag(CodeEntryAlignment)                                         \
+  do_uint_flag(CodeEntryAlignment)                                         \
   do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \
@@ -383,7 +385,6 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   X86_ONLY(do_int_flag(UseAVX))                                            \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
-  do_bool_flag(UseCompressedClassPointers)                                 \
   do_bool_flag(UseCompressedOops)                                          \
   X86_ONLY(do_bool_flag(UseCountLeadingZerosInstruction))                  \
   X86_ONLY(do_bool_flag(UseCountTrailingZerosInstruction))                 \
@@ -547,16 +548,17 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
 #define ADD_BOOL_FLAG(name)   ADD_FLAG(bool, name, BOXED_BOOLEAN)
+#define ADD_UINT_FLAG(name)   ADD_FLAG(uint, name, BOXED_LONG)
 #define ADD_INT_FLAG(name)    ADD_FLAG(int, name, BOXED_LONG)
 #define ADD_SIZE_T_FLAG(name) ADD_FLAG(size_t, name, BOXED_LONG)
 #define ADD_INTX_FLAG(name)   ADD_FLAG(intx, name, BOXED_LONG)
 #define ADD_UINTX_FLAG(name)  ADD_FLAG(uintx, name, BOXED_LONG)
 
-  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
+  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
   JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
   JVMCIObject value;
-  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
+  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_UINT_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
   JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 

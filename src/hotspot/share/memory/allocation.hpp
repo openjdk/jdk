@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 #ifndef SHARE_MEMORY_ALLOCATION_HPP
 #define SHARE_MEMORY_ALLOCATION_HPP
 
+#include "cppstdlib/new.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <new>
 
 class outputStream;
 class Thread;
@@ -421,6 +420,7 @@ class AnyObj {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
   static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
+  void set_in_aot_cache() NOT_DEBUG_RETURN;
 #ifdef ASSERT
  private:
   // When this object is allocated on stack the new() operator is not
@@ -430,6 +430,7 @@ class AnyObj {
   uintptr_t _allocation_t[2];
   bool is_type_set() const;
   void initialize_allocation_info();
+  bool in_aot_cache() const;
  public:
   allocation_type get_allocation_type() const;
   bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }

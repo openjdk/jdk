@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,6 @@
 #include "jni_util.h"
 #include "SoundDefs.h"
 #include "Configure.h"          // put flags for debug msgs etc. here
-
-// return 1 if this platform is big endian, or 0 for little endian
-int UTIL_IsBigEndianPlatform();
-
 
 // ERROR PRINTS
 #ifdef USE_ERROR

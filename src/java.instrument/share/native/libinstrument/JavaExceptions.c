@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,20 @@ forceFallback(jthrowable potentialException) {
 jboolean
 initializeFallbackError(JNIEnv* jnienv) {
     jplis_assert(isSafeForJNICalls(jnienv));
-    sFallbackInternalError = createInternalError(jnienv, NULL);
+    jthrowable localRef = createInternalError(jnienv, NULL);
+    if (localRef == NULL) {
+        return JNI_FALSE;
+    }
+
+    jthrowable globalRef = (*jnienv)->NewGlobalRef(jnienv, localRef);
+    if (globalRef == NULL) {
+        return JNI_FALSE;
+    }
+
+    sFallbackInternalError = globalRef;
     jplis_assert(isSafeForJNICalls(jnienv));
-    return (sFallbackInternalError != NULL);
+
+    return JNI_TRUE;
 }
 
 

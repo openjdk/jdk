@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
   #define ROTATE (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)))
   #define FLUSHPOINT (msgs & (MSGBIT(MSG_FLUSHPOINT)))
   #define PROCESS_FULL_BUFFERS (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)|MSGBIT(MSG_FULLBUFFER)))
+  #define LEAKPROFILER_REFCHAINS (msgs & MSGBIT(MSG_EMIT_LEAKP_REFCHAINS))
 
   JfrPostBox& post_box = JfrRecorderThreadEntry::post_box();
   log_debug(jfr, system)("Recorder thread STARTED");
@@ -69,6 +70,9 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
         MutexUnlocker mul(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
         if (PROCESS_FULL_BUFFERS) {
           service.process_full_buffers();
+        }
+        if (LEAKPROFILER_REFCHAINS) {
+          service.emit_leakprofiler_events();
         }
         // Check amount of data written to chunk already
         // if it warrants asking for a new chunk.
@@ -98,5 +102,5 @@ void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
   #undef ROTATE
   #undef FLUSHPOINT
   #undef PROCESS_FULL_BUFFERS
-  #undef SCAVENGE
+  #undef LEAKPROFILER_REFCHAINS
 }
