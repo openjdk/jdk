@@ -30,6 +30,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 
+import com.sun.source.tree.ExpressionTree;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
@@ -79,6 +80,7 @@ import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCTypeUnion;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.tree.Pretty;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
@@ -490,31 +492,12 @@ public class TypeAnnotations {
                 alternatives.addAll(ut.alternatives_field.tail);
                 ret = new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
             } else {
+                JCTree enclTr = enclTr(typetree, !onlyTypeAnnotations.isEmpty());
                 Type enclTy = type;
                 Element enclEl = type.asElement();
-                JCTree enclTr = typetree;
-
-                while (enclEl != null &&
-                        enclEl.getKind() != ElementKind.PACKAGE &&
-                        enclTy != null &&
-                        enclTy.getKind() != TypeKind.NONE &&
-                        (enclTr.getKind() == JCTree.Kind.MEMBER_SELECT ||
-                                enclTr.getKind() == JCTree.Kind.PARAMETERIZED_TYPE ||
-                                enclTr.getKind() == JCTree.Kind.ANNOTATED_TYPE)) {
-                    // Iterate also over the type tree, not just the type: the type is already
-                    // completely resolved and we cannot distinguish where the annotation
-                    // belongs for a nested type.
-                    if (enclTr.getKind() == JCTree.Kind.MEMBER_SELECT) {
-                        // only change encl in this case.
-                        enclTy = enclTy.getEnclosingType();
-                        enclEl = enclEl.getEnclosingElement();
-                        enclTr = ((JCFieldAccess)enclTr).getExpression();
-                    } else if (enclTr.getKind() == JCTree.Kind.PARAMETERIZED_TYPE) {
-                        enclTr = ((JCTypeApply)enclTr).getType();
-                    } else {
-                        // only other option because of while condition
-                        enclTr = ((JCAnnotatedType)enclTr).getUnderlyingType();
-                    }
+                while (!enclTy.hasTag(TypeTag.NONE) && enclTr.type != null && enclTr.type.tsym != enclEl) {
+                    enclTy = enclTy.getEnclosingType();
+                    enclEl = enclEl.getEnclosingElement();
                 }
 
                 /** We are trying to annotate some enclosing type,
@@ -574,6 +557,19 @@ public class TypeAnnotations {
             return ret;
         }
 
+        private static JCTree enclTr(JCTree tree, boolean onlyTypeAnnotations) {
+            return switch (tree.getKind()) {
+                case MEMBER_SELECT -> {
+                    JCExpression selected = ((JCFieldAccess) tree).selected;
+                    yield selected.type.hasTag(TypeTag.CLASS) || onlyTypeAnnotations
+                            ? enclTr(selected, onlyTypeAnnotations) : tree;
+                }
+                case PARAMETERIZED_TYPE -> enclTr(((JCTypeApply) tree).getType(), onlyTypeAnnotations);
+                case ANNOTATED_TYPE -> enclTr(((JCAnnotatedType) tree).getUnderlyingType(), onlyTypeAnnotations);
+                default -> tree;
+            };
+        }
+
         /**
          * Create a copy of the {@code Type type} with the help of the Tree for a type
          * {@code JCTree typetree} inserting all type annotations in {@code annotations} to the
@@ -625,7 +621,7 @@ public class TypeAnnotations {
                     // assert that t.constValue() == null?
                     if (t == stopAt ||
                         t.getEnclosingType() == Type.noType) {
-                        return t.annotatedType(s);
+                        return annotate(t, s);
                     } else {
                         ClassType ret = new ClassType(t.getEnclosingType().accept(this, s),
                                                       t.typarams_field, t.tsym,
@@ -692,13 +688,29 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitErrorType(ErrorType t, List<TypeCompound> s) {
-                    return t.annotatedType(s);
+                    return annotate(t, s);
                 }
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
                     return t.annotatedType(s);
                 }
+
+                private static Type annotate(ClassType t, List<TypeCompound> s) {
+                    TypeMetadata.Annotations existing = t.getMetadata(TypeMetadata.Annotations.class);
+                    if (existing != null) {
+                        // The type may have existing annotations if it is referred to by its qualified name,
+                        // and the simple name part of the name has an explicit type annotation, and the type
+                        // is part of a declaration with a dual declaration and TYPE_USE annotation:
+                        //
+                        // @DeclAndTypeUseAnno java.lang.@TypeUseAnno String f;
+                        //
+                        existing.annotationBuffer().addAll(s);
+                        return t;
+                    }
+                    return t.annotatedType(s);
+                }
+
             };
 
             return type.accept(visitor, annotations);
