@@ -83,7 +83,6 @@ public class Names {
     public final Name clone;
     public final Name close;
     public final Name deserializeLambda;
-    public final Name deserializeLambdaCheck;
     public final Name desiredAssertionStatus;
     public final Name equals;
     public final Name error;
@@ -275,7 +274,6 @@ public class Names {
         clone = fromString("clone");
         close = fromString("close");
         deserializeLambda = fromString("$deserializeLambda$");
-        deserializeLambdaCheck = fromString("$deserializeLambda$check$");
         desiredAssertionStatus = fromString("desiredAssertionStatus");
         equals = fromString("equals");
         error = fromString("<error>");
