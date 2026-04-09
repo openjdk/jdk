@@ -1207,22 +1207,22 @@ void VM_Version::get_processor_features() {
       }
     }
   } else {
-    if (!UseAES) {
-      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-    } else if (!cpu_supports_aes()) {
+    if (!cpu_supports_aes()) {
       if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         warning("AES intrinsics are not available on this CPU");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
         warning("AES-CTR intrinsics are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    } else if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
