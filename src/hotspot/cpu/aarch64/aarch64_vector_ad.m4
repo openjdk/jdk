@@ -4720,6 +4720,82 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
   ins_pipe(pipe_slow);
 %}
 
+// ------------------------------ Vector bitwise blend -------------------------
+
+instruct vbitwise_blend_neon_sve1(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseSVE < 2 &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (XorV src3 (AndV dst_src1 (XorV src2 src3))));
+  // Second form: inner XorV may have operands (src3, src2) after Ideal/GVN.
+  // adlc only auto-swaps commutative ops when at least one operand is a subtree,
+  // not when both sides are leaves, so both shapes need explicit match rules.
+  match(Set dst_src1 (XorV src3 (AndV dst_src1 (XorV src3 src2))));
+  format %{ "vbitwise_blend_neon_sve1 $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    Assembler::SIMD_Arrangement T = length_in_bytes == 16 ? __ T16B : __ T8B;
+    __ bsl($dst_src1$$FloatRegister, T, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_sve2(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseSVE == 2);
+  match(Set dst_src1 (XorV src2 (AndV src3 (XorV dst_src1 src2))));
+  // Second form: inner XorV may have operands (src2, dst_src1) after Ideal/GVN.
+  // adlc only auto-swaps commutative ops when at least one operand is a subtree,
+  // not when both sides are leaves, so both shapes need explicit match rules.
+  match(Set dst_src1 (XorV src2 (AndV src3 (XorV src2 dst_src1))));
+  format %{ "vbitwise_blend_sve2 $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    __ sve_bsl($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_masked_sve1(vReg dst_src1, vReg src2, vReg src3, pReg pg) %{
+  predicate(UseSVE == 1 &&
+            Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst_src1 (XorV (Binary src3 (AndV dst_src1 (XorV src2 src3))) pg));
+  // Second form: inner XorV may have operands (src3, src2) after Ideal/GVN.
+  // adlc only auto-swaps commutative ops when at least one operand is a subtree,
+  // not when both sides are leaves, so both shapes need explicit match rules.
+  match(Set dst_src1 (XorV (Binary src3 (AndV dst_src1 (XorV src3 src2))) pg));
+  format %{ "vbitwise_blend_masked_sve1 $dst_src1, $pg, $src2, $src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    Assembler::SIMD_Arrangement T = length_in_bytes == 16 ? __ T16B : __ T8B;
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ bsl($dst_src1$$FloatRegister, T, $src2$$FloatRegister, $src3$$FloatRegister);
+    // sve_sel reads src3 after bsl overwrites dst_src1.
+    assert($dst_src1$$FloatRegister != $src3$$FloatRegister,
+           "dst_src1 and src3 must not alias");
+    __ sve_sel($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_masked_sve2(vReg dst_src1, vReg src2, vReg src3, pReg pg) %{
+  predicate(UseSVE == 2);
+  match(Set dst_src1 (XorV (Binary src2 (AndV src3 (XorV dst_src1 src2))) pg));
+  // Second form: inner XorV may have operands (src2, dst_src1) after Ideal/GVN.
+  // adlc only auto-swaps commutative ops when at least one operand is a subtree,
+  // not when both sides are leaves, so both shapes need explicit match rules.
+  match(Set dst_src1 (XorV (Binary src2 (AndV src3 (XorV src2 dst_src1))) pg));
+  format %{ "vbitwise_blend_masked_sve2 $dst_src1, $pg, $src2, $src3" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bsl($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+    // sve_sel reads src2 after sve_bsl overwrites dst_src1.
+    assert($dst_src1$$FloatRegister != $src2$$FloatRegister,
+           "dst_src1 and src2 must not alias");
+    __ sve_sel($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $dst_src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector round ---------------------------------
 
 // vector Math.round
