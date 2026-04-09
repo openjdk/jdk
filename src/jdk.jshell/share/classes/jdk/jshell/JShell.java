@@ -435,6 +435,7 @@ public class JShell implements AutoCloseable {
          * @param binarySourceMapping the binary to source mapper
          * @return the {@code Builder} instance (for use in chained
          * initialization)
+         * @since 27
          */
         public Builder binarySourceMapping(Function<Path, Iterable<? extends Path>> binarySourceMapping) {
             this.binarySourceMapping = binarySourceMapping;

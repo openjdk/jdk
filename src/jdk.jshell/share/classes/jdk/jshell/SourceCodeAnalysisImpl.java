@@ -174,7 +174,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private final JShell proc;
     private final CompletenessAnalyzer ca;
-    private final List<AutoCloseable> closeables = new ArrayList<>();
+    private final List<AutoCloseable> closeablesForSources = new ArrayList<>();
     private final Map<Path, ClassIndex> currentIndexes = new HashMap<>();
     private int indexVersion;
     private int classpathVersion;
@@ -1410,6 +1410,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     void classpathChanged() {
+        List<AutoCloseable> toClose = new ArrayList<>();
+
         synchronized (currentIndexes) {
             int cpVersion = ++classpathVersion;
 
@@ -1417,7 +1419,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
             allPaths = null;
             availableSources = null;
+            toClose.addAll(closeablesForSources);
+            closeablesForSources.clear();
         }
+
+        close(toClose);
     }
 
     private Set<PackageElement> listPackages(AnalyzeTask at, String enclosingPackage) {
@@ -1937,7 +1943,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     public void close() {
-        for (AutoCloseable closeable : closeables) {
+        close(closeablesForSources);
+    }
+
+    private void close(List<AutoCloseable> toClose) {
+        for (AutoCloseable closeable : toClose) {
             try {
                 closeable.close();
             } catch (Exception ex) {
@@ -1982,10 +1992,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 return availableSources;
             }
         }
+        List<AutoCloseable> toCloseFromResult = new ArrayList<>();
         List<Path> result = new ArrayList<>();
         if (jdkSourcesOverride == null) {
             Path home = Paths.get(System.getProperty("java.home"));
-            Path srcZip = Path.of("/home/jlahoda/src/jdk/jdk8/build/linux-x86_64-server-release/images/jdk/lib/src.zip");//home.resolve("lib").resolve("src.zip");
+            Path srcZip = home.resolve("lib").resolve("src.zip");
             if (!Files.isReadable(srcZip))
                 srcZip = home.getParent().resolve("src.zip");
             if (Files.isReadable(srcZip)) {
@@ -2016,7 +2027,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 } finally {
                     if (zipFO != null) {
                         if (keepOpen) {
-                            closeables.add(zipFO);
+                            toCloseFromResult.add(zipFO);
                         } else {
                             try {
                                 zipFO.close();
@@ -2039,7 +2050,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                     if (mappedSources != null) {
                         if (mappedSources instanceof AutoCloseable closeable) {
-                            closeables.add(closeable);
+                            toCloseFromResult.add(closeable);
                         }
                         mappedSources.forEach(sources::add);
                     }
@@ -2049,13 +2060,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
         }
 
+        List<AutoCloseable> toClose = new ArrayList<>();
+
         synchronized (currentIndexes) {
             if (originalClasspathVersion != classpathVersion) {
                 result = null;
+                toClose.addAll(toCloseFromResult);
             } else {
                 availableSources = result;
+                toClose.addAll(closeablesForSources);
+                closeablesForSources.clear();
+                closeablesForSources.addAll(toCloseFromResult);
             }
         }
+
+        close(toClose);
 
         if (result == null) {
             result = findSources();

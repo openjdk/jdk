@@ -51,6 +51,7 @@ import jdk.jshell.JShell;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BinaryToSourceCodeMappingTest extends KullaTesting {
@@ -129,10 +130,14 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                       test.inner.Test
                       null""");
         getState().addToClasspath(classesDir.toString());
+        assertFalse(closeCalled.get());
         assertJavadoc("test.inner.Test|",
                       """
                       test.inner.Test
                       Class javadoc.""");
+        getState().addToClasspath(classesDir.toString());
+        assertTrue(closeCalled.get());
+        closeCalled.set(false);
     }
 
     //TODO: test classpath modification!
@@ -143,9 +148,12 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                 case "testNull" -> null;
                 case "testReturnsNull" -> _ -> null;
                 case "testSourcesAsDirectory" -> p -> classesDir.equals(p) ? List.of(srcDir) : List.of();
-                case "testSourcesAsZip", "testClassPathModification" ->
+                case "testSourcesAsZip" ->
                         p -> classesDir.equals(p) ? List.of(srcZip) : List.of();
-                case "testSourcesAsZipNested" -> p -> {
+                case "testClassPathModification", "testSourcesAsZipNested" -> p -> {
+                    if (!classesDir.equals(p)) {
+                        return List.of();
+                    }
                     try {
                         FileSystem withNested = FileSystems.newFileSystem(srcZipWithNestedPath);
                         class CloseableIterable implements AutoCloseable, Iterable<Path> {
@@ -224,6 +232,9 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
     protected void tearDownDone() {
         if ("testSourcesAsZipNested".equals(testInfo.getTestMethod().orElseThrow().getName())) {
             assertTrue(closeCalled.get());
+        }
+        if ("testClassPathModification".equals(testInfo.getTestMethod().orElseThrow().getName())) {
+            assertFalse(closeCalled.get());
         }
         super.tearDownDone();
     }
