@@ -115,13 +115,12 @@ public class StrongSecureRandom {
 
 
         System.out.println("Testing " + algorithm);
-        final SecureRandom secureRandom = SecureRandom.getInstance(algorithm);
-        assertEquals(algorithm, secureRandom.getAlgorithm(),
-                "Unexpected algorithm");
+        final SecureRandom sr = SecureRandom.getInstance(algorithm);
+        assertEquals(algorithm, sr.getAlgorithm(), "Unexpected algorithm");
 
-        final byte[] seed = secureRandom.generateSeed(1);
-        secureRandom.nextBytes(seed);
-        secureRandom.setSeed(seed);
+        final byte[] seed = sr.generateSeed(1);
+        sr.nextBytes(seed);
+        sr.setSeed(seed);
     }
 
     @ParameterizedTest(name = "testUnsupportedParams {0}")
