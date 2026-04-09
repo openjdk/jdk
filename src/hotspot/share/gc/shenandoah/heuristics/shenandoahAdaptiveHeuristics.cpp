@@ -829,19 +829,20 @@ double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccoun
   const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
   double now = os::elapsedTime();
   double time_since_last_update = now - _last_sample_time;
+  double rate = 0.0;
   if (time_since_last_update < MinSampleTime) {
     unaccounted_bytes_allocated = allocated - _last_sample_value;
-    _last_sample_value = 0;
-    return 0.0;
   } else {
-    double rate = instantaneous_rate(now, allocated);
+    rate = instantaneous_rate(now, allocated);
     _rate.add(rate);
     _rate_avg.add(_rate.avg());
     _last_sample_time = now;
-    _last_sample_value = allocated;
     unaccounted_bytes_allocated = 0;
-    return rate;
   }
+  // force sample is done before when reset allocated since gc start,
+  // _last_sample_value must be reset 0.
+  _last_sample_value = 0;
+  return rate;
 }
 
 double ShenandoahAllocationRate::sample(size_t allocated) {
@@ -890,9 +891,7 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
-  size_t last_value = _last_sample_value;
-  double last_time = _last_sample_time;
-  size_t allocation_delta = (allocated > last_value) ? (allocated - last_value) : 0;
-  double time_delta_sec = time - last_time;
-  return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
+  assert(allocated >= _last_sample_value, "Must be");
+  assert(time > _last_sample_time, "Must be");
+  return (allocated - _last_sample_value) / (time - _last_sample_time);
 }
