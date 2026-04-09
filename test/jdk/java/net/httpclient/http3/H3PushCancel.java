@@ -29,7 +29,7 @@
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
  *      -Djdk.httpclient.http3.maxConcurrentPushStreams=5
- *      H3PushCancel
+ *      ${test.main.class}
  * @summary This test checks that not accepting one of the push promise
  *       will cancel it. It also verifies that receiving a pushId bigger
  *       than the max push ID allowed on the connection will cause

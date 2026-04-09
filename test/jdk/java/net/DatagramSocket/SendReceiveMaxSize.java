@@ -88,7 +88,6 @@
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
-import jtreg.SkippedException;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -102,9 +101,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.DatagramChannel;
+import java.util.Optional;
 import java.util.Random;
 
 import static java.net.StandardSocketOptions.SO_RCVBUF;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.expectThrows;
@@ -115,8 +116,8 @@ public class SendReceiveMaxSize {
 
     private int BUF_LIMIT;
     private InetAddress HOST_ADDR;
-    private final static int IPV4_SNDBUF = 65507;
-    private final static int IPV6_SNDBUF = 65527;
+    private final static int IPV4_SNDBUF = IPSupport.getMaxUDPSendBufSizeIPv4();
+    private final static int IPV6_SNDBUF = IPSupport.getMaxUDPSendBufSizeIPv6();
     private final static Class<IOException> IOE = IOException.class;
     private final static Random random = RandomFactory.getRandom();
 
@@ -127,14 +128,11 @@ public class SendReceiveMaxSize {
 
     @BeforeTest
     public void setUp() throws IOException {
-        try {
-            // This method throws jtreg.SkippedException, which is
-            // interpreted as a test failure by testng
-            IPSupport.throwSkippedExceptionIfNonOperational();
-        } catch (SkippedException skip) {
-            // throws the appropriate TestNG SkipException
-            throw new SkipException(skip.getMessage(), skip);
-        }
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkipException::new).ifPresent(x -> {
+            throw x;
+        });
+
         HOST_ADDR = PREFER_LOOPBACK ? InetAddress.getLoopbackAddress() : InetAddress.getLocalHost();
         BUF_LIMIT = (HOST_ADDR instanceof Inet6Address) ? IPV6_SNDBUF : IPV4_SNDBUF;
         System.out.printf("Host address: %s, Buffer limit: %d%n", HOST_ADDR, BUF_LIMIT);
