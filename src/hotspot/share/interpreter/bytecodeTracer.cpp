@@ -203,7 +203,6 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   // the current bytecodes, rather than to print diagnostic information as is the
   // case here. Always stack-allocate for this printing.
   BytecodeTracerData data;
-  BytecodePrinter method_printer(&data, flags);
   BytecodeStream s(method);
   s.set_interval(from, to);
 
@@ -211,6 +210,7 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   stringStream ss;
   outputStream* out = buffered ? &ss : st;
   while (s.next() >= 0) {
+    BytecodePrinter method_printer(&data, flags);
     method_printer.trace(method, s.bcp(), out);
   }
   if (buffered) {
