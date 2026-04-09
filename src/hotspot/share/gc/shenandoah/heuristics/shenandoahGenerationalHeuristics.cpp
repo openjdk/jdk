@@ -423,7 +423,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
 
   add_tenured_regions_to_collection_set(old_promotion_reserve, heap, candidates, sorted_regions);
 
-  const size_t tenuring_threshold = heap->age_census()->tenuring_threshold();
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
   const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   assert(tenurable_next_cycle >= tenurable_this_cycle,
