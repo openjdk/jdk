@@ -78,6 +78,10 @@ public enum JPackageStringBundle {
         });
     }
 
+    public Pattern cannedFormattedStringAsPattern(String key, Object ... args) {
+        return cannedFormattedStringAsPattern(key, MATCH_ANY, args);
+    }
+
     static Pattern toPattern(MessageFormat mf, Function<Object, Pattern> formatArgMapper, Object ... args) {
         Objects.requireNonNull(mf);
         Objects.requireNonNull(formatArgMapper);
@@ -154,4 +158,14 @@ public enum JPackageStringBundle {
     private final Class<?> i18nClass;
     private final Method i18nClass_getString;
     private final BiFunction<String, Object[], String> formatter;
+
+    private static final Function<Object, Pattern> MATCH_ANY = new Function<>() {
+
+        @Override
+        public Pattern apply(Object v) {
+            return PATTERN;
+        }
+
+        private static final Pattern PATTERN = Pattern.compile(".*");
+    };
 }
