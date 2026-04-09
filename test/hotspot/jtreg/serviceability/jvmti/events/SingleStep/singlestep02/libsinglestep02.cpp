@@ -29,11 +29,6 @@
 
 extern "C" {
 
-#define STATUS_FAILED 2
-#define PASSED 0
-
-static volatile jint result = PASSED;
-static volatile long wrongStepEv = 0;
 
 static jvmtiEnv *jvmti = nullptr;
 
