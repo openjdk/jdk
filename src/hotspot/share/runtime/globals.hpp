@@ -865,10 +865,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceBytecodesTruncated, false,                             \
           "Truncate non control-flow bytecode when tracing bytecode")       \
                                                                             \
-  develop(bool, TraceBytecodesLocking, false,                               \
-          "Takes a TTY lock for each bytecode trace line to avoid "         \
-          "inter-thread trace mangling")                                    \
-                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \

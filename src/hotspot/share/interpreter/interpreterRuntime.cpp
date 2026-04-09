@@ -1518,12 +1518,7 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   methodHandle mh(current, last_frame.method());
   stringStream st;
   BytecodeTracer::trace_interpreter(mh, last_frame.get_frame().real_fp(), last_frame.bcp(), tos, tos2, &st);
-  if (TraceBytecodesLocking) {
-    ttyLocker ttyl;
-    tty->print("%s", st.freeze());
-  } else {
-    tty->print("%s", st.freeze());
-  }
+  tty->print("%s", st.freeze());
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT
