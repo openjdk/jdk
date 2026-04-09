@@ -191,7 +191,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   }
 
   // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
-  return false;
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 // Return a conservative estimate of how much memory can be allocated before we need to start GC. The estimate is based
