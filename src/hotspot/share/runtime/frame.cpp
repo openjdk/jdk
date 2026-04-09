@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -706,12 +706,6 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         }
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
-#if INCLUDE_JVMCI
-        const char* jvmciName = nm->jvmci_name();
-        if (jvmciName != nullptr) {
-          st->print(" (%s)", jvmciName);
-        }
-#endif
       } else {
         st->print("J  " PTR_FORMAT, p2i(pc()));
       }
@@ -1188,9 +1182,9 @@ void frame::verify(const RegisterMap* map) const {
       // make sure we have the right receiver type
     }
   }
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
-#endif
+#endif // COMPILER2
 
   if (map->update_map()) { // The map has to be up-to-date for the current frame
     oops_do_internal(&VerifyOopClosure::verify_oop, nullptr, nullptr, DerivedPointerIterationMode::_ignore, map, false);

@@ -289,8 +289,6 @@ class vframeStreamCommon : StackObj {
   int bci() const { return _bci; }
   inline intptr_t* frame_id() const;
   address frame_pc() const { return _frame.pc(); }
-  inline int vframe_id() const;
-  inline int decode_offset() const;
   inline oop continuation() const;
 
   CodeBlob* cb() const { return _frame.cb();  }
