@@ -47,34 +47,30 @@ class BytecodePrinter {
  private:
   BytecodeTracerData* _data;
   int                 _flags;
+  Bytecodes::Code     _raw_code; // note: some methods translate this to the Java bytecode
+  address             _next_pc;  // current decoding position, destructive
 
-  address   next_pc() const          { return _data->next_pc(); }
-  void      next_pc_inc(int by = 1)  { _data->set_next_pc(_data->next_pc() + by); }
-  void      set_next_pc(address pc)  { _data->set_next_pc(pc); }
-  void      align()                  { set_next_pc(align_up(next_pc(), sizeof(jint))); }
-
-  int       get_byte()               { int i = *(jbyte*)next_pc(); next_pc_inc(); return i; }  // signed
-  int       get_index_u1()           { int i = *(address)next_pc(); next_pc_inc(); return i; }  // returns 0x00 - 0xff as an int
-  short     get_short()              { short i = Bytes::get_Java_u2  (next_pc()); next_pc_inc(2); return i; }
-  int       get_int()                { int   i = Bytes::get_Java_u4  (next_pc()); next_pc_inc(4); return i; }
-  int       get_native_index_u2()    { int   i = Bytes::get_native_u2(next_pc()); next_pc_inc(2); return i; }
-  int       get_native_index_u4()    { int   i = Bytes::get_native_u4(next_pc()); next_pc_inc(4); return i; }
-  int       get_Java_index_u2()      { int   i = Bytes::get_Java_u2  (next_pc()); next_pc_inc(2); return i; }
-  int       get_Java_index_u4()      { int   i = Bytes::get_Java_u4  (next_pc()); next_pc_inc(4); return i; }
+  void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
+  int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
+  int       get_index_u1()           { return *(address)_next_pc++; }  // returns 0x00 - 0xff as an int
+  short     get_short()              { short i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_int()                { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
+  int       get_native_index_u2()    { int   i = Bytes::get_native_u2(_next_pc); _next_pc += 2; return i; }
+  int       get_native_index_u4()    { int   i = Bytes::get_native_u4(_next_pc); _next_pc += 4; return i; }
+  int       get_Java_index_u2()      { int   i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_Java_index_u4()      { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_Java_index_u2() : get_index_u1(); }
 
-  // Warning: may be junk or null.
+  // Warning: only do pointer comparison between critical sections.
   Method*   method() const              { return _data->current_method(); }
   void      set_method(Method* current) { _data->set_current_method(current); }
 
-  intptr_t* fp() const               { return _data->current_fp(); }
+  // Warning: should only be used for comparison and not dereferenced.
+  intptr_t* fp() const                    { return _data->current_fp(); }
   void      set_fp(intptr_t* current)     { _data->set_current_fp(current); }
 
   bool      is_wide() const     { return _data->is_wide(); }
   void      set_wide(bool wide) { _data->set_wide(wide); }
-
-  Bytecodes::Code raw_code() const                       { return _data->raw_code(); }
-  void            set_raw_code(Bytecodes::Code raw_code) { _data->set_raw_code(raw_code); }
 
   ConstantPool*      constants() const    { return method()->constants(); }
   bool               use_cp_cache() const { return constants()->cache() != nullptr; }
@@ -92,12 +88,15 @@ class BytecodePrinter {
  public:
   BytecodePrinter(BytecodeTracerData* data, int flags = 0) :
     _data(data),
-    _flags(flags) {}
+    _flags(flags),
+    _raw_code(Bytecodes::_illegal),
+    _next_pc(nullptr) {}
 
 #ifndef PRODUCT
   // This method is called while executing the raw bytecodes, so none of
   // the adjustments that BytecodeStream performs applies.
   void trace(const methodHandle& method, intptr_t* fp, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+    assert(_raw_code == Bytecodes::_illegal, "invariant");
     ResourceMark rm;
     // Method changes can be another method getting called, or a self-recursive call.
     bool method_changed = (this->method() != method()) || (this->fp() != fp);
@@ -112,6 +111,7 @@ class BytecodePrinter {
       method->print_name(st);
       st->cr();
     }
+
     Bytecodes::Code code;
     if (is_wide()) {
       // bcp wasn't advanced if previous bytecode was _wide.
@@ -119,8 +119,8 @@ class BytecodePrinter {
     } else {
       code = Bytecodes::code_at(method(), bcp);
     }
-    set_raw_code(code);
-    set_next_pc(is_wide() ? bcp+2 : bcp+1);
+    _raw_code = code;
+    _next_pc = is_wide() ? bcp+2 : bcp+1;
 
     bool is_terminal = Bytecodes::is_terminal(code);
     // Trace each bytecode unless we're truncating the tracing output, then only print the first
@@ -140,8 +140,8 @@ class BytecodePrinter {
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     set_wide(code == Bytecodes::_wide);
-    // Finished using the code, recent to illegal.
-    set_raw_code(Bytecodes::_illegal);
+    // Finished using the code, reset to illegal.
+    _raw_code = Bytecodes::_illegal;
 
     // Invalidate the current method to force a signature change. In some
     // rare cases, the method and frame pointers aren't enough to determine
@@ -159,6 +159,7 @@ class BytecodePrinter {
   // Used for Method::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
+    assert(_raw_code == Bytecodes::_illegal, "invariant");
     set_method(method());
     // This may be called during linking after bytecodes are rewritten to point to the cpCache.
     ResourceMark rm;
@@ -168,7 +169,7 @@ class BytecodePrinter {
     if (is_wide()) {
       code = Bytecodes::code_at(method(), bcp+1);
     }
-    set_raw_code(code);
+    _raw_code = code;
     int bci = (int)(bcp - method->code_base());
     // Print bytecode index and name
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
@@ -179,7 +180,7 @@ class BytecodePrinter {
     } else {
       st->print("%4d %s", bci, Bytecodes::name(code));
     }
-    set_next_pc(is_wide() ? bcp+2 : bcp+1);
+    _next_pc = is_wide() ? bcp+2 : bcp+1;
     print_attributes(bci, st);
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_DATA)) {
       print_method_data_at(bci, st);
@@ -348,7 +349,7 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
 
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
-  Bytecodes::Code code = Bytecodes::java_code(raw_code());
+  Bytecodes::Code code = Bytecodes::java_code(_raw_code);
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
@@ -369,7 +370,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_ldc:
       {
         int cp_index;
-        if (Bytecodes::uses_cp_cache(raw_code())) {
+        if (Bytecodes::uses_cp_cache(_raw_code)) {
           assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_index_u1();
           cp_index = constants()->object_to_cp_index(obj_index);
@@ -384,7 +385,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_ldc2_w:
       {
         int cp_index;
-        if (Bytecodes::uses_cp_cache(raw_code())) {
+        if (Bytecodes::uses_cp_cache(_raw_code)) {
           assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_native_index_u2();
           cp_index = constants()->object_to_cp_index(obj_index);
@@ -536,7 +537,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
           cp_index = method_entry->constant_pool_index();
           print_field_or_method(cp_index, st);
 
-          if (raw_code() == Bytecodes::_invokehandle &&
+          if (_raw_code == Bytecodes::_invokehandle &&
               ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
             assert(use_cp_cache(), "invokehandle is only in rewritten methods");
             method_entry->print_on(st);
