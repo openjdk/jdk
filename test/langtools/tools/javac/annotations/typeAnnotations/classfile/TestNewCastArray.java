@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ public class TestNewCastArray {
     // 'b' tests fail with only even numbers of annotations (8005681).
     String[] testclasses = {"Test1",
         "Test2a", "Test3a", "Test4a", "Test5a",
-        "Test2b", "Test3b", "Test4b", "Test5b"
+        "Test2b", "Test3b", "Test4b", "Test5b",
+        "Test6a"
     };
 
     public static void main(String[] args) throws Exception {
@@ -181,6 +182,11 @@ public class TestNewCastArray {
             case "Test5b<init>": cexpected=3; break;
             case "ci2":  expected = 0; break;
             case "ci22": expected = 0; break;
+
+            case "Test6a<init>": cexpected=4; break;
+            case "test6aPrimitiveArray":  expected = 0; break;
+            case "test6aRefArray": expected = 0; break;
+            case "test6aMethod": cexpected = 4; break;
 
             default: expected = 0; break;
         }
@@ -351,6 +357,18 @@ public class TestNewCastArray {
         // expect 1+2=3
         Integer ci2 =  (@A @A Integer)o;       // FAIL expect 2, got 1
         Integer ci22 = (@A @A @B @B Integer)o; // FAIL expect 3, got 1
+    }
+
+    static class Test6a {
+        Test6a(){}
+        long l = 0;
+        // Cast expressions inside new array dimensions:
+        int[] test6aPrimitiveArray = new int[(@A @A @B @B int) l];
+        Integer[] test6aRefArray   = new Integer[(@A @A @B @B int) l];
+        private void test6aMethod() {
+            int[] primitiveArray = new int[(@A @A @B @B int) l];
+            Integer[] refArray   = new Integer[(@A @A @B @B int) l];
+        }
     }
 
 @Retention(RUNTIME) @Target({TYPE_USE}) @Repeatable( AC.class ) @interface A { }

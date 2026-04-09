@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -406,7 +406,6 @@ public:
     offset <<= shift;
     uint64_t target_page = ((uint64_t)insn_addr) + offset;
     target_page &= ((uint64_t)-1) << shift;
-    uint32_t insn2 = insn_at(insn_addr, 1);
     target = address(target_page);
     precond(inner != nullptr);
     inner(insn_addr, target);
@@ -473,6 +472,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   return RelocActions<Patcher>::run(insn_addr, target);
 }
 
@@ -480,6 +480,8 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   int instructions;
   unsigned insn = *(unsigned*)insn_addr;
   assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // OOPs are either narrow (32 bits) or wide (48 bits).  We encode
   // narrow OOPs by setting the upper 16 bits in the first
@@ -510,16 +512,11 @@ int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
   assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
          nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
 
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
   Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
   return 2 * NativeInstruction::instruction_size;
-}
-
-address MacroAssembler::target_addr_for_insn_or_null(address insn_addr) {
-  if (NativeInstruction::is_ldrw_to_zr(insn_addr)) {
-    return nullptr;
-  }
-  return MacroAssembler::target_addr_for_insn(insn_addr);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
@@ -765,7 +762,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(java_thread == rthread, "unexpected register");
 #ifdef ASSERT
   // TraceBytecodes does not use r12 but saves it over the call, so don't verify
-  // if ((UseCompressedOops || UseCompressedClassPointers) && !TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");
+  // if (!TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");
 #endif // ASSERT
 
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
@@ -955,7 +952,10 @@ void MacroAssembler::emit_static_call_stub() {
 }
 
 int MacroAssembler::static_call_stub_size() {
-  if (!codestub_branch_needs_far_jump()) {
+  // During AOT production run AOT and JIT compiled code
+  // are used at the same time. We need this size
+  // to be the same for both types of code.
+  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
     // isb; movk; movz; movz; b
     return 5 * NativeInstruction::instruction_size;
   }
@@ -1005,14 +1005,10 @@ int MacroAssembler::ic_check(int end_alignment) {
     load_narrow_klass_compact(tmp1, receiver);
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
-  } else if (UseCompressedClassPointers) {
+  } else {
     ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
-  } else {
-    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
-    cmp(tmp1, tmp2);
   }
 
   Label dont;
@@ -1955,9 +1951,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register
     r_array_base   = temp1,
-    r_array_length = temp2,
-    r_array_index  = noreg, // unused
-    r_bitmap       = noreg; // unused
+    r_array_length = temp2;
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
@@ -2117,6 +2111,161 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
     return Address(rscratch1, offset);
   }
 }
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  assert_different_registers(recv, mdp, rscratch1, rscratch2);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    return;
+  }
+
+  Register offset = rscratch2;
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  mov(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    ldr(rscratch1, Address(mdp, offset));
+    cmp(rscratch1, recv);
+    br(Assembler::EQ, L_found_recv);
+  add(offset, offset, receiver_step);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is full
+  mov(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    ldr(rscratch1, Address(mdp, offset));
+    cbz(rscratch1, L_found_empty);
+  add(offset, offset, receiver_step);
+  sub(rscratch1, offset, end_receiver_offset);
+  cbnz(rscratch1, L_loop_search_empty);
+  b(L_polymorphic);
+
+  // Slow: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  //
+  // The update uses CAS, which clobbers rscratch1. Therefore, rscratch2
+  // is used to hold the destination address. This is safe because the
+  // offset is no longer needed after the address is computed.
+
+  lea(rscratch2, Address(mdp, offset));
+  cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
+          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  b(L_restart);
+
+  // Counter updates:
+
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  mov(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add(offset, offset, receiver_to_count_step);
+
+  bind(L_count_update);
+  increment(Address(mdp, offset), DataLayout::counter_increment);
+}
+
 
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
@@ -3128,7 +3277,6 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
 #if 0
-  assert (UseCompressedOops || UseCompressedClassPointers, "should be compressed");
   assert (Universe::heap() != nullptr, "java heap should be initialized");
   if (!UseCompressedOops || Universe::ptr_base() == nullptr) {
     // rheapbase is allocated as general register
@@ -3306,7 +3454,7 @@ void MacroAssembler::subw(Register Rd, Register Rn, RegisterOrConstant decrement
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mov(rheapbase, CompressedOops::base());
     } else {
       lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -3451,9 +3599,8 @@ extern "C" void findpc(intptr_t x);
 void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 {
   // In order to get locks to work, we need to fake a in_VM state
-  if (ShowMessageBoxOnError ) {
+  if (ShowMessageBoxOnError) {
     JavaThread* thread = JavaThread::current();
-    JavaThreadState saved_state = thread->thread_state();
     thread->set_thread_state(_thread_in_vm);
 #ifndef PRODUCT
     if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
@@ -4918,13 +5065,10 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst);
-  } else if (UseCompressedClassPointers) {
-    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst);
   } else {
-    ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
+  decode_klass_not_null(dst);
 }
 
 void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
@@ -4976,25 +5120,22 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
 
 void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
   assert_different_registers(obj, klass, tmp);
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp, obj);
-    } else {
-      ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
-    if (CompressedKlassPointers::base() == nullptr) {
-      cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
-      return;
-    } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-               && CompressedKlassPointers::shift() == 0) {
-      // Only the bottom 32 bits matter
-      cmpw(klass, tmp);
-      return;
-    }
-    decode_klass_not_null(tmp);
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, obj);
   } else {
-    ldr(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
+  if (CompressedKlassPointers::base() == nullptr) {
+    cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
+    return;
+  } else if (!AOTCodeCache::is_on_for_dump() &&
+             ((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+             && CompressedKlassPointers::shift() == 0) {
+    // Only the bottom 32 bits matter
+    cmpw(klass, tmp);
+    return;
+  }
+  decode_klass_not_null(tmp);
   cmp(klass, tmp);
 }
 
@@ -5002,36 +5143,25 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2,  obj2);
-    cmpw(tmp1, tmp2);
-  } else if (UseCompressedClassPointers) {
+  } else {
     ldrw(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
-    cmpw(tmp1, tmp2);
-  } else {
-    ldr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
-    cmp(tmp1, tmp2);
   }
+  cmpw(tmp1, tmp2);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    encode_klass_not_null(src);
-    strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  } else {
-    str(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  }
+  encode_klass_not_null(src);
+  strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    // Store to klass gap in destination
-    strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
-  }
+  // Store to klass gap in destination
+  strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
 }
 
 // Algorithm must match CompressedOops::encode.
@@ -5177,8 +5307,6 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 }
 
 MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
-  assert(UseCompressedClassPointers, "not using compressed class pointers");
-
   // KlassDecodeMode shouldn't be set already.
   assert(_klass_decode_mode == KlassDecodeNone, "set once");
 
@@ -5244,7 +5372,7 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
     encode_klass_not_null_for_aot(dst, src);
     return;
   }
@@ -5308,8 +5436,6 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
-  assert (UseCompressedClassPointers, "should only be used for compressed headers");
-
   if (AOTCodeCache::is_on_for_dump()) {
     decode_klass_not_null_for_aot(dst, src);
     return;
@@ -5376,7 +5502,6 @@ void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 }
 
 void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
-  assert (UseCompressedClassPointers, "should only be used for compressed headers");
   assert (oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->find_index(k);
 
@@ -5578,7 +5703,6 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
 }
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
   uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
   uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
   uint64_t dest_page = (uint64_t)dest.target() >> 12;
@@ -5606,12 +5730,33 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-  CardTable::CardValue* byte_map_base =
-    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
+    lea(reg, ExternalAddress(byte_map_base_adr));
+    ldr(reg, Address(reg));
+    return;
+  }
+#endif
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
-  // Strictly speaking the byte_map_base isn't an address at all, and it might
+  // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
-  mov(reg, (uint64_t)byte_map_base);
+  mov(reg, (uint64_t)ctbs->card_table_base_const());
+}
+
+void MacroAssembler::load_aotrc_address(Register reg, address a) {
+#if INCLUDE_CDS
+  assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
+  if (AOTCodeCache::is_on_for_dump()) {
+    // all aotrc field addresses should be registered in the AOTCodeCache address table
+    lea(reg, ExternalAddress(a));
+  } else {
+    mov(reg, (uint64_t)a);
+  }
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -5782,6 +5927,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
+    ldrw(tmp5, Address(a2, length_offset));
+    cmp(cnt1, tmp5);
+    br(NE, DONE); // If lengths differ, return false
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
     lea(a1, Address(a1, start_offset));
@@ -5848,6 +5996,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
+    ldrw(tmp5, Address(a2, length_offset));
+    cmp(cnt1, tmp5);
+    br(NE, DONE); // If lengths differ, return false
     // Increase loop counter by diff between base- and actual start-offset.
     addw(cnt1, cnt1, extra_length);
 
@@ -5949,7 +6100,6 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
 
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
@@ -6259,10 +6409,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 
 // Intrinsic for
 //
-// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
-//     return the number of characters copied.
-// - java/lang/StringUTF16.compress
-//     return index of non-latin1 character if copy fails, otherwise 'len'.
+// - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
+//
+// - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
+//   Encodes char[] to byte[] in ASCII
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
@@ -6657,11 +6811,36 @@ void MacroAssembler::spin_wait() {
         assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
         sb();
         break;
+      case SpinWait::WFET:
+        spin_wait_wfet(VM_Version::spin_wait_desc().delay());
+        break;
       default:
         ShouldNotReachHere();
     }
   }
   block_comment("}");
+}
+
+void MacroAssembler::spin_wait_wfet(int delay_ns) {
+  // The sequence assumes CNTFRQ_EL0 is fixed to 1GHz. The assumption is valid
+  // starting from Armv8.6, according to the "D12.1.2 The system counter" of the
+  // Arm Architecture Reference Manual for A-profile architecture version M.a.a.
+  // This is sufficient because FEAT_WFXT is introduced from Armv8.6.
+  Register target = rscratch1;
+  Register current = rscratch2;
+  get_cntvctss_el0(current);
+  add(target, current, delay_ns);
+
+  Label L_wait_loop;
+  bind(L_wait_loop);
+
+  wfet(target);
+  get_cntvctss_el0(current);
+
+  cmp(current, target);
+  br(LT, L_wait_loop);
+
+  sb();
 }
 
 // Stack frame creation/removal

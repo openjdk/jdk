@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -938,7 +939,8 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
-    method()->print_codes_on(&ss);
+    // Buffering to a stringStream, disable internal buffering so it's not done twice.
+    method()->print_codes_on(&ss, 0, false);
     print_code_on(&ss);
     print_pcs_on(&ss);
     tty->print("%s", ss.as_string()); // print all at once
@@ -1252,6 +1254,9 @@ void nmethod::post_init() {
 
   finalize_relocations();
 
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
+
   Universe::heap()->register_nmethod(this);
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
@@ -1305,9 +1310,7 @@ nmethod::nmethod(
     _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
@@ -1445,7 +1448,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
-  _oops_size                    = nm._oops_size;
 #if INCLUDE_JVMCI
   _metadata_size                = nm._metadata_size;
 #endif
@@ -1586,8 +1588,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
-      ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
-
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
@@ -1748,9 +1748,7 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
     assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
@@ -2040,7 +2038,7 @@ void nmethod::copy_values(GrowableArray<jobject>* array) {
   // The code and relocations have already been initialized by the
   // CodeBlob constructor, so it is valid even at this early point to
   // iterate over relocations and patch the code.
-  fix_oop_relocations(nullptr, nullptr, /*initialize_immediates=*/ true);
+  fix_oop_relocations(/*initialize_immediates=*/ true);
 }
 
 void nmethod::copy_values(GrowableArray<Metadata*>* array) {
@@ -2052,23 +2050,41 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+bool nmethod::fix_oop_relocations(bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this, begin, end);
+  RelocIterator iter(this);
+  bool modified_code = false;
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
-      if (initialize_immediates && reloc->oop_is_immediate()) {
+      if (!reloc->oop_is_immediate()) {
+        // Refresh the oop-related bits of this instruction.
+        reloc->set_value(reloc->value());
+        modified_code = true;
+      } else if (initialize_immediates) {
         oop* dest = reloc->oop_addr();
         jobject obj = *reinterpret_cast<jobject*>(dest);
         initialize_immediate_oop(dest, obj);
       }
-      // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
+      modified_code |= !reloc->metadata_is_immediate();
     }
+  }
+  return modified_code;
+}
+
+void nmethod::fix_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_oop_relocations(&icic);
+}
+
+void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
+  assert(icic != nullptr, "must provide context to track if code was modified");
+  bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
+  if (modified_code) {
+    icic->set_has_modified_code();
   }
 }
 
@@ -2136,6 +2152,9 @@ void nmethod::make_deoptimized() {
 
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
+
+  // Assume there will be some calls to make deoptimized.
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   while (iter.next()) {
 
@@ -2213,6 +2232,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   AtomicAccess::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2304,6 +2324,8 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // No need for fencing either.
     return false;
   }
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   {
     // Enter critical section.  Does not block for safepoint.
@@ -2739,6 +2761,8 @@ bool nmethod::is_unloading() {
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Note that if an nmethod has dead oops, everyone will agree that the
   // nmethod is_unloading. However, the is_cold heuristics can yield

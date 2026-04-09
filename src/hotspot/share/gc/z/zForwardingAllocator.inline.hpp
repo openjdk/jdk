@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 
 #include "gc/z/zForwardingAllocator.hpp"
 
-#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 inline size_t ZForwardingAllocator::size() const {
@@ -34,11 +33,11 @@ inline size_t ZForwardingAllocator::size() const {
 }
 
 inline bool ZForwardingAllocator::is_full() const {
-  return _top == _end;
+  return _top.load_relaxed() == _end;
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {
-  char* const addr = AtomicAccess::fetch_then_add(&_top, size);
+  char* const addr = _top.fetch_then_add(size);
   assert(addr + size <= _end, "Allocation should never fail");
   return addr;
 }

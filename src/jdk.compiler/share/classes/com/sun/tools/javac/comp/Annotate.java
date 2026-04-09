@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -861,7 +861,6 @@ public class Annotate {
                 if (!chk.validateAnnotationDeferErrors(annoTree))
                     log.error(annoTree.pos(), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
 
-                c = attributeAnnotation(annoTree, targetContainerType, ctx.env);
                 c.setSynthesized(true);
 
                 @SuppressWarnings("unchecked")
@@ -1107,6 +1106,7 @@ public class Annotate {
             for (List<JCAnnotation> dimAnnos : tree.dimAnnotations)
                 enterTypeAnnotations(dimAnnos, env, sym, false);
             scan(tree.elemtype);
+            scan(tree.dims);
             scan(tree.elems);
         }
 

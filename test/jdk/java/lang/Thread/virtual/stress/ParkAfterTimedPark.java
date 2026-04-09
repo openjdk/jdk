@@ -53,7 +53,7 @@ public class ParkAfterTimedPark {
         for (int i = 1; i <= iterations; i++) {
             System.out.println(Instant.now() + " => " + i + " of " + iterations);
             for (int timeout = 1; timeout <= 10; timeout++) {
-                test(timeout, true);
+                test(timeout, pinned);
             }
         }
     }
