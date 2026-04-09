@@ -5962,12 +5962,33 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
     return this_one->is_java_subtype_of(other);
   }
 
-  if (!this_one->klass()->is_subtype_of(other->klass()) && !other->klass()->is_subtype_of(this_one->klass())) {
+  bool this_is_subtype = this_one->klass()->is_subtype_of(other->klass());
+
+  if (!this_is_subtype && !other->klass()->is_subtype_of(this_one->klass())) {
     return false;
   }
 
   if (this_exact) {
-    return this_one->klass()->is_subtype_of(other->klass()) && this_one->_interfaces->contains(other->_interfaces);
+    return this_is_subtype && this_one->_interfaces->contains(other->_interfaces);
+  }
+
+  // If 'this_one' has interface constraints, check if 'other' satisfies them
+  // when 'other' is a subtype of 'this_one' and narrowed to a unique leaf
+  // via CHA. If not, this subtype relationship is impossible.
+  if (!this_one->_interfaces->empty() &&
+      ((this_is_subtype && (other->klass() == this_one->klass())) || !this_is_subtype)) {
+    const TypeKlassPtr* otherk = other->isa_klassptr() ? other->is_klassptr() :
+                                                         other->is_oopptr()->as_klass_type();
+    const TypeKlassPtr* improved_other = otherk->try_improve();
+    ciInstanceKlass* base_ik = improved_other->is_instklassptr()->instance_klass();
+    if (!base_ik->has_subklass()) {
+      if (!improved_other->_interfaces->contains(this_one->_interfaces)) {
+        if (!base_ik->is_final()) {
+          Compile::current()->dependencies()->assert_leaf_type(base_ik);
+        }
+        return false;
+      }
+    }
   }
 
   return true;
