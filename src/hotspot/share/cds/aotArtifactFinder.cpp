@@ -115,10 +115,25 @@ void AOTArtifactFinder::find_artifacts() {
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
-    // Skip "AOT tooling classes" in this block. They will be included in the AOT cache only if
-    // - One of their subtypes is included
-    // - One of their instances is found by HeapShared.
-    if (!info.is_excluded() && !info.is_aot_tooling_class()) {
+    if (ik->name()->equals("java/lang/constant/ConstantDescs")) {
+      tty->print_cr("Hello1");
+    }
+
+    bool skip = info.is_excluded();
+    if (info.is_aot_tooling_class()) {
+      // Avoid including classes that were loaded only by AOT tooling, as they
+      // are not loaded as part of the app's normal run.
+      if (ik->is_initialized() && ik->has_aot_safe_initializer()) {
+        // Cannot skip this class, as other heap objects may point to its static fields
+      } else {
+        // Skip this class for now, but it might be added later if
+        // - One of their subtypes is included
+        // - One of their instances is found by HeapShared.
+        skip = true;
+      }
+    }
+
+    if (!skip) {
       bool add = false;
       if (!ik->is_hidden()) {
         // All non-hidden classes are always included into the AOT cache

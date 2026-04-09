@@ -512,11 +512,16 @@ public final class ModuleBootstrap {
         }
     }
 
+    static final boolean DBG_A = System.getProperty("ioi.allJrtOrModularJar") == null;
+    static final boolean DBG_B = System.getProperty("ioi.containsSplitPackages") == null;
+    static final boolean DBG_C = System.getProperty("ioi.containsIncubatorModule") == null;
+
     /**
      * Returns true if all modules in the configuration are in the run-time image or
      * modular JAR files.
      */
     private static boolean allJrtOrModularJar(Configuration cf) {
+      if (DBG_A) {
         for (ResolvedModule module : cf.modules()) {
             URI uri = module.reference().location().orElseThrow();
             if (!uri.getScheme().equalsIgnoreCase("jrt") && !isJarFile(uri)) {
@@ -524,6 +529,13 @@ public final class ModuleBootstrap {
             }
         }
         return true;
+      } else {
+       return !cf.modules().stream()
+                .map(m -> m.reference().location().orElseThrow())
+                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt")
+                        && !isJarFile(uri));
+
+      }
     }
 
     /**
@@ -542,6 +554,7 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains modules with overlapping packages.
      */
     private static boolean containsSplitPackages(Configuration cf) {
+     if (DBG_B) {
         var allPackages = new HashSet<String>();
         for (ResolvedModule module: cf.modules()) {
             Set<String> packages = module.reference().descriptor().packages();
@@ -552,6 +565,13 @@ public final class ModuleBootstrap {
             }
         }
         return false;
+     } else {
+        boolean found = cf.modules().stream()
+                .map(m -> m.reference().descriptor().packages())
+                .flatMap(Set::stream)
+                .allMatch(new HashSet<>()::add);
+        return !found;
+     }
     }
 
     /**
@@ -1066,12 +1086,18 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains an incubator module.
      */
     private static boolean containsIncubatorModule(Configuration cf) {
+      if (DBG_C) {
         for (ResolvedModule module : cf.modules()) {
             if (ModuleResolution.hasIncubatingWarning(module.reference())) {
                 return true;
             }
         }
         return false;
+      } else {
+        return cf.modules().stream()
+                .map(ResolvedModule::reference)
+                .anyMatch(ModuleResolution::hasIncubatingWarning);
+      }
     }
 
     /**
