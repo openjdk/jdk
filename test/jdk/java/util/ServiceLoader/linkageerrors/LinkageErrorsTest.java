@@ -59,7 +59,7 @@ class LinkageErrorsTest {
     @Test
     void testLoadClassThrows() throws Exception {
         // create services configuration file that lists two providers
-        createServicesonfigFile(test1.Service.class, "test1.Provider1", "test1.Provider2");
+        createServicesConfigFile(test1.Service.class, "test1.Provider1", "test1.Provider2");
 
         // delete Provider's super class, load of Provider2 will fail with LinkageError
         Files.delete(classesDir.resolve("test1", "Super.class"));
@@ -85,7 +85,7 @@ class LinkageErrorsTest {
     @Test
     void testFindConstructorThrows() throws Exception {
         // create services configuration file that lists two providers
-        createServicesonfigFile(test2.Service.class, "test2.Provider1", "test2.Provider2");
+        createServicesConfigFile(test2.Service.class, "test2.Provider1", "test2.Provider2");
 
         // delete Provider's parameter class, instantiating Provider2 will fail with LinkageError
         Files.delete(classesDir.resolve("test2", "Param.class"));
@@ -108,7 +108,7 @@ class LinkageErrorsTest {
      * Create services configuration file for the given service with the given
      * provider class names.
      */
-    private void createServicesonfigFile(Class<?> service,
+    private void createServicesConfigFile(Class<?> service,
                                          String... providerNames) throws Exception {
         Path configFile = classesDir.resolve("META-INF", "services", service.getName());
         Files.createDirectories(configFile.getParent());
