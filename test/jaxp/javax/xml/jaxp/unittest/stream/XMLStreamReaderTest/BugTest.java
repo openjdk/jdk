@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,22 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.StringReader;
-import javax.xml.stream.XMLEventReader;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8069098
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.BugTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.BugTest
  * @summary Test StAX parser can parse xml without declaration.
  */
 public class BugTest {
@@ -52,17 +52,18 @@ public class BugTest {
      * @param type2 the type of the 2nd event
      * @throws Exception if the test fails to run properly
      */
-    @Test(dataProvider = "xmls")
-    public static void test1(String xml, int type1, int type2) throws Exception {
-       XMLInputFactory factory = XMLInputFactory.newFactory();
+    @ParameterizedTest
+    @MethodSource("getXMLs")
+    public void test1(String xml, int type1, int type2) throws Exception {
+        XMLInputFactory factory = XMLInputFactory.newFactory();
 
-       XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
-       int type1stEvent = reader.getEventType();
-       int type2ndEvent = reader.next();
-       System.out.println("First event: " + type1stEvent);
-       System.out.println("2nd event: " + type2ndEvent);
-       Assert.assertEquals(type1, type1stEvent);
-       Assert.assertEquals(type2, type2ndEvent);
+        XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
+        int type1stEvent = reader.getEventType();
+        int type2ndEvent = reader.next();
+        System.out.println("First event: " + type1stEvent);
+        System.out.println("2nd event: " + type2ndEvent);
+        assertEquals(type1, type1stEvent);
+        assertEquals(type2, type2ndEvent);
     }
 
 
@@ -75,25 +76,25 @@ public class BugTest {
      * @param type2 the type of the 2nd event
      * @throws Exception if the test fails to run properly
      */
-    @Test(dataProvider = "xmls")
-    public static void test2(String xml, int type1, int type2) throws Exception {
-       XMLInputFactory factory = XMLInputFactory.newFactory();
+    @ParameterizedTest
+    @MethodSource("getXMLs")
+    public void test2(String xml, int type1, int type2) throws Exception {
+        XMLInputFactory factory = XMLInputFactory.newFactory();
 
-       XMLEventReader reader = factory.createXMLEventReader(new StringReader(xml));
-       int type1stEvent = reader.nextEvent().getEventType();
-       int type2ndEvent = reader.nextEvent().getEventType();
-       System.out.println("First event: " + type1stEvent);
-       System.out.println("2nd event: " + type2ndEvent);
-       Assert.assertEquals(type1, type1stEvent);
-       Assert.assertEquals(type2, type2ndEvent);
+        XMLEventReader reader = factory.createXMLEventReader(new StringReader(xml));
+        int type1stEvent = reader.nextEvent().getEventType();
+        int type2ndEvent = reader.nextEvent().getEventType();
+        System.out.println("First event: " + type1stEvent);
+        System.out.println("2nd event: " + type2ndEvent);
+        assertEquals(type1, type1stEvent);
+        assertEquals(type2, type2ndEvent);
     }
 
     /*
        DataProvider: for testing beginning event type
        Data: xml, 1st event type, 2nd event type
      */
-    @DataProvider(name = "xmls")
-    public Object[][] getXMLs() {
+    public static Object[][] getXMLs() {
 
         return new Object[][]{
             {"<?xml version='1.0'?><foo/>",

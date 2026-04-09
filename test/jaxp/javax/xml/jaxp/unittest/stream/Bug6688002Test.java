@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,24 @@
 
 package stream;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 6688002
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.Bug6688002Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.Bug6688002Test
  * @summary Test single instance of XMLOutputFactory/XMLInputFactory create multiple Writer/Readers in parallel.
  */
 public class Bug6688002Test {
@@ -65,7 +63,7 @@ public class Bug6688002Test {
         }
     }
 
-    public class MyRunnable implements Runnable {
+    private static class MyRunnable implements Runnable {
         final String no;
 
         MyRunnable(int no) {
@@ -74,7 +72,7 @@ public class Bug6688002Test {
 
         public void run() {
             try {
-                FileOutputStream fos = new FileOutputStream(USER_DIR + no);
+                FileOutputStream fos = new FileOutputStream(no);
                 XMLStreamWriter w = getWriter(fos);
                 // System.out.println("Writer="+w+" Thread="+Thread.currentThread());
                 w.writeStartDocument();
@@ -88,7 +86,7 @@ public class Bug6688002Test {
                 w.close();
                 fos.close();
 
-                FileInputStream fis = new FileInputStream(USER_DIR + no);
+                FileInputStream fis = new FileInputStream(no);
                 XMLStreamReader r = getReader(fis);
                 while (r.hasNext()) {
                     r.next();
@@ -96,19 +94,17 @@ public class Bug6688002Test {
                 r.close();
                 fis.close();
             } catch (Exception e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
         }
     }
 
-    public static/* synchronized */XMLStreamReader getReader(InputStream is) throws Exception {
+    public static XMLStreamReader getReader(InputStream is) throws Exception {
         return inputFactory.createXMLStreamReader(is);
-        // return XMLStreamReaderFactory.create(null, is, true);
     }
 
-    public static/* synchronized */XMLStreamWriter getWriter(OutputStream os) throws Exception {
+    public static XMLStreamWriter getWriter(OutputStream os) throws Exception {
         return outputFactory.createXMLStreamWriter(os);
-        // return XMLStreamWriterFactory.createXMLStreamWriter(os);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 
 package stream.XMLEventReaderTest;
 
-import org.testng.annotations.Test;
-import javax.xml.stream.*;
+import org.junit.jupiter.api.Test;
+
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -33,8 +37,8 @@ import java.util.Iterator;
 /*
  * @test
  * @bug 8209615
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.JDK8209615
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.JDK8209615
  * @summary Verifies that the parser continues parsing the character data
  */
 public class JDK8209615 {

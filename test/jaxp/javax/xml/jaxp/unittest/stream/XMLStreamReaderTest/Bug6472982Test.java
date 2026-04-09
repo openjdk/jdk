@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  * @test
  * @bug 6472982
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.Bug6472982Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.Bug6472982Test
  * @summary Test XMLStreamReader.getNamespaceContext().getPrefix("") won't throw IllegalArgumentException.
  */
 public class Bug6472982Test {
@@ -46,24 +46,17 @@ public class Bug6472982Test {
     String prefix = "a";
 
     @Test
-    public void testNamespaceContext() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            NamespaceContext context = sr.getNamespaceContext();
-            Assert.assertTrue(context.getPrefix("") == null);
-
-        } catch (IllegalArgumentException iae) {
-            Assert.fail("NamespacePrefix#getPrefix() should not throw an IllegalArgumentException for empty uri. ");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public void testNamespaceContext() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+        InputStream is = new java.io.ByteArrayInputStream(getXML().getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        NamespaceContext context = sr.getNamespaceContext();
+        assertNull(context.getPrefix(""));
     }
 
     String getXML() {
-        StringBuffer sbuffer = new StringBuffer();
+        StringBuilder sbuffer = new StringBuilder();
         sbuffer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         sbuffer.append("<" + rootElement + " xmlns:");
         sbuffer.append(prefix);

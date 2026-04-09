@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
 
 package stream.XMLEventWriterTest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -34,14 +32,14 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.stream.StreamSource;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventWriterTest.XMLEventWriterTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventWriterTest.XMLEventWriterTest
  * @summary Test XMLEventWriter.
  */
 public class XMLEventWriterTest {
@@ -50,25 +48,17 @@ public class XMLEventWriterTest {
      * Test XMLStreamWriter parsing a file with an external entity reference.
      */
     @Test
-    public void testXMLStreamWriter() {
+    public void testXMLStreamWriter() throws Exception {
+        XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+        XMLEventWriter eventWriter = outputFactory.createXMLEventWriter(System.out);
+        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+        String file = getClass().getResource("XMLEventWriterTest.xml").getPath();
+        XMLEventReader eventReader = inputFactory.createXMLEventReader(new StreamSource(new File(file)));
 
-        try {
-            XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-            XMLEventWriter eventWriter = outputFactory.createXMLEventWriter(System.out);
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            String file = getClass().getResource("XMLEventWriterTest.xml").getPath();
-            XMLEventReader eventReader = inputFactory.createXMLEventReader(new StreamSource(new File(file)));
-
-            // adds the event to the consumer.
-            eventWriter.add(eventReader);
-            eventWriter.flush();
-            eventWriter.close();
-
-            // expected success
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            Assert.fail(exception.toString());
-        }
+        // adds the event to the consumer.
+        eventWriter.add(eventReader);
+        eventWriter.flush();
+        eventWriter.close();
     }
 
     /**
@@ -76,80 +66,72 @@ public class XMLEventWriterTest {
      * during merge of xml files.
      */
     @Test
-    public void testMerge() {
+    public void testMerge() throws Exception {
+        // Create the XML input factory
+        XMLInputFactory factory = XMLInputFactory.newInstance();
 
-        try {
-            // Create the XML input factory
-            XMLInputFactory factory = XMLInputFactory.newInstance();
+        // Create XML event reader 1
+        InputStream inputStream1 = new FileInputStream(new File(XMLEventWriterTest.class.getResource("merge-1.xml").toURI()));
+        XMLEventReader r1 = factory.createXMLEventReader(inputStream1);
 
-            // Create XML event reader 1
-            InputStream inputStream1 = new FileInputStream(new File(XMLEventWriterTest.class.getResource("merge-1.xml").toURI()));
-            XMLEventReader r1 = factory.createXMLEventReader(inputStream1);
+        // Create XML event reader 2
+        InputStream inputStream2 = new FileInputStream(new File(XMLEventWriterTest.class.getResource("merge-2.xml").toURI()));
+        XMLEventReader r2 = factory.createXMLEventReader(inputStream2);
 
-            // Create XML event reader 2
-            InputStream inputStream2 = new FileInputStream(new File(XMLEventWriterTest.class.getResource("merge-2.xml").toURI()));
-            XMLEventReader r2 = factory.createXMLEventReader(inputStream2);
+        // Create the output factory
+        XMLOutputFactory xmlof = XMLOutputFactory.newInstance();
 
-            // Create the output factory
-            XMLOutputFactory xmlof = XMLOutputFactory.newInstance();
+        // Create XML event writer
+        XMLEventWriter xmlw = xmlof.createXMLEventWriter(System.out);
 
-            // Create XML event writer
-            XMLEventWriter xmlw = xmlof.createXMLEventWriter(System.out);
+        // Read to first <product> element in document 1
+        // and output to result document
+        QName bName = new QName("b");
 
-            // Read to first <product> element in document 1
-            // and output to result document
-            QName bName = new QName("b");
+        while (r1.hasNext()) {
+            // Read event to be written to result document
+            XMLEvent event = r1.nextEvent();
 
-            while (r1.hasNext()) {
-                // Read event to be written to result document
-                XMLEvent event = r1.nextEvent();
+            if (event.getEventType() == XMLEvent.END_ELEMENT) {
 
-                if (event.getEventType() == XMLEvent.END_ELEMENT) {
+                // Start element - stop at <product> element
+                QName name = event.asEndElement().getName();
+                if (name.equals(bName)) {
 
-                    // Start element - stop at <product> element
-                    QName name = event.asEndElement().getName();
-                    if (name.equals(bName)) {
+                    QName zName = new QName("z");
 
-                        QName zName = new QName("z");
+                    boolean isZr = false;
 
-                        boolean isZr = false;
-
-                        while (r2.hasNext()) {
-                            // Read event to be written to result document
-                            XMLEvent event2 = r2.nextEvent();
-                            // Output event
-                            if (event2.getEventType() == XMLEvent.START_ELEMENT && event2.asStartElement().getName().equals(zName)) {
-                                isZr = true;
-                            }
-
-                            if (xmlw != null && isZr) {
-                                xmlw.add(event2);
-                            }
-
-                            // stop adding events after </z>
-                            // i.e. do not write END_DOCUMENT :)
-                            if (isZr && event2.getEventType() == XMLEvent.END_ELEMENT && event2.asEndElement().getName().equals(zName)) {
-                                isZr = false;
-                            }
+                    while (r2.hasNext()) {
+                        // Read event to be written to result document
+                        XMLEvent event2 = r2.nextEvent();
+                        // Output event
+                        if (event2.getEventType() == XMLEvent.START_ELEMENT && event2.asStartElement().getName().equals(zName)) {
+                            isZr = true;
                         }
-                        xmlw.flush();
-                    }
-                }
 
-                // Output event
-                if (xmlw != null) {
-                    xmlw.add(event);
+                        if (xmlw != null && isZr) {
+                            xmlw.add(event2);
+                        }
+
+                        // stop adding events after </z>
+                        // i.e. do not write END_DOCUMENT :)
+                        if (isZr && event2.getEventType() == XMLEvent.END_ELEMENT && event2.asEndElement().getName().equals(zName)) {
+                            isZr = false;
+                        }
+                    }
+                    xmlw.flush();
                 }
             }
 
-            // Read to first <product> element in document 1
-            // without writing to result document
-            xmlw.close();
-
-            // expected success
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Assert.fail(ex.toString());
+            // Output event
+            if (xmlw != null) {
+                xmlw.add(event);
+            }
         }
+
+        // Read to first <product> element in document 1
+        // without writing to result document
+        xmlw.close();
     }
 }

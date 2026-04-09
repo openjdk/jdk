@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,18 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 
 /*
  * @test
  * @bug 6452107
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.Bug6452107
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.Bug6452107
  * @summary Test StAX can write ISO-8859-1 encoding XML.
  */
 public class Bug6452107 {
@@ -48,16 +45,12 @@ public class Bug6452107 {
      * inspected, this test throws an exception.
      */
     @Test
-    public void test() {
+    public void test() throws Exception {
         final String ENCODING = "ISO-8859-1";
 
-        try {
-            OutputStream out = new ByteArrayOutputStream();
-            XMLOutputFactory factory = XMLOutputFactory.newInstance();
-            XMLStreamWriter writer = factory.createXMLStreamWriter(out, ENCODING);
-            writer.writeStartDocument(ENCODING, "1.0");
-        } catch (XMLStreamException e) {
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        OutputStream out = new ByteArrayOutputStream();
+        XMLOutputFactory factory = XMLOutputFactory.newInstance();
+        XMLStreamWriter writer = factory.createXMLStreamWriter(out, ENCODING);
+        writer.writeStartDocument(ENCODING, "1.0");
     }
 }

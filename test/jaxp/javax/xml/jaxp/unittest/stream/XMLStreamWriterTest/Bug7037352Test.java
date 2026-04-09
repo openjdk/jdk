@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,34 @@
 
 package stream.XMLStreamWriterTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamResult;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /*
  * @test
  * @bug 7037352
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.Bug7037352Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.Bug7037352Test
  * @summary Test XMLStreamWriter.getNamespaceContext().getPrefix with XML_NS_URI and XMLNS_ATTRIBUTE_NS_URI.
  */
 public class Bug7037352Test {
 
     @Test
-    public void test() {
-        try {
-            XMLOutputFactory xof = XMLOutputFactory.newInstance();
-            StreamResult sr = new StreamResult();
-            XMLStreamWriter xsw = xof.createXMLStreamWriter(sr);
-            NamespaceContext nc = xsw.getNamespaceContext();
-            System.out.println(nc.getPrefix(XMLConstants.XML_NS_URI));
-            System.out.println("  expected result: " + XMLConstants.XML_NS_PREFIX);
-            System.out.println(nc.getPrefix(XMLConstants.XMLNS_ATTRIBUTE_NS_URI));
-            System.out.println("  expected result: " + XMLConstants.XMLNS_ATTRIBUTE);
+    public void test() throws Exception {
+        XMLOutputFactory xof = XMLOutputFactory.newInstance();
+        StreamResult sr = new StreamResult();
+        XMLStreamWriter xsw = xof.createXMLStreamWriter(sr);
+        NamespaceContext nc = xsw.getNamespaceContext();
 
-            Assert.assertTrue(nc.getPrefix(XMLConstants.XML_NS_URI) == XMLConstants.XML_NS_PREFIX);
-            Assert.assertTrue(nc.getPrefix(XMLConstants.XMLNS_ATTRIBUTE_NS_URI) == XMLConstants.XMLNS_ATTRIBUTE);
-
-        } catch (Throwable ex) {
-            Assert.fail(ex.toString());
-        }
+        assertSame(XMLConstants.XML_NS_PREFIX, nc.getPrefix(XMLConstants.XML_NS_URI));
+        assertSame(XMLConstants.XMLNS_ATTRIBUTE, nc.getPrefix(XMLConstants.XMLNS_ATTRIBUTE_NS_URI));
     }
 
 }

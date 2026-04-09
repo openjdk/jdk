@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,33 @@
 
 package stream.XMLInputFactoryTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
+import java.util.NoSuchElementException;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 6909759
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLInputFactoryTest.Bug6909759Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLInputFactoryTest.Bug6909759Test
  * @summary Test createXMLStreamReader with StreamSource.
  */
 public class Bug6909759Test {
 
-
     @Test
-    public void testCreateXMLStreamReader() {
+    public void testCreateXMLStreamReader() throws Exception {
+        StreamSource ss = new StreamSource(getClass().getResourceAsStream("play.xml"));
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader xsr = xif.createXMLStreamReader(ss);
 
-        try {
-            StreamSource ss = new StreamSource(getClass().getResourceAsStream("play.xml"));
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            // File file = new File("./tests/XMLStreamReader/sgml.xml");
-            // FileInputStream inputStream = new FileInputStream(file);
-            XMLStreamReader xsr;
-            xsr = xif.createXMLStreamReader(ss);
-
-            while (xsr.hasNext()) {
-                int eventType = xsr.next();
-            }
-
-        } catch (UnsupportedOperationException oe) {
-            Assert.fail("StreamSource should be supported");
-        } catch (XMLStreamException ex) {
-            Assert.fail("fix the test");
+        while (xsr.hasNext()) {
+            xsr.next();
         }
+        assertThrows(NoSuchElementException.class, xsr::next);
     }
 }

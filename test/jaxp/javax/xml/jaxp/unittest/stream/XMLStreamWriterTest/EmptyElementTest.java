@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.EmptyElementTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.EmptyElementTest
  * @summary Test XMLStreamWriter writes namespace and attribute after writeEmptyElement.
  */
 public class EmptyElementTest {
@@ -51,34 +51,22 @@ public class EmptyElementTest {
     public void testWriterOnLinux() throws Exception {
 
         // setup XMLStreamWriter
-        try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            xmlOutputFactory = XMLOutputFactory.newInstance();
-            xmlOutputFactory.setProperty(xmlOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream);
-        } catch (Exception e) {
-            System.err.println("Unexpected Exception: " + e.toString());
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+        byteArrayOutputStream = new ByteArrayOutputStream();
+        xmlOutputFactory = XMLOutputFactory.newInstance();
+        xmlOutputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, true);
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream);
 
         // create & write a document
-        try {
-            xmlStreamWriter.writeStartDocument();
-            xmlStreamWriter.writeStartElement("hello");
-            xmlStreamWriter.writeDefaultNamespace("http://hello");
-            xmlStreamWriter.writeEmptyElement("world");
-            xmlStreamWriter.writeDefaultNamespace("http://world");
-            xmlStreamWriter.writeAttribute("prefixes", "foo bar");
-            xmlStreamWriter.writeEndElement();
-            xmlStreamWriter.writeEndDocument();
-            xmlStreamWriter.flush();
-            String actualOutput = byteArrayOutputStream.toString();
-            Assert.assertEquals(EXPECTED_OUTPUT, actualOutput);
-        } catch (Exception e) {
-            System.err.println("Unexpected Exception: " + e.toString());
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+        xmlStreamWriter.writeStartDocument();
+        xmlStreamWriter.writeStartElement("hello");
+        xmlStreamWriter.writeDefaultNamespace("http://hello");
+        xmlStreamWriter.writeEmptyElement("world");
+        xmlStreamWriter.writeDefaultNamespace("http://world");
+        xmlStreamWriter.writeAttribute("prefixes", "foo bar");
+        xmlStreamWriter.writeEndElement();
+        xmlStreamWriter.writeEndDocument();
+        xmlStreamWriter.flush();
+        String actualOutput = byteArrayOutputStream.toString();
+        assertEquals(EXPECTED_OUTPUT, actualOutput);
     }
 }

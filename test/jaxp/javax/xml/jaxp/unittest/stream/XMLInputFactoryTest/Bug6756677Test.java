@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 package stream.XMLInputFactoryTest;
 
-import java.util.PropertyPermission;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /*
  * @test
  * @bug 6756677
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @library /javax/xml/jaxp/unittest
  * @compile MyInputFactory.java
- * @run testng/othervm stream.XMLInputFactoryTest.Bug6756677Test
+ * @run junit/othervm stream.XMLInputFactoryTest.Bug6756677Test
  * @summary Test XMLInputFactory.newFactory(String factoryId, ClassLoader classLoader).
  */
 public class Bug6756677Test {
@@ -42,31 +43,20 @@ public class Bug6756677Test {
     @Test
     public void testNewInstance() {
         String myFactory = "stream.XMLInputFactoryTest.MyInputFactory";
-        try {
-            setSystemProperty("MyInputFactory", myFactory);
-            XMLInputFactory xif = XMLInputFactory.newInstance("MyInputFactory", null);
-            System.out.println(xif.getClass().getName());
-            Assert.assertTrue(xif.getClass().getName().equals(myFactory));
-
-        } catch (UnsupportedOperationException oe) {
-            Assert.fail(oe.getMessage());
-        }
+        System.setProperty("MyInputFactory", myFactory);
+        XMLInputFactory xif = XMLInputFactory.newInstance("MyInputFactory", null);
+        System.out.println(xif.getClass().getName());
+        assertEquals(myFactory, xif.getClass().getName());
     }
 
     // newFactory was added in StAX 1.2
     @Test
     public void testNewFactory() {
         String myFactory = "stream.XMLInputFactoryTest.MyInputFactory";
-        ClassLoader cl = null;
-        try {
-            setSystemProperty("MyInputFactory", myFactory);
-            XMLInputFactory xif = XMLInputFactory.newFactory("MyInputFactory", cl);
-            System.out.println(xif.getClass().getName());
-            Assert.assertTrue(xif.getClass().getName().equals(myFactory));
-
-        } catch (UnsupportedOperationException oe) {
-            Assert.fail(oe.getMessage());
-        }
+        System.setProperty("MyInputFactory", myFactory);
+        XMLInputFactory xif = XMLInputFactory.newFactory("MyInputFactory", null);
+        System.out.println(xif.getClass().getName());
+        assertEquals(myFactory, xif.getClass().getName());
     }
 
 
@@ -82,10 +72,10 @@ public class Bug6756677Test {
      * XMLInputFactory
      */
     @Test
-    public void test29() throws Exception {
-        setSystemProperty(XMLInputFactoryID, XMLInputFactoryClassName);
+    public void test29() {
+        System.setProperty(XMLInputFactoryID, XMLInputFactoryClassName);
         XMLInputFactory xif = XMLInputFactory.newInstance(XMLInputFactoryID, CL);
-        Assert.assertTrue(xif instanceof XMLInputFactory, "xif should be an instance of XMLInputFactory");
+        assertInstanceOf(XMLInputFactory.class, xif, "xif should be an instance of XMLInputFactory");
     }
 
     /*
@@ -96,11 +86,11 @@ public class Bug6756677Test {
      * newInstance of XMLInputFactory
      */
     @Test
-    public void test31() throws Exception {
+    public void test31() {
         Bug6756677Test test3 = new Bug6756677Test();
         ClassLoader cl = (test3.getClass()).getClassLoader();
-        setSystemProperty(XMLInputFactoryID, XMLInputFactoryClassName);
+        System.setProperty(XMLInputFactoryID, XMLInputFactoryClassName);
         XMLInputFactory xif = XMLInputFactory.newInstance(XMLInputFactoryID, cl);
-        Assert.assertTrue(xif instanceof XMLInputFactory, "xif should be an instance of XMLInputFactory");
+        assertInstanceOf(XMLInputFactory.class, xif, "xif should be an instance of XMLInputFactory");
     }
 }

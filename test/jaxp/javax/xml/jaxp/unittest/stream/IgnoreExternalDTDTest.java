@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 package stream;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-
-import org.testng.annotations.Test;
+import java.io.StringReader;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.IgnoreExternalDTDTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.IgnoreExternalDTDTest
  * @summary Test feature ignore-external-dtd.
  */
 public class IgnoreExternalDTDTest {
@@ -52,7 +51,7 @@ public class IgnoreExternalDTDTest {
     }
 
     @Test
-    public void testFeatureNegative() throws Exception {
+    public void testFeatureNegative() {
         XMLInputFactory xif = XMLInputFactory.newInstance();
         xif.setProperty(ZEPHYR_PROPERTY_PREFIX + IGNORE_EXTERNAL_DTD, Boolean.FALSE);
         try {

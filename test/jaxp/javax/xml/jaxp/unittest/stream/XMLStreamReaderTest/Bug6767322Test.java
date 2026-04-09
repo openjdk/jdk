@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,53 +23,39 @@
 
 package stream.XMLStreamReaderTest;
 
-import java.io.ByteArrayInputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import java.io.ByteArrayInputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  * @test
  * @bug 6767322
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.Bug6767322Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.Bug6767322Test
  * @summary Test XMLStreamReader.getVersion() returns null if a version isn't declared.
  */
 public class Bug6767322Test {
     private static final String INPUT_FILE = "Bug6767322.xml";
 
     @Test
-    public void testVersionSet() {
-        try {
-            XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(),
-                    this.getClass().getResourceAsStream(INPUT_FILE));
+    public void testVersionSet() throws Exception {
+        XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(this.getClass().getResource(INPUT_FILE).toExternalForm(),
+                this.getClass().getResourceAsStream(INPUT_FILE));
 
-            String version = r.getVersion();
-            System.out.println("Bug6767322.xml: " + version);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+        String version = r.getVersion();
+        System.out.println("Bug6767322.xml: " + version);
     }
 
     @Test
-    public void testVersionNotSet() {
-        try {
-            String xmlText = "Version not declared";
-            XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new ByteArrayInputStream(xmlText.getBytes()));
-            String version = r.getVersion();
-            System.out.println("Version for text \"" + xmlText + "\": " + version);
-            if (version != null) {
-                Assert.fail("getVersion should return null");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception occured: " + e.getMessage());
-        }
+    public void testVersionNotSet() throws Exception {
+        String xmlText = "Version not declared";
+        XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new ByteArrayInputStream(xmlText.getBytes()));
+        String version = r.getVersion();
+        System.out.println("Version for text \"" + xmlText + "\": " + version);
+        assertNull(version, "getVersion should return null");
     }
 }

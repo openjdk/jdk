@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  */
 package stream.XMLEventReaderTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.EntityReference;
 import javax.xml.stream.events.XMLEvent;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6555001
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.Bug6555001
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.Bug6555001
  * @summary Test StAX parser replaces the entity reference as setting.
  */
 public class Bug6555001 {
-    private static final String XML = ""
-            + "<!DOCTYPE doc SYSTEM 'file:///tmp/this/does/not/exist/but/that/is/ok' ["
-            + "<!ENTITY def '<para/>'>" + "]>" + "<doc>&def;&undef;</doc>";
+    private static final String XML =
+            "<!DOCTYPE doc SYSTEM 'file:///tmp/this/does/not/exist/but/that/is/ok' ["
+                    + "<!ENTITY def '<para/>'>" + "]>" + "<doc>&def;&undef;</doc>";
 
     @Test
     public void testReplacing() throws Exception {
@@ -68,8 +71,8 @@ public class Bug6555001 {
             }
         }
 
-        Assert.assertEquals(false, sawDef);
-        Assert.assertEquals(true, sawUndef);
+        assertFalse(sawDef);
+        assertTrue(sawUndef);
         reader.close();
     }
 
@@ -99,8 +102,8 @@ public class Bug6555001 {
             }
         }
 
-        Assert.assertEquals(true, sawDef);
-        Assert.assertEquals(true, sawUndef);
+        assertTrue(sawDef);
+        assertTrue(sawUndef);
         reader.close();
     }
 }

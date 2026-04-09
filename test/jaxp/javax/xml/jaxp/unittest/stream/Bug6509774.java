@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,151 +23,92 @@
 
 package stream;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 6509774
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.Bug6509774
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.Bug6509774
  * @summary Test Property javax.xml.stream.supportDTD, DTD events are now returned even if supportDTD=false.
  */
 public class Bug6509774 {
 
     @Test
-    public void test0() {
+    public void test0() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty("javax.xml.stream.supportDTD", Boolean.TRUE);
 
-        try {
+        XMLStreamReader xsr = xif.createXMLStreamReader(
+                getClass().getResource("sgml_Bug6509774.xml").toString(),
+                getClass().getResourceAsStream("sgml_Bug6509774.xml"));
 
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+        assertEquals(XMLStreamConstants.START_DOCUMENT, xsr.getEventType());
 
-            xif.setProperty("javax.xml.stream.supportDTD", Boolean.TRUE);
+        int event = xsr.next();
 
-            XMLStreamReader xsr = xif.createXMLStreamReader(
+        // Must be a DTD event since DTDs are supported
+        assertEquals(XMLStreamConstants.DTD, event);
 
-            getClass().getResource("sgml_Bug6509774.xml").toString(),
-
-            getClass().getResourceAsStream("sgml_Bug6509774.xml"));
-
-            Assert.assertTrue(xsr.getEventType() == XMLStreamConstants.START_DOCUMENT);
-
-            int event = xsr.next();
-
-            // Must be a DTD event since DTDs are supported
-
-            Assert.assertTrue(event == XMLStreamConstants.DTD);
-
-            while (xsr.hasNext()) {
-
-                event = xsr.next();
-
-            }
-
-            Assert.assertTrue(event == XMLStreamConstants.END_DOCUMENT);
-
-            xsr.close();
-
+        while (xsr.hasNext()) {
+            event = xsr.next();
         }
 
-        catch (Exception e) {
-
-            Assert.fail(e.getMessage());
-
-        }
-
+        assertEquals(XMLStreamConstants.END_DOCUMENT, event);
+        xsr.close();
     }
 
     @Test
-    public void test1() {
+    public void test1() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty("javax.xml.stream.supportDTD", Boolean.FALSE);
 
-        try {
+        XMLStreamReader xsr = xif.createXMLStreamReader(
+                getClass().getResource("sgml_Bug6509774.xml").toString(),
+                getClass().getResourceAsStream("sgml_Bug6509774.xml"));
 
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+        assertEquals(XMLStreamConstants.START_DOCUMENT, xsr.getEventType());
 
-            xif.setProperty("javax.xml.stream.supportDTD", Boolean.FALSE);
+        int event = xsr.next();
 
-            XMLStreamReader xsr = xif.createXMLStreamReader(
+        // Should not be a DTD event since they are ignored
+        assertEquals(XMLStreamConstants.DTD, event);
 
-            getClass().getResource("sgml_Bug6509774.xml").toString(),
-
-            getClass().getResourceAsStream("sgml_Bug6509774.xml"));
-
-            Assert.assertTrue(xsr.getEventType() == XMLStreamConstants.START_DOCUMENT);
-
-            int event = xsr.next();
-
-            // Should not be a DTD event since they are ignored
-
-            Assert.assertTrue(event == XMLStreamConstants.DTD);
-
-            while (xsr.hasNext()) {
-
-                event = xsr.next();
-
-            }
-
-            Assert.assertTrue(event == XMLStreamConstants.END_DOCUMENT);
-
-            xsr.close();
-
+        while (xsr.hasNext()) {
+            event = xsr.next();
         }
 
-        catch (Exception e) {
-
-            Assert.fail(e.getMessage());
-
-        }
-
+        assertEquals(XMLStreamConstants.END_DOCUMENT, event);
+        xsr.close();
     }
 
     @Test
-    public void test2() {
+    public void test2() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty("javax.xml.stream.supportDTD", Boolean.FALSE);
 
-        try {
+        XMLStreamReader xsr = xif.createXMLStreamReader(
+                getClass().getResource("sgml-bad-systemId.xml").toString(),
+                getClass().getResourceAsStream("sgml-bad-systemId.xml"));
 
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+        assertEquals(XMLStreamConstants.START_DOCUMENT, xsr.getEventType());
 
-            xif.setProperty("javax.xml.stream.supportDTD", Boolean.FALSE);
+        int event = xsr.next();
 
-            XMLStreamReader xsr = xif.createXMLStreamReader(
-
-            getClass().getResource("sgml-bad-systemId.xml").toString(),
-
-            getClass().getResourceAsStream("sgml-bad-systemId.xml"));
-
-            Assert.assertTrue(xsr.getEventType() == XMLStreamConstants.START_DOCUMENT);
-
-            int event = xsr.next();
-
-            // Should not be a DTD event since they are ignored
-
-            Assert.assertTrue(event == XMLStreamConstants.DTD);
-
-            while (xsr.hasNext()) {
-
-                event = xsr.next();
-
-            }
-
-            Assert.assertTrue(event == XMLStreamConstants.END_DOCUMENT);
-
-            xsr.close();
-
+        // Should not be a DTD event since they are ignored
+        assertEquals(XMLStreamConstants.DTD, event);
+        while (xsr.hasNext()) {
+            event = xsr.next();
         }
 
-        catch (Exception e) {
-
-            // Bogus systemId in XML document should not result in exception
-
-            Assert.fail(e.getMessage());
-
-        }
-
+        assertEquals(XMLStreamConstants.END_DOCUMENT, event);
+        xsr.close();
     }
 
 }

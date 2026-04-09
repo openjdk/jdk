@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,61 +23,46 @@
 
 package stream.EventsTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.events.XMLEvent;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EventsTest.Issue58Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EventsTest.Issue58Test
  * @summary Test XMLEvent.getLocation() returns a non-volatile Location.
  */
 public class Issue58Test {
 
-    public java.io.File input;
-    public final String filesDir = "./";
-    protected XMLInputFactory inputFactory;
-    protected XMLOutputFactory outputFactory;
-
     @Test
-    public void testLocation() {
+    public void testLocation() throws Exception {
         String XML = "<?xml version='1.0' ?>" + "<!DOCTYPE root [\n" + "<!ENTITY intEnt 'internal'>\n" + "<!ENTITY extParsedEnt SYSTEM 'url:dummy'>\n"
                 + "<!NOTATION notation PUBLIC 'notation-public-id'>\n" + "<!NOTATION notation2 SYSTEM 'url:dummy'>\n"
                 + "<!ENTITY extUnparsedEnt SYSTEM 'url:dummy2' NDATA notation>\n" + "]>\n" + "<root />";
 
-        try {
-            XMLEventReader er = getReader(XML);
-            XMLEvent evt = er.nextEvent(); // StartDocument
-            Location loc1 = evt.getLocation();
-            System.out.println("Location 1: " + loc1.getLineNumber() + "," + loc1.getColumnNumber());
-            evt = er.nextEvent(); // DTD
-            // loc1 should not change so its line number should still be 1
-            Assert.assertTrue(loc1.getLineNumber() == 1);
-            Location loc2 = evt.getLocation();
-            System.out.println("Location 2: " + loc2.getLineNumber() + "," + loc2.getColumnNumber());
-            evt = er.nextEvent(); // root
-            System.out.println("Location 1: " + loc1.getLineNumber() + "," + loc1.getColumnNumber());
-            Assert.assertTrue(loc1.getLineNumber() == 1);
-            Assert.assertTrue(loc2.getLineNumber() == 7);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        XMLEventReader er = getReader(XML);
+        XMLEvent evt = er.nextEvent(); // StartDocument
+        Location loc1 = evt.getLocation();
+        evt = er.nextEvent(); // DTD
+        // loc1 should not change so its line number should still be 1
+        assertEquals(1, loc1.getLineNumber());
+
+        Location loc2 = evt.getLocation();
+        assertEquals(1, loc1.getLineNumber());
+        assertEquals(7, loc2.getLineNumber());
     }
 
     private XMLEventReader getReader(String XML) throws Exception {
-        inputFactory = XMLInputFactory.newInstance();
+        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 
         // Check if event reader returns the correct event
-        XMLEventReader er = inputFactory.createXMLEventReader(new StringReader(XML));
-        return er;
+        return inputFactory.createXMLEventReader(new StringReader(XML));
     }
-
 }

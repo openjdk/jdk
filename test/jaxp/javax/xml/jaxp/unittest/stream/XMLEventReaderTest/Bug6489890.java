@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,54 +23,48 @@
 
 package stream.XMLEventReaderTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /*
  * @test
  * @bug 6489890
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLEventReaderTest.Bug6489890
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLEventReaderTest.Bug6489890
  * @summary Test XMLEventReader's initial state is an undefined state, and nextEvent() is START_DOCUMENT.
  */
 public class Bug6489890 {
 
     @Test
-    public void test0() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+    public void test0() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
 
-            XMLStreamReader xsr = xif.createXMLStreamReader(getClass().getResource("sgml.xml").toString(), getClass().getResourceAsStream("sgml.xml"));
+        XMLStreamReader xsr = xif.createXMLStreamReader(getClass().getResource("sgml.xml").toString(), getClass().getResourceAsStream("sgml.xml"));
 
-            XMLEventReader xer = xif.createXMLEventReader(xsr);
+        XMLEventReader xer = xif.createXMLEventReader(xsr);
 
-            Assert.assertTrue(xer.peek().getEventType() == XMLEvent.START_DOCUMENT);
-            Assert.assertTrue(xer.peek() == xer.nextEvent());
-            xsr.close();
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        assertEquals(XMLEvent.START_DOCUMENT, xer.peek().getEventType());
+        assertSame(xer.peek(), xer.nextEvent());
+        xsr.close();
     }
 
     @Test
-    public void test1() {
-        try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+    public void test1() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
 
-            XMLStreamReader xsr = xif.createXMLStreamReader(getClass().getResource("sgml.xml").toString(), getClass().getResourceAsStream("sgml.xml"));
+        XMLStreamReader xsr = xif.createXMLStreamReader(getClass().getResource("sgml.xml").toString(), getClass().getResourceAsStream("sgml.xml"));
 
-            XMLEventReader xer = xif.createXMLEventReader(xsr);
+        XMLEventReader xer = xif.createXMLEventReader(xsr);
 
-            Assert.assertTrue(xer.nextEvent().getEventType() == XMLEvent.START_DOCUMENT);
-            xsr.close();
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        assertEquals(XMLEvent.START_DOCUMENT, xer.nextEvent().getEventType());
+        xsr.close();
     }
 
 }

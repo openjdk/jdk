@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,92 +23,57 @@
 
 package stream.EventsTest;
 
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.events.DTD;
 import javax.xml.stream.events.EntityDeclaration;
 import javax.xml.stream.events.NotationDeclaration;
 import javax.xml.stream.events.XMLEvent;
+import java.io.StringReader;
+import java.util.List;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
  * @bug 6620632
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EventsTest.Issue48Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EventsTest.Issue48Test
  * @summary Test XMLEventReader can parse notation and entity information from DTD Event.
  */
 public class Issue48Test {
-
-    public java.io.File input;
-    public final String filesDir = "./";
-    protected XMLInputFactory inputFactory;
-    protected XMLOutputFactory outputFactory;
-
     /**
      * DTDEvent instances constructed via event reader are missing the notation
      * and entity declaration information
      */
     @Test
-    public void testDTDEvent() {
+    public void testDTDEvent() throws Exception {
         String XML = "<?xml version='1.0' ?>" + "<!DOCTYPE root [\n" + "<!ENTITY intEnt 'internal'>\n" + "<!ENTITY extParsedEnt SYSTEM 'url:dummy'>\n"
                 + "<!NOTATION notation PUBLIC 'notation-public-id'>\n" + "<!NOTATION notation2 SYSTEM 'url:dummy'>\n"
                 + "<!ENTITY extUnparsedEnt SYSTEM 'url:dummy2' NDATA notation>\n" + "]>" + "<root />";
 
-        try {
-            XMLEventReader er = getReader(XML);
-            XMLEvent evt = er.nextEvent(); // StartDocument
-            evt = er.nextEvent(); // DTD
-            if (evt.getEventType() != XMLStreamConstants.DTD) {
-                Assert.fail("Expected DTD event");
-            }
-            DTD dtd = (DTD) evt;
-            List entities = dtd.getEntities();
-            if (entities == null) {
-                Assert.fail("No entity found. Expected 3.");
-            } else {
-                Assert.assertEquals(entities.size(), 3);
-            }
-            // Let's also verify they are all of right type...
-            testListElems(entities, EntityDeclaration.class);
+        XMLEventReader er = getReader(XML);
+        er.nextEvent(); // StartDocument
+        XMLEvent evt = er.nextEvent(); // DTD
+        assertEquals(XMLStreamConstants.DTD, evt.getEventType());
+        DTD dtd = (DTD) evt;
+        List<EntityDeclaration> entities = dtd.getEntities();
+        assertNotNull(entities);
+        assertEquals(3, entities.size());
 
-            List notations = dtd.getNotations();
-            if (notations == null) {
-                Assert.fail("No notation found. Expected 2.");
-            } else {
-                Assert.assertEquals(notations.size(), 2);
-            }
-            // Let's also verify they are all of right type...
-            testListElems(notations, NotationDeclaration.class);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        List<NotationDeclaration> notations = dtd.getNotations();
+        assertNotNull(notations);
+        assertEquals(2, notations.size());
     }
 
     private XMLEventReader getReader(String XML) throws Exception {
-        inputFactory = XMLInputFactory.newInstance();
+        XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 
         // Check if event reader returns the correct event
-        XMLEventReader er = inputFactory.createXMLEventReader(new StringReader(XML));
-        return er;
+        return inputFactory.createXMLEventReader(new StringReader(XML));
     }
-
-
-    private void testListElems(List l, Class expType) {
-        Iterator it = l.iterator();
-        while (it.hasNext()) {
-            Object o = it.next();
-            Assert.assertNotNull(o);
-            Assert.assertTrue(expType.isAssignableFrom(o.getClass()));
-        }
-    }
-
 }

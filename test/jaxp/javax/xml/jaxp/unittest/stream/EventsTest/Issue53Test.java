@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,17 @@
 
 package stream.EventsTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.events.StartDocument;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EventsTest.Issue53Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EventsTest.Issue53Test
  * @summary Test encodingSet/standaloneSet returns correct result in case encoding/standalone is set when constructing StartDocument.
  */
 public class Issue53Test {
@@ -41,30 +42,19 @@ public class Issue53Test {
     public void testEncodingSet() {
         XMLEventFactory f = XMLEventFactory.newInstance();
 
-        try {
-            StartDocument sd = f.createStartDocument("UTF-8");
-            System.out.println("Encoding: " + sd.getCharacterEncodingScheme());
-            System.out.println("Encoding set: " + sd.encodingSet());
-            Assert.assertTrue(sd.encodingSet(), "encoding is set, should return true.");
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
+        StartDocument sd = f.createStartDocument("UTF-8");
+        System.out.println("Encoding: " + sd.getCharacterEncodingScheme());
+        System.out.println("Encoding set: " + sd.encodingSet());
+        assertTrue(sd.encodingSet(), "encoding is set, should return true.");
     }
 
     @Test
     public void testStandaloneSet() {
         XMLEventFactory f = XMLEventFactory.newInstance();
 
-        try {
-            StartDocument sd = f.createStartDocument("UTF-8", "1.0", true);
-            System.out.println(sd.isStandalone());
-            System.out.println(sd.standaloneSet());
-            Assert.assertTrue(sd.standaloneSet(), "standalone is set, should return true.");
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
+        StartDocument sd = f.createStartDocument("UTF-8", "1.0", true);
+        System.out.println(sd.isStandalone());
+        System.out.println(sd.standaloneSet());
+        assertTrue(sd.standaloneSet(), "standalone is set, should return true.");
     }
-
 }

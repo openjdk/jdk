@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.SqeLinuxTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.SqeLinuxTest
  * @summary Test XMLStreamWriter can output multiple declarations if IS_REPAIRING_NAMESPACES is false.
  */
 public class SqeLinuxTest {
@@ -52,36 +52,24 @@ public class SqeLinuxTest {
     public void testWriterOnLinux() throws Exception {
 
         // setup XMLStreamWriter
-        try {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            xmlOutputFactory = XMLOutputFactory.newInstance();
-            xmlOutputFactory.setProperty(xmlOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(false));
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "ASCII");
-        } catch (Exception e) {
-            System.err.println("Unexpected Exception: " + e.toString());
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+        byteArrayOutputStream = new ByteArrayOutputStream();
+        xmlOutputFactory = XMLOutputFactory.newInstance();
+        xmlOutputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, Boolean.FALSE);
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "ASCII");
 
         // create & write a document
-        try {
-            xmlStreamWriter.writeStartDocument();
-            xmlStreamWriter.writeStartDocument("wStDoc_ver");
-            xmlStreamWriter.writeStartDocument("ASCII", "wStDoc_ver2");
-            xmlStreamWriter.writeStartDocument(null, null);
+        xmlStreamWriter.writeStartDocument();
+        xmlStreamWriter.writeStartDocument("wStDoc_ver");
+        xmlStreamWriter.writeStartDocument("ASCII", "wStDoc_ver2");
+        xmlStreamWriter.writeStartDocument(null, null);
 
-            // orignal SQE test used reset() before flush()
-            // believe this is false as reset() throws away output before
-            // flush() writes any cached output
-            // it is valid for a XMLStreamWriter to write its output at any
-            // time, flush() just garuntees it
-            // byteArrayOutputStream.reset();
-            xmlStreamWriter.flush();
-            Assert.assertEquals(EXPECTED_OUTPUT, byteArrayOutputStream.toString());
-        } catch (Exception e) {
-            System.err.println("Unexpected Exception: " + e.toString());
-            e.printStackTrace();
-            Assert.fail(e.toString());
-        }
+        // orignal SQE test used reset() before flush()
+        // believe this is false as reset() throws away output before
+        // flush() writes any cached output
+        // it is valid for a XMLStreamWriter to write its output at any
+        // time, flush() just garuntees it
+        // byteArrayOutputStream.reset();
+        xmlStreamWriter.flush();
+        assertEquals(EXPECTED_OUTPUT, byteArrayOutputStream.toString());
     }
 }

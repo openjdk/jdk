@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 package stream.XMLStreamWriterTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stax.StAXResult;
-import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8230094
- * @run testng stream.XMLStreamWriterTest.CustomImplTest
+ * @run junit stream.XMLStreamWriterTest.CustomImplTest
  * @summary Verifies custom implementation of the XMLStreamWriter.
  */
 public class CustomImplTest {
@@ -47,175 +47,128 @@ public class CustomImplTest {
     static class StreamWriterFilter implements XMLStreamWriter
     {
         @Override
-        public void writeStartElement(String localName)
-                throws XMLStreamException
-        {
+        public void writeStartElement(String localName) {
         }
 
         @Override
-        public void writeStartElement(String namespaceURI, String localName)
-                throws XMLStreamException
-        {
+        public void writeStartElement(String namespaceURI, String localName) {
         }
 
         @Override
         public void writeStartElement(
-                String prefix, String localName, String namespaceURI)
-                throws XMLStreamException
-        {
+                String prefix, String localName, String namespaceURI) {
         }
 
         @Override
-        public void writeEmptyElement(String namespaceURI, String localName)
-                throws XMLStreamException
-        {
+        public void writeEmptyElement(String namespaceURI, String localName) {
         }
 
         @Override
         public void writeEmptyElement(
-                String prefix, String localName, String namespaceURI)
-                throws XMLStreamException
-        {
+                String prefix, String localName, String namespaceURI) {
         }
 
         @Override
-        public void writeEmptyElement(String localName)
-                throws XMLStreamException
-        {
+        public void writeEmptyElement(String localName) {
         }
 
         @Override
-        public void writeEndElement() throws XMLStreamException
-        {
+        public void writeEndElement() {
         }
 
         @Override
-        public void writeEndDocument() throws XMLStreamException
-        {
+        public void writeEndDocument() {
         }
 
         @Override
-        public void close() throws XMLStreamException
-        {
+        public void close() {
         }
 
         @Override
-        public void flush() throws XMLStreamException
-        {
+        public void flush() {
         }
 
         @Override
-        public void writeAttribute(String localName, String value)
-                throws XMLStreamException
-        {
+        public void writeAttribute(String localName, String value) {
         }
 
         @Override
         public void writeAttribute(
-                String prefix, String namespaceURI, String localName, String value)
-                throws XMLStreamException
-        {
+                String prefix, String namespaceURI, String localName, String value) {
         }
 
         @Override
         public void writeAttribute(
-                String namespaceURI, String localName, String value)
-                throws XMLStreamException
-        {
+                String namespaceURI, String localName, String value) {
         }
 
         @Override
-        public void writeNamespace(String prefix, String namespaceURI)
-                throws XMLStreamException
-        {
+        public void writeNamespace(String prefix, String namespaceURI) {
         }
 
         @Override
-        public void writeDefaultNamespace(String namespaceURI)
-                throws XMLStreamException
-        {
+        public void writeDefaultNamespace(String namespaceURI) {
         }
 
         @Override
-        public void writeComment(String data) throws XMLStreamException
-        {
+        public void writeComment(String data) {
         }
 
         @Override
-        public void writeProcessingInstruction(String target)
-                throws XMLStreamException
-        {
+        public void writeProcessingInstruction(String target) {
         }
 
         @Override
-        public void writeProcessingInstruction(String target, String data)
-                throws XMLStreamException
-        {
+        public void writeProcessingInstruction(String target, String data) {
         }
 
         @Override
-        public void writeCData(String data) throws XMLStreamException
-        {
+        public void writeCData(String data) {
         }
 
         @Override
-        public void writeDTD(String dtd) throws XMLStreamException
-        {
+        public void writeDTD(String dtd) {
         }
 
         @Override
-        public void writeEntityRef(String name) throws XMLStreamException
-        {
+        public void writeEntityRef(String name) {
         }
 
         @Override
-        public void writeStartDocument() throws XMLStreamException
-        {
+        public void writeStartDocument() {
         }
 
         @Override
-        public void writeStartDocument(String version) throws XMLStreamException
-        {
+        public void writeStartDocument(String version) {
         }
 
         @Override
-        public void writeStartDocument(String encoding, String version)
-                throws XMLStreamException
-        {
+        public void writeStartDocument(String encoding, String version) {
         }
 
         @Override
-        public void writeCharacters(String text) throws XMLStreamException
-        {
+        public void writeCharacters(String text) {
         }
 
         @Override
-        public void writeCharacters(char[] text, int start, int len)
-                throws XMLStreamException
-        {
+        public void writeCharacters(char[] text, int start, int len) {
         }
 
         @Override
-        public String getPrefix(String uri) throws XMLStreamException
-        {
+        public String getPrefix(String uri) {
             return null;
         }
 
         @Override
-        public void setPrefix(String prefix, String uri)
-                throws XMLStreamException
-        {
+        public void setPrefix(String prefix, String uri) {
         }
 
         @Override
-        public void setDefaultNamespace(String uri) throws XMLStreamException
-        {
+        public void setDefaultNamespace(String uri) {
         }
 
         @Override
-        public void setNamespaceContext(NamespaceContext context)
-                throws XMLStreamException
-        {
+        public void setNamespaceContext(NamespaceContext context) {
         }
 
         @Override

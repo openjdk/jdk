@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,37 @@
 
 package stream.XMLStreamFilterTest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import java.io.StringReader;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 6481615
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamFilterTest.Bug6481615
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamFilterTest.Bug6481615
  * @summary Test Filtered XMLStreamReader can return the event type if current state is START_ELEMENT.
  */
 public class Bug6481615 {
 
-    static final String XML = "<?xml version=\"1.0\"?>" + "<S:Envelope foo=\"bar\" xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"></S:Envelope>";
+    private static final String XML = "<?xml version=\"1.0\"?>" + "<S:Envelope foo=\"bar\" xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"></S:Envelope>";
 
-    private XMLInputFactory factory = XMLInputFactory.newInstance();
+    private final XMLInputFactory factory = XMLInputFactory.newInstance();
 
     @Test
-    public void test() {
-        try {
-            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(XML));
-            reader.next(); // advance to START_ELEMENT
-            XMLStreamReader filter = factory.createFilteredReader(reader, new Filter());
-            Assert.assertTrue(filter.getEventType() != -1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Assert.fail("Unexpected Exception: " + e.getMessage());
-        }
+    public void test() throws Exception {
+        XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(XML));
+        reader.next(); // advance to START_ELEMENT
+        XMLStreamReader filter = factory.createFilteredReader(reader, new Filter());
+        assertTrue(filter.getEventType() != -1);
     }
 
-    class Filter implements StreamFilter {
-
+    private static class Filter implements StreamFilter {
         public boolean accept(XMLStreamReader reader) {
             return true;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,19 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.AttributeEscapeTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.AttributeEscapeTest
  * @summary Test XMLStreamWriter shall escape the illegal characters.
  */
 public class AttributeEscapeTest {
@@ -52,51 +46,36 @@ public class AttributeEscapeTest {
     private static final String XML_CONTENT = "Testing escaping: lt=<, gt=>, amp=&, apos=', dquote=\"";
 
     @Test
-    public void testCR6420953() {
+    public void testCR6420953() throws Exception {
+        XMLOutputFactory xof = XMLOutputFactory.newInstance();
+        StringWriter sw = new StringWriter();
+        XMLStreamWriter w = xof.createXMLStreamWriter(sw);
 
-        try {
-            XMLOutputFactory xof = XMLOutputFactory.newInstance();
-            StringWriter sw = new StringWriter();
-            XMLStreamWriter w = xof.createXMLStreamWriter(sw);
+        w.writeStartDocument();
+        w.writeStartElement("element");
 
-            w.writeStartDocument();
-            w.writeStartElement("element");
+        w.writeDefaultNamespace(XML_CONTENT);
+        w.writeNamespace("prefix", XML_CONTENT);
 
-            w.writeDefaultNamespace(XML_CONTENT);
-            w.writeNamespace("prefix", XML_CONTENT);
+        w.writeAttribute("attribute", XML_CONTENT);
+        w.writeAttribute(XML_CONTENT, "attribute2", XML_CONTENT);
+        w.writeAttribute("prefix", XML_CONTENT, "attribute3", XML_CONTENT);
 
-            w.writeAttribute("attribute", XML_CONTENT);
-            w.writeAttribute(XML_CONTENT, "attribute2", XML_CONTENT);
-            w.writeAttribute("prefix", XML_CONTENT, "attribute3", XML_CONTENT);
+        w.writeCharacters("\n");
+        w.writeCharacters(XML_CONTENT);
+        w.writeCharacters("\n");
+        w.writeCharacters(XML_CONTENT.toCharArray(), 0, XML_CONTENT.length());
+        w.writeCharacters("\n");
 
-            w.writeCharacters("\n");
-            w.writeCharacters(XML_CONTENT);
-            w.writeCharacters("\n");
-            w.writeCharacters(XML_CONTENT.toCharArray(), 0, XML_CONTENT.length());
-            w.writeCharacters("\n");
+        w.writeEndElement();
+        w.writeEndDocument();
+        w.flush();
 
-            w.writeEndElement();
-            w.writeEndDocument();
-            w.flush();
+        System.out.println(sw);
 
-            System.out.println(sw);
-
-            // make sure that the generated XML parses
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.newDocumentBuilder().parse(new InputSource(new StringReader(sw.toString())));
-        } catch (XMLStreamException xmlStreamException) {
-            xmlStreamException.printStackTrace();
-            Assert.fail(xmlStreamException.toString());
-        } catch (SAXException saxException) {
-            saxException.printStackTrace();
-            Assert.fail(saxException.toString());
-        } catch (ParserConfigurationException parserConfigurationException) {
-            parserConfigurationException.printStackTrace();
-            Assert.fail(parserConfigurationException.toString());
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-            Assert.fail(ioException.toString());
-        }
+        // make sure that the generated XML parses
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        dbf.newDocumentBuilder().parse(new InputSource(new StringReader(sw.toString())));
     }
 }

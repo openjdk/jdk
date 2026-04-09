@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  */
 package stream.XMLStreamReaderTest;
 
-import java.io.StringReader;
-import java.util.NoSuchElementException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
+import java.io.StringReader;
+import java.util.NoSuchElementException;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8167340 8204329
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamReaderTest.StreamReaderTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamReaderTest.StreamReaderTest
  * @summary Verifies patches for StreamReader bugs
  */
 public class StreamReaderTest {
-    @Test(expectedExceptions = NoSuchElementException.class)
+    @Test
     public void testNext() throws Exception {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(
@@ -50,7 +53,7 @@ public class StreamReaderTest {
             int event = xmlStreamReader.next();
         }
         // no more event
-        xmlStreamReader.next();
+        assertThrows(NoSuchElementException.class, xmlStreamReader::next);
     }
 
 
@@ -59,9 +62,9 @@ public class StreamReaderTest {
      * is initialized properly (the listener was not registered in this case).
      *
      * @param path the path to XML source
-     * @throws Exception
      */
-    @Test(dataProvider = "getPaths")
+    @ParameterizedTest
+    @MethodSource("getPaths")
     public void testSwitchXMLVersions(String path) throws Exception {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         xmlInputFactory.setProperty("javax.xml.stream.isCoalescing", true);
@@ -73,8 +76,7 @@ public class StreamReaderTest {
             if (event == XMLStreamConstants.START_ELEMENT) {
                 if (xmlStreamReader.getLocalName().equals("body")) {
                     String elementText = xmlStreamReader.getElementText();
-                    Assert.assertTrue(!elementText.contains("</body>"),
-                            "Fail: elementText contains </body>");
+                    assertFalse(elementText.contains("</body>"), "Fail: elementText contains </body>");
                 }
             }
         }
@@ -93,23 +95,18 @@ public class StreamReaderTest {
                 this.getClass().getResourceAsStream("ExternalDTD.xml"));
         while (r.next() != XMLStreamConstants.ENTITY_REFERENCE) {
             System.out.println("event type: " + r.getEventType());
-            continue;
         }
-        if (r.hasName()) {
-            System.out.println("hasName returned true on ENTITY_REFERENCE event.");
-        }
-        Assert.assertFalse(r.hasName()); // fails
+        assertFalse(r.hasName(), "hasName returned true on ENTITY_REFERENCE event.");
     }
 
     /*
        DataProvider: provides paths to xml sources
        Data: path to xml source
      */
-    @DataProvider(name = "getPaths")
-    public Object[][] getPaths() {
-        return new Object[][]{
-            {"Bug8167340_1-0.xml"},
-            {"Bug8167340_1-1.xml"}
+    public static Object[][] getPaths() {
+        return new Object[][] {
+                { "Bug8167340_1-0.xml" },
+                { "Bug8167340_1-1.xml" }
         };
     }
 }

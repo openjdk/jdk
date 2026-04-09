@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,24 @@
 
 package stream.EventsTest;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.EventFilter;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import java.io.IOException;
+import java.io.InputStream;
 
-/**
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/*
  * @test
  * @bug 8173111
  * @summary tests that filtering out nested elements doesn't end up in
  *          a StackOverflowException
- * @run testng/othervm stream.EventsTest.EventFilterSupportTest
+ * @run junit/othervm stream.EventsTest.EventFilterSupportTest
  * @author danielfuchs
  */
 public class EventFilterSupportTest {
@@ -49,19 +51,11 @@ public class EventFilterSupportTest {
     // A number high enough to trigger StackOverflowException before the fix.
     static final int MAX = 100_000;
 
-    public static void main(String[] args)
-            throws XMLStreamException, IOException {
-        smokeTest();
-        testNextEvent(MAX);
-        testNextTag(MAX);
-        System.out.println("Tests passed...");
-    }
-
     // The smoke test just verifies that our TestInputStream works as
     // expected and produces the expected stream of characters.
     // Here we test it with 4 nested elements.
     @Test
-    public static void smokeTest() throws IOException {
+    public void smokeTest() throws IOException {
         System.out.println("\nSmoke test...");
         StringBuilder sb = new StringBuilder();
         try (InputStream ts = new TestInputStream(4)) {
@@ -71,20 +65,20 @@ public class EventFilterSupportTest {
                 sb.append((char)c);
             }
         }
-        assertEquals(sb.toString(), SMOKE, "Smoke test failed");
+        assertEquals(SMOKE, sb.toString(), "Smoke test failed");
         System.out.println("\nSmoke test passed\n");
     }
 
     // Test calling XMLEventReader.nextEvent()
     @Test
-    public static void testNextEvent() throws IOException, XMLStreamException {
+    public void testNextEvent() throws XMLStreamException {
         testNextEvent(MAX);
     }
 
     // Without the fix, will cause a StackOverflowException if 'max' is high
     // enough
-    private static void testNextEvent(int max)
-            throws IOException, XMLStreamException {
+    private void testNextEvent(int max)
+            throws XMLStreamException {
         System.out.println("\nTest nextEvent (" + max + ")...");
         XMLEventReader reader = createXmlReader(max);
         XMLEvent event;
@@ -97,14 +91,13 @@ public class EventFilterSupportTest {
 
     // Test calling XMLEventReader.nextTag()
     @Test
-    public static void testNextTag() throws IOException, XMLStreamException {
+    public void testNextTag() throws XMLStreamException {
         testNextTag(MAX);
     }
 
     // Without the fix, will cause a StackOverflowException if 'max' is high
     // enough
-    private static void testNextTag(int max)
-            throws IOException, XMLStreamException {
+    private static void testNextTag(int max) throws XMLStreamException {
         System.out.println("\nTest nextTag (" + max + ")...");
         XMLEventReader reader = createXmlReader(max);
         XMLEvent event;
@@ -163,7 +156,7 @@ public class EventFilterSupportTest {
         }
 
         @Override
-        public int read() throws IOException {
+        public int read() {
             if (n >= 2 * max) return -1;
             if (open == 0) {
                 open = 1;

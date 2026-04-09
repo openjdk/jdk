@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,28 @@
 
 package stream;
 
-import java.io.File;
+import org.junit.jupiter.api.Test;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.util.StreamReaderDelegate;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Iterator;
 
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.util.StreamReaderDelegate;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.StreamReaderDelegateTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.StreamReaderDelegateTest
  * @summary Test StreamReaderDelegate.
  */
 public class StreamReaderDelegateTest {
@@ -56,74 +57,51 @@ public class StreamReaderDelegateTest {
      * <![CDATA[<greeting>Hello</greeting>]]> other content </ns1:foo>
      **/
     @Test
-    public void testAttribute() {
-        StreamReaderDelegate delegate = null;
+    public void testAttribute() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(getClass().getResource("testfile1.xml").getFile()));
+        StreamReaderDelegate delegate = new StreamReaderDelegate(reader);
         try {
-            System.out.println("===in testAttribute()===");
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(new File(getClass().getResource("testfile1.xml").getFile())));
-            delegate = new StreamReaderDelegate(reader);
 
-            Assert.assertTrue(delegate.standaloneSet());
-            Assert.assertFalse(delegate.isStandalone());
+            assertTrue(delegate.standaloneSet());
+            assertFalse(delegate.isStandalone());
             while (delegate.hasNext()) {
                 delegate.next();
                 if (delegate.getEventType() == XMLStreamConstants.START_ELEMENT || delegate.getEventType() == XMLStreamConstants.ATTRIBUTE) {
                     if (delegate.getLocalName().equals("foo")) {
-                        Assert.assertTrue(delegate.getAttributeCount() == 5);
-                        Assert.assertTrue(delegate.getAttributeType(1) == "CDATA");
+                        assertEquals(5, delegate.getAttributeCount());
+                        assertSame("CDATA", delegate.getAttributeType(1));
 
-                        Assert.assertTrue(delegate.getAttributeValue(0).equals("defaultAttr1"));
-                        Assert.assertTrue(delegate.getAttributeValue(delegate.getAttributeCount() - 2).equals("defaultAttr2"));
-                        Assert.assertTrue(delegate.getAttributeValue(delegate.getAttributeCount() - 1).equals("defaultAttr3"));
+                        assertEquals("defaultAttr1", delegate.getAttributeValue(0));
+                        assertEquals("defaultAttr2", delegate.getAttributeValue(delegate.getAttributeCount() - 2));
+                        assertEquals("defaultAttr3", delegate.getAttributeValue(delegate.getAttributeCount() - 1));
 
-                        Assert.assertTrue(delegate.getAttributeValue("http://ns1.java.com", "attr1").equals("ns1Attr1"));
-                        Assert.assertTrue(delegate.getAttributeValue("http://ns2.java.com", "attr1").equals("ns2Attr1"));
+                        assertEquals("ns1Attr1", delegate.getAttributeValue("http://ns1.java.com", "attr1"));
+                        assertEquals("ns2Attr1", delegate.getAttributeValue("http://ns2.java.com", "attr1"));
 
-                        Assert.assertTrue(delegate.getAttributeValue(null, "attr2").equals("defaultAttr2"));
-                        Assert.assertTrue(delegate.getAttributeValue(null, "attr3").equals("defaultAttr3"));
+                        assertEquals("defaultAttr2", delegate.getAttributeValue(null, "attr2"));
+                        assertEquals("defaultAttr3", delegate.getAttributeValue(null, "attr3"));
 
-                        Assert.assertTrue(delegate.getAttributeNamespace(0) == null);
-                        Assert.assertTrue(delegate.getAttributeNamespace(1).equals("http://ns1.java.com"));
-                        Assert.assertTrue(delegate.getAttributePrefix(1).equals("ns1"));
-                        Assert.assertTrue(delegate.getAttributeName(1).toString()
-                                .equals("{" + delegate.getAttributeNamespace(1) + "}" + delegate.getAttributeLocalName(1)));
-                        Assert.assertTrue(delegate.getAttributeLocalName(1).equals("attr1"));
+                        assertNull(delegate.getAttributeNamespace(0));
+                        assertEquals("http://ns1.java.com", delegate.getAttributeNamespace(1));
+                        assertEquals("ns1", delegate.getAttributePrefix(1));
+                        assertEquals(delegate.getAttributeName(1).toString(), "{" + delegate.getAttributeNamespace(1) + "}" + delegate.getAttributeLocalName(1));
+                        assertEquals("attr1", delegate.getAttributeLocalName(1));
 
                         // negative test. Should return null for out of
                         // attribute array index
-                        Assert.assertTrue(delegate.getAttributeNamespace(delegate.getAttributeCount()) == null);
-                        Assert.assertTrue(delegate.getAttributePrefix(delegate.getAttributeCount()) == null);
-                        Assert.assertTrue(delegate.getAttributeName(delegate.getAttributeCount()) == null);
-                        Assert.assertTrue(delegate.getAttributeLocalName(delegate.getAttributeCount()) == null);
-                        Assert.assertTrue(delegate.getAttributeType(delegate.getAttributeCount()) == null);
+                        assertNull(delegate.getAttributeNamespace(delegate.getAttributeCount()));
+                        assertNull(delegate.getAttributePrefix(delegate.getAttributeCount()));
+                        assertNull(delegate.getAttributeName(delegate.getAttributeCount()));
+                        assertNull(delegate.getAttributeLocalName(delegate.getAttributeCount()));
+                        assertNull(delegate.getAttributeType(delegate.getAttributeCount()));
                     }
                 } else {
-                    try {
-                        delegate.getAttributeCount();
-                    } catch (IllegalStateException e) {
-                        System.out.println("expected exception for incorrect event type");
-                    }
+                    assertThrows(IllegalStateException.class, delegate::getAttributeCount);
                 }
-
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testAttribute()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            System.out.println(delegate.getLocation());
-            Assert.fail("XMLStreamException in testAttribute()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testAttribute()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testAttribute()");
-            }
+            delegate.close();
         }
     }
 
@@ -134,33 +112,31 @@ public class StreamReaderDelegateTest {
      * <![CDATA[<greeting>Hello</greeting>]]> other content </ns1:foo>
      **/
     @Test
-    public void testNamespace() {
-        StreamReaderDelegate delegate = null;
+    public void testNamespace() throws Exception {
+        XMLStreamReader reader = XMLInputFactory.newFactory().createXMLStreamReader(
+                new FileInputStream(getClass().getResource("testfile2.xml").getFile()));
+        StreamReaderDelegate delegate = new StreamReaderDelegate();
         try {
-            System.out.println("===in testNamespace()===");
-            XMLStreamReader reader = XMLInputFactory.newFactory().createXMLStreamReader(
-                    new FileInputStream(new File(getClass().getResource("testfile2.xml").getFile())));
-            delegate = new StreamReaderDelegate();
             delegate.setParent(reader);
             while (delegate.hasNext()) {
                 delegate.next();
                 if (delegate.getEventType() == XMLStreamConstants.START_ELEMENT || delegate.getEventType() == XMLStreamConstants.ATTRIBUTE) {
 
                     if (delegate.getName().getLocalPart().equals("foo")) {
-                        Assert.assertTrue(("{" + delegate.getNamespaceURI(delegate.getPrefix()) + "}" + delegate.getLocalName()).equals(delegate.getName()
-                                .toString()));
+                        assertEquals(("{" + delegate.getNamespaceURI(delegate.getPrefix()) + "}" + delegate.getLocalName()), delegate.getName()
+                                .toString());
                         System.out.println(delegate.getLocation());
 
-                        Assert.assertTrue(delegate.getNamespaceCount() == 3);
-                        Assert.assertTrue(delegate.getNamespaceURI().equals("http://ns1.java.com"));
-                        Assert.assertTrue(delegate.getNamespaceURI(2).equals("http://ns2.java.com"));
-                        Assert.assertTrue(delegate.getNamespaceURI("ns").equals("http://ns1.java.com"));
+                        assertEquals(3, delegate.getNamespaceCount());
+                        assertEquals("http://ns1.java.com", delegate.getNamespaceURI());
+                        assertEquals("http://ns2.java.com", delegate.getNamespaceURI(2));
+                        assertEquals("http://ns1.java.com", delegate.getNamespaceURI("ns"));
 
-                        Assert.assertTrue(delegate.getNamespacePrefix(1).equals("ns1"));
+                        assertEquals("ns1", delegate.getNamespacePrefix(1));
 
                         NamespaceContext nsCtx = delegate.getNamespaceContext();
                         nsCtx.getNamespaceURI("ns");
-                        Iterator prefixes = nsCtx.getPrefixes("http://ns1.java.com");
+                        Iterator<String> prefixes = nsCtx.getPrefixes("http://ns1.java.com");
                         boolean hasns = false;
                         boolean hasns1 = false;
                         while (prefixes.hasNext()) {
@@ -171,27 +147,12 @@ public class StreamReaderDelegateTest {
                                 hasns1 = true;
                             }
                         }
-                        Assert.assertTrue(hasns && hasns1);
+                        assertTrue(hasns && hasns1);
                     }
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testNamespace()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            System.out.println(delegate.getLocation());
-            Assert.fail("XMLStreamException in testNamespace()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testNamespace()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testNamespace()");
-            }
+            delegate.close();
         }
     }
 
@@ -202,22 +163,20 @@ public class StreamReaderDelegateTest {
      * other content </ns1:foo>
      **/
     @Test
-    public void testText() {
+    public void testText() throws Exception {
         String property = "javax.xml.stream.isCoalescing";
-        System.out.println("===in testText()====");
-        StreamReaderDelegate delegate = null;
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        ifac.setProperty(property, Boolean.TRUE);
+        XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(getClass().getResource("testfile3.xml").getFile()), "iso8859-1");
+        StreamReaderDelegate delegate = new StreamReaderDelegate();
         try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            ifac.setProperty(property, Boolean.TRUE);
-            XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(new File(getClass().getResource("testfile3.xml").getFile())), "iso8859-1");
-            delegate = new StreamReaderDelegate();
             delegate.setParent(reader);
 
-            Assert.assertTrue(delegate.getParent().equals(reader));
-            Assert.assertTrue(delegate.getProperty(property).equals(Boolean.TRUE));
-            Assert.assertTrue(delegate.getCharacterEncodingScheme().equalsIgnoreCase("utf-8"));
-            Assert.assertTrue(delegate.getEncoding().equalsIgnoreCase("iso8859-1"));
-            Assert.assertTrue(delegate.getVersion().equals("1.0"));
+            assertEquals(delegate.getParent(), reader);
+            assertEquals(Boolean.TRUE, delegate.getProperty(property));
+            assertTrue(delegate.getCharacterEncodingScheme().equalsIgnoreCase("utf-8"));
+            assertTrue(delegate.getEncoding().equalsIgnoreCase("iso8859-1"));
+            assertEquals("1.0", delegate.getVersion());
             while (delegate.hasNext()) {
                 delegate.next();
                 if (delegate.getEventType() == XMLStreamConstants.CHARACTERS) {
@@ -225,96 +184,61 @@ public class StreamReaderDelegateTest {
                     delegate.getTextCharacters(delegate.getTextStart(), target1, 0, target1.length);
                     char[] target2 = delegate.getTextCharacters();
 
-                    Assert.assertTrue(delegate.getText().trim().equals(new String(target1).trim()));
-                    Assert.assertTrue(delegate.getText().trim().equals(new String(target2).trim()));
+                    assertEquals(delegate.getText().trim(), new String(target1).trim());
+                    assertEquals(delegate.getText().trim(), new String(target2).trim());
                 }
             }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testText()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            System.out.println(delegate.getLocation());
-            Assert.fail("XMLStreamException in testText()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testText()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testText()");
-            }
+            delegate.close();
         }
     }
 
     @Test
-    public void testWhiteSpace() {
-        System.out.println("===in testWhiteSpace()===");
-        StreamReaderDelegate delegate = null;
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            ifac.setProperty("javax.xml.stream.isCoalescing", Boolean.TRUE);
-            XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(new File(getClass().getResource("testfile4.xml").getFile())));
+    public void testWhiteSpace() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        ifac.setProperty("javax.xml.stream.isCoalescing", Boolean.TRUE);
+        XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(getClass().getResource("testfile4.xml").getFile()));
 
-            delegate = new StreamReaderDelegate();
+        StreamReaderDelegate delegate = new StreamReaderDelegate();
+        try {
             delegate.setParent(reader);
             while (delegate.hasNext()) {
                 int i = delegate.next();
                 switch (i) {
                     case XMLStreamConstants.CHARACTERS: {
-                        Assert.assertTrue(delegate.isCharacters());
-                        Assert.assertTrue(delegate.hasText());
-                        Assert.assertTrue(delegate.isWhiteSpace());
+                        assertTrue(delegate.isCharacters());
+                        assertTrue(delegate.hasText());
+                        assertTrue(delegate.isWhiteSpace());
                         break;
                     }
                     case XMLStreamConstants.START_ELEMENT: {
-                        Assert.assertTrue(delegate.isStartElement());
-                        Assert.assertTrue(delegate.isAttributeSpecified(0));
-                        Assert.assertTrue(delegate.hasName());
+                        assertTrue(delegate.isStartElement());
+                        assertTrue(delegate.isAttributeSpecified(0));
+                        assertTrue(delegate.hasName());
                         delegate.require(XMLStreamConstants.START_ELEMENT, delegate.getNamespaceURI(), delegate.getLocalName());
                         break;
                     }
                     case XMLStreamConstants.END_ELEMENT: {
-                        Assert.assertTrue(delegate.isEndElement());
-                        Assert.assertTrue(delegate.hasName());
+                        assertTrue(delegate.isEndElement());
+                        assertTrue(delegate.hasName());
                         delegate.require(XMLStreamConstants.END_ELEMENT, delegate.getNamespaceURI(), delegate.getLocalName());
                         break;
                     }
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testWhiteSpace()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            System.out.println(delegate.getLocation());
-            Assert.fail("XMLStreamException in testWhiteSpace()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testWhiteSpace()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testWhitespace()");
-            }
+            delegate.close();
         }
 
     }
 
     @Test
-    public void testElementText() {
-        System.out.println("===in testElementText()===");
-        StreamReaderDelegate delegate = null;
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(new File(getClass().getResource("toys.xml").getFile())));
+    public void testElementText() throws Exception {
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLStreamReader reader = ifac.createXMLStreamReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
 
-            delegate = new StreamReaderDelegate();
+        StreamReaderDelegate delegate = new StreamReaderDelegate();
+        try {
             delegate.setParent(reader);
             while (delegate.hasNext()) {
                 if (delegate.getEventType() == XMLStreamConstants.START_ELEMENT) {
@@ -326,57 +250,32 @@ public class StreamReaderDelegateTest {
                     delegate.next();
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail("FileNotFoundException in testElementText()");
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-            System.out.println(delegate.getLocation());
-            Assert.fail("XMLStreamException in testElementText()");
-        } catch (FactoryConfigurationError e) {
-            e.printStackTrace();
-            Assert.fail("FactoryConfigurationError in testElementText()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testElementText()");
-            }
+            delegate.close();
         }
     }
 
     @Test
-    public void testPITargetAndData() {
-        System.out.println("===in testPITargetAndData()===");
-        StreamReaderDelegate delegate = null;
+    public void testPITargetAndData() throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        String PITarget = "soffice";
+        String PIData = "WebservicesArchitecture";
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<?" + PITarget + " " + PIData + "?>" + "<foo></foo>";
+        InputStream is = new java.io.ByteArrayInputStream(xml.getBytes());
+        XMLStreamReader sr = xif.createXMLStreamReader(is);
+        StreamReaderDelegate delegate = new StreamReaderDelegate(sr);
         try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
-            String PITarget = "soffice";
-            String PIData = "WebservicesArchitecture";
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<?" + PITarget + " " + PIData + "?>" + "<foo></foo>";
-            InputStream is = new java.io.ByteArrayInputStream(xml.getBytes());
-            XMLStreamReader sr = xif.createXMLStreamReader(is);
-            delegate = new StreamReaderDelegate(sr);
             while (delegate.hasNext()) {
                 int eventType = delegate.next();
                 if (eventType == XMLStreamConstants.PROCESSING_INSTRUCTION) {
                     String target = delegate.getPITarget();
                     String data = delegate.getPIData();
-                    Assert.assertTrue(target.equals(PITarget));
-                    Assert.assertTrue(data.equals(PIData));
+                    assertEquals(PITarget, target);
+                    assertEquals(PIData, data);
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Assert.fail("Exception in testPITargetAndData()");
         } finally {
-            try {
-                delegate.close();
-            } catch (XMLStreamException e) {
-                e.printStackTrace();
-                Assert.fail("XMLStreamException in testPITargetAndData()");
-            }
+            delegate.close();
         }
     }
 }

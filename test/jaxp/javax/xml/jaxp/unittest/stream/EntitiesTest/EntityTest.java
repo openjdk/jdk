@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
 
 package stream.EntitiesTest;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -30,19 +36,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.events.XMLEvent;
-
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EntitiesTest.EntityTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EntitiesTest.EntityTest
  * @summary Test StAX parses entity.
  */
 public class EntityTest {
@@ -50,43 +49,29 @@ public class EntityTest {
     XMLInputFactory factory = null;
     String output = "";
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
-        try {
-            factory = XMLInputFactory.newInstance();
-        } catch (Exception ex) {
-            Assert.fail("Could not create XMLInputFactory");
-        }
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        factory = null;
+        factory = XMLInputFactory.newInstance();
     }
 
     @Test
     public void testProperties() {
-        Assert.assertTrue(factory.isPropertySupported("javax.xml.stream.isReplacingEntityReferences"));
+        assertTrue(factory.isPropertySupported("javax.xml.stream.isReplacingEntityReferences"));
     }
 
     @Test
-    public void testCharacterReferences() {
-        try {
-            URL fileName = EntityTest.class.getResource("testCharRef.xml");
-            URL outputFileName = EntityTest.class.getResource("testCharRef.xml.output");
-            XMLStreamReader xmlr = factory.createXMLStreamReader(new InputStreamReader(fileName.openStream()));
-            int eventType = 0;
-            while (xmlr.hasNext()) {
-                eventType = xmlr.next();
-                handleEvent(xmlr, eventType);
-            }
-            System.out.println("Output:");
-            System.out.println(output);
-            Assert.assertTrue(compareOutput(new InputStreamReader(outputFileName.openStream()), new StringReader(output)));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Assert.fail(ex.getMessage());
+    public void testCharacterReferences() throws Exception {
+        URL fileName = EntityTest.class.getResource("testCharRef.xml");
+        URL outputFileName = EntityTest.class.getResource("testCharRef.xml.output");
+        XMLStreamReader xmlr = factory.createXMLStreamReader(new InputStreamReader(fileName.openStream()));
+        int eventType = 0;
+        while (xmlr.hasNext()) {
+            eventType = xmlr.next();
+            handleEvent(xmlr, eventType);
         }
+        System.out.println("Output:");
+        System.out.println(output);
+        assertTrue(compareOutput(new InputStreamReader(outputFileName.openStream()), new StringReader(output)));
     }
 
     private void handleEvent(XMLStreamReader xmlr, int eventType) {

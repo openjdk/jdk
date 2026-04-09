@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,28 @@
 
 package stream.XMLStreamFilterTest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamFilterTest.HasNextTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamFilterTest.HasNextTest
  * @summary Test Filtered XMLStreamReader hasNext() always return the correct value if repeat to call it.
  */
 public class HasNextTest {
 
-    private static String INPUT_FILE = "HasNextTest.xml";
+    private static final String INPUT_FILE = "HasNextTest.xml";
 
     private HasNextTypeFilter createFilter() {
 
@@ -57,88 +61,37 @@ public class HasNextTest {
         return f;
     }
 
-    private XMLStreamReader createStreamReader(HasNextTypeFilter f) {
-
-        try {
-            XMLInputFactory factory = XMLInputFactory.newInstance();
-            factory = XMLInputFactory.newInstance();
-            return factory.createFilteredReader(factory.createXMLStreamReader(this.getClass().getResourceAsStream(INPUT_FILE)), (StreamFilter) f);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Unexpected Exception: " + e.getMessage());
-            return null;
-        }
+    private XMLStreamReader createStreamReader(HasNextTypeFilter f) throws XMLStreamException {
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        return factory.createFilteredReader(factory.createXMLStreamReader(this.getClass().getResourceAsStream(INPUT_FILE)), (StreamFilter) f);
     }
 
-    private void checkHasNext(XMLStreamReader r1) throws XMLStreamException {
-
+    private boolean checkHasNext(XMLStreamReader r1) {
         // try asking 3 times, insure all results are the same
-        boolean hasNext_1 = r1.hasNext();
-        boolean hasNext_2 = r1.hasNext();
-        boolean hasNext_3 = r1.hasNext();
-
-        System.out.println("XMLStreamReader.hasNext() (1): " + hasNext_1);
-        System.out.println("XMLStreamReader.hasNext() (2): " + hasNext_2);
-        System.out.println("XMLStreamReader.hasNext() (3): " + hasNext_3);
-
-        Assert.assertTrue((hasNext_1 == hasNext_2) && (hasNext_1 == hasNext_3),
-                "XMLStreamReader.hasNext() returns inconsistent values for each subsequent call: " + hasNext_1 + ", " + hasNext_2 + ", " + hasNext_3);
+        boolean hasNext = assertDoesNotThrow(r1::hasNext);
+        assertEquals(hasNext, assertDoesNotThrow(r1::hasNext));
+        assertEquals(hasNext, assertDoesNotThrow(r1::hasNext));
+        return hasNext;
     }
 
     @Test
-    public void testFilterUsingNextTag() {
-
-        try {
-            HasNextTypeFilter f = createFilter();
-            XMLStreamReader r1 = createStreamReader(f);
-
-            while (r1.hasNext()) {
-                try {
-                    r1.nextTag();
-                } catch (Exception e) {
-                    System.err.println("Expected Exception: " + e.getMessage());
-                    e.printStackTrace();
-                }
-
-                checkHasNext(r1);
+    public void testFilterUsingNextTag() throws Exception {
+        HasNextTypeFilter f = createFilter();
+        XMLStreamReader r1 = createStreamReader(f);
+        XMLStreamException expected = assertThrows(XMLStreamException.class, () -> {
+            while (checkHasNext(r1)) {
+                r1.nextTag();
             }
-
-        } catch (XMLStreamException e) {
-            System.err.println("Unexpected Exception: " + e.getMessage());
-            e.printStackTrace();
-            Assert.fail("Unexpected Exception: " + e.toString());
-        } catch (Exception e) {
-            // if this is END_DOCUMENT, it is expected
-            if (e.toString().indexOf("END_DOCUMENT") != -1) {
-                // expected
-                System.err.println("Expected Exception:");
-                e.printStackTrace();
-            } else {
-                // unexpected
-                System.err.println("Unexpected Exception: " + e.getMessage());
-                e.printStackTrace();
-                Assert.fail("Unexpected Exception: " + e.toString());
-            }
-        }
+        });
+        assertTrue(expected.toString().contains("END_ELEMENT"));
     }
 
     @Test
-    public void testFilterUsingNext() {
-
-        try {
-            HasNextTypeFilter f = createFilter();
-            XMLStreamReader r1 = createStreamReader(f);
-
-            while (r1.hasNext()) {
-                r1.next();
-                checkHasNext(r1);
-            }
-
-        } catch (Exception e) {
-            // unexpected
-            System.err.println("Unexpected Exception: " + e.getMessage());
-            e.printStackTrace();
-            Assert.fail("Unexpected Exception: " + e.toString());
+    public void testFilterUsingNext() throws Exception {
+        HasNextTypeFilter f = createFilter();
+        XMLStreamReader r1 = createStreamReader(f);
+        while (checkHasNext(r1)) {
+            r1.next();
         }
     }
 }

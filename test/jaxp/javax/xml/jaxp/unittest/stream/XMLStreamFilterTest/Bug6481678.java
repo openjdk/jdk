@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package stream.XMLStreamFilterTest;
 
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -33,15 +33,17 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 6481678
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamFilterTest.Bug6481678
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamFilterTest.Bug6481678
  * @summary Test Filtered XMLStreamReader parses namespace correctly.
  */
 public class Bug6481678 {
@@ -58,19 +60,14 @@ public class Bug6481678 {
     XMLInputFactory factory;
     InputStream is;
 
-    /** Creates a new instance of NamespaceTest */
-    public Bug6481678(java.lang.String testName) {
-        init();
-    }
-
-    private void init() {
+    public Bug6481678() {
         factory = XMLInputFactory.newInstance();
         factory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
         filter = createFilter();
     }
 
     String getXML() {
-        StringBuffer sbuffer = new StringBuffer();
+        StringBuilder sbuffer = new StringBuilder();
         sbuffer.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         sbuffer.append("<" + rootElement + " state=\"WA\"");
         sbuffer.append(" xmlns:" + prefixApple + "=\"" + namespaceURIApple + "\"");
@@ -85,7 +82,7 @@ public class Bug6481678 {
         return sbuffer.toString();
     }
 
-    public TypeFilter createFilter() {
+    TypeFilter createFilter() {
 
         TypeFilter f = new TypeFilter();
 
@@ -115,13 +112,13 @@ public class Bug6481678 {
                 int eventType = sr.getEventType();
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
                     if (sr.getLocalName().equals(rootElement)) {
-                        Assert.assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
+                        assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
                     }
                 }
                 eventType = sr.next();
             }
         } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            fail("Exception: " + ex.getMessage());
         }
     }
 
@@ -135,12 +132,12 @@ public class Bug6481678 {
                 int eventType = sr.next();
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
                     if (sr.getLocalName().equals(rootElement)) {
-                        Assert.assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
+                        assertTrue(sr.getNamespacePrefix(0).equals(prefixApple) && sr.getNamespaceURI(0).equals(namespaceURIApple));
                     }
                 }
             }
         } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            fail("Exception: " + ex.getMessage());
         }
     }
 
@@ -154,13 +151,13 @@ public class Bug6481678 {
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
                     if (sr.getLocalName().equals(childElement)) {
                         QName qname = sr.getName();
-                        Assert.assertTrue(qname.getPrefix().equals(prefixApple) && qname.getNamespaceURI().equals(namespaceURIApple)
+                        assertTrue(qname.getPrefix().equals(prefixApple) && qname.getNamespaceURI().equals(namespaceURIApple)
                                 && qname.getLocalPart().equals(childElement));
                     }
                 }
             }
         } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            fail("Exception: " + ex.getMessage());
         }
     }
 
@@ -174,12 +171,12 @@ public class Bug6481678 {
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
                     if (sr.getLocalName().equals(childElement)) {
                         NamespaceContext context = sr.getNamespaceContext();
-                        Assert.assertTrue(context.getPrefix(namespaceURIApple).equals(prefixApple));
+                        assertEquals(context.getPrefix(namespaceURIApple), prefixApple);
                     }
                 }
             }
         } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            fail("Exception: " + ex.getMessage());
         }
     }
 
@@ -193,21 +190,18 @@ public class Bug6481678 {
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
                     if (sr.getLocalName().equals(rootElement)) {
                         int count = sr.getNamespaceCount();
-                        Assert.assertTrue(count == 3);
+                        assertEquals(3, count);
                     }
                 }
             }
         } catch (Exception ex) {
-            Assert.fail("Exception: " + ex.getMessage());
+            fail("Exception: " + ex.getMessage());
         }
     }
 
-    class TypeFilter implements EventFilter, StreamFilter {
+    static class TypeFilter implements EventFilter, StreamFilter {
 
         protected boolean[] types = new boolean[20];
-
-        public TypeFilter() {
-        }
 
         public void addType(int type) {
             types[type] = true;

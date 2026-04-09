@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
 
 package stream.EventsTest;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Iterator;
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
@@ -41,73 +37,72 @@ import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.DTD;
 import javax.xml.stream.events.EndDocument;
 import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.EntityDeclaration;
 import javax.xml.stream.events.Namespace;
+import javax.xml.stream.events.NotationDeclaration;
 import javax.xml.stream.events.ProcessingInstruction;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.List;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
  * @bug 6631268
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.EventsTest.Issue41Test
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.EventsTest.Issue41Test
  * @summary Test XMLEvent.writeAsEncodedUnicode can output the event content.
  */
 public class Issue41Test {
 
     public java.io.File input;
-    public final String filesDir = "./";
     protected XMLInputFactory inputFactory;
-    protected XMLOutputFactory outputFactory;
 
     @Test
-    public void testEvents() {
+    public void testEvents() throws Exception {
         XMLEventFactory f = XMLEventFactory.newInstance();
         final String contents = "test <some> text & more! [[]] --";
         final String prefix = "prefix";
         final String uri = "http://foo";
         final String localName = "elem";
 
-        try {
-            StartDocument sd = f.createStartDocument();
-            writeAsEncodedUnicode(sd);
+        StartDocument sd = f.createStartDocument();
+        writeAsEncodedUnicode(sd);
 
-            Comment c = f.createComment("some comments");
-            writeAsEncodedUnicode(c);
+        Comment c = f.createComment("some comments");
+        writeAsEncodedUnicode(c);
 
-            StartElement se = f.createStartElement(prefix, uri, localName);
+        StartElement se = f.createStartElement(prefix, uri, localName);
 
-            ProcessingInstruction pi = f.createProcessingInstruction("target", "data");
-            writeAsEncodedUnicode(pi);
+        ProcessingInstruction pi = f.createProcessingInstruction("target", "data");
+        writeAsEncodedUnicode(pi);
 
-            Namespace ns = f.createNamespace(prefix, uri);
-            writeAsEncodedUnicode(ns);
+        Namespace ns = f.createNamespace(prefix, uri);
+        writeAsEncodedUnicode(ns);
 
-            Characters characters = f.createCharacters(contents);
-            writeAsEncodedUnicode(characters);
-            // CData
-            Characters cdata = f.createCData(contents);
-            writeAsEncodedUnicode(cdata);
+        Characters characters = f.createCharacters(contents);
+        writeAsEncodedUnicode(characters);
+        // CData
+        Characters cdata = f.createCData(contents);
+        writeAsEncodedUnicode(cdata);
 
-            // Attribute
-            QName attrName = new QName("http://test.com", "attr", "ns");
-            Attribute attr = f.createAttribute(attrName, "value");
-            writeAsEncodedUnicode(attr);
+        // Attribute
+        QName attrName = new QName("http://test.com", "attr", "ns");
+        Attribute attr = f.createAttribute(attrName, "value");
+        writeAsEncodedUnicode(attr);
 
-            // prefix, uri, localName
-            EndElement ee = f.createEndElement(prefix, uri, localName);
-            writeAsEncodedUnicode(ee);
+        // prefix, uri, localName
+        EndElement ee = f.createEndElement(prefix, uri, localName);
+        writeAsEncodedUnicode(ee);
 
-            EndDocument ed = f.createEndDocument();
-            writeAsEncodedUnicode(ed);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
+        EndDocument ed = f.createEndDocument();
+        writeAsEncodedUnicode(ed);
     }
 
     /**
@@ -115,47 +110,38 @@ public class Issue41Test {
      * and entity declaration information
      */
     @Test
-    public void testDTDEvent() {
-        String XML = "<?xml version='1.0' ?>" + "<!DOCTYPE root [\n" + "<!ENTITY intEnt 'internal'>\n" + "<!ENTITY extParsedEnt SYSTEM 'url:dummy'>\n"
-                + "<!NOTATION notation PUBLIC 'notation-public-id'>\n" + "<!NOTATION notation2 SYSTEM 'url:dummy'>\n"
-                + "<!ENTITY extUnparsedEnt SYSTEM 'url:dummy2' NDATA notation>\n" + "]>" + "<root />";
+    public void testDTDEvent() throws Exception {
+        String XML = "<?xml version='1.0' ?>"
+                + "<!DOCTYPE root [\n"
+                + "<!ENTITY intEnt 'internal'>\n"
+                + "<!ENTITY extParsedEnt SYSTEM 'url:dummy'>\n"
+                + "<!NOTATION notation PUBLIC 'notation-public-id'>\n"
+                + "<!NOTATION notation2 SYSTEM 'url:dummy'>\n"
+                + "<!ENTITY extUnparsedEnt SYSTEM 'url:dummy2' NDATA notation>\n"
+                + "]>\n"
+                + "<root />";
 
-        try {
-            XMLEventReader er = getReader(XML);
-            XMLEvent evt = er.nextEvent(); // StartDocument
-            evt = er.nextEvent(); // DTD
-            if (evt.getEventType() != XMLStreamConstants.DTD) {
-                Assert.fail("Expected DTD event");
-            }
-            DTD dtd = (DTD) evt;
-            writeAsEncodedUnicode(dtd);
-            List entities = dtd.getEntities();
-            if (entities == null) {
-                Assert.fail("No entity found. Expected 3.");
-            } else {
-                writeAsEncodedUnicode((XMLEvent) entities.get(0));
-                writeAsEncodedUnicode((XMLEvent) entities.get(1));
-                writeAsEncodedUnicode((XMLEvent) entities.get(2));
-            }
+        XMLEventReader er = getReader(XML);
+        assertNotNull(er.nextEvent()); // StartDocument
+        XMLEvent evt = er.nextEvent(); // DTD
+        assertEquals(XMLStreamConstants.DTD, evt.getEventType());
+        DTD dtd = (DTD) evt;
+        writeAsEncodedUnicode(dtd);
+        List<EntityDeclaration> entities = dtd.getEntities();
+        assertEquals(3, entities.size());
+        writeAsEncodedUnicode((XMLEvent) entities.get(0));
+        writeAsEncodedUnicode((XMLEvent) entities.get(1));
+        writeAsEncodedUnicode((XMLEvent) entities.get(2));
 
-            List notations = dtd.getNotations();
-            if (notations == null) {
-                Assert.fail("No notation found. Expected 2.");
-            } else {
-                writeAsEncodedUnicode((XMLEvent) notations.get(0));
-                writeAsEncodedUnicode((XMLEvent) notations.get(1));
-            }
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        List<NotationDeclaration> notations = dtd.getNotations();
+        assertEquals(2, notations.size());
+        writeAsEncodedUnicode((XMLEvent) notations.get(0));
+        writeAsEncodedUnicode((XMLEvent) notations.get(1));
     }
 
     private XMLEventReader getReader(String XML) throws Exception {
         inputFactory = XMLInputFactory.newInstance();
-
-        // Check if event reader returns the correct event
-        XMLEventReader er = inputFactory.createXMLEventReader(new StringReader(XML));
-        return er;
+        return inputFactory.createXMLEventReader(new StringReader(XML));
     }
 
 
@@ -170,8 +156,6 @@ public class Issue41Test {
         }
         StringWriter sw = new StringWriter();
         evt.writeAsEncodedUnicode(sw);
-
-        Assert.assertTrue(sw.toString().length() > 0);
-        System.out.println(sw.toString());
+        assertFalse(sw.toString().isEmpty());
     }
 }

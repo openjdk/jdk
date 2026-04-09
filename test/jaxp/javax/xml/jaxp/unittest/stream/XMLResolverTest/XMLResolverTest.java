@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,73 +23,54 @@
 
 package stream.XMLResolverTest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLResolverTest.XMLResolverTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLResolverTest.XMLResolverTest
  * @summary Test XMLResolver.
  */
 public class XMLResolverTest {
 
     @Test
-    public void testXMLResolver() {
-        try {
-            XMLInputFactory xifactory = XMLInputFactory.newInstance();
-            xifactory.setProperty(XMLInputFactory.RESOLVER, new MyStaxResolver());
-            File file = new File(getClass().getResource("XMLResolverTest.xml").getFile());
-            String systemId = file.toURI().toString();
-            InputStream entityxml = new FileInputStream(file);
-            XMLStreamReader streamReader = xifactory.createXMLStreamReader(systemId, entityxml);
-            while (streamReader.hasNext()) {
-                int eventType = streamReader.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    eventType = streamReader.next();
-                    if (eventType == XMLStreamConstants.CHARACTERS) {
-                        String text = streamReader.getText();
-                        Assert.assertTrue(text.contains("replace2"));
-                    }
+    public void testXMLResolver() throws Exception {
+        XMLInputFactory xifactory = XMLInputFactory.newInstance();
+        xifactory.setProperty(XMLInputFactory.RESOLVER, new MyStaxResolver());
+        File file = new File(getClass().getResource("XMLResolverTest.xml").getFile());
+        String systemId = file.toURI().toString();
+        InputStream entityxml = new FileInputStream(file);
+        XMLStreamReader streamReader = xifactory.createXMLStreamReader(systemId, entityxml);
+        while (streamReader.hasNext()) {
+            int eventType = streamReader.next();
+            if (eventType == XMLStreamConstants.START_ELEMENT) {
+                eventType = streamReader.next();
+                if (eventType == XMLStreamConstants.CHARACTERS) {
+                    String text = streamReader.getText();
+                    assertTrue(text.contains("replace2"));
                 }
             }
-        } catch (XMLStreamException ex) {
-
-            if (ex.getNestedException() != null) {
-                ex.getNestedException().printStackTrace();
-            }
-            // ex.printStackTrace() ;
-        } catch (Exception io) {
-            io.printStackTrace();
         }
     }
 
-    class MyStaxResolver implements XMLResolver {
+    private static class MyStaxResolver implements XMLResolver {
 
-        public MyStaxResolver() {
-
-        }
-
-        public Object resolveEntity(String publicId, String systemId, String baseURI, String namespace) throws javax.xml.stream.XMLStreamException {
-
-            Object object = null;
+        public Object resolveEntity(String publicId, String systemId, String baseURI, String namespace) {
             try {
-                object = new FileInputStream(getClass().getResource("replace2.txt").getFile());
+                return new FileInputStream(getClass().getResource("replace2.txt").getFile());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             }
-            return object;
         }
-
     }
 }

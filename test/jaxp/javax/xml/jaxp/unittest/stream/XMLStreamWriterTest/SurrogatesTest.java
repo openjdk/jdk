@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
 
 package stream.XMLStreamWriterTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -34,16 +32,19 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8145974
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm stream.XMLStreamWriterTest.SurrogatesTest
+ * @library /javax/xml/jaxp/unittest
+ * @run junit/othervm stream.XMLStreamWriterTest.SurrogatesTest
  * @summary Check that XMLStreamWriter generates valid xml with surrogate pair
  *  used within element text
  */
@@ -52,18 +53,18 @@ public class SurrogatesTest {
 
     // Test that valid surrogate characters can be written/readen by xml stream
     // reader/writer
-    @Test(dataProvider = "validData")
+    @ParameterizedTest
+    @MethodSource("getValidData")
     public void xmlWithValidSurrogatesTest(String content)
             throws Exception {
         generateAndReadXml(content);
     }
 
     // Test that unbalanced surrogate character will
-    @Test(dataProvider = "invalidData",
-            expectedExceptions = XMLStreamException.class)
-    public void xmlWithUnbalancedSurrogatesTest(String content)
-            throws Exception {
-        generateAndReadXml(content);
+    @ParameterizedTest
+    @MethodSource("getInvalidData")
+    public void xmlWithUnbalancedSurrogatesTest(String content) {
+        assertThrows(XMLStreamException.class, () -> generateAndReadXml(content));
     }
 
     // Generates xml content with XMLStreamWriter and read it to check
@@ -135,8 +136,7 @@ public class SurrogatesTest {
                             || ename.equals("writeCharactersWithArray")) {
                         inTestElement = false;
                         String content = sb.toString();
-                        System.out.println(ename + " text:'" + content + "' expected:'" + expectedContent+"'");
-                        Assert.assertEquals(content, expectedContent);
+                        assertEquals(expectedContent, content);
                         sb.setLength(0);
                     }
                     break;
@@ -150,8 +150,7 @@ public class SurrogatesTest {
         }
     }
 
-    @DataProvider(name = "validData")
-    public Object[][] getValidData() {
+    public static Object[][] getValidData() {
         return new Object[][] {
             {"Don't Worry Be \uD83D\uDE0A"},
             {"BMP characters \uE000\uFFFD"},
@@ -159,8 +158,7 @@ public class SurrogatesTest {
         };
     }
 
-    @DataProvider(name = "invalidData")
-    public Object[][] getInvalidData() {
+    public static Object[][] getInvalidData() {
         return new Object[][] {
             {"Unbalanced surrogate \uD83D"},
             {"Unbalanced surrogate \uD83Dis here"},
