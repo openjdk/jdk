@@ -63,7 +63,7 @@ import org.junit.jupiter.api.Test;
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=10
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
- *                     -Djdk.httpclient.HttpClient.log=quic,errors PacketLossTest
+ *                     -Djdk.httpclient.HttpClient.log=quic,errors ${test.main.class}
  */
 public class PacketLossTest {
 

@@ -909,10 +909,16 @@ void StubGenerator::poly1305_process_blocks_avx512(
 // After execution, input and length will point at remaining (unprocessed) data
 // and accumulator will point to the current accumulator value
 address StubGenerator::generate_poly1305_processBlocks() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   // Save all 'SOE' registers
@@ -1028,6 +1034,10 @@ address StubGenerator::generate_poly1305_processBlocks() {
 
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1695,3 +1705,14 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
   __ vpaddq(A1, A1, YTMP2, Assembler::AVX_256bit); //Add medium 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, YTMP5, Assembler::AVX_256bit);
 }
+#undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(POLY1305_PAD_MSG);
+  ADD(POLY1305_MASK42);
+  ADD(POLY1305_MASK44);
+#undef ADD
+}
+#endif // INCLUDE_CDS
