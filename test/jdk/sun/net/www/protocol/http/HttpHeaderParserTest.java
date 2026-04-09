@@ -1,7 +1,7 @@
 
 
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @summary Sanity check that HttpHeaderParser works same as MessageHeader
  * @modules java.base/sun.net.www java.base/sun.net.www.protocol.http:open
- * @run testng/othervm HttpHeaderParserTest
+ * @run junit/othervm HttpHeaderParserTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -45,16 +45,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import jdk.test.lib.net.HttpHeaderParser;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import sun.net.www.MessageHeader;
 
 public class HttpHeaderParserTest {
-    @DataProvider(name = "responses")
-    public Object[][] responses() {
+    public static Object[][] responses() {
         List<String> responses = new ArrayList<>();
 
         String[] basic =
@@ -319,7 +320,8 @@ public class HttpHeaderParserTest {
     }
 
 
-    @Test(dataProvider = "responses")
+    @ParameterizedTest
+    @MethodSource("responses")
     public void verifyHeaders(String respString) throws Exception {
         System.out.println("\ntesting:\n\t" + respString
                 .replace("\r\n", "<CRLF>")
@@ -366,8 +368,7 @@ public class HttpHeaderParserTest {
                         availableBytes, headerStream.available()));
     }
 
-    @DataProvider(name = "errors")
-    public Object[][] errors() {
+    public static Object[][] errors() {
         List<String> responses = new ArrayList<>();
 
         // These responses are parsed, somewhat, by MessageHeaders but give
@@ -444,13 +445,14 @@ public class HttpHeaderParserTest {
 
         return responses.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
     }
-
-    @Test(dataProvider = "errors", expectedExceptions = IOException.class)
+    
+    @ParameterizedTest
+    @MethodSource("errors")
     public void errors(String respString) throws IOException {
         byte[] bytes = respString.getBytes(US_ASCII);
         HttpHeaderParser decoder = new HttpHeaderParser();
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        decoder.parse(bais);
+        assertThrows(IOException.class, () -> decoder.parse(bais));
     }
 
     void assertHeadersEqual(Map<String,List<String>> expected,

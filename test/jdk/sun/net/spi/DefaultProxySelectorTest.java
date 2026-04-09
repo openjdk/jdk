@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,19 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import sun.net.spi.DefaultProxySelector;
 
 import java.net.ProxySelector;
 import java.net.URI;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * @test
  * @bug 6563286 6797318 8177648
  * @summary Tests sun.net.spi.DefaultProxySelector#select(URI)
- * @run testng DefaultProxySelectorTest
+ * @run junit DefaultProxySelectorTest
  * @modules java.base/sun.net.spi:+open
  */
 public class DefaultProxySelectorTest {
@@ -46,7 +47,7 @@ public class DefaultProxySelectorTest {
         final ProxySelector selector = new DefaultProxySelector();
         try {
             selector.select(null);
-            Assert.fail("select() was expected to fail for null URI");
+            fail("select() was expected to fail for null URI");
         } catch (IllegalArgumentException iae) {
             // expected
         }
@@ -82,7 +83,7 @@ public class DefaultProxySelectorTest {
     private static void assertFailsWithIAE(final ProxySelector selector, final URI uri) {
         try {
             selector.select(uri);
-            Assert.fail("select() was expected to fail for URI " + uri);
+            fail("select() was expected to fail for URI " + uri);
         } catch (IllegalArgumentException iae) {
             // expected
         }
