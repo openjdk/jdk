@@ -41,8 +41,14 @@ import sun.nio.cs.UTF_8;
 /**
  * Utility class for ZIP file entry name and comment decoding and encoding.
  * <p>
- * The {@code ZipCoder} for UTF-8 charset is thread safe, {@code ZipCoder}
- * for other charsets require external synchronization.
+ * The {@code ZipCoder} base class handles UTF-8, which is the the common case
+ * for ZIP files and always the case for JAR files. Other charsets are handled by
+ * the {@code CharsetZipCoder} subclass.
+ * <p>
+ * While the ZipCoder base class is stateless and safe for use from multiple threads,
+ * the CharsetZipCoder subclass does hold decoder/encoder state and therefore requires
+ * external synchronization. Because of this, ZipCoder instances should in general be
+ * treated as is they are stateful.
  */
 class ZipCoder {
 
