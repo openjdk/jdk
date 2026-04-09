@@ -34,7 +34,10 @@ import javax.xml.stream.util.EventReaderDelegate;
 import java.io.FileInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -54,15 +57,10 @@ public class EventReaderDelegateTest {
                 case XMLStreamConstants.START_ELEMENT: {
                     String name = event.asStartElement().getName().toString();
                     if (name.equals("name") || name.equals("price")) {
-                        System.out.println(delegate.getElementText());
+                        assertNotNull(delegate.getElementText());
                     } else {
-                        try {
-                            delegate.getElementText();
-                        } catch (XMLStreamException e) {
-                            System.out.println("Expected XMLStreamException in getElementText()");
-                        }
+                        assertThrows(XMLStreamException.class, delegate::getElementText);
                     }
-
                 }
             }
         }
@@ -71,14 +69,10 @@ public class EventReaderDelegateTest {
 
     @Test
     public void testRemove() throws Exception {
-        try {
-            XMLInputFactory ifac = XMLInputFactory.newFactory();
-            XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
-            EventReaderDelegate delegate = new EventReaderDelegate(reader);
-            delegate.remove();
-        } catch (UnsupportedOperationException e) {
-            System.out.println("Expected exception in remove()");
-        }
+        XMLInputFactory ifac = XMLInputFactory.newFactory();
+        XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
+        EventReaderDelegate delegate = new EventReaderDelegate(reader);
+        assertThrows(UnsupportedOperationException.class, delegate::remove);
     }
 
     @Test
@@ -90,9 +84,7 @@ public class EventReaderDelegateTest {
         while (delegate.hasNext()) {
             XMLEvent peekevent = delegate.peek();
             XMLEvent event = (XMLEvent) delegate.next();
-            if (peekevent != event) {
-                fail("peek() does not return same XMLEvent with next()");
-            }
+            assertSame(peekevent, event, "peek() does not return same XMLEvent with next()");
         }
         delegate.close();
     }
@@ -103,16 +95,12 @@ public class EventReaderDelegateTest {
         ifac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
         XMLEventReader reader = ifac.createXMLEventReader(new FileInputStream(getClass().getResource("toys.xml").getFile()));
         EventReaderDelegate delegate = new EventReaderDelegate(reader);
-        if (delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES) != Boolean.FALSE) {
-            fail("getProperty() does not return correct value");
-        }
+        assertEquals(Boolean.FALSE, delegate.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
         while (delegate.hasNext()) {
             XMLEvent event = delegate.peek();
             if (event.isEndElement() || event.isStartElement()) {
                 XMLEvent nextevent = delegate.nextTag();
-                if (!(nextevent.getEventType() == XMLStreamConstants.START_ELEMENT || nextevent.getEventType() == XMLStreamConstants.END_ELEMENT)) {
-                    fail("nextTag() does not return correct event type");
-                }
+                assertTrue(nextevent.getEventType() == XMLStreamConstants.START_ELEMENT || nextevent.getEventType() == XMLStreamConstants.END_ELEMENT);
             } else {
                 delegate.next();
             }
@@ -135,27 +123,27 @@ public class EventReaderDelegateTest {
             XMLEvent event = delegate.nextEvent();
             switch (event.getEventType()) {
                 case XMLStreamConstants.START_ELEMENT: {
-                    System.out.println(event.asStartElement().getName());
+                    assertNotNull(event.asStartElement().getName());
                     break;
                 }
                 case XMLStreamConstants.END_ELEMENT: {
-                    System.out.println(event.asEndElement().getName());
+                    assertNotNull(event.asEndElement().getName());
                     break;
                 }
                 case XMLStreamConstants.END_DOCUMENT: {
-                    System.out.println(event.isEndDocument());
+                    assertTrue(event.isEndDocument());
                     break;
                 }
                 case XMLStreamConstants.START_DOCUMENT: {
-                    System.out.println(event.isStartDocument());
+                    assertTrue(event.isStartDocument());
                     break;
                 }
                 case XMLStreamConstants.CHARACTERS: {
-                    System.out.println(event.asCharacters().getData());
+                    assertNotNull(event.asCharacters().getData());
                     break;
                 }
                 case XMLStreamConstants.COMMENT: {
-                    System.out.println(event.toString());
+                    assertNotNull(event.toString());
                     break;
                 }
             }

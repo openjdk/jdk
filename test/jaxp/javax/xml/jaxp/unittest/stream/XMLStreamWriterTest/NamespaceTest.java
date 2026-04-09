@@ -35,7 +35,6 @@ import java.io.ByteArrayOutputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -54,7 +53,7 @@ public class NamespaceTest {
     ByteArrayOutputStream byteArrayOutputStream = null;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws Exception {
 
         // want a Factory that repairs Namespaces
         xmlOutputFactory = XMLOutputFactory.newInstance();
@@ -64,25 +63,16 @@ public class NamespaceTest {
         byteArrayOutputStream = new ByteArrayOutputStream();
 
         // new Writer
-        try {
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
-
-        } catch (XMLStreamException xmlStreamException) {
-            fail(xmlStreamException.toString());
-        }
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
     }
 
     /**
      * Reset Writer for reuse.
      */
-    private void resetWriter() {
+    private void resetWriter() throws Exception {
         // reset the Writer
-        try {
-            byteArrayOutputStream.reset();
-            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
-        } catch (XMLStreamException xmlStreamException) {
-            fail(xmlStreamException.toString());
-        }
+        byteArrayOutputStream.reset();
+        xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
     }
 
     @Test
@@ -704,8 +694,8 @@ public class NamespaceTest {
     public void testSamePrefixDifferentURI() throws Exception {
 
         /*
-          writeAttribute("p", "http://example.org/URI-ONE", "attr1", "value");
-          writeAttribute("p", "http://example.org/URI-TWO", "attr2", "value");
+         * writeAttribute("p", "http://example.org/URI-ONE", "attr1", "value");
+         * writeAttribute("p", "http://example.org/URI-TWO", "attr2", "value");
          */
         final String EXPECTED_OUTPUT = "<?xml version=\"1.0\" ?>" + "<root" + " xmlns=\"\"" + " xmlns:p=\"http://example.org/URI-ONE\"" + " p:attr1=\"value\">"
                 + " xmlns:{generated prefix}=\"http://example.org/URI-TWO\"" + " {generated prefix}:attr2=\"value\">"
@@ -729,9 +719,8 @@ public class NamespaceTest {
         assertEquals(3, actualOutput.split(":attr").length, "Expected 2 :attr, actual output: " + actualOutput);
 
         /*
-          writeStartElement("p", "localName", "http://example.org/URI-ONE");
-          writeAttribute("p", "http://example.org/URI-TWO", "attrName",
-          "value");
+         * writeStartElement("p", "localName", "http://example.org/URI-ONE");
+         * writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value");
          */
         final String EXPECTED_OUTPUT_2 = "<?xml version=\"1.0\" ?>" + "<root" + " xmlns=\"\">" + "<p:localName" + " xmlns:p=\"http://example.org/URI-ONE\""
                 + " xmlns:{generated prefix}=\"http://example.org/URI-TWO\"" + " {generated prefix}:attrName=\"value\">" + "</p:localName>" + "</root>";
@@ -758,9 +747,8 @@ public class NamespaceTest {
         assertEquals(2, actualOutput.split(":attrName").length, "Expected 1 :attrName, actual output: " + actualOutput);
 
         /*
-          writeNamespace("p", "http://example.org/URI-ONE");
-          writeAttribute("p", "http://example.org/URI-TWO", "attrName",
-          "value");
+         * writeNamespace("p", "http://example.org/URI-ONE");
+         * writeAttribute("p", "http://example.org/URI-TWO", "attrName", "value");
          */
         final String EXPECTED_OUTPUT_3 = "<?xml version=\"1.0\" ?>" + "<root" + " xmlns=\"\"" + " xmlns:p=\"http://example.org/URI-ONE\""
                 + " xmlns:{generated prefix}=\"http://example.org/URI-TWO\"" + " {generated prefix}:attrName=\"value\">" + "</root>";
@@ -784,8 +772,8 @@ public class NamespaceTest {
         assertEquals(2, actualOutput.split(":attrName").length, "Expected a :attrName, actual output: " + actualOutput);
 
         /*
-          writeNamespace("xmlns", ""); writeStartElement("", "localName",
-          "http://example.org/URI-TWO");
+         * writeNamespace("xmlns", ""); writeStartElement("", "localName",
+         * "http://example.org/URI-TWO");
          */
         final String EXPECTED_OUTPUT_4 = "<?xml version=\"1.0\" ?>" + "<root xmlns=\"\">" + "<localName xmlns=\"http://example.org/URI-TWO\">"
                 + "xmlns declaration =\"http://example.org/URI-TWO\"" + "</localName" + "</root>";

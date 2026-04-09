@@ -33,7 +33,6 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -72,7 +71,8 @@ public class NamespaceTest {
             int eventType = sr.next();
             if (eventType == XMLStreamConstants.START_ELEMENT) {
                 if (sr.getLocalName().equals(rootElement)) {
-                    assertTrue(sr.getNamespacePrefix(0).equals(prefix) && sr.getNamespaceURI(0).equals(namespaceURI));
+                    assertEquals(prefix, sr.getNamespacePrefix(0));
+                    assertEquals(namespaceURI, sr.getNamespaceURI(0));
                 }
             }
         }
@@ -89,8 +89,9 @@ public class NamespaceTest {
             if (eventType == XMLStreamConstants.START_ELEMENT) {
                 if (sr.getLocalName().equals(childElement)) {
                     QName qname = sr.getName();
-                    assertTrue(qname.getPrefix().equals(prefix) && qname.getNamespaceURI().equals(namespaceURI)
-                            && qname.getLocalPart().equals(childElement));
+                    assertEquals(prefix, qname.getPrefix());
+                    assertEquals(namespaceURI, qname.getNamespaceURI());
+                    assertEquals(childElement, qname.getLocalPart());
                 }
             }
         }
