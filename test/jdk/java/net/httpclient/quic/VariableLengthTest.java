@@ -21,7 +21,6 @@
  * questions.
  */
 import jdk.internal.net.http.quic.VariableLengthEncoder;
-import jtreg.SkippedException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.opentest4j.TestAbortedException;
 
 /*
  * @test
@@ -345,7 +344,7 @@ public class VariableLengthTest {
             case 2 -> ByteBuffer.allocate(capacity).putShort((short) length);
             case 4 -> ByteBuffer.allocate(capacity).putInt((int) length);
             case 8 -> ByteBuffer.allocate(capacity).putLong(length);
-            default -> throw new SkippedException("bad value used for capacity");
+            default -> throw new TestAbortedException("bad value used for capacity");
         };
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 package sun.lwawt.macosx;
-
 
 import java.awt.*;
 import java.awt.font.*;
@@ -73,12 +72,17 @@ public class CTextPipe implements TextPipe {
 
     @Override
     public void drawString(final SunGraphics2D sg2d, final String s, final double x, final double y) {
+
+        FontInfo info = sg2d.getFontInfo();
+        double dx = x + info.originX;
+        double dy = y + info.originY;
+
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
             final OSXSurfaceData surfaceData = (OSXSurfaceData)sg2d.getSurfaceData();
-            surfaceData.drawString(this, sg2d, nativeStrikePtr, s, x, y);
+            surfaceData.drawString(this, sg2d, nativeStrikePtr, s, dx, dy);
         } else {
-            drawTextAsShape(sg2d, s, x, y);
+            drawTextAsShape(sg2d, s, dx, dy);
         }
     }
 
@@ -153,6 +157,15 @@ public class CTextPipe implements TextPipe {
         final Font prevFont = sg2d.getFont();
         sg2d.setFont(gV.getFont());
 
+        int flags = gV.getLayoutFlags();
+        boolean positionAdjustments = (flags & GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS) != 0;
+        if (positionAdjustments) {
+            // make sure GV positions are initialized, so they are available later in native code; this
+            // will already be the case if the user explicitly set the glyph positions, but not if the
+            // position adjustment flag was set because of a font translation transform or font tracking
+            gV.getGlyphPosition(0);
+        }
+
         if (hasSlotData(gV)) {
             final int length = gV.getNumGlyphs();
             float[] positions = gV.getGlyphPositions(0, length, null);
@@ -177,12 +190,17 @@ public class CTextPipe implements TextPipe {
 
     @Override
     public void drawChars(final SunGraphics2D sg2d, final char[] data, final int offset, final int length, final int x, final int y) {
+
+        FontInfo info = sg2d.getFontInfo();
+        double dx = x + info.originX;
+        double dy = y + info.originY;
+
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
             final OSXSurfaceData surfaceData = (OSXSurfaceData)sg2d.getSurfaceData();
-            surfaceData.drawUnicodes(this, sg2d, nativeStrikePtr, data, offset, length, x, y);
+            surfaceData.drawUnicodes(this, sg2d, nativeStrikePtr, data, offset, length, (float) dx, (float) dy);
         } else {
-            drawTextAsShape(sg2d, new String(data, offset, length), x, y);
+            drawTextAsShape(sg2d, new String(data, offset, length), dx, dy);
         }
     }
 
@@ -191,7 +209,8 @@ public class CTextPipe implements TextPipe {
     }
 
     public static final class Tracer extends CTextPipe {
-        void doDrawString(final SurfaceData sData, final long nativeStrikePtr, final String s, final float x, final float y) {
+        @Override
+        public void doDrawString(final SurfaceData sData, final long nativeStrikePtr, final String s, final double x, final double y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawString");
             super.doDrawString(sData, nativeStrikePtr, s, x, y);
         }

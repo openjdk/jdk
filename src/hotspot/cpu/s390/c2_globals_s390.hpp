@@ -46,7 +46,6 @@ define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, InteriorEntryAlignment,       4);
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        12000);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
@@ -78,8 +77,5 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    4);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on z/Architecture.
-
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
 
 #endif // CPU_S390_C2_GLOBALS_S390_HPP

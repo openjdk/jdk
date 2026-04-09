@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SocketChannelNAPITest
  */
 
-import jdk.test.lib.net.IPSupport;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -44,7 +43,9 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Optional;
 
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -59,7 +60,10 @@ public class SocketChannelNAPITest {
 
     @BeforeTest
     public void setup() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkipException::new).ifPresent(x -> {
+            throw x;
+        });
         try (var s = SocketChannel.open();
              var ssc = ServerSocketChannel.open()) {
             if (!s.supportedOptions().contains(SO_INCOMING_NAPI_ID)) {
