@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,14 @@
  */
 
 import java.net.*;
+import java.util.Optional;
 
-import jdk.test.lib.net.IPSupport;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 
 public class ToString {
 
@@ -74,7 +77,10 @@ public class ToString {
 
     @BeforeTest
     public void setup() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkipException::new).ifPresent(x -> {
+            throw x;
+        });
     }
 
     @Test
