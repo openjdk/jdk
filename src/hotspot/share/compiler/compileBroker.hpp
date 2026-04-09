@@ -450,6 +450,8 @@ public:
   // CodeHeap State Analytics.
   static void print_info(outputStream *out);
   static void print_heapinfo(outputStream *out, const char* function, size_t granularity);
+  static void suspend_print_compilation();
+  static void resume_print_compilation();
 };
 
 // In order to achiveve a maximally fast warmup we attempt to compile important methods as soon as all

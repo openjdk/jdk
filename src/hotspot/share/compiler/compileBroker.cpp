@@ -62,6 +62,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -2183,6 +2184,19 @@ static void whitebox_lock_compilation() {
   }
 }
 
+// Used in AOT training run to avoid printing compilation of
+// methods that won't be in the AOT profile.
+static bool _suspend_print_compilation = false;
+void CompileBroker::suspend_print_compilation() {
+    _suspend_print_compilation = true;
+    OrderAccess::fence();
+}
+
+void CompileBroker::resume_print_compilation() {
+    _suspend_print_compilation = false;
+    OrderAccess::fence();
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -2193,7 +2207,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   elapsedTimer time;
 
   DirectiveSet* directive = task->directive();
-  if (directive->PrintCompilationOption) {
+  if (!suspend_print_compilation && directive->PrintCompilationOption) {
     ResourceMark rm;
     task->print_tty();
   }

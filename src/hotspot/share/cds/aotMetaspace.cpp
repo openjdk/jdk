@@ -61,6 +61,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -1072,6 +1073,22 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
+class DisablePrintCompilation {
+  bool _old_value;
+public:
+  DisablePrintCompilation(bool doit) {
+    _old_value = PrintCompilation;
+    if (doit) {
+      PrintCompilation = false;
+      CompileBroker::suspend_print_compilation();
+    }
+  }
+  ~DisablePrintCompilation() {
+    PrintCompilation = _old_value;
+    CompileBroker::resume_print_compilation();
+  }
+};
+
 bool AOTMetaspace::preimage_static_archive_dumped() {
   assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
   return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
@@ -1144,6 +1161,11 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   link_shared_classes(CHECK);
   log_info(aot)("Rewriting and linking classes: done");
   TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
+
+  // If we are saving training data, don't print the compilation of Java methods
+  // executed by following code, such as regenerate_holder_classes(), as these
+  // methods will not be included in the AOT profile.
+  DisablePrintCompilation disable(TrainingData::need_data());
 
   if (CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
