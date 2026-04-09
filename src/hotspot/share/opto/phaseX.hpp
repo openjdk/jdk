@@ -462,6 +462,8 @@ protected:
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
+  DeadPathNode* dead_path();
+
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor

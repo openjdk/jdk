@@ -593,6 +593,7 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
+  assert(this != Compile::current()->dead_path(), "");
   Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
   if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);

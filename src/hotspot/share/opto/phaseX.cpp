@@ -2120,6 +2120,19 @@ Node *PhaseIterGVN::transform( Node *n ) {
   return transform_old(n);
 }
 
+DeadPathNode* PhaseIterGVN::dead_path() {
+  DeadPathNode* dead_path_node = C->dead_path();
+  if (dead_path_node->in(0) != dead_path_node) {
+    assert(C->root()->find_edge(dead_path_node) < 0, "");
+    dead_path_node->set_req(0, dead_path_node);
+    C->root()->add_req(dead_path_node);
+    _worklist.push(C->root());
+    set_type(dead_path_node, dead_path_node->bottom_type());
+  }
+  assert(C->root()->find_edge(dead_path_node) > 0, "");
+  return dead_path_node;
+}
+
 Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
@@ -2210,16 +2223,13 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    // if (k->is_CFG() && t == Type::TOP) {
-    //   k->remove_dead_region(this, true);
-    // }
     if (t == Type::TOP) {
       ResourceMark rm;
       Unique_Node_List wq;
       wq.push(k);
       for (uint i = 0; i < wq.size(); i++) {
         Node* n = wq.at(i);
-        if (n !=k && (n->is_Region() || n->is_Phi() || (n->is_CFG() && !wq.member(n->in(0))))) {
+        if (n != k && (n->is_Region() || n->is_Phi() || (n->is_CFG() && !wq.member(n->in(0))))) {
           continue;
         }
         for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
@@ -2228,7 +2238,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
         }
       }
 
-      RegionNode* r = nullptr;
       assert(wq.at(0) == k, "");
       for (uint i = 1; i < wq.size(); i++) {
         Node* n = wq.at(i);
@@ -2247,13 +2256,8 @@ Node *PhaseIterGVN::transform_old(Node* n) {
               if (n->in(0)->is_top() || n->in(0)->in(j) == nullptr || n->in(0)->in(j)->is_top()) {
                 continue;
               }
-              if (r == nullptr) {
-                r = new RegionNode(2);
-                r->init_req(1, C->root());
-                register_new_node_with_optimizer(r);
-                Node::create_halt_path(this, r, nullptr, "igvn");
-              }
-              r->add_req(n->in(0)->in(j));
+              dead_path()->add_req(n->in(0)->in(j));
+              _worklist.push(dead_path());
               replace_input_of(n, j, C->top());
               replace_input_of(n->in(0), j, C->top());
               if (in->outcnt() == 0) {
@@ -2265,22 +2269,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
           if (n->in(0)->is_top()) {
             continue;
           }
-          if (r == nullptr) {
-            r = new RegionNode(2);
-            r->init_req(1, C->root());
-            register_new_node_with_optimizer(r);
-            Node::create_halt_path(this, r, nullptr, "igvn");
-          }
-          r->add_req(n->in(0));
+          dead_path()->add_req(n->in(0));
+          _worklist.push(dead_path());
           replace_input_of(n, 0, C->top());
           n->remove_dead_region(this, true);
         }
       }
-      if (r != nullptr) {
-        assert(r->in(1) == C->root(), "");
-        replace_input_of(r, 1, C->top());
-      }
-        // k->make_paths_from_here_dead(this, nullptr, "igvn");
     }
     NOT_PRODUCT(set_progress();)
     Node* con = makecon(t);     // Make a constant
