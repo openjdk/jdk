@@ -461,7 +461,7 @@ public:
 
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
 
-    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
+    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate() && !cm->is_root_region(r);
     HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
 
     if (part_of_marking) {
