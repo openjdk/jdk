@@ -80,7 +80,8 @@ private:
   // Allocated size for filling TLAB in HeapWords
   size_t    _allocated_size;
 
-  AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
+  // Fraction of eden allocated in TLABs
+  AdaptiveWeightedAverage _allocation_fraction;
 
   void reset_statistics();
 

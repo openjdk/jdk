@@ -255,10 +255,10 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
   if (TLABSize > 0) {
     init_sz = TLABSize / HeapWordSize;
   } else {
-    size_t predicted_total_requested_size = ThreadLocalAllocStats::total_requested_size_fraction_avg() * Universe::heap()->tlab_capacity();
-    unsigned int num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
-    size_t per_thread_requested_size = predicted_total_requested_size / num_threads;
-    size_t tlab_size = per_thread_requested_size / _target_num_refills;
+    const size_t predicted_total_requested_size = ThreadLocalAllocStats::total_requested_size_fraction_avg() * Universe::heap()->tlab_capacity();
+    const uint num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
+    const size_t per_thread_requested_size = predicted_total_requested_size / num_threads;
+    const size_t tlab_size = per_thread_requested_size / _target_num_refills;
     init_sz = tlab_size / HeapWordSize;
     init_sz = align_object_size(init_sz);
   }
