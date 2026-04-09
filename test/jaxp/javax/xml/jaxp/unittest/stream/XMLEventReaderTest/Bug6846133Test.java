@@ -25,8 +25,10 @@ package stream.XMLEventReaderTest;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -45,7 +47,7 @@ public class Bug6846133Test {
         factory.setXMLResolver(new DTDResolver());
         factory.setProperty(javax.xml.stream.XMLInputFactory.SUPPORT_DTD, true);
         factory.setProperty(javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, true);
-        java.io.ByteArrayInputStream is = new java.io.ByteArrayInputStream(xml.getBytes(UTF_8));
+        ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(UTF_8));
 
         // createXMLEventReader (source) not supported
         // javax.xml.transform.stream.StreamSource source = new
@@ -58,18 +60,14 @@ public class Bug6846133Test {
             javax.xml.stream.events.XMLEvent event = reader.nextEvent();
             if (event.getEventType() == javax.xml.stream.XMLStreamConstants.DTD) {
                 String temp = ((javax.xml.stream.events.DTD) event).getDocumentTypeDeclaration();
-                if (temp.length() < 120) {
-                    fail("DTD truncated");
-                }
-                System.out.println(temp);
+                assertTrue(temp.length() >= 120, "DTD truncated");
             }
         }
     }
 
     private static class DTDResolver implements javax.xml.stream.XMLResolver {
         public Object resolveEntity(String arg0, String arg1, String arg2, String arg3) {
-            System.out.println("DTD is parsed");
-            return new java.io.ByteArrayInputStream(new byte[0]);
+            return new ByteArrayInputStream(new byte[0]);
         }
     }
 
