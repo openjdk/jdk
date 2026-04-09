@@ -28,7 +28,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
-
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
