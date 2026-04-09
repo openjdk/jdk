@@ -61,25 +61,10 @@ void G1FullGCMarker::process_partial_array(PartialArrayState* state, bool stolen
 }
 
 static uintx calc_array_stride(uint array_len, uint num_threads) {
+  precond(num_threads > 0);
 
-  static const uintx min_stride = MIN2((uintx)ParGCArrayScanChunk, ObjArrayMarkingStride);
-  static const uintx max_stride = MAX2((uintx)ParGCArrayScanChunk, ObjArrayMarkingStride);
-
-  if (array_len <= min_stride) {
-    return min_stride;
-  }
-
-  // If max_stride already gives at least one chunk per thread, use it.
-  if (num_threads == 1 || (array_len / max_stride) >= num_threads) {
-    return max_stride;
-  }
-
-  uintx stride = (array_len + num_threads - 1) / num_threads;
-
-  // Aligned up to a multiple of min_stride.
-  stride = ((stride + min_stride - 1) / min_stride) * min_stride;
-
-  return MIN2(stride, max_stride);
+  const size_t stride = (array_len + num_threads - 1) / num_threads;
+  return clamp(stride, ArrayMarkingMinStride, ObjArrayMarkingStride);
 }
 
 void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
