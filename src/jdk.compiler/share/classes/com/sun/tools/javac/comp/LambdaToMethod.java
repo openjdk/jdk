@@ -662,6 +662,10 @@ public class LambdaToMethod extends TreeTranslator {
                 it.remove();
             }
             cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), null, stmts.toList(), null));
+
+            if (deserializationCaseCount >= MAXIMUM_DESERIALIZATION_CASE_COUNT) {
+                break;
+            }
         }
         JCSwitch sw = make.Switch(deserGetter(deserParamSym, "getImplMethodName", syms.stringType), cases.toList());
         for (JCBreak br : breaks) {
