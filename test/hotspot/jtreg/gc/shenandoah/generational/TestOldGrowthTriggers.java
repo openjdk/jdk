@@ -97,6 +97,8 @@ public class TestOldGrowthTriggers {
         }
 
         testOld("-Xlog:gc",
+                "-XX:ConcGCThreads=1",
+                "-XX:ParallelGCThreads=1",
                 "-Xms96m",
                 "-Xmx96m",
                 "-XX:+UnlockDiagnosticVMOptions",
@@ -112,6 +114,8 @@ public class TestOldGrowthTriggers {
         );
 
         testOld("-Xlog:gc",
+                "-XX:ConcGCThreads=1",
+                "-XX:ParallelGCThreads=1",
                 "-Xms96m",
                 "-Xmx96m",
                 "-XX:+UnlockDiagnosticVMOptions",
