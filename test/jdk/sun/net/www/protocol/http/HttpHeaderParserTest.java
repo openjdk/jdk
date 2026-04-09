@@ -319,7 +319,6 @@ public class HttpHeaderParserTest {
         return res.toString();
     }
 
-
     @ParameterizedTest
     @MethodSource("responses")
     public void verifyHeaders(String respString) throws Exception {
@@ -442,10 +441,9 @@ public class HttpHeaderParserTest {
 
                 };
         Arrays.stream(bad).forEach(responses::add);
-
         return responses.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
     }
-    
+
     @ParameterizedTest
     @MethodSource("errors")
     public void errors(String respString) throws IOException {
