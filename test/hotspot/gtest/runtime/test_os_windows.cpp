@@ -869,8 +869,6 @@ TEST_VM(os_windows, numa_placeholder_reserve_commit) {
 
   char* result = os::attempt_reserve_memory_at(nullptr, size, mtTest);
   ASSERT_TRUE(result != nullptr) << "Failed to reserve memory";
-
-
   ASSERT_TRUE(is_aligned(result, os::vm_allocation_granularity()));
   ASSERT_TRUE(os::commit_memory(result, size, false));
 
