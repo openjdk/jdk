@@ -80,17 +80,17 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @library /test/lib
  * @summary test packet encoding and decoding in unencrypted form and without
  *          any network involvement.
- * @run junit/othervm -Dseed=2646683818688275736 PacketEncodingTest
- * @run junit/othervm -Dseed=-3723256402256409075 PacketEncodingTest
- * @run junit/othervm -Dseed=-3689060484817342283 PacketEncodingTest
- * @run junit/othervm -Dseed=2425718686525936108 PacketEncodingTest
- * @run junit/othervm -Dseed=-2996954753243104355 PacketEncodingTest
- * @run junit/othervm -Dseed=8750823652999067800 PacketEncodingTest
- * @run junit/othervm -Dseed=2906555779406889127 PacketEncodingTest
- * @run junit/othervm -Dseed=902801756808168822 PacketEncodingTest
- * @run junit/othervm -Dseed=5643545543196691308 PacketEncodingTest
- * @run junit/othervm -Dseed=2646683818688275736 PacketEncodingTest
- * @run junit/othervm -Djdk.internal.httpclient.debug=true PacketEncodingTest
+ * @run junit/othervm -Dseed=2646683818688275736 ${test.main.class}
+ * @run junit/othervm -Dseed=-3723256402256409075 ${test.main.class}
+ * @run junit/othervm -Dseed=-3689060484817342283 ${test.main.class}
+ * @run junit/othervm -Dseed=2425718686525936108 ${test.main.class}
+ * @run junit/othervm -Dseed=-2996954753243104355 ${test.main.class}
+ * @run junit/othervm -Dseed=8750823652999067800 ${test.main.class}
+ * @run junit/othervm -Dseed=2906555779406889127 ${test.main.class}
+ * @run junit/othervm -Dseed=902801756808168822 ${test.main.class}
+ * @run junit/othervm -Dseed=5643545543196691308 ${test.main.class}
+ * @run junit/othervm -Dseed=2646683818688275736 ${test.main.class}
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class PacketEncodingTest {
 

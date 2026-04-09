@@ -24,7 +24,7 @@
  /*
  * @test
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
- *      8354548
+ *      8354548 8381379
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
@@ -32,15 +32,21 @@
  */
 
 import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -217,6 +223,18 @@ public class TimeZoneNamesTest {
         };
     }
 
+    private static Stream<Arguments> explicitDstOffsets() {
+        return Stream.of(
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Irish Standard Time"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Greenwich Mean Time"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Irish Standard Time"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Greenwich Mean Time"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time"),
+            // This needs to change once TZDB adopts -7 offset year round, and CLDR uses explicit dst offset
+            // namely, "Pacific Standard Time" -> "Pacific Daylight Time"
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Standard Time")
+        );
+    }
 
     @ParameterizedTest
     @MethodSource("sampleTZs")
@@ -247,5 +265,20 @@ public class TimeZoneNamesTest {
                 .flatMap(Arrays::stream)
                 .anyMatch(name -> Objects.isNull(name) || name.isEmpty()),
             "getZoneStrings() returned array containing non-empty string element(s)");
+    }
+
+    // Explicit metazone dst offset test. As of CLDR v48, only Europe/Dublin utilizes
+    // this attribute, but will be used for America/Vancouver once CLDR adopts the
+    // explicit offset for that zone, which warrants the test data modification.
+    @ParameterizedTest
+    @MethodSource("explicitDstOffsets")
+    public void test_ExplicitMetazoneOffsets(ZonedDateTime zdt, String expected) {
+        // java.time
+        assertEquals(expected, DateTimeFormatter.ofPattern("zzzz").format(zdt));
+
+        // java.text/util
+        var sdf = new SimpleDateFormat("zzzz");
+        sdf.setTimeZone(TimeZone.getTimeZone(zdt.getZone()));
+        assertEquals(expected, sdf.format(Date.from(zdt.toInstant())));
     }
 }
