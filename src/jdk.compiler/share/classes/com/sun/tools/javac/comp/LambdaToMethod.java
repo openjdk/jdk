@@ -634,7 +634,10 @@ public class LambdaToMethod extends TreeTranslator {
         return trans_block;
     }
 
-    private static final int MAXIMUM_DESERIALIZATION_CASE_COUNT = 350;
+    private static final int CASE_COST = 71;
+    private static final int CHECK_COST = 94;
+    private static final int CAPTURE_COST = 12;
+    private static final int MAX_COST = 60_000;
 
     private Pair<MethodSymbol, JCMethodDecl> makeDeserializeMethod(int delegatingIndex) {
         Name currentName = delegatingIndex > 0 ? names.deserializeLambda.append('$', names.fromString(String.valueOf(delegatingIndex))) : names.deserializeLambda;
@@ -646,15 +649,23 @@ public class LambdaToMethod extends TreeTranslator {
 
         ListBuffer<JCCase> cases = new ListBuffer<>();
         ListBuffer<JCBreak> breaks = new ListBuffer<>();
-        int deserializationCaseCount = 0;
+        int cost = 0;
         for (Iterator<Map.Entry<String, ListBuffer<DeserializationCase>>> it = kInfo.deserializeCases.entrySet().iterator(); it.hasNext();) {
+            cost += CASE_COST;
+
+            if (cost >= MAX_COST) {
+                break;
+            }
+
             Map.Entry<String, ListBuffer<DeserializationCase>> entry = it.next();
             ListBuffer<JCStatement> stmts = new ListBuffer<>();
-            while (entry.getValue().nonEmpty() && deserializationCaseCount < MAXIMUM_DESERIALIZATION_CASE_COUNT) {
+
+            while (entry.getValue().nonEmpty() && cost < MAX_COST) {
                 DeserializationCase current = entry.getValue().next();
                 stmts.append(makeDeserializationCaseStatement(deserParamSym, current));
-                deserializationCaseCount++;
+                cost += CHECK_COST + current.indyType().getParameterTypes().size() * CAPTURE_COST;
             }
+
             if (entry.getValue().isEmpty()) {
                 JCBreak br = make.Break(null);
                 breaks.add(br);
@@ -662,10 +673,6 @@ public class LambdaToMethod extends TreeTranslator {
                 it.remove();
             }
             cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), null, stmts.toList(), null));
-
-            if (deserializationCaseCount >= MAXIMUM_DESERIALIZATION_CASE_COUNT) {
-                break;
-            }
         }
         JCSwitch sw = make.Switch(deserGetter(deserParamSym, "getImplMethodName", syms.stringType), cases.toList());
         for (JCBreak br : breaks) {
