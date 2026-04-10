@@ -798,7 +798,7 @@ window.addEventListener("load", () => {
     window.addEventListener("hashchange", closeSearch);
 
     document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.altKey || e.metaKey || resultSection.style.display === "none") return;
+        if (e.ctrlKey || e.altKey || e.metaKey || resultSection.style.display !== "block") return;
 
         if (e.key === "Escape") {
             if (input.value) {
