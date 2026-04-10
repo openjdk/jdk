@@ -310,24 +310,20 @@ private:
   // GrowableArrayRef -- iterate an instance of GrowableArray<T>.
   template <class T> class GrowableArrayRef : public Ref {
     GrowableArray<T>** _mpp;
+    GrowableArray<T>* dereference() const {
+      return *_mpp;
+    }
 
   public:
     GrowableArrayRef(GrowableArray<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
-    GrowableArray<T>* dereference() const {
-      return *_mpp;
-    }
     virtual void** mpp() const {
       return (void**)_mpp;
     }
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      metaspace_pointers_do_at_impl(it, dereference());
-    }
-
-  private:
-    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, GrowableArray<T>* array) const {
-      log_trace(aot)("Iter(GA): %p [%d]", array, array->length());
+      GrowableArray<T>* array = dereference();
+      log_trace(aot)("Iter(GrowableArray): %p [%d]", array, array->length());
       array->assert_on_C_heap();
       it->push_c_array(array->data_addr(), array->capacity());
     }
