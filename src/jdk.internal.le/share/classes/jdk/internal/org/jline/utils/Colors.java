@@ -530,6 +530,7 @@ public class Colors {
     /** Hue Composition / Hue Quadrature */
     public static final int H = 5;
     /** Hue */
+    @SuppressWarnings("java:S1845") // H and h are standard CIECAM02 correlate notation
     public static final int h = 6;
 
     /** CIECAM02 appearance correlates */

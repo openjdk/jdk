@@ -734,7 +734,7 @@ public final class TerminalBuilder {
      *                        or leave unset for auto-detection
      * @return The builder
      * @see Terminal#supportsGraphemeClusterMode()
-     * @see Terminal#setGraphemeClusterMode(boolean)
+     * @see Terminal#setGraphemeClusterMode(boolean, boolean)
      */
     public TerminalBuilder graphemeCluster(boolean graphemeCluster) {
         this.graphemeCluster = graphemeCluster;
@@ -742,9 +742,15 @@ public final class TerminalBuilder {
     }
 
     /**
-     * Builds the terminal.
-     * @return the newly created terminal, never {@code null}
-     * @throws IOException if an error occurs
+     * Create and configure a Terminal instance according to this builder's settings.
+     *
+     * If a global terminal override has been set, that instance is returned instead of creating a new one.
+     * The method also applies grapheme-cluster mode to the created terminal based on the builder setting
+     * or the `org.jline.terminal.graphemeCluster` system property: it may force-enable, disable, or
+     * probe-and-enable grapheme-cluster handling on the terminal.
+     *
+     * @return the configured Terminal instance; never {@code null}
+     * @throws IOException if terminal creation or configuration fails
      */
     public Terminal build() throws IOException {
         Terminal override = TERMINAL_OVERRIDE.get();
@@ -757,13 +763,23 @@ public final class TerminalBuilder {
             Log.debug(() -> "Using pty "
                     + ((AbstractPosixTerminal) terminal).getPty().getClass().getSimpleName());
         }
-        // Enable grapheme cluster mode (mode 2027) if supported
+        // Enable grapheme cluster mode if supported
         Boolean gc = this.graphemeCluster;
         if (gc == null) {
             gc = getBoolean(PROP_GRAPHEME_CLUSTER, null);
         }
-        if (!Boolean.FALSE.equals(gc) && terminal.supportsGraphemeClusterMode()) {
-            terminal.setGraphemeClusterMode(true);
+        if (Boolean.TRUE.equals(gc)) {
+            // Force-enable: skip probing, treat as native grapheme support
+            terminal.setGraphemeClusterMode(true, true);
+            Log.debug(() -> "Grapheme cluster mode: force-enabled (skipping probe)");
+        } else if (Boolean.FALSE.equals(gc)) {
+            Log.debug(() -> "Grapheme cluster mode: disabled by configuration");
+        } else if (terminal.supportsGraphemeClusterMode()) {
+            // Auto-detect: probe terminal and enable if supported
+            terminal.setGraphemeClusterMode(true, false);
+            Log.debug(() -> "Grapheme cluster mode: enabled (auto-detected)");
+        } else {
+            Log.debug(() -> "Grapheme cluster mode: not supported by terminal");
         }
         return terminal;
     }

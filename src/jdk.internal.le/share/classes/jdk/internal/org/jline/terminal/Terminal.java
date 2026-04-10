@@ -1359,7 +1359,7 @@ public interface Terminal extends Closeable, Flushable {
      * </p>
      *
      * @return {@code true} if the terminal supports mode 2027, {@code false} otherwise
-     * @see #setGraphemeClusterMode(boolean)
+     * @see #setGraphemeClusterMode(boolean, boolean)
      * @see #getGraphemeClusterMode()
      */
     default boolean supportsGraphemeClusterMode() {
@@ -1370,7 +1370,7 @@ public interface Terminal extends Closeable, Flushable {
      * Returns whether mode 2027 (grapheme cluster) is currently enabled.
      *
      * @return {@code true} if grapheme cluster mode is currently enabled, {@code false} otherwise
-     * @see #setGraphemeClusterMode(boolean)
+     * @see #setGraphemeClusterMode(boolean, boolean)
      */
     default boolean getGraphemeClusterMode() {
         return false;
@@ -1391,11 +1391,13 @@ public interface Terminal extends Closeable, Flushable {
      * </p>
      *
      * @param enable {@code true} to enable grapheme cluster mode, {@code false} to disable it
+     * @param force  if {@code true}, skip capability probing and treat the terminal as
+     *               natively supporting grapheme clusters (no Mode 2027 escape sequences sent)
      * @return {@code true} if the operation succeeded, {@code false} otherwise
      * @see #supportsGraphemeClusterMode()
      * @see #getGraphemeClusterMode()
      */
-    default boolean setGraphemeClusterMode(boolean enable) {
+    default boolean setGraphemeClusterMode(boolean enable, boolean force) {
         return false;
     }
 

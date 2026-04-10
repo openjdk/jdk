@@ -289,7 +289,7 @@ public interface TerminalProvider {
                     try {
                         Class<?> providerClass = cl.loadClass(line);
                         return (TerminalProvider) providerClass.getConstructor().newInstance();
-                    } catch (Exception e) {
+                    } catch (Exception | LinkageError e) {
                         throw new IOException("Unable to load terminal provider " + name + ": " + e.getMessage(), e);
                     }
                 }

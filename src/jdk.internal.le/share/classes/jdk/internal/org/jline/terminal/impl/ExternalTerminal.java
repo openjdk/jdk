@@ -60,7 +60,10 @@ import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 public class ExternalTerminal extends LineDisciplineTerminal {
 
     private final TerminalProvider provider;
+
+    @SuppressWarnings("java:S2387") // intentionally shadows AbstractTerminal.closed with AtomicBoolean
     protected final AtomicBoolean closed = new AtomicBoolean();
+
     protected final InputStream masterInput;
     protected final Object lock = new Object();
     protected boolean paused = true;

@@ -344,7 +344,7 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<MemorySegment>
         } else if (dwEventFlags == MOUSE_HWHEELED) {
             return;
         } else if ((dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
-            cb |= 0x00;
+            // cb is already 0 for left button
         } else if ((dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0) {
             cb |= 0x01;
         } else if ((dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) != 0) {

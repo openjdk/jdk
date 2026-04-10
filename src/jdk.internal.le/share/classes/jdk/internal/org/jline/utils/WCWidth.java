@@ -8,7 +8,10 @@
  */
 package jdk.internal.org.jline.utils;
 
+import java.text.BreakIterator;
+
 import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.terminal.impl.AbstractTerminal;
 
 /**
  * Utility class for determining the display width of Unicode characters.
@@ -52,6 +55,19 @@ import jdk.internal.org.jline.terminal.Terminal;
  */
 public final class WCWidth {
 
+    /**
+     * Whether the JDK runtime supports grapheme cluster segmentation.
+     * JDK 21+ provides improved {@code BreakIterator} support (full UAX #29)
+     * and {@code Character.isEmoji()} for reliable emoji detection.
+     * When {@code true} and no terminal is provided, grapheme cluster-aware
+     * width calculation is used as a better default for application-level
+     * width queries.
+     */
+    static final boolean HAS_JDK_GRAPHEME_SUPPORT = Runtime.version().feature() >= 21;
+
+    /**
+     * Prevents instantiation of this utility class.
+     */
     private WCWidth() {}
 
     /* The following two functions define the column width of an ISO 10646
@@ -394,6 +410,64 @@ public final class WCWidth {
      * @return the number of chars consumed by the grapheme cluster
      */
     public static int charCountForGraphemeCluster(CharSequence cs, int index) {
+        if (HAS_JDK_GRAPHEME_SUPPORT) {
+            return charCountForGraphemeClusterBreakIterator(cs, index);
+        }
+        return charCountForGraphemeClusterLegacy(cs, index);
+    }
+
+    /**
+     * Creates a {@link BreakIterator} configured for grapheme cluster segmentation
+     * of the given character sequence. Returns {@code null} when JDK grapheme
+     * support is unavailable (&lt; 21).
+     *
+     * <p>The returned iterator is bound to the {@code String} produced by
+     * {@code cs.toString()} at creation time. It must only be reused with the
+     * <em>same</em> character sequence; passing it to
+     * {@link #charCountForGraphemeClusterBreakIterator(CharSequence, int, BreakIterator)}
+     * with a different sequence will produce incorrect results. Create a new
+     * iterator for each distinct sequence.</p>
+     */
+    static BreakIterator createGraphemeBreakIterator(CharSequence cs) {
+        if (!HAS_JDK_GRAPHEME_SUPPORT) return null;
+        BreakIterator bi = BreakIterator.getCharacterInstance();
+        bi.setText(cs.toString());
+        return bi;
+    }
+
+    /**
+     * Uses JDK 21+ {@link BreakIterator} with full UAX #29 Extended Grapheme
+     * Cluster segmentation. Automatically stays current with new Unicode
+     * versions as the JDK is updated.
+     */
+    static int charCountForGraphemeClusterBreakIterator(CharSequence cs, int index) {
+        int len = cs.length();
+        if (index >= len) return 0;
+        BreakIterator bi = BreakIterator.getCharacterInstance();
+        bi.setText(cs.toString());
+        return charCountForGraphemeClusterBreakIterator(cs, index, bi);
+    }
+
+    /**
+     * Uses a pre-configured {@link BreakIterator} to find the grapheme cluster
+     * boundary at the given index, avoiding per-call allocation.
+     */
+    static int charCountForGraphemeClusterBreakIterator(CharSequence cs, int index, BreakIterator bi) {
+        int len = cs.length();
+        if (index >= len) return 0;
+        int next = bi.following(index);
+        if (next == BreakIterator.DONE) {
+            return len - index;
+        }
+        return next - index;
+    }
+
+    /**
+     * Fallback grapheme cluster segmentation for JDK &lt; 21.
+     * Handles ZWJ sequences, regional indicator pairs, emoji modifiers,
+     * variation selectors, and combining marks using heuristics.
+     */
+    static int charCountForGraphemeClusterLegacy(CharSequence cs, int index) {
         int len = cs.length();
         if (index >= len) return 0;
 
@@ -434,36 +508,273 @@ public final class WCWidth {
     }
 
     /**
-     * Returns the number of chars to advance past the current character or
-     * grapheme cluster at {@code index} in {@code cs}.
+     * Returns the display width of the grapheme cluster starting at {@code index}.
      *
-     * <p>When the terminal has grapheme cluster mode enabled, this delegates to
-     * {@link #charCountForGraphemeCluster(CharSequence, int)} so that ZWJ
-     * emoji, flag pairs, skin-tone modifiers, etc. are treated as a single
-     * unit.  Otherwise it simply returns {@code Character.charCount(cp)}
-     * for the code point at {@code index}.</p>
+     * <p>Variation selectors override the base code point's width:
+     * VS16 ({@code U+FE0F}) upgrades the cluster to emoji presentation (width 2),
+     * while VS15 ({@code U+FE0E}) downgrades it to text presentation (width 1).
+     * When neither is present, the width of the base code point (via
+     * {@link #wcwidth(int)}) is used.</p>
      *
-     * @param cs       the character sequence
-     * @param index    the starting char index
-     * @param terminal the terminal to query for grapheme cluster mode, or {@code null}
-     * @return the number of chars to advance
+     * @param cs    the character sequence
+     * @param index the starting char index
+     * @return the display width of the grapheme cluster, same range as {@link #wcwidth(int)}
+     */
+    public static int wcwidthForGraphemeCluster(CharSequence cs, int index) {
+        return wcwidthForGraphemeCluster(cs, index, charCountForGraphemeCluster(cs, index));
+    }
+
+    /**
+     * Returns the display width of the grapheme cluster of the given
+     * {@code clusterCharCount} chars starting at {@code index}.
+     *
+     * <p>This overload avoids recomputing the cluster boundaries when the
+     * caller already obtained them from
+     * {@link #charCountForGraphemeCluster(CharSequence, int)}.</p>
+     *
+     * @param cs               the character sequence
+     * @param index            the starting char index
+     * @param clusterCharCount number of {@code char}s in the cluster
+     * @return the display width of the grapheme cluster, same range as {@link #wcwidth(int)}
+     */
+    static int wcwidthForGraphemeCluster(CharSequence cs, int index, int clusterCharCount) {
+        int cp = Character.codePointAt(cs, index);
+        int w = wcwidth(cp);
+
+        // Scan the cluster for variation selectors
+        int end = index + clusterCharCount;
+        int pos = index + Character.charCount(cp);
+        while (pos < end) {
+            int ncp = Character.codePointAt(cs, pos);
+            if (ncp == 0xFE0F) {
+                return 2; // VS16 — emoji presentation (width 2)
+            } else if (ncp == 0xFE0E) {
+                return 1; // VS15 — text presentation (width 1)
+            }
+            pos += Character.charCount(ncp);
+        }
+
+        return w;
+    }
+
+    /**
+     * Compute the display width in terminal columns of the character or grapheme cluster
+     * that begins at the given index in the character sequence.
+     *
+     * <p>If the terminal has grapheme-cluster mode enabled, or if {@code terminal} is
+     * {@code null} and the runtime provides JDK-level grapheme-cluster support (JDK 21+),
+     * the measurement is grapheme-cluster-aware so emoji variation selectors and ZWJ
+     * sequences are handled as a single display unit. Otherwise the width of the
+     * single code point at {@code index} is returned.</p>
+     *
+     * @param cs       the character sequence containing the cluster
+     * @param index    the starting char index of the character or cluster
+     * @param terminal the terminal to query for grapheme-cluster mode, or {@code null}
+     * @return         the display width in terminal columns for the character or cluster
+     */
+    public static int wcwidthForDisplay(CharSequence cs, int index, Terminal terminal) {
+        if ((terminal != null && terminal.getGraphemeClusterMode()) || (terminal == null && HAS_JDK_GRAPHEME_SUPPORT)) {
+            int charCount = charCountForGraphemeCluster(cs, index);
+            return wcwidthForDisplayWithGroupings(cs, index, terminal, charCount);
+        }
+        return wcwidth(Character.codePointAt(cs, index));
+    }
+
+    /**
+     * Compute the display width in terminal columns of the character or grapheme cluster
+     * starting at the given char index, using a provided cluster char count to avoid
+     * recomputing cluster boundaries.
+     *
+     * @param cs       the character sequence containing the cluster
+     * @param index    the starting char index of the character or cluster
+     * @param terminal the terminal to query for grapheme-cluster grouping behavior; may be {@code null}
+     * @param charCount the number of Java `char`s occupied by the character or grapheme cluster
+     *                  starting at {@code index}
+     * @return the display width in terminal columns for the character or grapheme cluster
+     */
+    static int wcwidthForDisplay(CharSequence cs, int index, Terminal terminal, int charCount) {
+        if ((terminal != null && terminal.getGraphemeClusterMode()) || (terminal == null && HAS_JDK_GRAPHEME_SUPPORT)) {
+            return wcwidthForDisplayWithGroupings(cs, index, terminal, charCount);
+        }
+        return wcwidth(Character.codePointAt(cs, index));
+    }
+
+    /**
+     * Compute the number of Java chars that form the display unit (code point or grapheme cluster) starting at {@code index} in {@code cs}.
+     *
+     * <p>If the terminal indicates grapheme cluster mode, or when {@code terminal} is {@code null} and JDK grapheme-cluster support is available (JDK 21+), this uses grapheme-cluster segmentation so ZWJ sequences, flag pairs, skin-tone modifiers, and similar multi-code-point units are treated as a single unit and may span multiple {@code char}s. Otherwise it returns the {@link Character#charCount(int) char count} for the code point at {@code index}.</p>
+     *
+     * @param cs the character sequence
+     * @param index the starting char index
+     * @param terminal the terminal to consult for grapheme cluster mode, or {@code null}
+     * @return the number of {@code char} units to advance past the display unit beginning at {@code index}
      */
     public static int charCountForDisplay(CharSequence cs, int index, Terminal terminal) {
-        if (terminal != null && terminal.getGraphemeClusterMode()) {
-            return charCountForGraphemeCluster(cs, index);
+        return charCountForDisplay(cs, index, terminal, null);
+    }
+
+    /**
+     * Compute the number of Java chars that form the display unit starting at {@code index},
+     * reusing a pre-configured {@link BreakIterator} to avoid per-call allocation.
+     *
+     * @param cs the character sequence
+     * @param index the starting char index
+     * @param terminal the terminal to consult for grapheme cluster mode, or {@code null}
+     * @param bi a pre-configured BreakIterator from {@link #createGraphemeBreakIterator}, or {@code null}
+     * @return the number of {@code char} units to advance past the display unit beginning at {@code index}
+     */
+    static int charCountForDisplay(CharSequence cs, int index, Terminal terminal, BreakIterator bi) {
+        if ((terminal != null && terminal.getGraphemeClusterMode()) || (terminal == null && HAS_JDK_GRAPHEME_SUPPORT)) {
+            int charCount;
+            if (bi != null) {
+                charCount = charCountForGraphemeClusterBreakIterator(cs, index, bi);
+            } else {
+                charCount = charCountForGraphemeCluster(cs, index);
+            }
+            return charCountForDisplayWithGroupings(cs, index, terminal, charCount);
         }
         return Character.charCount(Character.codePointAt(cs, index));
     }
 
     /**
-     * Tests whether the given code point is a Regional Indicator Symbol
-     * (U+1F1E6 .. U+1F1FF), used in pairs to represent flag emoji.
+     * Compute the display width in columns for the grapheme cluster starting at the given index,
+     * honoring the terminal's per-category emoji grouping support.
+     *
+     * If the terminal is null or supports grouping for this cluster, the cluster is measured as a
+     * single grapheme and its cluster width is returned. If the cluster is an emoji grouping that
+     * the terminal does not support, the returned width is the sum of the individual code-point
+     * widths in the cluster. If the cluster contains a single non-grouped code point, the width of
+     * that base code point is returned.
+     *
+     * @param cs the character sequence containing the cluster
+     * @param index the index of the first char of the cluster in {@code cs}
+     * @param terminal the terminal whose emoji grouping support determines grouping behavior; may be {@code null}
+     * @param charCount the number of Java {@code char} units that make up the grapheme cluster at {@code index}
+     * @return the display width in columns for the cluster (or base code point / summed per-code-point width)
+     */
+    private static int wcwidthForDisplayWithGroupings(CharSequence cs, int index, Terminal terminal, int charCount) {
+        if (terminal == null || isGroupedByTerminal(cs, index, terminal, charCount)) {
+            return wcwidthForGraphemeCluster(cs, index, charCount);
+        }
+        if (isMultiCodepointEmoji(cs, index, charCount)) {
+            // Multi-codepoint emoji cluster not grouped by terminal:
+            // sum individual codepoint widths
+            return wcwidthUngrouped(cs, index, charCount);
+        }
+        return wcwidth(Character.codePointAt(cs, index));
+    }
+
+    /**
+     * Determine the number of Java char units that should be consumed for display starting at the given index, considering the terminal's emoji grouping support.
+     *
+     * @param cs the character sequence containing the cluster
+     * @param index the char index within cs where the cluster begins
+     * @param terminal the terminal whose emoji grouping preferences are consulted; may be null
+     * @param charCount the full char count of the grapheme cluster beginning at index
+     * @return the number of chars to consume for display: the full cluster charCount when the terminal groups the cluster or when the cluster is an emoji sequence, otherwise the char count of the single code point at index
+     */
+    private static int charCountForDisplayWithGroupings(CharSequence cs, int index, Terminal terminal, int charCount) {
+        if (terminal == null || isGroupedByTerminal(cs, index, terminal, charCount)) {
+            return charCount;
+        }
+        if (isMultiCodepointEmoji(cs, index, charCount)) {
+            // Consume the entire cluster even when not grouped, so that
+            // combining characters (skin tone modifiers, etc.) are not
+            // processed separately with incorrect zero-width values
+            return charCount;
+        }
+        return Character.charCount(Character.codePointAt(cs, index));
+    }
+
+    /**
+     * Compute the display width in terminal character cells for a multi-codepoint cluster
+     * when the terminal does not treat the cluster as a single grapheme.
+     *
+     * <p>The width is the sum of the display widths of the cluster's constituent code points.
+     * Skin-tone modifiers and regional indicator symbols are treated as width 2 when not
+     * grouped with a base character.</p>
+     *
+     * @param cs the character sequence containing the cluster
+     * @param index the index (in Java chars) of the cluster's first char within {@code cs}
+     * @param charCount the number of Java chars that make up the cluster
+     * @return the total display width of the cluster in character cells
+     */
+    private static int wcwidthUngrouped(CharSequence cs, int index, int charCount) {
+        int end = index + charCount;
+        int totalWidth = 0;
+        int pos = index;
+        while (pos < end) {
+            int cp = Character.codePointAt(cs, pos);
+            if (isSkinToneModifier(cp) || isRegionalIndicator(cp)) {
+                // These are in the combining table (wcwidth=0) but render
+                // as width-2 emoji when not combined with a base character
+                totalWidth += 2;
+            } else {
+                int w = wcwidth(cp);
+                if (w > 0) {
+                    totalWidth += w;
+                }
+            }
+            pos += Character.charCount(cp);
+        }
+        return totalWidth;
+    }
+
+    /**
+     * Tests whether the terminal groups the given cluster as a single unit.
+     *
+     * <p>Delegates to {@link AbstractTerminal#isClusterGrouped} when the
+     * terminal is an AbstractTerminal instance; otherwise falls back to
+     * {@link Terminal#getGraphemeClusterMode()}.</p>
+     */
+    private static boolean isGroupedByTerminal(CharSequence cs, int index, Terminal terminal, int charCount) {
+        if (terminal instanceof AbstractTerminal) {
+            return ((AbstractTerminal) terminal).isClusterGrouped(cs, index, charCount);
+        }
+        return terminal.getGraphemeClusterMode();
+    }
+
+    /**
+     * Tests whether the grapheme cluster starting at {@code index} is a
+     * multi-codepoint emoji sequence (as opposed to a single codepoint or a
+     * non-emoji combining sequence).
+     */
+    private static boolean isMultiCodepointEmoji(CharSequence cs, int index, int charCount) {
+        if (charCount <= Character.charCount(Character.codePointAt(cs, index))) {
+            return false; // Single codepoint
+        }
+        int cp = Character.codePointAt(cs, index);
+        return isRegionalIndicator(cp) || cp >= 0x2000;
+    }
+
+    /**
+     * Determines whether a Unicode code point is a Regional Indicator Symbol (U+1F1E6..U+1F1FF).
+     *
+     * @param cp the Unicode code point to test
+     * @return `true` if the code point is within U+1F1E6..U+1F1FF, `false` otherwise
      */
     public static boolean isRegionalIndicator(int cp) {
         return cp >= 0x1F1E6 && cp <= 0x1F1FF;
     }
 
-    /* auxiliary function for binary search in interval table */
+    /**
+     * Determines whether the Unicode code point is an Emoji Modifier (skin tone) in the range U+1F3FB..U+1F3FF.
+     *
+     * @param cp the Unicode code point to test
+     * @return true if the code point is an Emoji Modifier (skin tone) between U+1F3FB and U+1F3FF, false otherwise
+     */
+    private static boolean isSkinToneModifier(int cp) {
+        return cp >= 0x1F3FB && cp <= 0x1F3FF;
+    }
+
+    /**
+     * Determine whether a code point falls within any interval in a sorted Interval table.
+     *
+     * @param ucs   the Unicode code point to test
+     * @param table a sorted array of Interval ranges
+     * @param max   index of the last interval in {@code table} to consider (inclusive)
+     * @return      {@code true} if an interval between {@code table[0]} and {@code table[max]} contains {@code ucs}, {@code false} otherwise
+     */
     private static boolean bisearch(int ucs, Interval[] table, int max) {
         int min = 0;
         int mid;

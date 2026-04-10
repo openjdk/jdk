@@ -11,6 +11,7 @@ package jdk.internal.org.jline.terminal.impl.ffm;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -335,7 +336,6 @@ class CLibrary {
             long c_iflag = c_iflag();
             EnumSet<Attributes.InputFlag> iflag = attr.getInputFlags();
             addFlag(c_iflag, iflag, Attributes.InputFlag.IGNBRK, IGNBRK);
-            addFlag(c_iflag, iflag, Attributes.InputFlag.IGNBRK, IGNBRK);
             addFlag(c_iflag, iflag, Attributes.InputFlag.BRKINT, BRKINT);
             addFlag(c_iflag, iflag, Attributes.InputFlag.IGNPAR, IGNPAR);
             addFlag(c_iflag, iflag, Attributes.InputFlag.PARMRK, PARMRK);
@@ -437,7 +437,7 @@ class CLibrary {
 
     static final MethodHandle ioctl;
     static final MethodHandle isatty;
-    static final MethodHandle openpty;
+    static final MethodHandle openptyHandle;
     static final MethodHandle tcsetattr;
     static final MethodHandle tcgetattr;
     static final MethodHandle ttyname_r;
@@ -474,7 +474,7 @@ class CLibrary {
         LinkageError error = null;
         Optional<MemorySegment> openPtyAddr = lookup.find("openpty");
         if (openPtyAddr.isPresent()) {
-            openpty = linker.downcallHandle(
+            openptyHandle = linker.downcallHandle(
                     openPtyAddr.get(),
                     FunctionDescriptor.of(
                             ValueLayout.JAVA_INT,
@@ -485,7 +485,7 @@ class CLibrary {
                             ValueLayout.ADDRESS));
             openptyError = null;
         } else {
-            openpty = null;
+            openptyHandle = null;
             openptyError = error;
         }
     }
@@ -571,7 +571,7 @@ class CLibrary {
             MemorySegment buf = Arena.ofAuto().allocate(64);
             MemorySegment master = Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
             MemorySegment slave = Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
-            int res = (int) openpty.invoke(
+            int res = (int) openptyHandle.invoke(
                     master,
                     slave,
                     buf,
@@ -579,6 +579,9 @@ class CLibrary {
                     size != null
                             ? new winsize((short) size.getRows(), (short) size.getColumns()).segment()
                             : MemorySegment.NULL);
+            if (res != 0) {
+                throw new UncheckedIOException(new IOException("Unable to call openpty(): return code " + res));
+            }
             byte[] str = buf.toArray(ValueLayout.JAVA_BYTE);
             int len = 0;
             while (str[len] != 0) {
@@ -587,6 +590,8 @@ class CLibrary {
             String device = new String(str, 0, len);
             return new FfmNativePty(
                     provider, null, master.get(ValueLayout.JAVA_INT, 0), slave.get(ValueLayout.JAVA_INT, 0), device);
+        } catch (UncheckedIOException e) {
+            throw e;
         } catch (Throwable e) {
             throw new RuntimeException("Unable to call openpty()", e);
         }

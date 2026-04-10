@@ -259,7 +259,9 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected KillRing killRing = new KillRing();
 
+    @SuppressWarnings("java:S1845") // field name intentionally similar to inherited UNDO constant
     protected UndoTree<Buffer> undo;
+
     protected boolean isUndo;
 
     /**
@@ -292,6 +294,7 @@ public class LineReaderImpl implements LineReader, Flushable {
 
     protected boolean overTyping = false;
 
+    @SuppressWarnings("java:S1845") // field name intentionally similar to inherited KEYMAP constant
     protected String keyMap;
 
     protected int smallTerminalOffset = 0;
@@ -2460,6 +2463,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     protected boolean undo() {
         isUndo = true;
         if (undo.canUndo()) {
@@ -4009,6 +4013,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return out;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     protected Map<String, Widget> builtinWidgets() {
         Map<String, Widget> widgets = new HashMap<>();
         addBuiltinWidget(widgets, ACCEPT_AND_INFER_NEXT_HISTORY, this::acceptAndInferNextHistory);
@@ -4179,6 +4184,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         };
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean redisplay() {
         redisplay(true);
         return true;
@@ -6337,6 +6343,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean yank() {
         String yanked = killRing.yank();
         if (yanked == null) {
@@ -6367,6 +6374,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return true;
     }
 
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean mouse() {
         MouseEvent event = readMouseEvent();
         if (event.getType() == MouseEvent.Type.Released && event.getButton() == MouseEvent.Button.Button1) {
@@ -6417,6 +6425,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      * Clean the used display
      * @return <code>true</code>
      */
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean clear() {
         display.update(Collections.emptyList(), 0);
         return true;
@@ -6448,6 +6457,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      * Issue an audible keyboard bell.
      * @return <code>true</code>
      */
+    @SuppressWarnings("java:S1845") // widget method intentionally matches its constant name
     public boolean beep() {
         BellType bell_preference = BellType.AUDIBLE;
         switch (getString(BELL_STYLE, DEFAULT_BELL_STYLE).toLowerCase()) {
@@ -6562,6 +6572,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return keyMaps;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> emacs() {
         KeyMap<Binding> emacs = new KeyMap<>();
         bindKeys(emacs);
@@ -6680,6 +6691,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return viins;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> viCmd() {
         KeyMap<Binding> vicmd = new KeyMap<>();
         bind(vicmd, LIST_CHOICES, ctrl('D'));
@@ -6796,6 +6808,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return vicmd;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> menu() {
         KeyMap<Binding> menu = new KeyMap<>();
         bind(menu, MENU_COMPLETE, "\t");
@@ -6805,6 +6818,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return menu;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> safe() {
         KeyMap<Binding> safe = new KeyMap<>();
         bind(safe, SELF_INSERT, range("^@-^?"));
@@ -6813,6 +6827,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return safe;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> dumb() {
         KeyMap<Binding> dumb = new KeyMap<>();
         bind(dumb, SELF_INSERT, range("^@-^?"));
@@ -6821,6 +6836,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return dumb;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> visual() {
         KeyMap<Binding> visual = new KeyMap<>();
         bind(visual, UP_LINE, key(Capability.key_up), "k");
@@ -6833,6 +6849,7 @@ public class LineReaderImpl implements LineReader, Flushable {
         return visual;
     }
 
+    @SuppressWarnings("java:S1845") // keymap method intentionally matches its constant name
     public KeyMap<Binding> viOpp() {
         KeyMap<Binding> viOpp = new KeyMap<>();
         bind(viOpp, UP_LINE, key(Capability.key_up), "k");

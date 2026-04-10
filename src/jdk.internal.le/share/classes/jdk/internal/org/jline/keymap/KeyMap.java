@@ -628,7 +628,7 @@ public class KeyMap<T> {
         if (keySeq != null && keySeq.length() > 0) {
             for (int i = 0; i < keySeq.length() - 1; i++) {
                 char c = keySeq.charAt(i);
-                if (c > map.mapping.length) {
+                if (c >= map.mapping.length) {
                     return null;
                 }
                 if (!(map.mapping[c] instanceof KeyMap)) {
@@ -638,7 +638,7 @@ public class KeyMap<T> {
                 map = (KeyMap<T>) map.mapping[c];
             }
             char c = keySeq.charAt(keySeq.length() - 1);
-            if (c > map.mapping.length) {
+            if (c >= map.mapping.length) {
                 return null;
             }
             if (map.mapping[c] instanceof KeyMap) {

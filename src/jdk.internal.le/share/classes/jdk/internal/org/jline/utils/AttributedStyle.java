@@ -52,6 +52,8 @@ package jdk.internal.org.jline.utils;
  * @see AttributedString
  * @see AttributedStringBuilder
  */
+// S1845: style constants are intentionally named after their factory methods (e.g., BOLD = DEFAULT.bold())
+@SuppressWarnings("java:S1845")
 public class AttributedStyle {
 
     public static final int BLACK = 0;

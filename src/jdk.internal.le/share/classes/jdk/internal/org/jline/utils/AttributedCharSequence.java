@@ -8,6 +8,7 @@
  */
 package jdk.internal.org.jline.utils;
 
+import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -661,10 +662,11 @@ public abstract class AttributedCharSequence implements CharSequence {
     public int columnLength(Terminal terminal) {
         int cols = 0;
         int len = length();
+        BreakIterator bi = WCWidth.createGraphemeBreakIterator(this);
         for (int cur = 0; cur < len; ) {
-            int cp = codePointAt(cur);
-            int w = isHidden(cur) ? 0 : WCWidth.wcwidth(cp);
-            cur += WCWidth.charCountForDisplay(this, cur, terminal);
+            int charCount = WCWidth.charCountForDisplay(this, cur, terminal, bi);
+            int w = isHidden(cur) ? 0 : WCWidth.wcwidthForDisplay(this, cur, terminal, charCount);
+            cur += charCount;
             cols += w;
         }
         return cols;
@@ -703,26 +705,28 @@ public abstract class AttributedCharSequence implements CharSequence {
      * @return the subsequence spanning the specified column range
      */
     public AttributedString columnSubSequence(int start, int stop, Terminal terminal) {
+        BreakIterator bi = WCWidth.createGraphemeBreakIterator(this);
         int begin = 0;
         int col = 0;
         while (begin < this.length()) {
-            int cp = codePointAt(begin);
-            int w = isHidden(begin) ? 0 : WCWidth.wcwidth(cp);
+            int charCount = WCWidth.charCountForDisplay(this, begin, terminal, bi);
+            int w = isHidden(begin) ? 0 : WCWidth.wcwidthForDisplay(this, begin, terminal, charCount);
             if (col + w > start) {
                 break;
             }
-            begin += WCWidth.charCountForDisplay(this, begin, terminal);
+            begin += charCount;
             col += w;
         }
         int end = begin;
         while (end < this.length()) {
             int cp = codePointAt(end);
             if (cp == '\n') break;
-            int w = isHidden(end) ? 0 : WCWidth.wcwidth(cp);
+            int charCount = WCWidth.charCountForDisplay(this, end, terminal, bi);
+            int w = isHidden(end) ? 0 : WCWidth.wcwidthForDisplay(this, end, terminal, charCount);
             if (col + w > stop) {
                 break;
             }
-            end += WCWidth.charCountForDisplay(this, end, terminal);
+            end += charCount;
             col += w;
         }
         return subSequence(begin, end);
@@ -785,9 +789,11 @@ public abstract class AttributedCharSequence implements CharSequence {
         int cur = 0;
         int beg = cur;
         int col = 0;
+        BreakIterator bi = WCWidth.createGraphemeBreakIterator(this);
         while (cur < length()) {
             int cp = codePointAt(cur);
-            int w = isHidden(cur) ? 0 : WCWidth.wcwidth(cp);
+            int charCount = WCWidth.charCountForDisplay(this, cur, terminal, bi);
+            int w = isHidden(cur) ? 0 : WCWidth.wcwidthForDisplay(this, cur, terminal, charCount);
             if (cp == '\n') {
                 strings.add(subSequence(beg, includeNewlines ? cur + 1 : cur));
                 beg = cur + 1;
@@ -797,7 +803,7 @@ public abstract class AttributedCharSequence implements CharSequence {
                 beg = cur;
                 col = w;
             }
-            cur += WCWidth.charCountForDisplay(this, cur, terminal);
+            cur += charCount;
         }
         strings.add(subSequence(beg, cur));
         return strings;

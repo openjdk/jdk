@@ -132,7 +132,10 @@ public final class KillRing {
         lastKill = false;
         if (lastYank) {
             prev();
-            return slots[head];
+            if (head >= 0) {
+                return slots[head];
+            }
+            head = 0; // restore valid state
         }
         return null;
     }
