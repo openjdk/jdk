@@ -35,7 +35,7 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8378250
+ * @bug 8378250 8381452
  * @summary Verify correctness of byte vector MUL reduction across all species.
  *          A register aliasing bug in mulreduce32B caused the upper half of
  *          sign-extended data to overwrite the source, producing wrong results
@@ -93,7 +93,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx2", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     static byte testMulReduce256() {
         return ByteVector.fromArray(ByteVector.SPECIES_256, input, 0)
@@ -111,7 +111,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx512f", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     static byte testMulReduce512() {
         return ByteVector.fromArray(ByteVector.SPECIES_512, input, 0)
