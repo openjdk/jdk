@@ -615,6 +615,38 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
+  // With the following code pattern
+  //
+  // if (some_condition) {
+  //     v = 0;
+  // } else {
+  //     v = 1;
+  // } // v is Phi(0, 1)
+  // if (v == 0) {
+  //     uncommon_trap(); // reexecutes the if (v == 0) { above, captures v as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the if (some_other_condition) {
+  // }
+  //
+  // if the second if is split thru Phi, the result is:
+  //
+  // if (some_condition) {
+  //     uncommon_trap(); // reexecutes the if (v == 0) that was removed { above, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the if (some_other_condition) {
+  // }
+  //
+  // If next, some_condition and some_other_condition are folded into
+  // a single new condition that is narrower than some_condition
+  // (IfNode::fold_compares() for instance) and that new condition is
+  // true for some input value for which some_condition is false, then
+  // the trap is taken which causes if (v == 0) { to be reexecuted
+  // with v = 0, causing a branch that should not be taken to execute.
+  //
+  // Mark the uncommon trap nodes to prevent such a transformation
+  // from happening.
   IfProjNode* true_proj = iff->as_If()->true_proj();
   IfProjNode* false_proj = iff->as_If()->false_proj();
   CallStaticJavaNode* unc = true_proj->is_uncommon_trap_proj();
