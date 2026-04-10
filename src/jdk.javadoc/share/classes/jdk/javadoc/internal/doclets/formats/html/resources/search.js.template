@@ -97,13 +97,14 @@ function getURLPrefix(item, category) {
         if (item.m) {
             urlPrefix = item.m + slash;
         } else {
-            packageSearchIndex.forEach(function(it) {
+            for (var i = 0; i < packageSearchIndex.length; i++) {
+                const it = packageSearchIndex[i];
                 if (it.m && item.p === it.l) {
                     urlPrefix = it.m + slash;
                     item.m = it.m;
-                    return false;
+                    break;
                 }
-            });
+            }
         }
     }
     return urlPrefix;
@@ -351,7 +352,6 @@ function doSearch(request, response) {
                 // m.name = m.name + " " + m.score.toFixed(3);
                 matches.push(m);
             }
-            return true;
         });
         return matches.sort(function(e1, e2) {
             return e2.score - e1.score
@@ -424,12 +424,13 @@ function getEnclosingDescription(elem, desc, label) {
 }
 function getEnclosingTypeDesc(item) {
     if (!item.typeDesc) {
-        typeSearchIndex.forEach(function(it) {
+        for (let i = 0; i < typeSearchIndex.length; i++){
+            const it = typeSearchIndex[i];
             if (it.l === item.c && it.p === item.p && it.m === item.m) {
                 item.typeDesc = itemDesc[it.k || 12][1];
-                return false;
+                break;
             }
-        });
+        }
     }
     return item.typeDesc || "";
 }
@@ -631,6 +632,7 @@ window.addEventListener("load", () => {
 
             button.classList.add("active-table-tab");
             button.tabIndex = 0;
+            setSearchUrl();
         }
     }
 
@@ -707,6 +709,9 @@ window.addEventListener("load", () => {
         if (input.id === "search-input") {
             var link = document.getElementById("search-page-link");
             var href = pathtoroot + "search.html?q=" + encodeURI(query);
+            if (activeTab && fixedTab) {
+                href += "&c=" + activeTab;
+            }
             if (modules && modules.value) {
                 href += "&m=" + modules.value;
             }
