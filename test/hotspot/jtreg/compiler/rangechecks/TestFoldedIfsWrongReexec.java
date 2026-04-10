@@ -210,7 +210,7 @@ public class TestFoldedIfsWrongReexec {
         }
         return x;
     }
-    
+
     static final Object o1 = new Object();
     static final Object o2 = new Object();
 
@@ -289,7 +289,7 @@ public class TestFoldedIfsWrongReexec {
         }
         return b;
     }
-    
+
     private static boolean test7Helper2(Object o) {
         return o instanceof A;
     }
