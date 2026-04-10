@@ -220,6 +220,7 @@ final class DelayScheduler extends Thread {
         if (p == null) // failed initialization
             active = -1;
         else {
+            active = 1;
             try {
                 loop(p);
             } finally {
@@ -248,11 +249,11 @@ final class DelayScheduler extends Thread {
             for (;;) {                             // loop until stopped
                 ScheduledForkJoinTask<?> q, t; int runStatus;
                 if ((q = pending) == null) {
-                    if (active != 0)               // deactivate and recheck
-                        U.compareAndSetInt(this, ACTIVE, 1, 0);
-                    else {
-                        Thread.interrupted();      // clear before park
-                        U.park(false, parkTime);
+                    restingSize = n;
+                    if (U.getAndSetInt(this, ACTIVE, 0) == 0) {
+                        if (!Thread.interrupted() && pending == null)
+                            U.park(false, parkTime);
+                        active = 1;
                     }
                     q = pending;
                 }
@@ -336,7 +337,6 @@ final class DelayScheduler extends Thread {
                         }
                     } while ((n = replace(h, 0, n)) > 0);
                 }
-                restingSize = n;
             }
         }
     }
@@ -416,36 +416,40 @@ final class DelayScheduler extends Thread {
      */
     private int tryStop(ForkJoinPool p, ScheduledForkJoinTask<?>[] h, int n,
                         int runStatus, int prevRunStatus) {
-        if ((runStatus & POOL_STOPPING) == 0) {
-            if (n > 0) {
-                if (cancelDelayedTasksOnShutdown != 0) {
-                    cancelAll(h, n);
-                    n = 0;
-                }
-                else if (prevRunStatus == 0 && h != null && h.length >= n) {
-                    ScheduledForkJoinTask<?> t; int stat; // remove periodic tasks
-                    for (int i = n - 1; i >= 0; --i) {
-                        if ((t = h[i]) != null &&
-                            ((stat = t.status) < 0 || t.nextDelay != 0L)) {
-                            t.heapIndex = -1;
-                            if (stat >= 0)
-                                t.trySetCancelled();
-                            n = replace(h, i, n);
+        if (p != null && h != null && h.length > 0) {
+            if ((runStatus & POOL_STOPPING) == 0) {
+                if (n > 0) {
+                    if (cancelDelayedTasksOnShutdown != 0) {
+                        cancelAll(h, n);
+                        n = 0;
+                    }
+                    else if (prevRunStatus == 0) {
+                        ScheduledForkJoinTask<?> t; int stat; // remove periodic tasks
+                        for (int i = n - 1; i >= 0; --i) {
+                            if ((t = h[i]) != null &&
+                                ((stat = t.status) < 0 || t.nextDelay != 0L)) {
+                                t.heapIndex = -1;
+                                if (stat >= 0)
+                                    t.trySetCancelled();
+                                n = replace(h, i, n);
+                            }
                         }
                     }
                 }
+                if ((restingSize = n) > 0 ||
+                    ((p.shutdownStatus(this) & POOL_STOPPING) == 0 &&
+                     (p.getActiveThreadCount() != 0 || pending != null ||
+                      !p.tryStopIfShutdown(this))))
+                    return n;       // check for quiescent shutdown
             }
-            if ((restingSize = n) > 0 || pending != null ||
-                p == null || !p.tryStopIfShutdown(this))
-                return n;       // check for quiescent shutdown
+            restingSize = 0;
+            if (n > 0)
+                cancelAll(h, n);
+            for (ScheduledForkJoinTask<?> a = (ScheduledForkJoinTask<?>)
+                     U.getAndSetReference(this, PENDING, null);
+                 a != null; a = a.nextPending)
+                a.trySetCancelled(); // clear pending requests
         }
-        restingSize = 0;
-        if (n > 0)
-            cancelAll(h, n);
-        for (ScheduledForkJoinTask<?> a = (ScheduledForkJoinTask<?>)
-                 U.getAndSetReference(this, PENDING, null);
-             a != null; a = a.nextPending)
-            a.trySetCancelled(); // clear pending requests
         return -1;
     }
 
