@@ -244,16 +244,18 @@ private:
       return _num_elems * sizeof(T);
     }
 
-  protected:
     // Gives you back the GrowableArray::_data
     T* dereference() const {
       return *_mpp;
     }
-    virtual void** mpp() const {
-      return (void**)_mpp;
-    }
+
     int num_elems() const {
       return _num_elems;
+    }
+
+  protected:
+    virtual void** mpp() const {
+      return (void**)_mpp;
     }
   public:
     CArrayRef(T** mpp, int num_elems, Writability w)
