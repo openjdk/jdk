@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-// Graal is not tested here due to Graal not supporting DisableIntrinsic.
 /**
  * @test
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
