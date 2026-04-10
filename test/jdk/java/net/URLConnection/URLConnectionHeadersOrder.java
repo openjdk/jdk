@@ -63,9 +63,8 @@ public class URLConnectionHeadersOrder {
 
         assertNotNull(actualRequestProps);
 
-        String errorMessageTemplate = "Expected Request Properties = %s, Actual Request Properties = %s";
         assertEquals(expectedRequestProps, actualRequestProps,
-                String.format(errorMessageTemplate, expectedRequestProps, actualRequestProps));
+                "Unexpected value for request header \"test\"");
     }
 }
 

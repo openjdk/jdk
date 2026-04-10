@@ -101,7 +101,7 @@ public class HttpURLConnectionHeadersOrder {
         conn.disconnect();
         assertNotNull(customRequestProps);
         assertEquals(EXPECTED_HEADER_VALUES, customRequestProps,
-                String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES, customRequestProps));
+                "Unexpected value for request header \"test_req_prop\"");
     }
 
     /**
@@ -133,7 +133,7 @@ public class HttpURLConnectionHeadersOrder {
         var actualCustomResponseHeaders = conn.getHeaderFields().get("Test_response");
         assertNotNull(actualCustomResponseHeaders, "Error in reading custom response headers");
         assertEquals(EXPECTED_HEADER_VALUES, actualCustomResponseHeaders,
-                String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES, actualCustomResponseHeaders));
+                "Unexpected value for response header field \"Test_response\"");
     }
 
     private static HttpServer createSimpleHttpServer(SimpleHandler handler) throws IOException {
@@ -162,7 +162,7 @@ public class HttpURLConnectionHeadersOrder {
             }
 
             if (!actualTestRequestHeaders.equals(EXPECTED_HEADER_VALUES)) {
-                System.out.printf("Error: " +
+                System.out.printf("Error for \"test_server_handling\" " +
                         String.format(ERROR_MESSAGE_TEMPLATE, EXPECTED_HEADER_VALUES, actualTestRequestHeaders));
                 return -1;
             }

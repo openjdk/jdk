@@ -103,7 +103,7 @@ public class MaxAgeExpires {
             sb.append("; max-age=" + Long.toString(maxAge));
 
         String s = sb.toString();
-        System.out.println(s);
+        System.err.println(s);
         HttpCookie cookie;
         if (creationInstant == -1)
             cookie = HttpCookie.parse(s).get(0);
@@ -111,8 +111,8 @@ public class MaxAgeExpires {
             cookie = HttpCookie.parse(s, false, creationInstant).get(0);
 
         if (expectedAge != -1 && cookie.getMaxAge() != expectedAge) {
-            System.out.println("getMaxAge returned " + cookie.getMaxAge());
-            System.out.println("expectedAge was " + expectedAge);
+            System.err.println("getMaxAge returned " + cookie.getMaxAge());
+            System.err.println("expectedAge was " + expectedAge);
             throw new RuntimeException("Test failed: wrong age");
         }
 
@@ -121,9 +121,9 @@ public class MaxAgeExpires {
             : cookie.hasExpired(expiryCheckInstant);
 
         if (expired != hasExpired) {
-            System.out.println("cookie.hasExpired() returned " + expired);
-            System.out.println("hasExpired was " + hasExpired);
-            System.out.println("getMaxAge() returned " + cookie.getMaxAge());
+            System.err.println("cookie.hasExpired() returned " + expired);
+            System.err.println("hasExpired was " + hasExpired);
+            System.err.println("getMaxAge() returned " + cookie.getMaxAge());
             throw new RuntimeException("Test failed: wrong hasExpired");
         }
     }

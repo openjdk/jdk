@@ -49,7 +49,7 @@ public class RequestProperties {
     private static final Class NPE = NullPointerException.class;
     private static final Class ISE = IllegalStateException.class;
 
-    private static Object[][] urls() {
+    private static List<String> urls() {
         final List<String> urls = new ArrayList<>();
         urls.add("http://foo.com/bar/");
         urls.add("jar:http://foo.com/bar.html!/foo/bar");
@@ -57,11 +57,7 @@ public class RequestProperties {
         if (hasFtp()) {
             urls.add("ftp://foo:bar@foobar.com/etc/passwd");
         }
-        final Object[][] data = new Object[urls.size()][1];
-        for (int i = 0; i < urls.size(); i++) {
-            data[i][0] = urls.get(i);
-        }
-        return data;
+        return List.copyOf(urls);
     }
 
 

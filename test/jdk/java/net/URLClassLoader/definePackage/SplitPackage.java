@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SplitPackage {
@@ -86,11 +87,8 @@ public class SplitPackage {
         assertEquals(pForBar.getName(), pForFoo.getName());
         assertNotSame(pForBar, pForFoo);
 
-        try {
-            loader2.defineSplitPackage("p");
-        } catch (IllegalArgumentException e) {
-
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> loader2.defineSplitPackage("p"));
     }
 
     static class Loader extends URLClassLoader {
