@@ -296,3 +296,19 @@ address StubGenerator::generate_intpoly_mult_25519() {
 
   return start;
 }
+
+#undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_poly_25519(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  // use accessors to retrive all correct addresses
+  ADD(x25519_mask51());
+  ADD(carry_add());
+  ADD(shift_1R());
+  ADD(shift_1L());
+  ADD(limb_0());
+  ADD(term());
+#undef ADD
+}
+#endif // INCLUDE_CDS

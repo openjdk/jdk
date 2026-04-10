@@ -5045,6 +5045,7 @@ void StubGenerator::init_AOTAddressTable(GrowableArray<address>& external_addres
   init_AOTAddressTable_log(external_addresses);
   init_AOTAddressTable_poly1305(external_addresses);
   init_AOTAddressTable_poly_mont(external_addresses);
+  init_AOTAddressTable_poly_25519(external_addresses);
   init_AOTAddressTable_pow(external_addresses);
   init_AOTAddressTable_sha3(external_addresses);
   init_AOTAddressTable_sin(external_addresses);

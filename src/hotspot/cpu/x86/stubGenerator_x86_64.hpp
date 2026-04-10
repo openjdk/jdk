@@ -665,6 +665,7 @@ class StubGenerator: public StubCodeGenerator {
   static void init_AOTAddressTable_log(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_poly_25519(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_pow(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses);
   static void init_AOTAddressTable_sin(GrowableArray<address>& external_addresses);
