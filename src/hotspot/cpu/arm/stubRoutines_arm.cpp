@@ -39,3 +39,9 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
 
 address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
 address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+
+#if INCLUDE_CDS
+// nothing to do for arm
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

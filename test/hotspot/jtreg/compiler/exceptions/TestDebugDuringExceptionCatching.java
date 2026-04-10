@@ -22,6 +22,7 @@
  */
 package compiler.exceptions;
 
+import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
@@ -38,7 +39,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
 /**
  * @test
  * @bug 8350208
- * @summary Safepoints added during the processing of exception handlers should never reexecute
+ * @summary Safepoints added during the processing of exception handlers need correct stack state
  * @library /test/lib /test/jdk/java/lang/invoke/common /
  * @build test.java.lang.invoke.lib.InstructionHelper
  *
@@ -110,7 +111,7 @@ public class TestDebugDuringExceptionCatching {
                 });
     }
 
-    @Test
+    @Test(compLevel = CompLevel.C2) // see JDK-8381786
     private static int testBackwardHandler(V v) throws Throwable {
         return (int) SNIPPET_HANDLE.invokeExact(v);
     }
