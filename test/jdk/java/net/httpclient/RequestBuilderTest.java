@@ -25,7 +25,7 @@
  * @test
  * @bug 8276559
  * @summary HttpRequest[.Builder] API and behaviour checks
- * @run junit RequestBuilderTest
+ * @run junit ${test.main.class}
  */
 
 import java.net.URI;
