@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class DisabledCipherSuitesNotNegotiated {
         SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
         ctx.init(null, null, null);
         SSLSocketFactory factory = ctx.getSocketFactory();
-        try(SSLSocket socket = (SSLSocket)factory.createSocket("localhost", portNumber)) {
+        try(SSLSocket socket = (SSLSocket)factory.createSocket(InetAddress.getLoopbackAddress(), portNumber)) {
             if (!disableInClient) {
                 socket.setEnabledCipherSuites(new String[]{DISABLED_CIPHERSUITE});
             }
