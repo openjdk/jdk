@@ -132,7 +132,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   cmp2->set_req(2,con2);
   const Type *t = cmp2->Value(igvn);
   // This compare is dead, so whack it!
-  igvn->remove_dead_node(cmp2);
+  igvn->remove_dead_node(cmp2, PhaseIterGVN::NodeOrigin::Speculative);
   if( !t->singleton() ) return nullptr;
 
   // No intervening control, like a simple Call
@@ -443,7 +443,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       }
       l -= uses_found;    // we deleted 1 or more copies of this edge
     }
-    igvn->remove_dead_node(p);
+    igvn->remove_dead_node(p, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // Force the original merge dead
@@ -455,14 +455,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       r->set_req(0, nullptr);
     } else {
       assert(u->outcnt() == 0, "only dead users");
-      igvn->remove_dead_node(u);
+      igvn->remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
     }
     l -= 1;
   }
-  igvn->remove_dead_node(r);
+  igvn->remove_dead_node(r, PhaseIterGVN::NodeOrigin::Graph);
 
   // Now remove the bogus extra edges used to keep things alive
-  igvn->remove_dead_node( hook );
+  igvn->remove_dead_node(hook, PhaseIterGVN::NodeOrigin::Speculative);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -905,6 +905,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   IfNode* dom_iff = proj->in(0)->as_If();
   BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
   Node* lo = dom_iff->in(1)->in(1)->in(2);
+  Node* orig_lo = lo;
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
   IfProjNode* otherproj = proj->other_if_proj();
@@ -916,6 +917,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
+  PhaseTransform::SpeculativeProgressGuard progress_guard(igvn);
   // convert:
   //
   //          dom_bool = x {<,<=,>,>=} a
@@ -1053,6 +1055,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+          progress_guard.commit();
           return true;
         }
       }
@@ -1087,11 +1090,14 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     // min(limit, max(-2 + min_jint + 1, min_jint))
     // = min(limit, min_jint)
     // = min_jint
+    if (lo != orig_lo && lo->outcnt() == 0) {
+      igvn->remove_dead_node(lo, PhaseIterGVN::NodeOrigin::Speculative);
+    }
     if (adjusted_val->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_val);
+      igvn->remove_dead_node(adjusted_val, PhaseIterGVN::NodeOrigin::Speculative);
     }
     if (adjusted_lim->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_lim);
+      igvn->remove_dead_node(adjusted_lim, PhaseIterGVN::NodeOrigin::Speculative);
     }
     igvn->C->record_for_post_loop_opts_igvn(this);
     return false;
@@ -1103,6 +1109,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
   igvn->replace_input_of(this, 1, newbool);
 
+  progress_guard.commit();
   return true;
 }
 
@@ -1592,11 +1599,11 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
       }
     } // End for each child of a projection
 
-    igvn->remove_dead_node(ifp);
+    igvn->remove_dead_node(ifp, PhaseIterGVN::NodeOrigin::Graph);
   } // End for each IfTrue/IfFalse child of If
 
   // Kill the IfNode
-  igvn->remove_dead_node(this);
+  igvn->remove_dead_node(this, PhaseIterGVN::NodeOrigin::Graph);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -1758,7 +1765,7 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   }
 
   if (bol->outcnt() == 0) {
-    igvn->remove_dead_node(bol);    // Kill the BoolNode.
+    igvn->remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);    // Kill the BoolNode.
   }
   return this;
 }
@@ -1903,7 +1910,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   Node *prior = igvn->hash_find_insert(iff);
   if( prior ) {
-    igvn->remove_dead_node(iff);
+    igvn->remove_dead_node(iff, PhaseIterGVN::NodeOrigin::Graph);
     iff = (IfNode*)prior;
   } else {
     // Cannot call transform on it just yet

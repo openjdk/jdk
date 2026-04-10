@@ -576,7 +576,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   } else if (has_coalesce_and_fill_candidates()) {
     _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
   } else {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
   }
 }
 

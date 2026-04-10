@@ -731,7 +731,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
       }
       // Remove the RegionNode itself from DefUse info
-      igvn->remove_dead_node(this);
+      igvn->remove_dead_node(this, PhaseIterGVN::NodeOrigin::Graph);
       return nullptr;
     }
     return this;                // Record progress
@@ -1003,7 +1003,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
     BoolNode* new_bol = new BoolNode(bol2->in(1), res);
     igvn->replace_input_of(iff2, 1, igvn->transform((proj2->_con == 1) ? new_bol : new_bol->negate(igvn)));
     if (new_bol->outcnt() == 0) {
-      igvn->remove_dead_node(new_bol);
+      igvn->remove_dead_node(new_bol, PhaseIterGVN::NodeOrigin::Speculative);
     }
   }
   return false;

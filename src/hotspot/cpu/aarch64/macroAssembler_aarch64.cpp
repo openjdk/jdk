@@ -952,7 +952,10 @@ void MacroAssembler::emit_static_call_stub() {
 }
 
 int MacroAssembler::static_call_stub_size() {
-  if (!codestub_branch_needs_far_jump()) {
+  // During AOT production run AOT and JIT compiled code
+  // are used at the same time. We need this size
+  // to be the same for both types of code.
+  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
     // isb; movk; movz; movz; b
     return 5 * NativeInstruction::instruction_size;
   }
@@ -3451,7 +3454,7 @@ void MacroAssembler::subw(Register Rd, Register Rn, RegisterOrConstant decrement
 void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mov(rheapbase, CompressedOops::base());
     } else {
       lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -5125,7 +5128,8 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
   if (CompressedKlassPointers::base() == nullptr) {
     cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
     return;
-  } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+  } else if (!AOTCodeCache::is_on_for_dump() &&
+             ((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
              && CompressedKlassPointers::shift() == 0) {
     // Only the bottom 32 bits matter
     cmpw(klass, tmp);
@@ -5368,7 +5372,7 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (AOTCodeCache::is_on_for_dump()) {
+  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
     encode_klass_not_null_for_aot(dst, src);
     return;
   }
@@ -6807,11 +6811,36 @@ void MacroAssembler::spin_wait() {
         assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
         sb();
         break;
+      case SpinWait::WFET:
+        spin_wait_wfet(VM_Version::spin_wait_desc().delay());
+        break;
       default:
         ShouldNotReachHere();
     }
   }
   block_comment("}");
+}
+
+void MacroAssembler::spin_wait_wfet(int delay_ns) {
+  // The sequence assumes CNTFRQ_EL0 is fixed to 1GHz. The assumption is valid
+  // starting from Armv8.6, according to the "D12.1.2 The system counter" of the
+  // Arm Architecture Reference Manual for A-profile architecture version M.a.a.
+  // This is sufficient because FEAT_WFXT is introduced from Armv8.6.
+  Register target = rscratch1;
+  Register current = rscratch2;
+  get_cntvctss_el0(current);
+  add(target, current, delay_ns);
+
+  Label L_wait_loop;
+  bind(L_wait_loop);
+
+  wfet(target);
+  get_cntvctss_el0(current);
+
+  cmp(current, target);
+  br(LT, L_wait_loop);
+
+  sb();
 }
 
 // Stack frame creation/removal
