@@ -2133,6 +2133,71 @@ DeadPathNode* PhaseIterGVN::dead_path() {
   return dead_path_node;
 }
 
+void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
+  if (t != Type::TOP) {
+    return;
+  }
+  // k is going dead, follow uses
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(k);
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    if (n != k) {
+      if (n->is_Region()) {
+        // Find out through which of the Region's input, we reached that Region and mark it dead
+        for (uint j = 1; j < n->req(); j++) {
+          Node* in = n->in(j);
+          // We don't follow uses beyond Regions so if in is a Region, we couldn't reach this Region through it
+          if (in != nullptr && !in->is_Region() && wq.member(in)) {
+            replace_input_of(n, j, C->top());
+            in->remove_dead_region(this, true);
+          }
+        }
+        continue;
+      }
+      if (n->is_Phi()) {
+        // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
+        for (uint j = 1; j < n->req(); j++) {
+          Node* in = n->in(j);
+          // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phithrough it
+          if (in != nullptr && !in->is_Phi() && wq.member(in)) {
+            if (n->in(0)->is_top() || n->in(0)->in(j) == nullptr || n->in(0)->in(j)->is_top()) {
+              continue;
+            }
+            // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
+            // doesn't die in the meantime
+            dead_path()->add_req(n->in(0)->in(j));
+            _worklist.push(dead_path());
+            replace_input_of(n, j, C->top());
+            replace_input_of(n->in(0), j, C->top());
+            if (in->outcnt() == 0) {
+              remove_dead_node(in);
+            }
+          }
+        }
+        continue;
+      }
+      // If we reached this CFG node through a data input...
+      if (n->is_CFG() && n->in(0) != nullptr && !(!n->in(0)->is_Region() && wq.member(n->in(0)))) {
+        if (n->in(0)->is_top()) {
+          continue;
+        }
+        // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
+        dead_path()->add_req(n->in(0));
+        _worklist.push(dead_path());
+        replace_input_of(n, 0, C->top());
+        n->remove_dead_region(this, true);
+        continue;
+      }
+    }
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      wq.push(u);
+    }
+  }
+}
+
 Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
@@ -2223,59 +2288,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    if (t == Type::TOP) {
-      ResourceMark rm;
-      Unique_Node_List wq;
-      wq.push(k);
-      for (uint i = 0; i < wq.size(); i++) {
-        Node* n = wq.at(i);
-        if (n != k && (n->is_Region() || n->is_Phi() || (n->is_CFG() && !wq.member(n->in(0))))) {
-          continue;
-        }
-        for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
-          Node* u = n->fast_out(k);
-          wq.push(u);
-        }
-      }
-
-      assert(wq.at(0) == k, "");
-      for (uint i = 1; i < wq.size(); i++) {
-        Node* n = wq.at(i);
-        if (n->is_Region()) {
-          for (uint j = 1; j < n->req(); j++) {
-            Node* in = n->in(j);
-            if (in != nullptr && !in->is_Region() && wq.member(in)) {
-              replace_input_of(n, j, C->top());
-              in->remove_dead_region(this, true);
-            }
-          }
-        } else if (n->is_Phi()) {
-          for (uint j = 1; j < n->req(); j++) {
-            Node* in = n->in(j);
-            if (in != nullptr && !in->is_Phi() && wq.member(in)) {
-              if (n->in(0)->is_top() || n->in(0)->in(j) == nullptr || n->in(0)->in(j)->is_top()) {
-                continue;
-              }
-              dead_path()->add_req(n->in(0)->in(j));
-              _worklist.push(dead_path());
-              replace_input_of(n, j, C->top());
-              replace_input_of(n->in(0), j, C->top());
-              if (in->outcnt() == 0) {
-                remove_dead_node(in);
-              }
-            }
-          }
-        } else if (n->is_CFG() && !(!n->in(0)->is_Region() && wq.member(n->in(0)))) {
-          if (n->in(0)->is_top()) {
-            continue;
-          }
-          dead_path()->add_req(n->in(0));
-          _worklist.push(dead_path());
-          replace_input_of(n, 0, C->top());
-          n->remove_dead_region(this, true);
-        }
-      }
-    }
+    maybe_make_dependent_paths(k, t);
     NOT_PRODUCT(set_progress();)
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);

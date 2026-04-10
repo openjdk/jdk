@@ -593,7 +593,7 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
-  assert(this != Compile::current()->dead_path(), "");
+  assert(this != Compile::current()->dead_path(), "we want to keep the unique DeadPath node around");
   Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
   if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);
@@ -729,7 +729,7 @@ void Node::out_grow(uint len) {
 //------------------------------is_dead----------------------------------------
 bool Node::is_dead() const {
   // Mach and pinch point nodes may look like dead.
-  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) )
+  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path())
     return false;
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != nullptr )

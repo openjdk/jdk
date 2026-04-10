@@ -425,7 +425,7 @@ public:
 private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
-  DeadPathNode*         _dead_path;
+  DeadPathNode*         _dead_path;             // Unique DeadPath node
   Node*                 _immutable_memory;      // Initial memory state
 
   Node*                 _recent_alloc_obj;

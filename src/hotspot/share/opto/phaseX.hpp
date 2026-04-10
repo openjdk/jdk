@@ -464,6 +464,8 @@ protected:
 
   DeadPathNode* dead_path();
 
+  void maybe_make_dependent_paths(Node* k, const Type* t);
+
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
