@@ -1515,7 +1515,7 @@ void Arguments::set_heap_size() {
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
                        !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
-  const size_t avail_mem = os::physical_memory();
+  const physical_memory_size_type avail_mem = os::physical_memory();
 
   // If the maximum heap size has not been set with -Xmx, then set it as
   // fraction of the size of physical memory, respecting the maximum and
