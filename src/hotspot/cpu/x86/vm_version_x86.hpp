@@ -535,6 +535,10 @@ protected:
 
   static const char* _features_names[];
 
+  static void clear_feature(Feature_Flag feature) {
+    _features.clear_feature(feature);
+  }
+
   static void clear_cpu_features() {
     _features = VM_Features();
     _cpu_features = VM_Features();
@@ -930,6 +934,7 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return _cpu_features.supports_feature(CPU_AVX512F); }
+  static bool cpu_supports_aes()      { return _cpu_features.supports_feature(CPU_AES); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
