@@ -52,14 +52,17 @@ inline MetaspaceClosureType as_type(MetaspaceObj::Type msotype) {
   return (MetaspaceClosureType)msotype;
 }
 
-// This macro checks for the existence of a member with the name metaspace_pointers_do.
-// and a parameter list of (MetaspaceClosure* it).
+// This macro checks for the existence of a member with the name metaspace_pointers_do
 #define HAS_METASPACE_POINTERS_DO(T) HasMetaspacePointersDo<T>::value
 
 template<typename T>
 class HasMetaspacePointersDo {
   template<typename U> static void* test(decltype(&U::metaspace_pointers_do));
   template<typename> static int test(...);
+
+  // - If the first template matches, test_type will be void*
+  // - If the first template doesn't match, test<T> will match second template,
+  //   and test_type will be int
   using test_type = decltype(test<T>(nullptr));
 public:
   static constexpr bool value = std::is_pointer_v<test_type>;

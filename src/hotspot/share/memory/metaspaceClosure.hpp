@@ -85,7 +85,7 @@ public:
   // only in the Metadata class.
   //
   // To work around the lack of a vtable, we use the Ref class with templates
-  // to that we can statically discover the type of a object. The use of Ref
+  // so that we can statically discover the type of a object. The use of Ref
   // depends on the fact that:
   //
   // [1] We don't use polymorphic pointers to MetaspaceObj's that are not subclasses
@@ -123,7 +123,6 @@ public:
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const = 0;
     virtual MetaspaceClosureType type() const = 0;
     virtual bool is_read_only_by_default() const = 0;
-    virtual ~Ref() {}
 
     address obj() const {
       return strip_tags(*addr());
@@ -187,19 +186,18 @@ private:
       return strip_tags(*_mpp);
     }
   protected:
-    virtual void** mpp() const {
+    virtual void** mpp() const override {
       return (void**)_mpp;
     }
 
   public:
     MSORef(T** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
-    virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
-    virtual bool not_null()                const { return dereference() != nullptr; }
-    virtual int size()                     const { return get_size(dereference()); }
-    virtual MetaspaceClosureType type()    const { return as_type(dereference()->type()); }
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+    virtual bool is_read_only_by_default() const override { return T::is_read_only_by_default(); }
+    virtual bool not_null()                const override { return dereference() != nullptr; }
+    virtual int size()                     const override { return get_size(dereference()); }
+    virtual MetaspaceClosureType type()    const override { return as_type(dereference()->type()); }
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const override {
       dereference()->metaspace_pointers_do(it);
     }
   };
@@ -215,24 +213,24 @@ private:
       return *_mpp;
     }
 
-  public:
-    GrowableArrayRef(GrowableArray<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
-
-    virtual void** mpp() const {
+  protected:
+    virtual void** mpp() const override {
       return (void**)_mpp;
     }
 
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+  public:
+    GrowableArrayRef(GrowableArray<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
+
+    virtual bool is_read_only_by_default() const override { return false; }
+    virtual bool not_null()                const override { return dereference() != nullptr;  }
+    virtual int size()                     const override { return (int)heap_word_size(sizeof(*dereference())); }
+    virtual MetaspaceClosureType type()    const override { return MetaspaceClosureType::GrowableArrayType; }
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const override {
       GrowableArray<T>* array = dereference();
       log_trace(aot)("Iter(GrowableArray): %p [%d]", array, array->length());
       array->assert_on_C_heap();
       it->push_c_array(array->data_addr(), array->capacity());
     }
-
-    virtual bool is_read_only_by_default() const { return false; }
-    virtual bool not_null()                const { return dereference() != nullptr;  }
-    virtual int size()                     const { return (int)heap_word_size(sizeof(*dereference())); }
-    virtual MetaspaceClosureType type()    const { return MetaspaceClosureType::GrowableArrayType; }
   };
 
   // For iterating the buffer held by GrowableArray<T>.
@@ -254,20 +252,21 @@ private:
     }
 
   protected:
-    virtual void** mpp() const {
+    virtual void** mpp() const override {
       return (void**)_mpp;
     }
+
   public:
     CArrayRef(T** mpp, int num_elems, Writability w)
       : Ref(w), _mpp(mpp), _num_elems(num_elems) {
       assert(is_aligned(byte_size(), BytesPerWord), "must be");
     }
 
-    virtual bool is_read_only_by_default() const { return false; }
-    virtual bool not_null()                const { precond(dereference() != nullptr); return true; }
-    virtual int size()                     const { return (int)heap_word_size(byte_size()); }
-    virtual MetaspaceClosureType type()    const { return MetaspaceClosureType::CArrayType; }
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
+    virtual bool is_read_only_by_default() const override { return false; }
+    virtual bool not_null()                const override { precond(dereference() != nullptr); return true; }
+    virtual int size()                     const override { return (int)heap_word_size(byte_size()); }
+    virtual MetaspaceClosureType type()    const override { return MetaspaceClosureType::CArrayType; }
+    virtual void metaspace_pointers_do(MetaspaceClosure *it) const override {
       metaspace_pointers_do_impl<T>(it, dereference());
     }
 
