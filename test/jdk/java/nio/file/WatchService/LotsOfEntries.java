@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @bug 8330077
  * @summary Tests WatchService behavior with more entries in a watched directory
  *     than the default event limit
- * @library ..
+ * @library .. /test/lib
+ * @build jtreg.SkippedException
  * @run main/othervm LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=invalid LotsOfEntries 600 fail
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=-5 LotsOfEntries 5 fail
@@ -35,13 +36,28 @@
  * @run main/othervm -Djdk.nio.file.WatchService.maxEventsPerPoll=3000000000 LotsOfEntries 600 pass
  */
 
-import java.nio.file.*;
 import static java.nio.file.StandardWatchEventKinds.*;
-import java.util.*;
+
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import jtreg.SkippedException;
+
 public class LotsOfEntries {
+
+    /** LinuxWatchService message when fs.inotify.max_user_watches is exhausted. */
+    private static final String INOTIFY_WATCH_LIMIT_MSG =
+            "User limit of inotify watches reached";
 
     static void testCreateLotsOfEntries(Path dir, int numEvents, boolean fail) throws Exception {
         try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
@@ -113,6 +129,11 @@ public class LotsOfEntries {
         boolean fail = args[1].equals("fail");
         try {
             testCreateLotsOfEntries(dir, numEvents, fail);
+        } catch (IOException e) {
+            if (INOTIFY_WATCH_LIMIT_MSG.equals(e.getMessage())) {
+                throw new SkippedException(e.getMessage(), e);
+            }
+            throw e;
         } finally {
             TestUtil.removeAll(dir);
         }
