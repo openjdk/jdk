@@ -3987,14 +3987,10 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
   // Previous check may fail when the same wide memory Phi was split into Phis
   // for different memory slices. Search all Phis for this region.
   if (result != nullptr) {
-    Node* region = orig_phi->in(0);
-    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
-      Node* phi = region->fast_out(i);
-      if (phi->is_Phi() &&
-          C->get_alias_index(phi->as_Phi()->adr_type()) == alias_idx) {
-        assert(phi->_idx >= nodes_size(), "only new Phi per instance memory slice");
-        return phi->as_Phi();
-      }
+    PhiNode* phi = orig_phi->region()->find_memory_phi(C, C->get_adr_type(alias_idx));
+    if (phi != nullptr) {
+      assert(phi->_idx >= nodes_size(), "only new Phi per instance memory slice");
+      return phi;
     }
   }
   if (C->live_nodes() + 2*NodeLimitFudgeFactor > C->max_node_limit()) {

@@ -732,6 +732,10 @@
           "Each can be 0=off or 1=on")                                      \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
+  develop(bool, VerifyAmbiguousMemPhi, false,                               \
+          "Verify that there is no ambiguous choice when picking a"         \
+          "memory phi for a given slice in EA")                             \
+                                                                            \
   develop(bool, TraceCISCSpill, false,                                      \
           "Trace allocators use of cisc spillable instructions")            \
                                                                             \

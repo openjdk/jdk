@@ -159,6 +159,27 @@ PhiNode* RegionNode::has_unique_phi() const {
   return only_phi;
 }
 
+PhiNode * RegionNode::find_memory_phi(Compile *C, const TypePtr *adr_type) {
+  PhiNode* res = nullptr;
+  for (DUIterator_Fast imax, j = fast_outs(imax); j < imax; j++) {
+    Node* use = fast_out(j);
+    if(use->is_memory_phi() && use->as_Phi()->adr_type() == adr_type) {
+      if (VerifyAmbiguousMemPhi) {
+        if (res != nullptr) {
+          res->dump();
+          use->dump();
+          C->dump_igv("before failure", 3);
+          assert(false, "ambiguous choice of memory phi");
+        }
+        res = use->as_Phi();
+      } else {
+        return use->as_Phi();
+      }
+    }
+  }
+  return res;
+}
+
 
 //------------------------------check_phi_clipping-----------------------------
 // Helper function for RegionNode's identification of FP clipping
@@ -2628,8 +2649,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Must eagerly register phis, since they participate in loops.
         igvn->register_new_node_with_optimizer(new_base);
 
-        MergeMemNode* result = MergeMemNode::make(Compile::current()->top()); // TODO this is probably wrong
-        result->set_memory_at(phase->C->get_alias_index(this->adr_type()), new_base);
+        MergeMemNode* result = MergeMemNode::make(new_base);
 
         // Check if there exists a phi for a given slice already. If yes,
         // we should use it. We are moving the MergeMem down in the CFG,
@@ -2685,21 +2705,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // result in creating an excessive number of new nodes within a single
         // IGVN iteration. We have put the Phi nodes on the IGVN worklist, so
         // they are transformed later on in any case.
-
-#ifdef ASSERT
-        ResourceMark rm;
-        ResourceBitMap seen(phase->C->num_alias_types());
-        for (DUIterator_Fast imax, i = region()->fast_outs(imax); i < imax; i++) {
-          Node* phi = region()->fast_out(i);
-          if (phi->is_memory_phi()) {
-            int alias = phase->C->get_alias_index(phi->adr_type());
-            // We want to make sure that we didn't create any ambiguous phi for a given slice
-            // it is expected to have a duplicate for 'this' as it is going to be deleted later
-            assert(!seen.at(alias) || phi->adr_type() == adr_type() || phi->_idx < nodes_size, "duplicate phi for slice %d", alias);
-            seen.set_bit(alias);
-          }
-        }
-#endif
 
         // Replace self with the result.
         return result;

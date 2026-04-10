@@ -109,6 +109,7 @@ public:
   }
   PhiNode* has_phi() const;        // returns an arbitrary phi user, or null
   PhiNode* has_unique_phi() const; // returns the unique phi user, or null
+  PhiNode* find_memory_phi(Compile *C, const TypePtr* adr_type); // TODO should the argument be int or TypePtr? try to find similar methods
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
