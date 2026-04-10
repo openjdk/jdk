@@ -526,7 +526,7 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
   JvmtiEnv *env = ets->get_env();
 
   jlong was_enabled = ets->event_enable()->_event_enabled.get_bits();
-  jlong now_enabled = THREAD_FILTERED_EVENT_BITS &
+  jlong now_enabled =  THREAD_FILTERED_EVENT_BITS &
     env->env_event_enable()->_event_callback_enabled.get_bits() &
     (env->env_event_enable()->_event_user_enabled.get_bits() |
      ets->event_enable()->_event_user_enabled.get_bits());
