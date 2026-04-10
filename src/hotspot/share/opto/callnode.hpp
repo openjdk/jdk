@@ -817,6 +817,8 @@ public:
 // routines); generates static stub.
 class CallStaticJavaNode : public CallJavaNode {
 protected:
+  // If this is an uncommon trap guarded by some condition, is it safe to change the condition to a narrower condition?
+  // See comment in PhaseIdealLoop::do_split_if()
   bool _safe_for_fold_compare;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
