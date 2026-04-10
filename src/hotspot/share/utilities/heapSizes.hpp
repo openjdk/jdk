@@ -37,6 +37,9 @@ constexpr HeapWordUnit operator -  (HeapWordUnit x, HeapWordUnit y) { return in_
 constexpr HeapWordUnit operator *  (HeapWordUnit x, size_t       y) { return in_HeapWordUnit(in_heap_words(x) * y               ); }
 constexpr HeapWordUnit operator /  (HeapWordUnit x, size_t       y) { return in_HeapWordUnit(in_heap_words(x) / y               ); }
 
+inline HeapWordUnit& operator += (HeapWordUnit& x, HeapWordUnit y) { return x = x + y; }
+inline HeapWordUnit& operator -= (HeapWordUnit& x, HeapWordUnit y) { return x = x - y; }
+
 constexpr bool operator == (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) == in_heap_words(y); }
 constexpr bool operator != (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) != in_heap_words(y); }
 constexpr bool operator >  (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) >  in_heap_words(y); }
@@ -62,6 +65,9 @@ constexpr bool operator >  (HeapByteUnit x, HeapByteUnit y) { return in_heap_byt
 constexpr bool operator >= (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) >= in_heap_bytes(y); }
 constexpr bool operator <  (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) <  in_heap_bytes(y); }
 constexpr bool operator <= (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) <= in_heap_bytes(y); }
+
+inline HeapByteUnit& operator += (HeapByteUnit& x, HeapByteUnit y) { return x = x + y; }
+inline HeapByteUnit& operator -= (HeapByteUnit& x, HeapByteUnit y) { return x = x - y; }
 
 constexpr HeapByteUnit to_HeapByteUnit(HeapWordUnit x)   { return in_HeapByteUnit(in_heap_words(x) * HeapWordSize); }
 constexpr HeapWordUnit to_HeapWordUnit(HeapByteUnit x)   { return in_HeapWordUnit(in_heap_bytes(x) / HeapWordSize); }
