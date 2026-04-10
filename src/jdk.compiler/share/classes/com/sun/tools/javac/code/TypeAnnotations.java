@@ -154,6 +154,14 @@ public class TypeAnnotations {
                 } else {
                     pos.push(env.enclMethod);
                 }
+                Env<AttrContext> env1 = env;
+                while (env1 != null && !env1.tree.hasTag(Tag.CLASSDEF)) {
+                    if (env1.tree instanceof JCLambda l) {
+                        pos.currentLambda = l;
+                        break;
+                    }
+                    env1 = env1.next;
+                }
                 pos.scan(tree);
             } finally {
                 log.useSource(oldSource);
