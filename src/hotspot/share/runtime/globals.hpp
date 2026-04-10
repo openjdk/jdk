@@ -607,6 +607,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyAdapterSharing, false,                                \
           "Verify that the code for shared adapters is the equivalent")     \
+  develop(bool, FailAtExistingPhi, false,                                \
+          "Fail in PhiNode::Ideal when we are about to make a duplicate phi")     \
+develop(bool, AssertOnAmbiguousPhi, false,                                \
+"Assert in find_memory_phi if choice is ambiguous")     \
                                                                             \
   product(bool, PrintAssembly, false, DIAGNOSTIC,                           \
           "Print assembly code (using external disassembler.so)")           \
