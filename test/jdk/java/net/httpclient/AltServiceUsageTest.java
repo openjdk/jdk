@@ -56,7 +56,7 @@ import org.junit.jupiter.api.Test;
  *
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                     AltServiceUsageTest
+ *                     ${test.main.class}
  */
 public class AltServiceUsageTest implements HttpServerAdapters {
 
