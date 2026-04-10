@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
  */
 /**
  * @test
- * @requires !vm.graal.enabled
  * @comment These test C1 and C2 so make no sense when Graal is enabled.
  * @run testng/othervm/timeout=480 -Xcomp -XX:-TieredCompilation  ArrayIndexOutOfBoundsExceptionTest
  * @run testng/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 ArrayIndexOutOfBoundsExceptionTest

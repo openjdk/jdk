@@ -27,7 +27,6 @@
  *          methods.
  * @modules java.base/sun.net.ext
  *          jdk.net
- * @requires !vm.graal.enabled
  * @run main SocketOptionTests
  * @run main/othervm --limit-modules=java.base SocketOptionTests
  */
