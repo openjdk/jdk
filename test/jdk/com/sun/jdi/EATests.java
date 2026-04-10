@@ -105,36 +105,6 @@
  *                 -XX:GuaranteedAsyncDeflationInterval=1
  */
 
-/**
- * @test
- * @bug 8227745
- *
- * @summary This is another configuration of EATests.java to test Graal. Some testcases are expected
- *          to fail because Graal does not provide all information about non-escaping objects in
- *          scope. These are skipped.
- *
- * @author Richard Reingruber richard DOT reingruber AT sap DOT com
- *
- * @requires ((vm.compMode == "Xmixed") & vm.graal.enabled)
- *
- * @library /test/lib /test/hotspot/jtreg
- *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run compile -g EATests.java
- *
- * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping
- *          objects in scope. These are skipped.
- * @run driver EATests
- *                 -XX:+UnlockDiagnosticVMOptions
- *                 -Xms256m -Xmx256m
- *                 -Xbootclasspath/a:.
- *                 -XX:CompileCommand=dontinline,*::dontinline_*
- *                 -XX:+WhiteBoxAPI
- *                 -Xbatch
- *                 -XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler
- */
-
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import compiler.testlibrary.CompilerUtils;
