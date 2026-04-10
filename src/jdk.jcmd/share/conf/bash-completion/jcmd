@@ -141,7 +141,7 @@ function _jcmd_completion() {
   fi
 
   if [[ ${COMP_CWORD} -eq 3 ]]; then
-    if [[ ${COMP_WORDS[2]} == help ]] then
+    if [[ ${COMP_WORDS[2]} == help ]]; then
       _jcmd__complete_help_command "${jvm_identifier}" "${cur}"
     elif [[ ${COMP_WORDS[2]} == "-f" ]]; then
       # autocomplete filename
