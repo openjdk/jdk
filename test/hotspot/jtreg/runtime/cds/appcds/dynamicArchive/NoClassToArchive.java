@@ -29,13 +29,6 @@
  * @comment The test assumes that when "java -version" is executed, only a very limited number
  *          of classes are loaded, and all of those are loaded from the default shared archive.
  *
- *          However, when graal is used as the JIT, many extra classes are loaded during VM start-up.
- *          Some of those are loaded dynamically from jrt:/. Some classes are also defined by
- *          LambdaMetafactory. This causes complexity that cannot be easily handled by this test.
- *
- *          The VM code covered by this test can be sufficiently tested with C1/C2. So there's no need
- *          to bend over backwards to run this test with graal.
- *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StrConcatApp
  * @build jdk.test.whitebox.WhiteBox

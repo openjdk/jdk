@@ -52,7 +52,7 @@ public class MallocSiteTypeChange {
         output.shouldContain("Baseline taken");
 
         wb.NMTFree(addr);
-        addr = wb.NMTMallocWithPseudoStackAndType(2 * 1024, pc, 9 /* mtInternal */ );
+        addr = wb.NMTMallocWithPseudoStackAndType(2 * 1024, pc, 8 /* mtInternal */ );
         output = NMTTestUtils.startJcmdVMNativeMemory("detail.diff");
         output.shouldContain("(malloc=0KB type=Test -4KB)");
         output.shouldContain("(malloc=2KB type=Internal +2KB #1 +1)");
