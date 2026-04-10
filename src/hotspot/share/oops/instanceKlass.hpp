@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,6 +353,9 @@ class InstanceKlass: public Klass {
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
 
+  bool trust_final_fields()                { return _misc_flags.trust_final_fields(); }
+  void set_trust_final_fields(bool value)  { _misc_flags.set_trust_final_fields(value); }
+
   // Java itable
   int  itable_length() const               { return _itable_len; }
   void set_itable_length(int len)          { _itable_len = len; }
@@ -553,7 +556,7 @@ public:
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const override;  // means that initialize should be called
-  void initialize_with_aot_initialized_mirror(TRAPS);
+  void initialize_with_aot_initialized_mirror(bool early_init, TRAPS);
   void assert_no_clinit_will_run_for_aot_initialized_class() const NOT_DEBUG_RETURN;
   void initialize(TRAPS) override;
   void initialize_preemptable(TRAPS) override;

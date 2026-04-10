@@ -3,7 +3,7 @@
  * @bug 8304487 8325653 8332463
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
- * @compile/fail/ref=PrimitivePatternsSwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitivePatternsSwitchErrors.java
+ * @compile/fail/ref=PrimitivePatternsSwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDexhaustivityMaxBaseChecks=0 PrimitivePatternsSwitchErrors.java
  */
 public class PrimitivePatternsSwitchErrors {
     record R_int(int x) {}

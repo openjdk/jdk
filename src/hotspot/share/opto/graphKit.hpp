@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,6 +320,13 @@ class GraphKit : public Phase {
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset);
 
+  Node* off_heap_plus_addr(Node* ptr, intptr_t offset) {
+    return basic_plus_adr(top(), ptr, MakeConX(offset));
+  }
+
+  Node* off_heap_plus_addr(Node* ptr, Node* offset) {
+    return basic_plus_adr(top(), ptr, offset);
+  }
 
   // Some convenient shortcuts for common nodes
   Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new IfTrueNode(iff));      }
@@ -346,7 +353,7 @@ class GraphKit : public Phase {
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
 
-  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new AddPNode(b, a, o));    }
+  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)
@@ -876,6 +883,29 @@ class GraphKit : public Phase {
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
   Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
+
+  // Helper class to support reverting to a previous parsing state.
+  // When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+  // as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+  // bailout before making changes because the bailing out decision might depend on new nodes
+  // (their types, for instance).
+  //
+  // So, if an intrinsic might cause this situation, one must start by saving the state in a
+  // SavedState by constructing it, and the state will be restored on destruction. If the
+  // intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+  class SavedState : public StackObj {
+    GraphKit* _kit;
+    int _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(GraphKit*);
+    ~SavedState();
+    void discard();
+  };
 };
 
 // Helper class to support building of control flow branches. Upon

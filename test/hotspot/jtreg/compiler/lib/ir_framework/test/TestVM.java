@@ -26,6 +26,8 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
@@ -37,8 +39,6 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
 
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "Test VM". The class is
@@ -92,7 +92,7 @@ public class TestVM {
 
     static final boolean XCOMP = Platform.isComp();
     static final boolean VERBOSE = Boolean.getBoolean("Verbose");
-    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes");
+    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TESTLIST = System.getProperty("Test", "");
@@ -159,6 +159,7 @@ public class TestVM {
      */
     public static void main(String[] args) {
         try {
+            TestVmSocket.connect();
             String testClassName = args[0];
             System.out.println("TestVM main() called - about to run tests in class " + testClassName);
             Class<?> testClass = getClassObject(testClassName, "test");
@@ -167,7 +168,7 @@ public class TestVM {
             framework.addHelperClasses(args);
             framework.start();
         } finally {
-            TestFrameworkSocket.closeClientSocket();
+            TestVmSocket.close();
         }
     }
 
@@ -588,8 +589,13 @@ public class TestVM {
     }
 
     private void checkTestAnnotations(Method m, Test testAnno) {
-        TestFormat.check(!testMethodMap.containsKey(m.getName()),
-                         "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
+        List<Method> overloads = Arrays.stream(testClass.getDeclaredMethods()).filter(other -> !m.equals(other) && m.getName().equals(other.getName())).toList();
+        TestFormat.check(overloads.isEmpty(),
+                "Cannot overload @Test methods, but method " + m + " has " + overloads.size() + " overload" + (overloads.size() == 1 ? "" : "s") + ":" +
+                overloads.stream().map(String::valueOf).collect(Collectors.joining("\n    - ", "\n    - ", ""))
+        );
+        TestFramework.check(!testMethodMap.containsKey(m.getName()),
+                            "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
         TestFormat.check(testAnno != null, m + " must be a method with a @Test annotation");
 
         Check checkAnno = getAnnotation(m, Check.class);
@@ -823,14 +829,13 @@ public class TestVM {
         forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value)
                                                        .append(System.lineSeparator()));
         throw new TestRunException("Could not force compile the following @ForceCompile methods:"
-                                   + System.lineSeparator() + builder.toString());
+                                   + System.lineSeparator() + builder);
     }
 
     /**
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = (PRINT_TIMES || VERBOSE) ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -859,7 +864,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestFrameworkSocket.write("Run " + test.toString(), TestFrameworkSocket.TESTLIST_TAG, true);
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
             }
             try {
                 test.run();
@@ -867,17 +872,18 @@ public class TestVM {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append(test.toString()).append(":").append(System.lineSeparator()).append(sw.toString())
+                builder.append(test).append(":").append(System.lineSeparator()).append(sw)
                        .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
-            if (PRINT_TIMES || VERBOSE) {
+            if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                durations.put(duration, test.getName());
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
                 }
+                // Will be correctly formatted later.
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
@@ -885,20 +891,11 @@ public class TestVM {
             }
         }
 
-        // Print execution times
-        if (VERBOSE || PRINT_TIMES) {
-            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
-            for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
-                        PRINT_TIMES_TAG, true);
-            }
-        }
-
         if (failures > 0) {
             // Finally, report all occurred exceptions in a nice format.
             String msg = System.lineSeparator() + System.lineSeparator() + "Test Failures (" + failures + ")"
                          + System.lineSeparator() + "----------------" + "-".repeat(String.valueOf(failures).length());
-            throw new TestRunException(msg + System.lineSeparator() + builder.toString());
+            throw new TestRunException(msg + System.lineSeparator() + builder);
         }
     }
 

@@ -32,6 +32,7 @@ import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMetho
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 
 import java.util.Map;
 import java.util.SortedSet;
@@ -71,9 +72,9 @@ class IRMethodBuilder {
             Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
             boolean allowMethodNotCompilable = allowNotCompilable || testAnnos[0].allowNotCompilable();
             if (allowMethodNotCompilable) {
-                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().count());
             } else {
-                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().count());
             }
         }
     }

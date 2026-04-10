@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -83,7 +84,6 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -135,8 +135,8 @@ bool ParallelCompactData::RegionData::is_clear() {
          (_source_region == 0) &&
          (_partial_obj_addr == nullptr) &&
          (_partial_obj_size == 0) &&
-         (_dc_and_los == 0) &&
-         (_shadow_state == 0);
+         (dc_and_los() == 0) &&
+         (shadow_state() == 0);
 }
 
 #ifdef ASSERT
@@ -145,8 +145,8 @@ void ParallelCompactData::RegionData::verify_clear() {
   assert(_source_region == 0, "inv");
   assert(_partial_obj_addr == nullptr, "inv");
   assert(_partial_obj_size == 0, "inv");
-  assert(_dc_and_los == 0, "inv");
-  assert(_shadow_state == 0, "inv");
+  assert(dc_and_los() == 0, "inv");
+  assert(shadow_state() == 0, "inv");
 }
 #endif
 
@@ -232,14 +232,10 @@ bool ParallelCompactData::initialize(MemRegion reserved_heap)
 
   assert(region_align_down(_heap_start) == _heap_start,
          "region start not aligned");
+  assert(is_aligned(heap_size, RegionSize), "precondition");
 
-  return initialize_region_data(heap_size);
-}
-
-PSVirtualSpace*
-ParallelCompactData::create_vspace(size_t count, size_t element_size)
-{
-  const size_t raw_bytes = count * element_size;
+  const size_t count = heap_size >> Log2RegionSize;
+  const size_t raw_bytes = count * sizeof(RegionData);
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
   const size_t rs_align = MAX2(page_sz, granularity);
@@ -253,7 +249,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory.
-    return nullptr;
+    return false;
   }
 
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
@@ -261,34 +257,23 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   MemTracker::record_virtual_memory_tag(rs, mtGC);
 
-  PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
+  PSVirtualSpace* region_vspace = new PSVirtualSpace(rs, page_sz);
 
-  if (!vspace->expand_by(_reserved_byte_size)) {
+  if (!region_vspace->expand_by(_reserved_byte_size)) {
     // Failed to commit memory.
 
-    delete vspace;
+    delete region_vspace;
 
     // Release memory reserved in the space.
     MemoryReserver::release(rs);
 
-    return nullptr;
+    return false;
   }
 
-  return vspace;
-}
-
-bool ParallelCompactData::initialize_region_data(size_t heap_size)
-{
-  assert(is_aligned(heap_size, RegionSize), "precondition");
-
-  const size_t count = heap_size >> Log2RegionSize;
-  _region_vspace = create_vspace(count, sizeof(RegionData));
-  if (_region_vspace != nullptr) {
-    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
-    _region_count = count;
-    return true;
-  }
-  return false;
+  _region_vspace = region_vspace;
+  _region_data = (RegionData*)_region_vspace->reserved_low_addr();
+  _region_count = count;
+  return true;
 }
 
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
@@ -296,7 +281,9 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(end_region <= _region_count, "end_region out of range");
 
   const size_t region_cnt = end_region - beg_region;
-  memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
+  for (size_t i = beg_region; i < end_region; i++) {
+    ::new (&_region_data[i]) RegionData{};
+  }
 }
 
 // The total live words on src_region would overflow the target space, so find
@@ -1294,7 +1281,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 }
 
 template<typename Func>
-void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe) {
+void PSParallelCompact::adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter, Func&& on_stripe) {
   MutableSpace* sp = PSParallelCompact::space(id);
   HeapWord* const bottom = sp->bottom();
   HeapWord* const top = sp->top();
@@ -1307,7 +1294,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   const size_t stripe_size = num_regions_per_stripe * region_size;
 
   while (true) {
-    uint counter = AtomicAccess::fetch_then_add(claim_counter, num_regions_per_stripe);
+    uint counter = claim_counter->fetch_then_add(num_regions_per_stripe);
     HeapWord* cur_stripe = bottom + counter * region_size;
     if (cur_stripe >= top) {
       break;
@@ -1317,7 +1304,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   }
 }
 
-void PSParallelCompact::adjust_in_old_space(volatile uint* claim_counter) {
+void PSParallelCompact::adjust_in_old_space(Atomic<uint>* claim_counter) {
   // Regions in old-space shouldn't be split.
   assert(!_space_info[old_space_id].split_info().is_valid(), "inv");
 
@@ -1348,7 +1335,7 @@ void PSParallelCompact::adjust_in_old_space(volatile uint* claim_counter) {
   });
 }
 
-void PSParallelCompact::adjust_in_young_space(SpaceId id, volatile uint* claim_counter) {
+void PSParallelCompact::adjust_in_young_space(SpaceId id, Atomic<uint>* claim_counter) {
   adjust_in_space_helper(id, claim_counter, [](HeapWord* stripe_start, HeapWord* stripe_end) {
     HeapWord* obj_start = stripe_start;
     while (obj_start < stripe_end) {
@@ -1362,7 +1349,7 @@ void PSParallelCompact::adjust_in_young_space(SpaceId id, volatile uint* claim_c
   });
 }
 
-void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, volatile uint* claim_counters) {
+void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, Atomic<uint>* claim_counters) {
   auto start_time = Ticks::now();
   adjust_in_old_space(&claim_counters[0]);
   for (uint id = eden_space_id; id < last_space_id; ++id) {
@@ -1376,12 +1363,12 @@ class PSAdjustTask final : public WorkerTask {
   WeakProcessor::Task                        _weak_proc_task;
   OopStorageSetStrongParState<false, false>  _oop_storage_iter;
   uint                                       _nworkers;
-  volatile bool                              _code_cache_claimed;
-  volatile uint _claim_counters[PSParallelCompact::last_space_id] = {};
+  Atomic<bool>                               _code_cache_claimed;
+  Atomic<uint> _claim_counters[PSParallelCompact::last_space_id];
 
   bool try_claim_code_cache_task() {
-    return AtomicAccess::load(&_code_cache_claimed) == false
-        && AtomicAccess::cmpxchg(&_code_cache_claimed, false, true) == false;
+    return _code_cache_claimed.load_relaxed() == false
+        && _code_cache_claimed.compare_set(false, true);
   }
 
 public:
@@ -1393,6 +1380,9 @@ public:
     _nworkers(nworkers),
     _code_cache_claimed(false) {
 
+    for (unsigned int i = PSParallelCompact::old_space_id; i < PSParallelCompact::last_space_id; ++i) {
+      ::new (&_claim_counters[i]) Atomic<uint>{};
+    }
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 
