@@ -1905,9 +1905,6 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
-#endif
-
-#if defined(AARCH64)
   ADD_EXTERNAL_ADDRESS(BarrierSetAssembler::patching_epoch_addr());
 #endif
 
