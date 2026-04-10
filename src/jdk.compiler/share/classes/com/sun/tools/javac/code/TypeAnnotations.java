@@ -145,6 +145,10 @@ public class TypeAnnotations {
     }
 
     public void organizeTypeAnnotationsSignaturesForLocalVarType(final Env<AttrContext> env, final JCVariableDecl tree) {
+        if (env.info.isAttributionModeSpeculative()) {
+            //skip
+            return ;
+        }
         annotate.afterTypes(() -> {
             JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
             try {
@@ -1253,7 +1257,10 @@ public class TypeAnnotations {
                 }
 
                 scan(tree.body);
-                scan(tree.params);
+
+                if (sigOnly) {
+                    scan(tree.params);
+                }
             } finally {
                 currentLambda = prevLambda;
             }

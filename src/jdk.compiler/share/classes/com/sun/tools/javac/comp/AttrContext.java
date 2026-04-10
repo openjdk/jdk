@@ -174,6 +174,10 @@ public class AttrContext {
                 pendingResolutionPhase.isVarargsRequired();
     }
 
+    public boolean isAttributionModeSpeculative() {
+        return attributionMode == AttributionMode.SPECULATIVE;
+    }
+
     @Override
     public String toString() {
         return "AttrContext[" + scope.toString() + "]";

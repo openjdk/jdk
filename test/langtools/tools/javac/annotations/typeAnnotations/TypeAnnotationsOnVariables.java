@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -299,7 +300,7 @@ public class TypeAnnotationsOnVariables {
         Path testClass = classes.resolve("Test.class");
         TestClassDesc testClassDesc = TestClassDesc.create(testClass);
         MethodModel oMethod = singletonValue(testClassDesc.name2Method().get("o"));
-        var oTypeAnnos = getAnnotations(oMethod);
+        var oTypeAnnos = getAnnotationsFromCode(oMethod);
         assertFalse(oTypeAnnos.isPresent(), () -> oTypeAnnos.toString());
 
         checkTypeAnnotations(testClassDesc,
@@ -337,11 +338,72 @@ public class TypeAnnotationsOnVariables {
                              "          Test$TypeAnno");
     }
 
+    @Test
+    void explicitLambdaHeader() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import java.lang.annotation.ElementType;
+                          import java.lang.annotation.Target;
+                          import java.util.function.Consumer;
+                          import java.util.List;
+
+                          class Test {
+                              @Target(ElementType.TYPE_USE)
+                              @interface TypeAnno { }
+
+                              static final Consumer<List<@TypeAnno String>> TEST =
+                                  id((List<@TypeAnno String> arg) -> {});
+
+                              private static <T> Consumer<T> id(Consumer<T> t) { return t;}
+                              private void test() {
+                                  Object test =
+                                        id((List<@TypeAnno String> arg) -> {});
+                              }
+                          }
+                          """);
+        Files.createDirectories(classes);
+        new JavacTask(tb)
+                .options("-d", classes.toString())
+                .files(tb.findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        Path testClass = classes.resolve("Test.class");
+        TestClassDesc testClassDesc = TestClassDesc.create(testClass);
+        MethodModel clInit = singletonValue(testClassDesc.name2Method().get("<clinit>"));
+        var clInitTypeAnnos = getAnnotationsFromCode(clInit);
+        assertFalse(clInitTypeAnnos.isPresent(), () -> clInitTypeAnnos.toString());
+        MethodModel test = singletonValue(testClassDesc.name2Method().get("test"));
+        var testTypeAnnos = getAnnotationsFromCode(test);
+        assertFalse(testTypeAnnos.isPresent(), () -> testTypeAnnos.toString());
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$static$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno");
+
+        checkTypeAnnotations(testClassDesc,
+                             "lambda$test$0",
+                             this::getAnnotationsFromHeader,
+                             "      0: LTest$TypeAnno;(): METHOD_FORMAL_PARAMETER, param_index=0, location=[TYPE_ARGUMENT(0)]",
+                             "        Test$TypeAnno");
+    }
+
     private void checkTypeAnnotations(TestClassDesc testClassDesc,
                                       String lambdaMethodName,
                                       String... expectedEntries) throws IOException {
+        checkTypeAnnotations(testClassDesc, lambdaMethodName, this::getAnnotationsFromCode, expectedEntries);
+    }
+
+    private void checkTypeAnnotations(TestClassDesc testClassDesc,
+                                      String lambdaMethodName,
+                                      Function<MethodModel, Optional<RuntimeInvisibleTypeAnnotationsAttribute>> annotationsGetter,
+                                      String... expectedEntries) throws IOException {
         MethodModel lambdaMethod = singletonValue(testClassDesc.name2Method().get(lambdaMethodName));
-        var lambdaTypeAnnos = getAnnotations(lambdaMethod);
+        var lambdaTypeAnnos = annotationsGetter.apply(lambdaMethod);
         if (expectedEntries.length == 0) {
             assertFalse(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
         } else {
@@ -360,10 +422,14 @@ public class TypeAnnotationsOnVariables {
         return values.get(0);
     }
 
-    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotations(MethodModel m) {
+    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotationsFromCode(MethodModel m) {
         return m.findAttribute(Attributes.code())
                 .orElseThrow()
                 .findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
+    }
+
+    private Optional<RuntimeInvisibleTypeAnnotationsAttribute> getAnnotationsFromHeader(MethodModel m) {
+        return m.findAttribute(Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     void checkJavapOutput(TestClassDesc testClassDesc, List<String> expectedOutput) throws IOException {
