@@ -25,7 +25,7 @@
  * @test
  * @bug 8003948 8133686
  * @modules java.base/sun.net.www
- * @run junit MessageHeaderTest
+ * @run junit ${test.main.class}
  */
 
 import java.io.*;
@@ -59,7 +59,7 @@ public class MessageHeaderTest {
 
     @Test
     public void ntlmNegotiateTest () throws Exception {
-        String expected[] = {
+        String[] expected = {
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: NTLM sdsds}",
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: }",
             "{null: HTTP/1.1 200 Ok}{Foo: bar}{Bar: foo}{WWW-Authenticate: NTLM sdsds}",

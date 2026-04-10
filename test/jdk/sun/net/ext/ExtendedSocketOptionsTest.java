@@ -43,11 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * jdk.net.ExtendedSocketOptions doesn't lead to a deadlock
  * @modules java.base/sun.net.ext:open
  *          jdk.net
- * @run junit/othervm ExtendedSocketOptionsTest
- * @run junit/othervm ExtendedSocketOptionsTest
- * @run junit/othervm ExtendedSocketOptionsTest
- * @run junit/othervm ExtendedSocketOptionsTest
- * @run junit/othervm ExtendedSocketOptionsTest
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm ${test.main.class}
  */
 public class ExtendedSocketOptionsTest {
 
@@ -92,7 +92,7 @@ public class ExtendedSocketOptionsTest {
         // same instance of ExtendedSocketOptions
         assertEquals(2, GetInstanceTask.extendedSocketOptionsInstances.size());
         for (final Object inst : GetInstanceTask.extendedSocketOptionsInstances) {
-            assertSame(inst, extSocketOptions, "sun.net.ext.ExtendedSocketOptions#getInstance()" +
+            assertSame(extSocketOptions, inst, "sun.net.ext.ExtendedSocketOptions#getInstance()" +
                     " returned different instances");
         }
     }

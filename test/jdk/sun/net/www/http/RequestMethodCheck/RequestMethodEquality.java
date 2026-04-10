@@ -30,7 +30,7 @@
  * @modules java.base/sun.net.www.http
  *          java.base/sun.net.www.protocol.http
  * @build java.base/sun.net.www.http.HttpClientAccess
- * @run junit/othervm RequestMethodEquality
+ * @run junit/othervm ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpExchange;

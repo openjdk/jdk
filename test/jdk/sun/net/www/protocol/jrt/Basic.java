@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Basic test of jimage protocol handler
- * @run junit Basic
+ * @run junit ${test.main.class}
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -89,7 +91,7 @@ public class Basic {
         URLConnection uc = url.openConnection();
         try {
             int b = uc.getInputStream().read();
-            assertTrue(b != -1);
+            assertNotEquals(-1, b);
             if (!exists) fail("IOException expected");
         } catch (IOException ioe) {
             if (exists) fail("IOException not expected");
@@ -110,7 +112,7 @@ public class Basic {
         URL url = new URL(urlString);
         try {
             Object obj = url.getContent();
-            assertTrue(obj != null);
+            assertNotNull(obj);
             if (!exists) fail("IOException expected");
         } catch (IOException ioe) {
             if (exists) fail("IOException not expected");

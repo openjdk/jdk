@@ -31,7 +31,7 @@
  * @build CreateMultiReleaseTestJars
  *        jdk.test.lib.util.JarBuilder
  *        jdk.test.lib.compiler.Compiler
- * @run junit MultiReleaseJarURLConnection
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
@@ -205,9 +205,7 @@ public class MultiReleaseJarURLConnection {
         // verify we are loading a runtime versioned class
         MethodType mt = MethodType.methodType(int.class);
         MethodHandle mh = MethodHandles.lookup().findVirtual(vcls, "getVersion", mt);
-        assertEquals((int)mh.invoke(vcls.newInstance()),
-                style.equals("unversioned") ? 8 : Runtime.version().major());
-
+        assertEquals(style.equals("unversioned") ? 8 : Runtime.version().major(), (int)mh.invoke(vcls.newInstance()));
         // now get a resource and verify that we don't have a fragment attached
         Enumeration<URL> vclsUrlEnum = cldr.getResources("version/Version.class");
         assertTrue(vclsUrlEnum.hasMoreElements());

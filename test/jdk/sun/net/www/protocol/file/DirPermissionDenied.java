@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build DirPermissionDenied jdk.test.lib.process.*
  *        jdk.test.lib.util.FileUtils
- * @run junit DirPermissionDenied
+ * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
