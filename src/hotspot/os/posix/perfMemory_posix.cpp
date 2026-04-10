@@ -701,6 +701,39 @@ static void remove_file(const char* path) {
   }
 }
 
+// Files newer than this threshold are considered to belong to a JVM that may
+// still be starting up and are therefore not candidates for stale-file
+// cleanup. This avoids racing a concurrent JVM startup while scanning the
+// hsperfdata directory.
+static const time_t cleanup_grace_period_seconds = 5;
+
+static bool is_cleanup_candidate(const char* filename, const char* dirname) {
+  struct stat statbuf;
+  int result;
+
+  RESTARTABLE(::lstat(filename, &statbuf), result);
+  if (result == OS_ERR) {
+    log_debug(perf, memops)("lstat failed for %s/%s: %s", dirname, filename, os::strerror(errno));
+    return false;
+  }
+
+  if (!S_ISREG(statbuf.st_mode)) {
+    return false;
+  }
+
+  const time_t now = time(nullptr);
+  if (now == (time_t)-1) {
+    return false;
+  }
+
+  if (statbuf.st_mtime >= now - cleanup_grace_period_seconds) {
+    log_debug(perf, memops)("Skip cleanup of fresh file %s/%s", dirname, filename);
+    return false;
+  }
+
+  return true;
+}
+
 // cleanup stale shared memory files
 //
 // This method attempts to remove all stale shared memory files in
@@ -740,6 +773,11 @@ static void cleanup_sharedmem_files(const char* dirname) {
         unlink(filename);
       }
 
+      errno = 0;
+      continue;
+    }
+
+    if (!is_cleanup_candidate(filename, dirname)) {
       errno = 0;
       continue;
     }
@@ -872,16 +910,56 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     return -1;
   }
 
-  // Open the filename in the current directory.
-  // Cannot use O_TRUNC here; truncation of an existing file has to happen
-  // after the is_file_secure() check below.
-  int fd;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+  int fd = OS_ERR;
+  static const int create_sharedmem_file_retry_count = LINUX_ONLY(3) NOT_LINUX(1);
+  for (int attempt = 0; attempt < create_sharedmem_file_retry_count; attempt++) {
+    // Open the filename in the current directory.
+    // Use O_EXCL so that startup never reuses an existing pid file unless it
+    // has first been proven stale and removed in `cleanup_sharedmem_files`.
+    RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+    if (fd == OS_ERR) {
+      break;
+    }
+
+#if defined(LINUX)
+    // On Linux, different containerized processes that share the same /tmp
+    // directory (e.g., with "docker --volume ...") may have the same pid and
+    // try to use the same file. To avoid conflicts among such processes, we
+    // allow only one of them (the winner of the flock() call) to write to the
+    // file. If we lose the race, assume we may have collided with a concurrent
+    // scavenger briefly holding the lock on a fresh file and retry a few times
+    // before giving up.
+    int n;
+    RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
+    if (n == 0) {
+      break;
+    }
+
+    const int flock_errno = errno;
+    ::close(fd);
+    fd = OS_ERR;
+
+    if (attempt + 1 == create_sharedmem_file_retry_count || flock_errno != EWOULDBLOCK) {
+      log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
+                                (flock_errno == EWOULDBLOCK) ?
+                                "it is locked by another process" :
+                                "flock() failed", flock_errno);
+      errno = flock_errno;
+      break;
+    }
+
+    // Short sleep to allow the lock to free up.
+    os::naked_short_sleep(1);
+#endif
+  }
+
   if (fd == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (errno == ELOOP) {
         log.print_cr("file %s is a symlink and is not secure", filename);
+      } else if (errno == EEXIST) {
+        log.print_cr("could not create file %s: existing file is not provably stale", filename);
       } else {
         log.print_cr("could not create file %s: %s", filename, os::strerror(errno));
       }
@@ -901,27 +979,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   }
 
 #if defined(LINUX)
-  // On Linux, different containerized processes that share the same /tmp
-  // directory (e.g., with "docker --volume ...") may have the same pid and
-  // try to use the same file. To avoid conflicts among such
-  // processes, we allow only one of them (the winner of the flock() call)
-  // to write to the file. All the other processes will give up and will
-  // have perfdata disabled.
-  //
-  // Note that the flock will be automatically given up when the winner
-  // process exits.
-  //
-  // The locking protocol works only with other JVMs that have the JDK-8286030
-  // fix. If you are sharing the /tmp difrectory among different containers,
-  // do not use older JVMs that don't have this fix, or the behavior is undefined.
-  int n;
-  RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
-  if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
-                              (errno == EWOULDBLOCK) ?
-                              "it is locked by another process" :
-                              "flock() failed", errno);
-    ::close(fd);
+  if (fd == OS_ERR) {
     return -1;
   }
 #endif
