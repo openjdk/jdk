@@ -25,7 +25,7 @@
 /**
  * @test id=g1
  * @requires vm.gc.G1
- * @summary Sanity test of AOTCodeCache 
+ * @summary Sanity test of AOTCodeCache
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
@@ -33,7 +33,7 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeTest JavacBenchApp 
+ * @build AOTCodeTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 JavacBenchApp
  *                 JavacBenchApp$ClassFile
@@ -52,7 +52,7 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeTest JavacBenchApp 
+ * @build AOTCodeTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 JavacBenchApp
  *                 JavacBenchApp$ClassFile
@@ -71,13 +71,13 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeTest JavacBenchApp 
+ * @build AOTCodeTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 JavacBenchApp
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver/timeout=1500 AOTCodeTest Serial 
+ * @run driver/timeout=1500 AOTCodeTest Serial
  */
 /**
  * @test id=shenandoah
@@ -90,7 +90,7 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeTest JavacBenchApp 
+ * @build AOTCodeTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 JavacBenchApp
  *                 JavacBenchApp$ClassFile
@@ -109,7 +109,7 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeTest JavacBenchApp 
+ * @build AOTCodeTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 JavacBenchApp
  *                 JavacBenchApp$ClassFile
