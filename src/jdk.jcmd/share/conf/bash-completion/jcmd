@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 #
 # Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,11 +23,12 @@
 
 # Bash completion for jcmd.
 #
-# Source this file from an interactive shell after bash-completion is loaded:
-#   source /path/to/jcmd-completion.bash
+# Source this file from an interactive shell:
+#   source /path/to/bash-completion/jcmd
 #
 
-if ! type complete >/dev/null 2>&1; then
+# 'complete' is a Bash builtin from Programmable Completion framework
+if ! builtin complete &>/dev/null; then
   return 0 2>/dev/null || exit 0
 fi
 
@@ -135,7 +134,7 @@ function _jcmd_completion() {
 
   local -r jvm_identifier=${COMP_WORDS[1]}
 
-  # Second argument: diagnostic command.
+  # 2nd argument: diagnostic command.
   if [[ ${COMP_CWORD} -eq 2 ]]; then
     _jcmd__complete_command "${jvm_identifier}" "${cur}"
     return 0
