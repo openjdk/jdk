@@ -2092,7 +2092,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ spill_copy_register_to_register(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                                            as_FloatRegister(Matcher::_regEncode[src_lo]),
                                            use_movprfx_for_spill_copy(this, dst_lo, ra_),
-                                           false, ireg == Op_VecD ? __ T8B : __ T16B);
+                                           /* use_sve */ false,
+                                           ireg == Op_VecD ? __ T8B : __ T16B);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
         __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
                  ireg == Op_VecD ? __ D : __ Q,

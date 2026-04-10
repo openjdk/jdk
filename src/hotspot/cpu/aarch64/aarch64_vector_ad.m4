@@ -745,15 +745,12 @@ dnl
 dnl BITWISE_OP_IMM($1,        $2,   $3,      $4,   $5,   $6        )
 dnl BITWISE_OP_IMM(rule_name, type, op_name, insn, size, basic_type)
 define(`BITWISE_OP_IMM', `
-instruct $1(vReg dst, vReg src, imm$2Log con) %{
+instruct $1(vReg dst_src, imm$2Log con) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == $6);
-  match(Set dst ($3 src (Replicate con)));
-  format %{ "$1 $dst, $src, $con" %}
+  match(Set dst_src ($3 dst_src (Replicate con)));
+  format %{ "$1 $dst_src, $dst_src, $con" %}
   ins_encode %{
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-    }
-    __ $4($dst$$FloatRegister, __ $5, (uint64_t)($con$$constant));
+    __ $4($dst_src$$FloatRegister, __ $5, (uint64_t)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -864,8 +861,10 @@ dnl
 dnl VECTOR_NOT_PREDICATE($1  )
 dnl VECTOR_NOT_PREDICATE(type)
 define(`VECTOR_NOT_PREDICATE', `
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst (XorV (Binary src (Replicate m1)) pg));
@@ -874,8 +873,10 @@ instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
     if ($dst$$FloatRegister != $src$$FloatRegister) {
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
-    // Fusion limitation: avoid using the movprfx destination as
-    // the source of the next instruction.
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
     __ sve_not($dst$$FloatRegister, get_reg_variant(this),
                $pg$$PRegister, $src$$FloatRegister);
   %}
@@ -1014,8 +1015,10 @@ dnl
 dnl UNARY_OP_PREDICATE($1,        $2,      $3  )
 dnl UNARY_OP_PREDICATE(rule_name, op_name, insn)
 define(`UNARY_OP_PREDICATE', `
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst ($2 src pg));
@@ -1025,8 +1028,10 @@ instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
     if ($dst$$FloatRegister != $src$$FloatRegister) {
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
-    // Fusion limitation: avoid using the movprfx destination as
-    // the source of the next instruction.
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
     __ $3($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pg$$PRegister, $src$$FloatRegister);
   %}
@@ -1036,8 +1041,10 @@ dnl
 dnl UNARY_OP_PREDICATE_WITH_SIZE($1,        $2,      $3,   $4  )
 dnl UNARY_OP_PREDICATE_WITH_SIZE(rule_name, op_name, insn, size)
 define(`UNARY_OP_PREDICATE_WITH_SIZE', `
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst ($2 src pg));
@@ -1046,8 +1053,10 @@ instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
     if ($dst$$FloatRegister != $src$$FloatRegister) {
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
-    // Fusion limitation: avoid using the movprfx destination as
-    // the source of the next instruction.
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
     __ $3($dst$$FloatRegister, __ $4, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3549,8 +3558,10 @@ instruct extract$1(vReg$1 dst, vReg src, immI idx) %{
     } else {
       assert(UseSVE > 0, "must be sve");
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
-      // Fusion limitation: avoid using the movprfx destination as
-      // the source of the next instruction.
+      // Although dst and src hold the same value after movprfx, we must use src
+      // (not dst) as the second source of ext. The movprfx destination register
+      // must not appear in any source operand of the following instruction
+      // except as the destructive operand.
       __ sve_ext($dst$$FloatRegister, $src$$FloatRegister, index << $5);
     }
   %}
@@ -4611,8 +4622,10 @@ instruct vpopcountL(vReg dst, vReg src) %{
 // vector popcount - predicated
 UNARY_OP_PREDICATE(vpopcountI, PopCountVI, sve_cnt)
 
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct vpopcountL_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst (PopCountVL src pg));
@@ -4621,8 +4634,10 @@ instruct vpopcountL_masked(vReg dst, vReg src, pRegGov pg) %{
     if ($dst$$FloatRegister != $src$$FloatRegister) {
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
-    // Fusion limitation: avoid using the movprfx destination as
-    // the source of the next instruction.
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
     __ sve_cnt($dst$$FloatRegister, __ D,
                $pg$$PRegister, $src$$FloatRegister);
   %}
@@ -5036,8 +5051,10 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct vcountTrailingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst (CountTrailingZerosV src pg));
@@ -5048,8 +5065,10 @@ instruct vcountTrailingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
     if ($dst$$FloatRegister != $src$$FloatRegister) {
       __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     }
-    // Fusion limitation: avoid using the movprfx destination as
-    // the source of the next instruction.
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
     __ sve_rbit($dst$$FloatRegister, size,
                 $pg$$PRegister, $src$$FloatRegister);
     __ sve_clz($dst$$FloatRegister, size,
@@ -5127,8 +5146,10 @@ instruct vreverseBytes(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The API requires that the value of the inactive lane in dst be
-// consistent with that in src.
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
 instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst (ReverseBytesV src pg));
@@ -5143,8 +5164,10 @@ instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
       if ($dst$$FloatRegister != $src$$FloatRegister) {
         __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
       }
-      // Fusion limitation: avoid using the movprfx destination as
-      // the source of the next instruction.
+      // Although dst and src hold the same value after movprfx, we must use src
+      // (not dst) as the source of the following instruction. The movprfx
+      // destination register must not appear in any source operand of the
+      // following instruction except as the destructive operand.
       __ sve_revb($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                   $pg$$PRegister, $src$$FloatRegister);
     }
