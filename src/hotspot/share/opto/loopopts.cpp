@@ -1483,16 +1483,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       tty->print_cr("Split-If: %d %s", iff->_idx, iff->Name());
     }
 #endif
-    IfProjNode* true_proj = iff->as_If()->true_proj();
-    IfProjNode* false_proj = iff->as_If()->false_proj();
-    CallStaticJavaNode* unc = true_proj->is_uncommon_trap_proj();
-    if (unc != nullptr) {
-      unc->clear_safe_for_fold_compare();
-    }
-    unc = false_proj->is_uncommon_trap_proj();
-    if (unc != nullptr) {
-      unc->clear_safe_for_fold_compare();
-    }
     do_split_if(iff);
     C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;

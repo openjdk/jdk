@@ -615,6 +615,16 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
+  IfProjNode* true_proj = iff->as_If()->true_proj();
+  IfProjNode* false_proj = iff->as_If()->false_proj();
+  CallStaticJavaNode* unc = true_proj->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
+  unc = false_proj->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
 
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
