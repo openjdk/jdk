@@ -148,7 +148,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     return;
   }
 
-  breakpoint();
+  // TODO: Implement a better solution
+  assert_different_registers(Z_R4, src.base());
 
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
@@ -167,7 +168,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ z_agsi(0, scratch, 1);
 
   // Load adress
-  __ z_lgr(scratch, src.base());
+  __ z_lay(scratch, src);
 
   // Load oop at address
   __ z_lg(dst, 0, scratch);
@@ -251,6 +252,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // we can only have good value for fast path, for others it can be good as well as null
 
     if (is_atomic) {
+      __ stop("in_nmethod atomic");
       // Atomic operations must ensure that the contents of memory are store-good before
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
@@ -260,6 +262,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // TODO: Check if this will work or else implement z_chy
       __ z_ch(rnew_zpointer, ref_addr);
     } else {
+      __ stop("in_nmethod non-atomic");
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
@@ -281,12 +284,15 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
   } else {
     //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
+    // TOOD: try using z_lgh here.
     __ z_lg(rnew_zpointer, ref_addr);
-    // TODO: In this using z_ch makes more sense but that is not working I don't know why? Also z_brne is emitted as jlh.
+    __ z_nihf(rnew_zpointer, 0x00000000);
+    __ z_nilh(rnew_zpointer, 0x0000);
     __ z_cg(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
     __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
+      __ stop(" rnew_zaddress is noreg");
       __ z_xgr(rnew_zpointer, rnew_zpointer);
     } else {
       __ z_lgr(rnew_zpointer, rnew_zaddress);
@@ -354,6 +360,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
   // The reason to end up in the medium path is that the pre-value was not 'good'.
   if (is_native) {
+    __ stop("is_native store_barrier_medium");
     __ branch_optimized(Assembler::bcondAlways, slow_path);
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
@@ -361,6 +368,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
+    __ stop("is_atomic store_barrier_medium");
     __ z_la(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotEqual, slow_path);
@@ -419,6 +427,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     assert_different_registers(src, temp1, dst.base(), dst.index());
 
     if (dest_uninitialized) {
+      __ stop("dest_uinitialized store_at");
       if (src == noreg) {
         __ z_xgr(temp1, temp1);
       } else {
