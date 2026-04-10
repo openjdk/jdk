@@ -1862,11 +1862,8 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // addresses, respectively, keyed by the relevant address
 
 void AOTCodeAddressTable::hash_address(address addr, int idx) {
-  // only do this if we are caching stubs and we have a non-null
-  // address to record
-  if (!AOTStubCaching) {
-    return;
-  }
+  // only do this if we have a non-null address to record and the
+  // cache is open for dumping
   if (addr == nullptr) {
     return;
   }
@@ -2515,10 +2512,11 @@ AOTStubData::AOTStubData(BlobId blob_id) :
   // cannot be accessed before initialising the universe
   if (blob_id == BlobId::stubgen_preuniverse_id) {
     // invalidate any attempt to use this
-    _flags |= INVALID;
+    _flags = INVALID;
     return;
   }
   if (AOTCodeCache::is_on()) {
+    _flags = OPEN;
     // allow update of stub entry addresses
     if (AOTCodeCache::is_using_stub()) {
       // allow stub loading
