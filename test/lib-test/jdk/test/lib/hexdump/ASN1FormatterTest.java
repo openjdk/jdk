@@ -32,6 +32,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.HexFormat;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -110,10 +112,30 @@ class ASN1FormatterTest {
 
         assertEquals(1, result.lines().filter(s -> s.contains("OCTET STRING [INDEFINITE]")).count(),
                 "Indefinite length");
-        assertEquals(2, result.lines().filter(s -> s.contains(";   OCTET STRING [2]")).count(),
+        assertEquals(2, result.lines().filter(s -> s.contains("OCTET STRING [2]")).count(),
                 "Octet Sequences");
-        assertEquals(1, result.lines().filter(s -> s.contains(";   END-OF-CONTENT")).count(),
+        assertEquals(1, result.lines().filter(s -> s.contains("END-OF-CONTENT")).count(),
                 "end of content");
+    }
+
+    @Test
+    void testPositions() {
+        byte[] bytes = HexFormat.of().parseHex("3009040730050201050500");
+        HexPrinter p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(), "; ", 100);
+        String result = p.toString(bytes);
+        System.out.println(result);
+
+        assertTrue(result.contains("[0]: OCTET STRING [7] (try --drill=0)"));
+
+        p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(Set.of("0")), "; ", 100);
+        result = p.toString(bytes);
+        System.out.println(result);
+
+        assertTrue(!result.contains("try --drill"));
+        assertTrue(result.contains("[0]: OCTET STRING [7]"));
+        assertTrue(result.contains("[0c0]: BYTE 5"));
     }
 
     @Test
