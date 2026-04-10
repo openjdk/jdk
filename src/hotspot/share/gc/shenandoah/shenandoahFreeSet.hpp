@@ -685,6 +685,7 @@ public:
     // wrap-around arithmetic of size_t type to produce meaningful result when total_bytes_allocated overflows
     // its 64-bit counter. The expression below is equivalent to code:
     // if (total_bytes < _mutator_bytes_at_last_sample) {
+    //   // overflow
     //   return total_bytes + (SIZE_T_MAX - _mutator_bytes_at_last_sample) + 1;
     // } else {
     //   return total_bytes - _mutator_bytes_at_last_sample;
