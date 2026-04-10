@@ -37,19 +37,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-// This macro just check for the existence of a member with the name "metaspace_pointers_do". If the
-// parameter list is not (MetaspaceClosure* it), you will get a compilation error.
-#define HAS_METASPACE_POINTERS_DO(T) HasMetaspacePointersDo<T>::value
-
-template<typename T>
-class HasMetaspacePointersDo {
-  template<typename U> static void* test(decltype(&U::metaspace_pointers_do));
-  template<typename> static int test(...);
-  using test_type = decltype(test<T>(nullptr));
-public:
-  static constexpr bool value = std::is_pointer_v<test_type>;
-};
-
 // class MetaspaceClosure --
 //
 // This class is used for iterating the class metadata objects. It
@@ -98,8 +85,7 @@ public:
   // only in the Metadata class.
   //
   // To work around the lack of a vtable, we use the Ref class with templates
-  // (see MSORef, OtherArrayRef, MSOArrayRef, and MSOPointerArrayRef)
-  // so that we can statically discover the type of a object. The use of Ref
+  // to that we can statically discover the type of a object. The use of Ref
   // depends on the fact that:
   //
   // [1] We don't use polymorphic pointers to MetaspaceObj's that are not subclasses
@@ -194,15 +180,6 @@ private:
     return obj->size_in_heapwords();
   }
 
-  static MetaspaceClosureType as_type(MetaspaceClosureType t) {
-    return t;
-  }
-
-  static MetaspaceClosureType as_type(MetaspaceObj::Type msotype) {
-    precond(msotype < MetaspaceObj::_number_of_types);
-    return (MetaspaceClosureType)msotype;
-  }
-
   // MSORef -- iterate an instance of T, where T::metaspace_pointers_do() exists.
   template <class T> class MSORef : public Ref {
     T** _mpp;
@@ -224,82 +201,6 @@ private:
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       dereference()->metaspace_pointers_do(it);
-    }
-  };
-
-  //---------------------
-  // Support for Array<T>
-  //---------------------
-
-  // Abstract base class for MSOArrayRef, MSOPointerArrayRef and OtherArrayRef.
-  // These are used for iterating Array<T>.
-  template <class T> class ArrayRef : public Ref {
-    Array<T>** _mpp;
-  protected:
-    Array<T>* dereference() const {
-      return strip_tags(*_mpp);
-    }
-    virtual void** mpp() const {
-      return (void**)_mpp;
-    }
-
-    ArrayRef(Array<T>** mpp, Writability w) : Ref(w), _mpp(mpp) {}
-
-    // all Arrays are read-only by default
-    virtual bool is_read_only_by_default() const { return true; }
-    virtual bool not_null()                const { return dereference() != nullptr;  }
-    virtual int size()                     const { return dereference()->size(); }
-    virtual MetaspaceClosureType type()    const { return as_type(MetaspaceObj::array_type(sizeof(T))); }
-  };
-
-  // OtherArrayRef -- iterate an instance of Array<T>, where T does NOT have metaspace_pointer_do().
-  // T can be a primitive type, such as int, or a structure. However, we do not scan
-  // the fields inside T, so you should not embed any pointers inside T.
-  template <class T> class OtherArrayRef : public ArrayRef<T> {
-  public:
-    OtherArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      Array<T>* array = ArrayRef<T>::dereference();
-      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
-    }
-  };
-
-  // MSOArrayRef -- iterate an instance of Array<T>, where T has metaspace_pointer_do().
-  // We recursively call T::metaspace_pointers_do() for each element in this array.
-  template <class T> class MSOArrayRef : public ArrayRef<T> {
-  public:
-    MSOArrayRef(Array<T>** mpp, Writability w) : ArrayRef<T>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      metaspace_pointers_do_at_impl(it, ArrayRef<T>::dereference());
-    }
-  private:
-    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
-      log_trace(aot)("Iter(MSOArray): %p [%d]", array, array->length());
-      for (int i = 0; i < array->length(); i++) {
-        T* elm = array->adr_at(i);
-        elm->metaspace_pointers_do(it);
-      }
-    }
-  };
-
-  // MSOPointerArrayRef -- iterate an instance of Array<T*>, where T has metaspace_pointer_do().
-  // We recursively call MetaspaceClosure::push() for each pointer in this array.
-  template <class T> class MSOPointerArrayRef : public ArrayRef<T*> {
-  public:
-    MSOPointerArrayRef(Array<T*>** mpp, Writability w) : ArrayRef<T*>(mpp, w) {}
-
-    virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
-      metaspace_pointers_do_at_impl(it, ArrayRef<T*>::dereference());
-    }
-  private:
-    void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
-      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, array->length());
-      for (int i = 0; i < array->length(); i++) {
-        T** mpp = array->adr_at(i);
-        it->push(mpp);
-      }
     }
   };
 
@@ -462,11 +363,6 @@ public:
   //
   // MetaspaceClosure*      it = ...;
   // Klass*                 o  = ...;  it->push(&o);     => MSORef
-  // Array<int>*            a1 = ...;  it->push(&a1);    => OtherArrayRef
-  // Array<Annotation>*     a2 = ...;  it->push(&a2);    => MSOArrayRef
-  // Array<Klass*>*         a3 = ...;  it->push(&a3);    => MSOPointerArrayRef
-  // Array<Array<Klass*>*>* a4 = ...;  it->push(&a4);    => MSOPointerArrayRef
-  // Array<Annotation*>*    a5 = ...;  it->push(&a5);    => MSOPointerArrayRef
   //
   // GrowableArrays have a separate "C array" buffer, so they are scanned in two steps:
   //
@@ -485,23 +381,6 @@ public:
   void push(T** mpp, Writability w = _default) {
     static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push pointers of arbitrary types");
     push_with_ref<MSORef<T>>(mpp, w);
-  }
-
-  // --- Array<T>
-  template <typename T, ENABLE_IF(!HAS_METASPACE_POINTERS_DO(T))>
-  void push(Array<T>** mpp, Writability w = _default) {
-    push_with_ref<OtherArrayRef<T>>(mpp, w);
-  }
-
-  template <typename T, ENABLE_IF(HAS_METASPACE_POINTERS_DO(T))>
-  void push(Array<T>** mpp, Writability w = _default) {
-    push_with_ref<MSOArrayRef<T>>(mpp, w);
-  }
-
-  template <typename T>
-  void push(Array<T*>** mpp, Writability w = _default) {
-    static_assert(HAS_METASPACE_POINTERS_DO(T), "Do not push Arrays of arbitrary pointer types");
-    push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
 
   template <typename T>

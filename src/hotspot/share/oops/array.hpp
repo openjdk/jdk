@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_ARRAY_HPP
 #define SHARE_OOPS_ARRAY_HPP
 
+#include "memory/metaspaceClosureType.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
@@ -159,8 +160,36 @@ protected:
     st->print("Array<T>(" PTR_FORMAT ")", p2i(this));
   }
 
-  // This function does nothing. The iteration of the elements are done inside metaspaceClosure.hpp
-  void metaspace_pointers_do(MetaspaceClosure* it) {}
+  MetaspaceClosureType type() const { return as_type(MetaspaceObj::array_type(sizeof(T))); }
+
+  static bool is_read_only_by_default() {
+    return is_read_only_by_default_impl<T>();
+  }
+
+  template <typename U, ENABLE_IF(!std::is_pointer<U>::value && !HAS_METASPACE_POINTERS_DO(U))>
+  static bool is_read_only_by_default_impl() {
+    return true;
+  }
+
+  template <typename U, ENABLE_IF(std::is_pointer<U>::value || HAS_METASPACE_POINTERS_DO(U))>
+  static bool is_read_only_by_default_impl() {
+    return false;
+  }
+
+  void metaspace_pointers_do(MetaspaceClosure* it) {
+    metaspace_pointers_do_impl<T>(it);
+  }
+
+  template <typename U, ENABLE_IF(!std::is_pointer<U>::value && !HAS_METASPACE_POINTERS_DO(U))>
+  void metaspace_pointers_do_impl(MetaspaceClosure* it) {
+    // No pointers to follow
+  }
+
+  template <typename U, ENABLE_IF(!std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(U))>
+  void metaspace_pointers_do_impl(MetaspaceClosure* it);
+
+  template <typename U, ENABLE_IF(std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(typename std::remove_pointer<U>::type))>
+  void metaspace_pointers_do_impl(MetaspaceClosure* it);
 
 #ifndef PRODUCT
   void print(outputStream* st) {

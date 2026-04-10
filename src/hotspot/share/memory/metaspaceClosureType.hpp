@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_METASPACECLOSURETYPE_HPP
 
 #include "memory/allocation.hpp"
+#include "metaprogramming/enableIf.hpp"
 
 // MetaspaceClosure is able to iterate on MetaspaceObjs, plus the following classes
 #define METASPACE_CLOSURE_TYPES_DO(f) \
@@ -42,5 +43,26 @@ enum class MetaspaceClosureType : int {
   _number_of_types
 };
 
+inline MetaspaceClosureType as_type(MetaspaceClosureType t) {
+  return t;
+}
+
+inline MetaspaceClosureType as_type(MetaspaceObj::Type msotype) {
+  precond(msotype < MetaspaceObj::_number_of_types);
+  return (MetaspaceClosureType)msotype;
+}
+
+// This macro checks for the existence of a member with the name metaspace_pointers_do.
+// and a parameter list of (MetaspaceClosure* it).
+#define HAS_METASPACE_POINTERS_DO(T) HasMetaspacePointersDo<T>::value
+
+template<typename T>
+class HasMetaspacePointersDo {
+  template<typename U> static void* test(decltype(&U::metaspace_pointers_do));
+  template<typename> static int test(...);
+  using test_type = decltype(test<T>(nullptr));
+public:
+  static constexpr bool value = std::is_pointer_v<test_type>;
+};
 
 #endif // SHARE_MEMORY_METASPACECLOSURETYPE_HPP

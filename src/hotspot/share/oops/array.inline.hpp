@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosure.hpp"
 
 template <typename T>
 inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
@@ -51,5 +52,28 @@ inline void* Array<T>::operator new(size_t size, int length, MemTag flags) throw
   memset(p, 0, size);
   return p;
 }
+
+// Each element is an object that's iterable by MetaspaceClosure
+template <typename T>
+template <typename U, ENABLE_IF_SDEFN(!std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(U))>
+void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
+  log_trace(aot)("Iter(MSOArray): %p [%d]", this, length());
+  for (int i = 0; i < length(); i++) {
+    T* elm = adr_at(i);
+    elm->metaspace_pointers_do(it);
+  }
+}
+
+// Each element is a pointer to an object that's iterable by MetaspaceClosure
+template <typename T>
+template <typename U, ENABLE_IF_SDEFN(std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(typename std::remove_pointer<U>::type))>
+void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
+  log_trace(aot)("Iter(MSOArray): %p [%d]", this, length());
+  for (int i = 0; i < length(); i++) {
+    T* mpp = adr_at(i);
+    it->push(mpp);
+  }
+}
+
 
 #endif // SHARE_OOPS_ARRAY_INLINE_HPP
