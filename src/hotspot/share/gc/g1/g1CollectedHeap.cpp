@@ -896,7 +896,7 @@ void G1CollectedHeap::abort_refinement() {
 
     // Record any available refinement statistics.
     policy()->record_refinement_stats(sweep_state.stats());
-    sweep_state.complete_work(false /* concurrent */, false /* print_log */);
+    sweep_state.reset_to_idle();
   }
   sweep_state.reset_stats();
 }
