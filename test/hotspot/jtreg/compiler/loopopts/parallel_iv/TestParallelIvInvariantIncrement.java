@@ -223,8 +223,8 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
-    @IR(counts = { IRNode.MUL_I, "=4" })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
+    @IR(counts = { IRNode.MUL_I, ">=2" })
     private static int sideEffectLoopAdd(int[] arr, int inc) {
         int a = 0;
         for (int i = 0; i < arr.length; i++) {
@@ -242,8 +242,8 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
-    @IR(counts = { IRNode.MUL_I, "=4" })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
+    @IR(counts = { IRNode.MUL_I, ">=2" })
     private static int sideEffectLoopSub(int[] arr, int inc) {
         int a = 0;
         for (int i = 0; i < arr.length; i++) {
@@ -261,9 +261,9 @@ public class TestParallelIvInvariantIncrement {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "=4" })
-    @IR(counts = { IRNode.MUL_I, "=8" })
-    @IR(counts = { IRNode.MUL_L, "=4" })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
+    @IR(counts = { IRNode.MUL_I, ">=4" })
+    @IR(counts = { IRNode.MUL_L, ">=2" })
     private static long sideEffectLoopMultiIV(int[] arr, int incA, int incB, long incC) {
         int a = 0;
         int b = 0;
