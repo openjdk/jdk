@@ -166,30 +166,42 @@ protected:
     return is_read_only_by_default_impl<T>();
   }
 
+private:
+  // Elements are neither pointers nor metadata objects => no need to relocate, so put the array
+  // in read-only region by default.
   template <typename U, ENABLE_IF(!std::is_pointer<U>::value && !HAS_METASPACE_POINTERS_DO(U))>
   static bool is_read_only_by_default_impl() {
     return true;
   }
 
+  // The opposite of the above => the array may contain relocatable pointers, so put it
+  // in read-write region by default.
   template <typename U, ENABLE_IF(std::is_pointer<U>::value || HAS_METASPACE_POINTERS_DO(U))>
   static bool is_read_only_by_default_impl() {
     return false;
   }
 
+public:
   void metaspace_pointers_do(MetaspaceClosure* it) {
     metaspace_pointers_do_impl<T>(it);
   }
 
+private:
+  // E.g., Array<int>
   template <typename U, ENABLE_IF(!std::is_pointer<U>::value && !HAS_METASPACE_POINTERS_DO(U))>
   void metaspace_pointers_do_impl(MetaspaceClosure* it) {
     // No pointers to follow
   }
 
+  // E.g., Array<Annotation>
   template <typename U, ENABLE_IF(!std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(U))>
   void metaspace_pointers_do_impl(MetaspaceClosure* it);
 
+  // E.g., Array<Klass*>
   template <typename U, ENABLE_IF(std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(typename std::remove_pointer<U>::type))>
   void metaspace_pointers_do_impl(MetaspaceClosure* it);
+
+public:
 
 #ifndef PRODUCT
   void print(outputStream* st) {

@@ -53,7 +53,7 @@ inline void* Array<T>::operator new(size_t size, int length, MemTag flags) throw
   return p;
 }
 
-// Each element is an object that's iterable by MetaspaceClosure
+// E.g., Array<Annotation>
 template <typename T>
 template <typename U, ENABLE_IF_SDEFN(!std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(U))>
 void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
@@ -64,11 +64,11 @@ void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
   }
 }
 
-// Each element is a pointer to an object that's iterable by MetaspaceClosure
+// E.g., Array<Klass*>
 template <typename T>
 template <typename U, ENABLE_IF_SDEFN(std::is_pointer<U>::value && HAS_METASPACE_POINTERS_DO(typename std::remove_pointer<U>::type))>
 void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
-  log_trace(aot)("Iter(MSOArray): %p [%d]", this, length());
+  log_trace(aot)("Iter(MSOPtrArray): %p [%d]", this, length());
   for (int i = 0; i < length(); i++) {
     T* mpp = adr_at(i);
     it->push(mpp);
