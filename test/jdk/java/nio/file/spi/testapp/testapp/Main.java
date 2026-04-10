@@ -41,7 +41,7 @@ public class Main {
             throw new RuntimeException("FileSystemProvider not overridden");
 
         // exercise the file system
-        Path dir = Files.createTempDirectory("tmp");
+        Path dir = Files.createTempDirectory(Path.of(""), "tmp");
         if (dir.getFileSystem() != fs)
             throw new RuntimeException("'dir' not in default file system");
         System.out.println("created: " + dir);
