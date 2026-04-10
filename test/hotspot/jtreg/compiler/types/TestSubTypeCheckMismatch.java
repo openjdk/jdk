@@ -19,19 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
-#define SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
+/**
+ * @test
+ * @bug 8374496
+ * @summary "C2: assert(val->find_edge(con) > 0) failed"
+ *
+ * @run main/othervm -Xbatch ${test.main.class}
+ */
+package compiler.types;
 
-#include "cds/aotGrowableArray.hpp"
+public class TestSubTypeCheckMismatch {
+    static class A {}
 
-#include "memory/metaspaceClosure.hpp"
+    static Integer test(Object o, int a, int b) {
+        int i = -1;
+        if (o instanceof A) { // results in SubTypeCheck node and diamond-shape if
+            i = Math.min(a, b);
+        }
+        return Integer.valueOf(i); // late inlined
+    }
 
-template <typename E>
-void AOTGrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array(AOTGrowableArray<E>::data_addr(), AOTGrowableArray<E>::capacity());
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(new A(),      0, 0);
+            test(new Object(), 0, 0);
+        }
+    }
 }
-
-#endif // SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
