@@ -681,8 +681,8 @@ public:
 
   inline size_t get_bytes_allocated_since_previous_sample() {
     const size_t total_bytes_allocated = get_total_bytes_allocated();
-    // Total_bytes_allocated could overflow (wraps around) size_t in rare condition, we are relying on
-    // wrap-around arithmetic of size_t type to produce meaningful results when total_bytes_allocated overflows
+    // total_bytes_allocated could overflow (wraps around) size_t in rare condition, we are relying on
+    // wrap-around arithmetic of size_t type to produce meaningful result when total_bytes_allocated overflows
     // its 64-bit counter. The expression below is equivalent to code:
     // if (total_bytes < _mutator_bytes_at_last_sample) {
     //   return total_bytes + (SIZE_T_MAX - _mutator_bytes_at_last_sample) + 1;
