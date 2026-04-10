@@ -26,54 +26,15 @@ package compiler.vectorapi;
 import jdk.incubator.vector.*;
 
 /*
- * @test id=ROL
+ * @test
  * @bug 8381579
- * @summary Verify ROL on floating-point vectors throws UnsupportedOperationException.
+ * @summary Verify shift operations on floating-point vectors throw UnsupportedOperationException.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      compiler.vectorapi.TestShiftOpOnFloatingVector ROL
+ *      compiler.vectorapi.TestShiftOpOnFloatingVector
  */
 
-/*
- * @test id=ROR
- * @bug 8381579
- * @summary Verify ROR on floating-point vectors throws UnsupportedOperationException.
- * @modules jdk.incubator.vector
- * @library /test/lib /
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      compiler.vectorapi.TestShiftOpOnFloatingVector ROR
- */
-
-/*
- * @test id=LSHL
- * @bug 8381579
- * @summary Verify LSHL on floating-point vectors throws UnsupportedOperationException.
- * @modules jdk.incubator.vector
- * @library /test/lib /
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      compiler.vectorapi.TestShiftOpOnFloatingVector LSHL
- */
-
-/*
- * @test id=LSHR
- * @bug 8381579
- * @summary Verify LSHR on floating-point vectors throws UnsupportedOperationException.
- * @modules jdk.incubator.vector
- * @library /test/lib /
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      compiler.vectorapi.TestShiftOpOnFloatingVector LSHR
- */
-
-/*
- * @test id=ASHR
- * @bug 8381579
- * @summary Verify ASHR on floating-point vectors throws UnsupportedOperationException.
- * @modules jdk.incubator.vector
- * @library /test/lib /
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      compiler.vectorapi.TestShiftOpOnFloatingVector ASHR
- */
 public class TestShiftOpOnFloatingVector {
 
     static final int ITERATIONS = 4_000;
@@ -151,13 +112,10 @@ public class TestShiftOpOnFloatingVector {
     }
 
     public static void main(String[] args) {
-        switch (args[0]) {
-            case "ROL"  -> runTest(TestShiftOpOnFloatingVector::testROL,  "ROL");
-            case "ROR"  -> runTest(TestShiftOpOnFloatingVector::testROR,  "ROR");
-            case "LSHL" -> runTest(TestShiftOpOnFloatingVector::testLSHL, "LSHL");
-            case "LSHR" -> runTest(TestShiftOpOnFloatingVector::testLSHR, "LSHR");
-            case "ASHR" -> runTest(TestShiftOpOnFloatingVector::testASHR, "ASHR");
-            default -> throw new IllegalArgumentException("Unknown test: " + args[0]);
-        }
+        runTest(TestShiftOpOnFloatingVector::testROL,  "ROL");
+        runTest(TestShiftOpOnFloatingVector::testROR,  "ROR");
+        runTest(TestShiftOpOnFloatingVector::testLSHL, "LSHL");
+        runTest(TestShiftOpOnFloatingVector::testLSHR, "LSHR");
+        runTest(TestShiftOpOnFloatingVector::testASHR, "ASHR");
     }
 }
