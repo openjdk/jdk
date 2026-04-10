@@ -266,10 +266,16 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
 }
 
 address StubGenerator::generate_intpoly_mult_25519() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_intpoly_mult_25519_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   if (VM_Version::supports_avx512ifma() && VM_Version::supports_avx512vlbw()) {
@@ -284,5 +290,9 @@ address StubGenerator::generate_intpoly_mult_25519() {
 
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
