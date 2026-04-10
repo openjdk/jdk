@@ -2687,6 +2687,26 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // IGVN iteration. We have put the Phi nodes on the IGVN worklist, so
         // they are transformed later on in any case.
 
+        // TODO should we really keep this check? it makes less sense now with find_memory_phi
+        // or we could just add a 'verify' parameter to find_memory_phi, and only do it here if we are worried
+        // about useless computations
+#ifdef ASSERT
+        if (AssertOnAmbiguousPhi) {
+          ResourceMark rm;
+          ResourceBitMap seen(phase->C->num_alias_types());
+          for (DUIterator_Fast imax, i = region()->fast_outs(imax); i < imax; i++) {
+            Node* phi = region()->fast_out(i);
+            if (phi->is_memory_phi()) {
+              int alias = phase->C->get_alias_index(phi->adr_type());
+              // we want to make sure that we didn't create any ambiguous phi for a given slice
+              // it is expected to have a duplicate for 'this' as it is going to be deleted later
+              assert(!seen.at(alias) || phi->adr_type() == adr_type() || phi->_idx < nodes_size, "duplicate phi for slice %d", alias);
+              seen.set_bit(alias);
+            }
+          }
+        }
+#endif
+
         // Replace self with the result.
         return result;
       }
