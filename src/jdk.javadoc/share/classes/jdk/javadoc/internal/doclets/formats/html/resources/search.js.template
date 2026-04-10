@@ -436,14 +436,13 @@ function getEnclosingTypeDesc(item) {
 }
 
 window.addEventListener("load", () => {
-    const $ = (sel, root = document) => root.querySelector(sel);
-    var copy = $("#page-search-copy");
+    var copy = document.querySelector("#page-search-copy");
     if (!copy) {
         return;
     }
-    var expand = $("#page-search-expand");
-    var searchLink = $("span#page-search-link");
-    var redirect = $("input#search-redirect");
+    var expand = document.querySelector("#page-search-expand");
+    var searchLink = document.querySelector("span#page-search-link");
+    var redirect = document.querySelector("input#search-redirect");
     function setSearchUrlTemplate() {
         var href = document.location.href.split(/[#?]/)[0];
         href += "?q=" + "%s";
@@ -464,7 +463,7 @@ window.addEventListener("load", () => {
     copy.disabled = false;
     redirect.disabled = false;
     expand.addEventListener("click", function (e) {
-        var searchInfo = $("div.page-search-info");
+        var searchInfo = document.querySelector("div.page-search-info");
         if(this.parentElement.hasAttribute("open")) {
             searchInfo.setAttribute("style", " display:none;");
         } else {
@@ -473,23 +472,15 @@ window.addEventListener("load", () => {
     });
 });
 window.addEventListener("load", () => {
-    // Helper functions
-    const $ = (sel, root = document) => root.querySelector(sel);
-    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
     const empty = (el) => { if (el) el.replaceChildren(); };
-    const show = (el) => { if (el) el.style.display = "block"; };
-    const hide = (el) => { if (el) el.style.display = "none"; };
-    const isVisible = (el) => !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
     const setContent = (el, text) => { if (el) el.textContent = text; };
-    const setVisibility = (el, value) => { if (el) el.style.visibility = value; };
-    const triggerClick = (el) => el && el.dispatchEvent(new MouseEvent("click"));
 
-    const input = $("#search-input, #page-search-input");
-    const reset = $("#reset-search, #page-search-reset");
-    const modules = $("#search-modules");
-    const notify = $("#page-search-notify");
-    const resultSection = $("#search-result-section");
-    const resultContainer = $("#search-result-container");
+    const input = document.querySelector("#search-input, #page-search-input");
+    const reset = document.querySelector("#reset-search, #page-search-reset");
+    const modules = document.querySelector("#search-modules");
+    const notify = document.querySelector("#page-search-notify");
+    const resultSection = document.querySelector("#search-result-section");
+    const resultContainer = document.querySelector("#search-result-container");
 
     let overlay = null;
     let selectedLink = null;
@@ -605,7 +596,7 @@ window.addEventListener("load", () => {
         if (activeTab && result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
             resultContainer.appendChild(tableTabs);
 
-            const activeBtn = $(`button#result-tab-${activeTab}`);
+            const activeBtn = document.querySelector(`button#result-tab-${activeTab}`);
             if (activeBtn) {
                 activeBtn.classList.add("active-table-tab");
                 activeBtn.tabIndex = 0;
@@ -619,7 +610,7 @@ window.addEventListener("load", () => {
         function renderResult(category, button) {
             activeTab = category;
 
-            $$("div.result-table", resultContainer).forEach(el => el.remove());
+            Array.from(resultContainer.querySelectorAll("div.result-table")).forEach(el => el.remove());
 
             const newTable = renderItems(r[activeTab]);
             resultContainer.appendChild(newTable);
@@ -637,10 +628,10 @@ window.addEventListener("load", () => {
     }
 
     function selectTab(category) {
-        const btn = $(`button#result-tab-${category}`);
+        const btn = document.querySelector(`button#result-tab-${category}`);
         if (!btn) return;
         btn.focus();
-        triggerClick(btn);
+        btn.dispatchEvent(new MouseEvent("click"));
     }
 
     function select() {
@@ -733,7 +724,7 @@ window.addEventListener("load", () => {
 
     input.addEventListener("input", () => {
         redirect = false;
-        setVisibility(reset, input.value ? "visible" : "hidden");
+        reset.style.visibility = input.value ? "visible" : "hidden";
         scheduleSearch();
     });
 
@@ -761,20 +752,20 @@ window.addEventListener("load", () => {
         activeTab = "";
         fixedTab = false;
         empty(resultContainer);
-        setVisibility(reset, input.value ? "visible" : "hidden");
+        reset.style.visibility = input.value ? "visible" : "hidden";
         setSearchUrl();
     }
 
     function openSearch() {
-        show(resultSection);
+        resultSection.style.display = "block";
 
         if (input.id !== "search-input" || overlay) return;
 
         overlay = document.createElement("div");
         overlay.className = "overlay";
-        $("header")?.appendChild(overlay);
+        document.querySelector("header")?.appendChild(overlay);
         overlay.addEventListener("click", closeSearch);
-        show(overlay);
+        overlay.style.display = "block";
 
         document.body.style.setProperty("overflow-y", "hidden");
 
@@ -791,7 +782,7 @@ window.addEventListener("load", () => {
 
     function closeSearch() {
         clearResult();
-        hide(resultSection);
+        resultSection.style.display = "none";
 
         if (overlay) {
             var inputDiv = document.querySelector("div.sub-nav div.nav-list-search");
@@ -807,7 +798,7 @@ window.addEventListener("load", () => {
     window.addEventListener("hashchange", closeSearch);
 
     document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.altKey || e.metaKey || !isVisible(resultSection)) return;
+        if (e.ctrlKey || e.altKey || e.metaKey || resultSection.style.display === "none") return;
 
         if (e.key === "Escape") {
             if (input.value) {
@@ -835,7 +826,7 @@ window.addEventListener("load", () => {
                 e.preventDefault();
             }
         } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-            const links = $$("div.result-table > a.search-result-link");
+            const links = Array.from(document.querySelectorAll("div.result-table > a.search-result-link"));
             const current = links.indexOf(selectedLink);
 
             if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
@@ -894,7 +885,7 @@ window.addEventListener("load", () => {
     }
     if (urlParams.has("q")) {
         input.value = urlParams.get("q");
-        setVisibility(reset, input.value ? "visible" : "hidden");
+        reset.style.visibility = input.value ? "visible" : "hidden";
     }
     if (urlParams.has("c")) {
         activeTab = urlParams.get("c");
