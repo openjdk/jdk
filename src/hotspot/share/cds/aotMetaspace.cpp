@@ -949,10 +949,17 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
- if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
-   tty->print_cr("==================== archived_training_data ** before dumping ====================");
-   TrainingData::print_archived_training_data_on(tty);
+ if (CDSConfig::is_dumping_final_static_archive()) {
+   if (AOTPrintTrainingInfo) {
+     tty->print_cr("==================== archived_training_data ** before dumping ====================");
+     TrainingData::print_archived_training_data_on(tty);
+   }
+   LogStreamHandle(Info, aot, training, data) log;
+   if (log.is_enabled()) {
+     TrainingData::print_archived_training_data_on(&log);
+   }
  }
+
 
   StaticArchiveBuilder builder;
   dump_static_archive_impl(builder, THREAD);
@@ -1685,7 +1692,7 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       //  this with use_requested_addr, since we're going to patch all the
       //  pointers anyway so there's no benefit to mmap.
       if (use_requested_addr) {
-        assert(!total_space_rs.is_reserved(), "Should not be reserved when use_requested_addr is true");
+        assert(!total_space_rs.is_reserved(), "Should not be reserved for Windows");
         aot_log_info(aot)("Windows mmap workaround: releasing archive space.");
         MemoryReserver::release(archive_space_rs);
         // Mark as not reserved
@@ -1870,11 +1877,10 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
 // Return:
 //
 // - On success:
-//    - If use_archive_base_addr is true, archive_space_rs and class_space_rs are
-//      reserved as independent regions (placeholder split).
-//      total_space_rs is not set in this case. But if use_archive_base_addr is false,
-//      total_space_rs will be reserved as whole for archive_space_rs and
+//    - total_space_rs will be reserved as whole for archive_space_rs and
 //      class_space_rs on 64-bit.
+//      On Windows, try reserve archive_space_rs and class_space_rs
+//      separately first if use_archive_base_addr is true.
 //    - archive_space_rs will be reserved and large enough to host static and
 //      if needed dynamic archive: [Base, A).
 //      archive_space_rs.base and size will be aligned to CDS reserve
@@ -1970,36 +1976,46 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   }
 
   assert(total_range_size > ccs_begin_offset, "must be");
-  if (use_archive_base_addr && base_address != nullptr) {
-    os::PlaceholderRegion placeholder = os::reserve_placeholder_memory(total_range_size, mtNone, false /* exec */, (char*)base_address);
-
-    if (!placeholder.is_empty()) {
-      os::PlaceholderRegionPair split = os::split_memory(placeholder, ccs_begin_offset);
-
-      char* archive_base = os::convert_to_reserved(split.left);
-      char* class_base   = os::convert_to_reserved(split.right);
-
-      archive_space_rs = ReservedSpace(archive_base, ccs_begin_offset,
-                                       archive_space_alignment, os::vm_page_size(),
-                                       false /* exec */, false /* special */);
-      class_space_rs   = ReservedSpace(class_base, class_space_size,
-                                       class_space_alignment, os::vm_page_size(),
-                                       false /* exec */, false /* special */);
-      MemTracker::record_virtual_memory_split_reserved(archive_base, total_range_size,
-                                                       ccs_begin_offset, mtClassShared, mtClass);
+  if (use_windows_memory_mapping() && use_archive_base_addr) {
+    if (base_address != nullptr) {
+      // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
+      // Hence, we optimistically reserve archive space and class space side-by-side. We only
+      // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
+      // caller will not split the combined space for mapping, instead read the archive data
+      // via sequential file IO.
+      address ccs_base = base_address + archive_space_size + gap_size;
+      archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                                 archive_space_size,
+                                                 archive_space_alignment,
+                                                 os::vm_page_size(),
+                                                 mtNone);
+      class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
+                                                 class_space_size,
+                                                 class_space_alignment,
+                                                 os::vm_page_size(),
+                                                 mtNone);
     }
-
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
       return nullptr;
     }
+    MemTracker::record_virtual_memory_tag(archive_space_rs, mtClassShared);
+    MemTracker::record_virtual_memory_tag(class_space_rs, mtClass);
   } else {
-    // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
-    // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
-    // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
-    // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
-    // try allocating in low-address regions.
-    total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
+    if (use_archive_base_addr && base_address != nullptr) {
+      total_space_rs = MemoryReserver::reserve((char*) base_address,
+                                               total_range_size,
+                                               base_address_alignment,
+                                               os::vm_page_size(),
+                                               mtNone);
+    } else {
+      // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
+      // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
+      // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
+      // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
+      // try allocating in low-address regions.
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
+    }
 
     if (!total_space_rs.is_reserved()) {
       return nullptr;

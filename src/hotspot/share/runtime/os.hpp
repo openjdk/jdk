@@ -551,15 +551,16 @@ class os: AllStatic {
   // If addr is non-null, attempts to place the reservation at that address.
   static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, bool executable = false, char* addr = nullptr);
 
-  // Split 'orig' at 'offset'. Returns leading and trailing placeholder pieces as a PlaceholderRegionPair.
+  // Split 'orig' at 'offset'. Returns left and right placeholder pieces as a PlaceholderRegionPair.
   // The caller must not use 'orig' afterward.
   // Offset must be page-aligned.
   // If offset == orig.size(), returns { orig, empty }.
-  // On failure, returns {empty, empty}.
+  // This should not fail. If unsuccessful, this function fails fatally.
   static PlaceholderRegionPair split_memory(const PlaceholderRegion& orig, size_t offset);
 
   // Convert a placeholder region into a regular reserved region.
   // After conversion the Placeholder region should no longer be used.
+  // This should not fail. If unsuccessful, this function fails fatally.
   static char* convert_to_reserved(PlaceholderRegion region);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
