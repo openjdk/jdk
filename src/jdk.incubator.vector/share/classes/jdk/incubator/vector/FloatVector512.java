@@ -92,7 +92,7 @@ final class FloatVector512 extends FloatVector {
 
     @ForceInline
     @Override
-    public final Class<Float> elementType() { return ETYPE; }
+    public final Class<Float> elementType() { return float.class; }
 
     @ForceInline
     final Class<Float> carrierType() { return CTYPE; }

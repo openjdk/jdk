@@ -92,7 +92,7 @@ final class IntVector128 extends IntVector {
 
     @ForceInline
     @Override
-    public final Class<Integer> elementType() { return ETYPE; }
+    public final Class<Integer> elementType() { return int.class; }
 
     @ForceInline
     final Class<Integer> carrierType() { return CTYPE; }

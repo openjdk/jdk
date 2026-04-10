@@ -92,7 +92,7 @@ final class ByteVector128 extends ByteVector {
 
     @ForceInline
     @Override
-    public final Class<Byte> elementType() { return ETYPE; }
+    public final Class<Byte> elementType() { return byte.class; }
 
     @ForceInline
     final Class<Byte> carrierType() { return CTYPE; }

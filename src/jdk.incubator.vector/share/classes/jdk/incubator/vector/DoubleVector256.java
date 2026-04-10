@@ -93,7 +93,7 @@ final class DoubleVector256 extends DoubleVector {
 
     @ForceInline
     @Override
-    public final Class<Double> elementType() { return ETYPE; }
+    public final Class<Double> elementType() { return double.class; }
 
     @ForceInline
     final Class<Double> carrierType() { return CTYPE; }

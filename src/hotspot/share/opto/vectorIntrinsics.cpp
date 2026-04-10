@@ -2755,7 +2755,7 @@ bool LibraryCallKit::inline_vector_extract() {
   } else {
     // vbox_klass is vector. This is used for Vector.lane(int).
     if (!idx->is_con()) {
-      log_if_needed("  ** missing constant: idx=%s", NodeClassNames[argument(5)->Opcode()]);
+      log_if_needed("  ** missing constant: idx=%s", NodeClassNames[argument(4)->Opcode()]);
       return false; // not enough info for intrinsification
     }
 

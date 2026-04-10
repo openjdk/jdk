@@ -93,7 +93,7 @@ final class LongVector128 extends LongVector {
 
     @ForceInline
     @Override
-    public final Class<Long> elementType() { return ETYPE; }
+    public final Class<Long> elementType() { return long.class; }
 
     @ForceInline
     final Class<Long> carrierType() { return CTYPE; }

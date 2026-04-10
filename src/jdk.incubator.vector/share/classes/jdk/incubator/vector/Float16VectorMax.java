@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ final class Float16VectorMax extends Float16Vector {
 
     @ForceInline
     @Override
-    public final Class<Float16> elementType() { return ETYPE; }
+    public final Class<Float16> elementType() { return Float16.class; }
 
     @ForceInline
     final Class<Short> carrierType() { return CTYPE; }
