@@ -11,6 +11,6 @@ After the generation, modify each class:
 ---++ Add GetLastError Function to Extracted Methods
 Run the following command to generate alternative methods with `CapturableState` support.
 ```
-java AddGLE.java my_win_h.java GetTokenInformation LookupAccountSidA LookupAccountNameA DuplicateToken
+java AddGLE.java ../my_win_h.java OpenThreadToken OpenProcessToken ````GetTokenInformation LookupAccountSidA LookupAccountNameA DuplicateToken
 ```
 Paste the output into `NTSystem.java`.

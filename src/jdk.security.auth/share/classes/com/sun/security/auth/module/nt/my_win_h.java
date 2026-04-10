@@ -943,6 +943,66 @@ public class my_win_h extends my_win_h$shared {
         }
     }
 
+    private static class LocalFree {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+                my_win_h.C_POINTER,
+                my_win_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("LocalFree");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * HLOCAL LocalFree(HLOCAL hMem)
+     * }
+     */
+    public static FunctionDescriptor LocalFree$descriptor() {
+        return LocalFree.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * HLOCAL LocalFree(HLOCAL hMem)
+     * }
+     */
+    public static MethodHandle LocalFree$handle() {
+        return LocalFree.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * HLOCAL LocalFree(HLOCAL hMem)
+     * }
+     */
+    public static MemorySegment LocalFree$address() {
+        return LocalFree.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * HLOCAL LocalFree(HLOCAL hMem)
+     * }
+     */
+    public static MemorySegment LocalFree(MemorySegment hMem) {
+        var mh$ = LocalFree.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("LocalFree", hMem);
+            }
+            return (MemorySegment)mh$.invokeExact(hMem);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class FormatMessageA {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
                 my_win_h.C_LONG,

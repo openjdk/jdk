@@ -27,8 +27,10 @@ package com.sun.security.auth.module;
 
 import com.sun.security.auth.module.nt._SID_AND_ATTRIBUTES;
 import com.sun.security.auth.module.nt._TOKEN_GROUPS;
+import jdk.internal.foreign.BufferStack;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
@@ -38,6 +40,10 @@ import java.lang.foreign.Linker;
 
 
 import static com.sun.security.auth.module.nt.my_win_h.*;
+import static com.sun.security.auth.module.nt.my_win_h$shared.C_CHAR;
+import static com.sun.security.auth.module.nt.my_win_h$shared.C_INT;
+import static com.sun.security.auth.module.nt.my_win_h$shared.C_LONG;
+import static com.sun.security.auth.module.nt.my_win_h$shared.C_POINTER;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -74,8 +80,10 @@ public class NTSystem {
         }
         // dwLanguageId = 0 uses the caller's language preferences
         FormatMessageA(dwFormatFlags, hModule, errno, 0, buffer, 0, NULL);
+        MemorySegment msg = buffer.get(C_POINTER, 0);
         System.out.println(label + " error [" + errno + "]: "
-                + buffer.get(C_POINTER, 0).getString(0));
+                + msg.getString(0));
+        LocalFree(msg);
         if (hModule != NULL) {
             FreeLibrary(hModule);
         }
@@ -84,15 +92,28 @@ public class NTSystem {
     // The following MethodHandles and methods are the GetLastError-enabled
     // versions of their original jextract-generated forms.
 
-    private static final MethodHandle MH_OpenThreadTokenGLE = Linker.nativeLinker()
-            .downcallHandle(OpenThreadToken$address(), OpenThreadToken$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+    private static final MemoryLayout CAPTURE_LAYOUT =
+            Linker.Option.captureStateLayout();
+    private static final BufferStack POOL =
+            BufferStack.of(CAPTURE_LAYOUT);
+    private static final Linker.Option CCS_GLE =
+            Linker.Option.captureCallState("GetLastError");
 
-    private static int OpenThreadTokenGLE(MemorySegment cs, MemorySegment ThreadHandle,
-            int DesiredAccess, int OpenAsSelf, MemorySegment TokenHandle) {
-        try {
-            return (int) MH_OpenThreadTokenGLE.invokeExact(
+    private static final MethodHandle MH_OpenThreadTokenGLE = Linker.nativeLinker()
+            .downcallHandle(OpenThreadToken$address(), OpenThreadToken$descriptor(), CCS_GLE);
+
+    private int OpenThreadTokenGLE(MemorySegment ThreadHandle, int DesiredAccess, int OpenAsSelf, MemorySegment TokenHandle) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_OpenThreadTokenGLE.invokeExact(
                     cs, ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "OpenThreadToken", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -101,14 +122,20 @@ public class NTSystem {
     }
 
     private static final MethodHandle MH_OpenProcessTokenGLE = Linker.nativeLinker()
-            .downcallHandle(OpenProcessToken$address(), OpenProcessToken$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+            .downcallHandle(OpenProcessToken$address(), OpenProcessToken$descriptor(), CCS_GLE);
 
-    private static int OpenProcessTokenGLE(MemorySegment cs,
-            MemorySegment ProcessHandle_, int DesiredAccess, MemorySegment TokenHandle) {
-        try {
-            return (int) MH_OpenProcessTokenGLE.invokeExact(
+    private int OpenProcessTokenGLE(MemorySegment ProcessHandle_, int DesiredAccess, MemorySegment TokenHandle) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_OpenProcessTokenGLE.invokeExact(
                     cs, ProcessHandle_, DesiredAccess, TokenHandle);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "OpenProcessToken", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -117,16 +144,20 @@ public class NTSystem {
     }
 
     private static final MethodHandle MH_GetTokenInformationGLE = Linker.nativeLinker()
-            .downcallHandle(GetTokenInformation$address(), GetTokenInformation$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+            .downcallHandle(GetTokenInformation$address(), GetTokenInformation$descriptor(), CCS_GLE);
 
-    private static int GetTokenInformationGLE(MemorySegment cs,
-            MemorySegment TokenHandle, int TokenInformationClass, MemorySegment TokenInformation,
-            int TokenInformationLength, MemorySegment ReturnLength) {
-        try {
-            return (int) MH_GetTokenInformationGLE.invokeExact(
-                    cs, TokenHandle, TokenInformationClass, TokenInformation,
-                    TokenInformationLength, ReturnLength);
+    private int GetTokenInformationGLE(MemorySegment TokenHandle, int TokenInformationClass, MemorySegment TokenInformation, int TokenInformationLength, MemorySegment ReturnLength) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_GetTokenInformationGLE.invokeExact(
+                    cs, TokenHandle, TokenInformationClass, TokenInformation, TokenInformationLength, ReturnLength);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "GetTokenInformation", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -135,17 +166,20 @@ public class NTSystem {
     }
 
     private static final MethodHandle MH_LookupAccountSidAGLE = Linker.nativeLinker()
-            .downcallHandle(LookupAccountSidA$address(), LookupAccountSidA$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+            .downcallHandle(LookupAccountSidA$address(), LookupAccountSidA$descriptor(), CCS_GLE);
 
-    private static int LookupAccountSidAGLE(MemorySegment cs,
-            MemorySegment lpSystemName, MemorySegment Sid, MemorySegment Name,
-            MemorySegment cchName, MemorySegment ReferencedDomainName,
-            MemorySegment cchReferencedDomainName, MemorySegment peUse) {
-        try {
-            return (int) MH_LookupAccountSidAGLE.invokeExact(
-                    cs, lpSystemName, Sid, Name, cchName, ReferencedDomainName,
-                    cchReferencedDomainName, peUse);
+    private int LookupAccountSidAGLE(MemorySegment lpSystemName, MemorySegment Sid, MemorySegment Name, MemorySegment cchName, MemorySegment ReferencedDomainName, MemorySegment cchReferencedDomainName, MemorySegment peUse) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_LookupAccountSidAGLE.invokeExact(
+                    cs, lpSystemName, Sid, Name, cchName, ReferencedDomainName, cchReferencedDomainName, peUse);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "LookupAccountSidA", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -154,17 +188,20 @@ public class NTSystem {
     }
 
     private static final MethodHandle MH_LookupAccountNameAGLE = Linker.nativeLinker()
-            .downcallHandle(LookupAccountNameA$address(), LookupAccountNameA$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+            .downcallHandle(LookupAccountNameA$address(), LookupAccountNameA$descriptor(), CCS_GLE);
 
-    private static int LookupAccountNameAGLE(MemorySegment cs,
-            MemorySegment lpSystemName, MemorySegment lpAccountName,
-            MemorySegment Sid, MemorySegment cbSid, MemorySegment ReferencedDomainName,
-            MemorySegment cchReferencedDomainName, MemorySegment peUse) {
-        try {
-            return (int) MH_LookupAccountNameAGLE.invokeExact(
-                    cs, lpSystemName, lpAccountName, Sid, cbSid,
-                    ReferencedDomainName, cchReferencedDomainName, peUse);
+    private int LookupAccountNameAGLE(MemorySegment lpSystemName, MemorySegment lpAccountName, MemorySegment Sid, MemorySegment cbSid, MemorySegment ReferencedDomainName, MemorySegment cchReferencedDomainName, MemorySegment peUse) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_LookupAccountNameAGLE.invokeExact(
+                    cs, lpSystemName, lpAccountName, Sid, cbSid, ReferencedDomainName, cchReferencedDomainName, peUse);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "LookupAccountNameA", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -173,15 +210,20 @@ public class NTSystem {
     }
 
     private static final MethodHandle MH_DuplicateTokenGLE = Linker.nativeLinker()
-            .downcallHandle(DuplicateToken$address(), DuplicateToken$descriptor(),
-                    Linker.Option.captureCallState("GetLastError"));
+            .downcallHandle(DuplicateToken$address(), DuplicateToken$descriptor(), CCS_GLE);
 
-    private static int DuplicateTokenGLE(MemorySegment cs,
-            MemorySegment ExistingTokenHandle, int ImpersonationLevel,
-            MemorySegment DuplicateTokenHandle) {
-        try {
-            return (int) MH_DuplicateTokenGLE.invokeExact(
+    private int DuplicateTokenGLE(MemorySegment ExistingTokenHandle, int ImpersonationLevel, MemorySegment DuplicateTokenHandle) {
+        try (var arena = POOL.pushFrame(CAPTURE_LAYOUT.byteSize() + 64,
+                CAPTURE_LAYOUT.byteAlignment())) {
+            MemorySegment cs = arena.allocate(CAPTURE_LAYOUT);
+            int output = (int) MH_DuplicateTokenGLE.invokeExact(
                     cs, ExistingTokenHandle, ImpersonationLevel, DuplicateTokenHandle);
+            if (output == 0) {
+                if (debug) {
+                    DisplayErrorText(arena, "DuplicateToken", cs);
+                }
+            }
+            return output;
         } catch (Error | RuntimeException ex) {
             throw ex;
         } catch (Throwable t) {
@@ -199,16 +241,9 @@ public class NTSystem {
                 }
                 MemorySegment pHandle = scope.allocate(HANDLE);
                 // first try the thread token
-                MemorySegment capturedState = scope.allocate(Linker.Option.captureStateLayout());
-                if (OpenThreadTokenGLE(capturedState, GetCurrentThread(), TOKEN_READ(), 0, pHandle) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "OpenThreadToken", capturedState);
-                    }
+                if (OpenThreadTokenGLE(GetCurrentThread(), TOKEN_READ(), 0, pHandle) == 0) {
                     // next try the process token
-                    if (OpenProcessTokenGLE(capturedState, GetCurrentProcess(), TOKEN_READ(), pHandle) == 0) {
-                        if (debug) {
-                            DisplayErrorText(scope, "OpenProcessToken", capturedState);
-                        }
+                    if (OpenProcessTokenGLE(GetCurrentProcess(), TOKEN_READ(), pHandle) == 0) {
                         return false;
                     }
                     ;
@@ -233,10 +268,7 @@ public class NTSystem {
                 int size = bufSize.get(C_LONG, 0);
                 MemorySegment tokenUserInfo = scope.allocate(size);
                 if (GetTokenInformationGLE(
-                        capturedState, tokenHandle, TokenUser(), tokenUserInfo, size, bufSize) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "GetTokenInformation", capturedState);
-                    }
+                        tokenHandle, TokenUser(), tokenUserInfo, size, bufSize) == 0) {
                     return false;
                 }
                 if (debug) {
@@ -254,11 +286,8 @@ public class NTSystem {
 
                 MemorySegment bufName = scope.allocate(bufSize.get(C_LONG, 0));
                 MemorySegment bufDomain = scope.allocate(buf2Size.get(C_LONG, 0));
-                if (LookupAccountSidAGLE(capturedState, NULL, // local host
+                if (LookupAccountSidAGLE(NULL, // local host
                         userSid, bufName, bufSize, bufDomain, buf2Size, nameUse) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "LookupAccountSid", capturedState);
-                    }
                     return false;
                 }
                 this.userName = bufName.getString(0);
@@ -276,11 +305,8 @@ public class NTSystem {
 
                 MemorySegment dSid = scope.allocate(bufSize.get(C_LONG, 0));
                 MemorySegment domainSidName = scope.allocate(buf2Size.get(C_LONG, 0));
-                if (LookupAccountNameAGLE(capturedState, NULL, bufDomain,
+                if (LookupAccountNameAGLE(NULL, bufDomain,
                         dSid, bufSize, domainSidName, buf2Size, nameUse) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "LookupAccountName", capturedState);
-                    }
                     return false;
                 }
                 this.domainSID = getTextSid(dSid);
@@ -297,11 +323,8 @@ public class NTSystem {
                 GetTokenInformation(tokenHandle, TokenPrimaryGroup(), NULL, 0, bufSize);
                 size = bufSize.get(C_LONG, 0);
                 MemorySegment primaryGroupInfo = scope.allocate(size);
-                if (GetTokenInformationGLE(capturedState, tokenHandle, TokenPrimaryGroup(),
+                if (GetTokenInformationGLE(tokenHandle, TokenPrimaryGroup(),
                         primaryGroupInfo, size, bufSize) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "GetTokenInformation (TokenPrimaryGroup) ", capturedState);
-                    }
                     return false;
                 }
                 this.primaryGroupID = getTextSid(primaryGroupInfo.get(C_POINTER, 0));
@@ -318,11 +341,8 @@ public class NTSystem {
                 GetTokenInformation(tokenHandle, TokenGroups(), NULL, 0, bufSize);
                 size = bufSize.get(C_INT, 0);
                 MemorySegment groupsInfo = scope.allocate(size);
-                if (GetTokenInformationGLE(capturedState, tokenHandle,
+                if (GetTokenInformationGLE(tokenHandle,
                         TokenGroups(), groupsInfo, size, bufSize) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "GetTokenInformation (TokenGroups)", capturedState);
-                    }
                     return false;
                 }
                 int numGroups = _TOKEN_GROUPS.GroupCount(groupsInfo);
@@ -390,22 +410,15 @@ public class NTSystem {
         }
         try (Arena scope = Arena.ofConfined()) {
             MemorySegment dupToken = scope.allocate(HANDLE);
-            MemorySegment capturedState = scope.allocate(Linker.Option.captureStateLayout());
-            if (OpenThreadTokenGLE(capturedState, GetCurrentThread(),
+            if (OpenThreadTokenGLE(GetCurrentThread(),
                     TOKEN_DUPLICATE(), 0, dupToken) == 0) {
                 if (OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE(), dupToken) == 0) {
-                    if (debug) {
-                        DisplayErrorText(scope, "OpenProcessToken", capturedState);
-                    }
                     return 0;
                 }
             }
             MemorySegment impersonationToken = scope.allocate(HANDLE);
-            if (DuplicateTokenGLE(capturedState, dupToken.get(HANDLE, 0), SecurityImpersonation(),
+            if (DuplicateTokenGLE(dupToken.get(HANDLE, 0), SecurityImpersonation(),
                     impersonationToken) == 0) {
-                if (debug) {
-                    DisplayErrorText(scope, "DuplicateToken", capturedState);
-                }
                 return 0;
             }
             CloseHandle(dupToken);
