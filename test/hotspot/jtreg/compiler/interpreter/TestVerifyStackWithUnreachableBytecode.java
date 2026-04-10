@@ -70,7 +70,7 @@ public class TestVerifyStackWithUnreachableBytecode {
     public static void main(String[] args) {
         TestCase t = testCaseFromString(args[0]);
 
-        // The following is designed to cause a deopt with the reason `null_assert_or_unreached0`
+        // The following is designed to cause a deopt with the reason `null_assert`
         // when accessing A.val using getstatic due to the class B not being loaded and the consequent
         // assumption of A.val == null.
         TestVerifyStackWithUnreachableBytecodeA.val = null;

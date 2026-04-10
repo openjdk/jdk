@@ -33,9 +33,6 @@
  * @run main/othervm -XX:+TieredCompilation -XX:CompilationMode=high-only -XX:TieredStopAtLevel=3
  *                   -XX:CompileCommand=compileonly,compiler.tiered.TieredModesTest::test
  *                   compiler.tiered.TieredModesTest
- * @run main/othervm -XX:+TieredCompilation -XX:CompilationMode=high-only-quick-internal -XX:TieredStopAtLevel=3
- *                   -XX:CompileCommand=compileonly,compiler.tiered.TieredModesTest::test
- *                   compiler.tiered.TieredModesTest
  */
 
 package compiler.tiered;
