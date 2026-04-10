@@ -58,7 +58,7 @@ extern "C" int get_sve_vector_length();
 
 int VM_Version::get_current_sve_vector_length() {
   assert(VM_Version::supports_sve(), "should not call this");
-  return get_sve_vector_length();
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
@@ -70,7 +70,7 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
   // the user sets `MaxVectorSize` that is not the same as the maximum possible
   // vector length, then the caller (`VM_Version::initialize()`) will print a
   // warning and move on.
-  return get_sve_vector_length();
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
 void VM_Version::get_os_cpu_info() {
@@ -78,7 +78,6 @@ void VM_Version::get_os_cpu_info() {
   if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_CRC32);
   }
-
   if (IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_AES);
     set_feature(CPU_SHA1);
