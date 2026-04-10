@@ -29,41 +29,41 @@
 
 enum class HeapWordUnit : size_t {};
 
-constexpr HeapWordUnit in_HeapWordUnit(size_t size) { return static_cast<HeapWordUnit>(size); }
-constexpr size_t      in_heap_words(HeapWordUnit x)  { return static_cast<size_t>(x); }
+constexpr HeapWordUnit in_HeapWordUnit(size_t size)      { return static_cast<HeapWordUnit>(size); }
+constexpr size_t       in_heap_words(HeapWordUnit x)     { return static_cast<size_t>(x); }
 
-constexpr HeapWordUnit operator + (HeapWordUnit x, HeapWordUnit y) { return in_HeapWordUnit(in_heap_words(x) + in_heap_words(y)); }
-constexpr HeapWordUnit operator - (HeapWordUnit x, HeapWordUnit y) { return in_HeapWordUnit(in_heap_words(x) - in_heap_words(y)); }
-constexpr HeapWordUnit operator * (HeapWordUnit x, size_t      y) { return in_HeapWordUnit(in_heap_words(x) * y          ); }
-constexpr HeapWordUnit operator / (HeapWordUnit x, size_t      y) { return in_HeapWordUnit(in_heap_words(x) / y          ); }
+constexpr HeapWordUnit operator +  (HeapWordUnit x, HeapWordUnit y) { return in_HeapWordUnit(in_heap_words(x) + in_heap_words(y)); }
+constexpr HeapWordUnit operator -  (HeapWordUnit x, HeapWordUnit y) { return in_HeapWordUnit(in_heap_words(x) - in_heap_words(y)); }
+constexpr HeapWordUnit operator *  (HeapWordUnit x, size_t       y) { return in_HeapWordUnit(in_heap_words(x) * y               ); }
+constexpr HeapWordUnit operator /  (HeapWordUnit x, size_t       y) { return in_HeapWordUnit(in_heap_words(x) / y               ); }
 
-constexpr bool     operator == (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) == in_heap_words(y); }
-constexpr bool     operator != (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) != in_heap_words(y); }
-constexpr bool     operator > (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) > in_heap_words(y); }
-constexpr bool     operator >= (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) >= in_heap_words(y); }
-constexpr bool     operator < (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) < in_heap_words(y); }
-constexpr bool     operator <= (HeapWordUnit x, HeapWordUnit     y) { return in_heap_words(x) <= in_heap_words(y); }
+constexpr bool operator == (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) == in_heap_words(y); }
+constexpr bool operator != (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) != in_heap_words(y); }
+constexpr bool operator >  (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) >  in_heap_words(y); }
+constexpr bool operator >= (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) >= in_heap_words(y); }
+constexpr bool operator <  (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) <  in_heap_words(y); }
+constexpr bool operator <= (HeapWordUnit x, HeapWordUnit y) { return in_heap_words(x) <= in_heap_words(y); }
 
-// Heap byte is nothing special than a byte. It's really ByteSize has been extensively used and it's back by a smaller
-// type, int, which is too small for heap bytes usage, so just prepend the Heap to the name.
+// HeapByteUnit is a strongly-typed byte size for the heap. ByteSize (from sizes.hpp)
+// is backed by int, which is too small for heap-scale byte counts.
 enum class HeapByteUnit : size_t {};
 
-constexpr HeapByteUnit  in_HeapByteUnit(size_t size)  { return static_cast<HeapByteUnit>(size); }
-constexpr size_t        in_heap_bytes(HeapByteUnit x)  { return static_cast<size_t>(x); }
+constexpr HeapByteUnit in_HeapByteUnit(size_t size)      { return static_cast<HeapByteUnit>(size); }
+constexpr size_t       in_heap_bytes(HeapByteUnit x)     { return static_cast<size_t>(x); }
 
-constexpr HeapByteUnit operator + (HeapByteUnit x, HeapByteUnit y) { return in_HeapByteUnit(in_heap_bytes(x) + in_heap_bytes(y)); }
-constexpr HeapByteUnit operator - (HeapByteUnit x, HeapByteUnit y) { return in_HeapByteUnit(in_heap_bytes(x) - in_heap_bytes(y)); }
-constexpr HeapByteUnit operator * (HeapByteUnit x, size_t      y) { return in_HeapByteUnit(in_heap_bytes(x) * y          ); }
-constexpr HeapByteUnit operator / (HeapByteUnit x, size_t      y) { return in_HeapByteUnit(in_heap_bytes(x) / y          ); }
+constexpr HeapByteUnit operator +  (HeapByteUnit x, HeapByteUnit y) { return in_HeapByteUnit(in_heap_bytes(x) + in_heap_bytes(y)); }
+constexpr HeapByteUnit operator -  (HeapByteUnit x, HeapByteUnit y) { return in_HeapByteUnit(in_heap_bytes(x) - in_heap_bytes(y)); }
+constexpr HeapByteUnit operator *  (HeapByteUnit x, size_t       y) { return in_HeapByteUnit(in_heap_bytes(x) * y               ); }
+constexpr HeapByteUnit operator /  (HeapByteUnit x, size_t       y) { return in_HeapByteUnit(in_heap_bytes(x) / y               ); }
 
-constexpr bool     operator == (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) == in_heap_bytes(y); }
-constexpr bool     operator != (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) != in_heap_bytes(y); }
-constexpr bool     operator > (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) > in_heap_bytes(y); }
-constexpr bool     operator >= (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) >= in_heap_bytes(y); }
-constexpr bool     operator < (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) < in_heap_bytes(y); }
-constexpr bool     operator <= (HeapByteUnit x, HeapByteUnit     y) { return in_heap_bytes(x) <= in_heap_bytes(y); }
+constexpr bool operator == (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) == in_heap_bytes(y); }
+constexpr bool operator != (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) != in_heap_bytes(y); }
+constexpr bool operator >  (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) >  in_heap_bytes(y); }
+constexpr bool operator >= (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) >= in_heap_bytes(y); }
+constexpr bool operator <  (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) <  in_heap_bytes(y); }
+constexpr bool operator <= (HeapByteUnit x, HeapByteUnit y) { return in_heap_bytes(x) <= in_heap_bytes(y); }
 
-constexpr HeapByteUnit to_HeapByteUnit(HeapWordUnit x) { return in_HeapByteUnit(in_heap_words(x) * HeapWordSize); }
-constexpr HeapWordUnit to_HeapWordUnit(HeapByteUnit x) { return in_HeapWordUnit(in_heap_bytes(x) / HeapWordSize); }
+constexpr HeapByteUnit to_HeapByteUnit(HeapWordUnit x)   { return in_HeapByteUnit(in_heap_words(x) * HeapWordSize); }
+constexpr HeapWordUnit to_HeapWordUnit(HeapByteUnit x)   { return in_HeapWordUnit(in_heap_bytes(x) / HeapWordSize); }
 
 #endif // SHARE_UTILITIES_HEAP_SIZES_HPP
