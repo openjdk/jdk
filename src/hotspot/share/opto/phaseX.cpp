@@ -2245,7 +2245,7 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
             replace_input_of(n, j, C->top());
             replace_input_of(n->in(0), j, C->top());
             if (in->outcnt() == 0) {
-              remove_dead_node(in);
+              remove_dead_node(in, NodeOrigin::Graph);
             }
           }
         }
