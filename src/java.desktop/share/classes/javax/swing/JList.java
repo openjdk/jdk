@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2694,7 +2694,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                     }
                     Rectangle newFirstRect = getCellBounds(newFirst,newFirst);
                     Rectangle firstRect = getCellBounds(first,first);
-                    if ((newFirstRect != null) && (firstRect!=null)) {
+                    if ((newFirstRect != null) && (firstRect != null)) {
                         while ( (newFirstRect.y + visibleRect.height <
                                  firstRect.y + firstRect.height) &&
                                 (newFirstRect.y < firstRect.y) ) {

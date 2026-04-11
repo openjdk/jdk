@@ -1725,3 +1725,32 @@ com.sun.security.allowedAIALocations=
 #
 #jdk.mlkem.pkcs8.encoding = seed
 #jdk.mldsa.pkcs8.encoding = seed
+
+#
+# Policy for reading passwords from System.in
+#
+# When Java needs to read a password, whether it's via a tool such as keytool or
+# kinit, or by an API such as PasswordCallback with echo off, it normally reads
+# directly from the console. If the console is not available, Java falls back
+# to reading from the standard input stream ("System.in"), which typically
+# represents a redirected file or an inter-process pipe. This fallback is not
+# formally specified, and is not widely adopted by tools from other vendors.
+#
+# This security property determines whether passwords can be read from the
+# standard input stream when a console is not available. The value can be set
+# to either "true" or "false". If the value is set to "false", attempting
+# to read passwords from the standard input stream without a console will
+# throw an exception. The default value is "true". This default may change
+# in a future release.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# Note: This property applies only to password reading from the standard input
+# stream. It does not affect other supported password sources. For example, the
+# JAAS KeyStoreLoginModule allows a password to be read from the user-specified
+# "keyStorePasswordURL" option. The keytool and jarsigner commands also support
+# options such as "-storepass:env" and "-storepass:file" that read passwords
+# from an environment variable or a file.
+#
+#jdk.security.password.allowSystemIn = true

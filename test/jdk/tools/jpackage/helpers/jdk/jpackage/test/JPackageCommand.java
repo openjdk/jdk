@@ -392,12 +392,20 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setFakeRuntime() {
-        verifyMutable();
         addPrerequisiteAction(cmd -> {
             cmd.setArgumentValue("--runtime-image", createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_FAKE));
         });
 
         return this;
+    }
+
+    public JPackageCommand usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        verifyIsOfType(PackageType.IMAGE);
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(verifier -> {
+            addVerifyAction(verifier, ActionRole.LAUNCHER_VERIFIER);
+        });
+        return usePredefinedAppImage(appImageCmd.outputBundle());
     }
 
     public JPackageCommand usePredefinedAppImage(Path predefinedAppImagePath) {
@@ -406,6 +414,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
+        verifyMutable();
         prerequisiteActions.add(action);
         return this;
     }
@@ -421,6 +430,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
+        verifyMutable();
         verifyActions.add(action, actionRole);
         return this;
     }
@@ -1066,6 +1076,53 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand validateErr(CannedFormattedString... strings) {
         new JPackageOutputValidator().stderr().expectMatchingStrings(strings).applyTo(this);
         return this;
+    }
+
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            List<CannedFormattedString> expectedMessages) {
+
+        Objects.requireNonNull(validatorMutator);
+
+        if (!messageGroup.isEnum()) {
+            throw new IllegalArgumentException();
+        }
+
+        var messageSpecs = messageGroup.getEnumConstants();
+
+        var expectMessageFormats = expectedMessages.stream().map(CannedFormattedString::key).toList();
+
+        var groupMessageFormats = Stream.of(messageSpecs)
+                .map(CannedFormattedString.Spec::format)
+                .collect(Collectors.toMap(x -> x, x -> x))
+                .keySet();
+
+        if (!groupMessageFormats.containsAll(expectMessageFormats)) {
+            // Expected format strings should be a subset of the group format strings.
+            throw new IllegalArgumentException();
+        }
+
+        if (!expectedMessages.isEmpty()) {
+            new JPackageOutputValidator().expectMatchingStrings(expectedMessages).mutate(validatorMutator).applyTo(this);
+        }
+
+        Stream.of(messageSpecs).filter(spec -> {
+            return !expectMessageFormats.contains(spec.format());
+        }).map(CannedFormattedString.Spec::asPattern).map(pattern -> {
+            return TKit.assertTextStream(pattern).negate();
+        }).forEach(validator -> {
+            new JPackageOutputValidator().add(validator).stdoutAndStderr().applyTo(this);
+        });
+
+        return this;
+    }
+
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            CannedFormattedString... expected) {
+        return validateOutput(messageGroup, validatorMutator, List.of(expected));
     }
 
     public boolean isWithToolProvider() {
@@ -2033,7 +2090,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     // `--runtime-image` parameter set.
     public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
 
-    public final static String DEFAULT_VERSION = "1.0";
+    public static final String DEFAULT_VERSION = "1.0";
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(

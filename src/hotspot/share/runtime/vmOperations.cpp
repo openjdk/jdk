@@ -276,9 +276,6 @@ void VM_ThreadDump::doit_epilogue() {
 }
 
 // Hash table of int64_t to a list of ObjectMonitor* owned by the JavaThread.
-// The JavaThread's owner key is either a JavaThread* or a stack lock
-// address in the JavaThread so we use "int64_t".
-//
 class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
  private:
   static unsigned int ptr_hash(int64_t const& s1) {

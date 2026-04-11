@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.incubator.vector.*;
 import org.openjdk.jmh.annotations.*;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
+import java.util.Random;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -45,11 +46,20 @@ public class Float16OperationsBenchmark {
     short [] vector5;
     boolean [] vectorPredicate;
 
+    private int c0, c1, c2, s1, s2;
+
+    Random r;
+
     static final short f16_one = Float.floatToFloat16(1.0f);
     static final short f16_two = Float.floatToFloat16(2.0f);
 
     @Setup(Level.Trial)
     public void BmSetup() {
+        r = new Random();
+
+        c1 = s1 = step();
+        c2 = vectorDim - (s2 = step());
+
         rexp      = new int[vectorDim];
         vectorRes = new short[vectorDim];
         vector1   = new short[vectorDim];
@@ -82,6 +92,16 @@ public class Float16OperationsBenchmark {
                 }
             }
         );
+    }
+
+    private int step() {
+        return (r.nextInt() & 0xf) + 1;
+    }
+
+    private void inc() {
+        c1 = c1 + s1 < vectorDim ? c1 + s1 : (s1 = step());
+        c2 = c2 - s2 > 0 ? c2 - s2 : vectorDim - (s2 = step());
+        c0 = Math.abs(c2 - c1);
     }
 
     @Benchmark
@@ -201,9 +221,25 @@ public class Float16OperationsBenchmark {
     }
 
     @Benchmark
+    public void maxScalarBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            inc(); // Ensures no auto-vectorization
+            vectorRes[c0] = float16ToRawShortBits(max(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
+        }
+    }
+
+    @Benchmark
     public void minBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
             vectorRes[i] = float16ToRawShortBits(min(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(vector2[i])));
+        }
+    }
+
+    @Benchmark
+    public void minScalarBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            inc(); // Ensures no auto-vectorization
+            vectorRes[c0] = float16ToRawShortBits(min(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
         }
     }
 
