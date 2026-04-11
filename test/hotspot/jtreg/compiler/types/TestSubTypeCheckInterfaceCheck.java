@@ -50,7 +50,7 @@ public class TestSubTypeCheckInterfaceCheck {
     }
 
     @Test
-    @IR(counts = {IRNode.SUBTYPE_CHECK,"1"},
+    @IR(counts = {IRNode.SUBTYPE_CHECK, "1"},
         phase = CompilePhase.AFTER_PARSING)
     boolean test1(Object o) {
         Object o1 = (I)o ;
