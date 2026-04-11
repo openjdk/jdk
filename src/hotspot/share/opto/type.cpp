@@ -5980,11 +5980,11 @@ template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_ins
     const TypeKlassPtr* otherk = other->isa_klassptr() ? other->is_klassptr() :
                                                          other->is_oopptr()->as_klass_type();
     const TypeKlassPtr* improved_other = otherk->try_improve();
-    ciInstanceKlass* base_ik = improved_other->is_instklassptr()->instance_klass();
-    if (!base_ik->has_subklass()) {
+    ciInstanceKlass* improved_ik = improved_other->is_instklassptr()->instance_klass();
+    if (!improved_ik->has_subklass()) {
       if (!improved_other->_interfaces->contains(this_one->_interfaces)) {
-        if (!base_ik->is_final()) {
-          Compile::current()->dependencies()->assert_leaf_type(base_ik);
+        if (!improved_ik->is_final()) {
+          Compile::current()->dependencies()->assert_leaf_type(improved_ik);
         }
         return false;
       }
