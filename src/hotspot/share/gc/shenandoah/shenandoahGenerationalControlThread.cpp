@@ -479,7 +479,7 @@ bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     _heap->notify_gc_progress();
-    generation->record_success_concurrent(false);
+    generation->record_success_concurrent(gc.abbreviated());
   }
 
   if (_heap->cancelled_gc()) {

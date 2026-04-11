@@ -50,7 +50,6 @@ protected:
 
 private:
   ShenandoahDegenPoint        _degen_point;
-  bool                        _abbreviated;
   const bool                  _do_old_gc_bootstrap;
 
 public:
@@ -63,6 +62,9 @@ public:
 
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
+
+  // Return true if this cycle is generational and performed old evacuations
+  bool mixed() const { return _mixed; }
 
 protected:
   // Entry points to STW GC operations, these cause a related safepoint, that then

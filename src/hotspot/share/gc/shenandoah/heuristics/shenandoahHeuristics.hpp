@@ -59,6 +59,14 @@
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 
+typedef enum {
+  _mark,
+  _evac,
+  _update,
+  _final_roots,
+  _num_phases
+} ShenandoahMajorGCPhase;
+
 /*
  * Shenandoah heuristics are primarily responsible for deciding when to start
  * a collection cycle and choosing which regions will be evacuated during the
@@ -82,6 +90,14 @@ private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
 
+  static const uint8_t GC_Is_Abbreviated         = 0x01;
+  static const uint8_t GC_Is_Mixed               = 0x02;
+  static const uint8_t GC_Has_Promo              = 0x04;
+  static const uint8_t GC_Is_Generational_Global = 0x08;
+  static const uint8_t GC_Has_Promote_In_Place   = 0x10;
+
+  uint8_t _gc_cycle_is_atypical;
+
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
@@ -96,6 +112,13 @@ protected:
                                           //  in delaying the trigger vs. degeneration for other reasons (such as the
                                           //  most recent GC triggered "immediately" after previous GC finished, but the
                                           //  free headroom has already been depleted).
+
+  // Remember how much data was live after most recent mark
+  size_t _live_words_after_most_recent_mark;
+
+  // Remember how much data was evacuated in most recent evacuation
+  size_t _words_most_recently_evacuated;
+
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -213,6 +236,57 @@ protected:
     return _most_recent_planned_sleep_interval;
   }
 
+  inline void assume_gc_cycle_is_typical() {
+    _gc_cycle_is_atypical = 0;
+  }
+
+  // A typical gc cycle is defined as one that has few promotions, no mixed evacuations, is not generational global,
+  // and is not abbreviated.  The time required for an atypical gc cycle is computed from phase-accounting model rather
+  // than from average cycle time or from linear prediction model.
+  inline bool is_gc_cycle_typical() {
+    return !_gc_cycle_is_atypical;
+  }
+
+  inline bool is_gc_cycle_abbreviated() {
+    return _gc_cycle_is_atypical & GC_Is_Abbreviated;
+  }
+
+  inline uint8_t gc_typical_encoding() {
+    return _gc_cycle_is_atypical;
+  }
+
+  inline void gc_cycle_is_abbreviated() {
+    _gc_cycle_is_atypical |= GC_Is_Abbreviated;
+  }
+
+  inline void gc_cycle_has_old() {
+    _gc_cycle_is_atypical |= GC_Is_Mixed;
+  }
+
+  virtual double margin_of_error_sd() const {
+    return ShenandoahAdaptiveInitialConfidence;
+  }
+
+  // Promotion is considered signficant if it represents an increase of more than 10% over the normal young
+  // evacuation workload.
+  inline static bool is_promotion_significant(size_t anticipated_promotion, size_t anticipated_young_evac_non_promotion) {
+    return (10 * anticipated_promotion > anticipated_young_evac_non_promotion);
+  }
+
+  // If we have reserved for anticipated promotion more than 10% of planned young evacuation load, treat this as an
+  // atypical GC cycle due to the promotion workload.
+  inline void gc_cycle_has_significant_promotion() {
+    _gc_cycle_is_atypical |= GC_Has_Promo;
+  }
+
+  inline void gc_cycle_is_generational_global() {
+    _gc_cycle_is_atypical |= GC_Is_Generational_Global;
+  }
+
+  inline void gc_cycle_has_promote_in_place() {
+    _gc_cycle_is_atypical |= GC_Has_Promote_In_Place;;
+  }
+
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
@@ -268,6 +342,43 @@ public:
   // This indicates whether or not the current cycle should unload classes.
   // It does NOT indicate that a cycle should be started.
   virtual bool should_unload_classes();
+
+  virtual void record_phase_duration(ShenandoahMajorGCPhase p, double x, double duration) {
+    // Only adaptive heuristics will care to record phase durations
+  }
+
+  inline void set_live_words_after_most_recent_mark(size_t live_words) {
+    _live_words_after_most_recent_mark = live_words;
+  }
+
+  inline size_t get_live_words_after_most_recent_mark() {
+    return _live_words_after_most_recent_mark;
+  }
+
+  inline void set_words_most_recently_evacuated(size_t evacuated_words) {
+    _words_most_recently_evacuated = evacuated_words;
+  }
+
+  inline size_t get_words_most_recently_evacuated() {
+    return _words_most_recently_evacuated;
+  }
+
+  virtual void record_mark_end(double now, size_t marked_words) {}
+  virtual void record_evac_end(double now, size_t evacuated_words, size_t pip_words) {}
+  virtual void record_update_end(double now, size_t updated_words) {}
+  virtual void record_final_roots_end(double now, size_t pip_words) {}
+  virtual double predict_mark_time(size_t anticipated_marked_words) { return 0.0; }
+
+  // For satb mode, anticipate_pip_words is zero
+  virtual double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) { return 0.0; }
+  virtual double predict_update_time(size_t anticipated_update_words) { return 0.0; }
+
+  // In non-generational mode, supply pip_words as zero
+  virtual double predict_final_roots_time(size_t pip_words) { return 0.0; }
+
+  // Predict gc time using conservative approximations of anticipated mark, evac, and update words.  Returns 0.0 if there
+  // is not enough history to make a prediction.
+  virtual double predict_gc_time(size_t mark_words) { return 0.0; }
 
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;

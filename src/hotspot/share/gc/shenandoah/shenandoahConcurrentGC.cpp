@@ -94,7 +94,6 @@ ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation,
   ShenandoahGC(generation),
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
-  _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
@@ -118,6 +117,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       GCCause::should_clear_all_soft_refs(cause));
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
+
+  bool is_generational = heap->mode()->is_generational();
+  ShenandoahHeuristics* heuristics = _generation->heuristics();
+  ShenandoahYoungHeuristics* young_heuristics = is_generational ? heap->young_generation()->heuristics(): nullptr;
 
   // Reset for upcoming marking
   entry_reset();
@@ -185,8 +188,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
 
-  heap->free_set()->log_status_under_lock();
-
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
   // If so, strong_root_in_progress would be unset.
@@ -198,10 +199,33 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
   if (heap->is_evacuation_in_progress()) {
+    double start_evac_time = os::elapsedTime();
+    if (is_generational) {
+      size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
+      young_heuristics->record_mark_end(start_evac_time, live_young_words_after_mark);
+      if (ShenandoahHeap::heap()->collection_set()->has_old_regions()) {
+        _mixed = true;
+      }
+    } else {
+      size_t live_words_after_mark = heuristics->get_live_words_after_most_recent_mark();
+      heuristics->record_mark_end(start_evac_time, live_words_after_mark);
+    }
+
     // Concurrently evacuate
     entry_evacuate();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
       return false;
+    }
+
+    double start_update_time = os::elapsedTime();
+    if (is_generational) {
+      size_t evacuated_words = (young_heuristics->get_young_words_most_recently_evacuated()
+                                + young_heuristics->get_old_words_most_recently_evacuated());
+      size_t pip_words = young_heuristics->get_live_words_most_recently_promoted_in_place();
+      young_heuristics->record_evac_end(start_update_time, evacuated_words, pip_words);
+    } else {
+      size_t evacuated_words = heuristics->get_words_most_recently_evacuated();
+      heuristics->record_evac_end(start_update_time, evacuated_words, 0);
     }
 
     // Perform update-refs phase.
@@ -225,8 +249,34 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
+    if (is_generational) {
+      double gc_finish_time = os::elapsedTime();
+      if (_generation->is_global() || (young_heuristics->get_old_words_most_recently_evacuated() > 0)) {
+        // This was a global or mixed evacuation
+        size_t updated_young = young_heuristics->get_young_live_words_not_in_most_recent_cset();
+        size_t updated_old = young_heuristics->get_old_live_words_not_in_most_recent_cset();
+        size_t updated_words = updated_young + updated_old;
+        young_heuristics->record_update_end(gc_finish_time, updated_words);
+      } else {
+        // This was a traditional young GC
+        size_t updated_young = young_heuristics->get_young_live_words_not_in_most_recent_cset();
+        size_t updated_remset = young_heuristics->get_remset_words_in_most_recent_mark_scan();   // approximation
+        size_t updated_words = updated_young + updated_remset;
+        young_heuristics->record_update_end(gc_finish_time, updated_words);
+      }
+    }
   } else {
     _abbreviated = true;
+
+    double start_final_roots_time = os::elapsedTime();
+    if (is_generational) {
+      size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
+      young_heuristics->record_mark_end(start_final_roots_time, live_young_words_after_mark);
+    } else {
+      size_t live_words_after_mark = heuristics->get_live_words_after_most_recent_mark();
+      heuristics->record_mark_end(start_final_roots_time, live_words_after_mark);
+    }
+
     if (!entry_final_roots()) {
       assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
       return false;
@@ -235,11 +285,16 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     if (VerifyAfterGC) {
       vmop_entry_verify_final_roots();
     }
+    if (is_generational) {
+      double gc_finish_time = os::elapsedTime();
+      size_t pip_words = young_heuristics->get_live_words_most_recently_promoted_in_place();
+      young_heuristics->record_final_roots_end(gc_finish_time, pip_words);
+    }
   }
 
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
   // abbreviated cycle.
-  if (heap->mode()->is_generational()) {
+  if (is_generational) {
     ShenandoahGenerationalHeap::heap()->complete_concurrent_cycle();
   }
 

@@ -76,6 +76,8 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
   _add_regions_to_old = 0;
 
+  assume_gc_cycle_is_typical();
+
   // Choose the collection set
   filter_regions(collection_set);
 
@@ -232,6 +234,7 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
   size_t cand_idx = 0;
 
   size_t total_garbage = 0;
+  size_t live_words_in_young = 0;
 
   size_t immediate_garbage = 0;
   size_t immediate_regions = 0;
@@ -246,6 +249,9 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
     }
     const size_t garbage = region->garbage();
     total_garbage += garbage;
+    if (region->is_young()) {
+      live_words_in_young += region->get_live_data_words();
+    }
     if (region->is_empty()) {
       free_regions++;
       free += region_size_bytes;
@@ -304,6 +310,28 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
       heap->shenandoah_policy()->record_mixed_cycle();
     }
   }
+
+  if (ShenandoahHeuristics::is_promotion_significant(collection_set->get_live_bytes_in_tenurable_regions(),
+                                                     collection_set->get_live_bytes_in_untenurable_regions())) {
+    gc_cycle_has_significant_promotion();
+  }
+  if (collection_set->has_old_regions()) {
+    gc_cycle_has_old();
+  }
+  if (immediate_garbage == total_garbage) {
+    gc_cycle_is_abbreviated();
+  }
+  if (in_place_promotions.humongous_region_stats().count + in_place_promotions.regular_region_stats().count > 0) {
+    gc_cycle_has_promote_in_place();
+  }
+
+  heap->old_generation()->set_expected_humongous_region_in_place_promotions(in_place_promotions.humongous_region_stats().count);
+  size_t humongous_live_words_promoted = in_place_promotions.humongous_region_stats().usage / HeapWordSize;
+  heap->old_generation()->set_expected_in_place_promotable_humongous_region_live_data_words(humongous_live_words_promoted);
+  heap->old_generation()->set_expected_regular_region_in_place_promotions(in_place_promotions.regular_region_stats().count);
+  size_t regular_regions_promoted_live_words =
+    (in_place_promotions.regular_region_stats().usage - in_place_promotions.regular_region_stats().garbage) / HeapWordSize;
+  heap->old_generation()->set_expected_in_place_promotable_regular_region_live_data_words(regular_regions_promoted_live_words);
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set,

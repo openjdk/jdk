@@ -88,6 +88,10 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER),
   _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
+  _words_most_recently_evacuated(0),
+  _anticipated_mark_words(0),
+  _anticipated_evac_words(0),
+  _anticipated_update_words(0),
   _free_set(nullptr),
   _previous_acceleration_sample_timestamp(0.0),
   _gc_time_first_sample_index(0),
@@ -272,8 +276,106 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
   }
 }
 
+double ShenandoahAdaptiveHeuristics::predict_gc_time(size_t mark_words) {
+  assert(mark_words != 0, "(mark_words == 0) implies linear prediction of gc time");
+  size_t evac_words = get_anticipated_evac_words();
+  size_t update_words = get_anticipated_update_words();
+  double mark_time = predict_mark_time(mark_words);
+  double evac_time = predict_evac_time(evac_words, 0);
+  double update_time = predict_update_time(update_words);
+  if ((mark_time == 0.0) || (evac_time == 0.0) || (update_time == 0.0)) {
+    return 0.0;
+  } else {
+    double result = mark_time + evac_time + update_time;
+    return result;
+  }
+}
+
+// Marking effort is assumed to be a function of how many words are marked.  During steady state, marking efforts should be
+// constant.  During initialization, marking may increase linearly as data is retained for promotion.
+void ShenandoahAdaptiveHeuristics::record_mark_end(double now, size_t marked_words) {
+  // mark will be followed by evac or final_roots, we're not sure which
+  _phase_stats[ShenandoahMajorGCPhase::_evac].set_most_recent_start_time(now);
+  _phase_stats[ShenandoahMajorGCPhase::_final_roots].set_most_recent_start_time(now);
+  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_mark].get_most_recent_start_time();
+  double duration = now - start_phase_time;
+  record_phase_duration(ShenandoahMajorGCPhase::_mark, (double) marked_words, duration);
+}
+
+// Evacuation effort is assumed to be a function of words evacuated or promoted in place.  In non-generational mode,
+// promoted_in_place_words equals zero.
+void ShenandoahAdaptiveHeuristics::record_evac_end(double now, size_t evacuated_words, size_t promoted_in_place_words) {
+  // evac will be followed by update
+  _phase_stats[ShenandoahMajorGCPhase::_update].set_most_recent_start_time(now);
+  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_evac].get_most_recent_start_time();
+  double duration = now - start_phase_time;
+  // Evacuation time is a linear function of both evacuated_words and promoted_in_place_words.  Analysis of selected
+  // (not exhaustive) experiments shows that the proportionality constant for evacuated_words is 5 times larger than
+  // the proportionality constant for promoted_in_place_words.  In other words, it is approximately 5 times more
+  // costly to evacuate than to promote in place.  yThis was determined by first analyzing multiple results
+  // for which promoted_in_place_words equals zero to first determine the proportionality constant for evacuated_words,
+  // and then feeding that result into the analysis of proportionality constant for promoted_in_place_words.  Our current
+  // thoughts are that analyzing two-dimensional linear equations in real time is not practical.  Instead, we convert this
+  // into a one-dimensional problem by assuming a 5:1 ratio between the two dependencies.
+  record_phase_duration(ShenandoahMajorGCPhase::_evac, (double)(5 * evacuated_words + promoted_in_place_words), duration);
+}
+
+// Update effort is assumed to be a function of live words updated.  For young collection, this is number of live words
+// in young at start of evac that are not residing within the cset plus the remembered set words that reside in the  old
+// generation. For mixed collections, this is the number of live words in young and old at start of evac (excluding cset).
+void ShenandoahAdaptiveHeuristics::record_update_end(double now, size_t updated_words) {
+  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_update].get_most_recent_start_time();
+  double duration = now - start_phase_time;
+  record_phase_duration(ShenandoahMajorGCPhase::_update, (double) updated_words, duration);
+}
+
+// Final roots is assumed to be a function of pip_words.  For non-generational mode, promoted_in_place_words is zero.
+void ShenandoahAdaptiveHeuristics::record_final_roots_end(double now, size_t promoted_in_place_words) {
+  double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_final_roots].get_most_recent_start_time();
+  double duration = now - start_phase_time;
+  record_phase_duration(ShenandoahMajorGCPhase::_final_roots, (double) promoted_in_place_words, duration);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_mark_time(size_t anticipated_marked_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_mark].predict_at((double) anticipated_marked_words);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
+  // The non-generational version of predict_evac_time() assumes no dependency on anticipated_pip_words,
+  // which should always equal zero.
+  assert(anticipate_pip_words == 0, "Non-generational mode has no promote in place");
+  return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words));
+}
+
+double ShenandoahAdaptiveHeuristics::predict_update_time(size_t anticipated_update_words) {
+  return _phase_stats[ShenandoahMajorGCPhase::_update].predict_at((double) anticipated_update_words);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_final_roots_time(size_t pip_words) {
+  // The non-generational version of predict_final_roots_time() assumes constant time, since pip_words is always zero.
+  assert(pip_words == 0, "Non-generational mode has no promote in place");
+  return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at((double) 0.0);
+}
+
+// This is the common entry for using predicting gc time by prediction model rather than as historical average.
+// There are two prediction models:
+//  1. the linear prediction model applies to "typical" GC cycles and is based on a theory that gc times may be
+//     increasing linearly (due to an increase in live memory)
+// 2. the phase-accounting model applies to "atypical" GC cycles (e.g. generational global, abbreviated, mixed)
+//    and relies upon having anticipated values for words to be marked, words to be evacuated, words to be promoted
+//    in place, and words to be updated.
+// If anticipated values are not available, the phase-accounting model returns 0.0 and this function relies upon
+// its linear prediction model.  When we recognize that an upcoming GC cycle is anticipated to be "typical", we set
+// anticipated mark words to zero in order to disable the phase-accounting model in order to force the linear prediction
+// model.
 double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
-  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
+  size_t mark_words = get_anticipated_mark_words();
+  double result;
+  if ((mark_words == 0) || ((result = predict_gc_time(mark_words)) == 0.0)) {
+    // Return the linear prediction result.
+    result =_gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
+  }
+  return result;
 }
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
@@ -294,17 +396,19 @@ void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double times
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
   _allocation_rate.allocation_counter_reset();
+  double now = os::elapsedTime();
+  _phase_stats[ShenandoahMajorGCPhase::_mark].set_most_recent_start_time(now);
 }
 
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
-  double now = os::elapsedTime();
-
-  // Should we not add GC time if this was an abbreviated cycle?
-  add_gc_time(_cycle_start, elapsed_cycle_time());
-
+  double cycle_time = elapsed_cycle_time();
+  if (is_gc_cycle_typical() || (!is_gc_cycle_abbreviated() && (predict_gc_time(_cycle_start) > cycle_time))) {
+    // Generally, we expect atypical cycles to take longer than the typical cycles.  But we'll add atypical times into
+    // the lineaer prediction model if they help lower the standard deviation and/or slope of the prediction line.
+    add_gc_time(_cycle_start, elapsed_cycle_time());
+  }
   size_t available = _space_info->available();
-
   double z_score = 0.0;
   double available_sd = _available.sd();
   if (available_sd > 0) {
@@ -354,7 +458,11 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
 
 void ShenandoahAdaptiveHeuristics::record_degenerated() {
   ShenandoahHeuristics::record_degenerated();
-  add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+  if (is_gc_cycle_typical()) {
+    // Only add_degenerated_gc_time() if this was a traditional (non-abbreviated, non-global) normal or bootstrap gc.
+    // With non-generational global GC, we do want to add the gc time to the prediction model.
+    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+  }
   // Adjust both trigger's parameters in the case of a degenerated GC because
   // either of them should have triggered earlier to avoid this case.
   adjust_margin_of_error(DEGENERATE_PENALTY_SD);
@@ -470,7 +578,9 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   // represents memory available at the start of the current GC plus garbage reclaimed by the current GC. In a balanced,
   // fully utilized configuration, we will be starting each new GC cycle immediately following completion of the preceding
   // GC cycle.  In this configuration, we would expect half of R to be consumed during concurrent cycle GC(N) and half
-  // to be consumed during concurrent GC(N+1).
+  // to be consumed during concurrent GC(N+1).  R is a constant, but we don't know the value of this constant until after
+  // GC completes.  We express R in terms of A (memory allocated since the start of GC(N) and V, the amount of memory currently
+  // available to be allocated during concurent GC(N) and/or during the GC-idle span following completion of GC(N).
   //
   // Assume we want to delay GC trigger until:    A/V > 0.33
   //     This is equivalent to enforcing that:      A > 0.33V
@@ -491,12 +601,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   if ((now - _previous_acceleration_sample_timestamp) >= (ShenandoahAccelerationSamplePeriod / 1000.0)) {
-    predicted_future_accelerated_gc_time =
+    predicted_future_gc_time =
       predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0));
     double future_accelerated_planned_gc_time;
     bool future_accelerated_planned_gc_time_is_average;
-    if (predicted_future_accelerated_gc_time > avg_cycle_time) {
-      future_accelerated_planned_gc_time = predicted_future_accelerated_gc_time;
+    if (predicted_future_gc_time > avg_cycle_time) {
+      future_accelerated_planned_gc_time = predicted_future_gc_time;
       future_accelerated_planned_gc_time_is_average = false;
     } else {
       future_accelerated_planned_gc_time = avg_cycle_time;
@@ -605,7 +715,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
                     PROPERFMTARGS(size_t_alloc_rate),
                     PROPERFMTARGS(size_t_acceleration),
-                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by model prediction)",
                     future_accelerated_planned_gc_time * 1000);
       } else {
         log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
@@ -613,7 +723,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     PROPERFMTARGS(consumption_accelerated * HeapWordSize),
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
                     PROPERFMTARGS(size_t_alloc_rate),
-                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by model prediction)",
                     future_accelerated_planned_gc_time * 1000, _spike_threshold_sd);
 
 
@@ -647,7 +757,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (future_planned_gc_time > avg_time_to_deplete_available) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                future_planned_gc_time_is_average? "Average": "Modeled prediction of", future_planned_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
                 byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
                 _margin_of_error_sd);
@@ -671,7 +781,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (is_spiking && (rate != 0) && (future_planned_gc_time > spike_time_to_deplete_available)) {
     log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                future_planned_gc_time_is_average? "Average": "model prediction of", future_planned_gc_time * 1000,
                 byte_size_in_proper_unit(rate),        proper_unit_for_byte_size(rate),
                 byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
                 _spike_threshold_sd);
@@ -895,4 +1005,113 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   size_t allocation_delta = (allocated > last_value) ? (allocated - last_value) : 0;
   double time_delta_sec = time - last_time;
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
+}
+
+void ShenandoahAdaptiveHeuristics::record_phase_duration(ShenandoahMajorGCPhase phase, double x, double duration) {
+  _phase_stats[phase].add_sample(x, duration);
+}
+
+ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
+  _name(name),
+  _changed(true),
+  _changed_no_stdev(true),
+  _first_index(0),
+  _num_samples(0),
+  _sum_of_x(0.0),
+  _sum_of_y(0.0),
+  _sum_of_xx(0.0),
+  _sum_of_xy(0.0) { }
+
+// We use the history of recent phase execution times to predict the time required to execute this phase in the future.
+// The x_value represents an input parameter for the size of the phase's work.  For example, the evacuation phase is
+// parameterized by the amount of memory that we expect to evacuate.  The y-value is the time required to execute the phase.
+//
+// The samples are calibrated under the assumption that workers are not surged.  Our current approach is to
+//  only add samples that result from measurement of "unsurged execution phases".
+
+void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
+  if (_num_samples >= MaxSamples) {
+    _sum_of_x -= _x_values[_first_index];
+    _sum_of_xx -= _x_values[_first_index] * _x_values[_first_index];
+    _sum_of_xy -= _x_values[_first_index] * _y_values[_first_index];
+    _sum_of_y -= _y_values[_first_index];
+    _num_samples--;
+    _first_index++;
+    if (_first_index == MaxSamples) {
+      _first_index = 0;
+    }
+  }
+  _sum_of_x += x_value;
+  _sum_of_xx += x_value * x_value;
+  _sum_of_xy += x_value * y_value;
+  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahPhaseTimeEstimator samples");
+  assert(_first_index < MaxSamples, "Unexpected overflow");
+  _sum_of_y += y_value;;
+  _x_values[(_first_index + _num_samples) % MaxSamples] = x_value;
+  _y_values[(_first_index + _num_samples++) % MaxSamples] = y_value;;
+  _changed = true;
+}
+
+double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_x_value) {
+  if (!_changed_no_stdev && (_most_recent_prediction_x_value_no_stdev == predict_at_x_value)) {
+    return _most_recent_prediction_no_stdev;
+  } else if (_num_samples > 2) {
+    double m = (_num_samples * _sum_of_xy - _sum_of_x * _sum_of_y) / (_num_samples * _sum_of_xx - _sum_of_x * _sum_of_x);
+    double b = (_sum_of_y - m * _sum_of_x) / _num_samples;
+    for (uint i = 0; i < _num_samples; i++) {
+      double x_value = _x_values[(_first_index + i) % MaxSamples];
+    }
+    double prediction = b + m * predict_at_x_value;
+    _most_recent_prediction_no_stdev = prediction;
+    _changed_no_stdev = false;
+    _most_recent_prediction_x_value_no_stdev = predict_at_x_value;
+    return _most_recent_prediction_no_stdev;
+  } else {
+    // Insufficient samples to make a non-zero prediction
+    return 0.0;
+  }
+}
+
+double ShenandoahPhaseTimeEstimator::predict_at(double predict_at_x_value) {
+  if (!_changed && (_most_recent_prediction_x_value == predict_at_x_value)) {
+    return _most_recent_prediction;
+  } else if (_num_samples > 2) {
+    double m = (_num_samples * _sum_of_xy - _sum_of_x * _sum_of_y) / (_num_samples * _sum_of_xx - _sum_of_x * _sum_of_x);
+    double b = (_sum_of_y - m * _sum_of_x) / _num_samples;
+    double sum_of_squared_deviations = 0;
+    double min_x = _x_values[_first_index];
+    double max_x = min_x;
+    for (uint i = 0; i < _num_samples; i++) {
+      double x_value = _x_values[(_first_index + i) % MaxSamples];
+      if (x_value < min_x) {
+        min_x = x_value;
+      }
+      if (x_value > max_x) {
+        max_x = x_value;
+      }
+      double estimated_y = b + m * x_value;
+      double y_value = _y_values[(_first_index + i) % MaxSamples];
+      double delta = estimated_y - y_value;
+      sum_of_squared_deviations += delta * delta;
+    }
+    double span = max_x - min_x;
+    double standard_deviation_multiplier;
+    if (predict_at_x_value < min_x) {
+      standard_deviation_multiplier = (max_x - predict_at_x_value) / span;
+    } else if (predict_at_x_value > max_x) {
+      standard_deviation_multiplier = (predict_at_x_value - min_x) / span;
+    } else {
+      standard_deviation_multiplier = 1.0;
+    }
+    double standard_deviation = sqrt(sum_of_squared_deviations / _num_samples);
+    double prediction = b + m * predict_at_x_value + standard_deviation;;
+    double adjusted_prediction = prediction + standard_deviation * standard_deviation_multiplier;;
+    _most_recent_prediction = adjusted_prediction;
+    _changed = false;
+    _most_recent_prediction_x_value = predict_at_x_value;
+    return _most_recent_prediction;
+  } else {
+    // Insufficient samples to make a non-zero prediction
+    return 0.0;
+  }
 }

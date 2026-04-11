@@ -118,8 +118,8 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
 
 void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   _heap->old_generation()->set_pad_for_promote_in_place(_pip_padding_bytes);
-  _heap->old_generation()->set_expected_humongous_region_promotions(_pip_humongous_stats.count);
-  _heap->old_generation()->set_expected_regular_region_promotions(_pip_regular_stats.count);
+  _heap->old_generation()->set_expected_humongous_region_in_place_promotions(_pip_humongous_stats.count);
+  _heap->old_generation()->set_expected_regular_region_in_place_promotions(_pip_regular_stats.count);
   log_info(gc, ergo)("Planning to promote in place %zu humongous regions and %zu"
                      " regular regions, spanning a total of %zu used bytes",
                      _pip_humongous_stats.count, _pip_regular_stats.count,

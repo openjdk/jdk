@@ -169,7 +169,7 @@ private:
   void choose_global_collection_set(ShenandoahCollectionSet* cset,
                                     const ShenandoahHeuristics::RegionData* data,
                                     size_t size, size_t actual_free,
-                                    size_t cur_young_garbage) const;
+                                    size_t cur_young_garbage);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGLOBALHEURISTICS_HPP

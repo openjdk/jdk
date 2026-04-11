@@ -96,6 +96,10 @@ public:
   inline bool is_in(oop obj)                 const;
   inline bool is_in_loc(void* loc)           const;
 
+  // It is not known how many of these bytes will be promoted.
+  inline size_t get_young_bytes_reserved_for_evacuation();
+  inline size_t get_old_bytes_reserved_for_evacuation();
+
   // Prints a detailed accounting of all regions in the collection set when gc+cset=debug
   void print_on(outputStream* out) const;
 

@@ -110,8 +110,8 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
-    _promotable_humongous_regions(0),
-    _promotable_regular_regions(0),
+    _in_place_promotable_humongous_regions(0),
+    _in_place_promotable_regular_regions(0),
     _is_parsable(true),
     _card_scan(nullptr),
     _state(IDLE),
@@ -599,7 +599,7 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
   return _heuristics;
 }
 
-void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
+void ShenandoahOldGeneration::record_success_concurrent(bool is_abbreviated) {
   heuristics()->record_success_concurrent();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
 }
@@ -679,6 +679,10 @@ bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
 
 size_t ShenandoahOldGeneration::unprocessed_collection_candidates_live_memory() {
   return _old_heuristics->unprocessed_old_collection_candidates_live_memory();
+}
+
+size_t ShenandoahOldGeneration::unprocessed_collection_candidates_garbage() {
+  return _old_heuristics->unprocessed_old_collection_candidates_garbage();
 }
 
 void ShenandoahOldGeneration::abandon_collection_candidates() {

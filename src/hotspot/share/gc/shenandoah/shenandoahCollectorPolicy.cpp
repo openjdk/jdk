@@ -74,7 +74,6 @@ void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
   update_young(is_young);
-
   reset_consecutive_degenerated_gcs();
   _success_concurrent_gcs++;
   if (is_abbreviated) {

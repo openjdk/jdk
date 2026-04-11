@@ -115,6 +115,8 @@ ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneratio
 void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                        RegionData* data, size_t size,
                                                                        size_t actual_free) {
+  assume_gc_cycle_is_typical();
+  gc_cycle_is_generational_global();
   QuickSort::sort<RegionData>(data, size, compare_by_garbage);
   choose_global_collection_set(cset, data, size, actual_free, 0);
 }
@@ -122,7 +124,7 @@ void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(Shenandoa
 void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollectionSet* cset,
                                                               const ShenandoahHeuristics::RegionData* data,
                                                               size_t size, size_t actual_free,
-                                                              size_t cur_young_garbage) const {
+                                                              size_t cur_young_garbage) {
   shenandoah_assert_heaplocked_or_safepoint();
   auto heap = ShenandoahGenerationalHeap::heap();
   auto free_set = heap->free_set();
@@ -228,6 +230,19 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     size_t regions_to_transfer = MIN2(unaffiliated_young_regions, delta_regions);
     log_info(gc)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions_to_transfer);
+  }
+
+  if (cset->has_old_regions()) {
+    gc_cycle_has_old();
+  }
+
+  if (ShenandoahHeuristics::is_promotion_significant(cset->get_live_bytes_in_tenurable_regions(),
+                                                     cset->get_live_bytes_in_untenurable_regions())) {
+    gc_cycle_has_significant_promotion();
+  }
+
+  if (cset->is_empty()) {
+    gc_cycle_is_abbreviated();
   }
 
   heap->young_generation()->set_evacuation_reserve(budget.young_evac.reserve());

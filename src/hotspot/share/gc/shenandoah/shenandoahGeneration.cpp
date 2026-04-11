@@ -405,12 +405,15 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
   reserve_task_queues(nworkers);
+  size_t *accumulators = (size_t *) alloca(nworkers * sizeof(size_t));
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
+  ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent, nworkers, accumulators);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
+  ShenandoahYoungHeuristics* young_heuristics = heap->young_generation()->heuristics();
+  young_heuristics->set_remset_words_in_most_recent_mark_scan(task.get_words_examined());
   if (ShenandoahEnableCardStats) {
     ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
     assert(scanner != nullptr, "Not generational");
@@ -434,7 +437,7 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   return result;
 }
 
-void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
+void ShenandoahGeneration::record_success_concurrent(bool is_abbreviated) {
   heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
+  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), is_abbreviated);
 }

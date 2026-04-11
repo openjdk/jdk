@@ -135,11 +135,5 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
   heap->concurrent_final_roots();
-
-  // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
-  // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to
-  // follow the end of OLD marking.
-  heap->rebuild_free_set_within_phase();
-  heap->free_set()->log_status_under_lock();
   return true;
 }

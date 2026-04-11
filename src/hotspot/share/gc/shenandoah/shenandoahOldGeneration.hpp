@@ -66,10 +66,16 @@ private:
   // remaining in a PLAB when it is retired.
   Atomic<size_t> _promoted_expended;
 
-  // Represents the quantity of live bytes we expect to promote during the next GC cycle, either by
-  // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
+  // Represents the quantity of live bytes we expect to promote during the next GC cycle. Does not include
+  // anticipated promotion in place. This value feeds into the young heuristic's triggering decision.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
+
+  // Represents the quantity of live bytes we may promote in place during the next GC cycle.  This value
+  // feeds into the young heuristic's triggering decision.  Note that some regions identified for subsequent
+  // promotion in place may ultimately be promoted by evacuation.  This will happen if the amount of garbage
+  // within the region grows to exceed ShenandoahOldGarbageThreshold before the next evacuation cycle begins.
+  size_t _pip_potential;
 
   // When a region is selected to be promoted in place, the remaining free memory is filled
   // in to prevent additional allocations (preventing premature promotion of newly allocated
@@ -79,9 +85,11 @@ private:
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
   // This data is used to force the evacuation phase even when the collection set is otherwise
-  // empty.
-  size_t _promotable_humongous_regions;
-  size_t _promotable_regular_regions;
+  // empty.  Live data is represented in words.
+  size_t _in_place_promotable_humongous_regions;
+  size_t _in_place_promotable_regular_regions;
+  size_t _in_place_promotable_humongous_region_live_data;
+  size_t _in_place_promotable_regular_region_live_data;
 
   // True if old regions may be safely traversed by the remembered set scan.
   bool _is_parsable;
@@ -142,20 +150,39 @@ public:
   void set_region_balance(ssize_t balance) {
     _region_balance = balance;
   }
-  ssize_t get_region_balance() const { return _region_balance; }
+  ssize_t get_region_balance() const       { return _region_balance; }
 
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; }
-  size_t get_promotion_potential() const { return _promotion_potential; }
+  size_t get_promotion_potential() const   { return _promotion_potential; }
+
+  // See description in field declaration
+  void set_pip_potential(size_t val)       { _pip_potential = val; };
+  size_t get_pip_potential() const         { return _pip_potential; };
 
   // See description in field declaration
   void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
   size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
 
   // See description in field declaration
-  void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }
-  void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
-  size_t get_expected_in_place_promotions() const { return _promotable_humongous_regions + _promotable_regular_regions; }
+  void set_expected_humongous_region_in_place_promotions(size_t region_count) {
+    _in_place_promotable_humongous_regions = region_count;
+  }
+  void set_expected_regular_region_in_place_promotions(size_t region_count) {
+    _in_place_promotable_regular_regions = region_count;
+  }
+  void set_expected_in_place_promotable_humongous_region_live_data_words(size_t words) {
+    _in_place_promotable_humongous_region_live_data = words;
+  }
+  void set_expected_in_place_promotable_regular_region_live_data_words(size_t words) {
+    _in_place_promotable_regular_region_live_data = words;
+  }
+  size_t get_expected_in_place_promotions() const {
+    return _in_place_promotable_humongous_regions + _in_place_promotable_regular_regions;
+  }
+  size_t get_expected_in_place_promotable_live_words() {
+    return _in_place_promotable_regular_region_live_data + _in_place_promotable_humongous_region_live_data;
+  }
   bool has_in_place_promotions() const { return get_expected_in_place_promotions() > 0; }
 
   // Class unloading may render the card table offsets unusable, if they refer to unmarked objects
@@ -216,7 +243,7 @@ public:
   void transition_old_generation_after_global_gc();
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
+  void record_success_concurrent(bool is_abbreviated) override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
@@ -262,6 +289,9 @@ public:
   // Amount of live memory (bytes) in regions waiting for mixed collections
   size_t unprocessed_collection_candidates_live_memory();
 
+  // Amount of garbage (bytes) in regions waiting for mixed collection
+  size_t unprocessed_collection_candidates_garbage();
+
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
@@ -291,6 +321,7 @@ private:
   static const size_t INITIAL_LIVE_PERCENT = 16;
 
   size_t _live_bytes_at_last_mark;
+  size_t _used_bytes_at_start_of_mark;
 
   // How much growth in usage before we trigger old collection as a percent of soft_max_capacity
   size_t _growth_percent_before_collection;
@@ -307,6 +338,14 @@ public:
   }
 
   void transition_to(State new_state);
+
+  size_t get_used_bytes_at_start_of_mark() const {
+    return _used_bytes_at_start_of_mark;
+  }
+
+  void set_used_bytes_at_start_of_mark(size_t used) {
+    _used_bytes_at_start_of_mark = used;
+  }
 
   size_t get_live_bytes_at_last_mark() const;
   void set_live_bytes_at_last_mark(size_t new_live);

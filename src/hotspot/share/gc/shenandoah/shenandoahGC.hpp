@@ -59,17 +59,31 @@ public:
     _DEGENERATED_LIMIT
   };
 
-  explicit ShenandoahGC(ShenandoahGeneration* generation) : _generation(generation) {}
+  explicit ShenandoahGC(ShenandoahGeneration* generation) :
+    _generation(generation),
+    _abbreviated(false),
+    _mixed(false) {}
 
   // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
 
   ShenandoahGeneration* generation() const { return _generation; }
+
 protected:
   static void update_roots(bool full_gc);
 
-  ShenandoahGeneration* _generation;
+  ShenandoahGeneration*       _generation;
+  bool                        _abbreviated;
+  bool                        _mixed;
+
+  bool abbreviated() {
+    return _abbreviated;
+  }
+
+  bool mixed() {
+    return _mixed;
+  }
 };
 
 #endif  // SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP

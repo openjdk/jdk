@@ -84,8 +84,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   // Check all pinned regions have updated status before choosing the collection set.
   heap->assert_pinned_region_status();
 
-  // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
+  assume_gc_cycle_is_typical();
 
+  // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
   size_t num_regions = heap->num_regions();
 
   RegionData* candidates = _region_data;
@@ -148,6 +149,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
+
+  if (immediate_garbage == total_garbage) {
+    gc_cycle_is_abbreviated();
+  }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 }
 
@@ -243,9 +249,15 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
-  _gc_cycle_time_history->add(elapsed_cycle_time());
+  double cycle_time = elapsed_cycle_time();
+  if (is_gc_cycle_typical() ||
+      (!is_gc_cycle_abbreviated() &&
+       (cycle_time < _gc_cycle_time_history->davg() + (margin_of_error_sd() * _gc_cycle_time_history->dsd())))) {
+    // Generally, we expect atypical cycles to take longer than the typical cycles.  But we'll add atypical times into
+    // average if they help lower the standard deviation and/or running average.
+    _gc_cycle_time_history->add(cycle_time);
+  }
   _gc_times_learned++;
-
   adjust_penalty(Concurrent_Adjust);
 }
 

@@ -34,6 +34,59 @@
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
+class ShenandoahPhaseTimeEstimator {
+ private:
+  static const uint MaxSamples = 8;
+
+  const char* _name;
+  bool   _changed;
+  bool   _changed_no_stdev;
+  uint   _first_index;
+  uint   _num_samples;
+  double _sum_of_x;
+  double _sum_of_y;
+  double _sum_of_xx;
+  double _sum_of_xy;
+  double _most_recent_start;
+  double _x_values[MaxSamples];
+  double _y_values[MaxSamples];
+  double _most_recent_prediction_x_value;
+  double _most_recent_prediction;
+  double _most_recent_prediction_x_value_no_stdev;
+  double _most_recent_prediction_no_stdev;
+  double _most_recent_bytes_allocated;
+
+ public:
+  explicit ShenandoahPhaseTimeEstimator(const char *name);
+
+  void add_sample(double independent_variable, double dependent_variable);
+
+  // Return conservative prediction of time required for next execution of this phase,
+  //   which is Max(average_prediction, linear_prediction),
+  //   average_prediction is average + std_dev, and
+  //   linear_prediction is determined best-fit line + std_dev of this calculation
+  double predict_at(double independent_value);
+
+  double predict_at_without_stdev(double independent_value);
+
+  void set_most_recent_start_time(double now) {
+    _most_recent_start = now;
+  }
+
+  double get_most_recent_start_time() {
+    return _most_recent_start;
+  }
+
+  void set_most_recent_bytes_allocated(size_t bytes) {
+    _most_recent_bytes_allocated = bytes;
+  }
+
+  size_t get_most_recent_bytes_allocated() {
+    return _most_recent_bytes_allocated;
+  }
+};
+
+
 /**
  * ShenandoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
  * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
@@ -65,6 +118,9 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // of recently sampled instantaneous allocation rates added to sds times the standard deviation computed for the
   // sequence of recently sampled average allocation rates.
   double upper_bound(double sds) const;
+
+  // Return an estimate of the allocation rate.
+  double average_rate(double sds) const;
 
   // Test whether rate significantly diverges from the computed average allocation rate.  If so, return true.
   // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
@@ -131,11 +187,10 @@ public:
 
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                       RegionData* data, size_t size,
-                                                       size_t actual_free) override;
+                                             RegionData* data, size_t size,
+                                             size_t actual_free) override;
 
   void record_cycle_start() override;
-  void record_success_concurrent() override;
   void record_degenerated() override;
   void record_success_full() override;
 
@@ -144,6 +199,15 @@ public:
   const char* name() override     { return "Adaptive"; }
   bool is_diagnostic() override   { return false; }
   bool is_experimental() override { return false; }
+
+  virtual void record_phase_duration(ShenandoahMajorGCPhase p, double x, double duration) override;
+
+  void record_mark_end(double now, size_t marked_words) override;
+  // In non-generational mode, supply pip_words as zero
+  void record_evac_end(double now, size_t evacuated_words, size_t pip_words) override;
+  void record_update_end(double now, size_t updated_words) override;
+  // In non-generational mode, supply pip_words as zero
+  void record_final_roots_end(double now, size_t pip_words) override;
 
  private:
   // These are used to adjust the margin of error and the spike threshold
@@ -162,6 +226,18 @@ public:
 
   friend class ShenandoahAllocationRate;
 
+  void adjust_last_trigger_parameters(double amount);
+  void adjust_margin_of_error(double amount);
+  void adjust_spike_threshold(double amount);
+
+protected:
+  // Use this to estimate how much time will be required for future mark, evac, update, final-roots phases.
+  ShenandoahPhaseTimeEstimator _phase_stats[ShenandoahMajorGCPhase::_num_phases] = {
+    ShenandoahPhaseTimeEstimator("mark"),
+    ShenandoahPhaseTimeEstimator("evac"),
+    ShenandoahPhaseTimeEstimator("update"),
+    ShenandoahPhaseTimeEstimator("final-roots") };
+
   // Used to record the last trigger that signaled to start a GC.
   // This itself is used to decide whether or not to adjust the margin of
   // error for the average cycle time and allocation rate or the allocation
@@ -170,13 +246,15 @@ public:
     SPIKE, RATE, OTHER
   };
 
-  void adjust_last_trigger_parameters(double amount);
-  void adjust_margin_of_error(double amount);
-  void adjust_spike_threshold(double amount);
+  void record_success_concurrent() override;
 
   // Returns number of words that can be allocated before we need to trigger next GC, given available in bytes.
   inline size_t allocatable(size_t available) const {
     return (available > _headroom_adjustment)? (available - _headroom_adjustment) / HeapWordSize: 0;
+  }
+
+  double margin_of_error_sd() const override {
+    return _margin_of_error_sd;
   }
 
 protected:
@@ -213,6 +291,48 @@ protected:
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
 
+  // How many total words were evacuated in the most recently completed GC?
+  size_t _words_most_recently_evacuated;
+
+  // How many words do we expect to mark in the next GC?  Setting this value to zero effectively disables phase-account
+  // model prediction of GC time fot he next GC cycle.
+  size_t _anticipated_mark_words;
+
+  // How many words do we expect to evacuate in the next GC?  For an anticipated young GC, this is the same as what was
+  // evacuated in the previous GC cycle.  For an anticipated mixed-evac GC, this includes the anticipated mixed-evac
+  // workload.
+  size_t _anticipated_evac_words;
+
+  // How many words do we expect to update in the next GC?
+  size_t _anticipated_update_words;
+
+  double predict_mark_time(size_t anticipated_marked_words) override;
+  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) override;
+  double predict_update_time(size_t anticipated_update_words) override;
+  double predict_final_roots_time(size_t pip_words) override;
+
+  double predict_gc_time(size_t mark_words) override;
+
+  inline size_t get_anticipated_mark_words() {
+    return _anticipated_mark_words;
+  }
+
+  inline void set_anticipated_evac_words(size_t words) {
+    _anticipated_evac_words = words;
+  }
+
+  inline size_t get_anticipated_evac_words() {
+    return _anticipated_evac_words;
+  }
+
+  inline void set_anticipated_update_words(size_t words) {
+    _anticipated_update_words =  words;
+  }
+
+  inline size_t get_anticipated_update_words() {
+    return _anticipated_update_words;
+  }
+
   ShenandoahFreeSet* _free_set;
 
   // This represents the time at which the allocation rate was most recently sampled for the purpose of detecting acceleration.
@@ -242,8 +362,15 @@ protected:
   // detect when GC needs to trigger.
   void compute_headroom_adjustment() override;
 
+  // Add a normal (young or bootstrap) GC time to the GC time history.
   void add_gc_time(double timestamp_at_start, double duration);
+
+  // Add a degenerated (young or bootstrap) GC time to the GC time history.
   void add_degenerated_gc_time(double timestamp_at_start, double duration);
+
+  // Predict the GC time of the next GC cycle.  This uses a linear prediction model if the next GC is anticipated to be
+  // young or bootstrap without promotion.  If the next GC is anticipated to be mixed GC or is anticipated to have promotions,
+  // the prediction is based on phase accounting.
   double predict_gc_time(double timestamp_at_start);
 
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
