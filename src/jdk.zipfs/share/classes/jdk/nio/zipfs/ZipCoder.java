@@ -74,7 +74,7 @@ class ZipCoder {
 
     static class CharsetZipCoder extends ZipCoder {
 
-        static CharsetZipCoder UTF8_INSTANCE = new CharsetZipCoder(UTF_8);
+        static final CharsetZipCoder UTF8_INSTANCE = new CharsetZipCoder(UTF_8);
 
         @Override
         String toString(byte[] ba) {
@@ -121,7 +121,7 @@ class ZipCoder {
             return cs == UTF_8;
         }
 
-        private Charset cs;
+        private final Charset cs;
 
         private CharsetZipCoder(Charset cs) {
             this.cs = cs;
