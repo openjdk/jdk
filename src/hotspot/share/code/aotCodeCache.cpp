@@ -161,6 +161,12 @@ bool AOTCodeCache::is_caching_enabled() {
   return AOTStubCaching || AOTAdapterCaching;
 }
 
+// This is used before AOTCodeCahe is initialized
+// but after AOT (CDS) Cache flags consistency is checked.
+bool AOTCodeCache::maybe_dumping_code() {
+  return is_caching_enabled() && CDSConfig::is_dumping_final_static_archive();
+}
+
 static uint32_t encode_id(AOTCodeEntry::Kind kind, int id) {
   assert(AOTCodeEntry::is_valid_entry_kind(kind), "invalid AOTCodeEntry kind %d", (int)kind);
   // There can be a conflict of id between an Adapter and *Blob, but that should not cause any functional issue
@@ -2184,7 +2190,7 @@ void AOTCodeAddressTable::set_stubgen_stubs_complete() {
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200
 #else
-#define MAX_STR_COUNT 500
+#define MAX_STR_COUNT 2000
 #endif
 #define _c_str_max  MAX_STR_COUNT
 static const int _c_str_base = _all_max;
