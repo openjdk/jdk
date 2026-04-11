@@ -52,9 +52,9 @@ class BytecodePrinter {
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
   int       _flags;
-  bool      _is_linked;
+  bool      _use_cp_cache;
 
-  bool      is_linked() const        { return _is_linked; }
+  bool      use_cp_cache() const        { return _use_cp_cache; }
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
   int       get_index_u1()           { return *(address)_next_pc++; }  // returns 0x00 - 0xff as an int
@@ -69,7 +69,7 @@ class BytecodePrinter {
   bool      is_wide() const          { return _is_wide; }
   Bytecodes::Code raw_code() const   { return Bytecodes::Code(_code); }
   ConstantPool* constants() const    { return method()->constants(); }
-  ConstantPoolCache* cpcache() const { assert(is_linked(), "must be"); return constants()->cache(); }
+  ConstantPoolCache* cpcache() const { assert(use_cp_cache(), "must be"); return constants()->cache(); }
 
   void      print_constant(int i, outputStream* st);
   void      print_cpcache_entry(int cpc_index, outputStream* st);
@@ -94,8 +94,9 @@ class BytecodePrinter {
     ResourceMark rm;
     bool method_changed = _current_method != method();
     _current_method = method();
-    _is_linked = method->method_holder()->is_linked();
-    assert(_is_linked, "this function must be called on methods that are already executing");
+    _use_cp_cache = method->constants()->cache() != nullptr;
+    assert(method->method_holder()->is_linked(),
+           "this function must be called on methods that are already executing");
 
     if (method_changed) {
       // Note 1: This code will not work as expected with true MT/MP.
@@ -150,7 +151,8 @@ class BytecodePrinter {
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
-    _is_linked = method->method_holder()->is_linked();
+    // This may be called during linking after bytecodes are rewritten to point to the cpCache.
+    _use_cp_cache = method->constants()->cache() != nullptr;
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
@@ -301,7 +303,7 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
   if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
     print_bsm(cp_index, st);
 
-    if (is_linked()) {
+    if (use_cp_cache()) {
       ResolvedIndyEntry* indy_entry = constants()->resolved_indy_entry_at(indy_index);
       st->print("  ResolvedIndyEntry: ");
       indy_entry->print_on(st);
@@ -365,7 +367,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
-          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_index_u1();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
@@ -380,7 +382,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
-          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_native_index_u2();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
@@ -510,7 +512,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_getfield:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int field_index = get_native_index_u2();
           cp_index = cpcache()->resolved_field_entry_at(field_index)->constant_pool_index();
         } else {
@@ -525,7 +527,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokestatic:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int method_index = get_native_index_u2();
           ResolvedMethodEntry* method_entry = cpcache()->resolved_method_entry_at(method_index);
           cp_index = method_entry->constant_pool_index();
@@ -533,7 +535,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 
           if (raw_code() == Bytecodes::_invokehandle &&
               ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
-            assert(is_linked(), "invokehandle is only in rewritten methods");
+            assert(use_cp_cache(), "invokehandle is only in rewritten methods");
             method_entry->print_on(st);
             if (method_entry->has_appendix()) {
               st->print("  appendix: ");
@@ -550,7 +552,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokeinterface:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int method_index = get_native_index_u2();
           cp_index = cpcache()->resolved_method_entry_at(method_index)->constant_pool_index();
         } else {
@@ -566,7 +568,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int indy_index;
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {

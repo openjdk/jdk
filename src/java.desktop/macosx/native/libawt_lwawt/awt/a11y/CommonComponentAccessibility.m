@@ -136,6 +136,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"StaticTextAccessibility" forKey:@"label"];
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
+    [rolesMap setObject:@"CheckboxAccessibility" forKey:@"togglebutton"];
     [rolesMap setObject:@"SliderAccessibility" forKey:@"slider"];
     [rolesMap setObject:@"ScrollAreaAccessibility" forKey:@"scrollpane"];
     [rolesMap setObject:@"ScrollBarAccessibility" forKey:@"scrollbar"];

@@ -26,7 +26,7 @@
  * @bug 8159053
  * @build DummyWebSocketServer
  *        Support
- * @run junit/othervm WebSocketBuilderTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.net.URI;
