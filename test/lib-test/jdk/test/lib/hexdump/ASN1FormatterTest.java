@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ class ASN1FormatterTest {
         result = p.toString(bytes);
         System.out.println(result);
 
-        assertTrue(!result.contains("try --drill"));
+        assertFalse(result.contains("try --drill"));
         assertTrue(result.contains("[0]: OCTET STRING [7]"));
         assertTrue(result.contains("[0c0]: BYTE 5"));
     }

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -270,9 +269,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                             available -= 8;
                             break;
                         default:
-                            byte[] bytes = new byte[len];
-                            int l = in.read(bytes);
-                            BigInteger big = new BigInteger(bytes);
+                            in.readNBytes(len);
                             out.append("BIG INTEGER [" + len + "]");
                             available -= len;
                             break;
@@ -298,6 +295,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                     String drillPath = currentPrefix + "c";
                     if (drillPaths.contains(currentPrefix)) {
+                        out.append(" encapsulates");
                         out.append(System.lineSeparator());
                         annotate(in, out, len, true, drillPath);
                         available -= len;
@@ -368,51 +366,31 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     available -= len;
                     break;
                 default: {
-                    if (tag == TAG_Sequence ||
-                            tag == TAG_Set ||
-                            isApplication(tag) ||
-                            isContext(tag) ||
-                            isConstructed(tag)) {
-                        String lenStr = (len < 0) ? "INDEFINITE" : Integer.toString(len);
-                        // Handle nesting
-                        if (isApplication(tag)) {
-                            out.append(String.format("APPLICATION %d. [%s] {%n", tagType(tag), lenStr));
-                        } else {
-                            out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
-                        }
+                    String lenStr = (len < 0) ? "INDEFINITE" : Integer.toString(len);
+                    // Handle nesting
+                    if (isApplication(tag)) {
+                        out.append(String.format("APPLICATION %d. [%s] {%n", tagType(tag), lenStr));
+                    } else {
+                        out.append(String.format("%s [%s]%n", tagName(tag), lenStr));
+                    }
+                    if (isConstructed(tag)) {
                         int remaining = annotate(in, out, len, false, currentPrefix);
                         if (len > 0) {
                             available -= len - remaining;
                         }
                         continue;
                     } else {
-                        // Any other tag not already handled, dump the bytes
-                        out.append(String.format("%s[%d]: ", tagName(tag), len));
-                        formatBytes(in, out, len);
-                        available -= len;
-                        break;
+                        do {
+                            int skipped = (int) in.skip(len);
+                            len -= skipped;
+                            available -= skipped;
+                        } while (len > 0);
                     }
                 }
             }
             out.append(System.lineSeparator());
         }
         return available;
-    }
-
-    /**
-     * Reads bytes from the stream and annotates them as hexadecimal.
-     * @param in an inputStream
-     * @param out the Appendable for the formatted bytes
-     * @param len the number of bytes to read
-     * @throws IOException if an I/O error occurs
-     */
-    private void formatBytes(DataInputStream in, Appendable out, int len) throws IOException {
-        int b = in.readByte() & 0xff;
-        out.append(String.format("%02x", b));
-        for (int i = 1; i < len; i++) {
-            b = in.readByte() & 0xff;
-            out.append(String.format(",%02x", b));
-        }
     }
 
     private static boolean looksLikeDrillable(byte[] bytes) {
@@ -647,9 +625,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
 
     /** Returns true if the tag class is APPLICATION. */
     private boolean isApplication(int tag)    { return ((tag & 0xc0) == TAG_APPLICATION); }
-
-    /** Returns true if the tag class is CONTEXT. */
-    private boolean isContext(int tag)        { return ((tag & 0xc0) == TAG_CONTEXT); }
 
     /** Returns true iff the CONSTRUCTED bit is set in the type tag. */
     private boolean isConstructed(int tag)   { return ((tag & 0x20) == 0x20); }
