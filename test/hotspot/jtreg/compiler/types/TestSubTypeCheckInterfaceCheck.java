@@ -35,7 +35,7 @@ package compiler.types;
 import compiler.lib.ir_framework.*;
 
 public class TestSubTypeCheckInterfaceCheck {
-    static abstract class B           {}
+    static abstract class B {}
     static final class C extends B {}
 
     interface I {}
@@ -53,18 +53,18 @@ public class TestSubTypeCheckInterfaceCheck {
     @IR(counts = {IRNode.SUBTYPE_CHECK, "1"},
         phase = CompilePhase.AFTER_PARSING)
     boolean test1(Object o) {
-        Object o1 = (I)o ;
+        Object o1 = (I) o ;
         if (o1 instanceof B) {
             return testHelper2(o1);
-        } else{
+        } else {
             return false;
         }
     }
 
     @Run(test = "test1")
     boolean runTest() {
-        Object[] arr = new Object[] {new C(), new D()};
-        for (int i = 0; i< 2; i++){
+        Object[] arr = new Object[] { new C(), new D() };
+        for (int i = 0; i < 2; i++){
             Object o = arr[i];
             if (o instanceof I) {
                 return test1(o);
