@@ -161,7 +161,7 @@ bool AOTCodeCache::is_caching_enabled() {
   return AOTStubCaching || AOTAdapterCaching;
 }
 
-// This is used before AOTCodeCahe is initialized
+// This is used before AOTCodeCache is initialized
 // but after AOT (CDS) Cache flags consistency is checked.
 bool AOTCodeCache::maybe_dumping_code() {
   return is_caching_enabled() && CDSConfig::is_dumping_final_static_archive();
