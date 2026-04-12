@@ -290,8 +290,14 @@ ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
 
 address StubGenerator::generate_libmSinh() {
   StubId stub_id = StubId::stubgen_dsinh_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_3_0_2, L_2TAG_PACKET_4_0_2;
   Label L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2;
@@ -519,7 +525,32 @@ address StubGenerator::generate_libmSinh() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_sinh(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_L2E);
+  ADD(_L2E + 8);
+  ADD(_HALFMASK);
+  ADD(_Shifter);
+  ADD(_cv);
+  ADD(_cv + 16);
+  ADD(_cv + 32);
+  ADD(_cv + 48);
+  ADD(_cv + 64);
+  ADD(_T2f);
+  ADD(_T2_neg_f);
+  ADD(_pv);
+  ADD(_pv + 16);
+  ADD(_pv + 32);
+  ADD(_MASK3);
+#undef ADD
+}
+#endif // INCLUDE_CDS

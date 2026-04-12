@@ -2162,8 +2162,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                         break;
                     if (   (GET_ITEM_TYPE(top_type) == ITEM_NewObject
                             || (GET_ITEM_TYPE(top_type) == ITEM_InitObject))
-                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)
-                            || (opcode == JVM_OPC_ifnull) || (opcode == JVM_OPC_ifnonnull)))
+                        && ((opcode == JVM_OPC_astore) || (opcode == JVM_OPC_aload)))
                         break;
                     /* The 2nd edition VM of the specification allows field
                      * initializations before the superclass initializer,

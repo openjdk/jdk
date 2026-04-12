@@ -1095,6 +1095,10 @@ public:
 
 #undef INSN
 
+  void wfet(Register rt) {
+    system(0b00, 0b011, 0b0001, 0b0000, 0b000, rt);
+  }
+
   // we only provide mrs and msr for the special purpose system
   // registers where op1 (instr[20:19]) == 11
   // n.b msr has L (instr[21]) == 0 mrs has L == 1
@@ -3814,8 +3818,8 @@ public:
   }
 
 private:
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
-               bool isMerge, bool isFloat) {
+  void _sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
+                bool isMerge, bool isFloat) {
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
@@ -3839,11 +3843,11 @@ private:
 public:
   // SVE copy signed integer immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
-    sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
+    _sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    _sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors

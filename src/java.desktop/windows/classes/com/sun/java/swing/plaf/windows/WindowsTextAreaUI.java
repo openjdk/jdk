@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public final class WindowsTextAreaUI extends BasicTextAreaUI {
+public class WindowsTextAreaUI extends BasicTextAreaUI {
     /**
      * Creates the object to use for a caret.  By default an
      * instance of WindowsCaret is created.  This method
