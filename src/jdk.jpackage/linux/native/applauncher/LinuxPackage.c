@@ -109,7 +109,7 @@ static PackageDesc* initPackageDesc(PackageDesc* desc, const char* str,
 #define POPEN_CALLBACK_USE 1
 #define POPEN_CALLBACK_IGNORE 0
 
-typedef int (*popenCallbackType)(void*, const char*);
+typedef int (*popenCallbackType)(void*, char*);
 
 static int popenCommand(const char* cmdlineFormat, const char* arg,
                             popenCallbackType callback, void* callbackData) {
@@ -220,14 +220,14 @@ static char* concat(const char *x, const char *y) {
 }
 
 
-static int initRpmPackage(void* desc, const char* str) {
+static int initRpmPackage(void* desc, char* str) {
     initPackageDesc((PackageDesc*)desc, str, PACKAGE_TYPE_RPM);
     return POPEN_CALLBACK_IGNORE;
 }
 
 
-static int initDebPackage(void* desc, const char* str) {
-    char* colonChrPos = (char*) strchr(str, ':');
+static int initDebPackage(void* desc, char* str) {
+    char* colonChrPos = strchr(str, ':');
     if (colonChrPos) {
         *colonChrPos = 0;
     }
@@ -238,7 +238,7 @@ static int initDebPackage(void* desc, const char* str) {
 
 #define LAUNCHER_LIB_NAME "/libapplauncher.so"
 
-static int findLauncherLib(void* launcherLibPath, const char* str) {
+static int findLauncherLib(void* launcherLibPath, char* str) {
     char* buf = 0;
     const size_t strLen = strlen(str);
     const size_t launcherLibNameLen = strlen(LAUNCHER_LIB_NAME);
