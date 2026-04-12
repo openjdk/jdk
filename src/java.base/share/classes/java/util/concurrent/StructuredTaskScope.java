@@ -116,7 +116,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * <p> In the example above, the {@link #join()} method completes normally and returns
  * {@code null} if all subtasks succeed. It throws {@code ExecutionException} if any subtask
- * fails. Other policies and outcome are possible by creating a {@code StructuredTaskScope}
+ * fails. Other policies and outcomes are possible by creating a {@code StructuredTaskScope}
  * with a {@link Joiner Joiner} that implements the desired policy and outcome. A {@code
  * Joiner} handles subtasks as they are forked and when they complete, and produces the
  * outcome for the {@code join()} method. Instead of {@code null}, a {@code Joiner} may
@@ -387,9 +387,10 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
         permits StructuredTaskScopeImpl {
 
     /**
-     * Represents a subtask forked with {@link #fork(Callable)} or {@link #fork(Runnable)}.
+     * Represents a subtask forked in a {@link StructuredTaskScope} with {@link
+     * #fork(Callable) fork(Callable)} or {@link #fork(Runnable) fork(Runnable)}.
      *
-     * <p> Code that forks subtasks can use the {@link #get() get()} method after {@linkplain
+     * <p> The scope owner can use the {@link #get() get()} method after {@linkplain
      * #join() joining} to obtain the result of a subtask that completed successfully. It
      * can use the {@link #exception()} method to obtain the exception thrown by a subtask
      * that failed.
@@ -408,20 +409,24 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
         enum State {
             /**
              * The subtask result or exception is not available. This state indicates that
-             * the subtask was forked but has not completed, it completed after the scope
-             * was cancelled, or it was forked after the scoped was cancelled (in which
-             * case a thread was not created to execute the subtask).
+             * the subtask was forked but has not completed, the subtask was forked after
+             * the scope was {@linkplain StructuredTaskScope##Cancellation cancelled}, or
+             * the subtask completed after the scope was cancelled.
              */
             UNAVAILABLE,
             /**
-             * The subtask completed successfully. The {@link Subtask#get() Subtask.get()}
-             * method can be used to get the result. This is a terminal state.
+             * The subtask completed successfully. If the scope is {@linkplain
+             * StructuredTaskScope##Cancellation cancelled}, the subtask completed
+             * successfully before the scope was cancelled. The {@link Subtask#get()
+             * Subtask.get()} method can be used to get the result. This is a terminal
+             * state.
              */
             SUCCESS,
             /**
-             * The subtask failed with an exception. The {@link Subtask#exception()
-             * Subtask.exception()} method can be used to get the exception. This is a
-             * terminal state.
+             * The subtask failed with an exception. If the scope is {@linkplain
+             * StructuredTaskScope##Cancellation cancelled}, the subtask failed before
+             * the scope was cancelled. The {@link Subtask#exception() Subtask.exception()}
+             * method can be used to get the exception. This is a terminal state.
              */
             FAILED,
         }
@@ -432,16 +437,18 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
         State state();
 
         /**
-         * Returns the result of this subtask if it completed successfully. If the subtask
-         * was forked with {@link #fork(Callable) fork(Callable)} then the result from the
-         * {@link Callable#call() call} method is returned. If the subtask was forked with
-         * {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
+         * Returns the result of this subtask if it completed successfully. If the scope
+         * is {@linkplain StructuredTaskScope##Cancellation cancelled}, the subtask
+         * completed successfully before the scope was cancelled. If the subtask was
+         * forked with {@link #fork(Callable) fork(Callable)} then the result from the
+         * {@link Callable#call() call()} method is returned. If the subtask was forked
+         * with {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
          * result of a successful subtask after it has {@linkplain #join() joined}.
          *
          * <p> Code executing in the {@code Joiner} {@link Joiner#onComplete(Subtask)
-         * onComplete} method should test that the {@linkplain #state() subtask state} is
+         * onComplete(Subtask)} method should test that the {@linkplain #state() state} is
          * {@link State#SUCCESS SUCCESS} before using this method to get the result.
          *
          * <p> This method may be invoked by any thread after the scope owner has joined.
@@ -450,7 +457,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * @return the possibly-null result
          * @throws IllegalStateException if the subtask has not completed or did not
-         * complete successfully, or this method if invoked outside the context of the
+         * complete successfully, or this method is invoked outside the context of the
          * {@code onComplete(Subtask)} method before the owner thread has joined
          * @see State#SUCCESS
          */
@@ -458,16 +465,18 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
 
         /**
          * {@return the exception or error thrown by this subtask if it failed}
-         * If the subtask was forked with {@link #fork(Callable) fork(Callable)} then the
-         * exception or error thrown by the {@link Callable#call() call} method is returned.
-         * If the subtask was forked with {@link #fork(Runnable) fork(Runnable)} then the
-         * exception or error thrown by the {@link Runnable#run() run} method is returned.
+         * If the scope is {@linkplain StructuredTaskScope##Cancellation cancelled}, the
+         * subtask failed before the scope was cancelled. If the subtask was forked with
+         * {@link #fork(Callable) fork(Callable)} then the exception or error thrown by
+         * the {@link Callable#call() call()} method is returned. If the subtask was
+         * forked with {@link #fork(Runnable) fork(Runnable)} then the exception or error
+         * thrown by the {@link Runnable#run() run()} method is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
          * exception thrown by a failed subtask after it has {@linkplain #join() joined}.
          *
          * <p> Code executing in a {@code Joiner} {@link Joiner#onComplete(Subtask)
-         * onComplete} method should test that the {@linkplain #state() subtask state} is
+         * onComplete(Subtask)} method should test that the {@linkplain #state() state} is
          * {@link State#FAILED FAILED} before using this method to get the exception.
          *
          * <p> This method may be invoked by any thread after the scope owner has joined.
@@ -475,7 +484,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * owner has joined is when called from the {@code onComplete(Subtask)} method.
          *
          * @throws IllegalStateException if the subtask has not completed or completed
-         * with a result, or this method if invoked outside the context of the {@code
+         * with a result, or this method is invoked outside the context of the {@code
          * onComplete(Subtask)} method before the owner thread has joined
          * @see State#FAILED
          */
@@ -1052,9 +1061,9 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @param threadFactory the thread factory
          *
          * @apiNote The thread factory will typically create {@linkplain Thread##virtual-threads
-         * virtual threads}, maybe with names for monitoring purposes, an {@linkplain
-         * Thread.UncaughtExceptionHandler uncaught exception handler}, or other properties
-         * configured.
+         * virtual threads}, maybe with {@linkplain Thread#getName() thread names} for
+         * monitoring purposes, an {@linkplain Thread.UncaughtExceptionHandler uncaught
+         * exception handler}, or other properties configured.
          *
          * @see #fork(Callable)
          */
