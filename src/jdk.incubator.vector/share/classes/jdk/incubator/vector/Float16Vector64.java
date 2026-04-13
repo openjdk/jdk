@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -981,19 +981,6 @@ final class Float16Vector64 extends Float16Vector {
         return super.fromArray0Template(Float16Mask64.class, a, offset, indexMap, mapOffset, (Float16Mask64) m);
     }
 
-    @ForceInline
-    @Override
-    final
-    Float16Vector fromCharArray0(char[] a, int offset) {
-        return super.fromCharArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    Float16Vector fromCharArray0(char[] a, int offset, VectorMask<Float16> m, int offsetInRange) {
-        return super.fromCharArray0Template(Float16Mask64.class, a, offset, (Float16Mask64) m, offsetInRange);  // specialize
-    }
 
 
     @ForceInline
@@ -1033,12 +1020,6 @@ final class Float16Vector64 extends Float16Vector {
         super.intoMemorySegment0Template(Float16Mask64.class, ms, offset, (Float16Mask64) m);
     }
 
-    @ForceInline
-    @Override
-    final
-    void intoCharArray0(char[] a, int offset, VectorMask<Float16> m) {
-        super.intoCharArray0Template(Float16Mask64.class, a, offset, (Float16Mask64) m);
-    }
 
     // End of specialized low-level memory operations.
 

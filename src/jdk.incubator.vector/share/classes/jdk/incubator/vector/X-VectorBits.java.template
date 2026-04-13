@@ -1,9 +1,5 @@
 /*
-#if[FP16]
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
-#else[FP16]
  * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
-#end[FP16]
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1443,7 +1439,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         return super.fromArray0Template($masktype$.class, a, offset, indexMap, mapOffset, ($masktype$) m);
     }
 
-#if[short]
+#if[strictShort]
     @ForceInline
     @Override
     final
@@ -1457,7 +1453,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromCharArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
-#end[short]
+#end[strictShort]
 
 #if[byte]
     @ForceInline
@@ -1528,14 +1524,14 @@ final class $vectortype$ extends $abstractvectortype$ {
         super.intoMemorySegment0Template($masktype$.class, ms, offset, ($masktype$) m);
     }
 
-#if[short]
+#if[strictShort]
     @ForceInline
     @Override
     final
     void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m) {
         super.intoCharArray0Template($masktype$.class, a, offset, ($masktype$) m);
     }
-#end[short]
+#end[strictShort]
 
     // End of specialized low-level memory operations.
 

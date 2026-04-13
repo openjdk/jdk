@@ -94,7 +94,7 @@ do
       sizeInBytes=1
       laneType=LT_BYTE
       lanebitsType=LT_BYTE
-      args="$args -KbyteOrShort"
+      args="$args -KbyteOrShort -KbyteOrStrictShort"
       ;;
     Short)
       fptype=Float16
@@ -104,7 +104,7 @@ do
       sizeInBytes=2
       laneType=LT_SHORT
       lanebitsType=LT_SHORT
-      args="$args -KbyteOrShort"
+      args="$args -KbyteOrShort -KbyteOrStrictShort -KstrictShort"
       ;;
     Int)
       Boxtype=Integer

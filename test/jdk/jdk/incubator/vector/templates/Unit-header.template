@@ -1986,8 +1986,8 @@ relativeError));
             case 3  -> float16ToRawShortBits($Wideboxtype$.POSITIVE_INFINITY);
             case 4  -> float16ToRawShortBits($Wideboxtype$.NaN);
             case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
-            case 6  -> (($type$)0.0);
-            default -> (($type$)-0.0);
+            case 6  -> float16ToShortBits(Float16.valueOf(0.0f));
+            default -> float16ToShortBits(Float16.valueOf(-0.0f));
         };
 #else[FP16]
         return switch(i % 8) {

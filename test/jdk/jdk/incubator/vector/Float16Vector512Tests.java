@@ -1534,8 +1534,8 @@ public class Float16Vector512Tests extends AbstractVectorTest {
             case 3  -> float16ToRawShortBits(Float16.POSITIVE_INFINITY);
             case 4  -> float16ToRawShortBits(Float16.NaN);
             case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
-            case 6  -> ((short)0.0);
-            default -> ((short)-0.0);
+            case 6  -> float16ToShortBits(Float16.valueOf(0.0f));
+            default -> float16ToShortBits(Float16.valueOf(-0.0f));
         };
     }
 

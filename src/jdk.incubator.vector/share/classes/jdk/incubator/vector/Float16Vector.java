@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2860,7 +2860,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     }
 
     /**
-     * Loads a vector from an array of type {@code short[]}
+     * Loads a vector from an array of type {@code short[]} holding IEEE 754 binary16 values
      * starting at an offset.
      * For each vector lane, where {@code N} is the vector lane index, the
      * array element at index {@code offset + N} is placed into the
@@ -2884,7 +2884,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     }
 
     /**
-     * Loads a vector from an array of type {@code short[]}
+     * Loads a vector from an array of type {@code short[]} holding IEEE 754 binary16 values
      * starting at an offset and using a mask.
      * Lanes where the mask is unset are filled with the default
      * value of {@code short} (positive zero).
@@ -2921,7 +2921,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * Gathers a new vector composed of elements from an array of type
-     * {@code short[]},
+     * {@code short[]} holding IEEE 754 binary16 values,
      * using indexes obtained by adding a fixed {@code offset} to a
      * series of secondary offsets from an <em>index map</em>.
      * The index map is a contiguous sequence of {@code VLENGTH}
@@ -2993,7 +2993,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * Gathers a new vector composed of elements from an array of type
-     * {@code short[]},
+     * {@code short[]} holding IEEE 754 binary16 values,
      * under the control of a mask, and
      * using indexes obtained by adding a fixed {@code offset} to a
      * series of secondary offsets from an <em>index map</em>.
@@ -3042,156 +3042,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         }
     }
 
-    /**
-     * Loads a vector from an array of type {@code char[]}
-     * starting at an offset.
-     * For each vector lane, where {@code N} is the vector lane index, the
-     * array element at index {@code offset + N}
-     * is first cast to a {@code short} value and then
-     * placed into the resulting vector at lane index {@code N}.
-     *
-     * @param species species of desired vector
-     * @param a the array
-     * @param offset the offset into the array
-     * @return the vector loaded from an array
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
-     *         for any lane {@code N} in the vector
-     */
-    @ForceInline
-    public static
-    Float16Vector fromCharArray(VectorSpecies<Float16> species,
-                                       char[] a, int offset) {
-        offset = checkFromIndexSize(offset, species.length(), a.length);
-        Float16Species vsp = (Float16Species) species;
-        return vsp.dummyVector().fromCharArray0(a, offset);
-    }
-
-    /**
-     * Loads a vector from an array of type {@code char[]}
-     * starting at an offset and using a mask.
-     * Lanes where the mask is unset are filled with the default
-     * value of {@code short} (positive zero).
-     * For each vector lane, where {@code N} is the vector lane index,
-     * if the mask lane at index {@code N} is set then the array element at
-     * index {@code offset + N}
-     * is first cast to a {@code short} value and then
-     * placed into the resulting vector at lane index
-     * {@code N}, otherwise the default element value is placed into the
-     * resulting vector at lane index {@code N}.
-     *
-     * @param species species of desired vector
-     * @param a the array
-     * @param offset the offset into the array
-     * @param m the mask controlling lane selection
-     * @return the vector loaded from an array
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
-     *         for any lane {@code N} in the vector
-     *         where the mask is set
-     */
-    @ForceInline
-    public static
-    Float16Vector fromCharArray(VectorSpecies<Float16> species,
-                                       char[] a, int offset,
-                                       VectorMask<Float16> m) {
-        Float16Species vsp = (Float16Species) species;
-        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-            return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_IN_RANGE);
-        }
-
-        ((AbstractMask<Float16>)m)
-            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
-        return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
-    }
-
-    /**
-     * Gathers a new vector composed of elements from an array of type
-     * {@code char[]},
-     * using indexes obtained by adding a fixed {@code offset} to a
-     * series of secondary offsets from an <em>index map</em>.
-     * The index map is a contiguous sequence of {@code VLENGTH}
-     * elements in a second array of {@code int}s, starting at a given
-     * {@code mapOffset}.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * the lane is loaded from the expression
-     * {@code (short) a[f(N)]}, where {@code f(N)} is the
-     * index mapping expression
-     * {@code offset + indexMap[mapOffset + N]]}.
-     *
-     * @param species species of desired vector
-     * @param a the array
-     * @param offset the offset into the array, may be negative if relative
-     * indexes in the index map compensate to produce a value within the
-     * array bounds
-     * @param indexMap the index map
-     * @param mapOffset the offset into the index map
-     * @return the vector loaded from the indexed elements of the array
-     * @throws IndexOutOfBoundsException
-     *         if {@code mapOffset+N < 0}
-     *         or if {@code mapOffset+N >= indexMap.length},
-     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
-     *         is an invalid index into {@code a},
-     *         for any lane {@code N} in the vector
-     * @see Float16Vector#toIntArray()
-     */
-    @ForceInline
-    public static
-    Float16Vector fromCharArray(VectorSpecies<Float16> species,
-                                       char[] a, int offset,
-                                       int[] indexMap, int mapOffset) {
-        // FIXME: optimize
-        Float16Species vsp = (Float16Species) species;
-        return vsp.vOp(n -> (short) a[offset + indexMap[mapOffset + n]]);
-    }
-
-    /**
-     * Gathers a new vector composed of elements from an array of type
-     * {@code char[]},
-     * under the control of a mask, and
-     * using indexes obtained by adding a fixed {@code offset} to a
-     * series of secondary offsets from an <em>index map</em>.
-     * The index map is a contiguous sequence of {@code VLENGTH}
-     * elements in a second array of {@code int}s, starting at a given
-     * {@code mapOffset}.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * if the lane is set in the mask,
-     * the lane is loaded from the expression
-     * {@code (short) a[f(N)]}, where {@code f(N)} is the
-     * index mapping expression
-     * {@code offset + indexMap[mapOffset + N]]}.
-     * Unset lanes in the resulting vector are set to zero.
-     *
-     * @param species species of desired vector
-     * @param a the array
-     * @param offset the offset into the array, may be negative if relative
-     * indexes in the index map compensate to produce a value within the
-     * array bounds
-     * @param indexMap the index map
-     * @param mapOffset the offset into the index map
-     * @param m the mask controlling lane selection
-     * @return the vector loaded from the indexed elements of the array
-     * @throws IndexOutOfBoundsException
-     *         if {@code mapOffset+N < 0}
-     *         or if {@code mapOffset+N >= indexMap.length},
-     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
-     *         is an invalid index into {@code a},
-     *         for any lane {@code N} in the vector
-     *         where the mask is set
-     * @see Float16Vector#toIntArray()
-     */
-    @ForceInline
-    public static
-    Float16Vector fromCharArray(VectorSpecies<Float16> species,
-                                       char[] a, int offset,
-                                       int[] indexMap, int mapOffset,
-                                       VectorMask<Float16> m) {
-        // FIXME: optimize
-        Float16Species vsp = (Float16Species) species;
-        return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
-    }
 
 
     /**
@@ -3444,161 +3294,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
              });
     }
 
-    /**
-     * Stores this vector into an array of type {@code char[]}
-     * starting at an offset.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * the lane element at index {@code N}
-     * is first cast to a {@code char} value and then
-     * stored into the array element {@code a[offset+N]}.
-     *
-     * @param a the array, of type {@code char[]}
-     * @param offset the offset into the array
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
-     *         for any lane {@code N} in the vector
-     */
-    @ForceInline
-    public final
-    void intoCharArray(char[] a, int offset) {
-        offset = checkFromIndexSize(offset, length(), a.length);
-        Float16Species vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
-            a, charArrayAddress(a, offset), false,
-            this,
-            a, offset,
-            (arr, off, v)
-            -> v.stOp(arr, (int) off,
-                      (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
-    }
-
-    /**
-     * Stores this vector into an array of type {@code char[]}
-     * starting at offset and using a mask.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * the lane element at index {@code N}
-     * is first cast to a {@code char} value and then
-     * stored into the array element {@code a[offset+N]}.
-     * If the mask lane at {@code N} is unset then the corresponding
-     * array element {@code a[offset+N]} is left unchanged.
-     * <p>
-     * Array range checking is done for lanes where the mask is set.
-     * Lanes where the mask is unset are not stored and do not need
-     * to correspond to legitimate elements of {@code a}.
-     * That is, unset lanes may correspond to array indexes less than
-     * zero or beyond the end of the array.
-     *
-     * @param a the array, of type {@code char[]}
-     * @param offset the offset into the array
-     * @param m the mask controlling lane storage
-     * @throws IndexOutOfBoundsException
-     *         if {@code offset+N < 0} or {@code offset+N >= a.length}
-     *         for any lane {@code N} in the vector
-     *         where the mask is set
-     */
-    @ForceInline
-    public final
-    void intoCharArray(char[] a, int offset,
-                       VectorMask<Float16> m) {
-        if (m.allTrue()) {
-            intoCharArray(a, offset);
-        } else {
-            Float16Species vsp = vspecies();
-            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                ((AbstractMask<Float16>)m)
-                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
-            }
-            intoCharArray0(a, offset, m);
-        }
-    }
-
-    /**
-     * Scatters this vector into an array of type {@code char[]}
-     * using indexes obtained by adding a fixed {@code offset} to a
-     * series of secondary offsets from an <em>index map</em>.
-     * The index map is a contiguous sequence of {@code VLENGTH}
-     * elements in a second array of {@code int}s, starting at a given
-     * {@code mapOffset}.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * the lane element at index {@code N}
-     * is first cast to a {@code char} value and then
-     * stored into the array
-     * element {@code a[f(N)]}, where {@code f(N)} is the
-     * index mapping expression
-     * {@code offset + indexMap[mapOffset + N]]}.
-     *
-     * @param a the array
-     * @param offset an offset to combine with the index map offsets
-     * @param indexMap the index map
-     * @param mapOffset the offset into the index map
-     * @throws IndexOutOfBoundsException
-     *         if {@code mapOffset+N < 0}
-     *         or if {@code mapOffset+N >= indexMap.length},
-     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
-     *         is an invalid index into {@code a},
-     *         for any lane {@code N} in the vector
-     * @see Float16Vector#toIntArray()
-     */
-    @ForceInline
-    public final
-    void intoCharArray(char[] a, int offset,
-                       int[] indexMap, int mapOffset) {
-        // FIXME: optimize
-        stOp(a, offset,
-             (arr, off, i, e) -> {
-                 int j = indexMap[mapOffset + i];
-                 arr[off + j] = (char) e;
-             });
-    }
-
-    /**
-     * Scatters this vector into an array of type {@code char[]},
-     * under the control of a mask, and
-     * using indexes obtained by adding a fixed {@code offset} to a
-     * series of secondary offsets from an <em>index map</em>.
-     * The index map is a contiguous sequence of {@code VLENGTH}
-     * elements in a second array of {@code int}s, starting at a given
-     * {@code mapOffset}.
-     * <p>
-     * For each vector lane, where {@code N} is the vector lane index,
-     * if the mask lane at index {@code N} is set then
-     * the lane element at index {@code N}
-     * is first cast to a {@code char} value and then
-     * stored into the array
-     * element {@code a[f(N)]}, where {@code f(N)} is the
-     * index mapping expression
-     * {@code offset + indexMap[mapOffset + N]]}.
-     *
-     * @param a the array
-     * @param offset an offset to combine with the index map offsets
-     * @param indexMap the index map
-     * @param mapOffset the offset into the index map
-     * @param m the mask
-     * @throws IndexOutOfBoundsException
-     *         if {@code mapOffset+N < 0}
-     *         or if {@code mapOffset+N >= indexMap.length},
-     *         or if {@code f(N)=offset+indexMap[mapOffset+N]}
-     *         is an invalid index into {@code a},
-     *         for any lane {@code N} in the vector
-     *         where the mask is set
-     * @see Float16Vector#toIntArray()
-     */
-    @ForceInline
-    public final
-    void intoCharArray(char[] a, int offset,
-                       int[] indexMap, int mapOffset,
-                       VectorMask<Float16> m) {
-        // FIXME: optimize
-        stOp(a, offset, m,
-             (arr, off, i, e) -> {
-                 int j = indexMap[mapOffset + i];
-                 arr[off + j] = (char) e;
-             });
-    }
 
 
     /**
@@ -3742,37 +3437,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
     }
 
-    /*package-private*/
-    abstract
-    Float16Vector fromCharArray0(char[] a, int offset);
-    @ForceInline
-    final
-    Float16Vector fromCharArray0Template(char[] a, int offset) {
-        Float16Species vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
-            a, charArrayAddress(a, offset), false,
-            a, offset, vsp,
-            (arr, off, s) -> s.ldOp(arr, (int) off,
-                                    (arr_, off_, i) -> (short) arr_[off_ + i]));
-    }
-
-    /*package-private*/
-    abstract
-    Float16Vector fromCharArray0(char[] a, int offset, VectorMask<Float16> m, int offsetInRange);
-    @ForceInline
-    final
-    <M extends VectorMask<Float16>>
-    Float16Vector fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, int offsetInRange) {
-        m.check(species());
-        Float16Species vsp = vspecies();
-        return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
-                a, charArrayAddress(a, offset), false, m, offsetInRange,
-                a, offset, vsp,
-                (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
-                                            (arr_, off_, i) -> (short) arr_[off_ + i]));
-    }
 
 
     abstract
@@ -3873,23 +3537,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 });
     }
 
-    /*package-private*/
-    abstract
-    void intoCharArray0(char[] a, int offset, VectorMask<Float16> m);
-    @ForceInline
-    final
-    <M extends VectorMask<Float16>>
-    void intoCharArray0Template(Class<M> maskClass, char[] a, int offset, M m) {
-        m.check(species());
-        Float16Species vsp = vspecies();
-        VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
-            a, charArrayAddress(a, offset), false,
-            this, m, a, offset,
-            (arr, off, v, vm)
-            -> v.stOp(arr, (int) off, vm,
-                      (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
-    }
 
     // End of low-level memory operations.
 
@@ -3942,15 +3589,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
 
-    static final int ARRAY_CHAR_SHIFT =
-            31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_CHAR_INDEX_SCALE);
-    static final long ARRAY_CHAR_BASE =
-            Unsafe.ARRAY_CHAR_BASE_OFFSET;
-
-    @ForceInline
-    static long charArrayAddress(char[] a, int index) {
-        return ARRAY_CHAR_BASE + (((long)index) << ARRAY_CHAR_SHIFT);
-    }
 
 
     @ForceInline
@@ -3988,13 +3626,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     *
-     * @implNote This method always throws
-     * {@code UnsupportedOperationException}, because there is no floating
-     * point type of the same size as {@code short}.  The return type
-     * of this method is arbitrarily designated as
-     * {@code Vector<?>}.  Future versions of this API may change the return
-     * type if additional floating point types become available.
      */
     @ForceInline
     @Override
