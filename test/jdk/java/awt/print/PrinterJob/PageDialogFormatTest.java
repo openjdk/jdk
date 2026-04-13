@@ -25,10 +25,10 @@
  * @test
  * @bug 8334366 8334868
  * @key headful printer
- * @summary Verifies original PageFormat object is returned unmodified
- *          if PrinterJob.pageDialog is cancelled
+ * @summary Verifies PageFormat object returned from PrinterJob.pageDialog
+ *          changes to landscape orientation when "Landscape" is selected
  * @requires (os.family == "windows")
- * @run main PageDialogCancelTest
+ * @run main PageDialogFormatTest
  */
 
 import java.awt.Robot;
@@ -36,7 +36,7 @@ import java.awt.event.KeyEvent;
 import java.awt.print.PageFormat;
 import java.awt.print.PrinterJob;
 
-public class PageDialogCancelTest {
+public class PageDialogFormatTest {
 
     public static void main(String[] args) throws Exception {
         PrinterJob pj = PrinterJob.getPrinterJob();
@@ -44,14 +44,20 @@ public class PageDialogCancelTest {
         Robot robot = new Robot();
         Thread t1 = new Thread(() -> {
             robot.delay(2000);
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            // Select Landscape orientation
+            robot.keyPress(KeyEvent.VK_ALT);
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_ALT);
+            // Press OK
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
             robot.waitForIdle();
         });
         t1.start();
         PageFormat newFormat = pj.pageDialog(oldFormat);
-        if (!newFormat.equals(oldFormat)) {
-            throw new RuntimeException("Original PageFormat not returned on cancelling PageDialog");
+        if (newFormat.getOrientation() != PageFormat.LANDSCAPE) {
+            throw new RuntimeException("PageFormat didn't change to landscape");
         }
     }
 }
