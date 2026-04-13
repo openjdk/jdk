@@ -123,6 +123,7 @@ public:
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const = 0;
     virtual MetaspaceClosureType type() const = 0;
     virtual bool is_read_only_by_default() const = 0;
+    virtual ~Ref() {} // Required by clang
 
     address obj() const {
       return strip_tags(*addr());
