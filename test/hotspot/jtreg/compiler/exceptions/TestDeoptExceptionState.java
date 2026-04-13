@@ -22,13 +22,23 @@
  */
 
 /**
-* @test
+* @test id=default
 * @bug 8316422
 * @summary Test exception state used for deoptimization.
 * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -XX:+DeoptimizeALot
 *      -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileOnly=compiler.exceptions.TestDeoptExceptionState::test
 *      compiler.exceptions.TestDeoptExceptionState
 */
+
+/**
+ * @test id=with-deopt-stub-code
+ * @summary Test exception state used for deoptimization.
+ * @requires os.arch=="aarch64"
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -XX:+DeoptimizeALot
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysEmitDeoptStubCode
+ *      -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileOnly=compiler.exceptions.TestDeoptExceptionState::test
+ *      compiler.exceptions.TestDeoptExceptionState
+ */
 
 package compiler.exceptions;
 

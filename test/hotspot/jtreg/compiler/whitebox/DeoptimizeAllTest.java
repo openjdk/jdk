@@ -22,7 +22,7 @@
  */
 
 /*
- * @test DeoptimizeAllTest
+ * @test id=DeoptimizeAllTest
  * @bug 8006683 8007288 8022832
  * @summary testing of WB::deoptimizeAll()
  * @library /test/lib /
@@ -35,6 +35,24 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   compiler.whitebox.DeoptimizeAllTest
+ */
+
+/*
+ * @test id=DeoptimizeAllTest-with-deopt-stub-code
+ * @summary testing of WB::deoptimizeAll()
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ * @requires os.arch=="aarch64"
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+AlwaysEmitDeoptStubCode -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   compiler.whitebox.DeoptimizeAllTest
  */

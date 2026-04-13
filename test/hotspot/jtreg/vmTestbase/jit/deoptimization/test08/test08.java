@@ -32,6 +32,18 @@
  * @run main/othervm jit.deoptimization.test08.test08
  */
 
+/*
+ * @test id=with-deopt-stub-code
+ *
+ * @summary Ensure the same works with per-method deoptimization entry point.
+ * @library /vmTestbase
+ *          /test/lib
+ * @requires os.arch=="aarch64"
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+AlwaysEmitDeoptStubCode
+ *                   jit.deoptimization.test08.test08
+ */
+
 package jit.deoptimization.test08;
 
 import nsk.share.TestFailure;
