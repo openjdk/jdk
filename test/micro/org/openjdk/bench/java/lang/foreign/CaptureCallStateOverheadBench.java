@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 /*
  * Note that this benchmark only measures the overhead of capturing the
- * "errno" state of a C function.
+ * "errno" state on a C function (strtol).
  *
  * Depending on the foreign language and execution platform, there may be
  * additional states that could be captured.
@@ -66,21 +66,26 @@ import java.util.concurrent.TimeUnit;
 // This class benchmarks capturing the "errno" state.
 // Depending on the execution platform, there may be further states.
 public class CaptureCallStateOverheadBench {
+    private static final ValueLayout.OfLong C_LONG;
+    private static final ValueLayout.OfInt C_INT;
     private static final MethodHandle DOWNCALL_HANDLE_WITHOUT_STATE;
     private static final MethodHandle DOWNCALL_HANDLE_WITH_STATE;
     private Arena arena = null;
-    private int arg0;
-    private MemorySegment arg1 = null, arg2 = null, cs = null;
+    private MemorySegment arg0 = null, arg1 = null, cs = null;
+    private int arg2;
 
     // Set up as many fields as possible so they may be final.
     // Note that the Arena is allocated in setup such that it can be closed
     // in the corresponding teardown.
     static {
-        System.loadLibrary("CaptureCallStateOverhead");
-        MemorySegment name = SymbolLookup.loaderLookup().findOrThrow("fib_and_fact");
-        FunctionDescriptor signature = FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT,
-                                                                 ValueLayout.ADDRESS,
-                                                                 ValueLayout.ADDRESS);
+        Linker linker = Linker.nativeLinker();
+        MemorySegment name = linker.defaultLookup().findOrThrow("strtol");
+        C_LONG = (ValueLayout.OfLong) linker.canonicalLayouts().get("long");
+        C_INT = (ValueLayout.OfInt) linker.canonicalLayouts().get("int");
+        FunctionDescriptor signature = FunctionDescriptor.of(C_LONG,
+                                                             ValueLayout.ADDRESS,
+                                                             ValueLayout.ADDRESS,
+                                                             C_INT);
         Linker.Option ccs = Linker.Option.captureCallState("errno");
         DOWNCALL_HANDLE_WITHOUT_STATE = Linker.nativeLinker().downcallHandle(name, signature);
         DOWNCALL_HANDLE_WITH_STATE = Linker.nativeLinker().downcallHandle(name, signature, ccs);
@@ -89,20 +94,20 @@ public class CaptureCallStateOverheadBench {
     @Setup
     public void setup() {
         arena = Arena.ofShared();
-        arg0 = 12; // 12! won't overflow when backed by an int32.
-        arg1 = arena.allocate(ValueLayout.ADDRESS);
-        arg2 = arena.allocate(ValueLayout.ADDRESS);
+        arg0 = arena.allocateFrom("cafebab"); // Fits within int32.
+        arg1 = MemorySegment.NULL;
+        arg2 = 16;
         cs = arena.allocate(Linker.Option.captureStateLayout());
     }
 
     @Benchmark
     public void doNotUseCaptureCallState() throws Throwable {
-        DOWNCALL_HANDLE_WITHOUT_STATE.invokeExact(arg0, arg1, arg2);
+        long unused = (long) DOWNCALL_HANDLE_WITHOUT_STATE.invokeExact(arg0, arg1, arg2);
     }
 
     @Benchmark
     public void useCaptureCallState() throws Throwable {
-        DOWNCALL_HANDLE_WITH_STATE.invokeExact(cs, arg0, arg1, arg2);
+        long unused = (long) DOWNCALL_HANDLE_WITH_STATE.invokeExact(cs, arg0, arg1, arg2);
     }
 
     @TearDown
