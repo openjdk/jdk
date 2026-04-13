@@ -37,7 +37,9 @@
 
 ShenandoahObjArrayAllocator::ShenandoahObjArrayAllocator(
     Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)
-  : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
+  : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {
+  assert(_length >= 0, "length should be non-negative");
+}
 
 oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // threshold of object size, while above this size current mutator will yield to safepoint
@@ -92,13 +94,18 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     }
 
     Copy::zero_to_words(mem + process_start, process_size);
-    // reference array, header need to be overridden to its own.
-    if (is_ref_type) {
-      assert(_length >= 0, "length should be non-negative");
-      arrayOopDesc::set_length(mem, _length);
-      finish(mem);
-    }
 
+    if (!is_ref_type) {
+      // zap paddings after setting correct klass
+      mem_zap_start_padding(mem);
+      mem_zap_end_padding(mem);
+    }
+  }
+
+  // reference array, header need to be overridden to its own.
+  if (is_ref_type) {
+    arrayOopDesc::set_length(mem, _length);
+    finish(mem);
     // zap paddings after setting correct klass
     mem_zap_start_padding(mem);
     mem_zap_end_padding(mem);
