@@ -843,15 +843,11 @@ public class CLDRConverter {
                     String metaKey = METAZONE_ID_PREFIX + meta;
                     data = map.get(metaKey);
                     if (data instanceof String[] tznames) {
-                        boolean isDefZone = isDefaultZone(meta, tzKey);
-                        // TZDB short names
-                        tznames = isDefZone ?
-                            Arrays.copyOf(tznames, 6) :
-                            Arrays.copyOf((String[]) names.getOrDefault(metaKey, tznames), 6);
-                        fillTZDBShortNames(tzKey, tznames);
-                        if (!names.containsKey(metaKey)
-                            // Default zone for a metazone always puts the names
-                            || isDefZone) {
+                        if (isDefaultZone(meta, tzKey)) {
+                            // Record the metazone names only from the default
+                            // (001) zone, with short names filled from TZDB
+                            tznames = Arrays.copyOf(tznames, tznames.length);
+                            fillTZDBShortNames(tzKey, tznames);
                             names.put(metaKey, tznames);
                         }
                         names.put(tzid, meta);
