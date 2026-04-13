@@ -38,11 +38,6 @@
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 
-typedef struct {
-  ShenandoahHeapRegion* _region;
-  size_t _live_data;
-} AgedRegionData;
-
 static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
   if (a._live_data < b._live_data)
     return -1;
@@ -321,12 +316,48 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
                                            immediate_garbage);
 }
 
-// Select for inclusion into the collection set all regions whose age is at or above tenure age and for which the
-// garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).  We
-// identify these regions by setting the appropriate entry of the collection set's preselected regions array to true.
-// All entries are initialized to false before calling this function.
+void ShenandoahGenerationalHeuristics::add_tenured_regions_to_collection_set(const size_t old_promotion_reserve,
+                                                                               ShenandoahGenerationalHeap *const heap,
+                                                                               size_t candidates, AgedRegionData* sorted_regions) {
+  size_t old_consumed = 0;
+  if (candidates > 0) {
+    // Sort in increasing order according to live data bytes.  Note that
+    // candidates represents the number of regions that qualify to be promoted
+    // by evacuation.
+    QuickSort::sort<AgedRegionData>(sorted_regions, candidates,
+                                    compare_by_aged_live);
+
+    size_t selected_regions = 0;
+    size_t selected_live = 0;
+    for (size_t i = 0; i < candidates; i++) {
+      ShenandoahHeapRegion *const region = sorted_regions[i]._region;
+      const size_t region_live_data = sorted_regions[i]._live_data;
+      const size_t promotion_need = (size_t)(region_live_data * ShenandoahPromoEvacWaste);
+      if (old_consumed + promotion_need > old_promotion_reserve) {
+        // We rejected the remaining promotable regions from the collection set
+        // because we have no room to hold their evacuees. We do not need to
+        // iterate the remaining regions to estimate the amount we expect to
+        // promote because we know it directly form the census we computed
+        // during the preceding mark phase.
+        break;
+      }
+
+      old_consumed += promotion_need;
+      heap->collection_set()->add_region(region);
+      selected_regions++;
+      selected_live += region_live_data;
+    }
+    log_debug(gc, ergo)( "Preselected %zu regions containing " PROPERFMT " live data,"
+                        " consuming: " PROPERFMT " of budgeted: " PROPERFMT,
+                        selected_regions, PROPERFMTARGS(selected_live),
+                        PROPERFMTARGS(old_consumed), PROPERFMTARGS(old_promotion_reserve));
+  }
+}
+
+// Select for inclusion into the collection set all regions whose age is at or
+// above tenure age and for which the
+// garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).
 //
-// During the subsequent selection of the collection set, we give priority to these promotion set candidates.
 // Without this prioritization, we found that the aged regions tend to be ignored because they typically have
 // much less garbage and much more live data than the recently allocated "eden" regions.  When aged regions are
 // repeatedly excluded from the collection set, the amount of live memory within the young generation tends to
@@ -334,8 +365,8 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* c
 // CPU and wall-clock time.
 //
 // A second benefit of treating aged regions differently than other regions during collection set selection is
-// that this allows us to more accurately budget memory to hold the results of evacuation.  Memory for evacuation
-// of aged regions must be reserved in the old generation.  Memory for evacuation of all other regions must be
+// that this allows us to more accurately budget memory to hold the results of evacuation. Memory for evacuation
+// of aged regions must be reserved in the old generation. Memory for evacuation of all other regions must be
 // reserved in the young generation.
 size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions,
                                                              const size_t old_promotion_reserve) {
@@ -345,7 +376,6 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
 
   auto const heap = ShenandoahGenerationalHeap::heap();
 
-  size_t promo_potential = 0;
   size_t candidates = 0;
 
   // Sort the promotion-eligible regions in order of increasing live-data-bytes so that we can first reclaim regions that require
@@ -386,66 +416,28 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
         sorted_regions[candidates]._live_data = r->get_live_data_bytes();
         candidates++;
       }
-    } else {
-      // We only evacuate & promote objects from regular regions whose garbage() is above old-garbage-threshold.
-      // Objects in tenure-worthy regions with less garbage are promoted in place. These take a different path to
-      // old-gen.  Regions excluded from promotion because their garbage content is too low (causing us to anticipate that
-      // the region would be promoted in place) may be eligible for evacuation promotion by the time promotion takes
-      // place during a subsequent GC pass because more garbage is found within the region between now and then.  This
-      // should not happen if we are properly adapting the tenure age.  The theory behind adaptive tenuring threshold
-      // is to choose the youngest age that demonstrates no "significant" further loss of population since the previous
-      // age.  If not this, we expect the tenure age to demonstrate linear population decay for at least two population
-      // samples, whereas we expect to observe exponential population decay for ages younger than the tenure age.
-      //
-      // In the case that certain regions which were anticipated to be promoted in place need to be promoted by
-      // evacuation, it may be the case that there is not sufficient reserve within old-gen to hold evacuation of
-      // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
-      // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
-      // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
-        if (r->garbage() >= in_place_promotions.old_garbage_threshold()) {
-          promo_potential += r->get_live_data_bytes();
-        }
-      }
     }
-    // Note that we keep going even if one region is excluded from selection.
-    // Subsequent regions may be selected if they have smaller live data.
   }
 
   in_place_promotions.complete_planning();
 
-  // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
-  // that qualify to be promoted by evacuation.
-  size_t old_consumed = 0;
-  if (candidates > 0) {
-    size_t selected_regions = 0;
-    size_t selected_live = 0;
-    QuickSort::sort<AgedRegionData>(sorted_regions, candidates, compare_by_aged_live);
-    for (size_t i = 0; i < candidates; i++) {
-      ShenandoahHeapRegion* const region = sorted_regions[i]._region;
-      const size_t region_live_data = sorted_regions[i]._live_data;
-      const size_t promotion_need = (size_t) (region_live_data * ShenandoahPromoEvacWaste);
-      if (old_consumed + promotion_need <= old_promotion_reserve) {
-        old_consumed += promotion_need;
-        heap->collection_set()->add_region(region);
-        selected_regions++;
-        selected_live += region_live_data;
-      } else {
-        // We rejected this promotable region from the collection set because we had no room to hold its copy.
-        // Add this region to promo potential for next GC.
-        promo_potential += region_live_data;
-        assert(!heap->collection_set()->is_in(region), "Region %zu shouldn't be in the collection set", region->index());
-      }
-      // We keep going even if one region is excluded from selection because we need to accumulate all eligible
-      // regions that are not preselected into promo_potential
-    }
-    log_debug(gc, ergo)("Preselected %zu regions containing " PROPERFMT " live data,"
-                        " consuming: " PROPERFMT " of budgeted: " PROPERFMT,
-                        selected_regions, PROPERFMTARGS(selected_live), PROPERFMTARGS(old_consumed), PROPERFMTARGS(old_promotion_reserve));
-  }
+  add_tenured_regions_to_collection_set(old_promotion_reserve, heap, candidates, sorted_regions);
 
-  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: " PROPERFMT, PROPERFMTARGS(promo_potential));
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
+  const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
+  const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
+  assert(tenurable_next_cycle >= tenurable_this_cycle,
+          "Tenurable next cycle (" PROPERFMT ") should include tenurable this cycle (" PROPERFMT ")",
+          PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle));
+
+  const size_t max_promotions = tenurable_this_cycle * ShenandoahPromoEvacWaste;
+  const size_t old_consumed = MIN2(max_promotions, old_promotion_reserve);
+
+  // Don't include the bytes we expect to promote in this cycle in the next cycle
+  const size_t promo_potential = (tenurable_next_cycle - tenurable_this_cycle) * ShenandoahPromoEvacWaste;
   heap->old_generation()->set_promotion_potential(promo_potential);
+  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: " PROPERFMT, PROPERFMTARGS(promo_potential));
+
   return old_consumed;
 }
 

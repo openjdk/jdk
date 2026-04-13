@@ -49,8 +49,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
+
 import jdk.test.lib.net.IPSupport;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -92,7 +95,8 @@ public class AfterDisconnect {
 
     @Test
     public void execute() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
+
         boolean preferIPv6 = Boolean.getBoolean("java.net.preferIPv6Addresses");
         InetAddress lb = InetAddress.getLoopbackAddress();
 

@@ -286,8 +286,38 @@ void CompilerConfig::set_compilation_policy_flags() {
     }
   }
 
+#ifdef COMPILER2
+  if (HotCodeHeap) {
+    if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+      FLAG_SET_ERGO(SegmentedCodeCache, true);
+    } else if (!SegmentedCodeCache) {
+      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled");
+    }
+
+    if (FLAG_IS_DEFAULT(NMethodRelocation)) {
+      FLAG_SET_ERGO(NMethodRelocation, true);
+    } else if (!NMethodRelocation) {
+      vm_exit_during_initialization("HotCodeHeap requires NMethodRelocation enabled");
+    }
+
+    if (!is_c2_enabled()) {
+      vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
+    }
+
+    if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
+      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
+    }
+  } else if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled");
+  }
+#else
+  if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires C2 present");
+  }
+#endif // COMPILER2
+
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");
   }
 
   if (CompilationModeFlag::disable_intermediate()) {

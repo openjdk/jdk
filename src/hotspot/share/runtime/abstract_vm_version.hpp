@@ -55,7 +55,7 @@ enum class vmIntrinsicID;
     } \
   } else if (Use##feature) { \
     if (!FLAG_IS_DEFAULT(Use##feature)) { \
-      warning(#feature " instructions not available on this CPU"); \
+      warning(#feature " instructions are not available on this CPU"); \
     } \
     FLAG_SET_DEFAULT(Use##feature, false); \
   }

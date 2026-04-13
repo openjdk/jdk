@@ -34,6 +34,11 @@ class ShenandoahHeap;
 class ShenandoahCollectionSet;
 class RegionData;
 
+typedef struct {
+  ShenandoahHeapRegion* _region;
+  size_t _live_data;
+} AgedRegionData;
+
 /*
  * This class serves as the base class for heuristics used to trigger and
  * choose the collection sets for young and global collections. It leans
@@ -50,7 +55,7 @@ public:
 
   void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
 
-  virtual void post_initialize() override;
+  void post_initialize() override;
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
@@ -72,6 +77,12 @@ private:
   // array of the heap's collection set, which should be initialized
   // to false.
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
+
+  // Select regions for inclusion in the collection set that are tenured, but do
+  // not hold enough live data to warrant promotion in place.
+  void add_tenured_regions_to_collection_set(size_t old_promotion_reserve,
+                                             ShenandoahGenerationalHeap *const heap,
+                                             size_t candidates, AgedRegionData* sorted_regions);
 
   // Filter and sort remaining regions before adding to collection set.
   void filter_regions(ShenandoahCollectionSet* collection_set);
