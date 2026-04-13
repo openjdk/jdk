@@ -74,6 +74,7 @@ public class JLineConsoleProviderTest {
                     "java.base/jdk.internal.io=ALL-UNNAMED",
                     "--add-exports",
                     "jdk.internal.le/jdk.internal.org.jline=ALL-UNNAMED",
+                    "-Dtest.disabled.masking.thread=true",
                     ConsoleTest.class.getName(),
                     testName);
         OutputAnalyzer output = ProcessTools.executeProcess(builder, input);

@@ -90,6 +90,14 @@ public class KeyConversionTest {
                                         char ch, int controlKeyState) throws IOException {
                 super.processKeyEvent(isKeyDown, virtualKeyCode, ch, controlKeyState);
             }
+            @Override
+            public int getDefaultForegroundColor() {
+                return 0;
+            }
+            @Override
+            public int getDefaultBackgroundColor() {
+                return 0;
+            }
         }.processKeyEvent(event.isKeyDown, event.virtualKeyCode, event.ch, event.controlKeyState);
         String actual = result.toString();
 

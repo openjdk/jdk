@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import jdk.internal.org.jline.terminal.Terminal;
 
 /**
  * Utility class for terminal capability handling and terminfo database access.
@@ -602,7 +603,7 @@ public final class InfoCmp {
     public static String getInfoCmp(String terminal) throws IOException, InterruptedException {
         IOException error = new IOException("Unable to retrieve infocmp for " + terminal);
         String caps = getLoadedInfoCmp(terminal);
-        if (caps == null) {
+        if (false && caps == null) {
             try {
                 Process p = new ProcessBuilder(OSUtils.INFOCMP_COMMAND, "-x", terminal).start();
                 caps = ExecHelper.waitAndCapture(p);
@@ -615,7 +616,7 @@ public final class InfoCmp {
                 error.addSuppressed(e);
             }
         }
-        if (caps == null) {
+        if (false && caps == null) {
             try {
                 Process p = new ProcessBuilder(OSUtils.INFOCMP_COMMAND, terminal).start();
                 caps = ExecHelper.waitAndCapture(p);
@@ -633,7 +634,7 @@ public final class InfoCmp {
         } else {
             caps = getDefaultInfoCmp(terminal);
             if (caps == null) {
-                throw error;
+                caps = getDefaultInfoCmp(Terminal.TYPE_DUMB);
             }
         }
         return caps;

@@ -92,6 +92,7 @@ import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTER
 @SuppressWarnings("StatementWithEmptyBody")
 public class LineReaderImpl implements LineReader, Flushable {
     public static final char NULL_MASK = 0;
+    private static final boolean DISABLE_MASKING_THREAD = Boolean.getBoolean("test.disabled.masking.thread");
 
     public static final int DEFAULT_TAB_WIDTH = 4;
 
@@ -697,7 +698,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                     }
                 } else if (isTerminalDumb() && maskingCallback != null) {
                     // Setup masking thread for dumb terminals when reading a password
-                    setupMaskThread(prompt != null ? prompt : "");
+                    setupMaskThread(this.prompt.toAnsi());
                 }
 
                 callWidget(CALLBACK_INIT);
@@ -849,7 +850,7 @@ public class LineReaderImpl implements LineReader, Flushable {
      * that continuously overwrites the input line to hide what the user is typing.
      */
     private void setupMaskThread(final String prompt) {
-        if (isTerminalDumb() && maskThread == null) {
+        if (isTerminalDumb() && maskThread == null && !DISABLE_MASKING_THREAD) {
             // Create a prompt that will overwrite the current line and redisplay the prompt
             final String fullPrompt = "\r" + prompt + "                                                   \r" + prompt;
             maskThread = new Thread("JLine Mask Thread") {
