@@ -369,7 +369,7 @@ void stringStream::grow(size_t new_capacity) {
     }
     zero_terminate();
   } else {
-    _buffer = REALLOC_C_HEAP_ARRAY(char, _buffer, new_capacity, mtInternal);
+    _buffer = REALLOC_C_HEAP_ARRAY(_buffer, new_capacity, mtInternal);
     _capacity = new_capacity;
   }
 }
@@ -442,7 +442,7 @@ char* stringStream::as_string(Arena* arena) const {
 
 stringStream::~stringStream() {
   if (!_is_fixed && _buffer != _small_buffer) {
-    FREE_C_HEAP_ARRAY(char, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
   }
 }
 
@@ -681,7 +681,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   }
 
   fileStream* file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -699,7 +699,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
   file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -1056,7 +1056,7 @@ void bufferedStream::write(const char* s, size_t len) {
       }
     }
     if (buffer_length < end) {
-      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
+      buffer = REALLOC_C_HEAP_ARRAY(buffer, end, mtInternal);
       buffer_length = end;
     }
   }
@@ -1075,7 +1075,7 @@ char* bufferedStream::as_string() {
 }
 
 bufferedStream::~bufferedStream() {
-  FREE_C_HEAP_ARRAY(char, buffer);
+  FREE_C_HEAP_ARRAY(buffer);
 }
 
 #ifndef PRODUCT

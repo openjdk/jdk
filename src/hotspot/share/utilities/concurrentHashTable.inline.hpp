@@ -217,7 +217,7 @@ template <typename CONFIG, MemTag MT>
 inline ConcurrentHashTable<CONFIG, MT>::
   InternalTable::~InternalTable()
 {
-  FREE_C_HEAP_ARRAY(Bucket, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 // ScopedCS

@@ -479,6 +479,8 @@ protected:
 #endif // PRODUCT
 };
 
+#define REALLOC_RETURN_TYPE(old) typename std::remove_reference<decltype(old)>::type
+
 // One of the following macros must be used when allocating an array
 // or object to determine whether it should reside in the C heap on in
 // the resource area.
@@ -495,18 +497,18 @@ protected:
 #define NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
-#define REALLOC_RESOURCE_ARRAY(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type))
+#define REALLOC_RESOURCE_ARRAY(old, old_size, new_size)\
+  (REALLOC_RETURN_TYPE(old)) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(*old), (new_size) * sizeof(*old))
 
-#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type),\
-                                    (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
+#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(old, old_size, new_size)\
+  (REALLOC_RETURN_TYPE(old)) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(*old), \
+                                                       (new_size) * sizeof(*old), AllocFailStrategy::RETURN_NULL)
 
-#define FREE_RESOURCE_ARRAY(type, old, size)\
-  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(type))
+#define FREE_RESOURCE_ARRAY(old, size)\
+  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(*old))
 
-#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, type, old, size)\
-  resource_free_bytes(thread, (char*)(old), (size) * sizeof(type))
+#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, old, size)\
+  resource_free_bytes(thread, (char*)(old), (size) * sizeof(*old))
 
 #define FREE_FAST(old)\
     /* nop */
@@ -532,14 +534,14 @@ protected:
 #define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, mem_tag)\
   NEW_C_HEAP_ARRAY2(type, (size), mem_tag, AllocFailStrategy::RETURN_NULL)
 
-#define REALLOC_C_HEAP_ARRAY(type, old, size, mem_tag)\
-  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), mem_tag))
+#define REALLOC_C_HEAP_ARRAY(old, size, mem_tag)\
+  (REALLOC_RETURN_TYPE(old)) ReallocateHeap((char*)(old), (size) * sizeof(*old), mem_tag)
 
-#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, mem_tag)\
-  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), mem_tag, AllocFailStrategy::RETURN_NULL))
+#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(old, size, mem_tag)\
+  (REALLOC_RETURN_TYPE(old)) ReallocateHeap((char*)(old), (size) * sizeof(*old), mem_tag, AllocFailStrategy::RETURN_NULL)
 
-#define FREE_C_HEAP_ARRAY(type, old) \
-  FreeHeap((char*)(old))
+#define FREE_C_HEAP_ARRAY(obj) \
+  FreeHeap((void*)(obj))
 
 // allocate type in heap without calling ctor
 #define NEW_C_HEAP_OBJ(type, mem_tag)\
@@ -549,8 +551,8 @@ protected:
   NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, mem_tag)
 
 // deallocate obj of type in heap without calling dtor
-#define FREE_C_HEAP_OBJ(objname)\
-  FreeHeap((char*)objname);
+#define FREE_C_HEAP_OBJ(obj)\
+  FREE_C_HEAP_ARRAY(obj)
 
 
 //------------------------------ReallocMark---------------------------------

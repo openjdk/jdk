@@ -252,7 +252,7 @@ private:
 public:
   AOTStubData(BlobId blob_id) NOT_CDS({});
 
-  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
+  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(_ranges);}) NOT_CDS({})
 
   bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
   bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);

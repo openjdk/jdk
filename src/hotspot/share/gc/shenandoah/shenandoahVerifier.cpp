@@ -1073,7 +1073,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
   log_info(gc)("Verify %s, Level %zd (%zu reachable, %zu marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
-  FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);
+  FREE_C_HEAP_ARRAY(ld);
 }
 
 void ShenandoahVerifier::verify_generic(ShenandoahGeneration* generation, VerifyOption vo) {

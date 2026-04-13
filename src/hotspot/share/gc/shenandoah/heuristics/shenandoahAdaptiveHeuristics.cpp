@@ -111,12 +111,12 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   }
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_samples);
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
+  FREE_C_HEAP_ARRAY(_spike_acceleration_rate_samples);
+  FREE_C_HEAP_ARRAY(_spike_acceleration_rate_timestamps);
+  FREE_C_HEAP_ARRAY(_gc_time_timestamps);
+  FREE_C_HEAP_ARRAY(_gc_time_samples);
+  FREE_C_HEAP_ARRAY(_gc_time_xy);
+  FREE_C_HEAP_ARRAY(_gc_time_xx);
 }
 
 void ShenandoahAdaptiveHeuristics::initialize() {

@@ -444,14 +444,14 @@ void os::init_system_properties_values() {
     char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
     os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path);
+    FREE_C_HEAP_ARRAY(ld_library_path);
   }
 
   // Extensions directories.
   os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #else // __APPLE__
 
@@ -538,7 +538,7 @@ void os::init_system_properties_values() {
     os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
-    FREE_C_HEAP_ARRAY(char, ld_library_path);
+    FREE_C_HEAP_ARRAY(ld_library_path);
   }
 
   // Extensions directories.
@@ -550,7 +550,7 @@ void os::init_system_properties_values() {
                        user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #undef SYS_EXTENSIONS_DIR
 #undef SYS_EXTENSIONS_DIRS
