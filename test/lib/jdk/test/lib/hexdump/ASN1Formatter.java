@@ -58,7 +58,9 @@ import java.util.Set;
  * how to reach the value by walking through the constructed structure of the
  * ASN.1 encoding. For example, the path "123" means going to the 1st (zero-based)
  * child of the root constructed value, then the 2nd child of this inner value,
- * and finally the 3rd child of it.
+ * and finally the 3rd child of it. The path label can be used as location in
+ * various {@link jdk.test.lib.security.DerUtils DerUtils} methods.
+ *
  * <p>
  * The formatter can be configured with a set of drill paths, which will drill
  * into the OCTET STRING or BIT STRING value at the path to parse the content as
