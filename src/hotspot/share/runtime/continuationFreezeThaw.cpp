@@ -2054,7 +2054,7 @@ protected:
   intptr_t* _fastpath;
   bool _barriers;
   bool _preempted_case;
-  bool _caller_deoptimized_on_thaw;
+  bool _should_patch_caller_pc;
   bool _process_args_at_top;
   intptr_t* _top_unextended_sp_before_thaw;
   int _align_size;
@@ -2481,7 +2481,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   }
 
   frame caller; // the thawed caller on the stack
-  _caller_deoptimized_on_thaw = false;
+  _should_patch_caller_pc = false;
   recurse_thaw(heap_frame, caller, num_frames, _preempted_case);
   finish_thaw(caller); // caller is now the topmost thawed frame
   _cont.write();
@@ -2594,11 +2594,12 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
-  } else if (_caller_deoptimized_on_thaw) {
-    // caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
-    assert(caller.is_deoptimized_frame(), "");
+  } else if (_should_patch_caller_pc) {
+    // Caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    // Also, on some platforms, if the caller is interpreted but the callee not we also need to patch.
+    assert(caller.is_deoptimized_frame() PPC64_ONLY(|| caller.is_interpreted_frame()), "");
     ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
-    _caller_deoptimized_on_thaw = false;
+    _should_patch_caller_pc = false;
   }
 
   patch_pd(f, caller);
@@ -2876,8 +2877,8 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     assert(f.is_deoptimized_frame(), "");
     assert(ContinuationHelper::Frame::is_deopt_return(f.raw_pc(), f), "");
     maybe_set_fastpath(f.sp());
-    assert(!_caller_deoptimized_on_thaw, "");
-    _caller_deoptimized_on_thaw = true;
+    assert(!_should_patch_caller_pc, "");
+    _should_patch_caller_pc = true;
   }
 
   if (!is_bottom_frame) {
@@ -2894,7 +2895,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   DEBUG_ONLY(address return_pc = ContinuationHelper::CompiledFrame::return_pc(f);)
   assert(return_pc == _caller_raw_pc || (is_bottom_frame && return_pc == StubRoutines::cont_returnBarrier()), "wrong return pc");
   // Unless f was deoptimized above we need to use hf to get the raw pc (see comment above when calling new_stack_frame()).
-  DEBUG_ONLY(_caller_raw_pc = _caller_deoptimized_on_thaw ? f.raw_pc() : hf.raw_pc();)
+  DEBUG_ONLY(_caller_raw_pc = _should_patch_caller_pc ? f.raw_pc() : hf.raw_pc();)
   caller = f;
 }
 
