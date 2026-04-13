@@ -171,8 +171,8 @@ public class AOTCodeTest {
                                 "-Xlog:aot+codecache+exit=debug",
                                 "-Xlog:aot+codecache+stubs=debug"));
             // Add diagnostic flags
-            args.addAll(List.of("-XX:+AbortVMOnAOTCodeFailure",
-                                "-XX:+UnlockDiagnosticVMOptions"));
+            args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                "-XX:+AbortVMOnAOTCodeFailure"));
             return args.toArray(new String[args.size()]);
         }
 
