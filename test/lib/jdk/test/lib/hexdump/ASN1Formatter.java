@@ -39,24 +39,30 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * ASN.1 stream formatter; a debugging utility for visualizing the contents of an ASN.1 stream.
- * The ANS1Formatter can be used standalone by calling the {@link #annotate(DataInputStream)}
+ * ASN.1 stream formatter; a debugging utility for visualizing the contents
+ * of an ASN.1 stream. The ANS1Formatter can be used standalone by calling the
+ * {@link #annotate(DataInputStream)}
  * or {@link #annotate(DataInputStream, Appendable)} methods.
  * The ASN1Formatter implements the Formatter interface so it can be used
  * with the {@code HexPrinter} as a formatter to display the ASN.1 tagged values
  * with the corresponding bytes.
  * <p>
- * The formatter can be configured with a set of drill paths, which will drill into
- * the OCTET STRING or BIT STRING at the path to parse the content as another ASN.1
- * stream.
- * <p>
  * The formatter reads a single tag from the stream and prints a description
  * of the tag and its contents. If the tag is a constructed tag, set or sequence,
- * each of the contained tags is read and printed.
- * Generally, each tagged value is printed on a separate line. For constructed and application
- * tags the nested tagged values are indented.
- * There are few consistency checks and an improperly encoded stream may produce
- * unpredictable output.
+ * each of the contained tags is read and printed. Generally, each tagged value
+ * is printed on a separate line. For constructed and application tags the nested
+ * tagged values are indented. There are few consistency checks and an improperly
+ * encoded stream may produce unpredictable output.
+ * <p>
+ * The annotation line for each tagged value starts with a path label that shows
+ * how to reach the value by walking through the constructed structure of the
+ * ASN.1 encoding. For example, the path "123" means going to the 1st (zero-based)
+ * child of the root constructed value, then the 2nd child of this inner value,
+ * and finally the 3rd child of it.
+ * <p>
+ * The formatter can be configured with a set of drill paths, which will drill
+ * into the OCTET STRING or BIT STRING value at the path to parse the content as
+ * another ASN.1 stream. A drill-into is shown as "c" in its label.
  * <p>
  * For example, to show the contents of a stream from a file.
  * <pre>{@code
@@ -96,7 +102,7 @@ import java.util.Set;
  * }</pre>
  * As a standalone program, it can be launched with
  * <pre>
- * java ASN1Formatter [--drill=path[,path...]] [asn1file]
+ * java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn1file]
  * </pre>
  * It parses {@code asn1file} as a binary DER or BER encoded ASN.1 data block
  * and print out both the HEX dump and annotations. If no file is supplied,
@@ -109,6 +115,20 @@ import java.util.Set;
  * in comma-separated-value format.
  * <p>
  * If {@code --no-dump} option is provided, the HEX dump will not be displayed.
+ * <p>
+ * For example:
+ * {@snippet lang = shell :
+ * o $ echo 3009040730050201050500 | xxd -r -p > bin
+ * o $ java ASN1Formatter.java bin
+ * 0000: 30 09                                           ; []: SEQUENCE [9]
+ * 0002:       04 07 30 05 02 01 05 05 00                ; [0]: OCTET STRING [7] (try --drill=0)
+ * o $ java ASN1Formatter.java bin --drill=0
+ * 0000: 30 09                                           ; []: SEQUENCE [9]
+ * 0002:       04 07                                     ; [0]: OCTET STRING [7] encapsulates
+ * 0004:             30 05                               ; [0c]: SEQUENCE [5]
+ * 0006:                   02 01 05                      ; [0c0]: BYTE 5.
+ * 0009:                            05 00                ; [0c1]: NULL
+ * }
  */
 public class ASN1Formatter implements HexPrinter.Formatter {
 
