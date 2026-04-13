@@ -276,9 +276,8 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                     }
                     break;
                 case TAG_ObjectId:
-                    byte[] oid = new byte[len];
-                    int l1 = in.read(oid);
-                    available -= l1;
+                    byte[] oid = in.readNBytes(len);
+                    available -= oid.length;
                     String s = oidName(oid);
                     out.append(tagName(tag) + " [" + len + "] ");
                     out.append(s);
@@ -335,19 +334,26 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                         out.append("<Unprintable> ");
                     }
                     // Skip the rest
-                    while (l < len) {
-                        l += (int)in.skip(len - l);
-                    }
-                    available -= len;
+                    available -= in.skipBytes(len - l) + l;
                     break;
                 }
                 case TAG_Null:
-                    out.append("NULL ");
+                    if (len > 0) { // abnormal
+                        out.append(String.format("NULL [%d] (invalid length) ", len));
+                        available -= in.skipBytes(len);
+                    } else {
+                        out.append("NULL ");
+                    }
                     break;
                 case TAG_Boolean:
-                    int b = in.readByte();
-                    available--;
-                    out.append((b == 0) ? "FALSE " : "TRUE ");
+                    if (len != 1) {
+                        out.append(String.format("BOOLEAN [%d] (invalid length) ", len));
+                        available -= in.skipBytes(len);
+                    } else {
+                        int b = in.readByte();
+                        available--;
+                        out.append((b == 0) ? "FALSE " : "TRUE ");
+                    }
                     break;
                 case TAG_UTF8String:
                     out.append(getString(in, len, StandardCharsets.UTF_8));
@@ -380,11 +386,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                         }
                         continue;
                     } else {
-                        do {
-                            int skipped = (int) in.skip(len);
-                            len -= skipped;
-                            available -= skipped;
-                        } while (len > 0);
+                        available -= in.skipBytes(len);
                     }
                 }
             }
@@ -418,8 +420,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @throws IOException if an I/O error occurs
      */
     private String getString(DataInputStream in, int len, Charset charset) throws IOException {
-        byte[] bytes = new byte[len];
-        int l = in.read(bytes);
+        byte[] bytes = in.readNBytes(len);
         return new String(bytes, charset);
     }
 
@@ -647,21 +648,23 @@ public class ASN1Formatter implements HexPrinter.Formatter {
      * @param args file names
      */
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [asn.1 file]");
-            return;
-        }
         Set<String> drillPaths = new HashSet<>();
         boolean dump = true;
         String file = null;
         for (String arg : args) {
-            if (arg.startsWith("--drill=")) {
+            if (arg.equals("--help")) {
+                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [asn.1 file]");
+                return;
+            } else if (arg.startsWith("--drill=")) {
                 drillPaths.addAll(Arrays.asList(
                         arg.substring("--drill=".length()).split(",")));
             } else if (arg.equals("--no-dump")) {
                 dump = false;
-            } else {
+            } else if (file == null) {
                 file = arg;
+            } else {
+                System.out.println("Error: multiple files provided");
+                System.exit(1);
             }
         }
         ASN1Formatter fmt = ASN1Formatter.formatter(drillPaths);
