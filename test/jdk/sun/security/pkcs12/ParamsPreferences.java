@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class ParamsPreferences {
                 Map.of(),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
 
         // legacy settings
         test(c++,
@@ -170,21 +170,21 @@ public class ParamsPreferences {
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBEWithSHA1AndRC2_128, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
         test(c++,
                 Map.of(),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBEWithSHA1AndRC2_40, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
         test(c++,
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128"),
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBEWithSHA1AndRC4_128, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
         test(c++,
                 Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_40"),
@@ -192,7 +192,7 @@ public class ParamsPreferences {
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBEWithSHA1AndRC4_40, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
 
         // 8266293
         test(c++,
@@ -201,7 +201,7 @@ public class ParamsPreferences {
                 Map.of(),
                 PBEWithMD5AndDES, 10000,
                 PBEWithMD5AndDES, 10000,
-                SHA_256, 10000);
+                PBMAC1, 10000);
     }
 
     /**
@@ -269,6 +269,9 @@ public class ParamsPreferences {
         KnownOIDs macAlg = (KnownOIDs)args[i++];
         if (macAlg == null) {
             shouldNotExist(data, "2");
+        } else if (macAlg.stdName().equals("PBMAC1")) {
+            checkAlg(data, "2000", macAlg);
+            checkInt(data, "2001011", (int) args[i++]);
         } else {
             checkAlg(data, "2000", macAlg);
             checkInt(data, "22", (int) args[i++]);
