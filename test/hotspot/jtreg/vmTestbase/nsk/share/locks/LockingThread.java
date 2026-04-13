@@ -439,6 +439,13 @@ public class LockingThread extends Thread {
                     // but to be sure that LockingThread have reached required state method waitState() should be called
                     // and this method waits when LockingThred change state to 'Thread.State.WAITING'
 
+                    try {
+                        // This is to prevent a case when the LockingThread parks inside of wait(0) below BEFORE
+                        // the main thread executes _ParkEvent->unpark() in JavaThread::interrupt().
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                    }
+
                     while (relinquishMonitor)
                         relinquishedMonitor.wait(0);
 
