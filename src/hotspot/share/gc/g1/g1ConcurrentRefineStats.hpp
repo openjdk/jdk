@@ -29,6 +29,25 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+struct G1RefineData {
+  size_t _cards_scanned;
+  size_t _cards_clean;
+  size_t _cards_not_parsable;
+  size_t _cards_already_refer_to_cset;
+  size_t _cards_refer_to_cset;
+  size_t _cards_no_cross_region;
+  jlong _refine_duration;
+
+  G1RefineData() :
+    _cards_scanned(0),
+    _cards_clean(0),
+    _cards_not_parsable(0),
+    _cards_already_refer_to_cset(0),
+    _cards_refer_to_cset(0),
+    _cards_no_cross_region(0),
+    _refine_duration(0) {}
+};
+
 // Collection of statistics for concurrent refinement processing.
 // Used for collecting per-thread statistics and for summaries over a
 // collection of threads.
@@ -69,18 +88,10 @@ public:
 
   inline size_t cards_to_cset() const;
 
-  inline void inc_sweep_time(jlong t);
+  void add_atomic(const G1RefineData* other);
+
+  inline void inc_sweep_duration(jlong t);
   inline void inc_yield_during_sweep_duration(jlong t);
-  inline void inc_refine_duration(jlong t);
-
-  inline void inc_cards_scanned(size_t increment);
-  inline void inc_cards_clean(size_t increment);
-  inline void inc_cards_not_parsable();
-  inline void inc_cards_already_refer_to_cset();
-  inline void inc_cards_refer_to_cset();
-  inline void inc_cards_no_cross_region();
-
-  void add_atomic(G1ConcurrentRefineStats* other);
 
   void reset();
 };
