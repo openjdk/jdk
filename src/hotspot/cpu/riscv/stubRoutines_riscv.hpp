@@ -83,12 +83,10 @@ private:
 #define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
-  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT, DEFINE_ARCH_ENTRY_GETTER_ARRAY)
-
 #define DEFINE_ARCH_ENTRY_GETTER_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
   static address getter_name(int idx) { return STUB_FIELD_NAME(field_name) [idx] ; }
 
-  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT, DEFINE_ARCH_ENTRY_GETTER_ARRAY)
 
 #undef DEFINE_ARCH_ENTRY_GETTER_ARRAY
 #undef DEFINE_ARCH_ENTRY_GETTER_INIT
