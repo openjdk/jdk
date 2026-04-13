@@ -136,6 +136,8 @@ Thread::Thread(MemTag mem_tag) {
   }
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
+
+  DEBUG_ONLY(_dwarf_log_stream = nullptr;)
 }
 
 #ifdef ASSERT
