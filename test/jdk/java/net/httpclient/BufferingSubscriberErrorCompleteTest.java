@@ -44,7 +44,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /*
  * @test
  * @summary Test for HttpResponse.BodySubscriber.buffering() onError/onComplete
- * @run junit/othervm BufferingSubscriberErrorCompleteTest
+ * @run junit/othervm ${test.main.class}
  */
 
 public class BufferingSubscriberErrorCompleteTest {

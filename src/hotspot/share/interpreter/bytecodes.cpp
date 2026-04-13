@@ -402,7 +402,7 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
   case _fast_binaryswitch: // fall through
   case _fast_linearswitch:
     { address aligned_bcp = align_up(bcp + 1, jintSize);
-      if (end != nullptr && aligned_bcp + 2*jintSize >= end) {
+      if (end != nullptr && aligned_bcp + 2*jintSize > end) {
         return -1; // don't read past end of code buffer
       }
       // Promote calculation to 64 bits to do range checks, used by the verifier.

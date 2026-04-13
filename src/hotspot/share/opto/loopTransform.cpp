@@ -35,7 +35,9 @@
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phase.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
@@ -524,6 +526,9 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+  if (LoopPeeling != 1) {
+    return 0;
+  }
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -775,6 +780,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+  assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
@@ -1770,13 +1776,39 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
     Node* main_phi = main_head->out(i);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-      Node* cur_phi = old_new[main_phi->_idx];
+      Node* post_phi = old_new[main_phi->_idx];
+      Node* loopback_input = main_phi->in(LoopNode::LoopBackControl);
       Node* fallnew = clone_up_backedge_goo(main_head->back_control(),
                                             post_head->init_control(),
-                                            main_phi->in(LoopNode::LoopBackControl),
+                                            loopback_input,
                                             visited, clones);
-      _igvn.hash_delete(cur_phi);
-      cur_phi->set_req(LoopNode::EntryControl, fallnew);
+      // Technically, the entry value of post_phi must be the loop back input of the corresponding
+      // Phi of the outer loop, not the Phi of the inner loop (i.e. main_phi). However, we have not
+      // constructed the Phis for the OuterStripMinedLoop yet, so the input must be inferred from
+      // the loop back input of main_phi.
+      // - If post_phi is a data Phi, then we can use the loop back input of main_phi.
+      // - If post_phi is a memory Phi, since Stores can be sunk below the inner loop, but still
+      //   inside the outer loop, we have 2 cases:
+      //   + If the loop back input of main_phi is on the backedge, then the entry input of
+      //     post_phi is the clone of the node on the entry of post_head, similar to when post_phi
+      //     is a data Phi.
+      //   + If the loop back input of main_phi is not on the backedge, we need to find whether
+      //     there is a sunk Store corresponding to post_phi, if there is any, the latest such
+      //     store will be the entry input of post_phi. Fortunately, the safepoint at the exit of
+      //     the outer loop captures all memory states, so we can use it as the entry input of
+      //     post_phi.
+      //   Another way to see it is that, the memory phi should capture the latest state at the
+      //   post-loop entry. If loopback_input is cloned by clone_up_backedge_goo, it is pinned at
+      //   the post-loop entry, and is surely the latest state. Otherwise, the latest memory state
+      //   corresponding to post_phi is the memory state at the exit of the outer main-loop, which
+      //   is captured by the safepoint there.
+      if (main_head->is_strip_mined() && fallnew == loopback_input && post_phi->is_memory_phi()) {
+        SafePointNode* main_safepoint = main_head->outer_safepoint();
+        assert(main_safepoint != nullptr, "outer loop must have a safepoint");
+        fallnew = main_safepoint->memory();
+      }
+      _igvn.hash_delete(post_phi);
+      post_phi->set_req(LoopNode::EntryControl, fallnew);
     }
   }
   // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
@@ -2201,6 +2233,15 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
 
   // If loop is tripping an odd number of times, peel odd iteration
   if ((cl->trip_count() & 1) == 1) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("MaxUnroll cancelled since LoopPeeling is always disabled");
+        loop->dump_head();
+      }
+#endif
+      return;
+    }
     do_peeling(loop, old_new);
   }
 
@@ -3243,6 +3284,15 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #endif
 
   if (needs_guard) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Empty loop not removed since LoopPeeling is always disabled");
+        this->dump_head();
+      }
+#endif
+      return false;
+    }
     // Peel the loop to ensure there's a zero trip guard
     Node_List old_new;
     phase->do_peeling(this, old_new);
@@ -3969,7 +4019,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = new AddPNode(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
   // For normal array fills, C2 uses two AddP nodes for array element
   // addressing. But for array fills with Unsafe call, there's only one
@@ -3977,7 +4027,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   assert(offset != nullptr || C->has_unsafe_access(),
          "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
-    from = new AddPNode(base, from, offset);
+    from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
   }
   // Compute the number of elements to copy

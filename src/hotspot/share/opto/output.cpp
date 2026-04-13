@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2914,16 +2914,29 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     Node *m = b->get_node(i);
 
-    // Add precedence edge from following safepoint to use of derived pointer
-    if( last_safept_node != end_node &&
+    if (last_safept_node != end_node &&
         m != last_safept_node) {
+      bool need_safept_prec = false;
+      // Add precedence edge from following safepoint to use of derived pointer
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
-        if( t->isa_oop_ptr() &&
-            t->is_ptr()->offset() != 0 ) {
-          last_safept_node->add_prec( m );
+        if (t->isa_oop_ptr() &&
+            t->is_ptr()->offset() != 0) {
+          need_safept_prec = true;
           break;
         }
+      }
+      // A CheckCastPP whose input is still RawPtr must stay above the following safepoint.
+      // Otherwise post-regalloc block-local scheduling can leave a live raw oop at the safepoint.
+      if (!need_safept_prec && m->is_Mach() &&
+          m->as_Mach()->ideal_Opcode() == Op_CheckCastPP) {
+        Node* def = m->in(1);
+        if (def != nullptr && def->bottom_type()->base() == Type::RawPtr) {
+          need_safept_prec = true;
+        }
+      }
+      if (need_safept_prec) {
+        last_safept_node->add_prec(m);
       }
     }
 
