@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,11 @@ ClassFileLoadHook (
             loader, method_id, class_name_string)) != nullptr))
         return;
 
+    if (jni->ExceptionCheck()) {
+        jni->ExceptionClear();
+        return;
+    }
+
     if (!NSK_VERIFY((method_id = jni->GetStaticMethodID(
             callback_class, "callback", "(Ljava/lang/String;I)V")) != nullptr))
         return;
@@ -121,6 +126,10 @@ ClassFileLoadHook (
         return;
 
     jni->CallStaticObjectMethod(callback_class, method_id, class_name_string, agent_id);
+
+    if (jni->ExceptionCheck()) {
+        jni->ExceptionClear();
+    }
 }
 
 
