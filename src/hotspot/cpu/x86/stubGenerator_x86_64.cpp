@@ -893,9 +893,9 @@ address StubGenerator::generate_popcount_avx_lut() {
   return start;
 }
 
-address StubGenerator::generate_iota_indices() {
+void StubGenerator::generate_iota_indices() {
   StubId stub_id = StubId::stubgen_vector_iota_indices_id;
-  GrowableArray entries;
+  GrowableArray<address> entries;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == VECTOR_IOTA_COUNT, "sanity check");
   address start = load_archive_data(stub_id, &entries);
@@ -977,9 +977,9 @@ address StubGenerator::generate_iota_indices() {
   // install the entry addresses in the entry array
   assert(entries.length() == entry_count - 1,
          "unexpected entries count %d", entries.length());
-  StubRoutines::aarch64::_vector_iota_indices[0] = start;
+  StubRoutines::x86::_vector_iota_indices[0] = start;
   for (int i = 1; i < VECTOR_IOTA_COUNT; i++) {
-    StubRoutines::aarch64::_vector_iota_indices[i] = entries.at(i - 1);
+    StubRoutines::x86::_vector_iota_indices[i] = entries.at(i - 1);
   }
 }
 
