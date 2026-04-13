@@ -29,6 +29,7 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -177,17 +178,30 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
     Stream() : LogStream(LogTarget(Trace, gc, ref)()) {}
     void print_name(oop obj) {
       if (obj != nullptr) {
-        print(" a %s", obj->klass()->internal_name());
+        Klass* k = obj->klass_without_asserts();
+        if (!(Metaspace::contains(k) && Symbol::is_valid(k->name()))) {
+          // Maybe the mark contains a forwarding pointer
+          if (obj->is_forwarded()) {
+            obj = obj->forwardee();
+            k = obj->klass_without_asserts();
+            if (!(Metaspace::contains(k) && Symbol::is_valid(k->name()))) {
+              return; // Give up
+            }
+          } else {
+            return; // Give up
+          }
+        }
+        print(" a %s", k->internal_name());
       }
     }
     void print_contents_cr(oop* addr) {
       print(PTR_FORMAT, *(uintptr_t*)addr);
       if (!UseZGC) {
         // ZGC can't read raw oops without load barriers.
-        oop obj = CompressedOops::decode(*addr);
+        oop obj = *addr;
         print_name(obj);
       }
-      print_cr("");
+      cr();
     }
     void print_contents_cr(narrowOop* addr) {
       print(UINT32_FORMAT_X_0, *(uint32_t*)addr);
@@ -196,7 +210,7 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
         oop obj = CompressedOops::decode(*addr);
         print_name(obj);
       }
-      print_cr("");
+      cr();
     }
   } stream;
 
