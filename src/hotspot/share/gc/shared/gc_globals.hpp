@@ -256,12 +256,6 @@
           "before pushing a continuation entry")                            \
           range(1, INT_MAX/2)                                               \
                                                                             \
-  product_pd(bool, NeverActAsServerClassMachine,                            \
-          "(Deprecated) Never act like a server-class machine")             \
-                                                                            \
-  product(bool, AlwaysActAsServerClassMachine, false,                       \
-          "(Deprecated) Always act like a server-class machine")            \
-                                                                            \
   product(bool, AggressiveHeap, false,                                      \
           "(Deprecated) Optimize heap options for long-running memory "     \
           "intensive apps")                                                 \

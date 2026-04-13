@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
  * @summary The test checks if UncheckedIOException is thrown
  * @build  HttpClientExceptionTest
  * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=HttpClientExceptionTest$CustomSelectorProvider
- *                      HttpClientExceptionTest
+ *                      ${test.main.class}
  */
 
 public class HttpClientExceptionTest {

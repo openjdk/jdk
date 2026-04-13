@@ -32,7 +32,6 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -745,9 +744,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -1140,7 +1136,7 @@ void AsmRemarks::clear() {
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
   const char* prefix = " ;; ";
-  const char* remstr = _remarks->lookup(offset);
+  const char* remstr = (_remarks ? _remarks->lookup(offset) : nullptr);
   while (remstr != nullptr) {
     strm->bol();
     strm->print("%s", prefix);
