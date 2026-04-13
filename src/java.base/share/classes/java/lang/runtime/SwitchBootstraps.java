@@ -133,7 +133,8 @@ public final class SwitchBootstraps {
      * Bootstrap method for linking an {@code invokedynamic} call site that
      * implements a {@code switch} on a target of a reference type.  The static
      * arguments are an array of case labels which must be non-null and of type
-     * {@code String} or {@code Integer} or {@code Class} or {@code EnumDesc}.
+     * {@code String}, {@code Integer}, {@code Long}, {@code Float}, {@code Double},
+     * {@code Boolean}, {@code Class}, or {@code EnumDesc}.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
@@ -149,8 +150,8 @@ public final class SwitchBootstraps {
      * <ul>
      *   <li>the element is of type {@code Class} that is assignable
      *       from the target's class; or</li>
-     *   <li>the element is of type {@code String} or {@code Integer} and
-     *       equals to the target.</li>
+     *   <li>the element is of type {@code String}, {@code Integer}, {@code Long},
+     *       {@code Float}, {@code Double}, or {@code Boolean} and equals to the target.</li>
      *   <li>the element is of type {@code EnumDesc}, that describes a constant that is
      *       equals to the target.</li>
      * </ul>
@@ -162,13 +163,18 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
+     * @apiNote
+     * Case labels of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
+     * are allowed only when preview features are enabled.
+     *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
-     * @param labels case labels - {@code String} and {@code Integer} constants
+     * @param labels case labels - {@code String}, {@code Integer}, {@code Long},
+     *               {@code Float}, {@code Double}, and {@code Boolean} constants
      *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
@@ -179,6 +185,8 @@ public final class SwitchBootstraps {
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
      *                                  {@code Class} or {@code EnumDesc}
+     * @throws IllegalArgumentException with preview features disabled and if {@code labels} contains an element
+     *                                  that is of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
      *                                  when {@code target} is a {@code Boolean.class}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
