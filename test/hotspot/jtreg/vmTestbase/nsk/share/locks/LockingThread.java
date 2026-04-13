@@ -442,7 +442,7 @@ public class LockingThread extends Thread {
                     try {
                         // This is to prevent a case when the LockingThread parks inside of wait(0) below BEFORE
                         // the main thread executes _ParkEvent->unpark() in JavaThread::interrupt().
-                        Thread.sleep(500);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
 
