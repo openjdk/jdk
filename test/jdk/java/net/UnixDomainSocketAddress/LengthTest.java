@@ -51,9 +51,9 @@ public class LengthTest {
 
         return List.of(
                 "",
-                new String(new char[100]).replaceAll("\0", "x"),
-                new String(new char[namelen]).replaceAll("\0", "x"),
-                new String(new char[namelen-1]).replaceAll("\0", "x")
+                "x".repeat(100),
+                "x".repeat(namelen),
+                "x".repeat(namelen - 1)
         );
     }
 
