@@ -33,8 +33,12 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags HelloWorld
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
  * @run driver/timeout=1500 AOTCodeFlags
  */
 /**
@@ -48,8 +52,12 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags HelloWorld
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
  * @run driver/timeout=1500 AOTCodeFlags Z
  */
 /**
@@ -63,8 +71,12 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags HelloWorld
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
  * @run driver/timeout=1500 AOTCodeFlags Shenandoah
  */
 /**
@@ -78,8 +90,12 @@
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
  * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags HelloWorld
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
+ * @build AOTCodeFlags JavacBenchApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 JavacBenchApp
+ *                 JavacBenchApp$ClassFile
+ *                 JavacBenchApp$FileManager
+ *                 JavacBenchApp$SourceFile
  * @run driver/timeout=1500 AOTCodeFlags Parallel
  */
 
@@ -176,7 +192,7 @@ public class AOTCodeFlags {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] { "HelloWorld" };
+            return new String[] { "JavacBenchApp", "10" };
         }
 
         @Override
