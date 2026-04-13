@@ -37,6 +37,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -73,11 +75,8 @@ public class SocksSocketImplTest {
     public void testIOEOnProxySelection() throws Exception {
         final int backlog = -1;
         final int port = 0;
-        try (ServerSocket ss = new ServerSocket(port, backlog, InetAddress.getLoopbackAddress());
-             Socket s1 = new Socket(ss.getInetAddress(), ss.getLocalPort());
-             Socket s2 = ss.accept()) {
-                fail("IOException was expected to be thrown, but wasn't");
-        } catch (IOException ioe) {
+        try (ServerSocket ss = new ServerSocket(port, backlog, InetAddress.getLoopbackAddress())) {
+             IOException ioe = assertThrows(IOException.class, () -> new Socket(ss.getInetAddress(), ss.getLocalPort()));
             // expected
             // now verify the IOE was thrown for the correct expected reason
             if (!(ioe.getCause() instanceof IllegalArgumentException)) {

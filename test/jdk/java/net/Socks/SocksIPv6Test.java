@@ -59,9 +59,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SocksIPv6Test {
 
-    static private HttpServer server;
-    static private SocksServer socks;
-    private static String response = "Hello.";
+    private static HttpServer server;
+    private static SocksServer socks;
+    private static final String response = "Hello.";
 
     @BeforeAll
     public static void setUp() throws Exception {

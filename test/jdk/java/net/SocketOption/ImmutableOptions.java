@@ -65,8 +65,8 @@ public class ImmutableOptions {
     public void socketThrows() throws IOException {
         CustomSocketImpl impl = new CustomSocketImpl();
         Socket socket = new CustomSocket(impl);
-        assertThrows(UnsupportedOperationException.class,
-                () -> socket.supportedOptions().clear());
+        Set<SocketOption<?>> options = socket.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
     @Test
@@ -79,30 +79,31 @@ public class ImmutableOptions {
     @Test
     public void serverSocketThrows() throws IOException {
         ServerSocket ss = new ServerSocket();
-        assertThrows(UnsupportedOperationException.class,
-                () -> ss.supportedOptions().clear());
+        Set<SocketOption<?>> options = ss.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
     @Test
     public void serverSocketImplThrows() throws IOException {
         ServerSocket ss = new ServerSocket();
-        assertThrows(UnsupportedOperationException.class,
-                () -> ServerSocketImplFactory.mostRecentlyCreated.supportedOptions().clear());
+        Set<SocketOption<?>> options =
+                ServerSocketImplFactory.mostRecentlyCreated.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
     @Test
     public void datagramSocketThrows() throws IOException {
         CustomDatagramSocketImpl impl = new CustomDatagramSocketImpl();
         DatagramSocket socket = new CustomDatagramSocket(impl);
-        assertThrows(UnsupportedOperationException.class,
-                () -> socket.supportedOptions().clear());
+        Set<SocketOption<?>> options = socket.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
     @Test
     public void datagramSocketImplThrows() throws IOException {
         CustomDatagramSocketImpl impl = new CustomDatagramSocketImpl();
-        assertThrows(UnsupportedOperationException.class,
-                () -> impl.supportedOptions().clear());
+        Set<SocketOption<?>> options = impl.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
 

@@ -46,9 +46,7 @@ public class LengthTest {
     private static final int namelen = 100;    // length close to max
 
     public static List<String> strings() {
-        if (namelen == -1)
-            return List.of("");
-
+        assert namelen > 0;
         return List.of(
                 "",
                 "x".repeat(100),
