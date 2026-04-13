@@ -56,7 +56,7 @@ class TextBlockSupport {
         // No need to check indentation if opting out (last line is empty.)
         char lastChar = string.charAt(string.length() - 1);
         boolean optOut = lastChar == '\n' || lastChar == '\r';
-        // Split string using JLS text block line terminators: LF, CR, or CRLF.
+        // Split string using JLS text block line terminators: CRLF, CR, or LF.
         String[] lines = string.split("\\r\\n|\\r|\\n");
         int length = lines.length;
         // Extract last line.
