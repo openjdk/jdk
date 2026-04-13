@@ -336,6 +336,11 @@ source %{
       case Op_SqrtVHF:
       case Op_FmaVHF:
         return false;
+      // There's no SLI instruction in SVE, so we can't have an optimal vector
+      // rotate with masking when emitting code for SVE.
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        return false;
       default:
         break;
     }
@@ -1955,12 +1960,10 @@ instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
   format %{ "vrotateconstant $dst, $src, $shift" %}
   ins_encode %{
     int opc = this->ideal_Opcode();
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int esize = type2aelembytes(bt) * BitsPerByte;
     int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
                                       $shift$$constant : -$shift$$constant);
     __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
-                          $src$$FloatRegister, raw_shift & (esize - 1));
+                          $src$$FloatRegister, raw_shift);
   %}
   ins_pipe(pipe_slow);
 %}
