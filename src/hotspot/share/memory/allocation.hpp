@@ -267,7 +267,7 @@ class MetaspaceObj {
   // When AOT/CDS is not enabled, both pointers are set to null.
   static void* _aot_metaspace_base;  // (inclusive) low address
   static void* _aot_metaspace_top;   // (exclusive) high address
-
+  static volatile bool _aot_metaspace_range_initialized;
  public:
 
   // Returns true if the pointer points to a valid MetaspaceObj. A valid
@@ -277,23 +277,26 @@ class MetaspaceObj {
 
 #if INCLUDE_CDS
   static bool in_aot_cache(const MetaspaceObj* p) {
+    // No threads in the JVM should see MetaspaceObjs from the AOT cache until
+    // set_aot_metaspace_range() has been called.
+    precond(aot_metaspace_range_initialized());
+
     // If no shared metaspace regions are mapped, _aot_metaspace_{base,top} will
     // both be null and all values of p will be rejected quickly.
     return (((void*)p) < _aot_metaspace_top &&
             ((void*)p) >= _aot_metaspace_base);
   }
   bool in_aot_cache() const { return MetaspaceObj::in_aot_cache(this); }
+  static bool aot_metaspace_range_initialized();
 #else
   static bool in_aot_cache(const MetaspaceObj* p) { return false; }
   bool in_aot_cache() const { return false; }
+  static bool aot_metaspace_range_initialized() { return false; }
 #endif
 
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
-  static void set_aot_metaspace_range(void* base, void* top) {
-    _aot_metaspace_base = base;
-    _aot_metaspace_top = top;
-  }
+  static void set_aot_metaspace_range(void* base, void* top);
 
   static void* aot_metaspace_base() { return _aot_metaspace_base; }
   static void* aot_metaspace_top()  { return _aot_metaspace_top;  }
