@@ -257,7 +257,7 @@
           range(1, INT_MAX/2)                                               \
                                                                             \
   product(uintx, ArrayMarkingMinStride, 64, DIAGNOSTIC,                     \
-          "Minimum chunk size for object array processing during marking; " \
+          "Minimum chunk size for split array processing during marking; "  \
           "the effective stride is clamped between this value "             \
           "and ObjArrayMarkingStride.")                                     \
           constraint(ArrayMarkingMinStrideConstraintFunc,AfterErgo)         \

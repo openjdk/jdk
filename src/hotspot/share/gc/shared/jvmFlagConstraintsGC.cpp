@@ -415,7 +415,7 @@ JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
   }
 }
 
-JVMFlag::Error ArrayMarkingMinStrideConstraintFunc(size_t value, bool verbose) {
+JVMFlag::Error ArrayMarkingMinStrideConstraintFunc(uintx value, bool verbose) {
   if (value > ObjArrayMarkingStride) {
     JVMFlag::printError(verbose,
                         "ArrayMarkingMinStride (%zu) must be "
