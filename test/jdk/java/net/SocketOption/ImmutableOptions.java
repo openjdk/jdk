@@ -72,8 +72,8 @@ public class ImmutableOptions {
     @Test
     public void socketImplThrows() throws IOException {
         CustomSocketImpl impl = new CustomSocketImpl();
-        assertThrows(UnsupportedOperationException.class,
-                () -> impl.supportedOptions().clear());
+        var options = impl.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
     @Test
