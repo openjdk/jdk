@@ -91,7 +91,13 @@ class LinuxCDebugger implements CDebugger {
         return new LinuxPPC64CFrame(dbg, sp, pc, LinuxDebuggerLocal.getAddressSize());
     } else if (cpu.equals("aarch64")) {
        AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
-       return LinuxAARCH64CFrame.getTopFrame(dbg, context);
+       Address sp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
+       if (sp == null) return null;
+       Address fp = context.getRegisterAsAddress(AARCH64ThreadContext.FP);
+       if (fp == null) return null;
+       Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
+       if (pc == null) return null;
+       return new LinuxAARCH64CFrame(dbg, sp, fp, pc);
     } else if (cpu.equals("riscv64")) {
        RISCV64ThreadContext context = (RISCV64ThreadContext) thread.getContext();
        Address sp = context.getRegisterAsAddress(RISCV64ThreadContext.SP);
