@@ -790,7 +790,6 @@ JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* current
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
-  Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   JvmtiExport::post_raw_breakpoint(current, method, bcp);
 JRT_END
 
@@ -1151,6 +1150,7 @@ JRT_END
 JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread* current, Method* m))
   return Method::build_method_counters(current, m);
 JRT_END
+
 
 JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
   // We used to need an explicit preserve_arguments here for invoke bytecodes. However,
