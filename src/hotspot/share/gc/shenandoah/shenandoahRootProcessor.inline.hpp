@@ -147,7 +147,9 @@ public:
     assert_at_safepoint();
 
     HeapWord* invisible_root = ShenandoahThreadLocalData::get_invisible_root(t);
-    if (invisible_root == nullptr) return;
+    if (invisible_root == nullptr) {
+      return;
+    }
     size_t invisible_root_word_size = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
 
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
