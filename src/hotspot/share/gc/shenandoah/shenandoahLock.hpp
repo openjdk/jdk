@@ -38,15 +38,15 @@ private:
   shenandoah_padding(0);
   Atomic<LockState> _state;
   shenandoah_padding(1);
-  DEBUG_ONLY(Atomic<Thread*> _owner;)
-  DEBUG_ONLY(shenandoah_padding(2);)
+  DEBUG_ONLY(Atomic<Thread*> _owner;);
+  DEBUG_ONLY(shenandoah_padding(2););
 
   template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
   static void yield_or_sleep(int &yields);
 
 public:
-  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
+  ShenandoahLock() : _state(unlocked) { DEBUG_ONLY(_owner = nullptr;) };
 
   void lock(bool allow_block_for_safepoint = false) {
     assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
