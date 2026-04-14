@@ -48,8 +48,8 @@ private:
   static void yield_or_sleep(int &yields);
 
 public:
-  ShenandoahLock() : _state(unlocked) { 
-    DEBUG_ONLY(_owner.store_relaxed(nullptr);) 
+  ShenandoahLock() : _state(unlocked) {
+    DEBUG_ONLY(_owner.store_relaxed(nullptr);)
   };
 
   void lock(bool allow_block_for_safepoint = false) {
