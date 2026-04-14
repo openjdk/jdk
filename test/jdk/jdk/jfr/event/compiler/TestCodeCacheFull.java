@@ -34,7 +34,7 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.BlobType;
 
 /**
- * @test TestCodeCacheFull
+ * @test id=Default
  * @requires vm.hasJFR
  * @requires vm.opt.UseCodeCacheFlushing == null | vm.opt.UseCodeCacheFlushing == true
  *
@@ -50,6 +50,20 @@ import jdk.test.whitebox.code.BlobType;
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-SegmentedCodeCache jdk.jfr.event.compiler.TestCodeCacheFull
+ */
+
+/**
+ * @test id=HotCode
+ * @requires vm.hasJFR
+ * @requires vm.opt.UseCodeCacheFlushing == null | vm.opt.UseCodeCacheFlushing == true
+ * @requires vm.compiler2.enabled
+ *
+ * @library /test/lib
+ * @modules jdk.jfr
+ *          jdk.management.jfr
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M jdk.jfr.event.compiler.TestCodeCacheFull
