@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,13 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Dialog;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Window;
+import java.util.ArrayList;
+import java.util.List;
+
 import static jdk.test.lib.Asserts.*;
 
 
@@ -32,8 +38,8 @@ public class UnblockedDialogTest {
     private static final int delay = 500;
     private final ExtendedRobot robot;
 
-    private Dialog parentDialog;
-    private Frame  parentFrame;
+    final static List<Window> parents = new ArrayList<>();
+    final static List<Window> children = new ArrayList<>();
 
     private enum DialogOwner {HIDDEN_DIALOG, HIDDEN_FRAME, NULL_DIALOG, NULL_FRAME};
 
@@ -59,14 +65,16 @@ public class UnblockedDialogTest {
 
         switch (owner) {
             case HIDDEN_DIALOG:
-                parentDialog = new Dialog((Frame) null);
+                Dialog parentDialog = new Dialog((Frame) null);
+                parents.add(parentDialog);
                 dialog = new TestDialog(parentDialog);
                 break;
             case NULL_DIALOG:
                 dialog = new TestDialog((Dialog) null);
                 break;
             case HIDDEN_FRAME:
-                parentFrame = new Frame();
+                Frame parentFrame = new Frame();
+                parents.add(parentFrame);
                 dialog = new TestDialog(parentFrame);
                 break;
             case NULL_FRAME:
@@ -75,6 +83,7 @@ public class UnblockedDialogTest {
         }
 
         assertFalse(dialog == null, "error: null dialog");
+        children.add(dialog);
 
         dialog.setLocation(50, 50);
         if (setModal) {
@@ -89,7 +98,6 @@ public class UnblockedDialogTest {
     public void doTest() throws Exception {
 
         try {
-
             robot.waitForIdle(delay);
 
             for (DialogOwner owner: DialogOwner.values()) {
@@ -99,6 +107,7 @@ public class UnblockedDialogTest {
                 robot.waitForIdle(delay);
 
                 dialog.activated.waitForFlagTriggered();
+
                 assertTrue(dialog.activated.flag(), "Dialog did not trigger " +
                     "Window Activated event when it became visible");
 
@@ -116,8 +125,11 @@ public class UnblockedDialogTest {
     }
 
     private void closeAll() {
-        if (dialog != null) { dialog.dispose(); }
-        if (parentDialog != null) { parentDialog.dispose(); }
-        if (parentFrame  != null) {  parentFrame.dispose(); }
+        for (Window w : children) {
+            w.dispose();
+        }
+        for (Window w: parents) {
+            w.dispose();
+        }
     }
 }
