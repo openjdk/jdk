@@ -77,9 +77,11 @@ void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {
   AtomicAccess::release_store(&_aot_metaspace_range_initialized, true);
 }
 
+#if INCLUDE_CDS
 bool MetaspaceObj::aot_metaspace_range_initialized() {
   return AtomicAccess::load_acquire(&_aot_metaspace_range_initialized);
 }
+#endif
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,

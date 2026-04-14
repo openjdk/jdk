@@ -295,7 +295,7 @@ class MetaspaceObj {
   }
   static bool aot_metaspace_range_initialized();
 #else
-  static bool in_aot_cache(const MetaspaceObj* p) { return false; }
+  static bool is_pointer_in_aot_cache(const void* p) { return false; }
   bool in_aot_cache() const { return false; }
   static bool aot_metaspace_range_initialized() { return false; }
 #endif
