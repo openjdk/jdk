@@ -675,7 +675,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
         String file = null;
         for (String arg : args) {
             if (arg.equals("--help")) {
-                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [asn.1 file]");
+                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn.1 file]");
                 return;
             } else if (arg.startsWith("--drill=")) {
                 drillPaths.addAll(Arrays.asList(
@@ -684,7 +684,7 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 dump = false;
             } else if (arg.startsWith("-")) {
                 System.out.println("Unknown option: " + arg);
-                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [asn.1 file]");
+                System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [--no-dump] [asn.1 file]");
                 System.exit(1);
             } else if (file == null) {
                 file = arg;
