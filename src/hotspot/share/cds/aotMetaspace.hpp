@@ -104,6 +104,11 @@ public:
 
   // Return true if given address is in the shared metaspace regions (i.e., excluding the
   // mapped heap region.)
+  //
+  // Unlike MetaspaceObj::is_pointer_in_aot_cache(), this function should be called in contexts
+  // where the AOT metaspace range is known to have been initialized (which happens very early
+  // in VM boostrap), so the caller doesn't need to explicity check for
+  // MetaspaceObj::aot_metaspace_range_initialized().
   static bool in_aot_cache(const void* p) {
     assert(MetaspaceObj::aot_metaspace_range_initialized(), "Do not call this function before"
            " set_aot_metaspace_range() has been called");
