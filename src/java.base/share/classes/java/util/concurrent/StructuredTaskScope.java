@@ -263,7 +263,7 @@ import jdk.internal.javac.PreviewFeature;
  * subtask or {@code CancelledByTimeoutException}. The example uses the {@code switch}
  * statement to select based on the cause.
  * {@snippet lang=java :
- *    try (var scope = StructuredTaskScope.open(cf -> cf.withTimeout(timeout)) {
+ *    try (var scope = StructuredTaskScope.open(cf -> cf.withTimeout(timeout))) {
  *
  *        ..
  *
@@ -276,7 +276,7 @@ import jdk.internal.javac.PreviewFeature;
  *    }
  * }
  *
- * <p> In other cases it may not be useful to catch exception but instead leave it to
+ * <p> In other cases it may not be useful to catch the exception but instead leave it to
  * propagate to the configured {@linkplain Thread.UncaughtExceptionHandler uncaught
  * exception handler} for logging purposes.
  *
@@ -299,14 +299,14 @@ import jdk.internal.javac.PreviewFeature;
  * <p> When used in conjunction with a {@code StructuredTaskScope}, a {@code ScopedValue}
  * can also safely and efficiently share a value to methods executed by subtasks forked
  * in the scope. When a {@code ScopedValue} object is bound to a value in the thread
- * executing the task then that binding is inherited by the threads created to
- * execute the subtasks. The thread executing the task does not continue beyond the
+ * executing a "main" task then that binding is inherited by the threads created to
+ * execute subtasks. The thread executing the main task does not continue beyond the
  * {@link #close() close()} method until all threads executing the subtasks have finished.
  * This ensures that the {@code ScopedValue} is not reverted to being {@linkplain
  * ScopedValue#isBound() unbound} (or its previous value) while subtasks are executing.
  * In addition to providing a safe and efficient means to inherit a value into subtasks,
- * the inheritance allows sequential code using {@code ScopedValue} be refactored to use
- * structured concurrency.
+ * the inheritance allows sequential code using {@code ScopedValue} to be refactored to
+ * use structured concurrency.
  *
  * <p> To ensure correctness, opening a new {@code StructuredTaskScope} captures the
  * current thread's scoped value bindings. These are the scoped values bindings that are
@@ -356,8 +356,8 @@ import jdk.internal.javac.PreviewFeature;
  * scope are inherited into T2. The subtask (in thread T2) executes code that opens a
  * new {@code StructuredTaskScope} and forks a (sub-)subtask that runs in thread T3. The
  * scoped value bindings captured when T2 opens the scope are inherited into T3. These
- * include (or may be the same) as the bindings that were inherited from T1. In effect,
- * scoped values are inherited into a tree of subtasks, not just one level of subtask.
+ * include the bindings that were inherited from T1. In effect, scoped values are
+ * inherited into a tree of subtasks, not just one level of subtask.
  *
  * <h2>Memory consistency effects</h2>
  *
@@ -1272,7 +1272,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
     }
 
     /**
-     * Fork a subtask by starting a new thread in this scope to execute a value-returning
+     * Forks a subtask by starting a new thread in this scope to execute a value-returning
      * method. The new thread executes the subtask concurrently with the current thread.
      * The parameter to this method is a {@link Callable}, the new thread executes its
      * {@link Callable#call() call()} method.
@@ -1337,7 +1337,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
     <U extends T> Subtask<U> fork(Callable<? extends U> task);
 
     /**
-     * Fork a subtask by starting a new thread in this scope to execute a method that
+     * Forks a subtask by starting a new thread in this scope to execute a method that
      * does not return a result.
      *
      * <p> This method works exactly the same as {@link #fork(Callable)} except that the
