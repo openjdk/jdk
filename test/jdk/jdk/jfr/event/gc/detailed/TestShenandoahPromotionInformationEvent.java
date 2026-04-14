@@ -33,23 +33,19 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import jdk.test.lib.jfr.GCHelper;
 
 /**
  * @test
- * @bug 8221507
  * @requires vm.hasJFR & vm.gc.Shenandoah
  * @requires vm.flagless
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational jdk.jfr.event.gc.detailed.TestShenandoahEvacuationInformationEvent
+ * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational jdk.jfr.event.gc.detailed.TestShenandoahPromotionInformationEvent
  */
 
-public class TestShenandoahEvacuationInformationEvent {
-    private final static String EVENT_NAME = EventNames.ShenandoahEvacuationInformation;
+public class TestShenandoahPromotionInformationEvent {
+    private final static String EVENT_NAME = EventNames.ShenandoahPromotionInformation;
 
     public static void main(String[] args) throws Exception {
-        final long shenandoahHeapRegionSize = 1024 * 1024;
-        final long shenandoahMaxHeapRegionCount = 64;
         Recording recording = new Recording();
         recording.enable(EVENT_NAME).withThreshold(Duration.ofMillis(0));
         recording.start();
@@ -64,27 +60,19 @@ public class TestShenandoahEvacuationInformationEvent {
             }
             System.out.println("Event: " + event);
 
-            long cSetRegions = Events.assertField(event, "cSetRegions").atLeast(0L).getValue();
-            long setUsedAfter = Events.assertField(event, "cSetUsedAfter").atLeast(0L).getValue();
-            long setUsedBefore = Events.assertField(event, "cSetUsedBefore").atLeast(setUsedAfter).getValue();
-            long freeRegions = Events.assertField(event, "freeRegions").atLeast(0L).getValue();
-            Events.assertField(event, "regionsImmediate").atLeast(0L).getValue();
-            Events.assertField(event, "immediateBytes").atLeast(0L).getValue();
-
-            Asserts.assertGreaterThanOrEqual(shenandoahMaxHeapRegionCount, freeRegions + cSetRegions, "numRegions >= freeRegions + cSetRegions");
-            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedAfter, "ShenandoahHeapRegionSize * cSetRegions >= setUsedAfter");
-            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedBefore, "ShenandoahHeapRegionSize * cSetRegions >= setUsedBefore");
-
-            int gcId = Events.assertField(event, "gcId").getValue();
+            Events.assertField(event, "gcId").getValue();
+            Events.assertField(event, "collectedOld").atLeast(0L).getValue();
+            Events.assertField(event, "collectedPromoted").atLeast(0L).getValue();
+            Events.assertField(event, "collectedYoung").atLeast(0L).getValue();
+            Events.assertField(event, "regionsPromotedHumongous").atLeast(0L).getValue();
+            Events.assertField(event, "humongousPromotedGarbage").atLeast(0L).getValue();
+            Events.assertField(event, "humongousPromotedFree").atLeast(0L).getValue();
+            Events.assertField(event, "regionsPromotedRegular").atLeast(0L).getValue();
+            Events.assertField(event, "regularPromotedGarbage").atLeast(0L).getValue();
+            Events.assertField(event, "regularPromotedFree").atLeast(0L).getValue();
         }
     }
 
-    /**
-     * Allocate memory to trigger garbage collections.
-     * We want the allocated objects to have different life time, because we want both "young" and "old" objects.
-     * This is done by keeping the objects in an array and step the current index by a small random number in the loop.
-     * The loop will continue until we have allocated a fixed number of bytes.
-     */
     private static void allocate() {
         DummyObject[] dummys = new DummyObject[6000];
 
@@ -95,11 +83,9 @@ public class TestShenandoahEvacuationInformationEvent {
             int allocSize = 1000 + (r.nextInt(4000));
             bytesToAllocate -= allocSize;
             dummys[currPos] = new DummyObject(allocSize);
-
-            // Skip a few positions to get different duration on the objects.
             currPos = (currPos + r.nextInt(20)) % dummys.length;
         }
-        for (int c=0; c<dummys.length; c++) {
+        for (int c = 0; c < dummys.length; c++) {
             dummys[c] = null;
         }
         System.gc();
