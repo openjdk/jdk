@@ -276,15 +276,18 @@ class MetaspaceObj {
   static bool is_valid(const MetaspaceObj* p);
 
 #if INCLUDE_CDS
-  static bool in_aot_cache(const MetaspaceObj* p) {
-    // No threads in the JVM should see MetaspaceObjs from the AOT cache until
-    // set_aot_metaspace_range() has been called.
-    precond(aot_metaspace_range_initialized());
+  inline static bool in_aot_cache(const MetaspaceObj* p) {
+    assert(aot_metaspace_range_initialized(), "No threads in the JVM can see a MetaspaceObj until after"
+           " set_aot_metaspace_range() has been called");
+    return is_pointer_in_aot_cache((void*) p);
+  }
 
+  inline static bool is_pointer_in_aot_cache(const void* p) {
+    precond(aot_metaspace_range_initialized());
     // If no shared metaspace regions are mapped, _aot_metaspace_{base,top} will
     // both be null and all values of p will be rejected quickly.
-    return (((void*)p) < _aot_metaspace_top &&
-            ((void*)p) >= _aot_metaspace_base);
+    return (p < _aot_metaspace_top &&
+            p >= _aot_metaspace_base);
   }
   bool in_aot_cache() const { return MetaspaceObj::in_aot_cache(this); }
   static bool aot_metaspace_range_initialized();

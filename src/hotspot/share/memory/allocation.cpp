@@ -180,7 +180,8 @@ void AnyObj::set_in_aot_cache() {
 }
 
 bool AnyObj::in_aot_cache() const {
-  if (MetaspaceObj::aot_metaspace_range_initialized() && AOTMetaspace::in_aot_cache(this)) {
+  if (MetaspaceObj::aot_metaspace_range_initialized() && MetaspaceObj::is_pointer_in_aot_cache(this)) {
+    // "this" can be AOT space only if aot_metaspace_range_initialized()
     precond(_allocation_t[0] == 0);
     precond(_allocation_t[1] == 0);
     return true;
