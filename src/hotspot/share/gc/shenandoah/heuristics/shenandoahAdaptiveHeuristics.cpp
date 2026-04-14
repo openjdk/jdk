@@ -491,8 +491,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     " New Average: %0.2f, New Upper Bound: %0.2f, New Next: %0.2f"
     " Diff Average: %0.2f, Diff Upper Bound: %0.2f, Diff Next: %0.2f",
     old_rate, old_upper, old_next, new_average, new_upper, new_next,
-    (old_rate - new_average), (old_upper - new_upper), (old_next - new_next)
-    );
+    (old_rate - new_average), (old_upper - new_upper), (old_next - new_next));
 
   avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);

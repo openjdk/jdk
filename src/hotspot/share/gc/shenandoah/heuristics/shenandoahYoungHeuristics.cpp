@@ -136,7 +136,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     }
   }
 
-  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t capacity = heap->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
 
   if (trigger_learning(available, capacity)) {
@@ -148,7 +148,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   }
 
   const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-  const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
+  const double avg_alloc_rate = heap->alloc_rate().upper_bound(_margin_of_error_sd);
   size_t allocation_headroom = available;
   const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   const size_t penalties = capacity / 100 * _gc_time_penalties;
@@ -158,7 +158,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
     log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (" PROPERFMT "/s)"
                 " to deplete free headroom (" PROPERFMT ") (margin of error = %.2f)",
-                avg_cycle_time / 1000, PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(allocation_headroom), _margin_of_error_sd);
+                avg_cycle_time * 1000, PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(allocation_headroom), _margin_of_error_sd);
     accept_trigger_with_type(ShenandoahAdaptiveHeuristics::RATE);
     return true;
   }

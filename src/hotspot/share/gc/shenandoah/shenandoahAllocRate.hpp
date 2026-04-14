@@ -126,7 +126,7 @@ public:
   }
 
   double upper_bound(const double standard_deviations) const {
-    return _sampled_rates.davg() + (standard_deviations * _sampled_rates.davg());
+    return _sampled_rates.predict_next() + (standard_deviations * _sampled_rates.dsd());
   }
 
   double predict_next() const {
