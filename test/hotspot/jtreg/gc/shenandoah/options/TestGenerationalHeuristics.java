@@ -24,7 +24,7 @@
 
 /*
  * @test id=generational
- * @summary Test that ShenandoahGCHeuristics flags are reset after providing non-adaptive value
+ * @summary Test that ShenandoahGCHeuristics is always adaptive in generational mode
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestGenerationalHeuristics
@@ -39,10 +39,42 @@ public class TestGenerationalHeuristics {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-XX:+UseShenandoahGC",
                 "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGCHeuristics=adaptive",
+                "-XX:+PrintFlagsFinal",
+                "-version");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldHaveExitValue(0);
+        }
+
+        {
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
                 "-XX:ShenandoahGCHeuristics=static",
                 "-XX:+PrintFlagsFinal",
                 "-version");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldHaveExitValue(0);
+        }
 
+        {
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGCHeuristics=aggressive",
+                "-XX:+PrintFlagsFinal",
+                "-version");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldHaveExitValue(0);
+        }
+
+        {
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGCHeuristics=compact",
+                "-XX:+PrintFlagsFinal",
+                "-version");
             output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
             output.shouldHaveExitValue(0);
         }
