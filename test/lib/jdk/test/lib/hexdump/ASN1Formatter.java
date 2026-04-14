@@ -682,12 +682,12 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                         arg.substring("--drill=".length()).split(",")));
             } else if (arg.equals("--no-dump")) {
                 dump = false;
-            } else if (file == null) {
-                file = arg;
             } else if (arg.startsWith("-")) {
                 System.out.println("Unknown option: " + arg);
                 System.out.println("Usage: java ASN1Formatter [--drill=path[,path...]] [asn.1 file]");
                 System.exit(1);
+            } else if (file == null) {
+                file = arg;
             } else {
                 System.out.println("Error: multiple files provided");
                 System.exit(1);
