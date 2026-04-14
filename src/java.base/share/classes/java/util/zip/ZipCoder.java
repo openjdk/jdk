@@ -41,7 +41,7 @@ import sun.nio.cs.UTF_8;
 /**
  * Utility class for ZIP file entry name and comment decoding and encoding.
  * <p>
- * The {@code ZipCoder} base class handles UTF-8, which is the the common case
+ * The {@code ZipCoder} base class handles UTF-8, which is the common case
  * for ZIP files and always the case for JAR files. Other charsets are handled by
  * the {@code CharsetZipCoder} subclass.
  * <p>
