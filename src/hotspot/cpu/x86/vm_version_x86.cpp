@@ -1187,7 +1187,7 @@ void VM_Version::get_processor_features() {
     }
     if (!UseAESIntrinsics) {
       if (UseAESCTRIntrinsics) {
-        if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
         }
         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
