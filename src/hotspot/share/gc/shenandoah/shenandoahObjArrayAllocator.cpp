@@ -98,7 +98,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
     Copy::zero_to_words(mem + process_start, process_size);
 
     if (!is_ref_type) {
-      // zap paddings after setting correct klass
+      // zap paddings
       mem_zap_start_padding(mem);
       mem_zap_end_padding(mem);
     }
