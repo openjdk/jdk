@@ -231,8 +231,18 @@ public class NTSystem {
         }
     }
 
-    private boolean getCurrent() {
+    private void getCurrent() {
         try (Arena scope = Arena.ofConfined()) {
+
+            String tmpUserName = null;
+            String tmpDomain = null;
+            String tmpDomainSID = null;
+            String tmpUserSID = null;
+            String[] tmpGroupIDs = null;
+            String tmpPrimaryGroupID = null;
+
+            boolean succeed = false;
+
             MemorySegment tokenHandle = null;
             try {
                 // getToken
@@ -244,9 +254,8 @@ public class NTSystem {
                 if (OpenThreadTokenGLE(GetCurrentThread(), TOKEN_READ(), 0, pHandle) == 0) {
                     // next try the process token
                     if (OpenProcessTokenGLE(GetCurrentProcess(), TOKEN_READ(), pHandle) == 0) {
-                        return false;
+                        return;
                     }
-                    ;
                 }
                 tokenHandle = pHandle.get(HANDLE, 0);
                 if (debug) {
@@ -269,7 +278,7 @@ public class NTSystem {
                 MemorySegment tokenUserInfo = scope.allocate(size);
                 if (GetTokenInformationGLE(
                         tokenHandle, TokenUser(), tokenUserInfo, size, bufSize) == 0) {
-                    return false;
+                    return;
                 }
                 if (debug) {
                     System.out.println("Got TokenUser info");
@@ -288,15 +297,15 @@ public class NTSystem {
                 MemorySegment bufDomain = scope.allocate(buf2Size.get(C_LONG, 0));
                 if (LookupAccountSidAGLE(NULL, // local host
                         userSid, bufName, bufSize, bufDomain, buf2Size, nameUse) == 0) {
-                    return false;
+                    return;
                 }
-                this.userName = bufName.getString(0);
-                this.domain = bufDomain.getString(0);
-                this.userSID = getTextSid(userSid);
+                tmpUserName = bufName.getString(0);
+                tmpDomain = bufDomain.getString(0);
+                tmpUserSID = getTextSid(userSid);
                 if (debug) {
-                    System.out.println("userName = " + userName
-                            + ", domainName = " + bufDomain
-                            + ", userSid = " + userSID);
+                    System.out.println("userName = " + tmpUserName
+                            + ", domainName = " + tmpDomain
+                            + ", userSid = " + tmpUserSID);
                 }
 
                 bufSize.set(C_LONG, 0, 0);
@@ -307,11 +316,12 @@ public class NTSystem {
                 MemorySegment domainSidName = scope.allocate(buf2Size.get(C_LONG, 0));
                 if (LookupAccountNameAGLE(NULL, bufDomain,
                         dSid, bufSize, domainSidName, buf2Size, nameUse) == 0) {
-                    return false;
-                }
-                this.domainSID = getTextSid(dSid);
-                if (debug) {
-                    System.out.println("domainSID = " + domainSID);
+                    // ok not to have a domain SID (no error)
+                } else {
+                    tmpDomainSID = getTextSid(dSid);
+                    if (debug) {
+                        System.out.println("domainSID = " + tmpDomainSID);
+                    }
                 }
 
                 // getPrimaryGroup
@@ -325,11 +335,11 @@ public class NTSystem {
                 MemorySegment primaryGroupInfo = scope.allocate(size);
                 if (GetTokenInformationGLE(tokenHandle, TokenPrimaryGroup(),
                         primaryGroupInfo, size, bufSize) == 0) {
-                    return false;
+                    return;
                 }
-                this.primaryGroupID = getTextSid(primaryGroupInfo.get(C_POINTER, 0));
+                tmpPrimaryGroupID = getTextSid(primaryGroupInfo.get(C_POINTER, 0));
                 if (debug) {
-                    System.out.println("primaryGroup = " + primaryGroupID);
+                    System.out.println("primaryGroup = " + tmpPrimaryGroupID);
                 }
 
                 // getGroups
@@ -343,7 +353,7 @@ public class NTSystem {
                 MemorySegment groupsInfo = scope.allocate(size);
                 if (GetTokenInformationGLE(tokenHandle,
                         TokenGroups(), groupsInfo, size, bufSize) == 0) {
-                    return false;
+                    return;
                 }
                 int numGroups = _TOKEN_GROUPS.GroupCount(groupsInfo);
 
@@ -357,7 +367,7 @@ public class NTSystem {
                     if (debug) {
                         System.out.println("group " + i + " = " + g);
                     }
-                    if (g.equals(this.primaryGroupID)) {
+                    if (g.equals(tmpPrimaryGroupID)) {
                         if (debug) {
                             System.out.println("skip primary group");
                         }
@@ -369,19 +379,29 @@ public class NTSystem {
                     if (debug) {
                         System.out.println("no secondary groups");
                     }
-                    this.groupIDs = null;
+                    tmpGroupIDs = null;
                 } else if (pos != numGroups) {
-                    this.groupIDs = Arrays.copyOf(allGroups, pos);
+                    tmpGroupIDs = Arrays.copyOf(allGroups, pos);
                 } else {
-                    this.groupIDs = allGroups;
+                    tmpGroupIDs = allGroups;
                 }
+                succeed = true;
             } finally {
                 if (tokenHandle != null) {
                     CloseHandle(tokenHandle);
                 }
+                // Only fill in the fields when all info (except for domain sid)
+                // are available.
+                if (succeed) {
+                    userName = tmpUserName;
+                    userSID = tmpUserSID;
+                    domain = tmpDomain;
+                    domainSID = tmpDomainSID;
+                    primaryGroupID = tmpPrimaryGroupID;
+                    groupIDs = tmpGroupIDs;
+                }
             }
         }
-        return true;
     }
 
     private static String getTextSid(MemorySegment sid) {
@@ -409,15 +429,16 @@ public class NTSystem {
             System.out.println("getting impersonation token");
         }
         try (Arena scope = Arena.ofConfined()) {
-            MemorySegment dupToken = scope.allocate(HANDLE);
+            MemorySegment pDupToken = scope.allocate(HANDLE);
             if (OpenThreadTokenGLE(GetCurrentThread(),
-                    TOKEN_DUPLICATE(), 0, dupToken) == 0) {
-                if (OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE(), dupToken) == 0) {
+                    TOKEN_DUPLICATE(), 0, pDupToken) == 0) {
+                if (OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE(), pDupToken) == 0) {
                     return 0;
                 }
             }
             MemorySegment impersonationToken = scope.allocate(HANDLE);
-            if (DuplicateTokenGLE(dupToken.get(HANDLE, 0), SecurityImpersonation(),
+            MemorySegment dupToken = pDupToken.get(HANDLE, 0);
+            if (DuplicateTokenGLE(dupToken, SecurityImpersonation(),
                     impersonationToken) == 0) {
                 return 0;
             }
