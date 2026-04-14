@@ -131,14 +131,14 @@ public final class SwitchBootstraps {
 
     /**
      * Bootstrap method for linking an {@code invokedynamic} call site that
-     * implements a {@code switch} on a target of a reference type.  The static
-     * arguments are an array of case labels which must be non-null and of type
-     * {@code String}, {@code Integer}, {@code Long}, {@code Float}, {@code Double},
-     * {@code Boolean}, {@code Class}, or {@code EnumDesc}.
+     * implements a {@code switch} on a target. The static arguments are an array
+     * of case labels which must be non-null and of type {@code String},
+     * {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
+     * {@code Class}, or {@code EnumDesc}.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
-     * will be an {@code Object} instance ({@code target}) and the second
+     * will be an instance or value of the ({@code target}) type and the second
      * will be {@code int} ({@code restart}).
      * <p>
      * If the {@code target} is {@code null}, then the method of the call site
@@ -163,16 +163,19 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
-     * @apiNote
-     * Case labels of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
-     * are allowed only when preview features are enabled.
+     * <div class="preview-block">
+     *   <div class="preview-comment">
+     *     Case labels of type {@code Long}, {@code Float}, {@code Double}, or
+     *     {@code Boolean} are allowed only when preview features are enabled.
+     *   </div>
+     * </div>
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
-     *                       a reference type, an {@code int}, and {@code int} as a return type.
+     *                       a target type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels - {@code String}, {@code Integer}, {@code Long},
      *               {@code Float}, {@code Double}, and {@code Boolean} constants
      *               and {@code Class} and {@code EnumDesc} instances, in any combination
@@ -185,10 +188,8 @@ public final class SwitchBootstraps {
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
      *                                  {@code Class} or {@code EnumDesc}
-     * @throws IllegalArgumentException with preview features disabled and if {@code labels} contains an element
+     * @throws IllegalArgumentException if preview features are disabled and if {@code labels} contains an element
      *                                  that is of type {@code Long}, {@code Float}, {@code Double}, or {@code Boolean}
-     * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
-     *                                  when {@code target} is a {@code Boolean.class}
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -229,7 +230,6 @@ public final class SwitchBootstraps {
               labelClass != Long.class &&
               labelClass != Double.class &&
               labelClass != Boolean.class) ||
-              ((selectorType.equals(boolean.class) || selectorType.equals(Boolean.class)) && labelClass != Boolean.class && labelClass != Class.class) ||
              !previewEnabled) &&
 
             labelClass != EnumDesc.class) {
