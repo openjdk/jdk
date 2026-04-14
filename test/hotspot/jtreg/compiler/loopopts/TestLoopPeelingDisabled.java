@@ -55,7 +55,7 @@ public class TestLoopPeelingDisabled {
         // not throw IRViolationException.
         try {
             TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
-                                        "-XX:LoopPeeling=0");
+                                       "-XX:LoopPeeling=0");
             String verifyIR = System.getProperty("VerifyIR", "true");
             String msg = "Expected IRViolationException when performing IR matching";
             Asserts.assertFalse(Boolean.parseBoolean(verifyIR), msg);
