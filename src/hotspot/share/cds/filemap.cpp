@@ -1362,6 +1362,13 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     return false;
   } else {
     assert(mapped_base == requested_base, "must be");
+
+    if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
+      aot_log_error(aot)("region %d CRC error", AOTMetaspace::ac);
+      os::unmap_memory(mapped_base, r->used_aligned());
+      return false;
+    }
+
     r->set_mapped_from_file(true);
     r->set_mapped_base(mapped_base);
     aot_log_info(aot)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
