@@ -57,7 +57,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * In general, a URL can be broken into several parts. Consider the
  * following example:
  * {@snippet lang="text" :
- *     http://www.example.com/docs/resource1.html
+ * http://www.example.com/docs/resource1.html
  * }
  * <p>
  * The URL above indicates that the protocol to use is
@@ -77,7 +77,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * {@code http} is {@code 80}. An alternative port could be
  * specified as:
  * {@snippet lang="text" :
- *     http://www.example.com:1080/docs/resource1.html
+ * http://www.example.com:1080/docs/resource1.html
  * }
  * <p>
  * The syntax of {@code URL} is defined by  <a
@@ -92,7 +92,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * as a "ref" or a "reference". The fragment is indicated by the sharp
  * sign character "#" followed by more characters. For example,
  * {@snippet lang="text" :
- *     http://www.example.com/index.html#chapter1
+ * http://www.example.com/index.html#chapter1
  * }
  * <p>
  * This fragment is not technically part of the URL. Rather, it
@@ -106,15 +106,15 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * relative to another URL. Relative URLs are frequently used within
  * HTML pages. For example, if the contents of the URL:
  * {@snippet lang="text" :
- *     http://www.example.com/index.html
+ * http://www.example.com/index.html
  * }
  * contained within it the relative URL:
  * {@snippet lang="text" :
- *     FAQ.html
+ * FAQ.html
  * }
  * it would be a shorthand for:
  * {@snippet lang="text" :
- *     http://www.example.com/FAQ.html
+ * http://www.example.com/FAQ.html
  * }
  * <p>
  * The relative URL need not specify all the components of a URL. If
@@ -570,7 +570,7 @@ public final class URL implements java.io.Serializable {
      * argument as described in
      * RFC&nbsp;2396 &quot;Uniform Resource Identifiers : Generic Syntax&quot; :
      * {@snippet lang="text" :
-     *          <scheme>://<authority><path>?<query>#<fragment>
+     * <scheme>://<authority><path>?<query>#<fragment>
      * }
      * The reference is parsed into the scheme, authority, path, query and
      * fragment parts. If the path component is empty and the scheme,
@@ -1248,7 +1248,7 @@ public final class URL implements java.io.Serializable {
      * {@code InputStream} for reading from that connection. This
      * method is a shorthand for:
      * {@snippet lang="java" :
-     *     openConnection().getInputStream()
+     * openConnection().getInputStream()
      * }
      *
      * @return     an input stream for reading from the URL connection.
@@ -1263,7 +1263,7 @@ public final class URL implements java.io.Serializable {
     /**
      * Gets the contents of this URL. This method is a shorthand for:
      * {@snippet lang="java" :
-     *     openConnection().getContent()
+     * openConnection().getContent()
      * }
      *
      * @return     the contents of this URL.
@@ -1277,7 +1277,7 @@ public final class URL implements java.io.Serializable {
     /**
      * Gets the contents of this URL. This method is a shorthand for:
      * {@snippet lang="java" :
-     *     openConnection().getContent(classes)
+     * openConnection().getContent(classes)
      * }
      *
      * @param classes an array of Java types
