@@ -159,22 +159,25 @@ PhiNode* RegionNode::has_unique_phi() const {
   return only_phi;
 }
 
-PhiNode * RegionNode::find_memory_phi(Compile *C, const TypePtr *adr_type) {
+PhiNode * RegionNode::find_memory_phi(const TypePtr *adr_type) {
   PhiNode* res = nullptr;
   for (DUIterator_Fast imax, j = fast_outs(imax); j < imax; j++) {
     Node* use = fast_out(j);
     if(use->is_memory_phi() && use->as_Phi()->adr_type() == adr_type) {
+#ifdef ASSERT
       if (VerifyAmbiguousMemPhi) {
         if (res != nullptr) {
           res->dump();
           use->dump();
-          C->dump_igv("before failure", 3);
           assert(false, "ambiguous choice of memory phi");
         }
         res = use->as_Phi();
       } else {
         return use->as_Phi();
       }
+#else
+      return use->as_Phi();
+#endif
     }
   }
   return res;
