@@ -57,9 +57,9 @@ import com.sun.source.doctree.DocTree;
  *      of the tags supported by the taglet.
  * <li> As appropriate, the doclet calls one of the {@code toString} methods
  *      declared in this interface, giving it a list of tags, the element whose
- *      documentation comment contains the tags, and optionally the root URI
- *      of the documentation, from which the taglet can determine the string
- *      to be included in the documentation.
+ *      documentation comment contains the tags, and optionally the documentation
+ *      root URI, from which the taglet can determine the string to be included
+ *      in the documentation.
  *      The doclet will typically specify any requirements on the contents of
  *      the string that is returned.
  * </ol>
@@ -127,29 +127,28 @@ public interface Taglet {
     default void init(DocletEnvironment env, Doclet doclet) { }
 
     /**
-     * Returns the string representation of one or more instances of
-     * this tag to be included in the generated output.
+     * Returns the string representation of the specified instances of this tag
+     * to be included in the generated output.
      *
-     * <p>If this taglet supports {@link #isInlineTag inline} tags, it will
-     * be called once per instance of the inline tag, each time with a
-     * singleton list. If this taglet supports {@link #isBlockTag block} tags,
-     * it will be called once for each comment containing instances of block
-     * tags, with a list of all the instances of the block tag in that comment.
+     * <p>If this taglet supports {@link #isInlineTag inline} tags, this method will
+     * be called once per instance of the inline tag, each time with a singleton list.
+     * If this taglet supports {@link #isBlockTag block} tags, it will be called once
+     * for each comment containing instances of block tags, with a list of all the instances
+     * of the block tag in that comment.
      *
-     * @apiNote Taglets intended for use with doclets that support URI-based
-     * links such as the {@linkplain StandardDoclet standard doclet} may
-     * instead override {@link #toString(List, Element, URI)}, which
-     * provides the root URI of the documentation, and return alternative
-     * content or throw {@code UnsupportedOperationException} in the
-     * implementation of this method.
+     * @apiNote Taglets that do not need the documentation root URI may
+     * implement this method only. Taglets that create links to other
+     * generated documentation resources should override
+     * {@link #toString(List, Element, URI)} instead.
+     * A taglet may implement both forms, typically by having one method
+     * delegate to the other.
      *
      * @param tags the list of instances of this tag
-     * @param element the element to which the enclosing comment belongs
+     * @param element the element whose documentation comment contains the tags
      * @return the string representation of the tags to be included in
      *  the generated output
      * @throws UnsupportedOperationException if {@link #toString(List, Element, URI)}
-     *  should be invoked instead of this method
-     *
+     *      should be invoked instead of this method
      * @see <a href="StandardDoclet.html#user-defined-taglets">User-Defined Taglets
      *      for the Standard Doclet</a>
      * @see #toString(List, Element, URI)
@@ -157,40 +156,36 @@ public interface Taglet {
     String toString(List<? extends DocTree> tags, Element element);
 
     /**
-     * Returns the string representation of one or more instances of
-     * this tag to be included in the generated output. This is an optional method
-     * for use with doclets that support URI-based links such as the {@linkplain
-     * StandardDoclet standard doclet}; other doclets should use
-     * {@link #toString(List, Element)} instead.
+     * Returns the string representation of the specified instances of this tag
+     * to be included in the generated output.
      *
-     * <p>If this taglet supports {@link #isInlineTag inline} tags, it will
+     * <p>If this taglet supports {@link #isInlineTag inline} tags, this method will
      * be called once per instance of the inline tag, each time with a singleton list.
      * If this taglet supports {@link #isBlockTag block} tags, it will be called once
      * for each comment containing instances of block tags, with a list of all the instances
      * of the block tag in that comment.
      *
-     * <p>The {@code docRoot} argument can be used to create links to other
-     * documentation resources by invoking its {@link URI#resolve(String) resolve(String)}
-     * method with the path of the target resource relative to the documentation root URI.
+     * <p>The {@code docRoot} argument identifies the documentation root as seen
+     * by the current resource, and may be used to {@linkplain URI#resolve(String) resolve}
+     * links to other generated documentation resources.
      *
-     * @apiNote The kind of {@code URI} passed to this method is doclet-specific.
-     * With the {@linkplain StandardDoclet standard doclet}, {@code docRoot} is always
-     * a relative URI representing the inverse path from the current resource to
-     * the documentation root directory.
+     * @apiNote The exact form of {@code docRoot} is doclet-specific. For the
+     * {@linkplain StandardDoclet standard doclet}, it is a relative URI from
+     * the current document to the documentation root.
      *
-     * @implSpec The default implementation returns {@link #toString(List, Element)
+     * @implSpec The default implementation invokes {@link #toString(List, Element)
      * toString(tags, element)}.
      *
      * @param tags the list of instances of this tag
-     * @param element the element to which the enclosing comment belongs
-     * @param docRoot the root URI of the documentation
+     * @param element the element whose documentation comment contains the tags
+     * @param docRoot the documentation root URI
      * @return the string representation of the tags to be included in
      *  the generated output
-     * @throws IllegalArgumentException if {@code docRoot} is a {@code URI}
-     *  that is not supported by the taglet, such as an {@linkplain
-     *  URI##uri-syntax-and-components-heading opaque or absolute URI}.
+     * @throws IllegalArgumentException if {@code docRoot} is a URI that is
+     *      not supported by this taglet
+     * @see <a href="StandardDoclet.html#user-defined-taglets">User-Defined Taglets
+     *      for the Standard Doclet</a>
      * @see #toString(List, Element)
-     *
      * @since 27
      */
     default String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
