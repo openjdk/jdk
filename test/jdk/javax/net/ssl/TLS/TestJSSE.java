@@ -89,7 +89,7 @@ public class TestJSSE {
         System.out.println("Testing protocol: " + protocol);
         System.out.println("Testing cipher  : " + cipher);
 
-        var server =  CipherTestUtils.mainServer(
+        var server = CipherTestUtils.mainServer(
             new JSSEFactory(null, protocol, cipher, "Server JSSE"),
             expectedExcp);
 
