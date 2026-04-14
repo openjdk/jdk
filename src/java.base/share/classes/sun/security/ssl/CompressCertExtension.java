@@ -249,14 +249,12 @@ final class CompressCertExtension {
         }
 
         // Produce the extension.
-        if (hc.certInflaters == null) {
-            hc.certInflaters = CompressionAlgorithm.getInflaters();
-        }
+        hc.certInflaters = CompressionAlgorithm.getInflaters();
 
         if (hc.certInflaters.isEmpty()) {
             if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine("Ignore unsupported " +
-                        "compress_certificate extension");
+                SSLLogger.warning("Unable to produce the extension: "
+                        + "no certificate compression inflaters defined");
             }
             return null;
         }

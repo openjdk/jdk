@@ -35,7 +35,9 @@ import java.util.zip.Inflater;
 
 /**
  * Enum for TLS certificate compression algorithms.
+ * This class also defines internally supported inflate/deflate functions.
  */
+
 enum CompressionAlgorithm {
     ZLIB(1);  // Currently only ZLIB is supported.
 
@@ -88,6 +90,20 @@ enum CompressionAlgorithm {
                     return null;
                 }
             });
+
+    static Map.Entry<Integer, Function<byte[], byte[]>> selectDeflater(
+            int[] compressionAlgorithmIds) {
+
+        for (var entry : DEFLATORS.entrySet()) {
+            for (int id : compressionAlgorithmIds) {
+                if (id == entry.getKey()) {
+                    return new AbstractMap.SimpleImmutableEntry<>(entry);
+                }
+            }
+        }
+
+        return null;
+    }
 
     private static final Map<Integer, Function<byte[], byte[]>> INFLATORS =
             Map.of(ZLIB.id, (input) -> {
@@ -162,19 +178,5 @@ enum CompressionAlgorithm {
 
     static Map<Integer, Function<byte[], byte[]>> getInflaters() {
         return INFLATORS;
-    }
-
-    static Map.Entry<Integer, Function<byte[], byte[]>> selectDeflater(
-            int[] compressionAlgorithmIds) {
-
-        for (var entry : DEFLATORS.entrySet()) {
-            for (int id : compressionAlgorithmIds) {
-                if (id == entry.getKey()) {
-                    return new AbstractMap.SimpleImmutableEntry<>(entry);
-                }
-            }
-        }
-
-        return null;
     }
 }
