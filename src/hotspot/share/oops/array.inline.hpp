@@ -75,5 +75,4 @@ void Array<T>::metaspace_pointers_do_impl(MetaspaceClosure* it) {
   }
 }
 
-
 #endif // SHARE_OOPS_ARRAY_INLINE_HPP
