@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
+  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %d > %d: %s", (int)rank, (int)safepoint, name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
@@ -324,23 +324,34 @@ static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty"
 
 static const int _num_ranks = 7;
 
-static const char* rank_name_internal(Mutex::Rank r) {
+static void rank_name_internal(outputStream* st, Mutex::Rank r) {
   // Find closest rank and print out the name
-  stringStream st;
   for (int i = 0; i < _num_ranks; i++) {
     if (r == _ranks[i]) {
-      return _rank_names[i];
+      st->print("%s", _rank_names[i]);
     } else if (r  > _ranks[i] && (i < _num_ranks-1 && r < _ranks[i+1])) {
       int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
-      st.print("%s-%d", _rank_names[i+1], delta);
-      return st.as_string();
+      st->print("%s-%d", _rank_names[i+1], delta);
     }
   }
-  return "fail";
 }
 
+static const char* rank_name_internal(Mutex::Rank r) {
+  stringStream st;
+  rank_name_internal(&st, r);
+  return st.as_string();
+}
+
+// Does not require caller to have ResourceMark, unless the outputStream already has one.
+void Mutex::print_rank_name(outputStream* st) const {
+  rank_name_internal(st, _rank);
+}
+
+// Requires caller to have ResourceMark.
 const char* Mutex::rank_name() const {
-  return rank_name_internal(_rank);
+  stringStream st;
+  rank_name_internal(&st, _rank);
+  return st.as_string();
 }
 
 
@@ -350,9 +361,12 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   // underflow is caught in constructor
   if (i != 0 && adjusted > event && adjusted <= _ranks[i-1]) {
     ResourceMark rm;
+    const char* orig_name = rank_name_internal(orig);
+    const char* adjusted_name = rank_name_internal(adjusted);
+    log_info(vmmutex, bot)("Rank %s-%d compares with %s", orig_name, adjust, adjusted_name);
+
     assert(adjusted > _ranks[i-1],
-           "Rank %s-%d overlaps with %s",
-           rank_name_internal(orig), adjust, rank_name_internal(adjusted));
+           "Rank %s-%d overlaps with %s", orig_name, adjust, adjusted_name);
   }
 }
 #endif // ASSERT
@@ -362,9 +376,9 @@ void Mutex::print_on(outputStream* st) const {
   st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
             p2i(this), _name, p2i(owner()));
   if (_allow_vm_block) {
-    st->print("%s", " allow_vm_block");
+    st->print("%s", " allow_vm_block ");
   }
-  DEBUG_ONLY(st->print(" %s", rank_name()));
+  DEBUG_ONLY(print_rank_name(st));
   st->cr();
 }
 

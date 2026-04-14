@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,9 +325,12 @@ TEST_VM_ASSERT_MSG(MutexSafepoint, possible_safepoint_lock,
   ThreadInVMfromNative in_native(thread);
   MutexLocker ml(new Mutex(Mutex::nosafepoint, "SpecialTest_lock"),
                    Mutex::_no_safepoint_check_flag);
+  MutexLocker m2(new Mutex(Mutex::nosafepoint-1, "SpecialTest2_lock"),
+                   Mutex::_no_safepoint_check_flag);
   thread->print_thread_state_on(tty);
   // If the lock above succeeds, try to safepoint to test the NSV implied with this nosafepoint lock.
   ThreadBlockInVM tbivm(thread);
   thread->print_thread_state_on(tty);
 }
+
 #endif // ASSERT
