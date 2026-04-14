@@ -25,13 +25,18 @@
 
 package jdk.tools.jlink.internal;
 
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import jdk.internal.jimage.ImageHeader;
+import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageStream;
-import jdk.internal.jimage.ImageStringsReader;
+
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import static jdk.internal.jimage.ImageLocation.ATTRIBUTE_PREVIEW_FLAGS;
 
 public final class BasicImageWriter {
     public static final String MODULES_IMAGE_NAME = "modules";
@@ -41,7 +46,7 @@ public final class BasicImageWriter {
     private int length;
     private int[] redirect;
     private ImageLocationWriter[] locations;
-    private final List<ImageLocationWriter> input;
+    private final Map<String, ImageLocationWriter> input;
     private final ImageStream headerStream;
     private final ImageStream redirectStream;
     private final ImageStream locationOffsetStream;
@@ -50,7 +55,9 @@ public final class BasicImageWriter {
 
     public BasicImageWriter(ByteOrder byteOrder) {
         this.byteOrder = Objects.requireNonNull(byteOrder);
-        this.input = new ArrayList<>();
+        // Linked hashmap preserves order of adding to builder.
+        // TODO(review): This might not be necessary...
+        this.input = new LinkedHashMap<>();
         this.strings = new ImageStringsWriter();
         this.headerStream = new ImageStream(byteOrder);
         this.redirectStream = new ImageStream(byteOrder);
@@ -71,17 +78,16 @@ public final class BasicImageWriter {
         return strings.get(offset);
     }
 
-    public void addLocation(
+    public ImageLocationWriter addLocation(
             String fullname,
             long contentOffset,
             long compressedSize,
-            long uncompressedSize,
-            int previewFlags) {
-        ImageLocationWriter location =
-                ImageLocationWriter.newLocation(fullname, strings,
-                        contentOffset, compressedSize, uncompressedSize, previewFlags);
-        input.add(location);
+            long uncompressedSize) {
+        ImageLocationWriter location = ImageLocationWriter.newLocation(
+                fullname, strings, contentOffset, compressedSize, uncompressedSize);
+        input.put(fullname, location);
         length++;
+        return location;
     }
 
     ImageLocationWriter[] getLocations() {
@@ -94,9 +100,7 @@ public final class BasicImageWriter {
                         PerfectHashBuilder.Entry.class,
                         PerfectHashBuilder.Bucket.class);
 
-        input.forEach((location) -> {
-            builder.put(location.getFullName(), location);
-        });
+        input.forEach(builder::put);
 
         builder.generate();
 
@@ -117,6 +121,18 @@ public final class BasicImageWriter {
     private void prepareRedirectBytes() {
         for (int i = 0; i < length; i++) {
             redirectStream.putInt(redirect[i]);
+        }
+    }
+
+    private void generateLocationFlags() {
+        Set<String> allNames = input.keySet();
+        for (String name : allNames) {
+            // Note that flags for "/packages/xxx" entries are already set, so we
+            // must not unconditionally write zero here if the returned flag is zero.
+            int previewFlags = ImageLocation.getPreviewFlags(name, allNames::contains);
+            if (previewFlags != 0) {
+                input.get(name).addAttribute(ATTRIBUTE_PREVIEW_FLAGS, previewFlags);
+            }
         }
     }
 
@@ -162,6 +178,7 @@ public final class BasicImageWriter {
             generatePerfectHash();
             prepareStringBytes();
             prepareRedirectBytes();
+            generateLocationFlags();
             prepareLocationBytes();
             prepareOffsetBytes();
             prepareHeaderBytes();

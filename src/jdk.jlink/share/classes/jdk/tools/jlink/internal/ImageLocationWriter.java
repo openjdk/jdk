@@ -29,6 +29,8 @@ import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageStream;
 import jdk.internal.jimage.ImageStringsReader;
 
+import java.util.Objects;
+
 public final class ImageLocationWriter extends ImageLocation {
     private int locationOffset;
 
@@ -37,19 +39,39 @@ public final class ImageLocationWriter extends ImageLocation {
     }
 
     void writeTo(ImageStream stream) {
-        byte[] bytes = ImageLocation.compress(attributes);
+        byte[] bytes = compress(attributes);
         locationOffset = stream.getPosition();
         stream.put(bytes, 0, bytes.length);
     }
 
-    private ImageLocationWriter addAttribute(int kind, long value) {
+    private static byte[] compress(long[] attributes) {
+        Objects.requireNonNull(attributes);
+        ImageStream stream = new ImageStream(16);
+
+        for (int kind = ATTRIBUTE_END + 1; kind < ATTRIBUTE_COUNT; kind++) {
+            long value = attributes[kind];
+
+            if (value != 0) {
+                int n = (63 - Long.numberOfLeadingZeros(value)) >> 3;
+                stream.put((kind << 3) | n);
+
+                for (int i = n; i >= 0; i--) {
+                    stream.put((int)(value >> (i << 3)));
+                }
+            }
+        }
+        stream.put(ATTRIBUTE_END << 3);
+        return stream.toArray();
+    }
+
+    ImageLocationWriter addAttribute(int kind, long value) {
         assert ATTRIBUTE_END < kind &&
                kind < ATTRIBUTE_COUNT : "Invalid attribute kind";
         attributes[kind] = value;
         return this;
     }
 
-    private ImageLocationWriter addAttribute(int kind, String value) {
+    ImageLocationWriter addAttribute(int kind, String value) {
         return addAttribute(kind, strings.add(value));
     }
 
@@ -58,8 +80,7 @@ public final class ImageLocationWriter extends ImageLocation {
             ImageStringsWriter strings,
             long contentOffset,
             long compressedSize,
-            long uncompressedSize,
-            int previewFlags) {
+            long uncompressedSize) {
         String moduleName = "";
         String parentName = "";
         String baseName;
@@ -100,8 +121,7 @@ public final class ImageLocationWriter extends ImageLocation {
                 .addAttribute(ATTRIBUTE_EXTENSION, extensionName)
                 .addAttribute(ATTRIBUTE_OFFSET, contentOffset)
                 .addAttribute(ATTRIBUTE_COMPRESSED, compressedSize)
-                .addAttribute(ATTRIBUTE_UNCOMPRESSED, uncompressedSize)
-                .addAttribute(ATTRIBUTE_PREVIEW_FLAGS, previewFlags);
+                .addAttribute(ATTRIBUTE_UNCOMPRESSED, uncompressedSize);
     }
 
     @Override

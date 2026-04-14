@@ -103,8 +103,6 @@ extern "C" JNIEXPORT JImageLocationRef
 JIMAGE_FindResource(JImageFile* image,
         const char* module_name, const char* name, bool is_preview_mode,
         jlong* size) {
-    static const char str_modules[] = "modules";
-    static const char str_packages[] = "packages";
     static const char preview_infix[] = "/META-INF/preview";
 
     size_t module_name_len = strlen(module_name);
@@ -113,11 +111,16 @@ JIMAGE_FindResource(JImageFile* image,
     assert(module_name_len > 0 && "module name must be non-empty");
     assert(name_len > 0 && "name must non-empty");
 
-    // Do not attempt to lookup anything of the form /modules/... or /packages/...
-    if (strncmp(module_name, str_modules, sizeof(str_modules)) == 0
-            || strncmp(module_name, str_packages, sizeof(str_packages)) == 0) {
-        return 0L;
-    }
+    // Jimage cannot encode resources where the module name is "modules" or "packages".
+    // Module names should only come from Module instances or other trusted sources.
+    #ifdef ASSERT
+    static const char str_modules[] = "modules";
+    static const char str_packages[] = "packages";
+    assert(strncmp(module_name, str_modules, sizeof(str_modules)) != 0
+            && strncmp(module_name, str_packages, sizeof(str_packages)) != 0
+            && "invalid module name");
+    #endif
+
     // If the preview mode version of the path string is too long for the buffer,
     // return not found (even when not in preview mode).
     if (1 + module_name_len + preview_infix_len + 1 + name_len + 1 > IMAGE_MAX_PATH) {

@@ -134,15 +134,14 @@ public class ImageLocation {
      */
     public static int getPreviewFlags(String name, Predicate<String> hasEntry) {
         if (name.startsWith(PACKAGES_PREFIX + "/")) {
-            throw new IllegalArgumentException(
-                    "Package sub-directory flags handled separately: " + name);
+            // '/packages/xxx' entries have flags, but not calculated here.
+            return 0;
         }
         // Find suffix for either '/modules/xxx/suffix' or '/xxx/suffix' paths.
         int idx = name.startsWith(MODULES_PREFIX + "/") ? MODULES_PREFIX.length() + 1 : 1;
         int suffixStart = name.indexOf('/', idx);
         if (suffixStart == -1) {
             // No flags for '[/modules]/xxx' paths (esp. '/modules', '/packages').
-            // '/packages/xxx' entries have flags, but not calculated here.
             return 0;
         }
         // Prefix is either '/modules/xxx' or '/xxx', and suffix starts with '/'.
@@ -240,28 +239,6 @@ public class ImageLocation {
         }
         return attributes;
     }
-
-    public static byte[] compress(long[] attributes) {
-        Objects.requireNonNull(attributes);
-        ImageStream stream = new ImageStream(16);
-
-        for (int kind = ATTRIBUTE_END + 1; kind < ATTRIBUTE_COUNT; kind++) {
-            long value = attributes[kind];
-
-            if (value != 0) {
-                int n = (63 - Long.numberOfLeadingZeros(value)) >> 3;
-                stream.put((kind << 3) | n);
-
-                for (int i = n; i >= 0; i--) {
-                    stream.put((int)(value >> (i << 3)));
-                }
-            }
-        }
-
-        stream.put(ATTRIBUTE_END << 3);
-
-        return stream.toArray();
-     }
 
     public boolean verify(String name) {
         return verify(name, attributes, strings);

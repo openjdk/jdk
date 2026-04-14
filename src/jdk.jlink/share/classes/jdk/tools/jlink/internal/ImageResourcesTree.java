@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import static jdk.internal.jimage.ImageLocation.ATTRIBUTE_PREVIEW_FLAGS;
+
 /**
  * A class to build a sorted tree of Resource paths as a tree of ImageLocation.
  */
@@ -87,8 +89,7 @@ public final class ImageResourcesTree {
         }
 
         public Node getChildren(String name) {
-            Node item = children.get(name);
-            return item;
+            return children.get(name);
         }
 
         private static String buildPath(Node item) {
@@ -168,7 +169,7 @@ public final class ImageResourcesTree {
     static final class Tree {
         private static final String PREVIEW_PREFIX = "META-INF/preview/";
 
-        private final Map<String, Node> directAccess = new HashMap<>();
+        private final Map<String, Node> directoryNodes = new HashMap<>();
         private final List<String> paths;
         private final Node root;
         private Node packagesRoot;
@@ -176,16 +177,16 @@ public final class ImageResourcesTree {
         // Visible for testing only.
         Tree(List<String> paths) {
             this.paths = paths.stream().sorted(Comparator.reverseOrder()).toList();
-            // Root node is not added to the directAccess map.
+            // Root node is not added to the directoryNodes map.
             root = new Node("", null);
             buildTree();
         }
 
         private void buildTree() {
             Node modulesRoot = new Node("modules", root);
-            directAccess.put(modulesRoot.getPath(), modulesRoot);
+            directoryNodes.put(modulesRoot.getPath(), modulesRoot);
             packagesRoot = new Node("packages", root);
-            directAccess.put(packagesRoot.getPath(), packagesRoot);
+            directoryNodes.put(packagesRoot.getPath(), packagesRoot);
 
             // Map of dot-separated package names to module links (those in
             // which the package appear). Links are merged after to ensure each
@@ -216,7 +217,7 @@ public final class ImageResourcesTree {
                         .sorted()
                         .toList();
                 PackageNode pkgNode = new PackageNode(pkgName, pkgModules, packagesRoot);
-                directAccess.put(pkgNode.getPath(), pkgNode);
+                directoryNodes.put(pkgNode.getPath(), pkgNode);
             });
         }
 
@@ -268,7 +269,7 @@ public final class ImageResourcesTree {
             if (resourceNode == null) {
                 ModuleLink resourceLink = ModuleLink.forPackage(modName, isPreviewPath);
                 packageToModules.computeIfAbsent(fullPkgName, p -> new HashSet<>()).add(resourceLink);
-                // Init adds new node to parent (don't add resources to directAccess).
+                // Init adds new node to parent (don't add resources to directoryNodes).
                 new ResourceNode(resourceName, parentNode);
             } else if (!(resourceNode instanceof ResourceNode)) {
                 throw new InvalidTreeException(resourceNode);
@@ -280,7 +281,7 @@ public final class ImageResourcesTree {
             if (child == null) {
                 // Adds child to parent during init.
                 child = new Node(name, parent);
-                directAccess.put(child.getPath(), child);
+                directoryNodes.put(child.getPath(), child);
             } else if (child instanceof ResourceNode) {
                 throw new InvalidTreeException(child);
             }
@@ -319,7 +320,7 @@ public final class ImageResourcesTree {
         }
 
         public Map<String, Node> getMap() {
-            return directAccess;
+            return directoryNodes;
         }
     }
 
@@ -342,7 +343,10 @@ public final class ImageResourcesTree {
                 List<ModuleLink> links = ((PackageNode) current).getModuleLinks();
                 // "/packages/<pkg name>" entries have 8-byte entries (flags+offset).
                 int size = links.size() * 8;
-                writer.addLocation(current.getPath(), offset, 0, size, ImageLocation.getPackageFlags(links));
+                // Flags are more complex to calculate than other cases, so do them
+                // early (the other flags are calculated in the writer itself).
+                ImageLocationWriter location = writer.addLocation(current.getPath(), offset, 0, size);
+                location.addAttribute(ATTRIBUTE_PREVIEW_FLAGS, ImageLocation.getPackageFlags(links));
                 offset += size;
             } else {
                 int[] ret = new int[current.children.size()];
@@ -352,10 +356,9 @@ public final class ImageResourcesTree {
                     i += 1;
                 }
                 if (current != tree.getRoot() && !(current instanceof ResourceNode)) {
-                    int locFlags = ImageLocation.getPreviewFlags(current.getPath(), tree.directAccess::containsKey);
                     // Normal directory entries have 4-byte entries (offset only).
                     int size = ret.length * 4;
-                    writer.addLocation(current.getPath(), offset, 0, size, locFlags);
+                    writer.addLocation(current.getPath(), offset, 0, size);
                     offset += size;
                 }
             }

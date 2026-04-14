@@ -155,36 +155,6 @@ public final class ImageFileCreator {
         });
     }
 
-    public static void recreateJimage(Path jimageFile,
-            Set<Archive> archives,
-            ImagePluginStack pluginSupport,
-            boolean generateRuntimeImage)
-            throws IOException {
-        try {
-            Map<String, List<Entry>> entriesForModule
-                    = archives.stream().collect(Collectors.toMap(
-                                    Archive::moduleName,
-                                    a -> {
-                                        try (Stream<Entry> entries = a.entries()) {
-                                            return entries.toList();
-                                        }
-                                    }));
-            ByteOrder order = ByteOrder.nativeOrder();
-            BasicImageWriter writer = new BasicImageWriter(order);
-            ResourcePoolManager pool = createPoolManager(archives, entriesForModule, order, writer);
-            try (OutputStream fos = Files.newOutputStream(jimageFile);
-                    BufferedOutputStream bos = new BufferedOutputStream(fos);
-                    DataOutputStream out = new DataOutputStream(bos)) {
-                generateJImage(pool, writer, pluginSupport, out, generateRuntimeImage);
-            }
-        } finally {
-            //Close all archives
-            for (Archive a : archives) {
-                a.close();
-            }
-        }
-    }
-
     private void writeImage(Set<Archive> archives,
             ByteOrder byteOrder)
             throws IOException {
@@ -252,18 +222,14 @@ public final class ImageFileCreator {
                 long onFileSize = res.contentLength();
 
                 if (duplicates.contains(path)) {
-                    System.err.format("duplicate resource \"%s\", skipping%n",
-                            path);
-                    // TODO Need to hang bytes on resource and write
-                    // from resource not zip.
+                    System.err.format("duplicate resource \"%s\", skipping%n", path);
+                    // TODO Need to hang bytes on resource and write from resource not zip.
                     // Skipping resource throws off writing from zip.
                     offset[0] += onFileSize;
                     return;
                 }
-                int locFlags = ImageLocation.getPreviewFlags(
-                        res.path(), p -> resultResources.findEntry(p).isPresent());
                 duplicates.add(path);
-                writer.addLocation(path, offset[0], compressedSize, uncompressedSize, locFlags);
+                writer.addLocation(path, offset[0], compressedSize, uncompressedSize);
                 paths.add(path);
                 offset[0] += onFileSize;
             }
