@@ -170,6 +170,8 @@ void G1ConcurrentRefineThread::do_refinement() {
   state.snapshot_heap();
 
   // 5. Sweep refinement table until done.
+  log_info(gc, task)("Concurrent Refine Sweep Using %u of %u Workers", cr()->num_threads_wanted(), cr()->max_num_threads());
+
   jlong total_yield_during_sweep_duration = 0;
   if (!state.sweep_refinement_table(total_yield_during_sweep_duration)) {
     log_debug(gc, refine)("GC completed sweeping, aborting concurrent operation");

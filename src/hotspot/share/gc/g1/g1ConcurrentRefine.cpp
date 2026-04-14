@@ -290,7 +290,10 @@ bool G1ConcurrentRefineSweepState::sweep_refinement_table(jlong& total_yield_dur
       if (!is_in_progress()) {
         return false;
       } else {
-        total_yield_duration += os::elapsed_counter() - yield_start;
+        jlong yield_during_sweep_duration = os::elapsed_counter() - yield_start;
+        log_debug(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
+                              TimeHelper::counter_to_millis(yield_during_sweep_duration));
+        total_yield_duration += yield_during_sweep_duration;
       }
     }
   }
