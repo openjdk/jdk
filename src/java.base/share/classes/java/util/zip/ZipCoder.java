@@ -48,7 +48,7 @@ import sun.nio.cs.UTF_8;
  * While the ZipCoder base class is stateless and safe for use from multiple threads,
  * the CharsetZipCoder subclass does hold decoder/encoder state and therefore requires
  * external synchronization. Because of this, ZipCoder instances should in general be
- * treated as is they are stateful.
+ * treated as if is they are stateful.
  */
 class ZipCoder {
 
