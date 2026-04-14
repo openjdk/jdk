@@ -1803,8 +1803,8 @@ static bool match_type_check(PhaseGVN& gvn,
       assert(idx == 1 || idx == 2, "");
       Node* vcon = val->in(idx);
 
-      assert(val->find_edge(con) > 0, "");
       if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
+        assert(val->find_edge(con) > 0, "mismatch");
         SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
         Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
         Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);

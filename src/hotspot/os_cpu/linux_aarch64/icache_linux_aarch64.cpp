@@ -25,4 +25,4 @@
 #include "runtime/icache.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-NOT_PRODUCT(THREAD_LOCAL AArch64ICacheInvalidationContext* AArch64ICacheInvalidationContext::_current_context = nullptr;)
+DEBUG_ONLY(THREAD_LOCAL AArch64ICacheInvalidationContext* AArch64ICacheInvalidationContext::_current_context = nullptr;)

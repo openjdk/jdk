@@ -650,7 +650,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
-    _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
+    _g1h->mark_evac_failure_object(old);
 
     _evacuation_failed_info.register_copy_failure(word_sz);
 
