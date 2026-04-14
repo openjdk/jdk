@@ -29,7 +29,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import javax.security.auth.Destroyable;
 import sun.security.util.Debug;
-import sun.security.util.KeyUtil;
 import sun.security.util.PBEUtil;
 
 /**
@@ -262,7 +261,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
         public Builder secret(byte[] k) throws IllegalArgumentException {
             checkNonNull(k, "secret");
             if (this.k != B0) {
-                Arrays.fill(k, (byte) 0);
+                Arrays.fill(this.k, (byte)0);
             }
             this.k = (k.length > 0 ? k.clone() : B0);
             return this;
@@ -321,7 +320,12 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
                 Charset cs) {
             checkNonNull(passwdChar, "password char[]");
             checkNonNull(cs, "charset");
-            return build(salt, PBEUtil.encodePassword(passwdChar, cs));
+            byte[] password = PBEUtil.encodePassword(passwdChar, cs);
+            try {
+                return build(salt, password);
+            } finally {
+                Arrays.fill(password, (byte)0);
+            }
         }
     };
 
@@ -366,9 +370,9 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      */
     private Argon2ParameterSpec(Builder builder, byte[] salt, byte[] passwd) {
         // values are already validated by Builder
-        this.ver = builder.ver;
         this.passwd = passwd.clone();
         this.salt = salt.clone();
+        this.ver = builder.ver;
         this.p = builder.p;
         this.tagLen = builder.tagLen;
         this.memory = builder.memory;
@@ -450,11 +454,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      * {@return a String representation of the parameter set}
      */
     public String toString() {
-        String s = String.format("%s, memoryKiB=%d, iterations=%d, parallelism=%d, tagLen=%d, associatedData=%s, salt=%s",
+        // skip password and secret due to their sensitivity
+        return String.format("%s, memoryKiB=%d, iterations=%d, parallelism=%d, tagLen=%d, associatedData=%s, salt=%s",
                 ver.name(), memory, t, p, tagLen, Debug.toString(x),
                 Debug.toString(salt));
-        // skip password and secret due to their sensitivity
-        return s;
     }
 
     /**
@@ -463,9 +466,12 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
      */
     @Override
     public void destroy() {
-        KeyUtil.clear(passwd, k);
-        passwd = null;
-        k = null;
+        if (!isDestroyed()) {
+            Arrays.fill(passwd, (byte)0);
+            Arrays.fill(k, (byte)0);
+            passwd = null;
+            k = null;
+        }
     }
 
     /**
@@ -476,5 +482,4 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec,
     public boolean isDestroyed() {
         return (passwd == null && k == null);
     }
-
 }

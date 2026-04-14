@@ -35,8 +35,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.Argon2ParameterSpec;
-
-import jdk.internal.ref.CleanerFactory;
+import javax.security.auth.Destroyable;
 
 import sun.security.util.Argon2Util;
 
@@ -46,14 +45,17 @@ import sun.security.util.Argon2Util;
  *
  * @since 27
  */
-public final class Argon2DerivedKey implements SecretKey {
+public final class Argon2DerivedKey implements SecretKey, Destroyable {
 
     @java.io.Serial
     private static final long serialVersionUID = 724953279128L;
 
+    // cannot be final; set to null after destroy() is called
     private byte[] key;
-    private String algo;
-    private String encodedHash;
+    private final String algo;
+
+    // for including Argon2 parameters in toString() method
+    private final transient String info;
 
     /**
      * Create a Argon2 derived secret key using the supplied arguments.
@@ -68,23 +70,20 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     public Argon2DerivedKey(String type, Argon2ParameterSpec spec,
             byte[] key, String algo) {
-        this.key = key; // known internal bytes; no need to clone
+        this.key = key; // internally derived, no need to clone
         this.algo = algo;
-        this.encodedHash = Argon2Util.encodeHash(type, spec, key);
-        final byte[] k = this.key;
-        CleanerFactory.cleaner().register(this,
-                () -> Arrays.fill(k, (byte)0x00));
+
+        this.info = String.format("%s key derived using %s with params = %s",
+                algo, type, spec.toString());
     }
 
     public byte[] getEncoded() {
+        if (isDestroyed()) {
+            throw new IllegalStateException("key destroyed");
+        }
         // Return a copy of the key, rather than a reference,
         // so that the key data cannot be modified from outside
-        try {
-            return key.clone();
-        } finally {
-            // prevent this from being cleaned for the above block
-            Reference.reachabilityFence(this);
-        }
+        return key.clone();
     }
 
     public String getAlgorithm() {
@@ -101,39 +100,55 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     @Override
     public int hashCode() {
-        try {
-            return Arrays.hashCode(key) ^
-                    algo.toLowerCase(Locale.ENGLISH).hashCode();
-        } finally {
-            // prevent this from being cleaned for the above block
-            Reference.reachabilityFence(this);
-        }
+        return Arrays.hashCode(key) ^
+                algo.toLowerCase(Locale.ENGLISH).hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (isDestroyed()) {
+            throw new IllegalStateException("key destroyed");
+        }
+
+        if (!(obj instanceof SecretKey that)) {
+            return false;
+        }
+        if (!(algo.equalsIgnoreCase(that.getAlgorithm()))) {
+            return false;
+        }
         try {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof SecretKey that)) {
-                return false;
-            }
-            if (!(algo.equalsIgnoreCase(that.getAlgorithm()))) {
-                return false;
-            }
             byte[] thatKey = that.getEncoded();
             boolean ret = MessageDigest.isEqual(this.key, thatKey);
-            Arrays.fill(thatKey, (byte)0x00);
+            if (thatKey != null) {
+                Arrays.fill(thatKey, (byte)0);
+            }
             return ret;
-        } finally {
-            // prevent this from being cleaned for the above block
-            Reference.reachabilityFence(this);
+        } catch (RuntimeException re) {
+            // if cannot compare for any reason
+            return false;
         }
     }
 
+    @Override
     public String toString() {
-        return this.encodedHash;
+        return info;
+    }
+
+    @Override
+    public void destroy() {
+        if (key != null) {
+            Arrays.fill(key, (byte)0);
+            key = null;
+        }
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return (key == null);
     }
 
     /**
@@ -145,7 +160,7 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-         throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         // not directly serialized
         throw new InvalidObjectException("Invalid object");
     }
@@ -160,14 +175,9 @@ public final class Argon2DerivedKey implements SecretKey {
      */
     @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
-        try {
-            return new KeyRep(KeyRep.Type.SECRET,
-                        getAlgorithm(),
-                        getFormat(),
-                        key);
-        } finally {
-            // prevent this from being cleaned for the above block
-            Reference.reachabilityFence(this);
-        }
+        return new KeyRep(KeyRep.Type.SECRET,
+                    getAlgorithm(),
+                    getFormat(),
+                    key);
     }
 }

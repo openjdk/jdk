@@ -35,6 +35,7 @@ import java.security.ProviderException;
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
 import static sun.security.provider.ByteArrayAccess.*;
+import sun.security.util.KeyUtil;
 
 /**
  * This class implements the Password Hashing Algorithm Argon2 as specified
@@ -51,21 +52,6 @@ public final class Argon2Impl {
     // Pre-hashing digest length and its extension
     static final int ARGON2_PREHASH_DIGEST_LENGTH = 64;
     static final int ARGON2_PREHASH_SEED_LENGTH   = 72;
-
-    // implementation limits to deter DOS
-    private static final long MEMORY_MAX;
-    private static final int P_MAX;
-    static {
-        Runtime r = Runtime.getRuntime();
-        long memLimit = r.maxMemory();
-        if (memLimit == Long.MAX_VALUE) {
-            MEMORY_MAX = 1 << 21; // 2 GiB?
-        } else {
-            MEMORY_MAX = memLimit >>> 12; // 1/4 of maximum jvm memory
-        }
-        // PHC range: 1 - 255
-        P_MAX = r.availableProcessors() * 16;
-    }
 
     /**
      * Type of Argon2 algorithms
@@ -111,36 +97,39 @@ public final class Argon2Impl {
                     ("Unsupported version, SunJCE only supports V13, but got " +
                     spec.version());
         }
-        int memory = checkMax(spec.memoryKiB(), MEMORY_MAX,
-                "Memory size %d exceeds SunJCE's maximum %d");
-        int lanes = checkMax(spec.parallelism(), P_MAX,
-                "Parallelism value %d exceeds SunJCE's maximum %d");
+        int memory = spec.memoryKiB();
+        int lanes = spec.parallelism();
         int tagLen = spec.tagLen();
         int iterations = spec.iterations();
+
         byte[] msg = spec.password();
         byte[] nonce = spec.salt();
         byte[] secret = spec.secret();
         byte[] ad = spec.associatedData();
-
         byte[] h0Plus8Bytes = null;
         try {
             // 1) Establish initial hash H_0
             // Allocate 72 bytes for storing initialHash(h0) since H_0 is
             // appended w/ additional 8 bytes for generating the first 2
             // blocks in fillFirstTwoColumns(...).
-            h0Plus8Bytes = initialHash(lanes, tagLen, memory,
-                iterations, Version.V13, type, msg, nonce, secret, ad);
-
-            // 2) Allocate memory m' - stored inside Argon2Instance
-            Argon2Instance instance = new Argon2Instance(type, lanes,
-                    memory, iterations);
-            instance.fillFirstTwoColumns(h0Plus8Bytes);
-            instance.fillMemoryBlocks();
-            return instance.getFinalTag(tagLen);
+            h0Plus8Bytes = initialHash(lanes, tagLen, memory, iterations,
+                    Version.V13, type, msg, nonce, secret, ad);
         } finally {
-            // erase initial hash
-            Arrays.fill(h0Plus8Bytes, (byte)0);
+            // erase sensitive data right after use
+            KeyUtil.clear(msg, secret);
         }
+
+        // 2) Allocate memory m' - stored inside Argon2Instance
+        Argon2Instance instance = new Argon2Instance(type, lanes, memory,
+                iterations);
+        try {
+            instance.fillFirstTwoColumns(h0Plus8Bytes);
+        } finally {
+            // erase initial hash right after use
+            KeyUtil.clear(h0Plus8Bytes);
+        }
+        instance.fillMemoryBlocks();
+        return instance.getFinalTag(tagLen);
     }
 
     private static int checkMax(int value, long max, String errMsg)
@@ -171,6 +160,7 @@ public final class Argon2Impl {
         i2bLittle4(v.value(), in, 16);
         i2bLittle4(type.value(), in, 20);
         bl.update(in);
+
         byte[][] byteArrays = { msg, nonce, secret, ad };
         for (byte[] b : byteArrays) {
             int len = (b == null ? 0 : b.length);
@@ -212,8 +202,7 @@ public final class Argon2Impl {
             // no need to set LE32(0) as that should be the value
             for (int k = 0; k < lanes; k++) {
                 i2bLittle4(k, h0Plus8Bytes, 68);
-                b[k][0] = new Block(vlHash(ARGON2_BLOCK_SIZE,
-                        h0Plus8Bytes));
+                b[k][0] = new Block(vlHash(ARGON2_BLOCK_SIZE, h0Plus8Bytes));
             }
 
             // 4) Compute B[i][1] for i = [0...p-1]
@@ -221,8 +210,7 @@ public final class Argon2Impl {
             i2bLittle4(1, h0Plus8Bytes, ARGON2_PREHASH_DIGEST_LENGTH);
             for (int k = 0; k < lanes; k++) {
                 i2bLittle4(k, h0Plus8Bytes, 68);
-                b[k][1] = new Block(vlHash(ARGON2_BLOCK_SIZE,
-                        h0Plus8Bytes));
+                b[k][1] = new Block(vlHash(ARGON2_BLOCK_SIZE, h0Plus8Bytes));
             }
         }
 
@@ -379,7 +367,7 @@ public final class Argon2Impl {
             } finally {
                 // erase all involved block here
                 if (cBytes != null) {
-                    Arrays.fill(cBytes, (byte) 0);
+                    KeyUtil.clear(cBytes);
                 }
                 for (int i = 0; i < this.lanes; i++) {
                     b[i][this.columns - 1].erase();
@@ -472,12 +460,7 @@ public final class Argon2Impl {
         private static void compressG(Block a, Block b, Block dst,
                 boolean xor) {
             Block blockR = Block.xor(a, b);
-            Block tmp = (Block) blockR.clone();
-
-            if (xor) {
-                // tmp = r xor dst
-                tmp.xor(dst);
-            }
+            Block tmp = (xor ? Block.xor(blockR, dst) : (Block) blockR.clone());
 
             // r.value = 128 longs (8-byte each) which is arranged into an
             // 8x8 array of elements whose length is 16 bytes
@@ -520,6 +503,7 @@ public final class Argon2Impl {
             this.slice = slice;
             this.index = 0; // will be set later
         }
+
         public String toString() {
             return "pass = " + pass + ", lane = " + lane + ", slice = " +
                 slice + ", index = " + index;
@@ -550,7 +534,9 @@ public final class Argon2Impl {
                 throw new ProviderException("Wrong input array size: " +
                         value.length);
             }
-            this.value = value.clone();
+            // 'value' is either created internally through vlHash() or
+            // already cloned before calling
+            this.value = value;
         }
 
         Block(byte[] bytes) {
@@ -570,7 +556,7 @@ public final class Argon2Impl {
         }
 
         void erase() {
-            Arrays.fill(value, 0L);
+            KeyUtil.clear(value);
         }
 
         // xor this w/ 'other' and store the result in this
@@ -596,7 +582,7 @@ public final class Argon2Impl {
 
         @Override
         public Object clone() {
-            return new Block(value);
+            return new Block(value.clone());
         }
 
         @Override

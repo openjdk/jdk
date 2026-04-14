@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,6 +556,7 @@ public final class KeyUtil {
             switch (o) {
                 case byte[] b -> Arrays.fill(b, (byte)0);
                 case char[] c -> Arrays.fill(c, (char)0);
+                case long[] v -> Arrays.fill(v, 0L);
                 case PKCS8Key p8 -> p8.clear();
                 case PKCS8EncodedKeySpec p8 ->
                     SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(p8);

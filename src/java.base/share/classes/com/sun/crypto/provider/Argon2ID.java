@@ -78,8 +78,7 @@ public final class Argon2ID extends KDFSpi {
         // javax.crypto.KDF checks and rejects null or empty alg, and null
         // derivationSpec
         Argon2ParameterSpec spec = check(derivationSpec);
-        byte[] keyBytes = impl.derive(spec);
-        return new Argon2DerivedKey(TYPE, spec, keyBytes, alg);
+        return new Argon2DerivedKey(TYPE, spec, impl.derive(spec), alg);
     }
 
     @Override

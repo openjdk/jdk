@@ -95,7 +95,8 @@ public final class Blake2b {
                     "longer than 64 bytes: " + key.length);
         }
 
-        this.key = ((key == null || key.length == 0) ? NULL_KEY : key.clone());
+        // no need to clone key as this class is not publicly available
+        this.key = ((key == null || key.length == 0) ? NULL_KEY : key);
         this.b = new byte[128];
         this.h = IV.clone();
         if (this.key == NULL_KEY) {
@@ -183,7 +184,7 @@ public final class Blake2b {
     private void reset() {
         Arrays.fill(b, (byte) 0);
         System.arraycopy(IV, 0, h, 0, IV.length);
-        Arrays.fill(t, (long) 0);
+        Arrays.fill(t, 0L);
         if (key != NULL_KEY) {
             // process the key at the next update/doFinal call
             h[0] ^= (0x01010000L ^ (key.length << 8) ^ outLen);

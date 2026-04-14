@@ -40,20 +40,14 @@ public final class Argon2Util {
     private static Base64.Encoder enc = Base64.getEncoder().withoutPadding();
     private static Base64.Decoder dec = Base64.getDecoder();
 
-    // encode the Argon2 parameters in the order of m, t, p, keyid, data
-    private static String encodeParams(int m, int t, int p, byte[] k,
-            byte[] x) {
+    // encode the Argon2 parameters in the order of m, t, p, data
+    private static String encodeParams(int m, int t, int p, byte[] x) {
         String baseFormat = "m=%d,t=%d,p=%d" +
-                (k.length != 0 ? ",keyid=%s" : "") +
                 (x.length != 0 ? ",data=%s" : "");
         switch (baseFormat.length()) {
             case 14 -> { return String.format(baseFormat, m, t, p); }
-            case 23 -> { return String.format(baseFormat, m, t, p,
-                    enc.encodeToString(k)); }
             case 22 -> { return String.format(baseFormat, m, t, p,
                     enc.encodeToString(x)); }
-            case 31 -> { return String.format(baseFormat, m, t, p,
-                    enc.encodeToString(k), enc.encodeToString(x)); }
             default -> { throw new RuntimeException
                     ("Unsupported params format: " + baseFormat);
             }
@@ -75,13 +69,14 @@ public final class Argon2Util {
         return value;
     }
 
-    // decode the Argon2 parameters in the order of m, t, p, keyid, data
+    // decode the Argon2 parameters in the order of m, t, p, data
+    // error out if keyid is present
     private static void decodeAndSetParams(String paramStr,
             Argon2ParameterSpec.Builder builder)
             throws IllegalArgumentException {
 
         String[] assignments = paramStr.split(",");
-        // must be in the order of m ,t, p, followed by optional keyid and data
+        // must be in the order of m ,t, p, followed by the optional parameters
         if (assignments.length < 3 || assignments.length > 5) {
             throw new IllegalArgumentException("Invalid params: " + paramStr);
         }
@@ -89,7 +84,7 @@ public final class Argon2Util {
         builder.iterations(parseInt(assignments[1], "t" , -1));
         builder.parallelism(parseInt(assignments[2], "p", 256));
         int index = 3;
-        while (index < assignments.length) { // keyid or data
+        while (index < assignments.length) {
             String[] nextPair = assignments[index++].split("=");
             byte[] value = dec.decode(nextPair[1]);
             if (nextPair[0].equals("keyid")) {
@@ -98,7 +93,8 @@ public final class Argon2Util {
                             ("keyid length should not exceed 8: " +
                             value.length);
                 }
-                builder.secret(value);
+                // mapping keyid to secret value is application-specific;
+                throw new IllegalArgumentException("keyid is not supported");
             } else if (nextPair[0].equals("data")) {
                 if (value.length > 32) {
                     throw new IllegalArgumentException
@@ -128,7 +124,7 @@ public final class Argon2Util {
     public static String encodeHash(String algo, Argon2ParameterSpec spec,
             byte[] tag) {
         String params = encodeParams(spec.memoryKiB(), spec.iterations(),
-                spec.parallelism(), spec.secret(), spec.associatedData());
+                spec.parallelism(), spec.associatedData());
         if (tag != null) {
             return String.format("$%s$v=%d$%s$%s$%s",
                 algo.toLowerCase(Locale.ENGLISH),
