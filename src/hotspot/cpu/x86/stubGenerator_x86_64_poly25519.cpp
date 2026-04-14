@@ -86,7 +86,7 @@ ATTRIBUTE_ALIGNED(64) constexpr uint64_t PERMLOWH[] = {
   0x0000000000000000ULL, 0x0000000000000000ULL,
   0x0000000000000000ULL, 0x0000000000000006ULL,
   0x0000000000000007ULL, 0x0000000000000000ULL,
-  0x0000000000000000ULL, 0x0000000000000000ULL,
+  0x0000000000000000ULL, 0x0000000000000000ULL
 };
 static address perm_lowH() {
   return (address)PERMLOWH;
@@ -97,7 +97,7 @@ ATTRIBUTE_ALIGNED(64) constexpr uint64_t LIMB0[] = {
   0x0000000000000000ULL, 0x0000000000000000ULL,
   0x0000000000000000ULL, 0x0000000000000000ULL,
   0x0000000000000000ULL, 0x0000000000000000ULL,
-  0x0000000000000000ULL, 0x0000000000000004ULL,
+  0x0000000000000000ULL, 0x0000000000000004ULL
 };
 static address limb_0() {
   return (address)LIMB0;
@@ -259,7 +259,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
-  __ evmovdquq(Address(rLimbs, 0), Acc1L, Assembler::AVX_256bit);
+  __ evmovdquq(Address(rLimbs, 0), allLimbs, Acc1L, false, Assembler::AVX_512bit);
   // Cleanup
   // Zero out zmm0-zmm15, higher registers not used by intrinsics.
   __ vzeroall();
