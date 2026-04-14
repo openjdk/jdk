@@ -66,8 +66,7 @@ import java.util.concurrent.TimeUnit;
 // This class benchmarks capturing the "errno" state.
 // Depending on the execution platform, there may be further states.
 public class CaptureCallStateOverheadBench {
-    private static final ValueLayout.OfLong C_LONG;
-    private static final ValueLayout.OfInt C_INT;
+    private static final boolean L32;
     private static final MethodHandle DOWNCALL_HANDLE_WITHOUT_STATE;
     private static final MethodHandle DOWNCALL_HANDLE_WITH_STATE;
     private Arena arena = null;
@@ -80,12 +79,14 @@ public class CaptureCallStateOverheadBench {
     static {
         Linker linker = Linker.nativeLinker();
         MemorySegment name = linker.defaultLookup().findOrThrow("strtol");
-        C_LONG = (ValueLayout.OfLong) linker.canonicalLayouts().get("long");
-        C_INT = (ValueLayout.OfInt) linker.canonicalLayouts().get("int");
-        FunctionDescriptor signature = FunctionDescriptor.of(C_LONG,
+        MemoryLayout cLong = linker.canonicalLayouts().get("long"); // OfLong or OfInt.
+        MemoryLayout cInt = linker.canonicalLayouts().get("int"); // Always OfInt.
+        // Windows and 32-bit platforms treat the C "long" as 32-bit.
+        L32 = cLong.byteSize() == 4;
+        FunctionDescriptor signature = FunctionDescriptor.of(cLong,
                                                              ValueLayout.ADDRESS,
                                                              ValueLayout.ADDRESS,
-                                                             C_INT);
+                                                             cInt);
         Linker.Option ccs = Linker.Option.captureCallState("errno");
         DOWNCALL_HANDLE_WITHOUT_STATE = Linker.nativeLinker().downcallHandle(name, signature);
         DOWNCALL_HANDLE_WITH_STATE = Linker.nativeLinker().downcallHandle(name, signature, ccs);
@@ -102,12 +103,20 @@ public class CaptureCallStateOverheadBench {
 
     @Benchmark
     public void doNotUseCaptureCallState() throws Throwable {
-        long unused = (long) DOWNCALL_HANDLE_WITHOUT_STATE.invokeExact(arg0, arg1, arg2);
+        if (L32) {
+            int unused = (int) DOWNCALL_HANDLE_WITHOUT_STATE.invokeExact(arg0, arg1, arg2);
+        } else {
+            long unused = (long) DOWNCALL_HANDLE_WITHOUT_STATE.invokeExact(arg0, arg1, arg2);
+        }
     }
 
     @Benchmark
     public void useCaptureCallState() throws Throwable {
-        long unused = (long) DOWNCALL_HANDLE_WITH_STATE.invokeExact(cs, arg0, arg1, arg2);
+        if (L32) {
+            int unused = (int) DOWNCALL_HANDLE_WITH_STATE.invokeExact(cs, arg0, arg1, arg2);
+        } else {
+            long unused = (long) DOWNCALL_HANDLE_WITH_STATE.invokeExact(cs, arg0, arg1, arg2);
+        }
     }
 
     @TearDown
