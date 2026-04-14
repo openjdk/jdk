@@ -64,7 +64,7 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   const size_t process_start = process_start_offset_in_bytes / BytesPerWord;
   const size_t process_size = _word_size - process_start;
 
-  // Pin the region before clearing avoid moving the object until it is done
+  // Pin the region before clearing to avoid moving the object until it is done
   ShenandoahHeapRegion* region = heap->heap_region_containing(mem);
   region->record_pin();
 

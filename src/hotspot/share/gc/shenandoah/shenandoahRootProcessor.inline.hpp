@@ -155,7 +155,9 @@ public:
     // Mark the invisible root if it is not marked.
     if (!marking_context->is_marked(invisible_root)) {
       bool was_upgraded = false;
-      if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) return;
+      if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) {
+        return;
+      }
 
       // Update region liveness data
       ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
