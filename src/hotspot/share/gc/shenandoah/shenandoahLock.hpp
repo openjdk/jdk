@@ -38,8 +38,8 @@ private:
   shenandoah_padding(0);
   Atomic<LockState> _state;
   shenandoah_padding(1);
-  Atomic<Thread*> _owner;
-  shenandoah_padding(2);
+  DEBUG_ONLY(Atomic<Thread*> _owner;)
+  DEBUG_ONLY(shenandoah_padding(2);)
 
   template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
