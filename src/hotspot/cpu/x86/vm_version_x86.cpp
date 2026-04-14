@@ -1373,10 +1373,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
 #if COMPILER2_OR_JVMCI
   int max_vector_size = 0;
   if (UseAVX == 0 || !os_supports_avx_vectors()) {
