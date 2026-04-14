@@ -62,12 +62,12 @@ class ZipCoder {
         return new String(ba, ISO_8859_1);
     }
 
-    private static final ZipCoder utf8 = new ZipCoder();
+    private static final ZipCoder UTF8 = new ZipCoder();
 
     public static ZipCoder get(String csn) {
         Charset cs = Charset.forName(csn);
         if (cs.name().equals("UTF-8")) {
-            return utf8;
+            return UTF8;
         }
         return new CharsetZipCoder(cs);
     }
