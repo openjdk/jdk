@@ -2415,7 +2415,7 @@ void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
     case T_LONG:
     case T_DOUBLE:
       {
-        int idx = vector_iota_entry_index(bt);
+        int idx = vector_iota_entry_index(T_LONG);
         lea(rscratch1,
             ExternalAddress(StubRoutines::aarch64::vector_iota_indices(idx)));
         ldrq(tmp, rscratch1);
