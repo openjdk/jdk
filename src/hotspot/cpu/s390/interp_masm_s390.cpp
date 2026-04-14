@@ -951,6 +951,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.

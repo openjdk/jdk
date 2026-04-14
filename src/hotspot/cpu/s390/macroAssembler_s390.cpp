@@ -2763,11 +2763,21 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
   return 0;
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
-  // Armed page has poll_bit set.
-  z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
-  z_brnaz(slow_path);
+void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg, bool at_return, bool in_nmethod) {
+  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()));
+
+  if (at_return) {
+    // TODO: Double Check this during Runtime
+    // In interpreter, Z_fp IS VALID!
+    z_cg(in_nmethod ? Z_SP : Z_fp, poll_byte_addr);
+    branch_optimized(Assembler::bcondHigh, slow_path);
+  } else {
+    // TODO: CHeck this also how many bytes do we need to test ppc is testing all 64(might be due to lack of instruction) but x86 is anly doing 8
+    // Armed page has poll_bit set.
+    z_lg(temp_reg, poll_byte_addr);
+    z_tmll(temp_reg, SafepointMechanism::poll_bit());
+    branch_optimized(Assembler::bcondNotAllZero, slow_path);
+  }
 }
 
 // Don't rely on register locking, always use Z_R1 as scratch register instead.
