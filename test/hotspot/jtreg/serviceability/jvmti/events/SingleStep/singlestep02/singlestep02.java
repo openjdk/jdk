@@ -35,8 +35,8 @@ import java.io.*;
  *     to be sent only during the live phase via the GetPhase() call.
  *
  *     The ClassLoad event is required to trigger creation of jvmti
- *     state in the START phase. This is thread filtered event that
- *     should be sent in start phase.
+ *     thread state in the START phase. This is thread filtered event
+ *     that should be sent in start phase.
  *
  * @run main/othervm/native -agentlib:singlestep02 singlestep02
  */
