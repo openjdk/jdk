@@ -24,6 +24,7 @@
 
 /*
  * @test id=generational
+ * @bug 8381871
  * @summary Test that ShenandoahGCHeuristics is always adaptive in generational mode
  * @requires vm.gc.Shenandoah
  * @library /test/lib
