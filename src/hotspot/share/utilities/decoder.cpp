@@ -25,6 +25,8 @@
 
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
 
