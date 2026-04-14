@@ -114,6 +114,7 @@ ClassFileLoadHook (
         return;
 
     if (jni->ExceptionCheck()) {
+        jni->ExceptionDescribe();
         jni->ExceptionClear();
         return;
     }
@@ -125,11 +126,8 @@ ClassFileLoadHook (
     if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(name)) != nullptr))
         return;
 
-    jni->CallStaticObjectMethod(callback_class, method_id, class_name_string, agent_id);
-
-    if (jni->ExceptionCheck()) {
-        jni->ExceptionClear();
-    }
+    if (!NSK_JNI_VERIFY_VOID(jni, jni->CallStaticVoidMethod(callback_class, method_id, class_name_string, agent_id)))
+        return;
 }
 
 
