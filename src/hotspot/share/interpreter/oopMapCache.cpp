@@ -92,11 +92,8 @@ class OopMapForCacheEntry: public GenerateOopMap {
 };
 
 
-OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry* entry) : GenerateOopMap(method) {
-  _bci       = bci;
-  _entry     = entry;
-  _stack_top = -1;
-}
+OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry* entry) :
+  GenerateOopMap(method, /*all_exception_edges*/ true), _entry(entry), _bci(bci), _stack_top(-1) { }
 
 
 bool OopMapForCacheEntry::compute_map(Thread* current) {

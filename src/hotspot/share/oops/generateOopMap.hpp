@@ -307,6 +307,7 @@ class GenerateOopMap {
   bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
+  bool         _all_exception_edges;        // All bytecodes can reach containing exception handler.
 
   // Working Cell type state
   int            _state_len;                // Size of states
@@ -380,7 +381,6 @@ class GenerateOopMap {
   // Interpretation methods (secondary)
   void  interp1                             (BytecodeStream *itr);
   void  do_exception_edge                   (BytecodeStream *itr);
-  bool  first_bytecode_in_handler           (int bci) const;
   void  check_type                          (CellTypeState expected, CellTypeState actual);
   void  ppstore                             (CellTypeState *in,  int loc_no);
   void  ppload                              (CellTypeState *out, int loc_no);
@@ -456,7 +456,7 @@ class GenerateOopMap {
 
   friend class RelocCallback;
  public:
-  GenerateOopMap(const methodHandle& method);
+  GenerateOopMap(const methodHandle& method, bool all_exception_edges);
 
   // Compute the map - returns true on success and false on error.
   bool compute_map(Thread* current);
@@ -517,7 +517,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 #endif
 
  public:
-  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { }
+  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method, true) { }
   methodHandle do_potential_rewrite(TRAPS);
 };
 
@@ -536,7 +536,7 @@ class GeneratePairingInfo: public GenerateOopMap {
                                            CellTypeState* stack,
                                            int stack_top)                 {}
  public:
-  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
+  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method, false)       {};
 
   // Call compute_map() to generate info.
 };

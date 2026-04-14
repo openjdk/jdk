@@ -1167,37 +1167,32 @@ void GenerateOopMap::interp_bb(BasicBlock *bb) {
   }
 }
 
-// Exception catch clauses can throw recursive exceptions if the catch class has
-// an exception while loading.
-bool GenerateOopMap::first_bytecode_in_handler(int bci) const {
-  if (_has_exceptions) {
-    ExceptionTable exct(method());
-    for(int i = 0; i < exct.length(); i++) {
-      int start_pc   = exct.start_pc(i);
-      int catch_type = exct.catch_type_index(i);
-      // Catch all can't trap.
-      if (bci == start_pc && catch_type != 0) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 
-  // Only create an exception edge if bytecode can trap, or it is
-  // the first bytecode in exception handlers which also can trap.
-  // If the bytecode can trap, an async exception can be thrown at that bytecode, so must
-  // match an exception handler.
-  if (!first_bytecode_in_handler(itr->bci())) {
-    // Only check exception edge, if bytecode can trap
+  // Only check exception edge, if bytecode can trap or if async exceptions can be thrown
+  // from any bytecode in the interpreter when single stepping.
+  if (!_all_exception_edges) {
     if (!Bytecodes::can_trap(itr->code())) return;
     switch (itr->code()) {
       case Bytecodes::_aload_0:
-        // These bytecodes can trap for RewriteFrequentPairs.  We need to assume that
+        // These bytecodes can trap for rewriting.  We need to assume that
         // they do not throw exceptions to make the monitor analysis work.
         return;
+
+      case Bytecodes::_ireturn:
+      case Bytecodes::_lreturn:
+      case Bytecodes::_freturn:
+      case Bytecodes::_dreturn:
+      case Bytecodes::_areturn:
+      case Bytecodes::_return:
+        // If the monitor stack height is not zero when we leave the method,
+        // then we are either exiting with a non-empty stack or we have
+        // found monitor trouble earlier in our analysis.  In either case,
+        // assume an exception could be taken here.
+        if (_monitor_top == 0) {
+          return;
+        }
+        break;
 
       case Bytecodes::_monitorexit:
         // If the monitor stack height is bad_monitors, then we have detected a
@@ -2064,12 +2059,12 @@ void GenerateOopMap::print_time() {
 //
 //  ============ Main Entry Point ===========
 //
-GenerateOopMap::GenerateOopMap(const methodHandle& method) {
+GenerateOopMap::GenerateOopMap(const methodHandle& method, bool all_exception_edges) :
   // We have to initialize all variables here, that can be queried directly
-  _method = method;
-  _max_locals=0;
-  _init_vars = nullptr;
-}
+  _method(method),
+  _max_locals(0),
+  _all_exception_edges(all_exception_edges),
+  _init_vars(nullptr) {}
 
 bool GenerateOopMap::compute_map(Thread* current) {
 #ifndef PRODUCT
