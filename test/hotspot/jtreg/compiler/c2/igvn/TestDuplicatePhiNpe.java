@@ -26,7 +26,10 @@ package compiler.c2.igvn;
 /*
  * @test
  * @bug JDK-8375645
- * @summary TODO
+ * @summary In PhiNode::Ideal, we attempt to split phis through memory merges.
+ *          While doing that, we might end up creating new phis that conflict
+ *          with existing ones (same region and slice). This creates an
+ *          ambiguity that confuses escape analysis.
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyAmbiguousMemPhi
  *      -XX:CompileCommand=compileonly,${test.main.class}::test
