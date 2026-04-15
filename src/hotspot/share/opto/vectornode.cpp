@@ -2432,67 +2432,68 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
-static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
+static Node* MinMaxV_Common_Ideal(MinMaxVNode* n, PhaseGVN* phase, bool can_reshape) {
   int vopc = n->Opcode();
-  assert(vopc == Op_UMinV || vopc == Op_UMaxV, "Unexpected opcode");
+  int min_opcode = n->min_opcode();
+  int max_opcode = n->max_opcode();
 
-  Node* umin = nullptr;
-  Node* umax = nullptr;
+  Node* min_op = nullptr;
+  Node* max_op = nullptr;
   int lopc = n->in(1)->Opcode();
   int ropc = n->in(2)->Opcode();
 
-  if (lopc == Op_UMinV && ropc == Op_UMaxV) {
-    umin = n->in(1);
-    umax = n->in(2);
-  } else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
-    umin = n->in(2);
-    umax = n->in(1);
+  if (lopc == min_opcode && ropc == max_opcode) {
+    min_op = n->in(1);
+    max_op = n->in(2);
+  } else if (lopc == max_opcode && ropc == min_opcode) {
+    min_op = n->in(2);
+    max_op = n->in(1);
   } else {
     return nullptr;
   }
 
-  // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
-  // UMin (UMax(a, b), UMin(b, a))  => UMin(a, b)
-  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
-  // UMax (UMax(a, b), UMin(b, a))  => UMax(a, b)
-  if (umin != nullptr && umax != nullptr) {
-    if ((umin->in(1) == umax->in(1) && umin->in(2) == umax->in(2)) ||
-        (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
-      if (vopc == Op_UMinV) {
-        return new UMinVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
-      } else {
-        return new UMaxVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
+  // Min (Min(a, b), Max(a, b))  => Min(a, b)
+  // Min (Max(a, b), Min(b, a))  => Min(a, b)
+  // Max (Min(a, b), Max(a, b))  => Max(a, b)
+  // Max (Max(a, b), Min(b, a))  => Max(a, b)
+
+  if (min_op != nullptr && max_op != nullptr) {
+    // Skip if predication status is inconsistent across n, min_op, and max_op,
+    // or if predicated operands carry different masks.
+    if (n->is_predicated_vector() != min_op->is_predicated_vector() ||
+        min_op->is_predicated_vector() != max_op->is_predicated_vector()) {
+      return nullptr;
+    }
+    if (min_op->is_predicated_vector() &&
+        !(n->in(3) == min_op->in(3) && min_op->in(3) == max_op->in(3))) {
+      return nullptr;
+    }
+
+    if ((min_op->in(1) == max_op->in(1) && min_op->in(2) == max_op->in(2)) ||
+        (min_op->in(2) == max_op->in(1) && min_op->in(1) == max_op->in(2))) {
+      // Use n->in(1) inputs for the result to preserve correct merge-masking
+      // passthrough: inactive lanes use in(1), so result->in(1) must equal
+      // n->in(1)->in(1) to maintain the original passthrough semantics.
+      VectorNode* result = VectorNode::make(vopc, n->in(1)->in(1), n->in(1)->in(2), n->bottom_type()->is_vect());
+      if (n->is_predicated_vector()) {
+        result->add_req(n->in(3));
+        result->add_flag(Node::Flag_is_predicated_vector);
       }
+      return result;
     }
   }
 
   return nullptr;
 }
 
-Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+Node* MinMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
 }
 
-Node* UMinVNode::Identity(PhaseGVN* phase) {
-  // UMin (a, a) => a
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-  return this;
-}
-
-Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
-  if (progress != nullptr) return progress;
-
-  return VectorNode::Ideal(phase, can_reshape);
-}
-
-Node* UMaxVNode::Identity(PhaseGVN* phase) {
-  // UMax (a, a) => a
+Node* MinMaxVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
@@ -2502,4 +2503,5 @@ Node* UMaxVNode::Identity(PhaseGVN* phase) {
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
+
 #endif // !PRODUCT
