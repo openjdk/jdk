@@ -28,7 +28,7 @@ package compiler.c2.igvn;
  * @bug JDK-8375645
  * @summary TODO
  * @run main/othervm -Xbatch -XX:-TieredCompilation
- *      -XX:+VerifyAmbiguousMemPhi
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyAmbiguousMemPhi
  *      -XX:CompileCommand=compileonly,${test.main.class}::test
  *      ${test.main.class}
  * @run main ${test.main.class}
