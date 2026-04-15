@@ -30,11 +30,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
@@ -56,8 +58,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,6 +73,7 @@ import java.util.zip.ZipOutputStream;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -116,9 +117,9 @@ public class ZipFSTester {
     }
 
     @Test
-    void test0() throws Exception {
+    void entryParentTest() throws Exception {
         List<String> list = new LinkedList<>();
-        try (var fs = newZipFileSystem(jarFile, Map.of());
+        try (var fs = FileSystems.newFileSystem(jarFile, Map.of());
              ZipFile zf = new ZipFile(fs.toString())) {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             while (zes.hasMoreElements()) {
@@ -134,25 +135,177 @@ public class ZipFSTester {
         }
     }
 
+    // Validates ZipFS provider for expected UOE on directory and non-zip file input
     @Test
-    void test1() throws Exception {
-        // prepare a src for testing
-        Path src = getTempPath();
-        String tmpName = src.toString();
-        try (OutputStream os = Files.newOutputStream(src)) {
-            byte[] bits = new byte[12345];
-            RDM.nextBytes(bits);
-            os.write(bits);
+    void providerValidationUOETest() throws Exception {
+        var nonZipFile = getNonZipFile();
+        var tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            FileSystemProvider provider = fs.provider();
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
+                            Map.of()), "newFileSystem() opens a directory as zipfs");
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.newFileSystem(nonZipFile, Map.of()),
+                    "newFileSystem() opens a non-zip file as zipfs");
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+            Files.deleteIfExists(nonZipFile);
         }
+    }
 
-        // clone a fs from fs0 and test on it
-        Path tmpfsPath = getTempPath();
-        Map<String, Object> env = new HashMap<String, Object>();
-        env.put("create", "true");
-        try (var fs = newZipFileSystem(jarFile, Map.of());
-             FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
+    // Validates ZipFS provider for expected FSAE on duplicate input
+    @Test
+    void providerValidationFSAETest() throws Exception {
+        var tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            FileSystemProvider provider = fs.provider();
+            assertThrows(FileSystemAlreadyExistsException.class,
+                    () -> provider.newFileSystem(pathToJarURI(tmpfsPath),
+                            Map.of()), "newFileSystem(URI...) does not throw exception");
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+        }
+    }
+
+    // Validates ZipFS provider for newFileSystem(Path, ...)
+    @Test
+    void providerValidationTest() throws Exception {
+        var tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            FileSystemProvider provider = fs.provider();
+            try (FileSystem _ = provider.newFileSystem(tmpfsPath, Map.of())) {}
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+        }
+    }
+
+    // Performs a sequence of operations where subsequent ops depend on previous state.
+    // Covers ops such as `copy`, `delete`, `move`
+    @Test
+    void entryCopyMoveDeleteFlowTest() throws Exception {
+        var src = getFile();
+        Path tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            // walk
+            walk(fs.getPath("/"));
+            // copyin
+            Path dst = getPathWithParents(fs, src.toString());
+            Files.copy(src, dst);
+            checkEqual(src, dst);
+            // copy
+            Path dst2 = getPathWithParents(fs, "/xyz" + RDM.nextInt(100) +
+                    "/efg" + RDM.nextInt(100) + "/foo.class");
+            Files.copy(dst, dst2);
+            // dst.moveTo(dst2);
+            checkEqual(src, dst2);
+            // delete
+            Files.delete(dst);
+            assertFalse(Files.exists(dst));
+            // moveout
+            Path dst3 = Paths.get(src + "_Tmp");
+            Files.move(dst2, dst3);
+            checkEqual(src, dst3);
+            assertFalse(Files.exists(dst2));
+            // copyback + move
+            Files.copy(dst3, dst);
+            Path dst4 = getPathWithParents(fs, src + "_Tmp0");
+            Files.move(dst, dst4);
+            checkEqual(src, dst4);
+            // delete
+            Files.delete(dst4);
+            assertFalse(Files.exists(dst4));
+            Files.delete(dst3);
+            assertFalse(Files.exists(dst3));
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+            Files.deleteIfExists(src);
+        }
+    }
+
+    // Verify existing entry can be renamed within zfs
+    @Test
+    void existingEntryMoveTest() throws Exception {
+        Path tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            // move (existing entry)
+            Path manifest = fs.getPath("META-INF/MANIFEST.MF");
+            if (Files.exists(manifest)) {
+                Path movedManifest = fs.getPath("META-INF/MANIFEST.MF_TMP");
+                Files.move(manifest, movedManifest);
+                // Ensure the move operation was successful
+                assertFalse(Files.exists(manifest));
+                assertTrue(Files.exists(movedManifest));
+                walk(fs.getPath("/"));
+            } else {
+                fail("Unexpected failure, manifest does not exist");
+            }
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+        }
+    }
+
+    // Verify some directory behavior: open dir as stream fails, correct cleanup of empty parent dir
+    @Test
+    void directoryOpsTest() throws Exception {
+        var src = getFile();
+        Path tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            Path pathWithParents = getPathWithParents(fs, "/xyz" + RDM.nextInt(100) +
+                    "/efg" + RDM.nextInt(100) + "/foo.class");
+            Files.copy(src, pathWithParents);
+            // Invoking `newInputStream` on directory should fail
+            Path parent = pathWithParents.getParent();
+            assertThrows(FileSystemException.class, () -> Files.newInputStream(parent));
+            Files.delete(pathWithParents);
+            // Clean up directory (when nested child is removed)
+            assertDoesNotThrow(() -> rmdirs(parent));
+            assertFalse(Files.exists(parent));
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+            Files.deleteIfExists(src);
+        }
+    }
+
+    // Verify some channel ops
+    @Test
+    void channelTest() throws Exception {
+        var src = getFile();
+        Path tmpfsPath = getTempZipPath();
+        createClonedZip(tmpfsPath);
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
+            Path dst = getPathWithParents(fs, src.toString());
+            // newFileChannel() copy in, out and verify via fch
+            fchCopy(src, dst);    // in
+            checkEqual(src, dst);
+            Path tmp = Paths.get(src + "_Tmp");
+            fchCopy(dst, tmp);   //  out
+            checkEqual(src, tmp);
+            Files.delete(tmp);
+            // test channels
+            channel(fs, dst);
+            Files.delete(dst);
+        } finally {
+            Files.deleteIfExists(tmpfsPath);
+            Files.deleteIfExists(src);
+        }
+    }
+
+    // Verify ZipFS can operate on nested zip file entry in another zip
+    @Test
+    void nestedZipContentsTest() throws Exception {
+        // Set up the nested behavior
+        var src = getFile();
+        Path tmpfsPath = getTempZipPath();
+        try (var fs = FileSystems.newFileSystem(jarFile, Map.of());
+             FileSystem copy = FileSystems.newFileSystem(tmpfsPath, Map.of("create", "true"))) {
             z2zcopy(fs, copy, "/", 0);
-
             // copy the test jar itself in
             Files.copy(Paths.get(fs.toString()), copy.getPath("/foo.jar"));
             Path zpath = copy.getPath("/foo.jar");
@@ -160,106 +313,21 @@ public class ZipFSTester {
                 Files.copy(src, zzfs.getPath("/srcInjarjar"));
             }
         }
-
-        try (FileSystem fs = newZipFileSystem(tmpfsPath, new HashMap<String, Object>())) {
-
-            FileSystemProvider provider = fs.provider();
-            // newFileSystem(path...) should not throw exception
-            try (FileSystem fsPath = provider.newFileSystem(tmpfsPath, new HashMap<String, Object>())){}
-            assertThrows(FileSystemAlreadyExistsException.class,
-                    () -> provider.newFileSystem(new URI("jar", tmpfsPath.toUri().toString(), null),
-                    new HashMap<>()), "newFileSystem(URI...) does not throw exception");
-            assertThrows(UnsupportedOperationException.class,
-                    () -> provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
-                    new HashMap<>()), "newFileSystem() opens a directory as zipfs");
-            assertThrows(UnsupportedOperationException.class,
-                    () -> provider.newFileSystem(src, new HashMap<String, Object>()),
-                    "newFileSystem() opens a non-zip file as zipfs");
-
-            // walk
-            walk(fs.getPath("/"));
-
-            // copyin
-            Path dst = getPathWithParents(fs, tmpName);
-            Files.copy(src, dst);
-            checkEqual(src, dst);
-
-            // copy
-            Path dst2 = getPathWithParents(fs, "/xyz" + RDM.nextInt(100) +
-                                           "/efg" + RDM.nextInt(100) + "/foo.class");
-            Files.copy(dst, dst2);
-            //dst.moveTo(dst2);
-            checkEqual(src, dst2);
-
-            // delete
-            Files.delete(dst);
-            assertFalse(Files.exists(dst));
-
-            // moveout
-            Path dst3 = Paths.get(tmpName + "_Tmp");
-            Files.move(dst2, dst3);
-            checkEqual(src, dst3);
-            assertFalse(Files.exists(dst2));
-
-            // copyback + move
-            Files.copy(dst3, dst);
-            Path dst4 = getPathWithParents(fs, tmpName + "_Tmp0");
-            Files.move(dst, dst4);
-            checkEqual(src, dst4);
-
-            // delete
-            Files.delete(dst4);
-            assertFalse(Files.exists(dst4));
-            Files.delete(dst3);
-            assertFalse(Files.exists(dst3));
-
-            // move (existing entry)
-            Path dst5 = fs.getPath("META-INF/MANIFEST.MF");
-            if (Files.exists(dst5)) {
-                Path dst6 = fs.getPath("META-INF/MANIFEST.MF_TMP");
-                Files.move(dst5, dst6);
-                walk(fs.getPath("/"));
-            }
-
-            // newInputStream on dir
-            Path parent = dst2.getParent();
-            assertThrows(FileSystemException.class, () -> Files.newInputStream(parent));
-
-            // rmdirs
-            try {
-                rmdirs(parent);
-            } catch (IOException x) {
-                x.printStackTrace();
-            }
-
-            // newFileChannel() copy in, out and verify via fch
-            fchCopy(src, dst);    // in
-            checkEqual(src, dst);
-            Path tmp = Paths.get(tmpName + "_Tmp");
-            fchCopy(dst, tmp);   //  out
-            checkEqual(src, tmp);
-            Files.delete(tmp);
-
-            // test channels
-            channel(fs, dst);
-            Files.delete(dst);
-
+        // Assertions
+        try (FileSystem fs = FileSystems.newFileSystem(pathToJarURI(tmpfsPath), Map.of())) {
             // test foo.jar in jar/zipfs #8034802
             Path jpath = fs.getPath("/foo.jar");
-            System.out.println("walking: " + jpath);
             try (FileSystem zzfs = FileSystems.newFileSystem(jpath)) {
                 walk(zzfs.getPath("/"));
                 // foojar:/srcInjarjar
                 checkEqual(src, zzfs.getPath("/srcInjarjar"));
-
-                dst = getPathWithParents(zzfs, tmpName);
+                var dst = getPathWithParents(zzfs, src.toString());
                 fchCopy(src, dst);
                 checkEqual(src, dst);
-                tmp = Paths.get(tmpName + "_Tmp");
+                Path tmp = Paths.get(src + "_Tmp");
                 fchCopy(dst, tmp);   //  out
                 checkEqual(src, tmp);
                 Files.delete(tmp);
-
                 channel(zzfs, dst);
                 Files.delete(dst);
             }
@@ -270,100 +338,86 @@ public class ZipFSTester {
     }
 
     @Test
-    void test2() throws Exception {
-        Path fs1Path = getTempPath();
-        Path fs2Path = getTempPath();
-        Path fs3Path = getTempPath();
+    void concurrentCopyTest() throws Exception {
+        Path fs1Path = getTempZipPath();
+        Path fs2Path = getTempZipPath();
+        Path fs3Path = getTempZipPath();
 
         // create a new filesystem, copy everything from fs
-        Map<String, Object> env = new HashMap<String, Object>();
-        env.put("create", "true");
-        FileSystem fs0 = newZipFileSystem(fs1Path, env);
+        var env = Map.of("create", "true");
+        FileSystem fs0 = FileSystems.newFileSystem(fs1Path, env);
 
-        final FileSystem fs2 = newZipFileSystem(fs2Path, env);
-        final FileSystem fs3 = newZipFileSystem(fs3Path, env);
+        final FileSystem fs2 = FileSystems.newFileSystem(fs2Path, env);
+        final FileSystem fs3 = FileSystems.newFileSystem(fs3Path, env);
 
         System.out.println("copy src: fs -> fs0...");
-        try (var fs = newZipFileSystem(jarFile, Map.of())) {
+        try (var fs = FileSystems.newFileSystem(jarFile, Map.of())) {
             z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
             fs0.close();                // dump to file
 
             System.out.println("open fs0 as fs1");
-            env = new HashMap<String, Object>();
-            final FileSystem fs1 = newZipFileSystem(fs1Path, env);
+            final FileSystem fs1 = FileSystems.newFileSystem(fs1Path, Map.of());
 
             System.out.println("listing...");
             final ArrayList<String> files = new ArrayList<>();
             final ArrayList<String> dirs = new ArrayList<>();
             list(fs1.getPath("/"), files, dirs);
 
-            Thread t0 = new Thread(new Runnable() {
-                public void run() {
-                    List<String> list = new ArrayList<>(dirs);
-                    Collections.shuffle(list);
-                    for (String path : list) {
-                        try {
-                            z2zcopy(fs1, fs2, path, 0);
-                        } catch (Exception x) {
-                            x.printStackTrace();
-                        }
+            Thread t0 = new Thread(() -> {
+                List<String> list = new ArrayList<>(dirs);
+                Collections.shuffle(list);
+                for (String path : list) {
+                    try {
+                        z2zcopy(fs1, fs2, path, 0);
+                    } catch (Exception x) {
+                        x.printStackTrace();
                     }
                 }
-
             });
 
-            Thread t1 = new Thread(new Runnable() {
-                public void run() {
-                    List<String> list = new ArrayList<>(dirs);
-                    Collections.shuffle(list);
-                    for (String path : list) {
-                        try {
-                            z2zcopy(fs1, fs2, path, 1);
-                        } catch (Exception x) {
-                            x.printStackTrace();
-                        }
+            Thread t1 = new Thread(() -> {
+                List<String> list = new ArrayList<>(dirs);
+                Collections.shuffle(list);
+                for (String path : list) {
+                    try {
+                        z2zcopy(fs1, fs2, path, 1);
+                    } catch (Exception x) {
+                        x.printStackTrace();
                     }
                 }
-
             });
 
-            Thread t2 = new Thread(new Runnable() {
-                public void run() {
-                    List<String> list = new ArrayList<>(dirs);
-                    Collections.shuffle(list);
-                    for (String path : list) {
-                        try {
-                            z2zcopy(fs1, fs2, path, 2);
-                        } catch (Exception x) {
-                            x.printStackTrace();
-                        }
+            Thread t2 = new Thread(() -> {
+                List<String> list = new ArrayList<>(dirs);
+                Collections.shuffle(list);
+                for (String path : list) {
+                    try {
+                        z2zcopy(fs1, fs2, path, 2);
+                    } catch (Exception x) {
+                        x.printStackTrace();
                     }
                 }
-
             });
 
-            Thread t3 = new Thread(new Runnable() {
-                public void run() {
-                    List<String> list = new ArrayList<>(files);
-                    Collections.shuffle(list);
-                    while (!list.isEmpty()) {
-                        Iterator<String> itr = list.iterator();
-                        while (itr.hasNext()) {
-                            String path = itr.next();
-                            try {
-                                if (Files.exists(fs2.getPath(path))) {
-                                    z2zmove(fs2, fs3, path);
-                                    itr.remove();
-                                }
-                            } catch (FileAlreadyExistsException x) {
+            Thread t3 = new Thread(() -> {
+                List<String> list = new ArrayList<>(files);
+                Collections.shuffle(list);
+                while (!list.isEmpty()) {
+                    Iterator<String> itr = list.iterator();
+                    while (itr.hasNext()) {
+                        String path = itr.next();
+                        try {
+                            if (Files.exists(fs2.getPath(path))) {
+                                z2zmove(fs2, fs3, path);
                                 itr.remove();
-                            } catch (Exception x) {
-                                x.printStackTrace();
                             }
+                        } catch (FileAlreadyExistsException x) {
+                            itr.remove();
+                        } catch (Exception x) {
+                            x.printStackTrace();
                         }
                     }
                 }
-
             });
 
             System.out.println("copying/removing...");
@@ -394,7 +448,7 @@ public class ZipFSTester {
             fs3.close();
 
             System.out.println("opening: fs3 as fs4");
-            FileSystem fs4 = newZipFileSystem(fs3Path, env);
+            FileSystem fs4 = FileSystems.newFileSystem(fs3Path, Map.of());
 
 
             ArrayList<String> files2 = new ArrayList<>();
@@ -503,7 +557,7 @@ public class ZipFSTester {
     // test entry stream/channel reading
     @Test
     void testStreamChannel() throws Exception {
-        Path zpath = getTempPath();
+        Path zpath = getTempZipPath();
         try {
             var crc = new CRC32();
             Object[][] entries = getEntries();
@@ -527,7 +581,7 @@ public class ZipFSTester {
                    zos.closeEntry();
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Map.of())) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     Path path = zfs.getPath((String)e[0]);
                     byte[] bytes = (byte[])e[2];
@@ -537,7 +591,7 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [2] create zip via zfs.newByteChannel
-            try (var zfs = newZipFileSystem(zpath, Map.of("create", "true"))) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of("create", "true"))) {
                 for (Object[] e : entries) {
                     //  tbd: method is not used
                     try (var sbc = Files.newByteChannel(zfs.getPath((String)e[0]),
@@ -546,7 +600,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Map.of())) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -554,12 +608,12 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [3] create zip via Files.write()/newoutputStream/
-            try (var zfs = newZipFileSystem(zpath, Map.of("create", "true"))) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of("create", "true"))) {
                 for (Object[] e : entries) {
                     Files.write(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Map.of())) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -567,7 +621,7 @@ public class ZipFSTester {
             Files.deleteIfExists(zpath);
 
             // [4] create zip via zfs.newByteChannel, with "method_stored"
-            try (var zfs = newZipFileSystem(zpath,
+            try (var zfs = FileSystems.newFileSystem(zpath,
                     Map.of("create", true, "noCompression", true))) {
                 for (Object[] e : entries) {
                     try (var sbc = Files.newByteChannel(zfs.getPath((String)e[0]),
@@ -576,7 +630,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Map.of())) {
+            try (var zfs = FileSystems.newFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -596,7 +650,7 @@ public class ZipFSTester {
                         .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
-        Path fsPath = getTempPath();
+        Path fsPath = getTempZipPath();
         try (FileSystem fs = FileSystems.newFileSystem(fsPath, Map.of("create", "true"))) {
             System.out.println("test copy with timestamps...");
             // copyin
@@ -630,20 +684,18 @@ public class ZipFSTester {
     @Test
     void test8069211() throws Exception {
         // create a new filesystem, copy this file into it
-        Map<String, Object> env = new HashMap<String, Object>();
-        env.put("create", "true");
-        Path fsPath = getTempPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
+        Path fsPath = getTempZipPath();
+        try (FileSystem fs = FileSystems.newFileSystem(fsPath, Map.of("create", "true"))) {
             OutputStream out = Files.newOutputStream(fs.getPath("/foo"));
             out.write("hello".getBytes());
             out.close();
-            out.close();
+            out.close(); // Intentional second `close` invocation
         }
-        try (FileSystem fs = newZipFileSystem(fsPath, new HashMap<String, Object>())) {
+        try (FileSystem fs = FileSystems.newFileSystem(fsPath, Map.of())) {
             assertArrayEquals("hello".getBytes(), Files.readAllBytes(fs.getPath("/foo")),
-                    "entry close() failed");
+                    "Second `close` on entry output stream corrupted /foo");
         } catch (Exception x) {
-            fail("entry close() failed", x);
+            fail("Second `close` on entry output stream causes unexpected error", x);
         } finally {
             Files.delete(fsPath);
         }
@@ -651,26 +703,9 @@ public class ZipFSTester {
 
     @Test
     void test8131067() throws Exception {
-        Map<String, Object> env = new HashMap<String, Object>();
-        env.put("create", "true");
-
         // file name with space character for URI to quote it
-        File tmp = File.createTempFile("test zipfs", "zip");
-        tmp.delete();    // we need a clean path, no file
-        Path fsPath = tmp.toPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
-            Files.write(fs.getPath("/foo"), "hello".getBytes());
-            URI fooUri = fs.getPath("/foo").toUri();
-            assertArrayEquals("hello".getBytes(), Files.readAllBytes(Paths.get(fooUri)),
-                    "entry close() failed");
-        } finally {
-            Files.delete(fsPath);
-        }
-    }
-
-    private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
-        throws Exception
-    {
+        Path fsPath = Files.createTempFile(Path.of("."), "test zipfs", ".zip");
+        Files.delete(fsPath); // we need a clean path, no file
         // Use URLDecoder (for test only) to remove the double escaped space
         // character. For the path which is not encoded by UTF-8, we need to
         // replace "+" by "%2b" manually before feeding into the decoder.
@@ -682,16 +717,83 @@ public class ZipFSTester {
         //
         // Also, we should not use URLEncoder in case of the path has been
         // encoded.
-        return FileSystems.newFileSystem(
-            new URI("jar", URLDecoder.decode(path.toUri().toString()
-                            .replace("+", "%2b"), "utf8"), null), env, null);
+        try (FileSystem fs = FileSystems.newFileSystem(new URI("jar",
+                URLDecoder.decode(fsPath.toUri().toString().replace("+", "%2b"), StandardCharsets.UTF_8),
+                null), Map.of("create", "true"))) {
+            Files.write(fs.getPath("/foo"), "hello".getBytes());
+            URI fooUri = fs.getPath("/foo").toUri();
+            assertArrayEquals("hello".getBytes(), Files.readAllBytes(Paths.get(fooUri)),
+                    "entry close() failed");
+        } finally {
+            Files.deleteIfExists(fsPath);
+        }
     }
 
-    private static Path getTempPath() throws IOException
-    {
-        File tmp = File.createTempFile("testzipfs_", "zip");
-        tmp.delete();    // we need a clean path, no file
-        return tmp.toPath();
+    /**
+     * Tests if certain methods throw a NullPointerException if invoked with null
+     * as specified in java.nio.file.package-info.java
+     *
+     * @see 8299864
+     */
+    @Test
+    void testFileStoreNullArgs() throws Exception {
+        try (var fs = FileSystems.newFileSystem(jarFile, Map.of())) {
+            // file system containing at least one ZipFileStore
+            FileStore store = fs.getFileStores().iterator().next();
+
+            // Make sure we are testing the right thing
+            assertEquals("jdk.nio.zipfs.ZipFileStore", store.getClass().getName());
+
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((String) null));
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
+            assertThrows(NullPointerException.class, () -> store.getAttribute(null));
+            assertThrows(NullPointerException.class, () -> store.getFileStoreAttributeView(null));
+        }
+    }
+
+    private static Path getTempNonZipPath() throws IOException {
+        var path = Files.createTempFile(
+                Path.of("."), "testzipfs_", ".foo");
+        Files.delete(path);
+        return path;
+    }
+
+    private static Path getTempZipPath() throws IOException {
+        var path = Files.createTempFile(
+                Path.of("."), "testzipfs_", ".zip");
+        Files.delete(path);
+        return path;
+    }
+
+    private static Path getNonZipFile() throws IOException {
+        var src = getTempNonZipPath();
+        writeRandomBytes(src);
+        return src;
+    }
+
+    static Path getFile() throws IOException {
+        Path src = getTempZipPath();
+        writeRandomBytes(src);
+        return src;
+    }
+
+    private static void writeRandomBytes(Path src) throws IOException {
+        try (OutputStream os = Files.newOutputStream(src)) {
+            byte[] bits = new byte[12345];
+            RDM.nextBytes(bits);
+            os.write(bits);
+        }
+    }
+
+    private static void createClonedZip(Path tmpfsPath) throws Exception {
+        try (var fs = FileSystems.newFileSystem(jarFile, Map.of());
+             FileSystem copy = FileSystems.newFileSystem(tmpfsPath, Map.of("create", "true"))) {
+            z2zcopy(fs, copy, "/", 0);
+        }
+    }
+
+    private static URI pathToJarURI(Path path) throws URISyntaxException {
+        return new URI("jar", path.toUri().toString(), null);
     }
 
     private static void list(Path path, List<String> files, List<String> dirs )
@@ -718,7 +820,7 @@ public class ZipFSTester {
         if (Files.isDirectory(srcPath)) {
             if (!Files.exists(dstPath)) {
                 try {
-                    mkdirs(dstPath);
+                    Files.createDirectories(dstPath);
                 } catch (FileAlreadyExistsException x) {}
             }
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(srcPath)) {
@@ -756,7 +858,7 @@ public class ZipFSTester {
 
         if (Files.isDirectory(srcPath)) {
             if (!Files.exists(dstPath))
-                mkdirs(dstPath);
+                Files.createDirectories(dstPath);
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(srcPath)) {
                 for (Path child : ds) {
                     z2zmove(src, dst,
@@ -767,7 +869,7 @@ public class ZipFSTester {
             //System.out.println("moving..." + path);
             Path parent = dstPath.getParent();
             if (parent != null && Files.notExists(parent))
-                mkdirs(parent);
+                Files.createDirectories(parent);
             Files.move(srcPath, dstPath);
         }
     }
@@ -812,18 +914,6 @@ public class ZipFSTester {
                     return FileVisitResult.CONTINUE;
                 }
         });
-    }
-
-    private static void mkdirs(Path path) throws IOException {
-        if (Files.exists(path))
-            return;
-        path = path.toAbsolutePath();
-        Path parent = path.getParent();
-        if (parent != null) {
-            if (Files.notExists(parent))
-                mkdirs(parent);
-        }
-        Files.createDirectory(path);
     }
 
     private static void rmdirs(Path path) throws IOException {
@@ -915,11 +1005,8 @@ public class ZipFSTester {
 
     private static void fchCopy(Path src, Path dst) throws IOException
     {
-        Set<OpenOption> read = new HashSet<>();
-        read.add(READ);
-        Set<OpenOption> openwrite = new HashSet<>();
-        openwrite.add(CREATE_NEW);
-        openwrite.add(WRITE);
+        Set<OpenOption> read = Set.of(READ);
+        Set<OpenOption> openwrite = Set.of(CREATE_NEW, WRITE);
 
         try (FileChannel srcFc = src.getFileSystem()
                                     .provider()
@@ -939,11 +1026,8 @@ public class ZipFSTester {
 
     private static void chCopy(Path src, Path dst) throws IOException
     {
-        Set<OpenOption> read = new HashSet<>();
-        read.add(READ);
-        Set<OpenOption> openwrite = new HashSet<>();
-        openwrite.add(CREATE_NEW);
-        openwrite.add(WRITE);
+        Set<OpenOption> read = Set.of(READ);
+        Set<OpenOption> openwrite = Set.of(CREATE_NEW, WRITE);
 
         try (SeekableByteChannel srcCh = Files.newByteChannel(src, read);
              SeekableByteChannel dstCh = Files.newByteChannel(dst, openwrite))
@@ -983,8 +1067,7 @@ public class ZipFSTester {
         throws Exception
     {
         System.out.println("test ByteChannel...");
-        Set<OpenOption> read = new HashSet<>();
-        read.add(READ);
+        Set<OpenOption> read = Set.of(READ);
         int n = 0;
         ByteBuffer bb = null;
         ByteBuffer bb2 = null;
@@ -1027,29 +1110,7 @@ public class ZipFSTester {
         Path path = fs.getPath(name);
         Path parent = path.getParent();
         if (parent != null && Files.notExists(parent))
-            mkdirs(parent);
+            Files.createDirectories(parent);
         return path;
-    }
-
-    /**
-     * Tests if certain methods throw a NullPointerException if invoked with null
-     * as specified in java.nio.file.package-info.java
-     *
-     * @see 8299864
-     */
-    @Test
-    void testFileStoreNullArgs() throws Exception {
-        try (var fs = newZipFileSystem(jarFile, Map.of())) {
-            // file system containing at least one ZipFileStore
-            FileStore store = fs.getFileStores().iterator().next();
-
-            // Make sure we are testing the right thing
-            assertEquals("jdk.nio.zipfs.ZipFileStore", store.getClass().getName());
-
-            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((String) null));
-            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
-            assertThrows(NullPointerException.class, () -> store.getAttribute(null));
-            assertThrows(NullPointerException.class, () -> store.getFileStoreAttributeView(null));
-        }
     }
 }
