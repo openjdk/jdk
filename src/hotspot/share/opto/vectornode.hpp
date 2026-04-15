@@ -195,6 +195,7 @@ class VectorNode : public TypeNode {
   static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
   static bool is_reinterpret_opcode(int opc);
 
+  static Node* uncast_mask(Node* n);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
@@ -662,10 +663,22 @@ public:
   virtual int Opcode() const;
 };
 
-// Vector Min
-class MinVNode : public VectorNode {
+// Common superclass for Min/Max vector nodes
+class MinMaxVNode : public VectorNode {
 public:
-  MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MinMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int min_opcode() const = 0;
+  virtual int max_opcode() const = 0;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+// Vector Min
+class MinVNode : public MinMaxVNode {
+public:
+  MinVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
+  virtual int min_opcode() const { return Op_MinV; }
+  virtual int max_opcode() const { return Op_MaxV; }
   virtual int Opcode() const;
 };
 
@@ -684,31 +697,33 @@ public:
 };
 
 // Vector Unsigned Min
-class UMinVNode : public VectorNode {
+class UMinVNode : public MinMaxVNode {
  public:
-  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
+  virtual int min_opcode() const { return Op_UMinV; }
+  virtual int max_opcode() const { return Op_UMaxV; }
   virtual int Opcode() const;
 };
 
 // Vector Max
-class MaxVNode : public VectorNode {
+class MaxVNode : public MinMaxVNode {
  public:
-  MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
+  virtual int min_opcode() const { return Op_MinV; }
+  virtual int max_opcode() const { return Op_MaxV; }
   virtual int Opcode() const;
 };
 
 // Vector Unsigned Max
-class UMaxVNode : public VectorNode {
+class UMaxVNode : public MinMaxVNode {
  public:
-  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
+  virtual int min_opcode() const { return Op_UMinV; }
+  virtual int max_opcode() const { return Op_UMaxV; }
   virtual int Opcode() const;
 };
 
