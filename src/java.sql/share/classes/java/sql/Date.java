@@ -300,7 +300,7 @@ public class Date extends java.util.Date {
      */
     @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
-        return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());
+        return LocalDate.of(getNormalizedYear() + 1900, getMonth() + 1, getDate());
     }
 
    /**

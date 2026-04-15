@@ -328,6 +328,19 @@ public class DateTests extends BaseTest {
     }
 
     /*
+     * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with negative years.
+     */
+    @Test
+    public void test27() {
+        LocalDate ld1 = LocalDate.of(-4, 1, 1);
+        Date d1 = Date.valueOf(ld1);
+        LocalDate ld2 = d1.toLocalDate();
+        assertTrue(ld1.equals(ld2), "Error ld1 != ld2");
+        Date d2 = Date.valueOf(ld1);
+        assertTrue(d1.equals(d2), "Error d1 != d2");
+    }
+
+    /*
      * DataProvider used to provide Date which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
