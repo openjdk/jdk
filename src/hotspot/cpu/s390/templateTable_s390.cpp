@@ -480,8 +480,9 @@ void TemplateTable::fast_aldc(LdcType type) {
 
   // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
+  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch));
   __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
-  __ z_cg(Z_tos, Address(Z_R1_scratch));
+  __ z_cgr(Z_tos, Z_R1_scratch);
   __ z_brne(L_resolved);
   __ clear_reg(Z_tos);
   __ z_bru(L_resolved);
