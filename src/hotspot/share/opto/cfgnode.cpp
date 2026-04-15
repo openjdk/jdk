@@ -175,9 +175,9 @@ PhiNode* RegionNode::find_memory_phi(const TypePtr* adr_type) const {
       } else {
         return use->as_Phi();
       }
-#else
+#else // ASSERT
       return use->as_Phi();
-#endif
+#endif // ASSERT
     }
   }
   return res;
@@ -2662,8 +2662,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // slice in-between, and we should make sure that they are not missed.
         for (DUIterator_Fast imax, j = region()->fast_outs(imax); j < imax; j++) {
           Node* use = region()->fast_out(j);
-          if(use->is_Phi()) {
-            PhiNode* phi = use->as_Phi();
+          if (PhiNode* phi = use->isa_Phi(); phi != nullptr) {
             if (phi->type() == Type::MEMORY && phi->adr_type() != adr_type()) {
               result->set_memory_at(phase->C->get_alias_index(phi->adr_type()), phi);
             }
