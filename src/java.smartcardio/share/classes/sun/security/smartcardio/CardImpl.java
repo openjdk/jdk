@@ -71,6 +71,10 @@ final class CardImpl extends Card {
             this.state = state;
         }
 
+        /**
+         * The cleaning action calls SCardDisconnect if the card state is OK,
+         * otherwise it does nothing.
+         */
         public void run() {
             if (state == State.OK) {
                 state = State.DISCONNECTED;
@@ -147,8 +151,9 @@ final class CardImpl extends Card {
                 return true;
             } catch (PCSCException e) {
                 context.state = State.REMOVED;
-                // Cleaner no longer needs to track
-                cleanable.clean(); // FIXME: why?
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
+                cleanable.clean();
                 return false;
             }
         } finally {
@@ -168,6 +173,9 @@ final class CardImpl extends Card {
         try {
             if (e.code == SCARD_W_REMOVED_CARD) {
                 context.state = State.REMOVED;
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
+                cleanable.clean();
             }
         } finally {
             Reference.reachabilityFence(this);
@@ -307,7 +315,7 @@ final class CardImpl extends Card {
             if (reset) {
                 checkSecurity("reset");
             }
-            if (context.state != State.OK) { // Should this also de-register cleaner?
+            if (context.state != State.OK) {
                 return;
             }
             checkExclusive();
@@ -318,8 +326,8 @@ final class CardImpl extends Card {
             } finally {
                 context.state = State.DISCONNECTED;
                 exclusiveThread = null;
-                // Unregister from Cleaner.
-                // State now set to DISCONNECTED, so cleaning action will do nothing
+                // state has been set != OK. The cleaning action is now a noop.
+                // Deregister from Cleaner to reduce reference tracking.
                 cleanable.clean();
             }
         } finally {
