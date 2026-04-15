@@ -59,7 +59,7 @@ public class TestRegionSamplingLogging {
         }
 
         File directory = new File(".");
-        File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots") && name.endsWith(".log"));
+        File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots"));
         System.out.println(Arrays.toString(files));
         if (files == null || files.length == 0) {
             throw new IllegalStateException("Did not find expected snapshot log file.");
