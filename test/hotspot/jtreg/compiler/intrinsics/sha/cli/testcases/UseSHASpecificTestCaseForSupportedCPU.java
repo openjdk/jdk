@@ -73,34 +73,13 @@ public class UseSHASpecificTestCaseForSupportedCPU
 
     @Override
     protected void verifyOptionValues() throws Throwable {
-        // Verify that UseSHA is disabled when all UseSHA*Intrinsics are
-        // disabled.
+        // Verify that UseSHA is not affected and remains enabled when all UseSHA*Intrinsics
+        // are disabled.
         CommandLineOptionTest.verifyOptionValueForSameVM(
-                DigestOptionsBase.USE_SHA_OPTION, "false", String.format(
+                DigestOptionsBase.USE_SHA_OPTION, "true", String.format(
                 "'%s' option should be disabled when all UseSHA*Intrinsics are"
                         + " disabled", DigestOptionsBase.USE_SHA_OPTION),
                 DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
-                CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION, false),
-                CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, false),
-                CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false),
-                CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, false));
-
-        CommandLineOptionTest.verifyOptionValueForSameVM(
-                // Verify that UseSHA is disabled when all UseSHA*Intrinsics are
-                // disabled even if it was explicitly enabled.
-                DigestOptionsBase.USE_SHA_OPTION, "false",
-                String.format("'%s' option should be disabled when all "
-                        + "UseSHA*Intrinsics are disabled even if %s flag set "
-                        + "to JVM", DigestOptionsBase.USE_SHA_OPTION,
-                        CommandLineOptionTest.prepareBooleanFlag(
-                             DigestOptionsBase.USE_SHA_OPTION, true)),
-                DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
-                CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA1_INTRINSICS_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(

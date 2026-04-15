@@ -22,8 +22,8 @@
  */
 package org.xml.sax.ptests;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  * This is the Base test class provide basic support for JAXP SAX functional
@@ -31,16 +31,20 @@ import static jaxp.library.JAXPTestUtilities.getPathByClassName;
  * has their own TestBase class.
  */
 public class SAXTestConst {
+    private static final Path TEST_SRC = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
+    private static String forwardSlashDir(Path p) {
+        // Convention in these tests is to include trailing '/' in directory strings.
+        return p.toString().replace(File.separatorChar, '/') + '/';
+    }
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(SAXTestConst.class,
-            ".." + FILE_SEP + "xmlfiles");
-
+    public static final String XML_DIR = forwardSlashDir(TEST_SRC.resolveSibling("xmlfiles"));
 
     /**
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = getPathByClassName(SAXTestConst.class,
-            ".." + FILE_SEP + "xmlfiles" + FILE_SEP + "out");
+    public static final String GOLDEN_DIR = XML_DIR + "out/";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, List<Object> args) implements CannedArgument {
@@ -64,6 +65,23 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
             return String.format("%s", key);
         } else {
             return String.format("%s+%s", key, args);
+        }
+    }
+
+    public interface Spec {
+
+        String format();
+        List<Object> modelArgs();
+
+        default CannedFormattedString asCannedFormattedString(Object ... args) {
+            if (args.length != modelArgs().size()) {
+                throw new IllegalArgumentException();
+            }
+            return JPackageStringBundle.MAIN.cannedFormattedString(format(), args);
+        }
+
+        default Pattern asPattern() {
+            return JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(format(), modelArgs().toArray());
         }
     }
 
