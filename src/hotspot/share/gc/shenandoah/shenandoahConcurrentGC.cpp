@@ -288,7 +288,7 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
 
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration and run a degenerated young cycle.
-  if (!_generation->is_old()) {
+  if (!heap->cancelled_gc() && !_generation->is_old()) {
     ShenandoahTimingsTracker tracker(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::complete_abbreviated_update_region_ages);
     heap->update_region_ages(_generation->complete_marking_context());
