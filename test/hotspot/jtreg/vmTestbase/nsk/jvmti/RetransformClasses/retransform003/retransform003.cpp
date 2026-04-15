@@ -126,8 +126,7 @@ ClassFileLoadHook (
     if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(name)) != nullptr))
         return;
 
-    if (!NSK_JNI_VERIFY_VOID(jni, jni->CallStaticVoidMethod(callback_class, method_id, class_name_string, agent_id)))
-        return;
+    NSK_JNI_VERIFY_VOID(jni, jni->CallStaticVoidMethod(callback_class, method_id, class_name_string, agent_id));
 }
 
 
