@@ -46,6 +46,12 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
   }
 }
 
+/*
+ * The ClassLoad event is not used. This is thread filtered event that should
+ * be sent during start phase. It is enabled to trigger creation of jvmti thread state
+ * in the START phase. So test ensures that even jvmti state for thread is created
+ * before live phase the SingleStep event is sent only during live phase.
+ */
 void JNICALL
 ClassLoad(jvmtiEnv *jvmti_env,
             JNIEnv* jni_env,
