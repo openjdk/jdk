@@ -114,9 +114,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
-  bool should_update_surv_rate_group_predictors() {
-    return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
-  }
+  bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
 public:
@@ -160,12 +158,7 @@ public:
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
 
-  void cset_regions_freed() {
-    bool update = should_update_surv_rate_group_predictors();
-
-    _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-    _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
-  }
+  void cset_regions_freed();
 
   G1MMUTracker* mmu_tracker() {
     return _mmu_tracker;
@@ -320,9 +313,6 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
-
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
@@ -338,11 +328,6 @@ private:
   // Predict the number of bytes of surviving objects from survivor and old
   // regions and update the associated members.
   void update_survival_estimates_for_next_collection();
-
-  // Set the state to start a concurrent marking cycle and clear
-  // _initiate_conc_mark_if_possible because it has now been
-  // acted on.
-  void initiate_conc_mark();
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a

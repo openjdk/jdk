@@ -46,8 +46,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 import jdk.jpackage.internal.util.Slot;
@@ -58,8 +58,6 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageCommand.StandardAssert;
-import jdk.jpackage.test.JPackageOutputValidator;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -73,7 +71,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AppVersionTest.java
- * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=2880 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppVersionTest
  */
 
@@ -176,6 +174,16 @@ public final class AppVersionTest {
             AppTestSpec.create(builder, testCases::add);
         }
 
+        if (TKit.isOSX()) {
+            // Ensure "0.1" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("0.1"), testCases::add);
+
+            // Ensure "1.2.3.4.5" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("1.2.3.4.5"), testCases::add);
+        }
+
         return testCases.stream().map(v -> {
             return new Object[] {v};
         }).toList();
@@ -270,7 +278,7 @@ public final class AppVersionTest {
         }).toList();
     }
 
-    enum Message {
+    enum Message implements CannedFormattedString.Spec {
         VERSION_FROM_MODULE("message.module-version", "version", "module"),
         VERSION_FROM_RELEASE_FILE("message.release-version", "version"),
         VERSION_NORMALIZED("message.version-normalized", "version", "version"),
@@ -278,24 +286,21 @@ public final class AppVersionTest {
 
         Message(String key, Object ... args) {
             this.key = Objects.requireNonNull(key);
-            this.args = args;
+            this.args = List.of(args);
         }
 
-        CannedFormattedString cannedFormattedString(Object ... args) {
-            return JPackageStringBundle.MAIN.cannedFormattedString(key, args);
-        }
-
-        TKit.TextStreamVerifier negateFind() {
-            var pattern = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(key, args);
-            return TKit.assertTextStream(pattern).negate();
-        }
-
-        String key() {
+        @Override
+        public String format() {
             return key;
         }
 
+        @Override
+        public List<Object> modelArgs() {
+            return args;
+        }
+
         private final String key;
-        private final Object[] args;
+        private final List<Object> args;
     }
 
     sealed interface VersionSource {
@@ -389,16 +394,9 @@ public final class AppVersionTest {
         }
 
         void applyTo(JPackageCommand cmd) {
-            Objects.requireNonNull(cmd);
-            new JPackageOutputValidator().expectMatchingStrings(messages).matchTimestamps().stripTimestamps().applyTo(cmd);
-            cmd.version(version);
-
-            var expectMessageKeys = messages.stream().map(CannedFormattedString::key).toList();
-            Stream.of(Message.values()).filter(message -> {
-                return !expectMessageKeys.contains(message.key());
-            }).map(Message::negateFind).forEach(validator -> {
-                new JPackageOutputValidator().add(validator).stdoutAndStderr().applyTo(cmd);
-            });
+            cmd.version(version).validateOutput(Message.class, validator -> {
+                validator.matchTimestamps().stripTimestamps();
+            }, messages);
         }
 
         @Override
@@ -436,7 +434,7 @@ public final class AppVersionTest {
             }
 
             Builder message(Message message, Object ... args) {
-                return messages(message.cannedFormattedString(args));
+                return messages(message.asCannedFormattedString(args));
             }
 
             private String version;
@@ -497,10 +495,13 @@ public final class AppVersionTest {
                             : cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
                     var plist = MacHelper.readPListFromAppImage(bundleRoot);
                     var expectedVersion = expected.get(cmd.packageType()).version();
-                    for (var prop : List.of("CFBundleVersion", "CFBundleShortVersionString")) {
-                        TKit.assertEquals(expectedVersion, plist.queryValue(prop),
-                                String.format("Check the value of '%s' property in [%s] bundle", prop, bundleRoot));
-                    }
+                    TKit.assertEquals(expectedVersion, plist.queryValue("CFBundleVersion"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleVersion", bundleRoot));
+                    TKit.assertEquals(DottedVersion.lazy(expectedVersion).trim(3).toComponentsString(),
+                            plist.queryValue("CFBundleShortVersionString"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleShortVersionString", bundleRoot));
                 });
             }
         }
@@ -1001,9 +1002,6 @@ public final class AppVersionTest {
                         }));
                     });
                     yield MacBundle.fromPath(predefinedRuntimeDir).orElseThrow().homeDir();
-                }
-                default -> {
-                    throw new AssertionError();
                 }
             };
 

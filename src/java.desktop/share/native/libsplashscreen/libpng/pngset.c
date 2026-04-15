@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2025 Cosmin Truta
+ * Copyright (c) 2018-2026 Cosmin Truta
  * Copyright (c) 1998-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -362,7 +362,8 @@ png_set_eXIf_1(png_const_structrp png_ptr, png_inforp info_ptr,
    png_debug1(1, "in %s storage function", "eXIf");
 
    if (png_ptr == NULL || info_ptr == NULL ||
-       (png_ptr->mode & PNG_WROTE_eXIf) != 0)
+       (png_ptr->mode & PNG_WROTE_eXIf) != 0 ||
+       exif == NULL)
       return;
 
    new_exif = png_voidcast(png_bytep, png_malloc_warn(png_ptr, num_exif));
@@ -417,7 +418,7 @@ png_set_hIST(png_const_structrp png_ptr, png_inforp info_ptr,
 
    png_debug1(1, "in %s storage function", "hIST");
 
-   if (png_ptr == NULL || info_ptr == NULL)
+   if (png_ptr == NULL || info_ptr == NULL || hist == NULL)
       return;
 
    if (info_ptr->num_palette == 0 || info_ptr->num_palette
@@ -804,28 +805,38 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
       png_error(png_ptr, "Invalid palette");
    }
 
-   /* It may not actually be necessary to set png_ptr->palette here;
-    * we do it for backward compatibility with the way the png_handle_tRNS
-    * function used to do the allocation.
-    *
-    * 1.6.0: the above statement appears to be incorrect; something has to set
-    * the palette inside png_struct on read.
-    */
    png_free_data(png_ptr, info_ptr, PNG_FREE_PLTE, 0);
 
    /* Changed in libpng-1.2.1 to allocate PNG_MAX_PALETTE_LENGTH instead
     * of num_palette entries, in case of an invalid PNG file or incorrect
     * call to png_set_PLTE() with too-large sample values.
+    *
+    * Allocate independent buffers for info_ptr and png_ptr so that the
+    * lifetime of png_ptr->palette is decoupled from the lifetime of
+    * info_ptr->palette.  Previously, these two pointers were aliased,
+    * which caused a use-after-free vulnerability if png_free_data freed
+    * info_ptr->palette while png_ptr->palette was still in use by the
+    * row transform functions (e.g. png_do_expand_palette).
+    *
+    * Both buffers are allocated with png_calloc to zero-fill, because
+    * the ARM NEON palette riffle reads all 256 entries unconditionally,
+    * regardless of num_palette.
     */
+   png_free(png_ptr, png_ptr->palette);
    png_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
        PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+   info_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
+       PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+   png_ptr->num_palette = info_ptr->num_palette = (png_uint_16)num_palette;
 
    if (num_palette > 0)
+   {
+      memcpy(info_ptr->palette, palette, (unsigned int)num_palette *
+          (sizeof (png_color)));
       memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
           (sizeof (png_color)));
+   }
 
-   info_ptr->palette = png_ptr->palette;
-   info_ptr->num_palette = png_ptr->num_palette = (png_uint_16)num_palette;
    info_ptr->free_me |= PNG_FREE_PLTE;
    info_ptr->valid |= PNG_INFO_PLTE;
 }
@@ -1183,28 +1194,40 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
 
    if (trans_alpha != NULL)
    {
-       /* It may not actually be necessary to set png_ptr->trans_alpha here;
-        * we do it for backward compatibility with the way the png_handle_tRNS
-        * function used to do the allocation.
-        *
-        * 1.6.0: The above statement is incorrect; png_handle_tRNS effectively
-        * relies on png_set_tRNS storing the information in png_struct
-        * (otherwise it won't be there for the code in pngrtran.c).
-        */
-
        png_free_data(png_ptr, info_ptr, PNG_FREE_TRNS, 0);
 
        if (num_trans > 0 && num_trans <= PNG_MAX_PALETTE_LENGTH)
        {
-         /* Changed from num_trans to PNG_MAX_PALETTE_LENGTH in version 1.2.1 */
+          /* Allocate info_ptr's copy of the transparency data.
+           * Initialize all entries to fully opaque (0xff), then overwrite
+           * the first num_trans entries with the actual values.
+           */
           info_ptr->trans_alpha = png_voidcast(png_bytep,
               png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
+          memset(info_ptr->trans_alpha, 0xff, PNG_MAX_PALETTE_LENGTH);
           memcpy(info_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
-
           info_ptr->free_me |= PNG_FREE_TRNS;
           info_ptr->valid |= PNG_INFO_tRNS;
+
+          /* Allocate an independent copy for png_struct, so that the
+           * lifetime of png_ptr->trans_alpha is decoupled from the
+           * lifetime of info_ptr->trans_alpha.  Previously these two
+           * pointers were aliased, which caused a use-after-free if
+           * png_free_data freed info_ptr->trans_alpha while
+           * png_ptr->trans_alpha was still in use by the row transform
+           * functions (e.g. png_do_expand_palette).
+           */
+          png_free(png_ptr, png_ptr->trans_alpha);
+          png_ptr->trans_alpha = png_voidcast(png_bytep,
+              png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
+          memset(png_ptr->trans_alpha, 0xff, PNG_MAX_PALETTE_LENGTH);
+          memcpy(png_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
        }
-       png_ptr->trans_alpha = info_ptr->trans_alpha;
+       else
+       {
+          png_free(png_ptr, png_ptr->trans_alpha);
+          png_ptr->trans_alpha = NULL;
+       }
    }
 
    if (trans_color != NULL)
@@ -1902,7 +1925,7 @@ png_set_benign_errors(png_structrp png_ptr, int allowed)
 #endif /* BENIGN_ERRORS */
 
 #ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
-   /* Whether to report invalid palette index; added at libng-1.5.10.
+   /* Whether to report invalid palette index; added at libpng-1.5.10.
     * It is possible for an indexed (color-type==3) PNG file to contain
     * pixels with invalid (out-of-range) indexes if the PLTE chunk has
     * fewer entries than the image's bit-depth would allow. We recover
