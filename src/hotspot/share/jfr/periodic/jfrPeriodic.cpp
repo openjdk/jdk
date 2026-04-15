@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,9 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 
 #if INCLUDE_JVMTI
 template <typename AgentEvent>
-static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
+static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent, Ticks& timestamp) {
+  event.set_starttime(timestamp);
+  event.set_endtime(timestamp);
   event.set_name(agent->name());
   event.set_options(agent->options());
   event.set_dynamic(agent->is_dynamic());
@@ -292,29 +294,31 @@ static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
 
 TRACE_REQUEST_FUNC(JavaAgent) {
   JvmtiAgentList::Iterator it = JvmtiAgentList::java_agents();
+  Ticks ticks = timestamp();
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(agent->is_jplis(), "invariant");
     EventJavaAgent event;
-    send_agent_event(event, agent);
+    send_agent_event(event, agent, ticks);
   }
 }
 
-static void send_native_agent_events(JvmtiAgentList::Iterator& it) {
+static void send_native_agent_events(JvmtiAgentList::Iterator& it, Ticks& timestamp) {
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(!agent->is_jplis(), "invariant");
     EventNativeAgent event;
     event.set_path(agent->os_lib_path());
-    send_agent_event(event, agent);
+    send_agent_event(event, agent, timestamp);
   }
 }
 
 TRACE_REQUEST_FUNC(NativeAgent) {
+  Ticks ticks = timestamp();
   JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
-  send_native_agent_events(native_agents_it);
+  send_native_agent_events(native_agents_it, ticks);
   JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
-  send_native_agent_events(xrun_agents_it);
+  send_native_agent_events(xrun_agents_it, ticks);
 }
 #else  // INCLUDE_JVMTI
 TRACE_REQUEST_FUNC(JavaAgent)   {}
