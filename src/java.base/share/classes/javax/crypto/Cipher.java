@@ -2614,7 +2614,7 @@ public class Cipher {
     public SecretKey exportKey(String algorithm, byte[] context, int length) {
         Objects.requireNonNull(algorithm);
         if (length <= 0) {
-            throw new IllegalArgumentException("length must be a postive number");
+            throw new IllegalArgumentException("length must be a positive number");
         }
         checkCipherState();
         chooseFirstProvider();
@@ -2657,7 +2657,7 @@ public class Cipher {
      */
     public byte[] exportData(byte[] context, int length) {
         if (length <= 0) {
-            throw new IllegalArgumentException("length must be a postive number");
+            throw new IllegalArgumentException("length must be a positive number");
         }
         checkCipherState();
         chooseFirstProvider();
