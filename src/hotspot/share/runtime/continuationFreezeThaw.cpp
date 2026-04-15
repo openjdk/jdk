@@ -193,6 +193,7 @@ static void verify_continuation(oop continuation) { Continuation::debug_verify_c
 
 static void do_deopt_after_thaw(JavaThread* thread);
 static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, outputStream* st);
+static bool verify_deopt_state(const frame& f);
 static void log_frames(JavaThread* thread);
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp);
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st = tty);
@@ -2610,6 +2611,7 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
 
   assert(!bottom || !_cont.is_empty() || Continuation::is_continuation_entry_frame(f, nullptr), "");
   assert(!bottom || (_cont.is_empty() != Continuation::is_cont_barrier_frame(f)), "");
+  assert(!caller.is_compiled_frame() || verify_deopt_state(caller), "");
 }
 
 void ThawBase::clear_bitmap_bits(address start, address end) {
@@ -3040,8 +3042,7 @@ void ThawBase::finish_thaw(frame& f) {
 }
 
 void ThawBase::push_return_frame(const frame& f) { // see generate_cont_thaw
-  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
-  assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
+  assert(!f.is_compiled_frame() || verify_deopt_state(f), "");
 
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
@@ -3184,6 +3185,14 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
       return false;
     }
   }
+  return true;
+}
+
+static bool verify_deopt_state(const frame& f) {
+  nmethod* nm = f.cb()->as_nmethod();
+  assert(f.is_deoptimized_frame() == nm->is_deopt_pc(f.raw_pc()), "");
+  assert(f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
+  assert(f.is_deoptimized_frame() == nm->is_deopt_pc(ContinuationHelper::Frame::real_pc(f)), "");
   return true;
 }
 
