@@ -714,6 +714,19 @@ public class TimestampTests extends BaseTest {
     }
 
     /*
+     * Validate that Timestamp.valueOf and Timestamp.toLocalDateTime yield the expected results for dates with negative years.
+     */
+    @Test
+    public void test56() throws Exception {
+        LocalDateTime ldt1 = LocalDateTime.of(-4, 1, 1, 0, 0);
+        Timestamp ts1 = Timestamp.valueOf(ldt1);
+        LocalDateTime ldt2 = ts1.toLocalDateTime();
+        assertTrue(ldt1.equals(ldt2), "Error ldt1 != ldt2");
+        Timestamp ts2 = Timestamp.valueOf(ldt2);
+        assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
+    }
+
+    /*
      * DataProvider used to provide Timestamps which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method

@@ -517,7 +517,7 @@ public class Timestamp extends java.util.Date {
      */
     @SuppressWarnings("deprecation")
     public LocalDateTime toLocalDateTime() {
-        return LocalDateTime.of(getYear() + 1900,
+        return LocalDateTime.of(getNormalizedYear() + 1900,
                                 getMonth() + 1,
                                 getDate(),
                                 getHours(),
