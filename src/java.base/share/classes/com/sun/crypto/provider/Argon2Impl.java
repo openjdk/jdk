@@ -122,12 +122,7 @@ public final class Argon2Impl {
         // 2) Allocate memory m' - stored inside Argon2Instance
         Argon2Instance instance = new Argon2Instance(type, lanes, memory,
                 iterations);
-        try {
-            instance.fillFirstTwoColumns(h0Plus8Bytes);
-        } finally {
-            // erase initial hash right after use
-            KeyUtil.clear(h0Plus8Bytes);
-        }
+        instance.fillFirstTwoColumns(h0Plus8Bytes);
         instance.fillMemoryBlocks();
         return instance.getFinalTag(tagLen);
     }

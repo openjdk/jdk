@@ -182,7 +182,7 @@ public final class Blake2b {
 
     // reset fields to post-constructor
     private void reset() {
-        Arrays.fill(b, (byte) 0);
+        Arrays.fill(b, (byte)0);
         System.arraycopy(IV, 0, h, 0, IV.length);
         Arrays.fill(t, 0L);
         if (key != NULL_KEY) {
@@ -232,16 +232,20 @@ public final class Blake2b {
         // convert the message block from byte[] to long[] in Little Endian
         long[] m = new long[16];
         b2lLittle(b, 0, m, 0, 128);
-
-        for (int i = 0; i < 12; i++) {     // twelve rounds
-            mixG(localV, 0, 4,  8, 12, m[SIGMA[i][ 0]], m[SIGMA[i][ 1]]);
-            mixG(localV, 1, 5,  9, 13, m[SIGMA[i][ 2]], m[SIGMA[i][ 3]]);
-            mixG(localV, 2, 6, 10, 14, m[SIGMA[i][ 4]], m[SIGMA[i][ 5]]);
-            mixG(localV, 3, 7, 11, 15, m[SIGMA[i][ 6]], m[SIGMA[i][ 7]]);
-            mixG(localV, 0, 5, 10, 15, m[SIGMA[i][ 8]], m[SIGMA[i][ 9]]);
-            mixG(localV, 1, 6, 11, 12, m[SIGMA[i][10]], m[SIGMA[i][11]]);
-            mixG(localV, 2, 7,  8, 13, m[SIGMA[i][12]], m[SIGMA[i][13]]);
-            mixG(localV, 3, 4,  9, 14, m[SIGMA[i][14]], m[SIGMA[i][15]]);
+        try {
+            for (int i = 0; i < 12; i++) {     // twelve rounds
+                mixG(localV, 0, 4,  8, 12, m[SIGMA[i][ 0]], m[SIGMA[i][ 1]]);
+                mixG(localV, 1, 5,  9, 13, m[SIGMA[i][ 2]], m[SIGMA[i][ 3]]);
+                mixG(localV, 2, 6, 10, 14, m[SIGMA[i][ 4]], m[SIGMA[i][ 5]]);
+                mixG(localV, 3, 7, 11, 15, m[SIGMA[i][ 6]], m[SIGMA[i][ 7]]);
+                mixG(localV, 0, 5, 10, 15, m[SIGMA[i][ 8]], m[SIGMA[i][ 9]]);
+                mixG(localV, 1, 6, 11, 12, m[SIGMA[i][10]], m[SIGMA[i][11]]);
+                mixG(localV, 2, 7,  8, 13, m[SIGMA[i][12]], m[SIGMA[i][13]]);
+                mixG(localV, 3, 4,  9, 14, m[SIGMA[i][14]], m[SIGMA[i][15]]);
+            }
+        } finally {
+            // cleans up 'm' when not needed as its content contains user input
+            Arrays.fill(m, 0L);
         }
 
         // store result into 'h'
