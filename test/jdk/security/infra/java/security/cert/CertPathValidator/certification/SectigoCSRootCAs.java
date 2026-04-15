@@ -26,7 +26,7 @@
  * @bug 8359170
  * @summary Interoperability tests with Sectigo Public Code Signing Root CAs
  * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithParams
+ * @build ValidatePathWithParams
  * @run main/othervm/manual -Djava.security.debug=ocsp,certpath SectigoCSRootCAs OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath SectigoCSRootCAs CRL
  */
