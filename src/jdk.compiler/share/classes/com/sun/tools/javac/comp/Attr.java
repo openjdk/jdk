@@ -3241,7 +3241,11 @@ public class Attr extends JCTree.Visitor {
                 attribStats(that.params, localEnv);
 
                 if (arityMismatch) {
-                    resultInfo.checkContext.report(that, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                    resultInfo.checkContext.report(that, diags.fragment(lambdaType.getParameterTypes().isEmpty()
+                            ? Fragments.IncompatibleArgTypesInLambda(Fragments.NoArgs, TreeInfo.types(that.params))
+                            : that.params.isEmpty()
+                                    ? Fragments.IncompatibleArgTypesInLambda(lambdaType.getParameterTypes(), Fragments.NoArgs)
+                                    : Fragments.IncompatibleArgTypesInLambda(lambdaType.getParameterTypes(), TreeInfo.types(that.params))));
                         result = that.type = types.createErrorType(currentTarget);
                         return;
                 }
@@ -3567,7 +3571,11 @@ public class Attr extends JCTree.Visitor {
 
             List<Type> argTypes = checkContext.inferenceContext().asUndetVars(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
-                checkContext.report(tree, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                checkContext.report(tree, diags.fragment(argTypes.isEmpty()
+                        ? Fragments.IncompatibleArgTypesInLambda(Fragments.NoArgs, TreeInfo.types(tree.params))
+                        : tree.params.isEmpty()
+                                ? Fragments.IncompatibleArgTypesInLambda(argTypes, Fragments.NoArgs)
+                                : Fragments.IncompatibleArgTypesInLambda(argTypes, TreeInfo.types(tree.params))));
             }
         }
 
