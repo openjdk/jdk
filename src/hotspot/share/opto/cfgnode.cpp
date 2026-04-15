@@ -159,7 +159,7 @@ PhiNode* RegionNode::has_unique_phi() const {
   return only_phi;
 }
 
-PhiNode* RegionNode::find_memory_phi(const TypePtr* adr_type) {
+PhiNode* RegionNode::find_memory_phi(const TypePtr* adr_type) const {
   PhiNode* res = nullptr;
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* use = fast_out(i);
@@ -2652,7 +2652,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Must eagerly register phis, since they participate in loops.
         igvn->register_new_node_with_optimizer(new_base);
 
-        MergeMemNode* result = MergeMemNode::make(new_base);
+        MergeMemNode* result = MergeMemNode::make(phase->C->top());
+        result->set_memory_at(phase->C->get_alias_index(this->adr_type()), new_base);
 
         // Check if there exists a phi for a given slice already. If yes,
         // we should use it. We are moving the MergeMem down in the CFG,
