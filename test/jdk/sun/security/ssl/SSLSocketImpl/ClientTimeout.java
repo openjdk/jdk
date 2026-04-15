@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 4836493 8239798
+ * @bug 4836493 8239798 8370656
  * @summary Socket timeouts for SSLSockets causes data corruption.
  * @run main/othervm ClientTimeout
  */

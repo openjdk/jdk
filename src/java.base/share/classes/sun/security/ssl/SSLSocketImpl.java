@@ -28,13 +28,13 @@ package sun.security.ssl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -454,12 +454,12 @@ public final class SSLSocketImpl
                 if (!conContext.isNegotiated) {
                     readHandshakeRecord();
                 }
-            } catch (InterruptedIOException iioe) {
+            } catch (SocketTimeoutException e) {
                 if(resumable){
-                    handleException(iioe);
+                    handleException(e);
                 } else{
                     throw conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                            "Couldn't kickstart handshaking", iioe);
+                            "Couldn't kickstart handshaking", e);
                 }
             } catch (SocketException se) {
                 handleException(se);
@@ -1427,7 +1427,7 @@ public final class SSLSocketImpl
                     return 0;
                 }
             } catch (SSLException |
-                    InterruptedIOException | SocketException se) {
+                     SocketTimeoutException | SocketException se) {
                 // Don't change exception in case of timeouts or interrupts
                 // or SocketException.
                 throw se;
@@ -1486,7 +1486,7 @@ public final class SSLSocketImpl
                     return buffer;
                 }
             } catch (SSLException |
-                    InterruptedIOException | SocketException se) {
+                     SocketTimeoutException | SocketException se) {
                 // Don't change exception in case of timeouts or interrupts
                 // or SocketException.
                 throw se;
@@ -1678,7 +1678,7 @@ public final class SSLSocketImpl
         }
 
         // Don't close the Socket in case of timeouts or interrupts.
-        if (cause instanceof InterruptedIOException) {
+        if (cause instanceof SocketTimeoutException) {
             throw (IOException)cause;
         }
 
