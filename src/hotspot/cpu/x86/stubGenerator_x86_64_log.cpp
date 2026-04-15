@@ -736,7 +736,6 @@ void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_ad
   address log2_log10  = (address)_log2_log10;
   address coeff_log10 = (address)_coeff_log10;
 
-
   ADD(_L_tbl);
   ADD(log2);
   ADD(log2 + 8);

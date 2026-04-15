@@ -247,7 +247,7 @@ void StubGenerator::init_AOTAddressTable_constants(GrowableArray<address>& exter
   ADD(_SC_2);
   ADD(_SC_3);
   ADD(_SC_4);
-  // address StubGenerator::PI_4;
+  // Use value which was already cast to (address): StubGenerator::PI_4;
   ADD(PI_4);
   ADD(PI_4 + 8);
   ADD(_PI32INV);
