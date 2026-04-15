@@ -325,7 +325,7 @@ static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty"
 
 static const int _num_ranks = 7;
 
-static void rank_name_internal(outputStream* st, Mutex::Rank r) {
+static void print_rank_name_internal(outputStream* st, Mutex::Rank r) {
   // Find closest rank and print out the name
   for (int i = 0; i < _num_ranks; i++) {
     if (r == _ranks[i]) {
@@ -339,19 +339,19 @@ static void rank_name_internal(outputStream* st, Mutex::Rank r) {
 
 static const char* rank_name_internal(Mutex::Rank r) {
   stringStream st;
-  rank_name_internal(&st, r);
+  print_rank_name_internal(&st, r);
   return st.as_string();
 }
 
 // Does not require caller to have ResourceMark, unless the outputStream already has one.
 void Mutex::print_rank_name(outputStream* st) const {
-  rank_name_internal(st, _rank);
+  print_rank_name_internal(st, _rank);
 }
 
 // Requires caller to have ResourceMark.
 const char* Mutex::rank_name() const {
   stringStream st;
-  rank_name_internal(&st, _rank);
+  print_rank_name_internal(&st, _rank);
   return st.as_string();
 }
 
@@ -362,12 +362,9 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   // underflow is caught in constructor
   if (i != 0 && adjusted > event && adjusted <= _ranks[i-1]) {
     ResourceMark rm;
-    const char* orig_name = rank_name_internal(orig);
-    const char* adjusted_name = rank_name_internal(adjusted);
-    log_info(vmmutex, bot)("Rank %s-%d compares with %s", orig_name, adjust, adjusted_name);
-
     assert(adjusted > _ranks[i-1],
-           "Rank %s-%d overlaps with %s", orig_name, adjust, adjusted_name);
+           "Rank %s-%d overlaps with %s",
+           rank_name_internal(orig), adjust, rank_name_internal(adjusted));
   }
 }
 #endif // ASSERT
