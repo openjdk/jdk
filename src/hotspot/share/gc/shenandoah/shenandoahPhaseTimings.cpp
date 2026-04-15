@@ -121,7 +121,8 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case conc_weak_refs:
     case conc_strong_roots:
     case conc_coalesce_and_fill:
-    case promote_in_place:
+    case complete_abbreviated_promote_in_place:
+    case complete_abbreviated_update_region_ages:
       return true;
     default:
       return false;
