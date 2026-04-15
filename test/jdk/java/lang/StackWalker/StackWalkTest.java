@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,11 @@ public class StackWalkTest {
     static final Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
             "jdk.internal.reflect.DirectMethodHandleAccessor",
             "java.lang.reflect.Method",
-            "com.sun.javatest.regtest.MainWrapper$MainThread",
-            "com.sun.javatest.regtest.agent.MainWrapper$MainThread",
-            "com.sun.javatest.regtest.agent.MainWrapper$MainTask",
             "java.lang.Thread"
     ));
+    static final List<String> infrastructurePackages = List.of(
+            "com.sun.javatest.regtest."
+    );
     static final List<Class<?>> streamPipelines = Arrays.asList(
         classForName("java.util.stream.AbstractPipeline"),
         classForName("java.util.stream.TerminalOp")
@@ -128,6 +128,11 @@ public class StackWalkTest {
         if (count >= recorder.frameCount()) {
             // We've gone past main()...
             if (infrastructureClasses.contains(sf.getClassName())) {
+                // safe to ignore
+                return;
+            }
+            for (var prefix : infrastructurePackages) {
+                if (sf.getClassName().startsWith(prefix))
                 // safe to ignore
                 return;
             }
