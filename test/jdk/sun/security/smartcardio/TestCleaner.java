@@ -39,11 +39,9 @@
 
 // This test requires special hardware; a card must be present
 
-import java.util.List;
 import java.util.WeakHashMap;
 import javax.smartcardio.Card;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.TerminalFactory;
 
 import jdk.test.whitebox.WhiteBox;
 
