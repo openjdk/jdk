@@ -30,12 +30,13 @@ import java.util.List;
  * Represents the {@code toList} on a filtered name set, including the collection of the
  * names and the creation of the inner scope with the function.
  */
-record NamesToListToken<N>(
+record NamesToListToken<N extends Name>(
+        Class<N> type,
         NameSet.Predicate predicate,
         Function<List<N>, ScopeToken> function) implements Token {
 
     ScopeToken getScopeToken(List<Name> names) {
-        List<N> castNames = names.stream().map(n -> (N)n).toList();
+        List<N> castNames = names.stream().map(type::cast).toList();
         return function().apply(castNames);
     }
 }

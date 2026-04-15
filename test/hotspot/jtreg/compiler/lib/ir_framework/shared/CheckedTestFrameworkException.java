@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.shared;
 /**
  * Checked internal exceptions in the framework to propagate error handling.
  */
+@SuppressWarnings("serial")
 public class CheckedTestFrameworkException extends Exception {
     public CheckedTestFrameworkException(String msg) {
         super(msg);

@@ -26,5 +26,6 @@ package compiler.lib.ir_framework.shared;
 /**
  * Exception thrown when {@link ComparisonConstraintParser} cannot find a constraint.
  */
+@SuppressWarnings("serial")
 class EmptyConstraintException extends Exception {
 }

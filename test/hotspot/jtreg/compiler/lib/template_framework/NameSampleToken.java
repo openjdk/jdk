@@ -31,13 +31,14 @@ import java.util.function.Function;
  * name and type of the sampled name, which are then available in the inner scope
  * created by the provided function.
  */
-record NameSampleToken<N>(
+record NameSampleToken<N extends Name>(
+        Class<N> clazz,
         NameSet.Predicate predicate,
         String name,
         String type,
         Function<N, ScopeToken> function) implements Token {
 
     ScopeToken getScopeToken(Name n) {
-        return function().apply((N)n);
+        return function().apply(clazz.cast(n));
     }
 }

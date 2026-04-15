@@ -28,6 +28,7 @@ package compiler.lib.template_framework;
  * rendering, or in the use of any of its static methods.
  * It most likely indicates a wrong use of the Templates.
  */
+@SuppressWarnings("serial")
 public class RendererException extends RuntimeException {
     RendererException(String message) {
         super(message);

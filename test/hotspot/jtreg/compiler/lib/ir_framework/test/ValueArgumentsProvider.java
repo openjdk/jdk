@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,22 @@
  * questions.
  */
 
-package compiler.lib.template_framework;
+package compiler.lib.ir_framework.test;
 
-import java.util.function.Function;
+import java.util.Arrays;
 
 /**
- * Represents the for-each execution of the provided function and (optional) hashtag replacement
- * keys for name and type of each name.
+ * Used for @Arguments(values = {...}) to specify individual arguments directly.
  */
-record NameForEachToken<N extends Name>(
-        Class<N> clazz,
-        NameSet.Predicate predicate,
-        String name,
-        String type,
-        Function<N, ScopeToken> function) implements Token {
+final class ValueArgumentsProvider implements ArgumentsProvider {
+    ArgumentValue[] argumentValues;
 
-    ScopeToken getScopeToken(Name n) {
-        return function().apply(clazz.cast(n));
+    ValueArgumentsProvider(ArgumentValue[] argumentValues) {
+        this.argumentValues = argumentValues;
+    }
+
+    @Override
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return Arrays.stream(argumentValues).map(v -> v.getValue()).toArray();
     }
 }

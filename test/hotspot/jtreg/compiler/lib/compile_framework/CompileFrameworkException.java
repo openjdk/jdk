@@ -26,6 +26,7 @@ package compiler.lib.compile_framework;
 /**
  * Exception thrown in the Compilation Framework. Most likely, the user is responsible for the failure.
  */
+@SuppressWarnings("serial")
 public class CompileFrameworkException extends RuntimeException {
     public CompileFrameworkException(String message) {
         super("Exception in Compile Framework:" + System.lineSeparator() + message);

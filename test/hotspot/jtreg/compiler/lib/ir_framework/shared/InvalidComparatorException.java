@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.shared;
 /**
  * Exception threw when {@link ComparisonConstraintParser} parses an invalid comparator.
  */
+@SuppressWarnings("serial")
 public class InvalidComparatorException extends Exception {
     private final String comparator;
 

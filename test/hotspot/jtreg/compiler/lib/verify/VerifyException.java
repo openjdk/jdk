@@ -26,6 +26,7 @@ package compiler.lib.verify;
 /**
  * Exception thrown in verification.
  */
+@SuppressWarnings("serial")
 public class VerifyException extends RuntimeException {
 
     /**

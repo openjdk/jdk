@@ -29,6 +29,7 @@ package compiler.lib.ir_framework.driver.irmatching.mapping;
  * @see PhaseInterval
  * @see MultiPhaseRangeEntry
  */
+@SuppressWarnings("serial")
 class OverlappingPhaseRangesException extends RuntimeException {
     public OverlappingPhaseRangesException(PhaseInterval entry, PhaseInterval entry2) {
         super("The following two PhaseRangeEntry objects overlap which is forbidden:" + System.lineSeparator() + "- "

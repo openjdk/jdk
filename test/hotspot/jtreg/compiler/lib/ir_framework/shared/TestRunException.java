@@ -27,6 +27,7 @@ package compiler.lib.ir_framework.shared;
  * Exception that is thrown if the JTreg test throws an exception during the execution of individual tests of the
  * test class.
  */
+@SuppressWarnings("serial")
 public class TestRunException extends RuntimeException {
     public TestRunException(String message) {
         super(message);

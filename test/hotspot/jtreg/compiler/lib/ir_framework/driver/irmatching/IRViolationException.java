@@ -34,6 +34,7 @@ import compiler.lib.ir_framework.Test;
  * @see IR
  * @see Test
  */
+@SuppressWarnings("serial")
 public class IRViolationException extends RuntimeException {
     private final String compilations;
     private String exceptionInfo;

@@ -175,7 +175,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sample(Function<StructuralName, ScopeToken> function) {
-            return new NameSampleToken<>(predicate(), null, null, function);
+            return new NameSampleToken<>(StructuralName.class, predicate(), null, null, function);
         }
 
         /**
@@ -190,7 +190,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<StructuralName>(predicate(), name, type, n -> Template.transparentScope());
+            return new NameSampleToken<StructuralName>(StructuralName.class, predicate(), name, type, n -> Template.transparentScope());
         }
 
         /**
@@ -204,7 +204,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name) {
-            return new NameSampleToken<StructuralName>(predicate(), name, null, n -> Template.transparentScope());
+            return new NameSampleToken<>(StructuralName.class, predicate(), name, null, n -> Template.transparentScope());
         }
 
         /**
@@ -245,7 +245,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token toList(Function<List<StructuralName>, ScopeToken> function) {
-            return new NamesToListToken<>(predicate(), function);
+            return new NamesToListToken<>(StructuralName.class, predicate(), function);
         }
 
         /**
@@ -259,7 +259,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(Function<StructuralName, ScopeToken> function) {
-            return new NameForEachToken<>(predicate(), null, null, function);
+            return new NameForEachToken<>(StructuralName.class, predicate(), null, null, function);
         }
 
         /**
@@ -283,7 +283,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(String name, String type, Function<StructuralName, ScopeToken> function) {
-            return new NameForEachToken<>(predicate(), name, type, function);
+            return new NameForEachToken<>(StructuralName.class, predicate(), name, type, function);
         }
     }
 }

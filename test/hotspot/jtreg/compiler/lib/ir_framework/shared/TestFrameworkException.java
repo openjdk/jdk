@@ -27,6 +27,7 @@ package compiler.lib.ir_framework.shared;
  * Exception that is thrown if there is an internal error in the framework. This is most likely an indicator of a bug
  * in the framework.
  */
+@SuppressWarnings("serial")
 public class TestFrameworkException extends RuntimeException {
     public TestFrameworkException(String message) {
         super("Internal Test Framework exception - please file a bug:" + System.lineSeparator() + message);

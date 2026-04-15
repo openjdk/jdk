@@ -26,6 +26,7 @@ package compiler.lib.compile_framework;
 /**
  * Internal exception thrown in Compilation Framework. Most likely, this is due to a bug in the CompileFramework.
  */
+@SuppressWarnings("serial")
 public class InternalCompileFrameworkException extends RuntimeException {
     public InternalCompileFrameworkException(String message) {
         super("Internal exception in Compile Framework, please file a bug:" + System.lineSeparator() + message);

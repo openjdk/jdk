@@ -873,7 +873,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        return new LetToken(key, value, v -> transparentScope());
+        return new LetToken<>(key, value, v -> transparentScope());
     }
 
     /**
@@ -902,7 +902,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A {@link Token} representing the hashtag replacement definition and inner scope.
      */
     static <T> Token let(String key, T value, Function<T, ScopeToken> function) {
-        return new LetToken(key, value, function);
+        return new LetToken<>(key, value, function);
     }
 
     /**
