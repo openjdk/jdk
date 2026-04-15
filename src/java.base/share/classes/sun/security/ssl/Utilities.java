@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,35 @@ final class Utilities {
         }
 
         return builder.toString();
+    }
+
+    static String wrapText(String text, int maxWidth) {
+        if (text == null || text.isEmpty() || maxWidth <= 0) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        String[] values = text.split(",\\s*");
+        StringBuilder line = new StringBuilder();
+
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
+            // If adding this value would exceed maxWidth
+            if (line.length() > 0) {
+                // +1 for the comma
+                if (line.length() + 1 + value.length() > maxWidth) {
+                    result.append(line).append(LINE_SEP);
+                    line.setLength(0);
+                } else {
+                    line.append(",");
+                }
+            }
+            line.append(value);
+        }
+        // Append any remaining line
+        if (line.length() > 0) {
+            result.append(line);
+        }
+        return result.toString();
     }
 
     static String byte16HexString(int id) {

@@ -247,9 +247,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that right shift operations on subword expressions cannot be
-    // vectorized since precise type info about signedness is missing.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(applyIfCPUFeature = {"avx", "true"},
+            counts = {IRNode.RSHIFT_VI, ">0"})
     public short[] subwordExpressionRightShift() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

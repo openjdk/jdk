@@ -24,13 +24,12 @@
  */
 package jdk.incubator.vector;
 
-import java.util.function.IntFunction;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.IntFunction;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
@@ -115,7 +114,7 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  * operations on individual lane values.
  *
  */
-public abstract class VectorOperators {
+public final class VectorOperators {
     private VectorOperators() { }
 
     /**
@@ -131,12 +130,9 @@ public abstract class VectorOperators {
      * @see VectorOperators.Test Test
      * @see VectorOperators.Conversion Conversion
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Operator {
+    public sealed interface Operator {
         /**
          * Returns the symbolic name of this operator,
          * as a constant in {@link VectorOperators}.
@@ -235,13 +231,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Unary)
      * lanewise}{@code (NEG)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Unary extends Operator {
+    public sealed interface Unary extends Operator {
     }
 
     /**
@@ -252,12 +243,9 @@ public abstract class VectorOperators {
      * Vector#lanewise(VectorOperators.Binary,Vector)
      * lanewise}{@code (ADD, v1)}.
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Binary extends Operator {
+    public sealed interface Binary extends Operator {
     }
 
     /**
@@ -267,13 +255,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Ternary,Vector,Vector)
      * lanewise}{@code (FMA, v1, v2)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Ternary extends Operator {
+    public sealed interface Ternary extends Operator {
     }
 
     /**
@@ -283,13 +266,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code e = v0.}{@link
      * IntVector#reduceLanes(VectorOperators.Associative)
      * reduceLanes}{@code (ADD)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Associative extends Binary {
+    public sealed interface Associative extends Binary {
     }
 
     /**
@@ -299,13 +277,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * FloatVector#test(VectorOperators.Test)
      * test}{@code (IS_FINITE)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Test extends Operator {
+    public sealed interface Test extends Operator {
     }
 
     /**
@@ -315,13 +288,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * Vector#compare(VectorOperators.Comparison,Vector)
      * compare}{@code (LT, v1)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Comparison extends Operator {
+    public sealed interface Comparison extends Operator {
     }
 
     /**
@@ -336,13 +304,8 @@ public abstract class VectorOperators {
      *        domain type (the input lane type)
      * @param <F> the boxed element type for the conversion
      *        range type (the output lane type)
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Conversion<E,F> extends Operator {
+    public sealed interface Conversion<E,F> extends Operator {
         /**
          * The domain of this conversion, a primitive type.
          * @return the domain of this conversion
@@ -597,15 +560,15 @@ public abstract class VectorOperators {
 
 
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
      * @since 19
      */
@@ -831,7 +794,7 @@ public abstract class VectorOperators {
                                     kind, dom, ran);
     }
 
-    private abstract static class OperatorImpl implements Operator {
+    private abstract static sealed class OperatorImpl implements Operator {
         private final String symName;
         private final String opName;
         private final int opInfo;
@@ -956,35 +919,35 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class UnaryImpl extends OperatorImpl implements Unary {
+    private static final class UnaryImpl extends OperatorImpl implements Unary {
         private UnaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
         }
     }
 
-    private static class BinaryImpl extends OperatorImpl implements Binary {
+    private static sealed class BinaryImpl extends OperatorImpl implements Binary permits AssociativeImpl {
         private BinaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);
         }
     }
 
-    private static class TernaryImpl extends OperatorImpl implements Ternary {
+    private static final class TernaryImpl extends OperatorImpl implements Ternary {
         private TernaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_TERNARY);
         }
     }
 
-    private static class AssociativeImpl extends BinaryImpl implements Associative {
+    private static final class AssociativeImpl extends BinaryImpl implements Associative {
         private AssociativeImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
         }
     }
 
     /*package-private*/
-    static
+    static final
     class ConversionImpl<E,F> extends OperatorImpl
                               implements Conversion<E,F> {
         private ConversionImpl(String symName, String opName, int opInfo,
@@ -1260,7 +1223,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class TestImpl extends OperatorImpl implements Test {
+    private static final class TestImpl extends OperatorImpl implements Test {
         private TestImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
@@ -1272,7 +1235,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class ComparisonImpl extends OperatorImpl implements Comparison {
+    private static final class ComparisonImpl extends OperatorImpl implements Comparison {
         private ComparisonImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);

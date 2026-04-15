@@ -76,15 +76,18 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
             @Override
             public String[] vmArgs(RunMode runMode) {
                 if (runMode == RunMode.PRODUCTION) {
-                    return new String[] {vmOption, "-Xlog:aot+codecache+init=debug"};
+                    return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
+                } else {
+                    return new String[] {"-Xlog:aot+codecache*=debug"};
                 }
-                return new String[] {};
             }
             @Override
             public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-                if (runMode == RunMode.ASSEMBLY) {
+                if (runMode == RunMode.ASSEMBLY || runMode == RunMode.PRODUCTION) {
                     out.shouldMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
-                } else if (runMode == RunMode.PRODUCTION) {
+                }
+
+                if (runMode == RunMode.PRODUCTION) {
                     out.shouldMatch("AOT Code Cache disabled: required cpu features are missing:.*" + featureName + ".*");
                     out.shouldContain("Unable to use AOT Code Cache");
                 }

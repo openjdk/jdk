@@ -30,6 +30,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -46,6 +47,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/rbTree.inline.hpp"
 #include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
@@ -116,13 +118,17 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
 
   if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
-    // We don't want any pointer that points to very bottom of the archive, otherwise when
-    // AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
-    // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
-    // of the archive.
-    assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
-
     if (value != nullptr) {
+      // We don't want any pointer that points to very bottom of the AOT metaspace, otherwise
+      // when AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
+      // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
+      // of the AOT metaspace.
+      //
+      // This should never happen because the protection zone prevents any valid objects from
+      // being allocated at the bottom of the AOT metaspace.
+      assert(AOTMetaspace::protection_zone_size() > 0, "must be");
+      assert(ArchiveBuilder::current()->any_to_offset(value) > 0, "cannot point to bottom of AOT metaspace");
+
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
       size_t idx = ptr_loc - ptr_base();
       if (_ptrmap->size() <= idx) {
@@ -130,7 +136,6 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
       }
       assert(idx < _ptrmap->size(), "must be");
       _ptrmap->set_bit(idx);
-      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
     }
   }
 }
@@ -144,7 +149,6 @@ void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
   size_t idx = ptr_loc - ptr_base();
   assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
   _ptrmap->clear_bit(idx);
-  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
 }
 
 class ArchivePtrBitmapCleaner: public BitMapClosure {
@@ -249,14 +253,177 @@ void DumpRegion::commit_to(char* newtop) {
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
+// Basic allocation. Any alignment gaps will be wasted.
 char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
   // Always align to at least minimum alignment
   alignment = MAX2(SharedSpaceObjectAlignment, alignment);
   char* p = (char*)align_up(_top, alignment);
-  char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
+  char* newtop = p + align_up(num_bytes, SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
   return p;
+}
+
+class DumpRegion::AllocGap {
+  size_t _gap_bytes;   // size of this gap in bytes
+  char* _gap_bottom;   // must be SharedSpaceObjectAlignment aligned
+public:
+  size_t gap_bytes() const { return _gap_bytes; }
+  char* gap_bottom() const { return _gap_bottom; }
+
+  AllocGap(size_t bytes, char* bottom) : _gap_bytes(bytes), _gap_bottom(bottom) {
+    precond(is_aligned(gap_bytes(), SharedSpaceObjectAlignment));
+    precond(is_aligned(gap_bottom(), SharedSpaceObjectAlignment));
+  }
+};
+
+struct DumpRegion::AllocGapCmp {
+  static RBTreeOrdering cmp(AllocGap a, AllocGap b) {
+    RBTreeOrdering order = rbtree_primitive_cmp(a.gap_bytes(), b.gap_bytes());
+    if (order == RBTreeOrdering::EQ) {
+      order = rbtree_primitive_cmp(a.gap_bottom(), b.gap_bottom());
+    }
+    return order;
+  }
+};
+
+struct Empty {};
+using AllocGapNode = RBNode<DumpRegion::AllocGap, Empty>;
+
+class DumpRegion::AllocGapTree : public RBTreeCHeap<AllocGap, Empty, AllocGapCmp, mtClassShared> {
+public:
+  size_t add_gap(char* gap_bottom, char* gap_top) {
+    precond(gap_bottom < gap_top);
+    size_t gap_bytes = pointer_delta(gap_top, gap_bottom, 1);
+    precond(gap_bytes > 0);
+
+    _total_gap_bytes += gap_bytes;
+
+    AllocGap gap(gap_bytes, gap_bottom); // constructor checks alignment
+    AllocGapNode* node = allocate_node(gap, Empty{});
+    insert(gap, node);
+
+    log_trace(aot, alloc)("adding a gap of %zu bytes @ %p (total = %zu) in %zu blocks", gap_bytes, gap_bottom, _total_gap_bytes, size());
+    return gap_bytes;
+  }
+
+  char* allocate_from_gap(size_t num_bytes) {
+    // The gaps are sorted in ascending order of their sizes. When two gaps have the same
+    // size, the one with a lower gap_bottom comes first.
+    //
+    // Find the first gap that's big enough, with the lowest gap_bottom.
+    AllocGap target(num_bytes, nullptr);
+    AllocGapNode* node = closest_ge(target);
+    if (node == nullptr) {
+      return nullptr; // Didn't find any usable gap.
+    }
+
+    size_t gap_bytes = node->key().gap_bytes();
+    char* gap_bottom = node->key().gap_bottom();
+    char* result = gap_bottom;
+    precond(is_aligned(result, SharedSpaceObjectAlignment));
+
+    remove(node);
+
+    precond(_total_gap_bytes >= num_bytes);
+    _total_gap_bytes -= num_bytes;
+    _total_gap_bytes_used += num_bytes;
+    _total_gap_allocs++;
+    DEBUG_ONLY(node = nullptr); // Don't use it anymore!
+
+    precond(gap_bytes >= num_bytes);
+    if (gap_bytes > num_bytes) {
+      gap_bytes -= num_bytes;
+      gap_bottom += num_bytes;
+
+      AllocGap gap(gap_bytes, gap_bottom); // constructor checks alignment
+      AllocGapNode* new_node = allocate_node(gap, Empty{});
+      insert(gap, new_node);
+    }
+    log_trace(aot, alloc)("%zu bytes @ %p in a gap of %zu bytes (used gaps %zu times, remain gap = %zu bytes in %zu blocks)",
+                          num_bytes, result, gap_bytes, _total_gap_allocs, _total_gap_bytes, size());
+    return result;
+  }
+};
+
+size_t DumpRegion::_total_gap_bytes = 0;
+size_t DumpRegion::_total_gap_bytes_used = 0;
+size_t DumpRegion::_total_gap_allocs = 0;
+DumpRegion::AllocGapTree DumpRegion::_gap_tree;
+
+// Alignment gaps happen only for the RW space. Collect the gaps into the _gap_tree so they can be
+// used for future small object allocation.
+char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats) {
+  num_bytes = align_up(num_bytes, SharedSpaceObjectAlignment);
+  size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
+  bool is_class = (type == MetaspaceClosureType::ClassType);
+  bool is_instance_class = is_class && ((Klass*)src)->is_instance_klass();
+
+#ifdef _LP64
+  // More strict alignments needed for Klass objects
+  if (is_class) {
+    size_t klass_alignment = checked_cast<size_t>(nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()));
+    alignment = MAX2(alignment, klass_alignment);
+    precond(is_aligned(alignment, SharedSpaceObjectAlignment));
+  }
+#endif
+
+  if (alignment == SharedSpaceObjectAlignment && type != MetaspaceClosureType::SymbolType) {
+    // The addresses of Symbols must be in the same order as they are in ArchiveBuilder::SourceObjList.
+    // If we put them in gaps, their order will change.
+    //
+    // We have enough small objects that all gaps are usually filled.
+    char* p = _gap_tree.allocate_from_gap(num_bytes);
+    if (p != nullptr) {
+      // Already memset to 0 when adding the gap
+      stats->record(type, checked_cast<int>(num_bytes), /*read_only=*/false); // all gaps are from RW space (for classes)
+      return p;
+    }
+  }
+
+  // Reserve space for a pointer directly in front of the buffered InstanceKlass, so
+  // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
+  // without building another hashtable. See RunTimeClassInfo::get_for()
+  // in systemDictionaryShared.cpp.
+  const size_t RuntimeClassInfoPtrSize = is_instance_class ? sizeof(address) : 0;
+
+  if (is_class && !is_aligned(top() + RuntimeClassInfoPtrSize, alignment)) {
+    // We need to add a gap to align the buffered Klass. Save the gap for future small allocations.
+    assert(read_only == false, "only gaps in RW region are reusable");
+    char* gap_bottom = top();
+    char* gap_top = align_up(gap_bottom + RuntimeClassInfoPtrSize, alignment) - RuntimeClassInfoPtrSize;
+    size_t gap_bytes = _gap_tree.add_gap(gap_bottom, gap_top);
+    allocate(gap_bytes);
+  }
+
+  char* oldtop = top();
+  if (is_instance_class) {
+    SystemDictionaryShared::validate_before_archiving((InstanceKlass*)src);
+    allocate(RuntimeClassInfoPtrSize);
+  }
+
+  precond(is_aligned(top(), alignment));
+  char* result = allocate(num_bytes);
+  log_trace(aot, alloc)("%zu bytes @ %p", num_bytes, result);
+  stats->record(type, pointer_delta_as_int(top(), oldtop), read_only); // includes RuntimeClassInfoPtrSize for classes
+
+  return result;
+}
+
+// Usually we have no gaps left.
+void DumpRegion::report_gaps(DumpAllocStats* stats) {
+  _gap_tree.visit_in_order([&](const AllocGapNode* node) {
+        stats->record_gap(checked_cast<int>(node->key().gap_bytes()));
+        return true;
+      });
+  if (_gap_tree.size() > 0) {
+    log_warning(aot)("Unexpected %zu gaps (%zu bytes) for Klass alignment",
+                     _gap_tree.size(), _total_gap_bytes);
+  }
+  if (_total_gap_allocs > 0) {
+    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes)",
+                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes);
+  }
 }
 
 void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {

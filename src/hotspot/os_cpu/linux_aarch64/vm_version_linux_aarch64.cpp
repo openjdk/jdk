@@ -31,6 +31,10 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 
+// IC IVAU trap probe.
+// Defined in ic_ivau_probe_linux_aarch64.S.
+extern "C" int ic_ivau_probe(void);
+
 #ifndef HWCAP_AES
 #define HWCAP_AES   (1<<3)
 #endif
@@ -95,6 +99,13 @@
 #define HWCAP2_SVEBITPERM (1 << 4)
 #endif
 
+#ifndef HWCAP2_ECV
+#define HWCAP2_ECV (1 << 19)
+#endif
+
+#ifndef HWCAP2_WFXT
+#define HWCAP2_WFXT (1u << 31)
+#endif
 #ifndef PR_SVE_GET_VL
 // For old toolchains which do not have SVE related macros defined.
 #define PR_SVE_SET_VL   50
@@ -158,6 +169,12 @@ void VM_Version::get_os_cpu_info() {
   if (auxv2 & HWCAP2_SVEBITPERM) {
     set_feature(CPU_SVEBITPERM);
   }
+  if (auxv2 & HWCAP2_ECV) {
+    set_feature(CPU_ECV);
+  }
+  if (auxv2 & HWCAP2_WFXT) {
+    set_feature(CPU_WFXT);
+  }
 
   uint64_t ctr_el0;
   uint64_t dczid_el0;
@@ -169,6 +186,12 @@ void VM_Version::get_os_cpu_info() {
 
   _icache_line_size = (1 << (ctr_el0 & 0x0f)) * 4;
   _dcache_line_size = (1 << ((ctr_el0 >> 16) & 0x0f)) * 4;
+  _cache_idc_enabled = ((ctr_el0 >> 28) & 0x1) != 0;
+  _cache_dic_enabled = ((ctr_el0 >> 29) & 0x1) != 0;
+
+  // Probe whether IC IVAU is trapped.
+  // Must run before VM_Version::initialize() sets NeoverseN1ICacheErratumMitigation.
+  _ic_ivau_trapped = (ic_ivau_probe() == 1);
 
   if (!(dczid_el0 & 0x10)) {
     _zva_length = 4 << (dczid_el0 & 0xf);

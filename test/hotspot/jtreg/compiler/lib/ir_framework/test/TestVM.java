@@ -594,8 +594,8 @@ public class TestVM {
                 "Cannot overload @Test methods, but method " + m + " has " + overloads.size() + " overload" + (overloads.size() == 1 ? "" : "s") + ":" +
                 overloads.stream().map(String::valueOf).collect(Collectors.joining("\n    - ", "\n    - ", ""))
         );
-        TestFormat.check(!testMethodMap.containsKey(m.getName()),
-                         "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
+        TestFramework.check(!testMethodMap.containsKey(m.getName()),
+                            "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
         TestFormat.check(testAnno != null, m + " must be a method with a @Test annotation");
 
         Check checkAnno = getAnnotation(m, Check.class);
@@ -836,7 +836,6 @@ public class TestVM {
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = PRINT_TIMES ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -865,7 +864,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestVmSocket.send(MessageTag.TEST_LIST + "Run " + test.toString());
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
             }
             try {
                 test.run();
@@ -880,22 +879,15 @@ public class TestVM {
             if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                durations.put(duration, test.getName());
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
                 }
+                // Will be correctly formatted later.
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
                 WHITE_BOX.fullGC();
-            }
-        }
-
-        // Print execution times
-        if (PRINT_TIMES) {
-            TestVmSocket.send(MessageTag.PRINT_TIMES + " Test execution times:");
-            for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                TestVmSocket.send(MessageTag.PRINT_TIMES + String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()));
             }
         }
 

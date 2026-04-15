@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,17 @@
 #include <sys/ptrace.h>
 #include <sys/uio.h>
 #include "libproc_impl.h"
+
+#ifdef __aarch64__
+#include <sys/auxv.h>
+
+// HWCAP_PACA was introduced in glibc 2.30
+// https://sourceware.org/git/?p=glibc.git;a=commit;h=a2e57f89a35e6056c9488428e68c4889e114ef71
+#ifndef HWCAP_PACA
+#define HWCAP_PACA (1 << 30)
+#endif
+
+#endif
 
 #if defined(x86_64) && !defined(amd64)
 #define amd64 1
@@ -459,6 +470,10 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
     free(ph);
     return NULL;
   }
+
+#ifdef __aarch64__
+  ph->pac_enabled = HWCAP_PACA & getauxval(AT_HWCAP);
+#endif
 
   // initialize ps_prochandle
   ph->pid = pid;

@@ -166,10 +166,9 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-    if (plab != nullptr) {
-      // This will assert if plab is not null in non-generational mode
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (shenandoah_plab != nullptr) {
+      shenandoah_plab->retire();
     }
 
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC

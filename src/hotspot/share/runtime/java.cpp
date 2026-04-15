@@ -151,7 +151,8 @@ static void print_method_profiling_data() {
           ss.fill_to(2);
           m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes_on(&ss);
+        // Buffering to a stringStream, disable internal buffering so it's not done twice.
+        m->print_codes_on(&ss, 0, false);
         tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }

@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2234,6 +2234,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
 
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
+
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
     case Op_LowerCase:
@@ -2406,10 +2412,8 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   return false;
 }
 
-// Return whether or not this register is ever used as an argument. This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg(int reg) {
   // We must include the virtual halves in order to get STDs and LDs
   // instead of STWs and LWs in the trampoline stubs.
@@ -2441,10 +2445,7 @@ bool Matcher::can_be_java_arg(int reg) {
 
   return false;
 }
-
-bool Matcher::is_spillable_arg(int reg) {
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -2454,10 +2455,6 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   return (FLOATPRESSURE == -1) ? 28 : FLOATPRESSURE;
-}
-
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
 }
 
 // Register for DIVI projection of divmodI.
@@ -3708,13 +3705,6 @@ frame %{
 
   // Compiled code's Frame Pointer.
   frame_pointer(R1); // R1_SP
-
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors. I2CAdaptors convert from
-  // interpreted java to compiled java.
-  //
-  // R14_state holds pointer to caller's cInterpreter.
-  interpreter_frame_pointer(R14); // R14_state
 
   stack_alignment(frame::alignment_in_bytes);
 
@@ -6333,36 +6323,8 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-// Special prefetch versions which use the dcbz instruction.
-instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
-  match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
@@ -6375,7 +6337,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
 
 instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}
@@ -7169,6 +7130,18 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-store-load" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -7210,6 +7183,18 @@ instruct membar_volatile() %{
 //  ins_encode( /*empty*/ );
 //  ins_pipe(pipe_class_default);
 //%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-full" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
@@ -10318,7 +10303,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovI   $crx, $dst, $src" %}
+  format %{ "CMOVI   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10331,7 +10316,7 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovI   $crx, $dst, $src" %}
+  format %{ "CMOVI   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10343,7 +10328,7 @@ instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   effect(DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CmovI   $dst, $crx, $src \t// postalloc expanded" %}
+  format %{ "CMOVI   $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -10493,7 +10478,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovL   $crx, $dst, $src" %}
+  format %{ "CMOVL   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10506,7 +10491,7 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovL   $crx, $dst, $src" %}
+  format %{ "CMOVL   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10518,7 +10503,7 @@ instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   effect(DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CmovL   $dst, $crx, $src \t// postalloc expanded" %}
+  format %{ "CMOVL   $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -10719,9 +10704,9 @@ instruct convF2HF_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   effect(TEMP tmp);
   ins_cost(3 * DEFAULT_COST);
   size(12);
-  format %{ "xscvdphp $tmp, $src\t# convert to half precision\n\t"
-            "mffprd $dst, $tmp\t# move result from $tmp to $dst\n\t"
-            "extsh $dst, $dst\t# make it a proper short"
+  format %{ "XSCVDPHP $tmp, $src\t# convert to half precision\n\t"
+            "MFFPRD $dst, $tmp\t# move result from $tmp to $dst\n\t"
+            "EXTSH $dst, $dst\t# make it a proper short"
   %}
   ins_encode %{
     __ f2hf($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
@@ -10733,8 +10718,8 @@ instruct convHF2F_reg_reg(regF dst, iRegIsrc src) %{
   match(Set dst (ConvHF2F src));
   ins_cost(2 * DEFAULT_COST);
   size(8);
-  format %{ "mtfprd $dst, $src\t# move source from $src to $dst\n\t"
-            "xscvhpdp $dst, $dst\t# convert from half precision"
+  format %{ "MTFPRD $dst, $src\t# move source from $src to $dst\n\t"
+            "XSCVHPDP $dst, $dst\t# convert from half precision"
   %}
   ins_encode %{
     __ hf2f($dst$$FloatRegister, $src$$Register);
@@ -11132,7 +11117,7 @@ instruct cmov_bns_less(flagsReg crx) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmov    $crx" %}
+  format %{ "CMOV    $crx" %}
   size(12);
   ins_encode %{
     Label done;
@@ -11160,7 +11145,7 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
   match(Set crx (CmpF src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  format %{ "CmpF    $crx, $src1, $src2 \t// postalloc expanded" %}
+  format %{ "CMPF    $crx, $src1, $src2 \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -12309,6 +12294,58 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMINJDP $dst, $src1, $src2\t// MinF" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMINJDP $dst, $src1, $src2\t// MinD" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMAXJDP $dst, $src1, $src2\t// MaxF" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMAXJDP $dst, $src1, $src2\t// MaxD" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13835,7 +13872,7 @@ instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
 instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowAddL op1 op2));
 
-  format %{ "add_    $op1, $op2\t# overflow check long" %}
+  format %{ "ADD_    $op1, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13848,7 +13885,7 @@ instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL op1 op2));
 
-  format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
+  format %{ "SUBFO_  R0, $op2, $op1\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13861,7 +13898,7 @@ instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL zero op2));
 
-  format %{ "nego_   R0, $op2\t# overflow check long" %}
+  format %{ "NEGO_   R0, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13874,7 +13911,7 @@ instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
 instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowMulL op1 op2));
 
-  format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
+  format %{ "MULLDO_ R0, $op1, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -14251,7 +14288,7 @@ instruct ForwardExceptionjmp()
   match(ForwardException);
   ins_cost(CALL_COST);
 
-  format %{ "Jmp     forward_exception_stub" %}
+  format %{ "JMP     forward_exception_stub" %}
   ins_encode %{
     __ set_inst_mark();
     __ b64_patchable(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type);
@@ -14279,7 +14316,7 @@ instruct RethrowException() %{
   match(Rethrow);
   ins_cost(CALL_COST);
 
-  format %{ "Jmp     rethrow_stub" %}
+  format %{ "JMP     rethrow_stub" %}
   ins_encode %{
     __ set_inst_mark();
     __ b64_patchable((address)OptoRuntime::rethrow_stub(), relocInfo::runtime_call_type);
@@ -14320,20 +14357,6 @@ instruct tlsLoadP(threadRegP dst) %{
 %}
 
 //---Some PPC specific nodes---------------------------------------------------
-
-// Stop a group.
-instruct endGroup() %{
-  ins_cost(0);
-
-  ins_is_nop(true);
-
-  format %{ "End Bundle (ori r1, r1, 0)" %}
-  size(4);
-  ins_encode %{
-    __ endgroup();
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 // Nop instructions
 

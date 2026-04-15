@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,8 @@
 /* @test
  * @bug 8208362
  * @summary Tests reachability from source to dependent direct byte buffers
- * @run testng ReachabilityTest
+ * @run junit ReachabilityTest
  */
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -41,7 +38,13 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.UnaryOperator;
 
+import org.junit.jupiter.api.Test;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReachabilityTest {
 
@@ -98,13 +101,13 @@ public class ReachabilityTest {
                 }
             }
         } catch (InterruptedException unexpected) {
-            throw new AssertionError("unexpected InterruptedException");
+            fail("unexpected InterruptedException");
         }
 
         // Some or all of the intermediate values must be GC'ed
-        Assert.assertTrue(collected);
+        assertTrue(collected);
         // The root should never be GC'ed
-        Assert.assertNotNull(root.get());
+        assertNotNull(root.get());
 
         Reference.reachabilityFence(t);
     }

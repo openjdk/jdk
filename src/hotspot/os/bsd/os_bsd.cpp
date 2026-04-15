@@ -76,6 +76,7 @@
 # include <fcntl.h>
 # include <fenv.h>
 # include <inttypes.h>
+# include <mach/mach.h>
 # include <poll.h>
 # include <pthread.h>
 # include <pwd.h>
@@ -102,6 +103,7 @@
 #endif
 
 #ifdef __APPLE__
+  #include <libproc.h>
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
 #endif
@@ -1885,11 +1887,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return nullptr;
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  fatal("os::release_memory_special should not be called on BSD.");
-  return false;
-}
-
 size_t os::large_page_size() {
   return _large_page_size;
 }
@@ -2601,3 +2598,45 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+void os::print_open_file_descriptors(outputStream* st) {
+#ifdef __APPLE__
+  char buf[1024 * sizeof(struct proc_fdinfo)];
+  os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
+#else
+  st->print_cr("Open File Descriptors: unknown");
+#endif
+}
+
+void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t buflen) {
+#ifdef __APPLE__
+  pid_t my_pid;
+
+  // ensure the scratch buffer is big enough for at least one FD info struct
+  precond(buflen >= sizeof(struct proc_fdinfo));
+  kern_return_t kres = pid_for_task(mach_task_self(), &my_pid);
+  if (kres != KERN_SUCCESS) {
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+  size_t max_fds = buflen / sizeof(struct proc_fdinfo);
+  struct proc_fdinfo* fds = reinterpret_cast<struct proc_fdinfo*>(buf);
+
+  // fill our buffer with FD info, up to the available buffer size
+  int res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, max_fds * sizeof(struct proc_fdinfo));
+  if (res <= 0) {
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+
+  // print lower threshold if count exceeds buffer size
+  int nfiles = res / sizeof(struct proc_fdinfo);
+  if ((size_t)nfiles >= max_fds) {
+    st->print_cr("Open File Descriptors: > %zu", max_fds);
+    return;
+  }
+  st->print_cr("Open File Descriptors: %d", nfiles);
+#else
+  st->print_cr("Open File Descriptors: unknown");
+#endif
+}

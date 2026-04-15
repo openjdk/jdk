@@ -79,7 +79,10 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   ShenandoahOldHeuristics* _old_heuristics;
   ShenandoahHeuristics* _global_heuristics;
 
+  // duration of planned regulator sleep period, in ms
   uint _sleep;
+  double _most_recent_wake_time;
+  double _most_recent_period;
   double _last_sleep_adjust_time;
 };
 

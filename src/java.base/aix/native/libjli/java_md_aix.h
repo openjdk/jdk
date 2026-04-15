@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,7 @@
  * in the hotspot implementation which is not available at this place, though.
  */
 
-typedef struct {
-  const char *dli_fname; /* file path of loaded library */
-  void *dli_fbase;       /* unsupported */
-  const char *dli_sname; /* unsupported */
-  void *dli_saddr;       /* unsupported */
-} Dl_info;
+#include "dl_info.h"
 
 int dladdr(void *addr, Dl_info *info);
 

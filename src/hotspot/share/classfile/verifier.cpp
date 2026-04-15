@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,9 +619,6 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
-
-  // Either verifying both local and remote classes or just remote classes.
-  assert(BytecodeVerificationRemote, "Should not be here");
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
@@ -1610,12 +1607,12 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_if_acmpeq :
         case Bytecodes::_if_acmpne :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+            object_type(), CHECK_VERIFY(this));
           // fall through
         case Bytecodes::_ifnull :
         case Bytecodes::_ifnonnull :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+            object_type(), CHECK_VERIFY(this));
           stackmap_table.check_jump_target
             (&current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;

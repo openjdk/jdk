@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.cli.StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -32,23 +34,29 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jdk.jpackage.internal.util.RootedPath;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class MacApplicationBuilder {
 
-    MacApplicationBuilder(Application app) {
-        this.app = Objects.requireNonNull(app);
+    MacApplicationBuilder(ApplicationBuilder appBuilder) {
+        this.superBuilder = Objects.requireNonNull(appBuilder);
     }
 
     private MacApplicationBuilder(MacApplicationBuilder other) {
-        this(other.app);
+        this(other.superBuilder.copy());
         icon = other.icon;
         bundleName = other.bundleName;
         bundleIdentifier = other.bundleIdentifier;
@@ -93,18 +101,28 @@ final class MacApplicationBuilder {
         return this;
     }
 
+    Optional<ExternalApplication> externalApplication() {
+        return superBuilder.externalApplication();
+    }
+
+    Optional<ApplicationLaunchers> launchers() {
+        return superBuilder.launchers();
+    }
+
     MacApplication create() {
         if (externalInfoPlistFile != null) {
             return createCopyForExternalInfoPlistFile().create();
         }
+
+        var app = superBuilder.create();
 
         validateAppVersion(app);
         validateAppContentDirs(app);
 
         final var mixin = new MacApplicationMixin.Stub(
                 validatedIcon(),
-                validatedBundleName(),
-                validatedBundleIdentifier(),
+                validatedBundleName(app),
+                validatedBundleIdentifier(app),
                 validatedCategory(),
                 appStore,
                 createSigningConfig());
@@ -121,20 +139,6 @@ final class MacApplicationBuilder {
                 app.appStore(),
                 app.signingConfig());
         return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
-    }
-
-    static boolean isValidBundleIdentifier(String id) {
-        for (int i = 0; i < id.length(); i++) {
-            char a = id.charAt(i);
-            // We check for ASCII codes first which we accept. If check fails,
-            // check if it is acceptable extended ASCII or unicode character.
-            if ((a >= 'A' && a <= 'Z') || (a >= 'a' && a <= 'z')
-                    || (a >= '0' && a <= '9') || (a == '-' || a == '.')) {
-                continue;
-            }
-            return false;
-        }
-        return true;
     }
 
     private static void validateAppVersion(Application app) {
@@ -160,41 +164,58 @@ final class MacApplicationBuilder {
     }
 
     private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
-        try {
-            final var plistFile = AppImageInfoPListFile.loadFromInfoPList(externalInfoPlistFile);
+        final var builder = new MacApplicationBuilder(this);
 
-            final var builder = new MacApplicationBuilder(this);
+        builder.externalInfoPlistFile(null);
 
-            builder.externalInfoPlistFile(null);
+        Result<PListReader> plistResult = Result.of(() -> {
+            return new PListReader(Files.readAllBytes(externalInfoPlistFile));
+        }, Exception.class);
 
+        plistResult.value().ifPresent(plist -> {
             if (builder.bundleName == null) {
-                builder.bundleName(plistFile.bundleName());
+                plist.findValue("CFBundleName").ifPresent(builder::bundleName);
             }
 
             if (builder.bundleIdentifier == null) {
-                builder.bundleIdentifier(plistFile.bundleIdentifier());
+                plist.findValue("CFBundleIdentifier").ifPresent(builder::bundleIdentifier);
             }
 
             if (builder.category == null) {
-                builder.category(plistFile.category());
+                plist.findValue("LSApplicationCategoryType").ifPresent(builder::category);
             }
 
-            return builder;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        } catch (Exception ex) {
-            throw I18N.buildConfigException("message.app-image-requires-identifier")
-                    .advice("message.app-image-requires-identifier.advice")
-                    .cause(ex)
-                    .create();
-        }
+            if (builder.superBuilder.version().isEmpty()) {
+                plist.findValue("CFBundleVersion").ifPresent(builder.superBuilder::version);
+            }
+        });
+
+        plistResult.firstError().filter(_ -> {
+            // If we are building a runtime and the Info.plist file of the predefined
+            // runtime bundle is malformed or unavailable, ignore it.
+            return !superBuilder.isRuntime();
+        }).ifPresent(ex -> {
+            // We are building an application from the predefined app image and
+            // the Info.plist file in the predefined app image bundle is malformed or unavailable. Bail out.
+            switch (ex) {
+                case IOException ioex -> {
+                    throw new UncheckedIOException(ioex);
+                }
+                default -> {
+                    throw new JPackageException(
+                            I18N.format("error.invalid-app-image-plist-file", externalInfoPlistFile), ex);
+                }
+            }
+        });
+
+        return builder;
     }
 
     private Optional<AppImageSigningConfig> createSigningConfig() {
         return Optional.ofNullable(signingBuilder).map(AppImageSigningConfigBuilder::create);
     }
 
-    private String validatedBundleName() {
+    private String validatedBundleName(Application app) {
         final var value = Optional.ofNullable(bundleName).orElseGet(() -> {
             final var appName = app.name();
 // Commented out for backward compatibility
@@ -213,9 +234,9 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedBundleIdentifier() {
-        final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
-            return app.mainLauncher()
+    private String validatedBundleIdentifier(Application app) {
+        return Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
+            var derivedValue = app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
                     .map(li -> {
                         final var packageName = li.packageName();
@@ -226,15 +247,23 @@ final class MacApplicationBuilder {
                         }
                     })
                     .orElseGet(app::name);
+
+            if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                // Derived bundle identifier is invalid. Try to adjust it by dropping all invalid characters.
+                derivedValue = derivedValue.codePoints()
+                        .mapToObj(Character::toString)
+                        .filter(IS_VALID_MAC_BUNDLE_IDENTIFIER)
+                        .collect(Collectors.joining(""));
+                if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-bundle-identifier"),
+                            I18N.format("error.invalid-derived-bundle-identifier.advice"));
+                }
+            }
+
+            Log.verbose(I18N.format("message.derived-bundle-identifier", derivedValue));
+            return derivedValue;
         });
-
-        if (!isValidBundleIdentifier(value)) {
-            throw I18N.buildConfigException("message.invalid-identifier", value)
-                    .advice("message.invalid-identifier.advice")
-                    .create();
-        }
-
-        return value;
     }
 
     private String validatedCategory() {
@@ -256,7 +285,7 @@ final class MacApplicationBuilder {
     private Path externalInfoPlistFile;
     private AppImageSigningConfigBuilder signingBuilder;
 
-    private final Application app;
+    private final ApplicationBuilder superBuilder;
 
     private static final Defaults DEFAULTS = new Defaults("utilities");
 

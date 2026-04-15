@@ -23,28 +23,38 @@
 
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
-import compiler.lib.ir_framework.test.network.MessageTag;
-
 /**
  * Class to collect all Java messages sent from the Test VM to the Driver VM.
  */
 public class JavaMessages {
-    private final String output;
-    private final boolean receivedStdOut;
+    private final StdoutMessages stdoutMessages;
+    private final ExecutedTests executedTests;
+    private final MethodTimes methodTimes;
+    private final ApplicableIRRules applicableIrRules;
+    private final VMInfo vmInfo;
 
-    public JavaMessages(String output, boolean receivedStdOut) {
-        this.output = output;
-        this.receivedStdOut = receivedStdOut;
+    JavaMessages(StdoutMessages stdoutMessages, ExecutedTests executedTests, MethodTimes methodTimes,
+                 ApplicableIRRules applicableIrRules, VMInfo vmInfo) {
+        this.stdoutMessages = stdoutMessages;
+        this.executedTests = executedTests;
+        this.methodTimes = methodTimes;
+        this.applicableIrRules = applicableIrRules;
+        this.vmInfo = vmInfo;
     }
 
-    public String output() {
-        return output;
+    public VMInfo vmInfo() {
+        return vmInfo;
     }
 
-    /**
-     * Return whether Test VM sent messages to be put on stdout (starting with {@link MessageTag#STDOUT}).
-     */
-    public boolean hasStdOut() {
-        return receivedStdOut;
+    public ApplicableIRRules applicableIRRules() {
+        return applicableIrRules;
+    }
+
+    public void print() {
+        stdoutMessages.print();
+        methodTimes.print();
+        executedTests.print();
+        vmInfo.print();
+        applicableIrRules.print();
     }
 }

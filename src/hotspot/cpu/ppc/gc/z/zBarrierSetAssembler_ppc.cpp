@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,6 +625,19 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
   __ bind(done);
 
   __ block_comment("} try_resolve_jobject_in_native (zgc)");
+}
+
+void ZBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadMask);
+  __ andi_(R0, obj, barrier_Relocation::unpatched);
+  __ bne(CR0, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ srdi(obj, obj, ZPointerLoadShift);
 }
 
 #undef __

@@ -1286,7 +1286,7 @@ public:
   }
 
   bool is_good(oop* p) {
-    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass(), -1) && oopDesc::is_oop_or_null(*p));
+    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass_without_asserts(), -1) && oopDesc::is_oop_or_null(*p));
   }
   void describe(FrameValues& values, int frame_no) {
     for (int i = 0; i < _oops->length(); i++) {

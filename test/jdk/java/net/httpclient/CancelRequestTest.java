@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635
+ * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635 8377181
  * @summary Tests cancelling the request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @key randomness
@@ -31,7 +31,7 @@
  *        ReferenceTracker CancelRequestTest
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.enableAllMethodRetry=true
- *                     CancelRequestTest
+ *                     ${test.main.class}
  */
 // *                     -Dseed=3582896013206826205L
 // *                     -Dseed=5784221742235559231L

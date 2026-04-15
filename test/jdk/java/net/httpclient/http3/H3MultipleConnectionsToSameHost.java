@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=90
  *                     -Djdk.httpclient.quic.maxPtoBackoff=10
@@ -41,7 +44,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  */
 /*
@@ -52,7 +55,10 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -65,7 +71,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  *          on windows 10 and windows 2016 - but with -XX:-VMContinuations
  */
@@ -75,10 +81,10 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -89,7 +95,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
@@ -100,10 +106,10 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -114,7 +120,7 @@
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
  *                     -Djdk.internal.httpclient.quic.congestionController=reno
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with Reno congestion controller
@@ -161,13 +167,14 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
@@ -223,11 +230,11 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        new H3MultipleConnectionsToSameHost().test();
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             long prestart = System.nanoTime();
             initialize();
@@ -244,7 +251,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
-            Assert.assertEquals(resp.statusCode(), 200);
+            Assertions.assertEquals(200, resp.statusCode());
             long elapsed = System.nanoTime() - start;
             System.out.println("First request took: " + elapsed + " nanos (" + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms)");
             final int max = property("simpleget.requests", 50);
@@ -298,7 +305,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
 
                 }
             }
-            list.forEach((cf) -> Assert.assertEquals(cf.join().statusCode(), 200));
+            list.forEach((cf) -> Assertions.assertEquals(200, cf.join().statusCode()));
             client.close();
         } catch (Throwable tt) {
             System.err.println("tt caught");

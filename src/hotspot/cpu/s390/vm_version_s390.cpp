@@ -289,10 +289,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {
     if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
       warning("UseSecondarySupersTable requires z196 or later.");

@@ -370,6 +370,32 @@ static void test_binary_instance_correctness_exhaustive(Operation op, Inference 
   }
 }
 
+template <class InputType, class U = std::remove_const_t<decltype(InputType::_ulo)>>
+static void populate_sample_values(U* samples, const size_t sample_count, const InputType &input) {
+  constexpr size_t max_tries = 100;
+  constexpr size_t start_random_idx = 4;
+
+  assert(sample_count >= 4, "need at least 4 slots for boundary values");
+  samples[0] = U(input._lo);
+  samples[1] = U(input._hi);
+  samples[2] = input._ulo;
+  samples[3] = input._uhi;
+
+  // Initialize remaining slots to a known-contained value in case the random
+  // fill below doesn't find enough values.
+  for (size_t i = start_random_idx; i < sample_count; i++) {
+    samples[i] = input._ulo;
+  }
+
+  for (size_t tries = 0, idx = start_random_idx; tries < max_tries && idx < sample_count; tries++) {
+    U n = uniform_random<U>();
+    if (input.contains(n)) {
+      samples[idx] = n;
+      idx++;
+    }
+  }
+}
+
 // Check the correctness, that is, if v1 is an element of input1, v2 is an element of input2, then
 // op(v1, v2) must be an element of infer(input1, input2). This version does the check randomly on
 // a number of elements in input1 and input2.
@@ -379,22 +405,11 @@ static void test_binary_instance_correctness_samples(Operation op, Inference inf
   auto result = infer(input1, input2);
 
   constexpr size_t sample_count = 6;
-  U input1_samples[sample_count] {U(input1._lo), U(input1._hi), input1._ulo, input1._uhi, input1._ulo, input1._ulo};
-  U input2_samples[sample_count] {U(input2._lo), U(input2._hi), input2._ulo, input2._uhi, input2._ulo, input2._ulo};
+  U input1_samples[sample_count];
+  populate_sample_values(input1_samples, sample_count, input1);
 
-  auto random_sample = [](U* samples, const InputType& input) {
-    constexpr size_t max_tries = 100;
-    constexpr size_t start_random_idx = 4;
-    for (size_t tries = 0, idx = start_random_idx; tries < max_tries && idx < sample_count; tries++) {
-      U n = uniform_random<U>();
-      if (input.contains(n)) {
-        samples[idx] = n;
-        idx++;
-      }
-    }
-  };
-  random_sample(input1_samples, input1);
-  random_sample(input2_samples, input2);
+  U input2_samples[sample_count];
+  populate_sample_values(input2_samples, sample_count, input2);
 
   for (size_t i = 0; i < sample_count; i++) {
     for (size_t j = 0; j < sample_count; j++) {
@@ -428,6 +443,22 @@ static void test_binary_instance_monotonicity_exhaustive(Inference infer, const 
   }
 }
 
+template <class InputType>
+static InputType compute_random_superset(const InputType& input) {
+    using S = std::remove_const_t<decltype(InputType::_lo)>;
+    using U = std::remove_const_t<decltype(InputType::_ulo)>;
+
+    S lo = MIN2(input->_lo, S(uniform_random<U>()));
+    S hi = MAX2(input->_hi, S(uniform_random<U>()));
+    U ulo = MIN2(input->_ulo, uniform_random<U>());
+    U uhi = MAX2(input->_uhi, uniform_random<U>());
+    U zeros = input->_bits._zeros & uniform_random<U>();
+    U ones = input->_bits._ones & uniform_random<U>();
+    InputType super = InputType::make(TypeIntPrototype<S, U>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, 0);
+    assert(super.contains(input), "impossible");
+    return super;
+}
+
 // Check the monotonicity, that is, if input1 is a subset of super1, input2 is a subset of super2,
 // then infer(input1, input2) must be a subset of infer(super1, super2). This version does the
 // check randomly on a number of supersets of input1 and input2.
@@ -443,20 +474,8 @@ static void test_binary_instance_monotonicity_samples(Inference infer, const Inp
   ASSERT_TRUE(infer(input1, universe).contains(result));
   ASSERT_TRUE(infer(universe, universe).contains(result));
 
-  auto random_superset = [](const InputType& input) {
-    S lo = MIN2(input->_lo, S(uniform_random<U>()));
-    S hi = MAX2(input->_hi, S(uniform_random<U>()));
-    U ulo = MIN2(input->_ulo, uniform_random<U>());
-    U uhi = MAX2(input->_uhi, uniform_random<U>());
-    U zeros = input->_bits._zeros & uniform_random<U>();
-    U ones = input->_bits._ones & uniform_random<U>();
-    InputType super = InputType::make(TypeIntPrototype<S, U>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, 0);
-    assert(super.contains(input), "impossible");
-    return super;
-  };
-
-  InputType super1 = random_superset(input1);
-  InputType super2 = random_superset(input2);
+  InputType super1 = compute_random_superset<InputType>(input1);
+  InputType super2 = compute_random_superset<InputType>(input2);
   ASSERT_TRUE(infer(super1, input2).contains(result));
   ASSERT_TRUE(infer(input1, super2).contains(result));
   ASSERT_TRUE(infer(super1, super2).contains(result));
@@ -480,15 +499,10 @@ static void test_binary_exhaustive(Operation op, Inference infer) {
   }
 }
 
-// Verify the correctness and monotonicity of an inference function by randomly sampling instances
-// of InputType
-template <class InputType, class Operation, class Inference>
-static void test_binary_random(Operation op, Inference infer) {
+template <class InputType>
+static void populate_sample_types(InputType* samples, const size_t sample_count) {
   using S = std::remove_const_t<decltype(InputType::_lo)>;
   using U = std::remove_const_t<decltype(InputType::_ulo)>;
-
-  constexpr size_t sample_count = 100;
-  InputType samples[sample_count];
 
   // Fill with {0}
   for (size_t i = 0; i < sample_count; i++) {
@@ -549,6 +563,18 @@ static void test_binary_random(Operation op, Inference infer) {
                                        canonicalized_t._data._bits};
     idx++;
   }
+}
+
+// Verify the correctness and monotonicity of an inference function by randomly sampling instances
+// of InputType
+template <class InputType, class Operation, class Inference>
+static void test_binary_random(Operation op, Inference infer) {
+  using S = std::remove_const_t<decltype(InputType::_lo)>;
+  using U = std::remove_const_t<decltype(InputType::_ulo)>;
+
+  constexpr size_t sample_count = 100;
+  InputType samples[sample_count];
+  populate_sample_types(samples, sample_count);
 
   for (size_t i = 0; i < sample_count; i++) {
     for (size_t j = 0; j < sample_count; j++) {
@@ -568,6 +594,107 @@ static void test_binary() {
   test_binary_random<TypeIntMirror<intn_t<6>, uintn_t<6>>>(Operation<uintn_t<6>>(), Inference<TypeIntMirror<intn_t<6>, uintn_t<6>>>());
   test_binary_random<TypeIntMirror<jint, juint>>(Operation<juint>(), Inference<TypeIntMirror<jint, juint>>());
   test_binary_random<TypeIntMirror<jlong, julong>>(Operation<julong>(), Inference<TypeIntMirror<jlong, julong>>());
+}
+
+template <class U>
+static U lshift_op(U v, int shift) {
+  return v << shift;
+}
+
+// Test correctness: for all values v in input, (v << shift) must be in the result
+template <class InputType>
+static void test_lshift_correctness(const InputType& input, int shift) {
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+  for (juint v = 0; v <= juint(std::numeric_limits<U>::max()); v++) {
+    if (input.contains(U(v))) {
+      U r = lshift_op(U(v), shift);
+      ASSERT_TRUE(result.contains(r));
+    }
+  }
+}
+
+// Test correctness for jint/jlong types by sampling values from the input range.
+template <class InputType>
+static void test_lshift_correctness_samples(const InputType& input, int shift) {
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+
+  constexpr size_t sample_count = 6;
+  U samples[sample_count];
+  populate_sample_values(samples, sample_count, input);
+
+  for (size_t i = 0; i < sample_count; i++) {
+    ASSERT_TRUE(input.contains(samples[i]));
+
+    U r = lshift_op(samples[i], shift);
+    ASSERT_TRUE(result.contains(r));
+  }
+}
+
+// Test monotonicity: if input is a subset of super, then result is a subset of
+// infer_lshift(super, shift)
+template <class InputType>
+static void test_lshift_monotonicity(const InputType& input, int shift) {
+  auto result = RangeInference::infer_lshift(input, shift);
+  for (const InputType& super : all_instances<InputType>()) {
+    if (super.contains(input)) {
+      ASSERT_TRUE(RangeInference::infer_lshift(super, shift).contains(result));
+    }
+  }
+}
+
+// Test monotonicity for jint/jlong types by constructing random supersets.
+template <class InputType>
+static void test_lshift_monotonicity_samples(const InputType& input, int shift) {
+  using S = std::remove_const_t<decltype(input->_lo)>;
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+
+  // The universe is a superset of all other sets
+  InputType universe = InputType{std::numeric_limits<S>::min(), std::numeric_limits<S>::max(), U(0), U(-1), {U(0), U(0)}};
+  ASSERT_TRUE(RangeInference::infer_lshift(universe, shift).contains(result));
+
+  InputType super = compute_random_superset<InputType>(input);
+  ASSERT_TRUE(RangeInference::infer_lshift(super, shift).contains(result));
+}
+
+template <class InputType>
+static void test_lshift_for_type() {
+  using U = std::remove_const_t<decltype(InputType::_ulo)>;
+  constexpr int type_bits = HotSpotNumerics::type_width<U>();
+  for (const InputType& input : all_instances<InputType>()) {
+    for (int shift = 0; shift < type_bits; shift++) {
+      test_lshift_correctness(input, shift);
+      test_lshift_monotonicity(input, shift);
+    }
+  }
+}
+
+// Sample-based test for jint/jlong types
+template <class InputType>
+static void test_lshift_random() {
+  using S = std::remove_const_t<decltype(InputType::_lo)>;
+  using U = std::remove_const_t<decltype(InputType::_ulo)>;
+
+  constexpr size_t sample_count = 100;
+  InputType samples[sample_count];
+  populate_sample_types(samples, sample_count);
+
+  for (size_t i = 0; i < sample_count; i++) {
+    for (int shift = 0; shift < HotSpotNumerics::type_width<U>(); shift++) {
+      test_lshift_correctness_samples(samples[i], shift);
+      test_lshift_monotonicity_samples(samples[i], shift);
+    }
+  }
+}
+
+static void test_lshift() {
+  test_lshift_for_type<TypeIntMirror<intn_t<1>, uintn_t<1>>>();
+  test_lshift_for_type<TypeIntMirror<intn_t<2>, uintn_t<2>>>();
+  test_lshift_for_type<TypeIntMirror<intn_t<3>, uintn_t<3>>>();
+  test_lshift_random<TypeIntMirror<jint, juint>>();
+  test_lshift_random<TypeIntMirror<jlong, julong>>();
 }
 
 template <class U>
@@ -622,4 +749,5 @@ TEST(opto, range_inference) {
   test_binary<OpAnd, InferAnd>();
   test_binary<OpOr, InferOr>();
   test_binary<OpXor, InferXor>();
+  test_lshift();
 }

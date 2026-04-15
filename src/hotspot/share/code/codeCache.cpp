@@ -201,6 +201,7 @@ void CodeCache::initialize_heaps() {
   CodeHeapInfo non_nmethod = {NonNMethodCodeHeapSize, FLAG_IS_CMDLINE(NonNMethodCodeHeapSize), true};
   CodeHeapInfo profiled = {ProfiledCodeHeapSize, FLAG_IS_CMDLINE(ProfiledCodeHeapSize), true};
   CodeHeapInfo non_profiled = {NonProfiledCodeHeapSize, FLAG_IS_CMDLINE(NonProfiledCodeHeapSize), true};
+  CodeHeapInfo hot = {HotCodeHeapSize, FLAG_IS_CMDLINE(HotCodeHeapSize), true};
 
   const bool cache_size_set   = FLAG_IS_CMDLINE(ReservedCodeCacheSize);
   const size_t ps             = page_size(false, 8);
@@ -217,6 +218,12 @@ void CodeCache::initialize_heaps() {
     profiled.size = 0;
     profiled.set = true;
     profiled.enabled = false;
+  }
+
+  if (!heap_available(CodeBlobType::MethodHot)) {
+    hot.size = 0;
+    hot.set = true;
+    hot.enabled = false;
   }
 
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
@@ -238,14 +245,36 @@ void CodeCache::initialize_heaps() {
     set_size_of_unset_code_heap(&non_profiled, cache_size, non_nmethod.size + profiled.size, min_size);
   }
 
-  if (!profiled.set && non_profiled.set) {
-    set_size_of_unset_code_heap(&profiled, cache_size, non_nmethod.size + non_profiled.size, min_size);
+  if (!profiled.set && non_profiled.set && hot.set) {
+    set_size_of_unset_code_heap(&profiled, cache_size, non_nmethod.size + non_profiled.size + hot.size, min_size);
+  }
+
+  if (hot.enabled) {
+    if (!hot.set) {
+      assert(hot.size == 0, "must be calculated during heaps initialization");
+      // An application usually has ~20% hot code which is mostly non-profiled code.
+      // We set the hot code heap size to 20% of the non-profiled code heap.
+      hot.size = MAX2(non_profiled.size / 5, min_size);
+
+      if (non_profiled.set) {
+        err_msg msg("Must manually set HotCodeHeapSize when NonProfiledCodeHeapSize is set");
+        vm_exit_during_initialization("Invalid code heap sizes", msg);
+      }
+
+      non_profiled.size -= hot.size;
+    }
+
+    if (hot.size > non_profiled.size) {
+      err_msg msg("Hot (%zuK) exceeds NonProfiled (%zuK).",
+              hot.size / K, non_profiled.size / K);
+      vm_exit_during_initialization("Invalid code heap sizes", msg);
+    }
   }
 
   // Compatibility.
   size_t non_nmethod_min_size = min_cache_size + compiler_buffer_size;
-  if (!non_nmethod.set && profiled.set && non_profiled.set) {
-    set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size, non_nmethod_min_size);
+  if (!non_nmethod.set && profiled.set && non_profiled.set && hot.set) {
+    set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size + hot.size, non_nmethod_min_size);
   }
 
   // Note: if large page support is enabled, min_size is at least the large
@@ -253,8 +282,9 @@ void CodeCache::initialize_heaps() {
   non_nmethod.size = align_up(non_nmethod.size, min_size);
   profiled.size = align_up(profiled.size, min_size);
   non_profiled.size = align_up(non_profiled.size, min_size);
+  hot.size = align_up(hot.size, min_size);
 
-  size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+  size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size + hot.size;
   if (!cache_size_set) {
     // If ReservedCodeCacheSize is explicitly set and exceeds CODE_CACHE_SIZE_LIMIT,
     // it is rejected by flag validation elsewhere. Here we only handle the case
@@ -262,15 +292,15 @@ void CodeCache::initialize_heaps() {
     // sizes (after alignment) exceed the platform limit.
     if (aligned_total > CODE_CACHE_SIZE_LIMIT) {
       err_msg message("ReservedCodeCacheSize (%zuK), Max (%zuK)."
-                      "Segments: NonNMethod (%zuK), NonProfiled (%zuK), Profiled (%zuK).",
+                      "Segments: NonNMethod (%zuK), NonProfiled (%zuK), Profiled (%zuK), Hot (%zuK).",
                       aligned_total/K, CODE_CACHE_SIZE_LIMIT/K,
-                      non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+                      non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K);
       vm_exit_during_initialization("Code cache size exceeds platform limit", message);
     }
     if (aligned_total != cache_size) {
       log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
-                          "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
-                          cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, aligned_total/K);
+                          "%zuK NonProfiled %zuK Profiled %zuK Hot %zuK = %zuK",
+                          cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K, aligned_total/K);
       // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
       cache_size = aligned_total;
     }
@@ -295,19 +325,23 @@ void CodeCache::initialize_heaps() {
         }
         if (profiled.enabled && !profiled.set && profiled.size > min_size) {
           profiled.size -= min_size;
+          if (--delta == 0) break;
+        }
+        if (hot.enabled && !hot.set && hot.size > min_size) {
+          hot.size -= min_size;
           delta--;
         }
         if (delta == start_delta) {
           break;
         }
       }
-      aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+      aligned_total = non_nmethod.size + profiled.size + non_profiled.size + hot.size;
     }
   }
 
   log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
-                       " NonProfiled %zuK Profiled %zuK",
-                       cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+                       " NonProfiled %zuK Profiled %zuK Hot %zuK",
+                       cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, hot.size/K);
 
   // Validation
   // Check minimal required sizes
@@ -318,6 +352,9 @@ void CodeCache::initialize_heaps() {
   if (non_profiled.enabled) { // non_profiled.enabled is always ON for segmented code heap, leave it checked for clarity
     check_min_size("non-profiled code heap", non_profiled.size, min_size);
   }
+  if (hot.enabled) {
+    check_min_size("hot code heap", hot.size, min_size);
+  }
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
   if (aligned_total != cache_size && cache_size_set) {
@@ -327,6 +364,9 @@ void CodeCache::initialize_heaps() {
     }
     if (non_profiled.enabled) {
       message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
+    }
+    if (hot.enabled) {
+      message.append(" + HotCodeHeapSize (%zuK)", hot.size/K);
     }
     message.append(" = %zuK", aligned_total/K);
     message.append((aligned_total > cache_size) ? " is greater than " : " is less than ");
@@ -348,6 +388,7 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
+  FLAG_SET_ERGO(HotCodeHeapSize, hot.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
   ReservedSpace rs = reserve_heap_memory(cache_size, ps);
@@ -367,6 +408,13 @@ void CodeCache::initialize_heaps() {
   offset += non_nmethod.size;
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
+
+  if (hot.enabled) {
+    ReservedSpace hot_space = rs.partition(offset, hot.size);
+    offset += hot.size;
+    // Nmethods known to be always hot.
+    add_heap(hot_space, "CodeHeap 'hot nmethods'", CodeBlobType::MethodHot);
+  }
 
   if (non_profiled.enabled) {
     ReservedSpace non_profiled_space  = rs.partition(offset, non_profiled.size);
@@ -406,16 +454,25 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     // Interpreter only: we don't need any method code heaps
     return (code_blob_type == CodeBlobType::NonNMethod);
   } else if (CompilerConfig::is_c1_profiling()) {
-    // Tiered compilation: use all code heaps
+    // Tiered compilation: use all code heaps including
+    // the hot code heap when it is present.
+
+    if (COMPILER2_PRESENT(!HotCodeHeap &&) (code_blob_type == CodeBlobType::MethodHot)) {
+      return false;
+    }
+
     return (code_blob_type < CodeBlobType::All);
   } else {
     // No TieredCompilation: we only need the non-nmethod and non-profiled code heap
+    // and the hot code heap if it is requested.
     return (code_blob_type == CodeBlobType::NonNMethod) ||
-           (code_blob_type == CodeBlobType::MethodNonProfiled);
+           (code_blob_type == CodeBlobType::MethodNonProfiled)
+           COMPILER2_PRESENT(|| ((code_blob_type == CodeBlobType::MethodHot) && HotCodeHeap));
   }
 }
 
-const char* CodeCache::get_code_heap_flag_name(CodeBlobType code_blob_type) {
+// Returns the name of the VM option to set the size of the corresponding CodeHeap
+static const char* get_code_heap_flag_name(CodeBlobType code_blob_type) {
   switch(code_blob_type) {
   case CodeBlobType::NonNMethod:
     return "NonNMethodCodeHeapSize";
@@ -425,6 +482,9 @@ const char* CodeCache::get_code_heap_flag_name(CodeBlobType code_blob_type) {
     break;
   case CodeBlobType::MethodProfiled:
     return "ProfiledCodeHeapSize";
+    break;
+  case CodeBlobType::MethodHot:
+    return "HotCodeHeapSize";
     break;
   default:
     ShouldNotReachHere();
@@ -542,7 +602,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 
   // Get CodeHeap for the given CodeBlobType
   CodeHeap* heap = get_code_heap(code_blob_type);
-  assert(heap != nullptr, "heap is null");
+  assert(heap != nullptr, "No heap for given code_blob_type (%d), heap is null", (int)code_blob_type);
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size);
@@ -569,6 +629,9 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
           if (type == orig_code_blob_type) {
             type = CodeBlobType::MethodNonProfiled;
           }
+          break;
+        case CodeBlobType::MethodHot:
+          type = CodeBlobType::MethodNonProfiled;
           break;
         default:
           break;

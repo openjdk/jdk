@@ -627,6 +627,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
   RegeneratedClasses::record_regenerated_objects();
+  DumpRegion::report_gaps(&_alloc_stats);
 }
 
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
@@ -639,33 +640,10 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes(); // word-aligned
-  size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
+  int bytes = src_info->size_in_bytes();
+  char* dest = dump_region->allocate_metaspace_obj(bytes, src, src_info->type(),
+                                                   src_info->read_only(), &_alloc_stats);
 
-  char* oldtop = dump_region->top();
-  if (src_info->type() == MetaspaceClosureType::ClassType) {
-    // Allocate space for a pointer directly in front of the future InstanceKlass, so
-    // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
-    // without building another hashtable. See RunTimeClassInfo::get_for()
-    // in systemDictionaryShared.cpp.
-    Klass* klass = (Klass*)src;
-    if (klass->is_instance_klass()) {
-      SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
-      dump_region->allocate(sizeof(address));
-    }
-#ifdef _LP64
-    // More strict alignments needed for UseCompressedClassPointers
-    if (UseCompressedClassPointers) {
-      alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
-    }
-#endif
-  } else if (src_info->type() == MetaspaceClosureType::SymbolType) {
-    // Symbols may be allocated by using AllocateHeap, so their sizes
-    // may be less than size_in_bytes() indicates.
-    bytes = ((Symbol*)src)->byte_size();
-  }
-
-  char* dest = dump_region->allocate(bytes, alignment);
   memcpy(dest, src, bytes);
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
@@ -692,11 +670,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
-
-  char* newtop = dump_region->top();
-  _alloc_stats.record(src_info->type(), int(newtop - oldtop), src_info->read_only());
-
-  DEBUG_ONLY(_alloc_stats.verify((int)dump_region->used(), src_info->read_only()));
 }
 
 // This is used by code that hand-assembles data structures, such as the LambdaProxyClassKey, that are
@@ -1119,20 +1092,17 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // Standard Mode:
+  //    We use 32 bits for narrowKlass, which should cover a full 4G Klass range. Shift can be 0.
   // CompactObjectHeader Mode:
   //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
   //    Klass encoding range.
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {

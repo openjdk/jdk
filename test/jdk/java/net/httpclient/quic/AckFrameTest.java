@@ -46,7 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @test
  * @summary tests the logic to build an AckFrame
  * @library /test/lib
- * @run junit AckFrameTest
+ * @run junit ${test.main.class}
  */
 public class AckFrameTest {
 

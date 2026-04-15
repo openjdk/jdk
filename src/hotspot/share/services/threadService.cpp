@@ -1252,7 +1252,7 @@ private:
             // The first stage of async deflation does not affect any field
             // used by this comparison so the ObjectMonitor* is usable here.
             if (mark.has_monitor()) {
-              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor

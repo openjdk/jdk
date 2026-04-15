@@ -272,7 +272,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
 
 HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
   // Try young-gen first.
-  HeapWord* result = young_gen()->allocate(size);
+  HeapWord* result = young_gen()->cas_allocate(size);
   if (result != nullptr) {
     return result;
   }
@@ -932,7 +932,7 @@ void ParallelScavengeHeap::resize_after_full_gc() {
 }
 
 HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
-  return _old_gen->allocate(size);
+  return _old_gen->cas_allocate_with_expansion(size);
 }
 
 void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {

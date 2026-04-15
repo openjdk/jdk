@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -823,9 +823,9 @@ public class JavaCompiler {
                 c, () -> diagFactory.fragment(Fragments.UserSelectedCompletionFailure), dcfh);
         }
         JavaFileObject filename = c.classfile;
-        JavaFileObject prev = log.useSource(filename);
 
         if (tree == null) {
+            JavaFileObject prev = log.useSource(filename);
             try {
                 tree = parse(filename, filename.getCharContent(false));
             } catch (IOException e) {

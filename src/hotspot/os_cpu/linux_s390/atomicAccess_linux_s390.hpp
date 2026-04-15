@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,10 +25,6 @@
 
 #ifndef OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
 #define OS_CPU_LINUX_S390_ATOMICACCESS_LINUX_S390_HPP
-
-#include "runtime/atomicAccess.hpp"
-#include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 
 // Note that the compare-and-swap instructions on System z perform
 // a serialization function before the storage operand is fetched

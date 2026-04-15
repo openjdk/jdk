@@ -26,7 +26,7 @@
  * @test
  * @summary Check that the verbose message of ICCE is printed correctly.
  *          The test forces errors in vtable stubs and interpreter.
- * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & (!vm.graal.enabled | vm.opt.TieredCompilation == true) & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
+ * @requires !(os.arch=="arm") & vm.flavor == "server" & vm.compMode=="Xmixed" & (!vm.graal.enabled | vm.opt.TieredCompilation == true) & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

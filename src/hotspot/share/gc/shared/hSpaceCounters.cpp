@@ -81,14 +81,3 @@ void HSpaceCounters::update_all(size_t capacity, size_t used) {
   update_capacity(capacity);
   update_used(used);
 }
-
-DEBUG_ONLY(
-  // for security reasons, we do not allow arbitrary reads from
-  // the counters as they may live in shared memory.
-  jlong HSpaceCounters::used() {
-    return _used->get_value();
-  }
-  jlong HSpaceCounters::capacity() {
-    return _used->get_value();
-  }
-)

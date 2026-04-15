@@ -148,8 +148,9 @@ void G1Arguments::initialize_card_set_configuration() {
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(G1HeapRegion::LogCardsPerRegion);
+    const JVMTypedFlagLimit<uint>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1RemSetArrayOfCardsEntries))->cast<uint>();
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
+                                                    MIN2(G1RemSetArrayOfCardsEntriesBase << region_size_log_mb, limit->max())));
   }
 
   // Howl card set container globals.

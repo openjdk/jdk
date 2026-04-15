@@ -93,8 +93,11 @@ public final class MacSignVerify {
         final var exec = Executor.of(
                 "/usr/bin/codesign",
                 "-d",
-                "--entitlements", "-",
-                "--xml", path.toString()).saveOutput().dumpOutput().binaryOutput();
+                // `--entitlements :-` will print entitlements as XML plist in the stdout and "Executable=..." message to the stderr.
+                // Prefer this option combination to `--entitlements - --xml` as
+                // the latter doesn't work on older macOS releases (Proved unsupported on Catalina 10.15.7).
+                "--entitlements", ":-",
+                path.toString()).saveOutput().dumpOutput().binaryOutput();
         final var result = exec.execute();
         var xml = result.byteStdout();
         if (xml.length == 0) {

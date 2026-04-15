@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ static void test_update(G1IHOPControl* ctrl,
   test_update_allocation_tracker(alloc_tracker, alloc_amount);
   for (int i = 0; i < 100; i++) {
     ctrl->update_allocation_info(alloc_time, young_size);
-    ctrl->update_marking_length(mark_time);
+    ctrl->add_marking_start_to_mixed_length(mark_time);
   }
 }
 
@@ -57,7 +57,7 @@ static void test_update_humongous(G1IHOPControl* ctrl,
   alloc_tracker->reset_after_gc(humongous_bytes_after_last_gc);
   for (int i = 0; i < 100; i++) {
     ctrl->update_allocation_info(alloc_time, young_size);
-    ctrl->update_marking_length(mark_time);
+    ctrl->add_marking_start_to_mixed_length(mark_time);
   }
 }
 
@@ -74,26 +74,26 @@ TEST_VM(G1IHOPControl, static_simple) {
   G1IHOPControl ctrl(initial_ihop, &alloc_tracker, is_adaptive, nullptr, 0, 0);
   ctrl.update_target_occupancy(100);
 
-  size_t threshold = ctrl.get_conc_mark_start_threshold();
+  size_t threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   EXPECT_EQ(initial_ihop, threshold);
 
   test_update_allocation_tracker(&alloc_tracker, 100);
   ctrl.update_allocation_info(100.0, 100);
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   EXPECT_EQ(initial_ihop, threshold);
 
-  ctrl.update_marking_length(1000.0);
-  threshold = ctrl.get_conc_mark_start_threshold();
+  ctrl.add_marking_start_to_mixed_length(1000.0);
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   EXPECT_EQ(initial_ihop, threshold);
 
   // Whatever we pass, the IHOP value must stay the same.
   test_update(&ctrl, &alloc_tracker, 2, 10, 10, 3);
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_EQ(initial_ihop, threshold);
 
   test_update(&ctrl, &alloc_tracker, 12, 10, 10, 3);
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_EQ(initial_ihop, threshold);
 }
@@ -126,23 +126,23 @@ TEST_VM(G1IHOPControl, adaptive_simple) {
           - (young_size + alloc_amount1 / alloc_time1 * marking_time1);
 
   size_t threshold;
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_EQ(initial_threshold, threshold);
 
   for (size_t i = 0; i < G1AdaptiveIHOPNumInitialSamples - 1; i++) {
     test_update_allocation_tracker(&alloc_tracker, alloc_amount1);
     ctrl.update_allocation_info(alloc_time1, young_size);
-    ctrl.update_marking_length(marking_time1);
+    ctrl.add_marking_start_to_mixed_length(marking_time1);
     // Not enough data yet.
-    threshold = ctrl.get_conc_mark_start_threshold();
+    threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
     ASSERT_EQ(initial_threshold, threshold) << "on step " << i;
   }
 
   test_update(&ctrl, &alloc_tracker, alloc_time1, alloc_amount1, young_size, marking_time1);
 
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_EQ(settled_ihop1, threshold);
 
@@ -155,7 +155,7 @@ TEST_VM(G1IHOPControl, adaptive_simple) {
 
   test_update(&ctrl, &alloc_tracker, alloc_time2, alloc_amount2, young_size, marking_time2);
 
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_LT(threshold, settled_ihop1);
 
@@ -166,14 +166,14 @@ TEST_VM(G1IHOPControl, adaptive_simple) {
   const size_t settled_ihop3 = 0;
 
   test_update(&ctrl, &alloc_tracker, alloc_time3, alloc_amount3, young_size, marking_time3);
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_EQ(settled_ihop3, threshold);
 
   // And back to some arbitrary value.
   test_update(&ctrl, &alloc_tracker, alloc_time2, alloc_amount2, young_size, marking_time2);
 
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 
   EXPECT_GT(threshold, settled_ihop3);
 }
@@ -205,7 +205,7 @@ TEST_VM(G1IHOPControl, adaptive_humongous) {
                         humongous_bytes_after_last_gc, young_size, marking_time);
   // Test threshold
   size_t threshold;
-  threshold = ctrl.get_conc_mark_start_threshold();
+  threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   // Adjusted allocated bytes:
   // Total bytes: humongous_bytes
   // Freed hum bytes: humongous_bytes - humongous_bytes_after_last_gc
@@ -219,7 +219,7 @@ TEST_VM(G1IHOPControl, adaptive_humongous) {
   ctrl2.update_target_occupancy(target_size);
   test_update_humongous(&ctrl2, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);
-  threshold = ctrl2.get_conc_mark_start_threshold();
+  threshold = ctrl2.old_gen_threshold_for_conc_mark_start();
   // Adjusted allocated bytes:
   // Total bytes: old_bytes + humongous_bytes
   // Freed hum bytes: humongous_bytes - (humongous_bytes_after_gc - humongous_bytes_after_last_gc)
@@ -235,7 +235,7 @@ TEST_VM(G1IHOPControl, adaptive_humongous) {
   ctrl3.update_target_occupancy(target_size);
   test_update_humongous(&ctrl3, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);
-  threshold = ctrl3.get_conc_mark_start_threshold();
+  threshold = ctrl3.old_gen_threshold_for_conc_mark_start();
   // Adjusted allocated bytes:
   // All humongous are cleaned up since humongous_bytes_after_gc < humongous_bytes_after_last_gc
   // Total bytes: old_bytes + humongous_bytes

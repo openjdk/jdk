@@ -26,6 +26,7 @@ package org.openjdk.bench.vm.compiler;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 
 /**
@@ -36,6 +37,8 @@ public class VectorAlgorithmsImpl {
     private static final VectorSpecies<Integer> SPECIES_I    = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> SPECIES_I512 = IntVector.SPECIES_512;
     private static final VectorSpecies<Integer> SPECIES_I256 = IntVector.SPECIES_256;
+    private static final VectorSpecies<Integer> SPECIES_I128 = IntVector.SPECIES_128;
+    private static final VectorSpecies<Integer> SPECIES_I64  = IntVector.SPECIES_64;
     private static final VectorSpecies<Byte> SPECIES_B       = ByteVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Byte> SPECIES_B64     = ByteVector.SPECIES_64;
     private static final VectorSpecies<Float> SPECIES_F      = FloatVector.SPECIES_PREFERRED;
@@ -58,14 +61,30 @@ public class VectorAlgorithmsImpl {
         public int[] rI2;
         public int[] rI3;
         public int[] rI4;
-        public int[] eI;
+        public int[] rI5;
+
+        // Search element for "findI"
+        public int[] eI_findI;
         // The test has to use the same index into eI for all implementations. But in the
         // benchmark, we'd like to use random indices, so we use the index to advance through
         // the array.
-        public int eI_idx = 0;
+        public int eI_findI_idx = 0;
+
+        // Data and threshold eI value for "filterI".
+        // We create the data in a range, and then pick a threshold scaled to that range,
+        // so that the branch in the filter is branchProbability.
+        public int[] aI_filterI;
+        public int eI_filterI;
 
         public float[] aF;
         public float[] bF;
+
+        // Input for piece-wise functions.
+        // Uniform [0..1[ with probability p and Uniform [1..2[ with probability (1-p)
+        public float[] xF;
+        public float[] rF1;
+        public float[] rF2;
+        public float[] rF3;
 
         public byte[] aB;
         public byte[] strB;
@@ -76,7 +95,16 @@ public class VectorAlgorithmsImpl {
         public int[] oopsX4;
         public int[] memX4;
 
-        public Data(int size, int seed, int numX4Objects) {
+        // Input for mismatchB
+        // We set m1B and m2B to have identical data, temporarily edit m2B at one position,
+        // run the mismatch implementation, and then reset that position. This means we
+        // perform as little mutation while randomizing the input data.
+        public byte[] m1B;
+        public byte[] m2B;
+        public int[] mismatchB_idx;
+        public int mismatchB_idx_idx = 0;
+
+        public Data(int size, int seed, int numX4Objects, float branchProbability) {
             Random random = new Random(seed);
 
             // int: one input array and multiple output arrays so different implementations can
@@ -86,13 +114,19 @@ public class VectorAlgorithmsImpl {
             rI2 = new int[size];
             rI3 = new int[size];
             rI4 = new int[size];
+            rI5 = new int[size];
             Arrays.setAll(aI, i -> random.nextInt());
 
             // Populate with some random values from aI, and some totally random values.
-            eI = new int[0x10000];
-            for (int i = 0; i < eI.length; i++) {
-                eI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
+            eI_findI = new int[0x10000];
+            for (int i = 0; i < eI_findI.length; i++) {
+                eI_findI[i] = (random.nextInt(10) == 0) ? random.nextInt() : aI[random.nextInt(size)];
             }
+
+            int filterI_range = 1000_000;
+            aI_filterI = new int[size];
+            Arrays.setAll(aI_filterI, i -> random.nextInt(filterI_range));
+            eI_filterI = (int)(filterI_range * (1.0f - branchProbability));
 
             // X4 oop setup.
             // oopsX4 holds "addresses" (i.e. indices), that point to the 16-byte objects in memX4.
@@ -117,14 +151,54 @@ public class VectorAlgorithmsImpl {
                 bF[i] = random.nextInt(32) - 16;
             }
 
+            xF = new float[size];
+            rF1 = new float[size];
+            rF2 = new float[size];
+            rF3 = new float[size];
+            for (int i = 0; i < size; i++) {
+                xF[i] = (random.nextFloat() < branchProbability)
+                        ? 0f + random.nextFloat()
+                        : 1f + random.nextFloat();
+            }
+
             // byte: just random data.
             aB = new byte[size];
-            strB = new byte[size];
             rB1 = new byte[size];
             rB2 = new byte[size];
             rB3 = new byte[size];
             random.nextBytes(aB);
-            random.nextBytes(strB); // TODO: special data!
+
+            // byte string: for lowerCase benchmark.
+            strB = new byte[size];
+            for (int i = 0; i < size; i++) {
+                strB[i] = (random.nextFloat() < branchProbability)
+                          ? (byte)(random.nextInt(16) + 'A')
+                          : (byte)(random.nextInt(16) + 'a');
+            }
+
+            // Input data for mismatchB
+            m1B = new byte[size];
+            m2B = new byte[size];
+            random.nextBytes(m1B);
+            System.arraycopy(m1B, 0, m2B, 0, size);
+
+            mismatchB_idx = new int[0x10000];
+            for (int i = 0; i < mismatchB_idx.length; i++) {
+                // Sometimes make no mutation (-1), sometimes pick index for mutation.
+                mismatchB_idx[i] = (random.nextInt(10) == 0) ? -1 : random.nextInt(m1B.length);
+            }
+        }
+
+        public interface MismatchBImpl {
+            int run(byte[] a, byte[] b);
+        }
+
+        public int wrap_mismatchB(int idx, MismatchBImpl impl) {
+            int i = mismatchB_idx[idx & 0xffff];
+            if (i != -1) { m2B[i]++; }
+            int res = impl.run(m1B, m2B);
+            if (i != -1) { m2B[i]--; }
+            return res;
         }
     }
 
@@ -304,6 +378,21 @@ public class VectorAlgorithmsImpl {
         float sum = sums.reduceLanes(VectorOperators.ADD);
         for (; i < a.length; i++) {
             sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    public static float dotProductF_VectorAPI_fma(float[] a, float[] b) {
+        var sums = FloatVector.broadcast(SPECIES_F, 0.0f);
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var va = FloatVector.fromArray(SPECIES_F, a, i);
+            var vb = FloatVector.fromArray(SPECIES_F, b, i);
+            sums = va.fma(vb, sums);
+        }
+        float sum = sums.reduceLanes(VectorOperators.ADD);
+        for (; i < a.length; i++) {
+            sum = Math.fma(a[i], b[i], sum);
         }
         return sum;
     }
@@ -616,6 +705,44 @@ public class VectorAlgorithmsImpl {
         return -1;
     }
 
+    public static int mismatchB_loop(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int mismatchB_Arrays(byte[] a, byte[] b) {
+        return Arrays.mismatch(a, b);
+    }
+
+    public static int mismatchB_MemorySegment(byte[] a, byte[] b) {
+        var aMS = MemorySegment.ofArray(a);
+        var bMS = MemorySegment.ofArray(b);
+        return (int) aMS.mismatch(bMS);
+    }
+
+    public static int mismatchB_VectorAPI(byte[] a, byte[] b) {
+        int i = 0;
+        for (; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+            ByteVector va = ByteVector.fromArray(SPECIES_B, a, i);
+            ByteVector vb = ByteVector.fromArray(SPECIES_B, b, i);
+            var mask = va.compare(VectorOperators.NE, vb);
+            if (mask.anyTrue()) {
+                return i + mask.firstTrue();
+            }
+        }
+        for (; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
     public static Object reverseI_loop(int[] a, int[] r) {
         for (int i = 0; i < a.length; i++) {
             r[a.length - i - 1] = a[i];
@@ -651,13 +778,12 @@ public class VectorAlgorithmsImpl {
         return r;
     }
 
-    public static Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
-        var thresholds = IntVector.broadcast(SPECIES_I, threshold);
+    public static Object filterI_VectorAPI_v1(int[] a, int[] r, int threshold) {
         int j = 0;
         int i = 0;
         for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);
-            var mask = v.compare(VectorOperators.GE, thresholds);
+            var mask = v.compare(VectorOperators.GE, threshold);
             v = v.compress(mask);
             int trueCount = mask.trueCount();
             var prefixMask = mask.compress();
@@ -665,6 +791,98 @@ public class VectorAlgorithmsImpl {
             j += trueCount;
         }
 
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    // Idea: on platforms that do not support the "v1" solution with "compress" and
+    //       masked stores, we struggle to deal with the loop-carried dependency of j.
+    //       But we can still use dynamic uniformity to enable some vectorized performance.
+    public static Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I64.loopBound(a.length); i += SPECIES_I64.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I64, a, i);
+            var mask = v.compare(VectorOperators.GE, threshold);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 2;
+            } else if (mask.anyTrue()) {
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I128.loopBound(a.length); i += SPECIES_I128.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I128, a, i);
+            var mask = v.compare(VectorOperators.GE, threshold);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 4;
+            } else if (mask.anyTrue()) {
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
+                if (mask.laneIsSet(2)) { r[j++] = v.lane(2); }
+                if (mask.laneIsSet(3)) { r[j++] = v.lane(3); }
+            } else {
+                // nothing
+            }
+        }
+        for (; i < a.length; i++) {
+            int ai = a[i];
+            if (ai >= threshold) {
+                r[j++] = ai;
+            }
+        }
+        // Just force the resulting length onto the same array.
+        r[r.length - 1] = j;
+        return r;
+    }
+
+    public static Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
+        int j = 0;
+        int i = 0;
+        for (; i < SPECIES_I256.loopBound(a.length); i += SPECIES_I256.length()) {
+            IntVector v = IntVector.fromArray(SPECIES_I256, a, i);
+            var mask = v.compare(VectorOperators.GE, threshold);
+            if (mask.allTrue()) {
+                v.intoArray(r, j);
+                j += 8;
+            } else if (mask.anyTrue()) {
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
+                if (mask.laneIsSet(2)) { r[j++] = v.lane(2); }
+                if (mask.laneIsSet(3)) { r[j++] = v.lane(3); }
+                if (mask.laneIsSet(4)) { r[j++] = v.lane(4); }
+                if (mask.laneIsSet(5)) { r[j++] = v.lane(5); }
+                if (mask.laneIsSet(6)) { r[j++] = v.lane(6); }
+                if (mask.laneIsSet(7)) { r[j++] = v.lane(7); }
+            } else {
+                // nothing
+            }
+        }
         for (; i < a.length; i++) {
             int ai = a[i];
             if (ai >= threshold) {
@@ -771,5 +989,176 @@ public class VectorAlgorithmsImpl {
         }
         return r;
     }
-}
 
+    public static int conditionalSumB_loop(byte[] a) {
+        int sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            byte c = a[i];
+            if (c >= 'A' && c <= 'Z') {
+                sum += c;
+            }
+        }
+        return sum;
+    }
+
+    public static int conditionalSumB_VectorAPI_v1(byte[] a) {
+        return ConditionalSumB_VectorAPI_V1.compute(a);
+    }
+
+    private static class ConditionalSumB_VectorAPI_V1 {
+        // Pick I species to be a full vector, and the B vector a quarter its bit length.
+        // However, we have to get at least 64bits for the B vector, so at least 256bits
+        // for the int vector - a sad restriction by the currently very narrow range of
+        // supported shapes.
+        private static final int BITS_I = Math.max(256, IntVector.SPECIES_PREFERRED.vectorBitSize());
+        private static final int BITS_B = BITS_I / 4;
+        private static final VectorShape SHAPE_I = VectorShape.forBitSize(BITS_I);
+        private static final VectorShape SHAPE_B = VectorShape.forBitSize(BITS_B);
+        private static final VectorSpecies<Integer> SPECIES_I = SHAPE_I.withLanes(int.class);
+        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE_B.withLanes(byte.class);
+
+        public static int compute(byte[] a) {
+            var zeroB = ByteVector.zero(SPECIES_B);
+            var accI = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vB = ByteVector.fromArray(SPECIES_B, a, i);
+                var maskA = vB.compare(VectorOperators.GE, (byte)'A');
+                var maskZ = vB.compare(VectorOperators.LE, (byte)'Z');
+                var mask = maskA.and(maskZ);
+                vB = zeroB.blend(vB, mask);
+                var vI = vB.castShape(SPECIES_I, 0);
+                accI = accI.add(vI);
+            }
+            int sum = accI.reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                byte c = a[i];
+                if (c >= 'A' && c <= 'Z') {
+                    sum += c;
+                }
+            }
+            return sum;
+        }
+    }
+
+    public static int conditionalSumB_VectorAPI_v2(byte[] a) {
+        return ConditionalSumB_VectorAPI_V2.compute(a);
+    }
+
+    private static class ConditionalSumB_VectorAPI_V2 {
+        // Pick B species to be a full vector, and use 4 I vectors of the same bit size.
+        private static final VectorSpecies<Byte>    SPECIES_B = ByteVector.SPECIES_PREFERRED;
+        private static final VectorSpecies<Integer> SPECIES_I = SPECIES_B.vectorShape().withLanes(int.class);
+
+        public static int compute(byte[] a) {
+            var zeroB = ByteVector.zero(SPECIES_B);
+            var accI = IntVector.zero(SPECIES_I);
+            int i;
+            for (i = 0; i < SPECIES_B.loopBound(a.length); i += SPECIES_B.length()) {
+                var vB = ByteVector.fromArray(SPECIES_B, a, i);
+                var maskA = vB.compare(VectorOperators.GE, (byte)'A');
+                var maskZ = vB.compare(VectorOperators.LE, (byte)'Z');
+                var mask = maskA.and(maskZ);
+                vB = zeroB.blend(vB, mask);
+                // When casting byte->int, we get 4x the bits, and split them into 4 parts.
+                var vI0 = vB.castShape(SPECIES_I, 0);
+                var vI1 = vB.castShape(SPECIES_I, 1);
+                var vI2 = vB.castShape(SPECIES_I, 2);
+                var vI3 = vB.castShape(SPECIES_I, 3);
+                accI = accI.add(vI0.add(vI1).add(vI2).add(vI3));
+            }
+            int sum = accI.reduceLanes(VectorOperators.ADD);
+            for (; i < a.length; i++) {
+                byte c = a[i];
+                if (c >= 'A' && c <= 'Z') {
+                    sum += c;
+                }
+            }
+            return sum;
+        }
+    }
+
+    public static float[] pieceWise2FunctionF_loop(float[] a, float[] r) {
+        for (int i = 0; i < a.length; i++) {
+            float ai = a[i];
+            if (ai < 1f) {
+                float a2 = ai * ai;
+                float a4 = a2 * a2;
+                float a8 = a4 * a4;
+                r[i] = a8;
+            } else {
+                float s2 = (float)Math.sqrt(ai);
+                float s4 = (float)Math.sqrt(s2);
+                float s8 = (float)Math.sqrt(s4);
+                r[i] = s8;
+            }
+        }
+        return r;
+    }
+
+    public static float[] pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var ai = FloatVector.fromArray(SPECIES_F, a, i);
+            var mask = ai.compare(VectorOperators.LT, 1f);
+            var a2 = ai.lanewise(VectorOperators.MUL, ai);
+            var a4 = a2.lanewise(VectorOperators.MUL, a2);
+            var a8 = a4.lanewise(VectorOperators.MUL, a4);
+            var s2 = ai.lanewise(VectorOperators.SQRT);
+            var s4 = s2.lanewise(VectorOperators.SQRT);
+            var s8 = s4.lanewise(VectorOperators.SQRT);
+            var v = s8.blend(a8, mask);
+            v.intoArray(r, i);
+        }
+        for (; i < a.length; i++) {
+            float ai = a[i];
+            if (ai < 1f) {
+                float a2 = ai * ai;
+                float a4 = a2 * a2;
+                float a8 = a4 * a4;
+                r[i] = a8;
+            } else {
+                float s2 = (float)Math.sqrt(ai);
+                float s4 = (float)Math.sqrt(s2);
+                float s8 = (float)Math.sqrt(s4);
+                r[i] = s8;
+            }
+        }
+        return r;
+    }
+
+    public static float[] pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
+        int i;
+        for (i = 0; i < SPECIES_F.loopBound(a.length); i += SPECIES_F.length()) {
+            var ai = FloatVector.fromArray(SPECIES_F, a, i);
+            var mask = ai.compare(VectorOperators.LT, 1f);
+            var a2 = ai.lanewise(VectorOperators.MUL, ai);
+            var a4 = a2.lanewise(VectorOperators.MUL, a2);
+            var a8 = a4.lanewise(VectorOperators.MUL, a4);
+            var v = a8;
+            // SQRT is expensive, so only call if it necessary
+            if (!mask.allTrue()) {
+                var s2 = ai.lanewise(VectorOperators.SQRT);
+                var s4 = s2.lanewise(VectorOperators.SQRT);
+                var s8 = s4.lanewise(VectorOperators.SQRT);
+                v = s8.blend(a8, mask);
+            }
+            v.intoArray(r, i);
+        }
+        for (; i < a.length; i++) {
+            float ai = a[i];
+            if (ai < 1f) {
+                float a2 = ai * ai;
+                float a4 = a2 * a2;
+                float a8 = a4 * a4;
+                r[i] = a8;
+            } else {
+                float s2 = (float)Math.sqrt(ai);
+                float s4 = (float)Math.sqrt(s2);
+                float s8 = (float)Math.sqrt(s4);
+                r[i] = s8;
+            }
+        }
+        return r;
+    }
+}

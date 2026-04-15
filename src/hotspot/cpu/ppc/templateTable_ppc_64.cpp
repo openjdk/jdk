@@ -3489,7 +3489,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   // Get receiver klass.
   __ load_klass_check_null_throw(Rrecv_klass, Rrecv, R11_scratch1);
   __ verify_klass_ptr(Rrecv_klass);
-  __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2, false);
+  __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2);
 
   generate_vtable_call(Rrecv_klass, Rvtableindex_or_method, Rret_addr, R11_scratch1);
 }
@@ -3596,7 +3596,7 @@ void TemplateTable::invokeinterface_object_method(Register Rrecv_klass,
   // Non-final callc case.
   __ bind(LnotFinal);
   __ lhz(Rindex, in_bytes(ResolvedMethodEntry::table_index_offset()), Rcache);
-  __ profile_virtual_call(Rrecv_klass, Rtemp1, Rscratch, false);
+  __ profile_virtual_call(Rrecv_klass, Rtemp1, Rscratch);
   generate_vtable_call(Rrecv_klass, Rindex, Rret, Rscratch);
 }
 
@@ -3664,7 +3664,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ lookup_interface_method(Rrecv_klass, Rinterface_klass, noreg, noreg, Rscratch1, Rscratch2,
                              L_no_such_interface, /*return_method=*/false);
 
-  __ profile_virtual_call(Rrecv_klass, Rscratch1, Rscratch2, false);
+  __ profile_virtual_call(Rrecv_klass, Rscratch1, Rscratch2);
 
   // Find entry point to call.
 

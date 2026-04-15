@@ -168,6 +168,7 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReachabilityFenceNode;
 class ReductionNode;
 class RegMask;
 class RegionNode;
@@ -451,6 +452,9 @@ public:
 #endif
   // Check whether node has become unreachable
   bool is_unreachable(PhaseIterGVN &igvn) const;
+
+  // Does the node have any immediate non-debug uses?
+  bool has_non_debug_uses() const;
 
   // Set a required input edge, also updates corresponding output edge
   void add_req( Node *n ); // Append a NEW required input
@@ -824,6 +828,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 20)
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
+    DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
 
     _max_classes  = ClassMask_Neg
   };
@@ -1013,6 +1018,7 @@ public:
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(ReachabilityFence)
   DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)

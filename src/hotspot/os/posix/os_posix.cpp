@@ -888,6 +888,14 @@ void* os::lookup_function(const char* name) {
   return dlsym(RTLD_DEFAULT, name);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::ftell(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::fseek(file, offset, whence);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }

@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 #define SKIP_IF_NOT_SHENANDOAH() \
@@ -58,10 +59,15 @@ protected:
     old->set_evacuation_reserve(512 * HeapWordSize);
 
     Thread* thread = Thread::current();
-    ShenandoahThreadLocalData::reset_plab_promoted(thread);
-    ShenandoahThreadLocalData::disable_plab_promotions(thread);
-    ShenandoahThreadLocalData::set_plab_actual_size(thread, INITIAL_PLAB_SIZE);
-    ShenandoahThreadLocalData::add_to_plab_promoted(thread, INITIAL_PLAB_PROMOTED);
+    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (shenandoah_plab == nullptr) {
+      ShenandoahThreadLocalData::initialize_gclab(thread);
+      shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    }
+    shenandoah_plab->reset_promoted();
+    shenandoah_plab->disable_promotions();
+    shenandoah_plab->set_actual_size(INITIAL_PLAB_SIZE);
+    shenandoah_plab->add_to_promoted(INITIAL_PLAB_PROMOTED);
   }
 
   void TearDown() override {
@@ -72,15 +78,15 @@ protected:
   }
 
   static bool promotions_enabled() {
-    return ShenandoahThreadLocalData::allow_plab_promotions(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->allows_promotion();
   }
 
   static size_t plab_size() {
-    return ShenandoahThreadLocalData::get_plab_actual_size(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->get_actual_size();
   }
 
   static size_t plab_promoted() {
-    return ShenandoahThreadLocalData::get_plab_promoted(Thread::current());
+    return ShenandoahThreadLocalData::shenandoah_plab(Thread::current())->get_promoted();
   }
 };
 

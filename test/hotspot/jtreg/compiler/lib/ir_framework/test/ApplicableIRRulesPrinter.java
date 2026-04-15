@@ -47,9 +47,7 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
-    public static final String START = "##### ApplicableIRRules - used by TestFramework #####";
-    public static final String END = "----- END -----";
-    public static final int NO_RULE_APPLIED = -1;
+    public static final String NO_RULES = "<no IR rules>";
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -128,13 +126,11 @@ public class ApplicableIRRulesPrinter {
         "zfh",
         "zvbb",
         "zvfh",
-        "zvkn"
+        "zvkn",
+        // PPC64
+        "darn",
+        "brw"
     ));
-
-    public ApplicableIRRulesPrinter() {
-        output.append(START).append(System.lineSeparator());
-        output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
-    }
 
     /**
      * Emits "<method>,{ids}" where {ids} is either:
@@ -159,17 +155,15 @@ public class ApplicableIRRulesPrinter {
                 i++;
             }
         }
-        if (irAnnos.length != 0) {
-            output.append(m.getName());
-            if (validRules.isEmpty()) {
-                output.append("," + NO_RULE_APPLIED);
-            } else {
-                for (i = 0; i < validRules.size(); i++) {
-                    output.append(",").append(validRules.get(i));
-                }
-            }
-            output.append(System.lineSeparator());
+
+        if (irAnnos.length == 0 || validRules.isEmpty()) {
+            return;
         }
+        output.append(m.getName());
+        for (i = 0; i < validRules.size(); i++) {
+            output.append(",").append(validRules.get(i));
+        }
+        output.append(System.lineSeparator());
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
@@ -524,9 +518,10 @@ public class ApplicableIRRulesPrinter {
     }
 
     public void emit() {
-        output.append(END);
-        TestVmSocket.sendWithTag(MessageTag.APPLICABLE_IR_RULES, output.toString());
+        if (output.isEmpty()) {
+            output.append(NO_RULES).append(System.lineSeparator());
+        }
+        output.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
-
-

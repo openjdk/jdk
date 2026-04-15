@@ -31,7 +31,7 @@ import java.io.IOException;
  * @key stress
  * @library /
  * @requires vm.gc.Z
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  * @summary Stress ZGC
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx384m -XX:+UseZGC gc.stress.gcbasher.TestGCBasherWithZ 120000
  */
@@ -41,7 +41,7 @@ import java.io.IOException;
  * @key stress
  * @library /
  * @requires vm.gc.Z
- * @requires vm.flavor == "server" & !vm.emulatedClient & vm.opt.ClassUnloading != false
+ * @requires vm.flavor == "server" & vm.opt.ClassUnloading != false
  * @summary Stress ZGC with nmethod barrier forced deoptimization enabled.
  * @run main/othervm/timeout=200 -Xlog:gc*=info,nmethod+barrier=trace -Xmx384m -XX:+UseZGC
  *   -XX:+UnlockDiagnosticVMOptions -XX:+DeoptimizeNMethodBarriersALot -XX:-Inline

@@ -31,20 +31,93 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "utilities/quickSort.hpp"
 
+bool ShenandoahEvacuationBudget::try_reserve(size_t bytes) {
+  size_t new_consumption = _consumed + bytes;
+  if (new_consumption <= _reserve) {
+    return true;
+  }
+  // Try expanding from shared pool
+  size_t new_reserve = _reserve;
+  size_t new_committed = _shared->committed;
+  while ((new_consumption > new_reserve) && (new_committed < _shared->limit)) {
+    new_committed += _region_size_bytes;
+    new_reserve += _region_size_bytes;
+  }
+  if (new_consumption <= new_reserve) {
+    _reserve = new_reserve;
+    _shared->committed = new_committed;
+    return true;
+  }
+  return false;
+}
+
+void ShenandoahEvacuationBudget::commit(size_t consumption, size_t live) {
+  _consumed += consumption;
+  _live_bytes += live;
+  _region_count++;
+}
+
+ShenandoahGlobalRegionDisposition ShenandoahGlobalCSetBudget::try_add_region(
+    const ShenandoahGlobalRegionAttributes& region) {
+
+  size_t region_garbage = region.garbage;
+  size_t new_garbage = _cur_garbage + region_garbage;
+  bool add_regardless = (region_garbage > _ignore_threshold) && (new_garbage < _min_garbage);
+
+  if (!add_regardless && (region_garbage < _garbage_threshold)) {
+    return ShenandoahGlobalRegionDisposition::SKIP;
+  }
+
+  size_t live_bytes = region.live_data_bytes;
+
+  if (region.is_old) {
+    size_t evac_need = old_evac.anticipated_consumption(live_bytes);
+    size_t promo_loss = region.free_bytes;
+
+    // Snapshot state for rollback — old branch does two reservations
+    size_t saved_committed = _shared.committed;
+    size_t saved_old_reserve = old_evac.reserve();
+    size_t saved_promo_reserve = promo.reserve();
+
+    if (old_evac.try_reserve(evac_need) && promo.try_reserve(promo_loss)) {
+      old_evac.commit(evac_need, live_bytes);
+      promo.commit_raw(promo_loss);
+      _cur_garbage = new_garbage;
+      return ShenandoahGlobalRegionDisposition::ADD_OLD_EVAC;
+    }
+    _shared.committed = saved_committed;
+    old_evac.set_reserve(saved_old_reserve);
+    promo.set_reserve(saved_promo_reserve);
+    return ShenandoahGlobalRegionDisposition::SKIP;
+  } else if (region.is_tenurable) {
+    size_t promo_need = promo.anticipated_consumption(live_bytes);
+    if (promo.try_reserve(promo_need)) {
+      promo.commit(promo_need, live_bytes);
+      _cur_garbage = new_garbage;
+      return ShenandoahGlobalRegionDisposition::ADD_PROMO;
+    }
+    return ShenandoahGlobalRegionDisposition::SKIP;
+  } else {
+    size_t evac_need = young_evac.anticipated_consumption(live_bytes);
+    if (young_evac.try_reserve(evac_need)) {
+      young_evac.commit(evac_need, live_bytes);
+      _cur_garbage = new_garbage;
+      return ShenandoahGlobalRegionDisposition::ADD_YOUNG_EVAC;
+    }
+    return ShenandoahGlobalRegionDisposition::SKIP;
+  }
+}
+
 ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation)
         : ShenandoahGenerationalHeuristics(generation) {
 }
 
-
-void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                       RegionData* data, size_t size,
-                                                                       size_t actual_free) {
-  // Better select garbage-first regions
+void ShenandoahGlobalHeuristics::select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                                               RegionData* data, size_t size,
+                                                               size_t actual_free) {
   QuickSort::sort<RegionData>(data, size, compare_by_garbage);
-
-  choose_global_collection_set(cset, data, size, actual_free, 0 /* cur_young_garbage */);
+  choose_global_collection_set(cset, data, size, actual_free, 0);
 }
-
 
 void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollectionSet* cset,
                                                               const ShenandoahHeuristics::RegionData* data,
@@ -80,8 +153,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   if (young_evac_reserve > unaffiliated_young_memory) {
     shared_reserve_regions += unaffiliated_young_regions;
   } else {
-    size_t delta_regions = young_evac_reserve / region_size_bytes;
-    shared_reserve_regions += delta_regions;
+    shared_reserve_regions += young_evac_reserve / region_size_bytes;
   }
   young_evac_reserve = 0;
   size_t total_old_reserve = old_evac_reserve + old_promo_reserve;
@@ -90,24 +162,15 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     shared_reserve_regions += unaffiliated_old_regions;
     old_promo_reserve = total_old_reserve - unaffiliated_old_memory;
   } else {
-    size_t delta_regions = old_evac_reserve / region_size_bytes;
-    shared_reserve_regions += delta_regions;
+    shared_reserve_regions += old_evac_reserve / region_size_bytes;
   }
   old_evac_reserve = 0;
   assert(shared_reserve_regions <=
          (heap->young_generation()->free_unaffiliated_regions() + heap->old_generation()->free_unaffiliated_regions()),
-         "simple math");
-
-  size_t shared_reserves = shared_reserve_regions * region_size_bytes;
-  size_t committed_from_shared_reserves = 0;
-
-  size_t promo_bytes = 0;
-  size_t old_evac_bytes = 0;
-  size_t young_evac_bytes = 0;
-
-  size_t consumed_by_promo = 0;        // promo_bytes * ShenandoahPromoEvacWaste
-  size_t consumed_by_old_evac = 0;     // old_evac_bytes * ShenandoahOldEvacWaste
-  size_t consumed_by_young_evac = 0;   // young_evac_bytes * ShenandoahEvacWaste
+         "Shared reserve regions (%zu) should not exceed total unaffiliated regions (young: %zu, old: %zu)",
+         shared_reserve_regions,
+         heap->young_generation()->free_unaffiliated_regions(),
+         heap->old_generation()->free_unaffiliated_regions());
 
   // Of the memory reclaimed by GC, some of this will need to be reserved for the next GC collection.  Use the current
   // young reserve as an approximation of the future Collector reserve requirement.  Try to end with at least
@@ -115,147 +178,93 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + original_young_evac_reserve;
   size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-  size_t aged_regions_promoted = 0;
-  size_t young_regions_evacuated = 0;
-  size_t old_regions_evacuated = 0;
+  ShenandoahGlobalCSetBudget budget(region_size_bytes,
+                                    shared_reserve_regions * region_size_bytes,
+                                    garbage_threshold, ignore_threshold, min_garbage,
+                                    young_evac_reserve, ShenandoahEvacWaste,
+                                    old_evac_reserve, ShenandoahOldEvacWaste,
+                                    old_promo_reserve, ShenandoahPromoEvacWaste);
+  budget.set_cur_garbage(cur_young_garbage);
 
-  log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Discretionary evacuation budget (for either old or young): %zu%s"
-                     ", Actual Free: %zu%s.",
-                      byte_size_in_proper_unit(shared_reserves), proper_unit_for_byte_size(shared_reserves),
-                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
+  log_info(gc, ergo)("Adaptive CSet Selection for global cycle. Discretionary evacuation budget (for either old or young): " PROPERFMT ", Actual Free: " PROPERFMT,
+                     PROPERFMTARGS(budget.shared_reserves()), PROPERFMTARGS(actual_free));
 
-  size_t cur_garbage = cur_young_garbage;
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_preselected(r->index()), "There should be no preselected regions during GLOBAL GC");
-    bool add_region = false;
-    size_t region_garbage = r->garbage();
-    size_t new_garbage = cur_garbage + region_garbage;
-    bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
-    size_t live_bytes = r->get_live_data_bytes();
-    if (add_regardless || (region_garbage >= garbage_threshold)) {
-      if (r->is_old()) {
-        size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahOldEvacWaste);
-        size_t new_old_consumption = consumed_by_old_evac + anticipated_consumption;
-        size_t new_old_evac_reserve = old_evac_reserve;
-        size_t proposed_old_region_expansion = 0;
-        while ((new_old_consumption > new_old_evac_reserve) && (committed_from_shared_reserves < shared_reserves)) {
-          committed_from_shared_reserves += region_size_bytes;
-          proposed_old_region_expansion++;
-          new_old_evac_reserve += region_size_bytes;
-        }
-        // If this region has free memory and we choose to place it in the collection set, its free memory is no longer
-        // available to hold promotion results.  So we behave as if its free memory is consumed within the promotion reserve.
-        size_t anticipated_loss_from_promo_reserve = r->free();
-        size_t new_promo_consumption = consumed_by_promo + anticipated_loss_from_promo_reserve;
-        size_t new_promo_reserve = old_promo_reserve;
-        while ((new_promo_consumption > new_promo_reserve) && (committed_from_shared_reserves < shared_reserves)) {
-          committed_from_shared_reserves += region_size_bytes;
-          proposed_old_region_expansion++;
-          new_promo_reserve += region_size_bytes;
-        }
-        if ((new_old_consumption <= new_old_evac_reserve) && (new_promo_consumption <= new_promo_reserve)) {
-          add_region = true;
-          old_evac_reserve = new_old_evac_reserve;
-          old_promo_reserve = new_promo_reserve;
-          old_evac_bytes += live_bytes;
-          consumed_by_old_evac = new_old_consumption;
-          consumed_by_promo = new_promo_consumption;
-          cur_garbage = new_garbage;
-          old_regions_evacuated++;
-        } else {
-          // We failed to sufficiently expand old so unwind proposed expansion
-          committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
-        }
-      } else if (heap->is_tenurable(r)) {
-        size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahPromoEvacWaste);
-        size_t new_promo_consumption = consumed_by_promo + anticipated_consumption;
-        size_t new_promo_reserve = old_promo_reserve;
-        size_t proposed_old_region_expansion = 0;
-        while ((new_promo_consumption > new_promo_reserve) && (committed_from_shared_reserves < shared_reserves)) {
-          committed_from_shared_reserves += region_size_bytes;
-          proposed_old_region_expansion++;
-          new_promo_reserve += region_size_bytes;
-        }
-        if (new_promo_consumption <= new_promo_reserve) {
-          add_region = true;
-          old_promo_reserve = new_promo_reserve;
-          promo_bytes += live_bytes;
-          consumed_by_promo = new_promo_consumption;
-          cur_garbage = new_garbage;
-          aged_regions_promoted++;
-        } else {
-          // We failed to sufficiently expand old so unwind proposed expansion
-          committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
-        }
-      } else {
-        assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
-        size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahEvacWaste);
-        size_t new_young_evac_consumption = consumed_by_young_evac + anticipated_consumption;
-        size_t new_young_evac_reserve = young_evac_reserve;
-        size_t proposed_young_region_expansion = 0;
-        while ((new_young_evac_consumption > new_young_evac_reserve) && (committed_from_shared_reserves < shared_reserves)) {
-          committed_from_shared_reserves += region_size_bytes;
-          proposed_young_region_expansion++;
-          new_young_evac_reserve += region_size_bytes;
-        }
-        if (new_young_evac_consumption <= new_young_evac_reserve) {
-          add_region = true;
-          young_evac_reserve = new_young_evac_reserve;
-          young_evac_bytes += live_bytes;
-          consumed_by_young_evac = new_young_evac_consumption;
-          cur_garbage = new_garbage;
-          young_regions_evacuated++;
-        } else {
-          // We failed to sufficiently expand old so unwind proposed expansion
-          committed_from_shared_reserves -= proposed_young_region_expansion * region_size_bytes;
-        }
-      }
+    if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
+      assert(heap->is_tenurable(r), "Region %zu already selected for promotion must be tenurable", idx);
+      continue;
     }
-    if (add_region) {
+
+    ShenandoahGlobalRegionAttributes attrs;
+    attrs.garbage = r->garbage();
+    attrs.live_data_bytes = r->get_live_data_bytes();
+    attrs.free_bytes = r->free();
+    attrs.is_old = r->is_old();
+    attrs.is_tenurable = !r->is_old() && heap->is_tenurable(r);
+
+    if (budget.try_add_region(attrs) != ShenandoahGlobalRegionDisposition::SKIP) {
       cset->add_region(r);
     }
   }
 
-  if (committed_from_shared_reserves < shared_reserves) {
-    // Give all the rest to promotion
-    old_promo_reserve += (shared_reserves - committed_from_shared_reserves);
-    // dead code: committed_from_shared_reserves = shared_reserves;
-  }
+  budget.finish();
 
-  // Consider the effects of round-off:
-  //  1. We know that the sum over each evacuation mutiplied by Evacuation Waste is <= total evacuation reserve
-  //  2. However, the reserve for each individual evacuation may be rounded down.  In the worst case, we will be over budget
-  //     by the number of regions evacuated, since each region's reserve might be under-estimated by at most 1
-  //  3. Likewise, if we take the sum of bytes evacuated and multiply this by the Evacuation Waste and then round down
-  //     to nearest integer, the calculated reserve will underestimate the true reserve needs by at most 1.
-  //  4. This explains the adjustments to subtotals in the assert statements below.
-  assert(young_evac_bytes * ShenandoahEvacWaste <= young_evac_reserve + young_regions_evacuated,
-         "budget: %zu <= %zu", (size_t) (young_evac_bytes * ShenandoahEvacWaste), young_evac_reserve);
-  assert(old_evac_bytes * ShenandoahOldEvacWaste <= old_evac_reserve + old_regions_evacuated,
-         "budget: %zu <= %zu", (size_t) (old_evac_bytes * ShenandoahOldEvacWaste), old_evac_reserve);
-  assert(promo_bytes * ShenandoahPromoEvacWaste <= old_promo_reserve + aged_regions_promoted,
-         "budget: %zu <= %zu", (size_t) (promo_bytes * ShenandoahPromoEvacWaste), old_promo_reserve);
-  assert(young_evac_reserve + old_evac_reserve + old_promo_reserve <=
-         heap->young_generation()->get_evacuation_reserve() + heap->old_generation()->get_evacuation_reserve() +
-         heap->old_generation()->get_promoted_reserve(), "Exceeded budget");
+  DEBUG_ONLY(budget.assert_budget_constraints_hold(
+      heap->young_generation()->get_evacuation_reserve() +
+      heap->old_generation()->get_evacuation_reserve() +
+      heap->old_generation()->get_promoted_reserve()));
 
-  if (heap->young_generation()->get_evacuation_reserve() < young_evac_reserve) {
-    size_t delta_bytes = young_evac_reserve - heap->young_generation()->get_evacuation_reserve();
+  if (heap->young_generation()->get_evacuation_reserve() < budget.young_evac.reserve()) {
+    size_t delta_bytes = budget.young_evac.reserve() - heap->young_generation()->get_evacuation_reserve();
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_old_regions, delta_regions);
     log_info(gc)("Global GC moves %zu unaffiliated regions from old collector to young collector reserves", regions_to_transfer);
     ssize_t negated_regions = -regions_to_transfer;
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(negated_regions);
-  } else if (heap->young_generation()->get_evacuation_reserve() > young_evac_reserve) {
-    size_t delta_bytes = heap->young_generation()->get_evacuation_reserve() - young_evac_reserve;
+  } else if (heap->young_generation()->get_evacuation_reserve() > budget.young_evac.reserve()) {
+    size_t delta_bytes = heap->young_generation()->get_evacuation_reserve() - budget.young_evac.reserve();
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_young_regions, delta_regions);
     log_info(gc)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions_to_transfer);
   }
 
-  heap->young_generation()->set_evacuation_reserve(young_evac_reserve);
-  heap->old_generation()->set_evacuation_reserve(old_evac_reserve);
-  heap->old_generation()->set_promoted_reserve(old_promo_reserve);
+  heap->young_generation()->set_evacuation_reserve(budget.young_evac.reserve());
+  heap->old_generation()->set_evacuation_reserve(budget.old_evac.reserve());
+  heap->old_generation()->set_promoted_reserve(budget.promo.reserve());
 }
+
+#ifdef ASSERT
+void ShenandoahGlobalCSetBudget::assert_budget_constraints_hold(size_t original_total_reserves) const {
+  // Consider the effects of round-off:
+  //  1. We know that the sum over each evacuation multiplied by Evacuation Waste is <= total evacuation reserve
+  //  2. However, the reserve for each individual evacuation may be rounded down. In the worst case, we will be
+  //     over budget by the number of regions evacuated, since each region's reserve might be under-estimated by
+  //     at most 1.
+  //  3. Likewise, if we take the sum of bytes evacuated and multiply this by the Evacuation Waste and then round
+  //     down to nearest integer, the calculated reserve will underestimate the true reserve needs by at most 1.
+  //  4. This explains the adjustments to subtotals in the assert statements below.
+  assert(young_evac.live_bytes() * young_evac.waste_factor() <=
+         young_evac.reserve() + young_evac.region_count(),
+         "Young evac consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
+         (size_t)(young_evac.live_bytes() * young_evac.waste_factor()),
+         young_evac.reserve(), young_evac.region_count());
+  assert(old_evac.live_bytes() * old_evac.waste_factor() <=
+         old_evac.reserve() + old_evac.region_count(),
+         "Old evac consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
+         (size_t)(old_evac.live_bytes() * old_evac.waste_factor()),
+         old_evac.reserve(), old_evac.region_count());
+  assert(promo.live_bytes() * promo.waste_factor() <=
+         promo.reserve() + promo.region_count(),
+         "Promo consumption (%zu) exceeds reserve (%zu) + region count (%zu)",
+         (size_t)(promo.live_bytes() * promo.waste_factor()),
+         promo.reserve(), promo.region_count());
+
+  size_t total_post_reserves = young_evac.reserve() + old_evac.reserve() + promo.reserve();
+  assert(total_post_reserves <= original_total_reserves,
+         "Total post-cset reserves (%zu + %zu + %zu = %zu) exceed original reserves (%zu)",
+         young_evac.reserve(), old_evac.reserve(), promo.reserve(),
+         total_post_reserves, original_total_reserves);
+}
+#endif

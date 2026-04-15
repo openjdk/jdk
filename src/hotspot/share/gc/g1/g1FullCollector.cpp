@@ -353,7 +353,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
-  marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
+  marking_task_queues()->print_and_reset_taskqueue_stats("Full GC");
+
+  auto get_stats = [&](uint i) {
+    return marker(i)->partial_array_splitter().stats();
+  };
+  PartialArrayTaskStats::log_set(_num_workers, get_stats,
+                                 "Full GC Partial Array");
 #endif
 }
 

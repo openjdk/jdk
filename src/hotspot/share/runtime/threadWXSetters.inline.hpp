@@ -42,7 +42,7 @@ class ThreadWXEnable  {
 public:
   ThreadWXEnable(WXMode* new_mode, Thread* thread) :
     _thread(thread), _this_wx_mode(new_mode) {
-    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    NOT_PRODUCT(SafePerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
                 ? JavaThread::cast(_thread) : nullptr;
@@ -55,7 +55,7 @@ public:
   }
   ThreadWXEnable(WXMode new_mode, Thread* thread) :
     _thread(thread), _this_wx_mode(nullptr) {
-    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    NOT_PRODUCT(SafePerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
         ? JavaThread::cast(_thread) : nullptr;
@@ -68,7 +68,7 @@ public:
   }
 
   ~ThreadWXEnable() {
-    NOT_PRODUCT(PerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
+    NOT_PRODUCT(SafePerfTraceTime ptt(ClassLoader::perf_change_wx_time());)
     if (_thread) {
       _thread->enable_wx(_old_mode);
       JavaThread* javaThread
@@ -86,4 +86,3 @@ public:
 #endif // MACOS_AARCH64
 
 #endif // SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
-

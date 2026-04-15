@@ -94,14 +94,14 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @library /test/lib
  * @library ../debug
  * @build java.net.http/jdk.internal.net.http.common.TestLoggerUtil
- * @run junit/othervm PacketSpaceManagerTest
- * @run junit/othervm -Dseed=-7947549564260911920 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=-5413111674202728207 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=-176652423987357212 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=6550551791799910315 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=-4159871071396382784 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=2252276218459363615 PacketSpaceManagerTest
- * @run junit/othervm -Dseed=-5130588140709404919 PacketSpaceManagerTest
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Dseed=-7947549564260911920 ${test.main.class}
+ * @run junit/othervm -Dseed=-5413111674202728207 ${test.main.class}
+ * @run junit/othervm -Dseed=-176652423987357212 ${test.main.class}
+ * @run junit/othervm -Dseed=6550551791799910315 ${test.main.class}
+ * @run junit/othervm -Dseed=-4159871071396382784 ${test.main.class}
+ * @run junit/othervm -Dseed=2252276218459363615 ${test.main.class}
+ * @run junit/othervm -Dseed=-5130588140709404919 ${test.main.class}
  */
 // -Djdk.internal.httpclient.debug=true
 public class PacketSpaceManagerTest {

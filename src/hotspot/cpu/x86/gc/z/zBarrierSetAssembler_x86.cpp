@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1328,6 +1329,19 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
+  __ jcc(Assembler::notZero, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shrq(obj, barrier_Relocation::unpatched);
+}
+
 #undef __
 #endif // COMPILER2
 
@@ -1378,10 +1392,13 @@ static uint16_t patch_barrier_relocation_value(int format) {
   }
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool log) {
   const int offset = patch_barrier_relocation_offset(format);
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
+  if (log) {
+    log_trace(aot, codecache, stubs)("patching address " INTPTR_FORMAT " offset %d value 0x%x", p2i(addr), offset, value);
+  }
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
     if (VM_Version::supports_apx_f()) {
       NativeInstruction* instruction = nativeInstruction_at(addr);
@@ -1412,6 +1429,74 @@ void ZBarrierSetAssembler::patch_barriers() {
 
 #undef __
 #define __ masm->
+
+void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
+  int formats[] = {
+    ZBarrierRelocationFormatLoadBadAfterTest,
+    ZBarrierRelocationFormatStoreBadAfterTest,
+    ZBarrierRelocationFormatStoreGoodAfterOr,
+    -1
+  };
+  int format_idx = 0;
+  int format = formats[format_idx++];
+  for (int i = begin; i < begin + count; i++) {
+    address addr = entries.at(i);
+    // reloc addresses occur in 3 groups terminated with a nullptr
+    if (addr == nullptr) {
+      assert(format_idx < (int)(sizeof(formats) / sizeof(formats[0])),
+             "too many reloc groups");
+      format = formats[format_idx++];
+    } else {
+      switch(format) {
+      case ZBarrierRelocationFormatLoadBadAfterTest:
+        _load_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreBadAfterTest:
+        _store_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreGoodAfterOr:
+        _store_good_relocations.append(addr);
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+      }
+      patch_barrier_relocation(addr, format, true);
+    }
+  }
+  assert(format == -1, "unterminated format list");
+}
+
+void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
+  assert(start != nullptr, "start address must not be null");
+  assert(end != nullptr, "start address must not be null");
+  assert(start < end, "stub range must not be empty");
+  for (int i = 0; i < _load_bad_relocations.length(); i++) {
+    address addr = _load_bad_relocations.at(i);
+    assert(addr != nullptr, "load bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_bad_relocations.length(); i++) {
+    address addr = _store_bad_relocations.at(i);
+    assert(addr != nullptr, "store bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_good_relocations.length(); i++) {
+    address addr = _store_good_relocations.at(i);
+    assert(addr != nullptr, "store good reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+}
+
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored

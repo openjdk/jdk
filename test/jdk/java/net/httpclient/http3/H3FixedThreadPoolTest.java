@@ -36,7 +36,7 @@
  *          JTreg on Tier 7 so that, if the client becomes wedged again, the
  *          JTreg timeout handlers can collect more diagnostic information.
  *
- * @run testng/othervm  -Djdk.internal.httpclient.debug=err
+ * @run junit/othervm  -Djdk.internal.httpclient.debug=err
  *                      -Djdk.httpclient.HttpClient.log=ssl,headers,requests,responses,errors
  *                      -Djdk.httpclient.quic.idleTimeout=666666
  *                      -Djdk.test.server.quic.idleTimeout=666666
@@ -69,7 +69,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class H3FixedThreadPoolTest implements HttpServerAdapters {
 
@@ -118,7 +118,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             initialize();
             simpleTest(false);

@@ -160,7 +160,8 @@ import compiler.lib.ir_framework.TestFramework;
  * arguments into the strings. But since string templates are not (yet) available, the Templates provide
  * <strong>hashtag replacements</strong> in the {@link String}s: the Template argument names are captured, and
  * the argument values automatically replace any {@code "#name"} in the {@link String}s. See the different overloads
- * of {@link #make} for examples. Additional hashtag replacements can be defined with {@link #let}.
+ * of {@link #make} for examples. Additional hashtag replacements can be defined with {@link #let}. If a "#" is needed
+ * in the code, hashtag replacmement can be escaped by writing two hashtags, i.e. "##" will render as "#".
  * We have decided to keep hashtag replacements constrained to the scope of one Template. They
  * do not escape to outer or inner Template uses. If one needs to pass values to inner Templates,
  * this can be done with Template arguments. Keeping hashtag replacements local to Templates
@@ -172,7 +173,8 @@ import compiler.lib.ir_framework.TestFramework;
  * For this, Templates provide <strong>dollar replacements</strong>, which automatically rename any
  * {@code "$name"} in the {@link String} with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
  * a Template. The dollar replacement can also be captured with {@link #$}, and passed to nested
- * Templates, which allows sharing of these identifier names between Templates.
+ * Templates, which allows sharing of these identifier names between Templates. Similar to hashtag replacements,
+ * dollars can be escaped by doubling up, i.e. "$$" renders as "$".
  *
  * <p>
  * The dollar and hashtag names must have at least one character. The first character must be a letter

@@ -127,7 +127,12 @@ private:
   static void runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void dumptime_log_metaspace_region(const char* name, DumpRegion* region,
-                                            const ArchiveBuilder::SourceObjList* src_objs);
+                                            const ArchiveBuilder::SourceObjList* rw_objs,
+                                            const ArchiveBuilder::SourceObjList* ro_objs);
+  static void collect_metaspace_objs(GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                     address region_base, address region_top ,
+                                     const ArchiveBuilder::SourceObjList* src_objs);
+  static int compare_by_address(ArchivedObjInfo* a, ArchivedObjInfo* b);
 
   // Common code for dumptime/runtime
   static void log_file_header(FileMapInfo* mapinfo);

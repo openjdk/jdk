@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -151,9 +150,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
         wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
                 wixToolset.getType()));
-
-        wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
-                List::stream).distinct().toList().forEach(Log::verbose);
     }
 
     WinMsiPackager(BuildEnv env, WinMsiPackage pkg, Path outputDir, WinSystemEnvironment sysEnv) {
@@ -318,50 +314,50 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
     }
 
-    private Map<String, String> createWixVars() throws IOException {
-        Map<String, String> data = new HashMap<>();
+    private WixVariables createWixVars() throws IOException {
+        var wixVars = new WixVariables();
 
-        data.put("JpProductCode", pkg.productCode().toString());
-        data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
+        wixVars.put("JpProductCode", pkg.productCode().toString());
+        wixVars.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
 
         Log.verbose(I18N.format("message.product-code", pkg.productCode()));
         Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
 
-        data.put("JpAllowUpgrades", "yes");
+        wixVars.define("JpAllowUpgrades");
         if (!pkg.isRuntimeInstaller()) {
-            data.put("JpAllowDowngrades", "yes");
+            wixVars.define("JpAllowDowngrades");
         }
 
-        data.put("JpAppName", pkg.packageName());
-        data.put("JpAppDescription", pkg.description());
-        data.put("JpAppVendor", pkg.app().vendor());
-        data.put("JpAppVersion", pkg.version());
+        wixVars.put("JpAppName", pkg.packageName());
+        wixVars.put("JpAppDescription", pkg.description());
+        wixVars.put("JpAppVendor", pkg.app().vendor());
+        wixVars.put("JpAppVersion", pkg.version());
         if (Files.exists(installerIcon)) {
-            data.put("JpIcon", installerIcon.toString());
+            wixVars.put("JpIcon", installerIcon.toString());
         }
 
         pkg.helpURL().ifPresent(value -> {
-            data.put("JpHelpURL", value);
+            wixVars.put("JpHelpURL", value);
         });
 
         pkg.updateURL().ifPresent(value -> {
-            data.put("JpUpdateURL", value);
+            wixVars.put("JpUpdateURL", value);
         });
 
         pkg.aboutURL().ifPresent(value -> {
-            data.put("JpAboutURL", value);
+            wixVars.put("JpAboutURL", value);
         });
 
-        data.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
+        wixVars.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
                 env.appImageLayout()).sizeInBytes() >> 10));
 
-        data.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
+        wixVars.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
 
         if (pkg.isSystemWideInstall()) {
-            data.put("JpIsSystemWide", "yes");
+            wixVars.define("JpIsSystemWide");
         }
 
-        return data;
+        return wixVars;
     }
 
     private static List<Path> getWxlFilesFromDir(Path dir) {

@@ -25,22 +25,17 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
+import java.util.function.IntUnaryOperator;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
-
-import java.lang.foreign.ValueLayout;
-import java.lang.reflect.Array;
-import java.nio.ByteOrder;
-import java.util.Objects;
-import java.util.function.IntUnaryOperator;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
-abstract class AbstractVector<E> extends Vector<E> {
+abstract sealed class AbstractVector<E> extends Vector<E>
+        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.

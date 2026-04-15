@@ -276,6 +276,11 @@ public class WindowsHelper {
         return MsiDatabaseCache.INSTANCE.findProperty(cmd.outputBundle(), propertyName).orElseThrow();
     }
 
+    public static MsiDatabase.UIAlterations getUIAlterations(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        return MsiDatabaseCache.INSTANCE.uiAlterations(cmd.outputBundle());
+    }
+
     static Collection<MsiDatabase.Shortcut> getMsiShortcuts(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
         return MsiDatabaseCache.INSTANCE.listShortcuts(cmd.outputBundle());
@@ -570,6 +575,10 @@ public class WindowsHelper {
 
         Collection<MsiDatabase.Shortcut> listShortcuts(Path msiPath) {
             return ensureTables(msiPath, MsiDatabase.Table.LIST_SHORTCUTS_REQUIRED_TABLES).listShortcuts();
+        }
+
+        MsiDatabase.UIAlterations uiAlterations(Path msiPath) {
+            return ensureTables(msiPath, MsiDatabase.Table.UI_ALTERATIONS_REQUIRED_TABLES).uiAlterations();
         }
 
         MsiDatabase ensureTables(Path msiPath, Set<MsiDatabase.Table> tableNames) {

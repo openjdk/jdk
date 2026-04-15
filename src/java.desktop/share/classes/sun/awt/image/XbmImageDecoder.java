@@ -43,22 +43,25 @@ import static java.lang.Math.multiplyExact;
 /**
  * Parse files of the form:
  *
+ * {@snippet lang=c:
  * #define foo_width w
  * #define foo_height h
  * static char foo_bits[] = {
  * 0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,
  * 0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,
  * 0xnn,0xnn,0xnn,0xnn};
+ * }
  *
  * @author James Gosling
  */
 public class XbmImageDecoder extends ImageDecoder {
-    private static byte[] XbmColormap = {(byte) 255, (byte) 255, (byte) 255,
-                                         0, 0, 0};
-    private static int XbmHints = (ImageConsumer.TOPDOWNLEFTRIGHT |
-                                   ImageConsumer.COMPLETESCANLINES |
-                                   ImageConsumer.SINGLEPASS |
-                                   ImageConsumer.SINGLEFRAME);
+    private static final byte[] XbmColormap = {(byte) 255, (byte) 255, (byte) 255,
+                                               0, 0, 0};
+    private static final int XbmHints = (ImageConsumer.TOPDOWNLEFTRIGHT |
+                                         ImageConsumer.COMPLETESCANLINES |
+                                         ImageConsumer.SINGLEPASS |
+                                         ImageConsumer.SINGLEFRAME);
+
     private static final int MAX_XBM_SIZE = 16384;
     private static final int HEADER_SCAN_LIMIT = 100;
 

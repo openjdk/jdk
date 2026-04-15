@@ -210,8 +210,6 @@ WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTask
 }
 
 void WorkerThread::run() {
-  os::set_priority(this, NearMaxPriority);
-
   while (true) {
     _dispatcher->worker_run_task();
   }

@@ -535,6 +535,10 @@ protected:
 
   static const char* _features_names[];
 
+  static void clear_feature(Feature_Flag feature) {
+    _features.clear_feature(feature);
+  }
+
   static void clear_cpu_features() {
     _features = VM_Features();
     _cpu_features = VM_Features();
@@ -828,7 +832,7 @@ public:
   static uint32_t cpu_stepping()          { return _cpuid_info.cpu_stepping(); }
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
-  static bool is_intel_server_family()    { return cpu_family() == 6 || cpu_family() == 19; }
+  static bool is_intel_server_family()    { return cpu_family() == 6 || cpu_family() == 18 || cpu_family() == 19; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_hygon()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x6F677948; } // 'ogyH'
   static bool is_amd_family()     { return is_amd() || is_hygon(); }
@@ -930,6 +934,7 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return _cpu_features.supports_feature(CPU_AVX512F); }
+  static bool cpu_supports_aes()      { return _cpu_features.supports_feature(CPU_AES); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
@@ -958,7 +963,11 @@ public:
 
   static bool is_intel_darkmont();
 
-  static int avx3_threshold();
+  static bool is_intel_modern_cpu() {
+    precond(is_intel()); // should be called only for intel CPU
+    // Efficient cores in hybrid CPU may not support hyper-threads.
+    return (supports_avx() || (supports_sse4_2() && (supports_ht() || supports_hybrid())));
+  }
 
   static bool is_intel_tsc_synched_at_init();
 

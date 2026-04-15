@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
-import static java.text.DateFormatSymbols.*;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -56,6 +56,8 @@ import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
+
+import static java.text.DateFormatSymbols.*;
 
 /**
  * {@code SimpleDateFormat} is a concrete class for formatting and
@@ -1293,15 +1295,22 @@ public class SimpleDateFormat extends DateFormat {
 
         case PATTERN_ZONE_NAME: // 'z'
             if (current == null) {
+                TimeZone tz = calendar.getTimeZone();
+                String tzid = tz.getID();
+                int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
+                int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
+
+                // Check if an explicit metazone DST offset exists
+                String explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                boolean daylight = explicitDstOffset != null ?
+                    dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 :
+                    dstOffset != zoneOffset;
                 if (formatData.locale == null || formatData.isZoneStringsSet) {
-                    int zoneIndex =
-                        formatData.getZoneIndex(calendar.getTimeZone().getID());
+                    int zoneIndex = formatData.getZoneIndex(tzid);
                     if (zoneIndex == -1) {
-                        value = calendar.get(Calendar.ZONE_OFFSET) +
-                            calendar.get(Calendar.DST_OFFSET);
-                        buffer.append(ZoneInfoFile.toCustomID(value));
+                        buffer.append(ZoneInfoFile.toCustomID(dstOffset));
                     } else {
-                        int index = (calendar.get(Calendar.DST_OFFSET) == 0) ? 1: 3;
+                        int index = daylight ? 3 : 1;
                         if (count < 4) {
                             // Use the short name
                             index++;
@@ -1310,8 +1319,6 @@ public class SimpleDateFormat extends DateFormat {
                         buffer.append(zoneStrings[zoneIndex][index]);
                     }
                 } else {
-                    TimeZone tz = calendar.getTimeZone();
-                    boolean daylight = (calendar.get(Calendar.DST_OFFSET) != 0);
                     int tzstyle = (count < 4 ? TimeZone.SHORT : TimeZone.LONG);
                     buffer.append(tz.getDisplayName(daylight, tzstyle, formatData.locale));
                 }

@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code double} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class DoubleVector extends AbstractVector<Double> {
+public abstract sealed class DoubleVector extends AbstractVector<Double>
+         permits DoubleVector64, DoubleVector128, DoubleVector256, DoubleVector512, DoubleVectorMax {
 
     DoubleVector(double[] vec) {
         super(vec);
@@ -724,7 +725,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final
     DoubleVector unaryMathOp(VectorOperators.Unary op) {
-        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), DoubleVector::unaryOperations,
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), vspecies(), DoubleVector::unaryOperations,
                                              this);
     }
 
@@ -851,7 +852,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final
     DoubleVector binaryMathOp(VectorOperators.Binary op, DoubleVector that) {
-        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), DoubleVector::binaryOperations,
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), vspecies(), DoubleVector::binaryOperations,
                                               this, that);
     }
 

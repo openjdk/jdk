@@ -237,7 +237,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("G1ConcRefinementThreads");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
-        excludeTestMaxRange("MaxRAM");
         excludeTestMaxRange("NewSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");

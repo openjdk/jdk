@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -236,7 +237,7 @@ private:
   VerifyOption     _vo;
   bool             _failures;
 
-  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->in_full_gc(); }
+  bool is_in_full_gc() const { return G1CollectedHeap::heap()->collector_state()->is_in_full_gc(); }
 
 public:
   VerifyRegionClosure(VerifyOption vo)
@@ -349,7 +350,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   bool failures = rootsCl.failures() || codeRootsCl.failures();
 
-  if (!_g1h->policy()->collector_state()->in_full_gc()) {
+  if (!_g1h->policy()->collector_state()->is_in_full_gc()) {
     // If we're verifying during a full GC then the region sets
     // will have been torn down at the start of the GC. Therefore
     // verifying the region sets will fail. So we only verify
@@ -494,7 +495,7 @@ public:
 };
 
 void G1HeapVerifier::verify_marking_state() {
-  assert(G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(), "must be");
+  assert(G1CollectedHeap::heap()->collector_state()->is_in_concurrent_start_gc(), "must be");
 
   // Verify TAMSes, bitmaps and liveness statistics.
   //

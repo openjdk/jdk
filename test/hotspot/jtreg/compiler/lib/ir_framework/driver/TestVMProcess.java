@@ -68,6 +68,7 @@ public class TestVMProcess {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
+            socket.start();
             prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
                                allowNotCompilable, testClassesOnBootClassPath);
             start();
@@ -75,6 +76,7 @@ public class TestVMProcess {
         checkTestVMExitCode();
         String hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
         testVmData = socket.testVmData(hotspotPidFileName, allowNotCompilable);
+        testVmData.printJavaMessages();
     }
 
     public String getCommandLine() {

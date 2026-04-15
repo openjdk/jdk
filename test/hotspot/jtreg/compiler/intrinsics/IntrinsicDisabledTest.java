@@ -217,8 +217,7 @@ public class IntrinsicDisabledTest {
     }
 
     public static void main(String args[]) {
-        if (Platform.isServer() && !Platform.isEmulatedClient() &&
-                                   (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             if (TIERED_COMPILATION) {
                 test(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
             }

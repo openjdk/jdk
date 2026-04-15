@@ -43,7 +43,7 @@ public final class JPackageOutputValidator {
     }
 
     public JPackageOutputValidator(JPackageOutputValidator other) {
-        stdout = other.stdout;
+        stream = other.stream;
         match = other.match;
         matchTimestamps = other.matchTimestamps;
         stripTimestamps = other.stripTimestamps;
@@ -59,7 +59,7 @@ public final class JPackageOutputValidator {
      * @return this
      */
     public JPackageOutputValidator stdout() {
-        stdout = true;
+        stream = StdStream.OUT;
         return this;
     }
 
@@ -68,7 +68,16 @@ public final class JPackageOutputValidator {
      * @return this
      */
     public JPackageOutputValidator stderr() {
-        stdout = false;
+        stream = StdStream.ERR;
+        return this;
+    }
+
+    /**
+     * Configures this validator to validate both stdout and stderr.
+     * @return this
+     */
+    public JPackageOutputValidator stdoutAndStderr() {
+        stream = StdStream.OUT_AND_ERR;
         return this;
     }
 
@@ -131,6 +140,11 @@ public final class JPackageOutputValidator {
         return this;
     }
 
+    public JPackageOutputValidator mutate(Consumer<JPackageOutputValidator> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public void applyTo(JPackageCommand cmd) {
         toResultConsumer(cmd).ifPresent(cmd::validateResult);
     }
@@ -171,7 +185,7 @@ public final class JPackageOutputValidator {
     }
 
     public JPackageOutputValidator compose(JPackageOutputValidator other) {
-        if (stdout != other.stdout) {
+        if (stream != other.stream) {
             throw new IllegalArgumentException();
         }
         if (match != other.match) {
@@ -188,7 +202,7 @@ public final class JPackageOutputValidator {
 
     private Optional<Consumer<Executor.Result>> toResultConsumer(JPackageCommand cmd) {
         return toStringIteratorConsumer(cmd).map(validator -> {
-            return toResultConsumer(validator, stdout, match, label());
+            return toResultConsumer(validator, stream, match, label());
         });
     }
 
@@ -244,7 +258,11 @@ public final class JPackageOutputValidator {
     }
 
     private String label() {
-        return stdout ? "'stdout'" : "'stderr'";
+        return switch (stream) {
+            case OUT -> "'stdout'";
+            case ERR -> "'stderr'";
+            case OUT_AND_ERR -> "'stdout+stderr'";
+        };
     }
 
     private Consumer<Iterator<String>> decorate(TKit.TextStreamVerifier validator) {
@@ -256,17 +274,16 @@ public final class JPackageOutputValidator {
     }
 
     private static Consumer<Executor.Result> toResultConsumer(
-            Consumer<Iterator<String>> validator, boolean stdout, boolean match, String label) {
+            Consumer<Iterator<String>> validator, StdStream stream, boolean match, String label) {
         Objects.requireNonNull(validator);
         Objects.requireNonNull(label);
 
         return result -> {
-            List<String> content;
-            if (stdout) {
-                content = result.stdout();
-            } else {
-                content = result.stderr();
-            }
+            List<String> content = switch (stream) {
+                case OUT -> result.stdout();
+                case ERR -> result.stderr();
+                case OUT_AND_ERR -> result.getOutput();
+            };
 
             if (match) {
                 TKit.trace(String.format("Checking %s for exact match against defined validators...", label));
@@ -371,7 +388,14 @@ public final class JPackageOutputValidator {
         }
     }
 
-    boolean stdout = true;
+    private enum StdStream {
+        OUT,
+        ERR,
+        OUT_AND_ERR,
+        ;
+    }
+
+    StdStream stream = StdStream.OUT;
     boolean match;
     boolean matchTimestamps;
     boolean stripTimestamps;

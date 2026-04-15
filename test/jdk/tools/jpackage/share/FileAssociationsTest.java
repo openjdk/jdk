@@ -23,6 +23,8 @@
 
 import static java.util.Map.entry;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -84,7 +86,7 @@ public class FileAssociationsTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public static void test(boolean includeDescription) {
+    public static void test(boolean includeDescription) throws IOException {
         PackageTest packageTest = new PackageTest();
 
         // Not supported
@@ -96,10 +98,8 @@ public class FileAssociationsTest {
         }
         fa.applyTo(packageTest);
 
-        Path icon = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon"
-                + TKit.ICON_SUFFIX));
-
-        icon = TKit.createRelativePathCopy(icon);
+        var icon = TKit.createTempDirectory("icon-dir").resolve(ICON.getFileName());
+        Files.copy(ICON, icon);
 
         new FileAssociations("jptest2")
                 .setFilename("fa2")
@@ -151,4 +151,6 @@ public class FileAssociationsTest {
                 .addInitializer(JPackageCommand::setFakeRuntime)
                 .setExpectedExitCode(1);
     }
+
+    private static final Path ICON = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon" + TKit.ICON_SUFFIX));
 }

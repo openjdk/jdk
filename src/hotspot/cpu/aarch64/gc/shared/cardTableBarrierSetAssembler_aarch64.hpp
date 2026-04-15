@@ -46,7 +46,7 @@ protected:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
-  void store_check(MacroAssembler* masm, Register obj, Address dst);
+  void store_check(MacroAssembler* masm, Register obj, Address dst, Register tmp1, Register tmp2);
 };
 
 #endif // CPU_AARCH64_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_AARCH64_HPP

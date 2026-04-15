@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,144 +21,146 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.io.Writer;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertSame;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8196298
- * @run testng NullWriter
+ * @run junit NullWriter
  * @summary Check for expected behavior of Writer.nullWriter().
  */
 public class NullWriter {
     private static Writer openWriter;
     private static Writer closedWriter;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws IOException {
         openWriter = Writer.nullWriter();
         closedWriter = Writer.nullWriter();
         closedWriter.close();
     }
 
-    @AfterClass
+    @AfterAll
     public static void closeStream() throws IOException {
         openWriter.close();
     }
 
     @Test
-    public static void testOpen() {
+    public void testOpen() {
         assertNotNull(openWriter, "Writer.nullWriter() returned null");
     }
 
     @Test
-    public static void testAppendChar() throws IOException {
+    public void testAppendChar() throws IOException {
         assertSame(openWriter, openWriter.append('x'));
     }
 
     @Test
-    public static void testAppendCharSequence() throws IOException {
+    public void testAppendCharSequence() throws IOException {
         CharSequence cs = "abc";
         assertSame(openWriter, openWriter.append(cs));
     }
 
     @Test
-    public static void testAppendCharSequenceNull() throws IOException {
+    public void testAppendCharSequenceNull() throws IOException {
         assertSame(openWriter, openWriter.append(null));
     }
 
     @Test
-    public static void testAppendCharSequenceII() throws IOException {
+    public void testAppendCharSequenceII() throws IOException {
         CharSequence cs = "abc";
         assertSame(openWriter, openWriter.append(cs, 0, 1));
     }
 
     @Test
-    public static void testAppendCharSequenceIINull() throws IOException {
+    public void testAppendCharSequenceIINull() throws IOException {
         assertSame(openWriter, openWriter.append(null, 2, 1));
     }
 
     @Test
-    public static void testFlush() throws IOException {
+    public void testFlush() throws IOException {
         openWriter.flush();
     }
 
     @Test
-    public static void testWrite() throws IOException {
+    public void testWrite() throws IOException {
         openWriter.write(62832);
     }
 
     @Test
-    public static void testWriteString() throws IOException {
+    public void testWriteString() throws IOException {
         openWriter.write("");
     }
 
     @Test
-    public static void testWriteStringII() throws IOException {
+    public void testWriteStringII() throws IOException {
         openWriter.write("", 0, 0);
     }
 
     @Test
-    public static void testWriteBII() throws IOException, Exception {
+    public void testWriteBII() throws IOException, Exception {
         openWriter.write(new char[]{(char) 6}, 0, 1);
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testAppendCharClosed() throws IOException {
-        closedWriter.append('x');
+    @Test
+    public void testAppendCharClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.append('x'));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testAppendCharSequenceClosed() throws IOException {
+    @Test
+    public void testAppendCharSequenceClosed() throws IOException {
         CharSequence cs = "abc";
-        closedWriter.append(cs);
+        assertThrows(IOException.class, () -> closedWriter.append(cs));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testAppendCharSequenceNullClosed() throws IOException {
-        closedWriter.append(null);
+    @Test
+    public void testAppendCharSequenceNullClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.append(null));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testAppendCharSequenceIIClosed() throws IOException {
+    @Test
+    public void testAppendCharSequenceIIClosed() throws IOException {
         CharSequence cs = "abc";
-        closedWriter.append(cs, 0, 1);
+        assertThrows(IOException.class, () -> closedWriter.append(cs, 0, 1));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testAppendCharSequenceIINullClosed() throws IOException {
-        closedWriter.append(null, 2, 1);
+    @Test
+    public void testAppendCharSequenceIINullClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.append(null, 2, 1));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testFlushClosed() throws IOException {
-        closedWriter.flush();
+    @Test
+    public void testFlushClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.flush());
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testWriteClosed() throws IOException {
-        closedWriter.write(62832);
+    @Test
+    public void testWriteClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.write(62832));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testWriteStringClosed() throws IOException {
-        closedWriter.write("");
+    @Test
+    public void testWriteStringClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.write(""));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testWriteStringIIClosed() throws IOException {
-        closedWriter.write("", 0, 0);
+    @Test
+    public void testWriteStringIIClosed() throws IOException {
+        assertThrows(IOException.class, () -> closedWriter.write("", 0, 0));
     }
 
-    @Test(expectedExceptions = IOException.class)
-    public static void testWriteBIIClosed() throws IOException {
-        closedWriter.write(new char[]{(char) 6}, 0, 1);
+    @Test
+    public void testWriteBIIClosed() throws IOException {
+        assertThrows(IOException.class,
+                     () -> closedWriter.write(new char[]{(char) 6}, 0, 1));
     }
 }

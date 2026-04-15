@@ -31,6 +31,7 @@
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahMarkRefsSuperClosure;
 class WorkerThreads;
@@ -133,10 +134,10 @@ private:
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
 
-  oop _pending_list;
+  Atomic<oop> _pending_list;
   void* _pending_list_tail; // T*
 
-  volatile uint _iterate_discovered_list_id;
+  Atomic<uint> _iterate_discovered_list_id;
 
   ReferenceProcessorStats _stats;
 

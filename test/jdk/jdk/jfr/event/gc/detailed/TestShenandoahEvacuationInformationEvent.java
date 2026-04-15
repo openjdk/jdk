@@ -68,8 +68,8 @@ public class TestShenandoahEvacuationInformationEvent {
             long setUsedAfter = Events.assertField(event, "cSetUsedAfter").atLeast(0L).getValue();
             long setUsedBefore = Events.assertField(event, "cSetUsedBefore").atLeast(setUsedAfter).getValue();
             long freeRegions = Events.assertField(event, "freeRegions").atLeast(0L).getValue();
-            Events.assertField(event, "collectedOld").atLeast(0L).getValue();
-            Events.assertField(event, "collectedYoung").atLeast(0L).getValue();
+            Events.assertField(event, "regionsImmediate").atLeast(0L).getValue();
+            Events.assertField(event, "immediateBytes").atLeast(0L).getValue();
 
             Asserts.assertGreaterThanOrEqual(shenandoahMaxHeapRegionCount, freeRegions + cSetRegions, "numRegions >= freeRegions + cSetRegions");
             Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedAfter, "ShenandoahHeapRegionSize * cSetRegions >= setUsedAfter");

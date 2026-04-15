@@ -152,28 +152,14 @@ const char* Abstract_VM_Version::vm_info_string() {
       }
     case Arguments::_mixed:
       if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, static, sharing" : "mixed mode, emulated-client, static";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
-         }
+        return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, sharing" : "mixed mode, emulated-client";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
-        }
+        return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
       }
     case Arguments::_comp:
       if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, static, sharing" : "compiled mode, emulated-client, static";
-        }
         return CDSConfig::is_using_archive() ? "compiled mode, static, sharing" : "compiled mode, static";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
-        }
         return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
       }
   }

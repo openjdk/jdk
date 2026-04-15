@@ -40,20 +40,6 @@
 class MemRegion;
 
 #if INCLUDE_CDS_JAVA_HEAP
-class DumpedInternedStrings :
-  public ResizeableHashTable<oop, bool,
-                           AnyObj::C_HEAP,
-                           mtClassShared,
-                           HeapShared::string_oop_hash>
-{
-public:
-  DumpedInternedStrings(unsigned size, unsigned max_size) :
-    ResizeableHashTable<oop, bool,
-                                AnyObj::C_HEAP,
-                                mtClassShared,
-                                HeapShared::string_oop_hash>(size, max_size) {}
-};
-
 class AOTMappedHeapWriter : AllStatic {
   friend class HeapShared;
   friend class AOTMappedHeapLoader;
@@ -131,7 +117,6 @@ private:
 
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
-  static DumpedInternedStrings *_dumped_interned_strings;
 
   // We sort _source_objs_order to minimize the number of bits in ptrmap and oopmap.
   // See comments near the body of AOTMappedHeapWriter::compare_objs_by_oop_fields().
@@ -190,6 +175,7 @@ private:
   static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static size_t copy_one_source_obj_to_buffer(oop src_obj);
+  static void update_stats(oop src_obj);
 
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
   static size_t filler_array_byte_size(int length);
@@ -227,8 +213,6 @@ public:
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
   static bool is_string_too_large_to_archive(oop string);
-  static bool is_dumped_interned_string(oop o);
-  static void add_to_dumped_interned_strings(oop string);
   static void write(GrowableArrayCHeap<oop, mtClassShared>*, AOTMappedHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
   static size_t get_filler_size_at(address buffered_addr);

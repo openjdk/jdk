@@ -28,6 +28,7 @@
 #include "cppstdlib/limits.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/intn_t.hpp"
 
 class outputStream;
 class Type;
@@ -406,6 +407,40 @@ public:
       U<CTP> ones = (st1._bits._zeros & st2._bits._ones) | (st1._bits._ones & st2._bits._zeros);
       return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
     });
+  }
+
+  // Compute `known_bits` by shifting known bits of `t1` left and setting the
+  // low `shift` bits to zeros.  Also update the signed and unsigned ranges when
+  // the shift operation does not cause an overflow.  The caller is responsible
+  // for normalizing the shift amount (i.e. masking with 31 for ints or 63 for
+  // longs).
+  template <class CTP>
+  static CTP infer_lshift(CTP t1, int masked_shift) {
+    assert(masked_shift >= 0 &&
+        masked_shift < HotSpotNumerics::type_width<U<CTP>>(),
+        "shift is out of range");
+
+    U<CTP> pattern = (U<CTP>(1) << masked_shift) - U<CTP>(1);
+    U<CTP> known_one_bits = t1->_bits._ones << masked_shift;
+    U<CTP> known_zero_bits = (t1->_bits._zeros << masked_shift) | pattern;
+    KnownBits<U<CTP>> known_bits{known_zero_bits, known_one_bits};
+
+    S<CTP> shifted_slo = S<CTP>(U<CTP>(t1->_lo) << masked_shift);
+    S<CTP> shifted_shi = S<CTP>(U<CTP>(t1->_hi) << masked_shift);
+    bool s_overflow = (shifted_slo >> masked_shift) != t1->_lo ||
+                      (shifted_shi >> masked_shift) != t1->_hi;
+    S<CTP> slo = s_overflow ? std::numeric_limits<S<CTP>>::min() : shifted_slo;
+    S<CTP> shi = s_overflow ? std::numeric_limits<S<CTP>>::max() : shifted_shi;
+
+    U<CTP> shifted_ulo = t1->_ulo << masked_shift;
+    U<CTP> shifted_uhi = t1->_uhi << masked_shift;
+    bool u_overflow = (shifted_ulo >> masked_shift) != t1->_ulo ||
+                      (shifted_uhi >> masked_shift) != t1->_uhi;
+    U<CTP> ulo = u_overflow ? std::numeric_limits<U<CTP>>::min() : shifted_ulo;
+    U<CTP> uhi = u_overflow ? std::numeric_limits<U<CTP>>::max() : shifted_uhi;
+
+    TypeIntPrototype<S<CTP>, U<CTP>> proto{{slo, shi}, {ulo, uhi}, known_bits};
+    return CT<CTP>::make(proto, t1->_widen);
   }
 };
 

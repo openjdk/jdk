@@ -501,3 +501,9 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
     0x751997d0UL, 0x00000001UL,
     0xccaa009eUL, 0x00000000UL,
 };
+
+#if INCLUDE_CDS
+// nothing to do for riscv
+void StubRoutines::init_AOTAddressTable() {
+}
+#endif // INCLUDE_CDS

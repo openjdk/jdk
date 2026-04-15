@@ -34,7 +34,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -512,7 +511,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
     guarantee(at(i) != nullptr, "Tried to access region %u that has a null G1HeapRegion*", i);
     bool res = blk->do_heap_region(at(i));
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }
@@ -527,7 +525,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
     }
     bool res = blk->do_heap_region_index(i);
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }

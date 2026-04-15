@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @compile ../ReferenceTracker.java
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=quic,errors
  *              -Djdk.httpclient.http3.maxDirectConnectionTimeout=4000
- *              -Djdk.internal.httpclient.debug=true H3UserInfoTest
+ *              -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

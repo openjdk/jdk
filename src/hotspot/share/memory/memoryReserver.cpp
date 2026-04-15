@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,12 +231,7 @@ ReservedSpace MemoryReserver::reserve(size_t size,
 
 void MemoryReserver::release(const ReservedSpace& reserved) {
   assert(reserved.is_reserved(), "Precondition");
-
-  if (reserved.special()) {
-    os::release_memory_special(reserved.base(), reserved.size());
-  } else {
-    os::release_memory(reserved.base(), reserved.size());
-  }
+  os::release_memory(reserved.base(), reserved.size());
 }
 
 static char* map_memory_to_file(char* requested_address,
@@ -372,11 +367,7 @@ ReservedSpace HeapReserver::Instance::reserve_memory(size_t size,
 void HeapReserver::Instance::release(const ReservedSpace& reserved) {
   if (reserved.is_reserved()) {
     if (_fd == -1) {
-      if (reserved.special()) {
-        os::release_memory_special(reserved.base(), reserved.size());
-      } else{
-        os::release_memory(reserved.base(), reserved.size());
-      }
+      os::release_memory(reserved.base(), reserved.size());
     } else {
       os::unmap_memory(reserved.base(), reserved.size());
     }

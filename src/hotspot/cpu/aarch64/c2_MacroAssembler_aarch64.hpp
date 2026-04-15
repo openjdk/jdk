@@ -75,6 +75,8 @@
                                    unsigned vector_length_in_bytes);
 
  public:
+  using Assembler::sve_cpy;
+
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
                           FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
@@ -244,4 +246,7 @@
   void vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
                          int vector_length_in_bytes);
+
+  void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
+               bool isMerge);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
