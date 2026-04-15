@@ -2612,11 +2612,11 @@ public class Cipher {
      * @since 27
      */
     public SecretKey exportKey(String algorithm, byte[] context, int length) {
+        checkCipherState();
         Objects.requireNonNull(algorithm);
         if (length <= 0) {
             throw new IllegalArgumentException("length must be a positive number");
         }
-        checkCipherState();
         chooseFirstProvider();
         return spi.engineExportKey(algorithm, context, length);
     }
@@ -2637,8 +2637,8 @@ public class Cipher {
      * derived data when the same arguments are provided.
      *
      * @param context a byte array representing additional data or context
-     *          information that influences the key derivation process.
-     *          The derived key should be unique to the given context.
+     *          information that influences the data derivation process.
+     *          The derived data should be unique to the given context.
      *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived data
      *          (must be greater than 0)
@@ -2656,10 +2656,10 @@ public class Cipher {
      * @since 27
      */
     public byte[] exportData(byte[] context, int length) {
+        checkCipherState();
         if (length <= 0) {
             throw new IllegalArgumentException("length must be a positive number");
         }
-        checkCipherState();
         chooseFirstProvider();
         return spi.engineExportData(context, length);
     }
