@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,71 @@
  * @test
  * @bug 8359170
  * @summary Interoperability tests with Sectigo Public Code Signing Root CAs
- * @build ValidatePathWithParams
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithParams
  * @run main/othervm/manual -Djava.security.debug=ocsp,certpath SectigoCSRootCAs OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath SectigoCSRootCAs CRL
  */
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import jtreg.SkippedException;
+
 public class SectigoCSRootCAs {
+
+    /**
+     * Live revocation checks need outbound HTTP to Sectigo. Skip when the
+     * environment has no route (or needs an HTTP proxy that is not configured).
+     */
+    private static void requireSectigoRevocationServicesReachable(boolean crlMode) {
+        final String probeUrl = crlMode
+                ? "http://crl.sectigo.com/SectigoPublicCodeSigningRootR46.crl"
+                : "http://ocsp.sectigo.com/";
+        final String modeLabel = crlMode ? "CRL" : "OCSP";
+
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL(probeUrl).openConnection();
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(10_000);
+            conn.setInstanceFollowRedirects(true);
+            conn.connect();
+            int code = conn.getResponseCode();
+            InputStream in = (code >= HttpURLConnection.HTTP_BAD_REQUEST)
+                    ? conn.getErrorStream()
+                    : conn.getInputStream();
+            if (in != null) {
+                try {
+                    byte[] buf = new byte[512];
+                    in.read(buf);
+                } finally {
+                    in.close();
+                }
+            }
+        } catch (IOException e) {
+            throw new SkippedException(
+                    "Cannot reach Sectigo " + modeLabel + " endpoint (" + probeUrl + "). "
+                            + "This test needs outbound internet to Sectigo (or "
+                            + "http.proxyHost/http.proxyPort if HTTP access requires a proxy).",
+                    e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
 
+        boolean crlMode = args.length >= 1 && "CRL".equalsIgnoreCase(args[0]);
+        requireSectigoRevocationServicesReachable(crlMode);
+
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+        if (crlMode) {
             pathValidator.enableCRLCheck();
         } else {
             // OCSP check by default
