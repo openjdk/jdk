@@ -194,8 +194,12 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
-  // Roots processing is complete, put the weak roots/ref flags down.
+  // Roots processing is complete, perform the final root operations and put
+  // the weak roots/ref flags down.
   entry_final_roots();
+  // if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+  //   return false;
+  // }
 
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
@@ -232,28 +236,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     _abbreviated = true;
 
     if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
-
-      // We chose not to evacuate because we found sufficient immediate garbage.
-      // However, there may still be regions to promote in place, so do that now.
-      if (heap->old_generation()->has_in_place_promotions()) {
-        entry_promote_in_place();
-
-        // If the promote-in-place operation was cancelled, we can have the degenerated
-        // cycle complete the operation. It will see that no evacuations are in progress,
-        // and that there are regions wanting promotion. The risk with not handling the
-        // cancellation would be failing to restore top for these regions and leaving
-        // them unable to serve allocations for the old generation.This will leave the weak
-        // roots flag set (the degenerated cycle will unset it).
-        if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
-          return false;
-        }
-      }
-
-      // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
-      // the control thread will detect it on its next iteration and run a degenerated young cycle.
-      if (!_generation->is_old()) {
-        heap->update_region_ages(_generation->complete_marking_context());
+      if (!complete_abbreviated_cycle()) {
+        return false;
       }
     }
 
@@ -272,6 +256,36 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // previous GC. This allows us to start the next GC cycle more quickly after a trigger condition is detected,
   // reducing the likelihood that GC will degenerate.
   entry_reset_after_collect();
+
+  return true;
+}
+
+bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
+  shenandoah_assert_generational();
+
+  ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
+
+  // We chose not to evacuate because we found sufficient immediate garbage.
+  // However, there may still be regions to promote in place, so do that now.
+  if (heap->old_generation()->has_in_place_promotions()) {
+    entry_promote_in_place();
+
+    // If the promote-in-place operation was cancelled, we can have the degenerated
+    // cycle complete the operation. It will see that no evacuations are in progress,
+    // and that there are regions wanting promotion. The risk with not handling the
+    // cancellation would be failing to restore top for these regions and leaving
+    // them unable to serve allocations for the old generation.This will leave the weak
+    // roots flag set (the degenerated cycle will unset it).
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+      return false;
+    }
+  }
+
+  // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
+  // the control thread will detect it on its next iteration and run a degenerated young cycle.
+  if (!_generation->is_old()) {
+    heap->update_region_ages(_generation->complete_marking_context());
+  }
 
   return true;
 }
