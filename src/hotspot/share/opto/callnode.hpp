@@ -503,6 +503,66 @@ public:
     return _has_ea_local_in_scope;
   }
 
+  // A temporary storge for node edges.
+  // Intended for a single use.
+  class NodeEdgeTempStorage : public StackObj {
+    friend class SafePointNode;
+
+    PhaseIterGVN& _igvn;
+    Node*         _node_hook;
+
+#ifdef ASSERT
+    enum State { state_initial, state_populated, state_processed };
+
+    State _state; // monotonically transitions from initial to processed state.
+#endif // ASSERT
+
+    bool is_empty() const {
+      return _node_hook == nullptr || _node_hook->req() == 1;
+    }
+    void push(Node* n) {
+      assert(n != nullptr, "");
+      if (_node_hook == nullptr) {
+        _node_hook = new Node(nullptr);
+      }
+      _node_hook->add_req(n);
+    }
+    Node* pop() {
+      assert(!is_empty(), "");
+      int idx = _node_hook->req()-1;
+      Node* r = _node_hook->in(idx);
+      _node_hook->del_req(idx);
+      assert(r != nullptr, "");
+      return r;
+    }
+
+  public:
+    NodeEdgeTempStorage(PhaseIterGVN &igvn) : _igvn(igvn), _node_hook(nullptr)
+                                              DEBUG_ONLY(COMMA _state(state_initial)) {
+      assert(is_empty(), "");
+    }
+
+    ~NodeEdgeTempStorage() {
+      assert(_state == state_processed, "not processed");
+      assert(is_empty(), "");
+      if (_node_hook != nullptr) {
+        _node_hook->destruct(&_igvn);
+      }
+    }
+
+    void remove_edge_if_present(Node* n) {
+      if (!is_empty()) {
+        int idx = _node_hook->find_edge(n);
+        if (idx > 0) {
+          _node_hook->del_req(idx);
+        }
+      }
+    }
+  };
+
+  void remove_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+  void restore_non_debug_edges(NodeEdgeTempStorage& non_debug_edges);
+
   void disconnect_from_root(PhaseIterGVN *igvn);
 
   // Standard Node stuff
@@ -736,7 +796,7 @@ public:
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
   // Does this node have a use of n other than in debug information?
-  bool                has_non_debug_use(Node* n);
+  bool                has_non_debug_use(const Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns null if there is no one.
@@ -751,7 +811,10 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
+  void extract_projections(CallProjections* projs,
+                           bool separate_io_proj,
+                           bool do_asserts = true,
+                           bool allow_handlers = false) const;
 
   virtual uint match_edge(uint idx) const;
 

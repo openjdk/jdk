@@ -858,6 +858,13 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 }
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
+#ifdef ASSERT
+  // The code below copies contents across temp buffers. The following
+  // sizes relate to buffer contents, and should not be changed by buffer
+  // expansion.
+  int old_total_skipped = total_skipped_instructions_size();
+#endif
+
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanding CodeBuffer:");
@@ -916,6 +923,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     assert(cb_sect->capacity() >= new_capacity[n], "big enough");
     address cb_start = cb_sect->start();
     cb_sect->set_end(cb_start + this_sect->size());
+    cb_sect->register_skipped(this_sect->_skipped_instructions_size);
     if (this_sect->mark() == nullptr) {
       cb_sect->clear_mark();
     } else {
@@ -952,6 +960,9 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     this->print_on(tty);
   }
 #endif //PRODUCT
+
+  assert(old_total_skipped == total_skipped_instructions_size(),
+         "Should match: %d == %d", old_total_skipped, total_skipped_instructions_size());
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {

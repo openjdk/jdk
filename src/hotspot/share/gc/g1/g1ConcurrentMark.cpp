@@ -2173,8 +2173,7 @@ void G1CMTask::reset_for_restart() {
 void G1CMTask::register_partial_array_splitter() {
 
   ::new (&_partial_array_splitter) PartialArraySplitter(_cm->partial_array_state_manager(),
-                                                        _cm->max_num_tasks(),
-                                                        ObjArrayMarkingStride);
+                                                        _cm->max_num_tasks());
 }
 
 void G1CMTask::unregister_partial_array_splitter() {
@@ -2359,7 +2358,7 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length);
+  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length, ObjArrayMarkingStride);
 
   process_array_chunk(obj, 0, initial_chunk_size);
 
@@ -2917,7 +2916,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
-  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks(), ObjArrayMarkingStride),
+  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks()),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),

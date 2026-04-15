@@ -44,6 +44,7 @@ class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
 class LoopSelector;
+class ReachabilityFenceNode;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -662,6 +663,7 @@ public:
 
   Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
+  Node_List* _reachability_fences; // List of reachability fences in this loop
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail);
@@ -719,6 +721,9 @@ public:
 
   // Check for Node being a loop-breaking test
   Node *is_loop_exit(Node *iff) const;
+
+  // Return unique loop-exit projection or null if the loop has multiple exits.
+  IfFalseNode* unique_loop_exit_proj_or_null();
 
   // Remove simplistic dead code from loop body
   void DCE_loop_body();
@@ -824,6 +829,9 @@ public:
   IdealLoopTree* skip_strip_mined() {
     return _head->as_Loop()->is_strip_mined() ? _parent : this;
   }
+
+  // Registers a reachability fence node in the loop.
+  void register_reachability_fence(ReachabilityFenceNode* rf);
 
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
@@ -1165,6 +1173,16 @@ public:
   void replace_node_and_forward_ctrl(Node* old_node, Node* new_node) {
     _igvn.replace_node(old_node, new_node);
     forward_ctrl(old_node, new_node);
+  }
+
+  void remove_dead_data_node(Node* dead) {
+    assert(dead->outcnt() == 0 && !dead->is_top(), "must be dead");
+    assert(!dead->is_CFG(), "not a data node");
+    Node* c = get_ctrl(dead);
+    IdealLoopTree* lpt = get_loop(c);
+    _loop_or_ctrl.map(dead->_idx, nullptr); // This node is useless
+    lpt->_body.yank(dead);
+    igvn().remove_dead_node(dead, PhaseIterGVN::NodeOrigin::Graph);
   }
 
 private:
@@ -1598,6 +1616,15 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
+
+  // Reachability Fence (RF) support.
+ private:
+  void insert_rf(Node* ctrl, Node* referent);
+  void replace_rf(Node* old_node, Node* new_node);
+  void remove_rf(ReachabilityFenceNode* rf);
+ public:
+  bool optimize_reachability_fences();
+  bool expand_reachability_fences();
 
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,

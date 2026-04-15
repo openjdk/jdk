@@ -213,7 +213,12 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   bool entry_coalesce_and_fill();
+
+  // Global collections touch old regions, so the old generation needs to be informed of this.
+  // The old generation may decide to schedule additional mixed collections, or may decide to
+  // immediately coalesce-and-fill old objects in regions that were not collected.
   void transition_old_generation_after_global_gc();
+
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   void record_success_concurrent(bool abbreviated) override;

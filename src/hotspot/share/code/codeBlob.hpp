@@ -604,7 +604,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
-  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
+  static const int ENTRY_COUNT = 4 JVMCI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
