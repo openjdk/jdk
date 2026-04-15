@@ -819,12 +819,19 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Generate indices for iota vector.
-  address generate_iota_indices(StubId stub_id) {
+  void generate_iota_indices(StubId stub_id) {
+    GrowableArray<address> entries;
     int entry_count = StubInfo::entry_count(stub_id);
-    assert(entry_count == 1, "sanity check");
-    address start = load_archive_data(stub_id);
+    assert(entry_count == VECTOR_IOTA_COUNT, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
     if (start != nullptr) {
-      return start;
+      assert(entries.length() == entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      StubRoutines::aarch64::_vector_iota_indices[0] = start;
+      for (int i = 1; i < VECTOR_IOTA_COUNT; i++) {
+        StubRoutines::aarch64::_vector_iota_indices[i] = entries.at(i - 1);
+      }
+      return;
     }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
@@ -832,26 +839,37 @@ class StubGenerator: public StubCodeGenerator {
     // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
     __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    entries.append(__ pc());
     // H
     __ emit_data64(0x0003000200010000, relocInfo::none);
     __ emit_data64(0x0007000600050004, relocInfo::none);
+    entries.append(__ pc());
     // S
     __ emit_data64(0x0000000100000000, relocInfo::none);
     __ emit_data64(0x0000000300000002, relocInfo::none);
+    entries.append(__ pc());
     // D
     __ emit_data64(0x0000000000000000, relocInfo::none);
     __ emit_data64(0x0000000000000001, relocInfo::none);
+    entries.append(__ pc());
     // S - FP
     __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
     __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+    entries.append(__ pc());
     // D - FP
     __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
     __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
 
     // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
+    store_archive_data(stub_id, start, __ pc(), &entries);
 
-    return start;
+    // install the entry addresses in the entry array
+    assert(entries.length() == entry_count - 1,
+           "unexpected entries count %d", entries.length());
+    StubRoutines::aarch64::_vector_iota_indices[0] = start;
+    for (int i = 1; i < VECTOR_IOTA_COUNT; i++) {
+      StubRoutines::aarch64::_vector_iota_indices[i] = entries.at(i - 1);
+    }
   }
 
   // The inner part of zero_words().  This is the bulk operation,
@@ -12621,7 +12639,7 @@ class StubGenerator: public StubCodeGenerator {
 #if COMPILER2_OR_JVMCI
 
     if (UseSVE == 0) {
-      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices(StubId::stubgen_vector_iota_indices_id);
+      generate_iota_indices(StubId::stubgen_vector_iota_indices_id);
     }
 
     // array equals stub for large arrays.
