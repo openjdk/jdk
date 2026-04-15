@@ -41,6 +41,7 @@
 #include "opto/machnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
@@ -2911,8 +2912,8 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     *ctrl = iftrue1; // We need exactly the 1 test above
     PhaseIterGVN* igvn = gvn.is_IterGVN();
     if (igvn != nullptr) {
-      igvn->remove_globally_dead_node(r_ok_subtype);
-      igvn->remove_globally_dead_node(r_not_subtype);
+      igvn->remove_globally_dead_node(r_ok_subtype, PhaseIterGVN::NodeOrigin::Speculative);
+      igvn->remove_globally_dead_node(r_not_subtype, PhaseIterGVN::NodeOrigin::Speculative);
     }
     return not_subtype_ctrl;
   }
@@ -3539,6 +3540,15 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
     set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)),alias_idx);
   }
   return membar;
+}
+
+//------------------------------insert_reachability_fence----------------------
+Node* GraphKit::insert_reachability_fence(Node* referent) {
+  assert(!referent->is_top(), "");
+  Node* rf = _gvn.transform(new ReachabilityFenceNode(C, control(), referent));
+  set_control(rf);
+  C->record_for_igvn(rf);
+  return rf;
 }
 
 //------------------------------shared_lock------------------------------------

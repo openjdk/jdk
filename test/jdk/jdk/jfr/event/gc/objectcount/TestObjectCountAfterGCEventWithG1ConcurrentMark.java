@@ -29,7 +29,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithG1ConcurrentMark
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithG1ConcurrentMark
  */
 public class TestObjectCountAfterGCEventWithG1ConcurrentMark {
     public static void main(String[] args) throws Exception {

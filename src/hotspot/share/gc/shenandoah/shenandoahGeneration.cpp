@@ -272,7 +272,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
-  if (is_generational && ShenandoahGenerationalAdaptiveTenuring) {
+  if (is_generational) {
     // Objects above TAMS weren't included in the age census. Since they were all
     // allocated in this cycle they belong in the age 0 cohort. We walk over all
     // young regions and sum the volume of objects between TAMS and top.
@@ -301,6 +301,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
+    heap->assert_pinned_region_status(this);
     _heuristics->choose_collection_set(collection_set);
   }
 
@@ -419,12 +420,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 }
 
 size_t ShenandoahGeneration::available() const {
-  size_t result = available(max_capacity());
-  return result;
-}
-
-// For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
-size_t ShenandoahGeneration::available_with_reserve() const {
   size_t result = available(max_capacity());
   return result;
 }
