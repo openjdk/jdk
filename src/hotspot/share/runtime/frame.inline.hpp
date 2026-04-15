@@ -84,6 +84,14 @@ inline address frame::get_deopt_original_pc() const {
   return nullptr;
 }
 
+inline void frame::set_deopt_state() {
+  assert(is_compiled_frame(), "invalid operation");
+  assert(_cb == CodeCache::find_blob(_pc), "invalid _pc");
+  DEBUG_ONLY(nmethod* nm = _cb->as_nmethod();)
+  assert(!nm->is_deopt_pc(_pc) && nm->get_original_pc(this) == _pc, "wrong _pc");
+  _deopt_state = is_deoptimized;
+}
+
 template <typename RegisterMapT>
 inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_map) const {
   if (reg->is_reg()) {

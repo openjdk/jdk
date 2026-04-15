@@ -2864,6 +2864,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   assert(!f.is_deoptimized_frame(), "");
   if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
+    f.set_deopt_state();
   } else if (_thread->is_interp_only_mode()
               || (stub_caller && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
@@ -2894,8 +2895,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
   DEBUG_ONLY(address return_pc = ContinuationHelper::CompiledFrame::return_pc(f);)
   assert(return_pc == _caller_raw_pc || (is_bottom_frame && return_pc == StubRoutines::cont_returnBarrier()), "wrong return pc");
-  // Unless f was deoptimized above we need to use hf to get the raw pc (see comment above when calling new_stack_frame()).
-  DEBUG_ONLY(_caller_raw_pc = _should_patch_caller_pc ? f.raw_pc() : hf.raw_pc();)
+  DEBUG_ONLY(_caller_raw_pc = f.raw_pc();)
   caller = f;
 }
 
