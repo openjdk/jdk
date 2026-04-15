@@ -1260,6 +1260,10 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_LONG, "must be");
       vopc = Op_AddReductionVL;
       break;
+    case Op_AddHF:
+      assert(bt == T_SHORT, "must be");
+      vopc = Op_AddReductionVHF;
+      break;
     case Op_AddF:
       assert(bt == T_FLOAT, "must be");
       vopc = Op_AddReductionVF;
@@ -1283,6 +1287,10 @@ int ReductionNode::opcode(int opc, BasicType bt) {
     case Op_MulL:
       assert(bt == T_LONG, "must be");
       vopc = Op_MulReductionVL;
+      break;
+    case Op_MulHF:
+      assert(bt == T_SHORT, "must be");
+      vopc = Op_MulReductionVHF;
       break;
     case Op_MulF:
       assert(bt == T_FLOAT, "must be");
@@ -1432,10 +1440,12 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
+  case Op_AddReductionVHF: return new AddReductionVHFNode(ctrl, n1, n2, requires_strict_order);
   case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
   case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
   case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
   case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
+  case Op_MulReductionVHF: return new MulReductionVHFNode(ctrl, n1, n2, requires_strict_order);
   case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
   case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
@@ -1613,6 +1623,8 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
           return nullptr;
       }
       break;
+    case Op_AddReductionVHF:
+      return gvn.makecon(TypeH::ZERO);
     case Op_AddReductionVI: // fallthrough
     case Op_AddReductionVL: // fallthrough
     case Op_AddReductionVF: // fallthrough
@@ -1624,6 +1636,8 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
       return gvn.makecon(TypeInt::ONE);
     case Op_MulReductionVL:
       return gvn.makecon(TypeLong::ONE);
+    case Op_MulReductionVHF:
+      return gvn.makecon(TypeH::ONE);
     case Op_MulReductionVF:
       return gvn.makecon(TypeF::ONE);
     case Op_MulReductionVD:
@@ -1716,12 +1730,14 @@ bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
       // These are cases that all have associative operations, which can
       // thus be reordered, allowing non-strict order reductions.
       return false;
+    case Op_AddReductionVHF:
+    case Op_MulReductionVHF:
     case Op_AddReductionVF:
     case Op_MulReductionVF:
     case Op_AddReductionVD:
     case Op_MulReductionVD:
       // Floating-point addition and multiplication are non-associative,
-      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // so AddReductionVHF/VF/VD and MulReductionVHF/VF/VD require strict ordering
       // in auto-vectorization.
       return true;
     default:
