@@ -194,6 +194,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
+  // Roots processing is complete, perform the final root operations and put
+  // the weak roots/ref flags down.
+  entry_final_roots();
+  // if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+  //   return false;
+  // }
+
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
@@ -227,9 +234,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_cleanup_complete();
   } else {
     _abbreviated = true;
-    if (!entry_final_roots()) {
-      assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
-      return false;
+
+    if (heap->mode()->is_generational()) {
+      if (!complete_abbreviated_cycle()) {
+        return false;
+      }
     }
 
     if (VerifyAfterGC) {
@@ -1223,7 +1232,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 }
 
-bool ShenandoahConcurrentGC::entry_final_roots() {
+void ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
@@ -1235,14 +1244,7 @@ bool ShenandoahConcurrentGC::entry_final_roots() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               msg);
 
-  if (heap->mode()->is_generational()) {
-    if (!complete_abbreviated_cycle()) {
-      return false;
-    }
-  }
-
   heap->concurrent_final_roots();
-  return true;
 }
 
 void ShenandoahConcurrentGC::op_verify_final_roots() {

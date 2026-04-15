@@ -93,13 +93,11 @@ protected:
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
+  void entry_final_roots();
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_update_refs();
   void entry_cleanup_complete();
-
-  // This is the last phase of a cycle which performs no evacuations
-  bool entry_final_roots();
 
   // Called when the collection set is empty, but the generational mode has regions to promote in place
   void entry_promote_in_place() const;
