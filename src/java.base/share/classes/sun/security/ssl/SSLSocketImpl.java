@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,10 @@ public final class SSLSocketImpl
     /**
      * ERROR HANDLING GUIDELINES
      * (which exceptions to throw and catch and which not to throw and catch)
-     *
+     * <p>
      * - if there is an IOException (SocketException) when accessing the
      *   underlying Socket, pass it through
-     *
+     * <p>
      * - do not throw IOExceptions, throw SSLExceptions (or a subclass)
      */
 
