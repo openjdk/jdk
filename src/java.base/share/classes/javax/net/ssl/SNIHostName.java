@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static sun.net.util.IPAddressUtil.isIPv4LiteralAddress;
+import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
 
 /**
  * Instances of this class represent a server name of type
@@ -89,6 +92,7 @@ public final class SNIHostName extends SNIServerName {
      * <ul>
      * <li> {@code hostname} is empty,</li>
      * <li> {@code hostname} ends with a trailing dot,</li>
+     * <li> {@code hostname} is an IP literal,</li>
      * <li> {@code hostname} is not a valid Internationalized
      *      Domain Name (IDN) compliant with the RFC 3490 specification.</li>
      * </ul>
@@ -157,6 +161,7 @@ public final class SNIHostName extends SNIServerName {
      * <ul>
      * <li> {@code encoded} is empty,</li>
      * <li> {@code encoded} ends with a trailing dot,</li>
+     * <li> {@code encoded} is an IP literal,</li>
      * <li> {@code encoded} is not encoded in
      *      {@link StandardCharsets#US_ASCII} or
      *      {@link StandardCharsets#UTF_8}-compliant charset,</li>
@@ -341,17 +346,33 @@ public final class SNIHostName extends SNIServerName {
         return new SNIHostNameMatcher(regex);
     }
 
-    // check the validity of the string hostname
+    /**
+     * Validates the {@link #hostname host name}.
+     *
+     * @throws IllegalArgumentException If the host name is either empty, ends
+     * with a dot, or is an IP literal, which is not permitted per <a
+     * href="https://www.rfc-editor.org/rfc/rfc6066.html#page-6">RFC 6066</a>.
+     */
     private void checkHostName() {
+
+        // Is it empty?
         if (hostname.isEmpty()) {
             throw new IllegalArgumentException(
                 "Server name value of host_name cannot be empty");
         }
 
+        // Does it end with a dot?
         if (hostname.endsWith(".")) {
             throw new IllegalArgumentException(
                 "Server name value of host_name cannot have the trailing dot");
         }
+
+        // Is it an IP literal?
+        if (isIPv4LiteralAddress(hostname) || isIPv6LiteralAddress(hostname)) {
+            throw new IllegalArgumentException(
+                    "Server name value of host_name cannot be an IP literal");
+        }
+
     }
 
     private static final class SNIHostNameMatcher extends SNIMatcher {

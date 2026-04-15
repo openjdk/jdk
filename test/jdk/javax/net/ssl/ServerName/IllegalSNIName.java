@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,59 @@
 
 /*
  * @test
- * @bug 8020842 8261969
+ * @bug 8020842 8261969 8378500
  * @summary SNIHostName does not throw IAE when hostname doesn't conform to
- *          RFC 3490 or ends with a trailing dot
+ *          RFC 3490, RFC 6066, or ends with a trailing dot
+ * @run junit ${test.main.class}
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import javax.net.ssl.SNIHostName;
-import java.nio.charset.StandardCharsets;
-import java.util.HexFormat;
+import java.util.List;
 
-public class IllegalSNIName {
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    private static void checkHostname(String hostname) throws Exception {
-        try {
-            new SNIHostName(hostname);
-            throw new RuntimeException("Expected to get IllegalArgumentException for "
-                    + hostname);
-        } catch (IllegalArgumentException iae) {
-            // That's the right behavior.
-        }
-    }
+class IllegalSNIName {
 
-    private static void checkHostname(byte[] encodedHostname) throws Exception {
-        try {
-            new SNIHostName(encodedHostname);
-            throw new RuntimeException("Expected to get IllegalArgumentException for "
-                    + HexFormat.ofDelimiter(":").formatHex(encodedHostname));
-        } catch (IllegalArgumentException iae) {
-            // That's the right behavior.
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        String[] illegalNames = {
+    static List<String> invalidHostNames() {
+        return List.of(
                 "example\u3002\u3002com",
                 "example..com",
                 "com\u3002",
                 "com.",
                 ".",
-                "example^com"
-        };
-
-        for (String name : illegalNames) {
-            checkHostname(name);
-            checkHostname(name.getBytes(StandardCharsets.UTF_8));
-        }
+                "example^com",
+                "127.0.0.1",
+                "::1",
+                "",
+                " ",
+                "\n",
+                "\r",
+                "\t");
     }
+
+    @ParameterizedTest
+    @MethodSource("invalidHostNames")
+    void checkStringHostName(String invalidHostName) {
+        assertThrows(IllegalArgumentException.class, () -> new SNIHostName(invalidHostName));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidHostNames")
+    void checkAsciiEncodedHostName(String invalidHostName) {
+        byte[] invalidHostNameBytes = invalidHostName.getBytes(US_ASCII);
+        assertThrows(IllegalArgumentException.class, () -> new SNIHostName(invalidHostNameBytes));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidHostNames")
+    void checkUTF8EncodedHostName(String invalidHostName) {
+        byte[] invalidHostNameBytes = invalidHostName.getBytes(UTF_8);
+        assertThrows(IllegalArgumentException.class, () -> new SNIHostName(invalidHostNameBytes));
+    }
+
 }
