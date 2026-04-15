@@ -109,6 +109,8 @@ public class AOTCodeFlags {
     private static String gcName = null;
     public static void main(String... args) throws Exception {
         Tester t = new Tester(args.length == 0 ? null : args[0]);
+        // mode bits 0 and 1 encode AOTAdapterCaching and AOTStubCaching settings
+        // aMode is used for assembly run, pMode for production run
         for (int aMode = 0; aMode < 4; aMode++) {
             for (int pMode = 0; pMode < 4; pMode++) {
                 t.setTestMode(aMode, pMode);
