@@ -497,11 +497,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     // call sites described in JDK-8368292 by walking the source table.
     // Also reuses pre-computed hash codes, avoiding redundant
     // hashCode() calls.
-    @SuppressWarnings("unchecked")
     private void putHashMapEntries(HashMap<? extends K, ? extends V> src, boolean evict) {
-        Node<K,V>[] tab;
-        if (src.size > 0 && (tab = (Node<K,V>[]) src.table) != null) {
-            for (Node<K,V> e : tab) {
+        Node<? extends K, ? extends V>[] tab;
+        if (src.size > 0 && (tab = src.table) != null) {
+            for (Node<? extends K, ? extends V> e : tab) {
                 for (; e != null; e = e.next) {
                     putVal(e.hash, e.key, e.value, false, evict);
                 }
