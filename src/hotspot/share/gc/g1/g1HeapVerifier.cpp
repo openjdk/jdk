@@ -466,28 +466,21 @@ public:
 
     if (part_of_marking) {
       guarantee(r->bottom() != top_at_mark_start,
-                "region %u (%s) does not have TAMS set",
+                "region %u (%s) does not have TAMS set although it's going to be marked through",
                 r->hrm_index(), r->get_short_type_str());
-      size_t marked_bytes = cm->live_bytes(r->hrm_index());
 
       MarkedBytesClosure cl;
       r->apply_to_marked_objects(cm->mark_bitmap(), &cl);
 
+      size_t marked_bytes = cm->live_bytes(r->hrm_index());
       guarantee(cl.marked_bytes() == marked_bytes,
                 "region %u (%s) live bytes actual %zu and cache %zu differ",
                 r->hrm_index(), r->get_short_type_str(), cl.marked_bytes(), marked_bytes);
     } else {
-      guarantee(r->bottom() == top_at_mark_start,
-                "region %u (%s) has TAMS set " PTR_FORMAT " " PTR_FORMAT,
-                r->hrm_index(), r->get_short_type_str(), p2i(r->bottom()), p2i(top_at_mark_start));
-      guarantee(cm->live_bytes(r->hrm_index()) == 0,
-                "region %u (%s) has %zu live bytes recorded",
-                r->hrm_index(), r->get_short_type_str(), cm->live_bytes(r->hrm_index()));
-      guarantee(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->end()) == r->end(),
-                "region %u (%s) has mark",
-                r->hrm_index(), r->get_short_type_str());
-      guarantee(cm->is_root_region(r),
-                "region %u (%s) should be root region",
+      // We can't say anything about TAMS or the live bytes here: for reused regions,
+      // both may be set. At least check that there are no marks above TAMS.
+      guarantee(cm->mark_bitmap()->get_next_marked_addr(top_at_mark_start, r->end()) == r->end(),
+                "region %u (%s) has mark from TAMS to top",
                 r->hrm_index(), r->get_short_type_str());
     }
     return false;
