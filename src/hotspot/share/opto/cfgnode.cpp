@@ -159,7 +159,7 @@ PhiNode* RegionNode::has_unique_phi() const {
   return only_phi;
 }
 
-PhiNode * RegionNode::find_memory_phi(const TypePtr *adr_type) {
+PhiNode* RegionNode::find_memory_phi(const TypePtr* adr_type) {
   PhiNode* res = nullptr;
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* use = fast_out(i);
