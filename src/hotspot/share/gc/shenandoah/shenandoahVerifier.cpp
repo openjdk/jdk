@@ -1197,6 +1197,23 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
   );
 }
 
+// We have not yet cleanup (reclaimed) the collection set
+void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
+  verify_at_safepoint(
+          generation,
+          "After GC",
+          _verify_remembered_disable,  // do not verify remembered set
+          _verify_forwarded_none,      // no forwarded references
+          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_cset_none,           // no cset references, all updated
+          _verify_liveness_disable,    // no reliable liveness data anymore
+          _verify_regions_nocset,      // no cset regions, trash regions have appeared
+                                       // expect generation and heap sizes to match exactly, including trash
+          _verify_size_exact_including_trash,
+          _verify_gcstate_stable       // GC state was turned off
+  );
+}
+
 void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
