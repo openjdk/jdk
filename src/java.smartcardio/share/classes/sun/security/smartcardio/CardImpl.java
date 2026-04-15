@@ -83,6 +83,7 @@ final class CardImpl extends Card {
                 } catch (PCSCException e) {
                     // This will be swallowed if thrown when run by the Cleaner
                     // thread, and never thrown if called via Cleanable.clean()
+                    // (only called if state != OK.)
                     throw new RuntimeException(e);
                 }
             }
