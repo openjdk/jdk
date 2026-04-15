@@ -1043,9 +1043,15 @@ public class RepaintManager
         height = proposedHeight < 1? 1 :
                   (proposedHeight > maxSize.height? maxSize.height : proposedHeight);
 
+        boolean isWrongOpacity = doubleBuffer.image instanceof Transparency &&
+                ((Transparency)doubleBuffer.image).getTransparency() ==
+                        Transparency.OPAQUE &&
+                !w.isOpaque();
+
         if (doubleBuffer.needsReset || (doubleBuffer.image != null &&
                                         (doubleBuffer.size.width < width ||
-                                         doubleBuffer.size.height < height))) {
+                                         doubleBuffer.size.height < height ||
+                                                isWrongOpacity))) {
             doubleBuffer.needsReset = false;
             if (doubleBuffer.image != null) {
                 doubleBuffer.image.flush();
