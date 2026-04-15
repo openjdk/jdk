@@ -51,7 +51,10 @@
 
 long load_fubar = 0;
 long load_slow_fubar = 0;
+long load_slow_pre_fubar = 0;
 long store_fubar = 0;
+long some_fubar = 0;
+long store_slow_fubar = 0;
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -158,6 +161,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   Register scratch = Z_R4;
 
   Label done;
+  Label stop;
   Label uncolor;
 
   //
@@ -199,15 +203,23 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     ZRuntimeCallSpill rcs(masm, dst);
 
     __ lgr_if_needed(Z_ARG1, dst);
+
+    __ load_const_optimized(Z_ARG2, (uintptr_t)&load_slow_pre_fubar);
+    __ z_agsi(0, Z_ARG2, 1);
+
     __ z_lgr(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
+
+    // TODO: This is not needed in other architectures, but it makes sense to inlcude it and it also fixes some bugs
+    __ lgr_if_needed(dst, Z_ARG2);
 
     __ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
     __ z_agsi(0, Z_R3, 1);
   }
 
   // Slow-path has already uncolored
+  // TODO: Check if this L_handle_null != nullptr condition is even required.
   if (L_handle_null != nullptr) {
     __ z_ltgr(dst, dst);
     __ branch_optimized(Assembler::bcondEqual, *L_handle_null);
@@ -292,7 +304,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
-      __ stop(" rnew_zaddress is noreg");
       __ z_xgr(rnew_zpointer, rnew_zpointer);
     } else {
       __ z_lgr(rnew_zpointer, rnew_zaddress);
@@ -459,7 +470,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       {
         // Call VM
         ZRuntimeCallSpill rcs(masm, noreg);
-        __ z_la(Z_ARG1, dst);
+        // TODO: lay instead of la just to be safe can be tested after implementation is complete. (displacement id la is unsigned)
+        __ z_lay(Z_ARG1, dst);
         __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), Z_ARG1);
       }
 
