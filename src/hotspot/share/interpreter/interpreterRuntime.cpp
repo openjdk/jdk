@@ -1535,7 +1535,7 @@ void InterpreterRuntime::generate_oop_map_alot() {
   JavaThread* current = JavaThread::current();
   LastFrameAccessor last_frame(current);
   if (last_frame.is_interpreted_frame()) {
-    ResourceMark rm;
+    ResourceMark rm(current);
     InterpreterOopMap mask;
     methodHandle mh(current, last_frame.method());
     int bci = last_frame.bci();
