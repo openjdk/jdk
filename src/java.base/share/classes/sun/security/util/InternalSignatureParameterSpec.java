@@ -51,7 +51,7 @@ import java.util.List;
  *  string <code>new byte[32]</code>.
  * <li><code>internal</code>: the <code>ML-DSA.Sign_internal</code> defined
  *  in Section 6.2 of FIPS 204 is used.
- * <li><code>externalMu</code>: the b4-byte message representative mu inside
+ * <li><code>externalMu</code>: the 64-byte message representative mu inside
  *  <code>ML-DSA.Sign_internal</code> is computed in a different cryptographic
  *  module and directly provided as the input message.
  * </ul>
@@ -102,7 +102,7 @@ public final class InternalSignatureParameterSpec implements AlgorithmParameterS
      */
     public boolean hasFeature(String feature) {
         for (String f : features) {
-            if (f != null && f.equals(feature)) return true;
+            if (f.equals(feature)) return true;
         }
         return false;
     }

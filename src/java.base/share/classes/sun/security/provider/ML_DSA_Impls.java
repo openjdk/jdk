@@ -221,10 +221,8 @@ public class ML_DSA_Impls {
         }
 
         private byte[] m(byte[] msg) {
-            if (isInternal) {
-                return msg;
-            }
-            var ctxLen = sps.context() != null ? sps.context().length : 0;
+            byte[] ctx = sps.context();
+            var ctxLen = ctx.length;
             var oid = new byte[0];
             if (sps.preHash() != null) {
                 oid = new DerOutputStream().putOID(ObjectIdentifier.of(
@@ -234,7 +232,7 @@ public class ML_DSA_Impls {
             m[0] = sps.preHash() != null ? (byte)1 : (byte)0;
             m[1] = (byte) ctxLen;
             if (ctxLen > 0) {
-                System.arraycopy(sps.context(), 0, m, 2, ctxLen);
+                System.arraycopy(ctx, 0, m, 2, ctxLen);
             }
             if (oid.length > 0) {
                 System.arraycopy(oid, 0, m, ctxLen + 2, oid.length);
@@ -258,7 +256,7 @@ public class ML_DSA_Impls {
             var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
             ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(
-                    useExternalMu, m(msg), rnd, skBytes);
+                    useExternalMu, isInternal ? msg : m(msg), rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
 
@@ -272,7 +270,8 @@ public class ML_DSA_Impls {
             }
             var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
-            return mlDsa.verifyInternal(pkBytes, useExternalMu, m(msg), sigBytes);
+            return mlDsa.verifyInternal(
+                    pkBytes, useExternalMu, isInternal ? msg : m(msg), sigBytes);
         }
 
         @Override
