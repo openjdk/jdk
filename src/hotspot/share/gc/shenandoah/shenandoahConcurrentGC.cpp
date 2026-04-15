@@ -194,12 +194,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
-  // Roots processing is complete, perform the final root operations and put
-  // the weak roots/ref flags down.
+  // Roots processing is complete, put the weak roots/ref flags down.
   entry_final_roots();
-  // if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
-  //   return false;
-  // }
 
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
