@@ -61,6 +61,8 @@ public class TestRegionSamplingLogging {
         File directory = new File(".");
         File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots"));
         System.out.println(Arrays.toString(files));
+
+        // Expect one or more log files when region logging is enabled
         if (files == null || files.length == 0) {
             throw new IllegalStateException("Did not find expected snapshot log file.");
         }
