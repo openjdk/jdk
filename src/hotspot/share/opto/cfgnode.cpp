@@ -161,8 +161,8 @@ PhiNode* RegionNode::has_unique_phi() const {
 
 PhiNode * RegionNode::find_memory_phi(const TypePtr *adr_type) {
   PhiNode* res = nullptr;
-  for (DUIterator_Fast imax, j = fast_outs(imax); j < imax; j++) {
-    Node* use = fast_out(j);
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
     if(use->is_memory_phi() && use->as_Phi()->adr_type() == adr_type) {
 #ifdef ASSERT
       if (VerifyAmbiguousMemPhi) {

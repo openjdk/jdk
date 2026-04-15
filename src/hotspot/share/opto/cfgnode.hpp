@@ -109,7 +109,7 @@ public:
   }
   PhiNode* has_phi() const;        // returns an arbitrary phi user, or null
   PhiNode* has_unique_phi() const; // returns the unique phi user, or null
-  PhiNode* find_memory_phi(const TypePtr* adr_type);
+  PhiNode* find_memory_phi(const TypePtr* adr_type); // returns the memory phi for a given slice, or null
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
