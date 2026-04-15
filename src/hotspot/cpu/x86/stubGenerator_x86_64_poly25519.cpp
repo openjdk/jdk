@@ -132,11 +132,11 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   XMMRegister CarryAdd = xmm12;
   XMMRegister CarryH   = xmm13;
   XMMRegister Limb0    = xmm14;
-  KRegister allLimbs   = k0;
-  KRegister permL      = k1;
-  KRegister permLH     = k2;
-  KRegister allColumns = k3;
-  KRegister masks[]    = {k3, k4, k5, k6, k7};
+  KRegister allLimbs   = k1;
+  KRegister permL      = k2;
+  KRegister permLH     = k3;
+  KRegister allColumns = k4;
+  KRegister masks[]    = {permLH, allColumns, k5, k6, k7};
 
   __ mov64(t0, 0x1F);
   __ kmovql(allLimbs, t0);
@@ -154,11 +154,13 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evmovdqaq(CarryAdd, allLimbs, ExternalAddress(carry_add()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(Limb0, allLimbs, ExternalAddress(limb_0()), false, Assembler::AVX_512bit, rscratch);
 
-  // A = load(*aLimbs);  masked evmovdquq() can be slow. Instead load full 256bit, and compbine with 64bit
+  // A = load(*aLimbs); masked evmovdquq() can be slow. Instead load full
+  // 256bit, and combine with 64bit
   __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);
   __ evpermq(A, allLimbs, shift1L, A, false, Assembler::AVX_512bit);
   __ movq(T, Address(aLimbs, 0));
   __ evporq(A, A, T, Assembler::AVX_512bit);
+
   // Acc1 = 0
   __ evporq(Acc1, Acc1, Acc1, Assembler::AVX_512bit);
 
@@ -168,8 +170,10 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
+
   // Shift for previous low order bits and high order alignment before add
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
+
   // Acc2 = 0
   __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
 
@@ -194,13 +198,13 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // At this point Acc1 is completely set at 8q, with single high order at c7.
   // We use Acc1 as the upper-limbs to complete the remaining accummulators
   // and we use Acc1L for the lower-limbs that will accumulate the reduction.
-  // Move c0..c2 to Acc1L before Acc1 before zeroing respective positions.
+  // Move c0..c2 to Acc1L before Acc1 before zeroing respective positions
   __ evpermq(Acc1L, permL, permLow, Acc1, false, Assembler::AVX_512bit);
 
   // Row 3
   __ vpbroadcastq(B, Address(bLimbs, 24), Assembler::AVX_512bit);
-  // Non-merge of luq of Acc1 zeros out c0..c2 positions.
-  // No need for them anymore.
+
+  // Non-merge of luq of Acc1 zeros out c0..c2 positions, no need for them now.
   __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
@@ -221,13 +225,12 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
 
   // Pseudo-Marsenne reduction
   // The term is only 5 bits, the limbs 51 bits, and the elements are 64 bits,
-  // therefore a scalar multiplication will not overflow the element radix here.
+  // therefore a scalar multiplication will not overflow the element radix here
   __ vpbroadcastq(B, ExternalAddress(term()), Assembler::AVX_512bit);
   __ evpmullq(Acc1, allLimbs, Acc1, B, false, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, allLimbs, Acc1L, Acc1, false, Assembler::AVX_512bit);
 
-  // Perform carry and reduction from said carry-over.
-  // Note: masks[i] is limbs[i].
+  // Perform carry and reduction from said carry-over. Note: masks[i] = limbs[i]
   for (int i = 0; i < 5; i++) {
     __ mov64(t0, 1ULL << i);
     __ kmovql(masks[i], t0);
@@ -242,6 +245,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   __ evpsubq(Acc1L, masks[4], Acc1L, CarryH, true, Assembler::AVX_512bit);
+
   // Reduction with c4+ (with B=19) back into c0
   __ evpmullq(B, allLimbs, Carry, B, false, Assembler::AVX_512bit);
   __ evpermq(B, masks[0], Limb0, B, false, Assembler::AVX_512bit);
@@ -260,8 +264,9 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   __ evmovdquq(Address(rLimbs, 0), allLimbs, Acc1L, false, Assembler::AVX_512bit);
+
   // Cleanup
-  // Zero out zmm0-zmm15, higher registers not used by intrinsics.
+  // Zero out zmm0-zmm15, higher registers not used by intrinsics
   __ vzeroall();
 }
 
@@ -291,7 +296,7 @@ address StubGenerator::generate_intpoly_mult_25519() {
   __ leave();
   __ ret(0);
 
-  // record the stub entry and end
+  // Record the stub entry and end
   store_archive_data(stub_id, start, __ pc());
 
   return start;
