@@ -81,12 +81,15 @@
  *      CardTerminal terminal = terminals.get(0);
  *      // establish a connection with the card
  *      Card card = terminal.connect("T=0");
- *      System.out.println("card: " + card);
- *      CardChannel channel = card.getBasicChannel();
- *      ResponseAPDU r = channel.transmit(new CommandAPDU(c1));
- *      System.out.println("response: " + toString(r.getBytes()));
- *      // disconnect
- *      card.disconnect(false);
+ *      try {
+ *          System.out.println("card: " + card);
+ *          CardChannel channel = card.getBasicChannel();
+ *          ResponseAPDU r = channel.transmit(new CommandAPDU(c1));
+ *          System.out.println("response: " + toString(r.getBytes()));
+ *      } finally {
+ *          // disconnect
+ *          card.disconnect(false);
+ *      }
  * </pre>
  *
  * @since   1.6
