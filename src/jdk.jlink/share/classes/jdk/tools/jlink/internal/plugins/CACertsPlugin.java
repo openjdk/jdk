@@ -53,11 +53,6 @@ public class CACertsPlugin extends AbstractPlugin {
     }
 
     @Override
-    public Category getType() {
-        return Category.TRANSFORMER;
-    }
-
-    @Override
     public boolean hasArguments() {
         return true;
     }
