@@ -143,7 +143,7 @@ public:
   virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
 
   // Return true if this region is affiliated with this generation.
-  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  virtual bool contains(ShenandoahHeapRegion* region) const override = 0;
 
   // Return true if this object is affiliated with this generation.
   virtual bool contains(oop obj) const = 0;

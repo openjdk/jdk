@@ -301,6 +301,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
+    heap->assert_pinned_region_status(this);
     _heuristics->choose_collection_set(collection_set);
   }
 
