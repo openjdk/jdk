@@ -293,7 +293,8 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %d > %d: %s", (int)rank, (int)safepoint, name);
+  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %d outside [0, %d]: %s",
+         static_cast<int>(rank), static_cast<int>(safepoint), name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
@@ -376,8 +377,9 @@ void Mutex::print_on(outputStream* st) const {
   st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
             p2i(this), _name, p2i(owner()));
   if (_allow_vm_block) {
-    st->print("%s", " allow_vm_block ");
+    st->print("%s", " allow_vm_block");
   }
+  st->print(" ");
   DEBUG_ONLY(print_rank_name(st));
   st->cr();
 }
