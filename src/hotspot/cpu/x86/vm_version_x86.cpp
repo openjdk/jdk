@@ -1097,34 +1097,51 @@ void VM_Version::get_processor_features() {
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
-      UseAPX = false; // by default UseAPX is false
+      FLAG_SET_DEFAULT(UseAPX, false); // by default UseAPX is false
       _features.clear_feature(CPU_APX_F);
     } else if (!UseAPX) {
       _features.clear_feature(CPU_APX_F);
     }
-  } else if (UseAPX) {
-    if (!FLAG_IS_DEFAULT(UseAPX)) {
-      warning("APX is not supported on this CPU, setting it to false)");
+  } else {
+    if (!os_supports_apx_egprs() || !supports_avx512vl()) {
+      _features.clear_feature(CPU_APX_F);
     }
-    FLAG_SET_DEFAULT(UseAPX, false);
+    if (UseAPX) {
+      if (!FLAG_IS_DEFAULT(UseAPX)) {
+        warning("APX is not supported on this CPU, setting it to false)");
+      }
+      FLAG_SET_DEFAULT(UseAPX, false);
+    }
   }
 
-  CHECK_CPU_FEATURE(supports_clmul, CLMUL);
-  CHECK_CPU_FEATURE(supports_aes, AES);
-  CHECK_CPU_FEATURE(supports_fma, FMA);
+  CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseFMA, FMA, supports_fma(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCountLeadingZerosInstruction, LZCNT, supports_lzcnt(), SINGLE_INST_WARNING_MSG);
+  // BMI instructions (except tzcnt) use an encoding with VEX prefix.
+  // VEX prefix is generated only when AVX > 0.
+  CHECK_CPU_FEATURE(UseBMI1Instructions, BMI1, supports_bmi1(), MULTI_INST_WARNING_MSG);
 
-  if (supports_sha() || (supports_avx2() && supports_bmi2())) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    } else if (!UseSHA) {
-      _features.clear_feature(CPU_SHA);
+  if (supports_bmi2() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+      FLAG_SET_DEFAULT(UseBMI2Instructions, true);
+    } else if (!UseBMI2Instructions) {
+      clear_feature(CPU_BMI2);
     }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA)) {
-      warning("SHA instructions are not available on this CPU");
+  } else {
+    if (!supports_avx()) {
+      clear_feature(CPU_BMI2);
     }
-    FLAG_SET_DEFAULT(UseSHA, false);
+    if (UseBMI2Instructions) {
+      if (!FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+        warning("BMI2 instructions are not available on this CPU (AVX is also required)");
+      }
+      FLAG_SET_DEFAULT(UseBMI2Instructions, false);
+    }
   }
+
+  CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), SINGLE_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), MULTI_INST_WARNING_MSG);
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
@@ -1720,70 +1737,17 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
 
-  // Use count leading zeros count instruction if available.
-  if (supports_lzcnt()) {
-    if (FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {
-      UseCountLeadingZerosInstruction = true;
-    }
-   } else if (UseCountLeadingZerosInstruction) {
-    if (!FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {
-      warning("lzcnt instruction is not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseCountLeadingZerosInstruction, false);
-  }
-
   // Use count trailing zeros instruction if available
   if (supports_bmi1()) {
     // tzcnt does not require VEX prefix
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      if (!UseBMI1Instructions && !FLAG_IS_DEFAULT(UseBMI1Instructions)) {
-        // Don't use tzcnt if BMI1 is switched off on command line.
-        UseCountTrailingZerosInstruction = false;
-      } else {
-        UseCountTrailingZerosInstruction = true;
-      }
+      UseCountTrailingZerosInstruction = true;
     }
   } else if (UseCountTrailingZerosInstruction) {
     if (!FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
       warning("tzcnt instruction is not available on this CPU");
     }
     FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
-  }
-
-  // BMI instructions (except tzcnt) use an encoding with VEX prefix.
-  // VEX prefix is generated only when AVX > 0.
-  if (supports_bmi1() && supports_avx()) {
-    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
-      UseBMI1Instructions = true;
-    }
-  } else if (UseBMI1Instructions) {
-    if (!FLAG_IS_DEFAULT(UseBMI1Instructions)) {
-      warning("BMI1 instructions are not available on this CPU (AVX is also required)");
-    }
-    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
-  }
-
-  if (supports_bmi2() && supports_avx()) {
-    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
-      UseBMI2Instructions = true;
-    }
-  } else if (UseBMI2Instructions) {
-    if (!FLAG_IS_DEFAULT(UseBMI2Instructions)) {
-      warning("BMI2 instructions are not available on this CPU (AVX is also required)");
-    }
-    FLAG_SET_DEFAULT(UseBMI2Instructions, false);
-  }
-
-  // Use population count instruction if available.
-  if (supports_popcnt()) {
-    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      UsePopCountInstruction = true;
-    }
-  } else if (UsePopCountInstruction) {
-    if (!FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      warning("POPCNT instruction is not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
   // Use fast-string operations if available.
