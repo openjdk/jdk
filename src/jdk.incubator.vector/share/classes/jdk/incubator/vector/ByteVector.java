@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code byte} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class ByteVector extends AbstractVector<Byte> {
+public abstract sealed class ByteVector extends AbstractVector<Byte>
+         permits ByteVector64, ByteVector128, ByteVector256, ByteVector512, ByteVectorMax {
 
     ByteVector(byte[] vec) {
         super(vec);

@@ -533,8 +533,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompactObjectHeaders ? ", compact obj headers"
-                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
+                 UseCompactObjectHeaders ? ", compact obj headers" : "",
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -1215,7 +1214,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     CompressedOops::print_mode(st);
     st->cr();
 
-  STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
+  STEP_IF("printing compressed klass pointers mode", _verbose)
     CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
@@ -1328,7 +1327,14 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing OS information", _verbose)
     os::print_os_info(st);
+#ifdef __APPLE__
+    // Avoid large stack allocation on Mac for FD count during signal-handling.
+    os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
     st->cr();
+#else
+    os::print_open_file_descriptors(st);
+    st->cr();
+#endif
 
   STEP_IF("printing CPU info", _verbose)
     os::print_cpu_info(st, buf, sizeof(buf));
@@ -1430,12 +1436,10 @@ void VMError::print_vm_info(outputStream* st) {
 #endif
 
   // STEP("printing compressed class ptrs mode")
-  if (UseCompressedClassPointers) {
-    CDS_ONLY(AOTMetaspace::print_on(st);)
-    Metaspace::print_compressed_class_space(st);
-    CompressedKlassPointers::print_mode(st);
-    st->cr();
-  }
+  CDS_ONLY(AOTMetaspace::print_on(st);)
+  Metaspace::print_compressed_class_space(st);
+  CompressedKlassPointers::print_mode(st);
+  st->cr();
 
   // Take heap lock over heap, GC and metaspace printing so that information
   // is consistent.
@@ -1549,6 +1553,7 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing OS information")
 
   os::print_os_info(st);
+  os::print_open_file_descriptors(st);
   st->cr();
 
   // STEP("printing CPU info")

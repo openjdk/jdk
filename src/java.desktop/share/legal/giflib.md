@@ -1,4 +1,4 @@
-## GIFLIB v6.1.1
+## GIFLIB v6.1.2
 
 ### GIFLIB License
 ```
