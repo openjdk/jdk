@@ -964,9 +964,9 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> The predicate's {@code test(Object)} method must be thread safe as it may
          * be invoked concurrently from several threads. If the {@code test(Object)} method
-         * completes with an exception or error, then the thread that executed the subtask
-         * invokes the {@linkplain Thread.UncaughtExceptionHandler uncaught exception
-         * handler} with the exception or error before the thread terminates.
+         * throws an exception or error, then the thread that executed the subtask invokes
+         * the {@linkplain Thread.UncaughtExceptionHandler uncaught exception handler}
+         * with the exception or error before the thread terminates.
          *
          * <p> <b>Timeout Handling:</b> If used with a scope that has a {@linkplain
          * Configuration#withTimeout(Duration) timeout} set, and the timeout expires before
@@ -1126,27 +1126,27 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * method with the default configuration to produce the configuration for the new
      * scope:
      * <ul>
-     * <li> If the operator returns a {@code Configuration} with a {@link ThreadFactory},
-     * set using {@link Configuration#withThreadFactory(ThreadFactory)
+     * <li> If the {@code apply} method returns a {@code Configuration} with a {@link
+     * ThreadFactory}, set using {@link Configuration#withThreadFactory(ThreadFactory)
      * withThreadFactory(ThreadFactory)}, its {@link ThreadFactory#newThread(Runnable)
      * newThread()} method will be invoked to create threads when {@linkplain #fork(Callable)
      * forking} subtasks in the scope. If a {@code ThreadFactory} is not set then forking
      * subtasks will create an unnamed virtual thread for each subtask. </li>
-     * <li> If the operator returns a {@code Configuration} with a timeout, set using
-     * {@link Configuration#withTimeout(Duration) withTimeout(Duration)}, the timeout will
-     * start when the scope is opened. If the timeout expires before or while waiting in
+     * <li> If the {@code apply} method returns a {@code Configuration} with a timeout, set
+     * using {@link Configuration#withTimeout(Duration) withTimeout(Duration)}, the timeout
+     * will start when the scope is opened. If the timeout expires before or while waiting in
      * {@link #join()} then the scope will be {@linkplain ##Cancellation cancelled}. It is
      * {@link Joiner Joiner} specific as to whether the {@code join()} method returns a
      * result or throws an exception when a timeout occurs. If the outcome is an exception
      * then it will be thrown with a {@link CancelledByTimeoutException
      * CancelledByTimeoutException} as the {@linkplain Throwable#getCause() cause}. </li>
-     * <li> If the operator returns a {@code Configuration} with a name, set using
-     * {@linkplain Configuration#withName(String) Configuration.withName(String)}, the name
-     * will be used for monitoring and management purposes. </li>
-     * <li> If the operator completes with an exception or error then it is propagated by
-     * this method. </li>
-     * <li> If the operator returns {@code null} then {@code NullPointerException} is
-     * thrown. </li>
+     * <li> If the {@code apply} method returns a {@code Configuration} with a name, set
+     * using {@linkplain Configuration#withName(String) Configuration.withName(String)},
+     * the name will be used for monitoring and management purposes. </li>
+     * <li> If the {@code apply} method throws an exception or error then it is propagated
+     * by this method. </li>
+     * <li> If the {@code apply} method returns {@code null} then {@code NullPointerException}
+     * is thrown. </li>
      * </ul>
      *
      * <p> The new scope is owned by the current thread. Only code executing in this
@@ -1297,8 +1297,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> This method first creates a {@code Subtask} object to represent the forked
      * subtask. It invokes the Joiner's {@link Joiner#onFork(Subtask) onFork(Subtask)}
      * method with the subtask in the {@link Subtask.State#UNAVAILABLE UNAVAILABLE} state.
-     * If the {@code onFork(Subtask)} method completes with an exception or error then it
-     * is propagated by the {@code fork(Callable)} method without creating a thread.
+     * If the {@code onFork(Subtask)} method throws an exception or error then it is
+     * propagated by the {@code fork(Callable)} method without creating a thread.
      *
      * <p> If the scope is not already {@linkplain ##Cancellation cancelled}, and the {@code
      * onFork(Subtask)} method returns {@code false}, then an unstarted {@code Thread} is
