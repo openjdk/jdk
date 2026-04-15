@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,11 @@ class fieldDescriptor {
   void print() const;
   void print_on(outputStream* st) const;
   void print_on_for(outputStream* st, oop obj);
+#if !defined(PRODUCT) || INCLUDE_JVMTI
+  void print_access_flags(outputStream* st) const;
+#else
+  void print_access_flags(outputStream* st) const PRODUCT_RETURN;
+#endif
 };
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_HPP

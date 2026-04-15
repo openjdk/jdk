@@ -2204,7 +2204,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); print_access_flags(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();
@@ -2278,8 +2278,8 @@ void Method::print_on(outputStream* st) const {
   }
 }
 
-void Method::print_linkage_flags(outputStream* st) {
-  access_flags().print_on(st);
+void Method::print_linkage_flags(outputStream* st) const {
+  print_access_flags(st);
   if (is_default_method()) {
     st->print("default ");
   }
@@ -2288,6 +2288,24 @@ void Method::print_linkage_flags(outputStream* st) {
   }
 }
 #endif //PRODUCT
+
+#if !defined(PRODUCT) || INCLUDE_JVMTI
+void Method::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public       ()) st->print("public ");
+  if (flags.is_private      ()) st->print("private ");
+  if (flags.is_protected    ()) st->print("protected ");
+  if (flags.is_static       ()) st->print("static ");
+  if (flags.is_final        ()) st->print("final ");
+  if (flags.is_synchronized ()) st->print("synchronized ");
+  if (flags.is_bridge       ()) st->print("bridge ");
+  if (flags.has_vararg      ()) st->print("varargs ");
+  if (flags.is_native       ()) st->print("native ");
+  if (flags.is_abstract     ()) st->print("abstract ");
+  if (flags.is_strict_method()) st->print("strict ");
+  if (flags.is_synthetic    ()) st->print("synthetic ");
+}
+#endif // !defined(PRODUCT) || INCLUDE_JVMTI
 
 void Method::print_value_on(outputStream* st) const {
   assert(is_method(), "must be method");
