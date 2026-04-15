@@ -260,6 +260,18 @@ class MetaspaceObj {
   //   void deallocate_contents(ClassLoaderData* loader_data);
 
   friend class VMStructs;
+ public:
+
+  // Returns true if the pointer points to a valid MetaspaceObj. A valid
+  // MetaspaceObj is MetaWord-aligned and contained within either
+  // regular- or aot metaspace.
+  static bool is_valid(const MetaspaceObj* p);
+
+#if !INCLUDE_CDS
+  static bool is_pointer_in_aot_cache(const void* p) { return false; }
+  static bool aot_metaspace_range_initialized() { return false; }
+#else
+private:
   // All metsapce objects in the AOT cache (CDS archive) are mapped
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if a MetaspaceObj is in the
@@ -268,14 +280,8 @@ class MetaspaceObj {
   static void* _aot_metaspace_base;  // (inclusive) low address
   static void* _aot_metaspace_top;   // (exclusive) high address
   static volatile bool _aot_metaspace_range_initialized;
- public:
 
-  // Returns true if the pointer points to a valid MetaspaceObj. A valid
-  // MetaspaceObj is MetaWord-aligned and contained within either
-  // regular- or aot metaspace.
-  static bool is_valid(const MetaspaceObj* p);
-
-#if INCLUDE_CDS
+public:
   // Caller must check aot_metaspace_range_initialized() if it can call this
   // function in very early VM bootstrap.
   inline static bool is_pointer_in_aot_cache(const void* p) {
@@ -290,22 +296,19 @@ class MetaspaceObj {
             p >= _aot_metaspace_base);
   }
 
-  bool in_aot_cache() const {
-    return is_pointer_in_aot_cache(this);
-  }
   static bool aot_metaspace_range_initialized();
-#else
-  static bool is_pointer_in_aot_cache(const void* p) { return false; }
-  bool in_aot_cache() const { return false; }
-  static bool aot_metaspace_range_initialized() { return false; }
-#endif
-
-  void print_address_on(outputStream* st) const;  // nonvirtual address printing
-
   static void set_aot_metaspace_range(void* base, void* top);
 
   static void* aot_metaspace_base() { return _aot_metaspace_base; }
   static void* aot_metaspace_top()  { return _aot_metaspace_top;  }
+#endif // INCLUDE_CDS
+
+  bool in_aot_cache() const {
+    return is_pointer_in_aot_cache(this);
+  }
+
+  void print_address_on(outputStream* st) const;  // nonvirtual address printing
+
 
 #define METASPACE_OBJ_TYPES_DO(f) \
   f(Class) \

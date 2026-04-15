@@ -67,6 +67,7 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
+#if INCLUDE_CDS
 void* MetaspaceObj::_aot_metaspace_base = nullptr;
 void* MetaspaceObj::_aot_metaspace_top  = nullptr;
 volatile bool MetaspaceObj::_aot_metaspace_range_initialized = false;
@@ -77,7 +78,6 @@ void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {
   AtomicAccess::release_store(&_aot_metaspace_range_initialized, true);
 }
 
-#if INCLUDE_CDS
 bool MetaspaceObj::aot_metaspace_range_initialized() {
   return AtomicAccess::load_acquire(&_aot_metaspace_range_initialized);
 }

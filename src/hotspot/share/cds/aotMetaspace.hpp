@@ -107,7 +107,7 @@ public:
   //
   // Unlike MetaspaceObj::is_pointer_in_aot_cache(), this function should be called in contexts
   // where the AOT metaspace range is known to have been initialized (which happens very early
-  // in VM boostrap), so the caller doesn't need to explicity check for
+  // in VM bootstrap), so the caller doesn't need to explicitly check for
   // MetaspaceObj::aot_metaspace_range_initialized().
   static bool in_aot_cache(const void* p) {
     return MetaspaceObj::is_pointer_in_aot_cache(p);
