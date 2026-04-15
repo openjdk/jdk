@@ -62,10 +62,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bm" draft="unconfirmed">Bambara</language>
 			<language type="bn" draft="unconfirmed">Benggala</language>
 			<language type="bo" draft="unconfirmed">Tibèt</language>
+			<language type="bqi" draft="unconfirmed">Bahtiar</language>
 			<language type="br" draft="unconfirmed">Brèton</language>
 			<language type="brx" draft="unconfirmed">Boro</language>
 			<language type="bs" draft="unconfirmed">Bosni</language>
 			<language type="bss" draft="unconfirmed">Akosé</language>
+			<language type="bua" draft="unconfirmed">Buriat</language>
 			<language type="bug" draft="unconfirmed">Bugis</language>
 			<language type="byn" draft="unconfirmed">Belin</language>
 			<language type="ca" draft="unconfirmed">Katalan</language>
@@ -89,6 +91,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ckb" alt="variant" draft="unconfirmed">Kurdi, Tenga</language>
 			<language type="clc" draft="unconfirmed">Cilkotin</language>
 			<language type="co" draft="unconfirmed">Korsikan</language>
+			<language type="cop" draft="unconfirmed">Gibti</language>
 			<language type="crg" draft="unconfirmed">Micip</language>
 			<language type="crj" draft="unconfirmed">Kri Wètan Kidul</language>
 			<language type="crk" draft="unconfirmed">Kri Dataran</language>
@@ -228,6 +231,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksf" draft="unconfirmed">Bapia</language>
 			<language type="ksh" draft="unconfirmed">Kèl</language>
 			<language type="ku" draft="unconfirmed">Kurdi</language>
+			<language type="ku" menu="core" draft="unconfirmed">Kurdi</language>
 			<language type="kum" draft="unconfirmed">Kumuk</language>
 			<language type="kv" draft="unconfirmed">Komi</language>
 			<language type="kw" draft="unconfirmed">Kornis</language>
@@ -278,7 +282,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mi" draft="unconfirmed">Maori</language>
 			<language type="mic" draft="unconfirmed">Mikmak</language>
 			<language type="min" draft="unconfirmed">Minangkabo</language>
-			<language type="mk" draft="unconfirmed">Makèdoni</language>
+			<language type="mk" draft="unconfirmed">Makédoni</language>
 			<language type="ml" draft="unconfirmed">Malayalam</language>
 			<language type="mn" draft="unconfirmed">Monggol</language>
 			<language type="mni" draft="unconfirmed">Manipur</language>
@@ -337,6 +341,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pap" draft="unconfirmed">Papiamèn</language>
 			<language type="pau" draft="unconfirmed">Palau</language>
 			<language type="pcm" draft="unconfirmed">Pijin Nigéria</language>
+			<language type="pi" draft="unconfirmed">Pali</language>
 			<language type="pis" draft="unconfirmed">Pijin</language>
 			<language type="pl" draft="unconfirmed">Pol</language>
 			<language type="pqm" draft="unconfirmed">Malisèt-Pasamakuodi</language>
@@ -850,7 +855,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF" draft="unconfirmed">Sint-Martèn (Prasman)</territory>
 			<territory type="MG" draft="unconfirmed">Madagaskar</territory>
 			<territory type="MH" draft="unconfirmed">Pulo Marsal</territory>
-			<territory type="MK" draft="unconfirmed">Makèdoni Lor</territory>
+			<territory type="MK" draft="unconfirmed">Makédoni Lor</territory>
 			<territory type="ML" draft="unconfirmed">Mali</territory>
 			<territory type="MM" draft="unconfirmed">Mianmar (Birma)</territory>
 			<territory type="MN" draft="unconfirmed">Monggoli</territory>
@@ -1099,13 +1104,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc" draft="unconfirmed">Almenak Bingkok</type>
 			<type key="cf" type="account" draft="unconfirmed">Pormat Mata Uang Pembukuan</type>
 			<type key="cf" type="standard" draft="unconfirmed">Pormat Mata Uang Pakem</type>
-			<type key="collation" type="big5han" draft="unconfirmed">Rèntètan Sortir Tionghoa Terdisionil - Big5</type>
 			<type key="collation" type="compat" draft="unconfirmed">Rèntètan Sortir Sebelonnya, bakal kecocokan</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">Rèntètan Sortir Kamus</type>
 			<type key="collation" type="ducet" draft="unconfirmed">Rèntètan Sortir Bawaan Unicode</type>
 			<type key="collation" type="emoji" draft="unconfirmed">Rèntètan Sortir Émoji</type>
 			<type key="collation" type="eor" draft="unconfirmed">Aturan Pengrèntètan Èropa</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">Rèntètan Sortir Tionghoa Ringkes - GB2312</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">Rèntètan Sortir Buku Telepon</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">Rèntètan Sortir Pin-in</type>
 			<type key="collation" type="reformed" draft="unconfirmed">Rèntètan Sortir Kerobah</type>
@@ -3119,9 +3122,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">Waktu Aprika Kulon</generic>
-					<standard draft="unconfirmed">Waktu Pakem Aprika Kulon</standard>
-					<daylight draft="unconfirmed">Waktu Musim Pentèr Aprika Kulon</daylight>
+					<standard draft="unconfirmed">Waktu Aprika Kulon</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3502,6 +3503,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">Waktu Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">Waktu Pakem Hawai-Aléut</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4939,7 +4945,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimol per lèter</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milimol per lèter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">bagèan per juta</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} bagèan per juta</unitPattern>
 			</unit>
@@ -5567,7 +5573,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">biji</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} biji</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">bagèan/juta</displayName>
 			</unit>
 			<unit type="concentr-percent">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -85,7 +84,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -133,6 +132,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
     return;
   }
 
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
   AtomicAccess::store(&nm->_deoptimization_status, status);
@@ -499,6 +499,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  if (exec_mode == Unpack_deopt) {
+    assert(deoptee.is_deoptimized_frame(), "frame is not marked for deoptimization");
+  }
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
   nmethod* nm = deoptee.cb()->as_nmethod_or_null();
@@ -589,12 +592,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Verify we have the right vframeArray
   assert(cb->frame_size() >= 0, "Unexpected frame size");
   intptr_t* unpack_sp = stub_frame.sp() + cb->frame_size();
-
-  // If the deopt call site is a MethodHandle invoke call site we have
-  // to adjust the unpack_sp.
-  nmethod* deoptee_nm = deoptee.cb()->as_nmethod_or_null();
-  if (deoptee_nm != nullptr && deoptee_nm->is_method_handle_return(deoptee.pc()))
-    unpack_sp = deoptee.unextended_sp();
+  assert(unpack_sp == deoptee.unextended_sp(), "must be");
 
 #ifdef ASSERT
   assert(cb->is_deoptimization_stub() ||
@@ -1382,6 +1380,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1409,6 +1410,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
@@ -1656,7 +1660,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 #ifdef ASSERT
               else {
                 assert(!UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_metadata_deopt();
+                mon_info->lock()->set_bad_monitor_deopt();
               }
 #endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
@@ -1676,13 +1680,13 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         }
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                              deoptee_thread, thread);
+            ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                           deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
         assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
+        assert(ObjectSynchronizer::read_monitor(obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
@@ -1809,10 +1813,11 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
   deoptimize_single_frame(thread, fr, reason);
 }
 
-#if INCLUDE_JVMCI
-address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
+address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm, bool make_not_entrant) {
   // there is no exception handler for this pc => deoptimize
-  nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  if (make_not_entrant) {
+    nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  }
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -1826,6 +1831,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_nmethod_or_null() == nm, "expect top frame compiled method");
+
+  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
+
+  if (!nm->is_compiled_by_jvmci()) {
+    return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
+  }
+
+#if INCLUDE_JVMCI
+  // JVMCI support
   vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
   compiledVFrame* cvf = compiledVFrame::cast(vf);
   ScopeDesc* imm_scope = cvf->scope();
@@ -1841,16 +1855,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
     }
   }
 
-  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, nm->method()), true);
   if (trap_mdo != nullptr) {
     trap_mdo->inc_trap_count(Deoptimization::Reason_not_compiled_exception_handler);
   }
+#endif
 
   return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
 }
-#endif
 
 void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason) {
   assert(thread == Thread::current() ||
@@ -2008,7 +2021,7 @@ static void post_deoptimization_event(nmethod* nm,
 #endif // INCLUDE_JFR
 
 static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
-                              const char* reason_name, const char* reason_action) {
+                      const char* reason_name, const char* reason_action, const char* class_name) {
   LogTarget(Debug, deoptimization) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
@@ -2022,6 +2035,9 @@ static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_
     }
     ls.print("%s ", reason_name);
     ls.print("%s ", reason_action);
+    if (class_name != nullptr) {
+      ls.print("%s ", class_name);
+    }
     ls.print_cr("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
              pc, fr.pc() - nm->code_begin());
   }
@@ -2122,6 +2138,17 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     MethodData* trap_mdo =
       get_method_data(current, profiled_method, create_if_missing);
 
+    Symbol* class_name = nullptr;
+    bool unresolved = false;
+    if (unloaded_class_index >= 0) {
+      constantPoolHandle constants (current, trap_method->constants());
+      if (constants->tag_at(unloaded_class_index).is_unresolved_klass()) {
+        class_name = constants->klass_name_at(unloaded_class_index);
+        unresolved = true;
+      } else if (constants->tag_at(unloaded_class_index).is_symbol()) {
+        class_name = constants->symbol_at(unloaded_class_index);
+      }
+    }
     { // Log Deoptimization event for JFR, UL and event system
       Method* tm = trap_method();
       const char* reason_name = trap_reason_name(reason);
@@ -2129,10 +2156,24 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       intptr_t pc = p2i(fr.pc());
 
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      log_deopt(nm, tm, pc, fr, trap_bci, reason_name, reason_action);
-      Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
+
+      ResourceMark rm;
+
+      const char* class_name_str = nullptr;
+      const char* class_name_msg = nullptr;
+      stringStream st, stm;
+      if (class_name != nullptr) {
+        class_name->print_symbol_on(&st);
+        class_name_str = st.freeze();
+        stm.print("class=%s ", class_name_str);
+        class_name_msg = stm.freeze();
+      } else {
+        class_name_msg = "";
+      }
+      log_deopt(nm, tm, pc, fr, trap_bci, reason_name, reason_action, class_name_str);
+      Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s%s",
                                 reason_name, reason_action, pc,
-                                tm->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
+                                tm->name_and_sig_as_C_string(), trap_bci, class_name_msg, nm->compiler_name());
     }
 
     // Print a bunch of diagnostics, if requested.
@@ -2142,7 +2183,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
       // We must do this already now, since we cannot acquire this lock while
       // holding the tty lock (lock ordering by rank).
-      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+                                (trap_mdo != nullptr),
+                                Mutex::_no_safepoint_check_flag);
 
       ttyLocker ttyl;
 
@@ -2158,20 +2201,13 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #endif
         nm->log_identity(xtty);
       }
-      Symbol* class_name = nullptr;
-      bool unresolved = false;
-      if (unloaded_class_index >= 0) {
-        constantPoolHandle constants (current, trap_method->constants());
-        if (constants->tag_at(unloaded_class_index).is_unresolved_klass()) {
-          class_name = constants->klass_name_at(unloaded_class_index);
-          unresolved = true;
-          if (xtty != nullptr)
+      if (class_name != nullptr) {
+        if (xtty != nullptr) {
+          if (unresolved) {
             xtty->print(" unresolved='1'");
-        } else if (constants->tag_at(unloaded_class_index).is_symbol()) {
-          class_name = constants->symbol_at(unloaded_class_index);
-        }
-        if (xtty != nullptr)
+          }
           xtty->name(class_name);
+        }
       }
       if (xtty != nullptr && trap_mdo != nullptr && (int)reason < (int)MethodData::_trap_hist_limit) {
         // Dump the relevant MDO state.
@@ -2753,10 +2789,10 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "not_compiled_exception_handler",
   "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
   "transfer_to_interpreter",
-  "not_compiled_exception_handler",
   "unresolved",
   "jsr_mismatch",
 #endif

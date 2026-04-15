@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -534,13 +535,6 @@ static unsigned thread_native_entry(void* t) {
   OSThread* osthr = thread->osthread();
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
   // Diagnostic code to investigate JDK-6573254
   int res = 30115;  // non-java thread
   if (thread->is_Java_thread()) {
@@ -597,13 +591,6 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -848,22 +835,30 @@ jlong os::elapsed_frequency() {
 }
 
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::free_memory(size_t& value) {
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::win32::available_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::win32::available_memory(physical_memory_size_type& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPhys);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPhys);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
@@ -871,12 +866,16 @@ bool os::win32::available_memory(size_t& value) {
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value)  {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullTotalPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullTotalPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
@@ -884,12 +883,16 @@ bool os::total_swap_space(size_t& value) {
   }
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
@@ -897,7 +900,11 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
+  return win32::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -924,6 +931,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
     win32::set_processor_group_warning_displayed(true);
@@ -1729,6 +1740,8 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", name);
+
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
   result = LoadLibrary(name);
@@ -1841,12 +1854,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load %s-bit .dll on a %s-bit platform",
                          lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                          lib_arch, running_arch_str);
   }
@@ -2515,12 +2528,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-
-// Used for PostMortemDump
-extern "C" void safepoints();
-extern "C" void find(int x);
-extern "C" void events();
-
 // According to Windows API documentation, an illegal instruction sequence should generate
 // the 0xC000001C exception code. However, real world experience shows that occasionnaly
 // the execution of an illegal instruction can generate the exception code 0xC000001E. This
@@ -2644,14 +2651,13 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exception_record->ExceptionCode;
 #if defined(_M_ARM64)
   address pc = (address) exceptionInfo->ContextRecord->Pc;
+
+  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-  Thread* t = Thread::current_or_null_safe();
 
-#if defined(_M_AMD64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
@@ -2664,6 +2670,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
+#else
+  #error unknown architecture
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2674,6 +2682,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif
 
+  Thread* t = Thread::current_or_null_safe();
   if (t != nullptr && t->is_Java_thread()) {
     JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
@@ -2704,10 +2713,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
         report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-#endif
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
@@ -2759,10 +2766,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
       report_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
-#endif
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2811,9 +2816,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (cb != nullptr && cb->is_nmethod()) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = nm->is_method_handle_return(pc) ?
-            nm->deopt_mh_handler_begin() :
-            nm->deopt_handler_begin();
+          address deopt = nm->deopt_handler_entry();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler
@@ -2824,41 +2827,21 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-  if (exception_code != EXCEPTION_BREAKPOINT) {
+  bool should_report_error = (exception_code != EXCEPTION_BREAKPOINT);
+
+#if defined(_M_ARM64)
+  should_report_error = should_report_error &&
+                        FAILED(exception_code) &&
+                        (exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION);
+#endif
+
+  if (should_report_error) {
     report_error(t, exception_code, pc, exception_record,
                  exceptionInfo->ContextRecord);
   }
-#endif
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-#if defined(_M_ARM64)
-  address pc = (address) exceptionInfo->ContextRecord->Pc;
-#elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-
-  // Fast path for code part of the code cache
-  if (CodeCache::low_bound() <= pc && pc < CodeCache::high_bound()) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
-
-  // If the exception occurred in the codeCache, pass control
-  // to our normal exception handler.
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != nullptr) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -3188,7 +3171,6 @@ void os::large_page_init() {
   _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
-#if !defined(IA32)
     if (EnableAllLargePageSizesForWindows) {
       size_t min_size = GetLargePageMinimum();
 
@@ -3197,7 +3179,6 @@ void os::large_page_init() {
         _page_sizes.add(page_size);
       }
     }
-#endif
 
     _page_sizes.add(_large_page_size);
   }
@@ -3294,11 +3275,10 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
-                                  os::release_memory(extra_base, extra_size);
-    assert(rc, "release failed");
-    if (!rc) {
-      return nullptr;
+    if (file_desc != -1) {
+      os::unmap_memory(extra_base, extra_size);
+    } else {
+      os::release_memory(extra_base, extra_size);
     }
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
@@ -3531,11 +3511,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return reserve_large_pages(bytes, addr, exec);
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(base != nullptr, "Sanity check");
-  return pd_release_memory(base, bytes);
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -3694,8 +3669,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size, !ExecMem);
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+void os::remove_stack_guard_pages(char* addr, size_t size) {
+  os::uncommit_memory(addr, size);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {
@@ -3792,6 +3767,7 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
+void os::numa_set_thread_affinity(Thread *thread, int node) { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
@@ -3961,25 +3937,25 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_processor_type            = 0;
+int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
-int    os::win32::_processor_level           = 0;
-size_t os::win32::_physical_memory           = 0;
+int                       os::win32::_processor_level           = 0;
+physical_memory_size_type os::win32::_physical_memory           = 0;
 
-bool   os::win32::_is_windows_server         = false;
+bool                      os::win32::_is_windows_server         = false;
 
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
 // including the latest one (as of this writing - Windows Server 2012 R2)
-bool   os::win32::_has_exit_bug              = true;
+bool                      os::win32::_has_exit_bug              = true;
 
-int    os::win32::_major_version             = 0;
-int    os::win32::_minor_version             = 0;
-int    os::win32::_build_number              = 0;
-int    os::win32::_build_minor               = 0;
+int                       os::win32::_major_version             = 0;
+int                       os::win32::_minor_version             = 0;
+int                       os::win32::_build_number              = 0;
+int                       os::win32::_build_minor               = 0;
 
-bool   os::win32::_processor_group_warning_displayed = false;
-bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool                      os::win32::_processor_group_warning_displayed = false;
+bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
@@ -4198,12 +4174,7 @@ void os::win32::initialize_system_info() {
   if (res != TRUE) {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
-  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
-
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Adjust MaxRAM according to the maximum virtual address space available.
-    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
-  }
+  _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
 
   _is_windows_server = IsWindowsServer();
 
@@ -4535,7 +4506,7 @@ jint os::init_2(void) {
   // Setup Windows Exceptions
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
+  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
 #endif
 
@@ -4824,8 +4795,8 @@ int os::stat(const char *path, struct stat *sbuf) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -4836,14 +4807,14 @@ int os::stat(const char *path, struct stat *sbuf) {
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
     DWORD errcode = ::GetLastError();
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
+    os::free(wide_path);
+    os::free(path_to_target);
     if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
     } else {
       errno = 0;
     }
-    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
-    os::free(wide_path);
-    os::free(path_to_target);
     return -1;
   }
 
@@ -5042,8 +5013,8 @@ int os::open(const char *path, int oflag, int mode) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -5137,6 +5108,13 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::_lseeki64(fd, (__int64)offset, SEEK_SET);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::_ftelli64(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::_fseeki64(file,offset, whence);
+}
 
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
@@ -5317,6 +5295,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
@@ -6296,4 +6275,111 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   }
   *sigInfo = nullptr;
   return nullptr;
+}
+
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+}
+
+/*
+ * Windows/x64 does not use stack frames the way expected by Java:
+ * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
+ * [2] in rare cases, when alloca() is used, a frame pointer is used, but this may
+ *     not be RBP.
+ * See http://msdn.microsoft.com/en-us/library/ew5tede7.aspx
+ *
+ * So it's not possible to print the native stack using the
+ *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
+ * loop in vmError.cpp. We need to roll our own loop.
+ * This approach works for Windows AArch64 as well.
+ */
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char* buf, int buf_size, address& lastpc)
+{
+  CONTEXT ctx;
+  if (context != nullptr) {
+    memcpy(&ctx, context, sizeof(ctx));
+  } else {
+    RtlCaptureContext(&ctx);
+  }
+
+  st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+  DWORD machine_type;
+  STACKFRAME stk;
+  memset(&stk, 0, sizeof(stk));
+  stk.AddrStack.Mode      = AddrModeFlat;
+  stk.AddrFrame.Mode      = AddrModeFlat;
+  stk.AddrPC.Mode         = AddrModeFlat;
+
+#if defined(_M_AMD64)
+  stk.AddrStack.Offset    = ctx.Rsp;
+  stk.AddrFrame.Offset    = ctx.Rbp;
+  stk.AddrPC.Offset       = ctx.Rip;
+  machine_type            = IMAGE_FILE_MACHINE_AMD64;
+#elif defined(_M_ARM64)
+  stk.AddrStack.Offset    = ctx.Sp;
+  stk.AddrFrame.Offset    = ctx.Fp;
+  stk.AddrPC.Offset       = ctx.Pc;
+  machine_type            = IMAGE_FILE_MACHINE_ARM64;
+#else
+  #error unknown architecture
+#endif
+
+  // Ensure we consider dynamically loaded DLLs
+  SymbolEngine::refreshModuleList();
+
+  int count = 0;
+  address lastpc_internal = 0;
+  while (count++ < StackPrintLimit) {
+    intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
+    intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
+    address pc = (address)stk.AddrPC.Offset;
+
+    if (pc != nullptr) {
+      if (count == 2 && lastpc_internal == pc) {
+        // Skip it -- StackWalk64() may return the same PC
+        // (but different SP) on the first try.
+      } else {
+        // Don't try to create a frame(sp, fp, pc) -- on WinX64, stk.AddrFrame
+        // may not contain what Java expects, and may cause the frame() constructor
+        // to crash. Let's just print out the symbolic address.
+        frame::print_C_frame(st, buf, buf_size, pc);
+        // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        } else {
+          st->print("  (no source info available)");
+        }
+        st->cr();
+      }
+      lastpc_internal = pc;
+    }
+
+    PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
+    if (p == nullptr) {
+      // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
+      lastpc = lastpc_internal;
+      break;
+    }
+
+    BOOL result = WindowsDbgHelp::stackWalk64(
+        machine_type,              // __in      DWORD MachineType,
+        GetCurrentProcess(),       // __in      HANDLE hProcess,
+        GetCurrentThread(),        // __in      HANDLE hThread,
+        &stk,                      // __inout   LP STACKFRAME64 StackFrame,
+        &ctx);                     // __inout   PVOID ContextRecord,
+
+    if (!result) {
+      break;
+    }
+  }
+  if (count > StackPrintLimit) {
+    st->print_cr("...<more frames>...");
+  }
+  st->cr();
+
+  return true;
 }

@@ -204,10 +204,10 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    // lock_reg was destroyed by fast unlocking attempt => recompute it
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
+
+  // lock_reg was destroyed by fast unlocking attempt => recompute it
+  ce->monitor_address(_monitor_ix, _lock_reg);
+
   ce->store_parameter(_lock_reg->as_register(), 0);
   // note: non-blocking leaf routine => no call info needed
   StubId exit_id;

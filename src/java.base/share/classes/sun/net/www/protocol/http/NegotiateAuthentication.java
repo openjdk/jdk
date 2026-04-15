@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,29 +168,24 @@ final class NegotiateAuthentication extends AuthenticationInfo {
      * @param p A source of header values for this connection, not used because
      *          HeaderParser converts the fields to lower case, use raw instead
      * @param raw The raw header field.
-     * @return true if all goes well, false if no headers were set.
+     * @throws IOException if no headers were set
      */
     @Override
-    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    public void setHeaders(HttpURLConnection conn, HeaderParser p, String raw) throws IOException {
         // no need to synchronize here:
         //   already locked by s.n.w.p.h.HttpURLConnection
         assert conn.isLockHeldByCurrentThread();
 
-        try {
-            String response;
-            byte[] incoming = null;
-            String[] parts = raw.split("\\s+");
-            if (parts.length > 1) {
-                incoming = Base64.getDecoder().decode(parts[1]);
-            }
-            response = hci.scheme + " " + Base64.getEncoder().encodeToString(
-                        incoming==null?firstToken():nextToken(incoming));
-
-            conn.setAuthenticationProperty(getHeaderName(), response);
-            return true;
-        } catch (IOException e) {
-            return false;
+        String response;
+        byte[] incoming = null;
+        String[] parts = raw.split("\\s+");
+        if (parts.length > 1) {
+            incoming = Base64.getDecoder().decode(parts[1]);
         }
+        response = hci.scheme + " " + Base64.getEncoder().encodeToString(
+                    incoming==null?firstToken():nextToken(incoming));
+
+        conn.setAuthenticationProperty(getHeaderName(), response);
     }
 
     /**

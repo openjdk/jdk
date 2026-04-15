@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +121,8 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
     private long getLongValueEntryFromFile(String file, String metric) {
         Path filePath = Paths.get(UNIFIED.getPath(), file);
         try {
-            String strVal = Files.lines(filePath).filter(l -> l.startsWith(metric)).collect(Collectors.joining());
+            String strVal = Files.lines(filePath)
+                                 .filter(l -> l.matches("^" + metric + "\\s+.*")).collect(Collectors.joining());
             if (strVal.isEmpty()) {
                 // sometimes the match for the metric does not exist, e.g. cpu.stat's nr_periods iff the controller
                 // is not enabled
@@ -447,13 +449,13 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
         Metrics metrics = Metrics.systemMetrics();
         long oldVal = metrics.getBlkIOServiceCount();
         long newVal = getIoStatAccumulate(new String[] { "rios", "wios" });
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+        if (newVal < oldVal) {
             fail("io.stat->rios/wios: ", oldVal, newVal);
         }
 
         oldVal = metrics.getBlkIOServiced();
         newVal = getIoStatAccumulate(new String[] { "rbytes", "wbytes" });
-        if (!CgroupMetricsTester.compareWithErrorMargin(oldVal, newVal)) {
+        if (newVal < oldVal) {
             fail("io.stat->rbytes/wbytes: ", oldVal, newVal);
         }
     }

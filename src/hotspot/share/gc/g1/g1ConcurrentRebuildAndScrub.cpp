@@ -245,7 +245,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, bool should_rebuild_remset, uint worker_id) :
       _cm(cm),
       _bitmap(_cm->mark_bitmap()),
-      _rebuild_closure(G1CollectedHeap::heap(), worker_id),
+      _rebuild_closure(G1CollectedHeap::heap(), worker_id + cm->worker_id_offset()),
       _should_rebuild_remset(should_rebuild_remset),
       _processed_words(0) { }
 

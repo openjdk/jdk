@@ -41,10 +41,6 @@
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \
-  do_stub(initial, get_previous_sp)                                     \
-  do_arch_entry(x86, initial, get_previous_sp,                          \
-                get_previous_sp_entry,                                  \
-                get_previous_sp_entry)                                  \
   do_stub(initial, f2i_fixup)                                           \
   do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)          \
   do_stub(initial, f2l_fixup)                                           \
@@ -77,7 +73,7 @@
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
-  do_arch_blob(compiler, 109000 WINDOWS_ONLY(+2000))                    \
+  do_arch_blob(compiler, 120000 WINDOWS_ONLY(+2000))                    \
   do_stub(compiler, vector_float_sign_mask)                             \
   do_arch_entry(x86, compiler, vector_float_sign_mask,                  \
                 vector_float_sign_mask, vector_float_sign_mask)         \
@@ -165,6 +161,12 @@
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
                 pshuffle_byte_flip_mask_addr,                           \
                 pshuffle_byte_flip_mask_addr)                           \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_00ba_addr,                      \
+                pshuffle_byte_flip_mask_00ba_addr)                      \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,                 \
+                pshuffle_byte_flip_mask_dc00_addr,                      \
+                pshuffle_byte_flip_mask_dc00_addr)                      \
   /* x86_64 exposes these 3 stubs via a generic entry array */          \
   /* other arches use arch-specific entries */                          \
   /* this really needs rationalising */                                 \
@@ -175,6 +177,9 @@
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \
                 pshuffle_byte_flip_mask_addr_sha512)                    \
+  do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512,             \
+                pshuffle_byte_flip_mask_ymm_lo_addr_sha512)             \
   do_stub(compiler, compress_perm_table32)                              \
   do_arch_entry(x86, compiler, compress_perm_table32,                   \
                 compress_perm_table32, compress_perm_table32)           \

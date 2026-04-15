@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -181,6 +182,7 @@ class ConsoleIOContext extends IOContext {
 
         setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
+        reader.setVariable(LineReader.WORDCHARS, "_$");
 
         reader.setParser((line, cursor, context) -> {
             if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
@@ -201,6 +203,7 @@ class ConsoleIOContext extends IOContext {
               .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
               .sorted()
               .map(key -> repl.prefs.get(key))
+              .filter(Objects::nonNull)
               .forEach(loadHistory::add);
 
         for (ListIterator<String> it = loadHistory.listIterator(); it.hasNext(); ) {
@@ -345,18 +348,21 @@ class ConsoleIOContext extends IOContext {
                 ConsoleIOContextTestSupport.willComputeCompletion();
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
-                List<String> doc;
+                List<AttributedString> doc;
                 boolean command = prefix.isEmpty() && text.startsWith("/");
                 if (command) {
                     suggestions = repl.commandCompletionSuggestions(text, cursor, anchor);
-                    doc = repl.commandDocumentation(text, cursor, true);
+                    doc = repl.commandDocumentation(text, cursor, true)
+                              .stream()
+                              .map(AttributedString::new)
+                              .toList();
                 } else {
                     int prefixLength = prefix.length();
                     suggestions = repl.analysis.completionSuggestions(prefix + text, cursor + prefixLength, anchor);
                     anchor[0] -= prefixLength;
                     doc = repl.analysis.documentation(prefix + text, cursor + prefix.length(), false)
                                        .stream()
-                                       .map(Documentation::signature)
+                                       .map(this::renderSignature)
                                        .toList();
                 }
                 long smartCount = suggestions.stream().filter(Suggestion::matchesType).count();
@@ -500,6 +506,41 @@ class ConsoleIOContext extends IOContext {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private AttributedString renderSignature(Documentation doc) {
+        int activeParamIndex = doc.activeParameterIndex();
+        String signature = doc.signature();
+
+        if (activeParamIndex == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        int lparen = signature.indexOf('(');
+        int rparen = signature.indexOf(')', lparen);
+
+        if (lparen == (-1) || rparen == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        AttributedStringBuilder result = new AttributedStringBuilder();
+
+        result.append(signature.substring(0, lparen + 1), AttributedStyle.DEFAULT);
+
+        String[] params = signature.substring(lparen + 1, rparen).split(", *");
+        String sep = "";
+
+        for (int i = 0; i < params.length; i++) {
+            result.append(sep);
+            result.append(params[i], i == activeParamIndex ? AttributedStyle.BOLD
+                                                           : AttributedStyle.DEFAULT);
+
+            sep = ", ";
+        }
+
+        result.append(signature.substring(rparen), AttributedStyle.DEFAULT);
+
+        return result.toAttributedString();
     }
 
     private CompletionTask.Result doPrintFullDocumentation(List<CompletionTask> todo, List<String> doc, boolean command) {
@@ -722,9 +763,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class CommandSynopsisTask implements CompletionTask {
 
-        private final List<String> synopsis;
+        private final List<AttributedString> synopsis;
 
-        public CommandSynopsisTask(List<String> synposis) {
+        public CommandSynopsisTask(List<AttributedString> synposis) {
             this.synopsis = synposis;
         }
 
@@ -738,6 +779,7 @@ class ConsoleIOContext extends IOContext {
 //            try {
                 in.getTerminal().writer().println();
                 in.getTerminal().writer().println(synopsis.stream()
+                                   .map(doc -> doc.toAnsi(in.getTerminal()))
                                    .map(l -> l.replaceAll("\n", LINE_SEPARATOR))
                                    .collect(Collectors.joining(LINE_SEPARATORS2)));
 //            } catch (IOException ex) {
@@ -771,9 +813,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class ExpressionSignaturesTask implements CompletionTask {
 
-        private final List<String> doc;
+        private final List<AttributedString> doc;
 
-        public ExpressionSignaturesTask(List<String> doc) {
+        public ExpressionSignaturesTask(List<AttributedString> doc) {
             this.doc = doc;
         }
 
@@ -786,7 +828,9 @@ class ConsoleIOContext extends IOContext {
         public Result perform(String text, int cursor) throws IOException {
             in.getTerminal().writer().println();
             in.getTerminal().writer().println(repl.getResourceString("jshell.console.completion.current.signatures"));
-            in.getTerminal().writer().println(doc.stream().collect(Collectors.joining(LINE_SEPARATOR)));
+            in.getTerminal().writer().println(doc.stream()
+                                                 .map(doc -> doc.toAnsi(in.getTerminal()))
+                                                 .collect(Collectors.joining(LINE_SEPARATOR)));
             return Result.FINISH;
         }
 

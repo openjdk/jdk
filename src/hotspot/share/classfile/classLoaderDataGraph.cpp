@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -149,7 +150,8 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool has_clas
   // We mustn't GC until we've installed the ClassLoaderData in the Graph since the CLD
   // contains oops in _handles that must be walked.  GC doesn't walk CLD from the
   // loader oop in all collections, particularly young collections.
-  NoSafepointVerifier no_safepoints;
+  // Before is_init_completed(), GC is not allowed to run.
+  NoSafepointVerifier no_safepoints(is_init_completed());
 
   cld = new ClassLoaderData(loader, has_class_mirror_holder);
 
@@ -489,62 +491,25 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
   }
 }
 
-ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
-    : _next_klass(nullptr) {
+ClassLoaderDataGraphIteratorAtomic::ClassLoaderDataGraphIteratorAtomic()
+    : _cld(nullptr) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  ClassLoaderData* cld = ClassLoaderDataGraph::_head;
-  Klass* klass = nullptr;
-
-  // Find the first klass in the CLDG.
-  while (cld != nullptr) {
-    assert_locked_or_safepoint(cld->metaspace_lock());
-    klass = cld->_klasses;
-    if (klass != nullptr) {
-      _next_klass = klass;
-      return;
-    }
-    cld = cld->next();
-  }
+  _cld = AtomicAccess::load_acquire(&ClassLoaderDataGraph::_head);
 }
 
-Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass_in_cldg(Klass* klass) {
-  Klass* next = klass->next_link();
-  if (next != nullptr) {
-    return next;
-  }
-
-  // No more klasses in the current CLD. Time to find a new CLD.
-  ClassLoaderData* cld = klass->class_loader_data();
-  assert_locked_or_safepoint(cld->metaspace_lock());
-  while (next == nullptr) {
-    cld = cld->next();
-    if (cld == nullptr) {
-      break;
+ClassLoaderData* ClassLoaderDataGraphIteratorAtomic::next() {
+  ClassLoaderData* cur = AtomicAccess::load(&_cld);
+  for (;;) {
+    if (cur == nullptr) {
+      return nullptr;
     }
-    next = cld->_klasses;
-  }
-
-  return next;
-}
-
-Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
-  Klass* head = _next_klass;
-
-  while (head != nullptr) {
-    Klass* next = next_klass_in_cldg(head);
-
-    Klass* old_head = AtomicAccess::cmpxchg(&_next_klass, head, next);
-
-    if (old_head == head) {
-      return head; // Won the CAS.
+    ClassLoaderData* next = cur->next();
+    ClassLoaderData* old;
+    if ((old = AtomicAccess::cmpxchg(&_cld, cur, next)) == cur) {
+      return cur;
     }
-
-    head = old_head;
+    cur = old;
   }
-
-  // Nothing more for the iterator to hand out.
-  assert(head == nullptr, "head is " PTR_FORMAT ", expected not null:", p2i(head));
-  return nullptr;
 }
 
 void ClassLoaderDataGraph::verify() {

@@ -81,7 +81,7 @@ public class Parser implements GraphParser {
     public static final String FROM_INDEX_PROPERTY = "fromIndex";
     public static final String TO_INDEX_PROPERTY = "toIndex";
     public static final String TO_INDEX_ALT_PROPERTY = "index";
-    public static final String LABEL_PROPERTY = "label";
+    public static final String EDGE_LABEL_PROPERTY = "label";
     public static final String METHOD_ELEMENT = "method";
     public static final String INLINE_ELEMENT = "inline";
     public static final String BYTECODES_ELEMENT = "bytecodes";
@@ -655,7 +655,7 @@ public class Parser implements GraphParser {
                     toIndex = Integer.parseInt(toIndexString);
                 }
 
-                label = readAttribute(LABEL_PROPERTY);
+                label = readAttribute(EDGE_LABEL_PROPERTY);
                 type = readAttribute(TYPE_PROPERTY);
 
                 from = lookupID(readRequiredAttribute(FROM_PROPERTY));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField  contEntryField;
   private static AddressField activeHandlesField;
   private static CIntegerField monitorOwnerIDField;
   private static long oopPtrSize;
@@ -95,6 +96,7 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    contEntryField    = type.getAddressField("_cont_entry");
     activeHandlesField = type.getAddressField("_active_handles");
     monitorOwnerIDField = type.getCIntegerField("_monitor_owner_id");
 
@@ -338,6 +340,10 @@ public class JavaThread extends Thread {
 
   public int getTerminated() {
       return (int) terminatedField.getValue(addr);
+  }
+
+  public ContinuationEntry getContEntry() {
+      return ContinuationEntry.create(contEntryField.getValue(addr));
   }
 
   /** Gets the Java-side thread object for this JavaThread */

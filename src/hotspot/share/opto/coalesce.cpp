@@ -118,7 +118,7 @@ void PhaseCoalesce::combine_these_two(Node *n1, Node *n2) {
       // Merge in the IFG
       _phc._ifg->Union( lr1, lr2 );
       // Combine register restrictions
-      lrg1->AND(lrg2->mask());
+      lrg1->and_with(lrg2->mask());
     }
   }
 }
@@ -503,8 +503,8 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
                         lrgs(lr2).is_multidef() )
     ? NodeSentinel : src_def;
   lrgs(lr2)._def = nullptr;    // No def for lrg 2
-  lrgs(lr2).Clear();        // Force empty mask for LRG 2
-  //lrgs(lr2)._size = 0;      // Live-range 2 goes dead
+  lrgs(lr2).clear();           // Force empty mask for LRG 2
+  // lrgs(lr2)._size = 0;      // Live-range 2 goes dead
   lrgs(lr1)._is_oop |= lrgs(lr2)._is_oop;
   lrgs(lr2)._is_oop = 0;    // In particular, not an oop for GC info
 
@@ -570,9 +570,9 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
       // If we attempt to coalesce across a bound def
       if( lrgs(lidx).is_bound() ) {
         // Do not let the coalesced LRG expect to get the bound color
-        rm.SUBTRACT( lrgs(lidx).mask() );
+        rm.subtract(lrgs(lidx).mask());
         // Recompute rm_size
-        rm_size = rm.Size();
+        rm_size = rm.size();
         //if( rm._flags ) rm_size += 1000000;
         if( reg_degree >= rm_size ) return max_juint;
       }
@@ -693,12 +693,13 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
   // Check for compatibility of the 2 live ranges by
   // intersecting their allowed register sets.
-  RegMask rm = lrgs(lr1).mask();
-  rm.AND(lrgs(lr2).mask());
+  ResourceMark rm(C->regmask_arena());
+  RegMask mask(lrgs(lr1).mask(), C->regmask_arena());
+  mask.and_with(lrgs(lr2).mask());
   // Number of bits free
-  uint rm_size = rm.Size();
+  uint rm_size = mask.size();
 
-  if (UseFPUForSpilling && rm.is_infinite_stack()) {
+  if (UseFPUForSpilling && mask.is_infinite_stack() ) {
     // Don't coalesce when frequency difference is large
     Block *dst_b = _phc._cfg.get_block_for_node(dst_copy);
     Block *src_def_b = _phc._cfg.get_block_for_node(src_def);
@@ -707,7 +708,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   }
 
   // If we can use any stack slot, then effective size is infinite
-  if (rm.is_infinite_stack()) {
+  if (mask.is_infinite_stack()) {
     rm_size += 1000000;
   }
   // Incompatible masks, no way to coalesce
@@ -732,7 +733,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   }
 
   // Union the two interference sets together into '_ulr'
-  uint reg_degree = _ulr.lrg_union( lr1, lr2, rm_size, _phc._ifg, rm );
+  uint reg_degree = _ulr.lrg_union( lr1, lr2, rm_size, _phc._ifg, mask );
 
   if( reg_degree >= rm_size ) {
     record_bias( _phc._ifg, lr1, lr2 );
@@ -745,7 +746,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // line of previous blocks.  I give up at merge points or when I get
   // more interferences than my degree.  I can stop when I find src_copy.
   if( dst_copy != src_copy ) {
-    reg_degree = compute_separating_interferences(dst_copy, src_copy, b, bindex, rm, rm_size, reg_degree, lr1, lr2 );
+    reg_degree = compute_separating_interferences(dst_copy, src_copy, b, bindex, mask, rm_size, reg_degree, lr1, lr2 );
     if( reg_degree == max_juint ) {
       record_bias( _phc._ifg, lr1, lr2 );
       return false;
@@ -792,7 +793,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // union-find tree
   union_helper( lr1_node, lr2_node, lr1, lr2, src_def, dst_copy, src_copy, b, bindex );
   // Combine register restrictions
-  lrgs(lr1).set_mask(rm);
+  lrgs(lr1).set_mask(mask);
   lrgs(lr1).compute_set_mask_size();
   lrgs(lr1)._cost += lrgs(lr2)._cost;
   lrgs(lr1)._area += lrgs(lr2)._area;

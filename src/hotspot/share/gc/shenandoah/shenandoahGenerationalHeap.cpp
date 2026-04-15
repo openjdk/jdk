@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -73,7 +74,7 @@ size_t ShenandoahGenerationalHeap::calculate_max_plab() {
 }
 
 // Returns size in bytes
-size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
 }
 
@@ -89,9 +90,21 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
+void ShenandoahGenerationalHeap::initialize_generations() {
+  ShenandoahHeap::initialize_generations();
+  _young_generation->post_initialize(this);
+  _old_generation->post_initialize(this);
+}
+
 void ShenandoahGenerationalHeap::post_initialize() {
   ShenandoahHeap::post_initialize();
   _age_census = new ShenandoahAgeCensus();
+}
+
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize_heuristics();
+  _old_generation->post_initialize_heuristics();
 }
 
 void ShenandoahGenerationalHeap::print_init_logger() const {
@@ -103,18 +116,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   // Initialize global generation and heuristics even in generational mode.
   ShenandoahHeap::initialize_heuristics();
 
-  // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
-  // for old would be total heap - minimum capacity of young. This means the sum of the maximum
-  // allowed for old and young could exceed the total heap size. It remains the case that the
-  // _actual_ capacity of young + old = total.
-  _generation_sizer.heap_size_changed(max_capacity());
-  size_t initial_capacity_young = _generation_sizer.max_young_size();
-  size_t max_capacity_young = _generation_sizer.max_young_size();
-  size_t initial_capacity_old = max_capacity() - max_capacity_young;
-  size_t max_capacity_old = max_capacity() - initial_capacity_young;
-
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers());
+  _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }
@@ -155,6 +158,10 @@ void ShenandoahGenerationalHeap::stop() {
   regulator_thread()->stop();
 }
 
+void ShenandoahGenerationalHeap::start_idle_span() {
+  young_generation()->heuristics()->start_idle_span();
+}
+
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
   if (is_idle()) {
     return false;
@@ -178,15 +185,15 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {
+void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, false /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
   workers()->run_task(&task);
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(bool concurrent) {
+void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, true /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, true /* only promote regions */);
   workers()->run_task(&task);
 }
 
@@ -200,13 +207,13 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  ShenandoahHeapRegion* r = heap_region_containing(p);
-  assert(!r->is_humongous(), "never evacuate humongous objects");
+  ShenandoahHeapRegion* from_region = heap_region_containing(p);
+  assert(!from_region->is_humongous(), "never evacuate humongous objects");
 
-  ShenandoahAffiliation target_gen = r->affiliation();
-  // gc_generation() can change asynchronously and should not be used here.
-  assert(active_generation() != nullptr, "Error");
-  if (active_generation()->is_young() && target_gen == YOUNG_GENERATION) {
+  // Try to keep the object in the same generation
+  const ShenandoahAffiliation target_gen = from_region->affiliation();
+
+  if (target_gen == YOUNG_GENERATION) {
     markWord mark = p->mark();
     if (mark.is_marked()) {
       // Already forwarded.
@@ -216,26 +223,31 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
-      oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
+    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+      // If the object is tenurable, try to promote it
+      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+
+      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
       if (result != nullptr) {
         return result;
       }
-      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
     }
+    return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region->age());
   }
-  return try_evacuate_object(p, thread, r, target_gen);
+
+  assert(target_gen == OLD_GENERATION, "Expected evacuation to old");
+  return try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 }
 
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
-oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                        ShenandoahAffiliation target_gen) {
+template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
+oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint from_region_age) {
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
-  bool is_promotion = (target_gen == OLD_GENERATION) && from_region->is_young();
+  constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -244,7 +256,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   } else {
 #endif
     if (UseTLAB) {
-      switch (target_gen) {
+      switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           copy = allocate_from_gclab(thread, size);
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
@@ -257,26 +269,25 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           break;
         }
         case OLD_GENERATION: {
-          PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-          if (plab != nullptr) {
+          ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+          if (shenandoah_plab != nullptr) {
             has_plab = true;
-            copy = allocate_from_plab(thread, size, is_promotion);
-            if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
-                ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
+            copy = shenandoah_plab->allocate(size, is_promotion);
+            if (copy == nullptr && size < shenandoah_plab->desired_size() && shenandoah_plab->retries_enabled()) {
               // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
               // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
               // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
               // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
-              if (plab->words_remaining() < plab_min_size()) {
-                ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
-                copy = allocate_from_plab(thread, size, is_promotion);
-                // If we still get nullptr, we'll try a shared allocation below.
+              // Shrinking the desired PLAB size may allow us to eke out a small PLAB while staying beneath evacuation reserve.
+              if (shenandoah_plab->plab()->words_remaining() < plab_min_size()) {
+                shenandoah_plab->set_desired_size(plab_min_size());
+                copy = shenandoah_plab->allocate(size, is_promotion);
                 if (copy == nullptr) {
-                  // If retry fails, don't continue to retry until we have success (probably in next GC pass)
-                  ShenandoahThreadLocalData::disable_plab_retries(thread);
+                  // If we still get nullptr, we'll try a shared allocation below.
+                  // However, don't continue to retry until we have success (probably in next GC pass)
+                  shenandoah_plab->disable_retries();
                 }
               }
-              // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
             }
           }
           break;
@@ -291,22 +302,22 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
       if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
-        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
+        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
-      // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
+      // We choose not to promote objects smaller than size_threshold by way of shared allocations as this is too
       // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size())
+      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= size_threshhold).
     }
 #ifdef ASSERT
   }
 #endif
 
   if (copy == nullptr) {
-    if (target_gen == OLD_GENERATION) {
-      if (from_region->is_young()) {
+    if (TO_GENERATION == OLD_GENERATION) {
+      if (FROM_GENERATION == YOUNG_GENERATION) {
         // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
         old_generation()->handle_failed_promotion(thread, size);
         return nullptr;
@@ -318,14 +329,12 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     }
 
     control_thread()->handle_alloc_failure_evac(size);
-
     oom_evac_handler()->handle_out_of_memory_during_evacuation();
-
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
   if (ShenandoahEvacTracking) {
-    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
   }
 
   // Copy the object:
@@ -333,41 +342,31 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (target_gen == YOUNG_GENERATION && is_aging_cycle()) {
-    ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
+  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+    increase_object_age(copy_val, from_region_age + 1);
+  }
+
+  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+  // relativize derived pointers and set gc_mode before that happens. Skip if the
+  // copy's mark word is already a forwarding pointer (another thread won the race
+  // and overwrote the original's header before we copied it).
+  if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
   }
 
   // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-
-    // This is necessary for virtual thread support. This uses the mark word without
-    // considering that it may now be a forwarding pointer (and could therefore crash).
-    // Secondarily, we do not want to spend cycles relativizing stack chunks for oops
-    // that lost the evacuation race (and will therefore not become visible). It is
-    // safe to do this on the public copy (this is also done during concurrent mark).
-    ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
     if (ShenandoahEvacTracking) {
       // Record that the evacuation succeeded
-      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
     }
 
-    if (target_gen == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size, from_region->is_young());
-    } else {
-      // When copying to the old generation above, we don't care
-      // about recording object age in the census stats.
-      assert(target_gen == YOUNG_GENERATION, "Error");
-      // We record this census only when simulating pre-adaptive tenuring behavior, or
-      // when we have been asked to record the census at evacuation rather than at mark
-      if (!ShenandoahGenerationalAdaptiveTenuring) {
-        evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
-      }
+    if (TO_GENERATION == OLD_GENERATION) {
+      old_generation()->handle_evacuation(copy, size);
     }
-    shenandoah_assert_correct(nullptr, copy_val);
-    return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
     // new allocation is certainly after TAMS, it will be considered live in the next cycle.
@@ -378,15 +377,15 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
       // object will overwrite this stale copy, or the filler object on LAB retirement will
       // do this.
-      switch (target_gen) {
+      switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
           break;
         }
         case OLD_GENERATION: {
-          ShenandoahThreadLocalData::plab(thread)->undo_allocation(copy, size);
+          ShenandoahThreadLocalData::shenandoah_plab(thread)->plab()->undo_allocation(copy, size);
           if (is_promotion) {
-            ShenandoahThreadLocalData::subtract_from_plab_promoted(thread, size * HeapWordSize);
+            ShenandoahThreadLocalData::shenandoah_plab(thread)->subtract_from_promoted(size * HeapWordSize);
           }
           break;
         }
@@ -401,227 +400,30 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // we have to keep the fwdptr initialized and pointing to our (stale) copy.
       assert(size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
       fill_with_object(copy, size);
-      shenandoah_assert_correct(nullptr, copy_val);
-      // For non-LAB allocations, the object has already been registered
     }
-    shenandoah_assert_correct(nullptr, result);
-    return result;
   }
+  shenandoah_assert_correct(nullptr, result);
+  return result;
 }
 
-inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, size_t size, bool is_promotion) {
-  assert(UseTLAB, "TLABs should be enabled");
-
-  PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-  HeapWord* obj;
-
-  if (plab == nullptr) {
-    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(), "Performance: thread should have PLAB: %s", thread->name());
-    // No PLABs in this thread, fallback to shared allocation
-    return nullptr;
-  } else if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
-    return nullptr;
-  }
-  // if plab->word_size() <= 0, thread's plab not yet initialized for this pass, so allow_plab_promotions() is not trustworthy
-  obj = plab->allocate(size);
-  if ((obj == nullptr) && (plab->words_remaining() < plab_min_size())) {
-    // allocate_from_plab_slow will establish allow_plab_promotions(thread) for future invocations
-    obj = allocate_from_plab_slow(thread, size, is_promotion);
-  }
-  // if plab->words_remaining() >= ShenGenHeap::heap()->plab_min_size(), just return nullptr so we can use a shared allocation
-  if (obj == nullptr) {
-    return nullptr;
-  }
-
-  if (is_promotion) {
-    ShenandoahThreadLocalData::add_to_plab_promoted(thread, size * HeapWordSize);
-  }
-  return obj;
-}
-
-// Establish a new PLAB and allocate size HeapWords within it.
-HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion) {
-  // New object should fit the PLAB size
-
-  assert(mode()->is_generational(), "PLABs only relevant to generational GC");
-  const size_t plab_min_size = this->plab_min_size();
-  // PLABs are aligned to card boundaries to avoid synchronization with concurrent
-  // allocations in other PLABs.
-  const size_t min_size = (size > plab_min_size)? align_up(size, CardTable::card_size_in_words()): plab_min_size;
-
-  // Figure out size of new PLAB, using value determined at last refill.
-  size_t cur_size = ShenandoahThreadLocalData::plab_size(thread);
-  if (cur_size == 0) {
-    cur_size = plab_min_size;
-  }
-
-  // Expand aggressively, doubling at each refill in this epoch, ceiling at plab_max_size()
-  size_t future_size = MIN2(cur_size * 2, plab_max_size());
-  // Doubling, starting at a card-multiple, should give us a card-multiple. (Ceiling and floor
-  // are card multiples.)
-  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: %zu"
-          ", card_size: %zu, cur_size: %zu, max: %zu",
-         future_size, (size_t) CardTable::card_size_in_words(), cur_size, plab_max_size());
-
-  // Record new heuristic value even if we take any shortcut. This captures
-  // the case when moderately-sized objects always take a shortcut. At some point,
-  // heuristics should catch up with them.  Note that the requested cur_size may
-  // not be honored, but we remember that this is the preferred size.
-  log_debug(gc, free)("Set new PLAB size: %zu", future_size);
-  ShenandoahThreadLocalData::set_plab_size(thread, future_size);
-  if (cur_size < size) {
-    // The PLAB to be allocated is still not large enough to hold the object. Fall back to shared allocation.
-    // This avoids retiring perfectly good PLABs in order to represent a single large object allocation.
-    log_debug(gc, free)("Current PLAB size (%zu) is too small for %zu", cur_size, size);
-    return nullptr;
-  }
-
-  // Retire current PLAB, and allocate a new one.
-  PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-  if (plab->words_remaining() < plab_min_size) {
-    // Retire current PLAB. This takes care of any PLAB book-keeping.
-    // retire_plab() registers the remnant filler object with the remembered set scanner without a lock.
-    // Since PLABs are card-aligned, concurrent registrations in other PLABs don't interfere.
-    retire_plab(plab, thread);
-
-    size_t actual_size = 0;
-    HeapWord* plab_buf = allocate_new_plab(min_size, cur_size, &actual_size);
-    if (plab_buf == nullptr) {
-      if (min_size == plab_min_size) {
-        // Disable PLAB promotions for this thread because we cannot even allocate a minimal PLAB. This allows us
-        // to fail faster on subsequent promotion attempts.
-        ShenandoahThreadLocalData::disable_plab_promotions(thread);
-      }
-      return nullptr;
-    } else {
-      ShenandoahThreadLocalData::enable_plab_retries(thread);
-    }
-    // Since the allocated PLAB may have been down-sized for alignment, plab->allocate(size) below may still fail.
-    if (ZeroTLAB) {
-      // ... and clear it.
-      Copy::zero_to_words(plab_buf, actual_size);
-    } else {
-      // ...and zap just allocated object.
-#ifdef ASSERT
-      // Skip mangling the space corresponding to the object header to
-      // ensure that the returned space is not considered parsable by
-      // any concurrent GC thread.
-      size_t hdr_size = oopDesc::header_size();
-      Copy::fill_to_words(plab_buf + hdr_size, actual_size - hdr_size, badHeapWordVal);
-#endif // ASSERT
-    }
-    assert(is_aligned(actual_size, CardTable::card_size_in_words()), "Align by design");
-    plab->set_buf(plab_buf, actual_size);
-    if (is_promotion && !ShenandoahThreadLocalData::allow_plab_promotions(thread)) {
-      return nullptr;
-    }
-    return plab->allocate(size);
-  } else {
-    // If there's still at least min_size() words available within the current plab, don't retire it.  Let's nibble
-    // away on this plab as long as we can.  Meanwhile, return nullptr to force this particular allocation request
-    // to be satisfied with a shared allocation.  By packing more promotions into the previously allocated PLAB, we
-    // reduce the likelihood of evacuation failures, and we reduce the need for downsizing our PLABs.
-    return nullptr;
-  }
-}
-
-HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size) {
-  // Align requested sizes to card-sized multiples.  Align down so that we don't violate max size of TLAB.
-  assert(is_aligned(min_size, CardTable::card_size_in_words()), "Align by design");
-  assert(word_size >= min_size, "Requested PLAB is too small");
-
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
-  // Note that allocate_memory() sets a thread-local flag to prohibit further promotions by this thread
-  // if we are at risk of infringing on the old-gen evacuation budget.
-  HeapWord* res = allocate_memory(req);
-  if (res != nullptr) {
-    *actual_size = req.actual_size();
-  } else {
-    *actual_size = 0;
-  }
-  assert(is_aligned(res, CardTable::card_size_in_words()), "Align by design");
-  return res;
-}
-
-void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
-  // We don't enforce limits on plab evacuations.  We let it consume all available old-gen memory in order to reduce
-  // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
-  // does not result in an old-gen evacuation failure.  Note that a failed promotion is relatively harmless.  Any
-  // object that fails to promote in the current cycle will be eligible for promotion in a subsequent cycle.
-
-  // When the plab was instantiated, its entirety was treated as if the entire buffer was going to be dedicated to
-  // promotions.  Now that we are retiring the buffer, we adjust for the reality that the plab is not entirely promotions.
-  //  1. Some of the plab may have been dedicated to evacuations.
-  //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
-  size_t not_promoted =
-          ShenandoahThreadLocalData::get_plab_actual_size(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
-  ShenandoahThreadLocalData::reset_plab_promoted(thread);
-  ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
-  if (not_promoted > 0) {
-    old_generation()->unexpend_promoted(not_promoted);
-  }
-  const size_t original_waste = plab->waste();
-  HeapWord* const top = plab->top();
-
-  // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
-  // It adds the size of this unused memory, in words, to plab->waste().
-  plab->retire();
-  if (top != nullptr && plab->waste() > original_waste && is_in_old(top)) {
-    // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
-    // safely walk the region backing the plab.
-    log_debug(gc)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
-                  plab->waste() - original_waste, p2i(top));
-    // No lock is necessary because the PLAB memory is aligned on card boundaries.
-    old_generation()->card_scan()->register_object_without_lock(top);
-  }
-}
-
-void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
-  Thread* thread = Thread::current();
-  retire_plab(plab, thread);
-}
-
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_generations() {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  ShenandoahOldGeneration* old_gen = old_generation();
-  const ssize_t old_region_balance = old_gen->get_region_balance();
-  old_gen->set_region_balance(0);
-
-  if (old_region_balance > 0) {
-    const auto old_region_surplus = checked_cast<size_t>(old_region_balance);
-    const bool success = generation_sizer()->transfer_to_young(old_region_surplus);
-    return TransferResult {
-      success, old_region_surplus, "young"
-    };
-  }
-
-  if (old_region_balance < 0) {
-    const auto old_region_deficit = checked_cast<size_t>(-old_region_balance);
-    const bool success = generation_sizer()->transfer_to_old(old_region_deficit);
-    if (!success) {
-      old_gen->handle_failed_transfer();
-    }
-    return TransferResult {
-      success, old_region_deficit, "old"
-    };
-  }
-
-  return TransferResult {true, 0, "none"};
-}
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
+template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
-// xfer_limit, and any surplus is transferred to the young generation.
-// xfer_limit is the maximum we're able to transfer from young to old.
-void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions) {
-
+// mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
+// the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
+// for the idle span that precedes the next GC.
+void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
+                                                                size_t old_trashed_regions, size_t young_trashed_regions) {
+  shenandoah_assert_heaplocked();
   // We can limit the old reserve to the size of anticipated promotions:
   // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
   // clamped by the old generation space available.
   //
   // Here's the algebra.
-  // Let SOEP = ShenandoahOldEvacRatioPercent,
+  // Let SOEP = ShenandoahOldEvacPercent,
   //     OE = old evac,
   //     YE = young evac, and
   //     TE = total evac = OE + YE
@@ -633,91 +435,216 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   //  =>              OE = YE*SOEP/(100-SOEP)
 
   // We have to be careful in the event that SOEP is set to 100 by the user.
-  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
-  const size_t old_available = old_generation()->available();
-  // The free set will reserve this amount of memory to hold young evacuations
-  const size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
-
-  // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
-
-  const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
-                                 bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
-                                                            bound_on_old_reserve);
-
+  assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
+  ShenandoahOldGeneration* old_gen = old_generation();
+  size_t old_capacity = old_gen->max_capacity();
+  size_t old_usage = old_gen->used(); // includes humongous waste
+  size_t old_currently_available =
+    ((old_capacity >= old_usage)? old_capacity - old_usage: 0) + old_trashed_regions * region_size_bytes;
+
+  ShenandoahYoungGeneration* young_gen = young_generation();
+  size_t young_capacity = young_gen->max_capacity();
+  size_t young_usage = young_gen->used(); // includes humongous waste
+  size_t young_available = ((young_capacity >= young_usage)? young_capacity - young_usage: 0);
+  size_t freeset_available = free_set()->available_locked();
+  if (young_available > freeset_available) {
+    young_available = freeset_available;
+  }
+  young_available += young_trashed_regions * region_size_bytes;
+
+  // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
+  size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+
+  // If ShenandoahOldEvacPercent equals 100, max_old_reserve is limited only by mutator_xfer_limit and young_reserve
+  const size_t bound_on_old_reserve =
+    ((old_currently_available + mutator_xfer_limit + young_reserve) * ShenandoahOldEvacPercent) / 100;
+  size_t proposed_max_old = ((ShenandoahOldEvacPercent == 100)?
+                             bound_on_old_reserve:
+                             MIN2((young_reserve * ShenandoahOldEvacPercent) / (100 - ShenandoahOldEvacPercent),
+                                  bound_on_old_reserve));
+  assert(mutator_xfer_limit <= young_available,
+         "Cannot transfer (%zu) memory that is not available (%zu)", mutator_xfer_limit, young_available);
+  // Young reserves are to be taken out of the mutator_xfer_limit.
+  if (young_reserve > mutator_xfer_limit) {
+    young_reserve = mutator_xfer_limit;
+  }
+  mutator_xfer_limit -= young_reserve;
+
   // Decide how much old space we should reserve for a mixed collection
-  double reserve_for_mixed = 0;
-  if (old_generation()->has_unprocessed_collection_candidates()) {
-    // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
-    // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
-    const double max_evac_need = (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
-    assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
+  size_t proposed_reserve_for_mixed = 0;
+  const size_t old_fragmented_available =
+    old_currently_available - (old_generation()->free_unaffiliated_regions() + old_trashed_regions) * region_size_bytes;
+
+  if (old_fragmented_available > proposed_max_old) {
+    // In this case, the old_fragmented_available is greater than the desired amount of evacuation to old.
+    // We'll use all of this memory to hold results of old evacuation, and we'll give back to the young generation
+    // any old regions that are not fragmented.
+    //
+    // This scenario may happen after we have promoted many regions in place, and each of these regions had non-zero
+    // unused memory, so there is now an abundance of old-fragmented available memory, even more than the desired
+    // percentage for old reserve.  We cannot transfer these fragmented regions back to young.  Instead we make the
+    // best of the situation by using this fragmented memory for both promotions and evacuations.
+
+    proposed_max_old = old_fragmented_available;
+  }
+  // Otherwise: old_fragmented_available <= proposed_max_old. Do not shrink proposed_max_old from the original computation.
+
+  // Though we initially set proposed_reserve_for_promo to equal the entirety of old fragmented available, we have the
+  // opportunity below to shift some of this memory into the proposed_reserve_for_mixed.
+  size_t proposed_reserve_for_promo = old_fragmented_available;
+  const size_t max_old_reserve = proposed_max_old;
+
+  const size_t mixed_candidate_live_memory = old_generation()->unprocessed_collection_candidates_live_memory();
+  const bool doing_mixed = (mixed_candidate_live_memory > 0);
+  if (doing_mixed) {
+    // In the ideal, all of the memory reserved for mixed evacuation would be unfragmented, but we don't enforce
+    // this.  Note that the initial value of  max_evac_need is conservative because we may not evacuate all of the
+    // remaining mixed evacuation candidates in a single cycle.
+    const size_t max_evac_need = (size_t) (mixed_candidate_live_memory * ShenandoahOldEvacWaste);
+    assert(old_currently_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
            "Unaffiliated available must be less than total available");
-    const double old_fragmented_available = double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
-    reserve_for_mixed = max_evac_need + old_fragmented_available;
-    if (reserve_for_mixed > max_old_reserve) {
-      reserve_for_mixed = max_old_reserve;
+
+    // We prefer to evacuate all of mixed into unfragmented memory, and will expand old in order to do so, unless
+    // we already have too much fragmented available memory in old.
+    proposed_reserve_for_mixed = max_evac_need;
+    if (proposed_reserve_for_mixed + proposed_reserve_for_promo > max_old_reserve) {
+      // We're trying to reserve more memory than is available.  So we need to shrink our reserves.
+      size_t excess_reserves = (proposed_reserve_for_mixed + proposed_reserve_for_promo) - max_old_reserve;
+      // We need to shrink reserves by excess_reserves.  We prefer to shrink by reducing promotion, giving priority to mixed
+      // evacuation.  If the promotion reserve is larger than the amount we need to shrink by, do all the shrinkage there.
+      if (proposed_reserve_for_promo > excess_reserves) {
+        proposed_reserve_for_promo -= excess_reserves;
+      } else {
+        // Otherwise, we'll shrink promotion reserve to zero and we'll shrink the mixed-evac reserve by the remaining excess.
+        excess_reserves -= proposed_reserve_for_promo;
+        proposed_reserve_for_promo = 0;
+        proposed_reserve_for_mixed -= excess_reserves;
+      }
+    }
+  }
+  assert(proposed_reserve_for_mixed + proposed_reserve_for_promo <= max_old_reserve,
+         "Reserve for mixed (%zu) plus reserve for promotions (%zu) must be less than maximum old reserve (%zu)",
+         proposed_reserve_for_mixed, proposed_reserve_for_promo, max_old_reserve);
+
+  // Decide how much additional space we should reserve for promotions from young.  We give priority to mixed evacations
+  // over promotions.
+  const size_t promo_load = old_generation()->get_promotion_potential();
+  const bool doing_promotions = promo_load > 0;
+
+  // promo_load represents the combined total of live memory within regions that have reached tenure age.  The true
+  // promotion potential is larger than this, because individual objects within regions that have not yet reached tenure
+  // age may be promotable. On the other hand, some of the objects that we intend to promote in the next GC cycle may
+  // die before they are next marked.  In the future, the promo_load will include the total size of tenurable objects
+  // residing in regions that have not yet reached tenure age.
+
+  if (doing_promotions) {
+    // We are always doing promotions, even when old_generation->get_promotion_potential() returns 0.  As currently implemented,
+    // get_promotion_potential() only knows the total live memory contained within young-generation regions whose age is
+    // tenurable. It does not know whether that memory will still be live at the end of the next mark cycle, and it doesn't
+    // know how much memory is contained within objects whose individual ages are tenurable, which reside in regions with
+    // non-tenurable age.  We use this, as adjusted by ShenandoahPromoEvacWaste, as an approximation of the total amount of
+    // memory to be promoted.  In the near future, we expect to implement a change that will allow get_promotion_potential()
+    // to account also for the total memory contained within individual objects that are tenure-ready even when they do
+    // not reside in aged regions.  This will represent a conservative over approximation of promotable memory because
+    // some of these objects may die before the next GC cycle executes.
+
+    // Be careful not to ask for too much promotion reserves. We have observed jtreg test failures under which a greedy
+    // promotion reserve causes a humongous allocation which is awaiting a full GC to fail (specifically
+    // gc/TestAllocHumongousFragment.java). This happens if too much of the memory reclaimed by the full GC
+    // is immediately reserved so that it cannot be allocated by the waiting mutator. It's not clear that this
+    // particular test is representative of the needs of typical GenShen users.  It is really a test of high frequency
+    // Full GCs under heap fragmentation stress.
+
+    size_t promo_need = (size_t) (promo_load * ShenandoahPromoEvacWaste);
+    if (promo_need > proposed_reserve_for_promo) {
+      const size_t available_for_additional_promotions =
+        max_old_reserve - (proposed_reserve_for_mixed + proposed_reserve_for_promo);
+      if (proposed_reserve_for_promo + available_for_additional_promotions >= promo_need) {
+        proposed_reserve_for_promo = promo_need;
+      } else {
+        proposed_reserve_for_promo += available_for_additional_promotions;
+      }
+    }
+  }
+  // else, leave proposed_reserve_for_promo as is.  By default, it is initialized to represent old_fragmented_available.
+
+  // This is the total old we want to reserve (initialized to the ideal reserve)
+  size_t proposed_old_reserve = proposed_reserve_for_mixed + proposed_reserve_for_promo;
+
+  // We now check if the old generation is running a surplus or a deficit.
+  size_t old_region_deficit = 0;
+  size_t old_region_surplus = 0;
+
+  size_t mutator_region_xfer_limit = mutator_xfer_limit / region_size_bytes;
+  // align the mutator_xfer_limit on region size
+  mutator_xfer_limit = mutator_region_xfer_limit * region_size_bytes;
+
+  if (old_currently_available >= proposed_old_reserve) {
+    // We are running a surplus, so the old region surplus can go to young
+    const size_t old_surplus = old_currently_available - proposed_old_reserve;
+    old_region_surplus = old_surplus / region_size_bytes;
+    const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_trashed_regions;
+    old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
+    old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
+    old_currently_available -= old_region_surplus * region_size_bytes;
+    young_available += old_region_surplus * region_size_bytes;
+  } else if (old_currently_available + mutator_xfer_limit >= proposed_old_reserve) {
+    // We know that old_currently_available < proposed_old_reserve because above test failed. Expand old_currently_available.
+    // Mutator's xfer limit is sufficient to satisfy our need: transfer all memory from there.
+    size_t old_deficit = proposed_old_reserve - old_currently_available;
+    old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
+    old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
+    old_currently_available += old_region_deficit * region_size_bytes;
+    young_available -= old_region_deficit * region_size_bytes;
+  } else {
+    // We know that (old_currently_available < proposed_old_reserve) and
+    //   (old_currently_available + mutator_xfer_limit < proposed_old_reserve) because above tests failed.
+    // We need to shrink proposed_old_reserves.
+
+    // We could potentially shrink young_reserves in order to further expand proposed_old_reserves.  Let's not bother.  The
+    // important thing is that we keep a total amount of memory in reserve in preparation for the next GC cycle.  At
+    // the time we choose the next collection set, we'll have an opportunity to shift some of these young reserves
+    // into old reserves if that makes sense.
+
+    // Start by taking all of mutator_xfer_limit into old_currently_available.
+    size_t old_region_deficit = mutator_region_xfer_limit;
+    old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
+    old_currently_available += old_region_deficit * region_size_bytes;
+    young_available -= old_region_deficit * region_size_bytes;
+
+    assert(old_currently_available < proposed_old_reserve,
+           "Old currently available (%zu) must be less than old reserve (%zu)", old_currently_available, proposed_old_reserve);
+
+    // There's not enough memory to satisfy our desire.  Scale back our old-gen intentions.  We prefer to satisfy
+    // the budget_overrun entirely from the promotion reserve, if that is large enough.  Otherwise, we'll satisfy
+    // the overrun from a combination of promotion and mixed-evacuation reserves.
+    size_t budget_overrun = proposed_old_reserve - old_currently_available;
+    if (proposed_reserve_for_promo > budget_overrun) {
+      proposed_reserve_for_promo -= budget_overrun;
+      // Dead code:
+      //  proposed_old_reserve -= budget_overrun;
+    } else {
+      budget_overrun -= proposed_reserve_for_promo;
+      proposed_reserve_for_promo = 0;
+      proposed_reserve_for_mixed = (proposed_reserve_for_mixed > budget_overrun)? proposed_reserve_for_mixed - budget_overrun: 0;
+      // Dead code:
+      //  Note: proposed_reserve_for_promo is 0 and proposed_reserve_for_mixed may equal 0.
+      //  proposed_old_reserve = proposed_reserve_for_mixed;
     }
   }
 
-  // Decide how much space we should reserve for promotions from young
-  size_t reserve_for_promo = 0;
-  const size_t promo_load = old_generation()->get_promotion_potential();
-  const bool doing_promotions = promo_load > 0;
-  if (doing_promotions) {
-    // We're promoting and have a bound on the maximum amount that can be promoted
-    assert(max_old_reserve >= reserve_for_mixed, "Sanity");
-    const size_t available_for_promotions = max_old_reserve - reserve_for_mixed;
-    reserve_for_promo = MIN2((size_t)(promo_load * ShenandoahPromoEvacWaste), available_for_promotions);
-  }
+  assert(old_region_deficit == 0 || old_region_surplus == 0,
+         "Only surplus (%zu) or deficit (%zu), never both", old_region_surplus, old_region_deficit);
+  assert(young_reserve + proposed_reserve_for_mixed + proposed_reserve_for_promo <= old_currently_available + young_available,
+         "Cannot reserve more memory than is available: %zu + %zu + %zu <= %zu + %zu",
+         young_reserve, proposed_reserve_for_mixed, proposed_reserve_for_promo, old_currently_available, young_available);
 
-  // This is the total old we want to ideally reserve
-  const size_t old_reserve = reserve_for_mixed + reserve_for_promo;
-  assert(old_reserve <= max_old_reserve, "cannot reserve more than max for old evacuations");
-
-  // We now check if the old generation is running a surplus or a deficit.
-  const size_t max_old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
-  if (max_old_available >= old_reserve) {
-    // We are running a surplus, so the old region surplus can go to young
-    const size_t old_surplus = (max_old_available - old_reserve) / region_size_bytes;
-    const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
-    const size_t old_region_surplus = MIN2(old_surplus, unaffiliated_old_regions);
-    old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
-  } else {
-    // We are running a deficit which we'd like to fill from young.
-    // Ignore that this will directly impact young_generation()->max_capacity(),
-    // indirectly impacting young_reserve and old_reserve.  These computations are conservative.
-    // Note that deficit is rounded up by one region.
-    const size_t old_need = (old_reserve - max_old_available + region_size_bytes - 1) / region_size_bytes;
-    const size_t max_old_region_xfer = old_xfer_limit / region_size_bytes;
-
-    // Round down the regions we can transfer from young to old. If we're running short
-    // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
-    // curtailed if the budget is restricted.
-    const size_t old_region_deficit = MIN2(old_need, max_old_region_xfer);
-    old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
-  }
-}
-
-void ShenandoahGenerationalHeap::reset_generation_reserves() {
-  young_generation()->set_evacuation_reserve(0);
-  old_generation()->set_evacuation_reserve(0);
-  old_generation()->set_promoted_reserve(0);
-}
-
-void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outputStream* ss) const {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* const young_gen = heap->young_generation();
-  ShenandoahOldGeneration* const old_gen = heap->old_generation();
-  const size_t young_available = young_gen->available();
-  const size_t old_available = old_gen->available();
-  ss->print_cr("After %s, %s %zu regions to %s to prepare for next gc, old available: "
-                     PROPERFMT ", young_available: " PROPERFMT,
-                     when,
-                     success? "successfully transferred": "failed to transfer", region_count, region_destination,
-                     PROPERFMTARGS(old_available), PROPERFMTARGS(young_available));
+  // deficit/surplus adjustments to generation sizes will precede rebuild
+  young_generation()->set_evacuation_reserve(young_reserve);
+  old_generation()->set_evacuation_reserve(proposed_reserve_for_mixed);
+  old_generation()->set_promoted_reserve(proposed_reserve_for_promo);
 }
 
 void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) {
@@ -762,23 +689,27 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
+  // For update refs, _generation will be young or global. Mixed collections use the young generation.
+  ShenandoahGeneration* _generation;
   ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
 
 public:
-  explicit ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahRegionIterator* regions,
-                                                    ShenandoahRegionChunkIterator* work_chunks) :
+  ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahGeneration* generation,
+                                           ShenandoahRegionIterator* regions,
+                                           ShenandoahRegionChunkIterator* work_chunks) :
           WorkerTask("Shenandoah Update References"),
+          _generation(generation),
           _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
           _work_chunks(work_chunks)
   {
-    bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
+    const bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
     log_debug(gc, remset)("Update refs, scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj;
@@ -808,10 +739,8 @@ private:
     // If !CONCURRENT, there's no value in expanding Mutator free set
 
     ShenandoahHeapRegion* r = _regions->next();
-    // We update references for global, old, and young collections.
-    ShenandoahGeneration* const gc_generation = _heap->gc_generation();
-    shenandoah_assert_generations_reconciled();
-    assert(gc_generation->is_mark_complete(), "Expected complete marking");
+    // We update references for global, mixed, and young collections.
+    assert(_generation->is_mark_complete(), "Expected complete marking");
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     bool is_mixed = _heap->collection_set()->has_old_regions();
     while (r != nullptr) {
@@ -823,7 +752,7 @@ private:
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         } else if (r->is_old()) {
-          if (gc_generation->is_global()) {
+          if (_generation->is_global()) {
 
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
           }
@@ -852,7 +781,7 @@ private:
       r = _regions->next();
     }
 
-    if (!gc_generation->is_global()) {
+    if (_generation->is_young()) {
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 
@@ -966,15 +895,15 @@ private:
   }
 };
 
-void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
+void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
   if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&_update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<true> task(generation, &_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&_update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<false> task(generation, &_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   }
 
@@ -1049,36 +978,19 @@ public:
 
 void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
   ShenandoahSynchronizePinnedRegionStates pins;
-  ShenandoahUpdateRegionAges ages(active_generation()->complete_marking_context());
+  ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
   parallel_heap_region_iterate(&cl);
 }
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
-  if (is_concurrent_old_mark_in_progress()) {
-    // This is still necessary for degenerated cycles because the degeneration point may occur
-    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
-    // a more detailed explanation.
-    old_generation()->transfer_pointers_from_satb();
-  }
-
-  // We defer generation resizing actions until after cset regions have been recycled.
-  TransferResult result = balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Degenerated GC", &ls);
-  }
-
-  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
-  // transient state. Otherwise, these actions have no effect.
-  reset_generation_reserves();
-
   if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
     coalesce_and_fill_old_regions(false);
   }
+
+  old_generation()->maybe_log_promotion_failure_stats(false);
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
@@ -1093,19 +1005,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     entry_global_coalesce_and_fill();
   }
 
-  TransferResult result;
-  {
-    ShenandoahHeapLocker locker(lock());
-
-    result = balance_generations();
-    reset_generation_reserves();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Concurrent GC", &ls);
-  }
+  old_generation()->maybe_log_promotion_failure_stats(true);
 }
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {

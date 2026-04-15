@@ -476,7 +476,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
         return true;          // Found 1st use!
       }
     }
-    if (n->out_RegMask().is_NotEmpty()) {
+    if (!n->out_RegMask().is_empty()) {
       return false;
     }
   }
@@ -1038,7 +1038,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // bound use if we can't rematerialize the def, or if we need the
             // split to form a misaligned pair.
             if (!umask.is_infinite_stack() &&
-                (int)umask.Size() <= lrgs(useidx).num_regs() &&
+                (int)umask.size() <= lrgs(useidx).num_regs() &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure
@@ -1126,8 +1126,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 // If this node is already a SpillCopy, just patch the edge
                 // except the case of spilling to stack.
                 if( n->is_SpillCopy() ) {
-                  RegMask tmp_rm(umask);
-                  tmp_rm.SUBTRACT(Matcher::STACK_ONLY_mask);
+                  ResourceMark rm(C->regmask_arena());
+                  RegMask tmp_rm(umask, C->regmask_arena());
+                  tmp_rm.subtract(Matcher::STACK_ONLY_mask);
                   if( dmask.overlap(tmp_rm) ) {
                     if( def != n->in(inpidx) ) {
                       n->set_req(inpidx, def);

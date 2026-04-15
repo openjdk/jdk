@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,11 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *        DigestEchoServer HttpsTunnelTest
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
- *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ *                   -Djdk.internal.httpclient.debug=true ${test.main.class}
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.allowRestrictedHeaders=host
  *                   -Djdk.httpclient.HttpClient.log=headers
- *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ *                   -Djdk.internal.httpclient.debug=true ${test.main.class}
  *
  */
 
@@ -82,14 +82,9 @@ public class HttpsTunnelTest implements HttpServerAdapters {
         "Excepteur sint occaecat cupidatat non proident."
     };
 
-    static final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     static {
-        try {
-            context = new SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
     HttpsTunnelTest() {

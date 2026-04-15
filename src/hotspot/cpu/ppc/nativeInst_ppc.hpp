@@ -51,8 +51,6 @@ class NativeInstruction {
   friend class Relocation;
 
  public:
-  bool is_post_call_nop() const { return MacroAssembler::is_post_call_nop(long_at(0)); }
-
   bool is_jump() const { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
 
   bool is_sigtrap_ic_miss_check() {
@@ -76,6 +74,12 @@ class NativeInstruction {
     return MacroAssembler::is_trap_range_check(long_at(0));
   }
 #endif
+
+  bool is_sigtrap_nmethod_entry_barrier() {
+    assert(UseSIGTRAP && TrapBasedNMethodEntryBarriers, "precondition");
+    return Assembler::is_tw(long_at(0), Assembler::traptoLessThanUnsigned | Assembler::traptoGreaterThanUnsigned,
+                            0, -1);
+  }
 
   bool is_safepoint_poll() {
     // The current arguments of the instruction are not checked!
@@ -525,6 +529,14 @@ class NativePostCallNop: public NativeInstruction {
 };
 
 public:
+  enum ppc_specific_constants {
+    // If the check is adjusted to read beyond size of the instruction at the deopt handler stub
+    // code entry point, it has to happen in two stages - to prevent out of bounds access in case
+    // the return address points to the entry point which could be at the end of page.
+    first_check_size = BytesPerInstWord
+  };
+
+  bool is_post_call_nop() const { return MacroAssembler::is_post_call_nop(long_at(0)); }
   bool check() const { return is_post_call_nop(); }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     uint32_t instr_bits = long_at(0);

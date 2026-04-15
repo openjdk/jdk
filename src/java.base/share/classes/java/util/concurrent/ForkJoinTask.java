@@ -531,19 +531,22 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * still correct, although it may contain a misleading stack
      * trace.
      *
-     * @param asExecutionException true if wrap as ExecutionException
+     * @param asExecutionException true if wrap the result as an
+     * ExecutionException. This applies only to actual exceptions, not
+     * implicit CancellationExceptions issued when not THROWN or
+     * available, which are not wrapped because by default they are
+     * issued separately from ExecutionExceptions by callers. Which
+     * may require further handling when this is not true (currently
+     * only in InvokeAnyTask).
      * @return the exception, or null if none
      */
     private Throwable getException(boolean asExecutionException) {
         int s; Throwable ex; Aux a;
         if ((s = status) >= 0 || (s & ABNORMAL) == 0)
             return null;
-        else if ((s & THROWN) == 0 || (a = aux) == null || (ex = a.ex) == null) {
-            ex = new CancellationException();
-            if (!asExecutionException || !(this instanceof InterruptibleTask))
-                return ex;         // else wrap below
-        }
-        else if (a.thread != Thread.currentThread()) {
+        if ((s & THROWN) == 0 || (a = aux) == null || (ex = a.ex) == null)
+            return new CancellationException();
+        if (a.thread != Thread.currentThread()) {
             try {
                 Constructor<?> noArgCtor = null, oneArgCtor = null;
                 for (Constructor<?> c : ex.getClass().getConstructors()) {
@@ -1814,6 +1817,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                                  (t = new InvokeAnyTask<T>(c, this, t)));
                 }
                 return timed ? get(nanos, TimeUnit.NANOSECONDS) : get();
+            } catch (CancellationException ce) {
+                throw new ExecutionException(ce);
             } finally {
                 for (; t != null; t = t.pred)
                     t.onRootCompletion();

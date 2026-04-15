@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -97,10 +98,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
   ciMethod*       orig_callee = caller->get_method_at_bci(bci);
 
-  const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
-                                       (bytecode == Bytecodes::_invokeinterface) ||
-                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual) ||
-                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
+  const bool is_virtual = (bytecode == Bytecodes::_invokevirtual) || (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual);
+  const bool is_interface = (bytecode == Bytecodes::_invokeinterface) || (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
+  const bool is_virtual_or_interface = is_virtual || is_interface;
+
+  const bool check_access = !orig_callee->is_method_handle_intrinsic(); // method handle intrinsics don't perform access checks
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -191,7 +193,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      bool should_delay = C->should_delay_inlining();
+      bool should_delay = C->should_delay_inlining() || C->directive()->should_delay_inline(callee);
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
         // For optimized virtual calls assert at runtime that receiver object
@@ -239,7 +241,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // this invoke because it may lead to bimorphic inlining which
           // a speculative type should help us avoid.
           receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                   speculative_receiver_type);
+                                                   speculative_receiver_type,
+                                                   check_access);
           if (receiver_method == nullptr) {
             speculative_receiver_type = nullptr;
           } else {
@@ -256,8 +259,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
            (morphism == 2 && UseBimorphicInlining))) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
+        assert(check_access, "required");
         receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                      profile.receiver(0));
+                                                 profile.receiver(0));
       }
       if (receiver_method != nullptr) {
         // The single majority receiver sufficiently outweighs the minority.
@@ -268,8 +272,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* next_hit_cg = nullptr;
           ciMethod* next_receiver_method = nullptr;
           if (morphism == 2 && UseBimorphicInlining) {
+            assert(check_access, "required");
             next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                               profile.receiver(1));
+                                                          profile.receiver(1));
             if (next_receiver_method != nullptr) {
               next_hit_cg = this->call_generator(next_receiver_method,
                                   vtable_index, !call_does_dispatch, jvms,
@@ -334,16 +339,25 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // number of implementors for decl_interface is 0 or 1. If
     // it's 0 then no class implements decl_interface and there's
     // no point in inlining.
-    if (call_does_dispatch && bytecode == Bytecodes::_invokeinterface) {
-      ciInstanceKlass* declared_interface =
-          caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+    if (call_does_dispatch && is_interface) {
+      ciInstanceKlass* declared_interface = nullptr;
+      if (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface) {
+        // MemberName doesn't keep information about resolved interface class (REFC) once
+        // resolution is over, but resolved method holder (DECC) can be used as a
+        // conservative approximation.
+        declared_interface = callee->holder();
+      } else {
+        assert(!orig_callee->is_method_handle_intrinsic(), "not allowed");
+        declared_interface = caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
+      }
+      assert(declared_interface->is_interface(), "required");
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
 
       if (singleton != nullptr) {
         assert(singleton != declared_interface, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =
-            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
+            callee->find_monomorphic_target(caller->holder(), declared_interface, singleton, check_access);
 
         if (cha_monomorphic_target != nullptr &&
             cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
@@ -366,7 +380,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
         }
       }
-    } // call_does_dispatch && bytecode == Bytecodes::_invokeinterface
+    } // call_does_dispatch && is_interface
 
     // Nothing claimed the intrinsic, we go with straight-forward inlining
     // for already discovered intrinsic.
@@ -896,8 +910,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     if (handler_bci < 0) {     // merge with corresponding rethrow node
       throw_to_exit(make_exception_state(ex_oop));
     } else {                      // Else jump to corresponding handle
-      push_ex_oop(ex_oop);        // Clear stack and push just the oop.
-      merge_exception(handler_bci);
+      push_and_merge_exception(handler_bci, ex_oop);
     }
   }
 
@@ -995,13 +1008,10 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     int handler_bci = handler->handler_bci();
 
     if (remaining == 1) {
-      push_ex_oop(ex_node);        // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
-      // If this is a backwards branch in the bytecodes, add safepoint
-      maybe_add_safepoint(handler_bci);
-      merge_exception(handler_bci); // jump to handler
+      push_and_merge_exception(handler_bci, ex_node); // jump to handler
       return;                   // No more handling to be done here!
     }
 
@@ -1026,15 +1036,13 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->is_instptr();
       assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new CheckCastPPNode(control(), ex_node, tinst));
-      push_ex_oop(ex_oop);      // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print("  Catching inline exception bci:%d -> handler_bci:%d -- ", bci(), handler_bci);
         klass->print_name();
         tty->cr();
       }
       // If this is a backwards branch in the bytecodes, add safepoint
-      maybe_add_safepoint(handler_bci);
-      merge_exception(handler_bci);
+      push_and_merge_exception(handler_bci, ex_oop);
     }
     set_control(not_subtype_ctrl);
 
@@ -1046,14 +1054,19 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   assert(!stopped(), "you should return if you finish the chain");
 
   // Oops, need to call into the VM to resolve the klasses at runtime.
-  // Note:  This call must not deoptimize, since it is not a real at this bci!
   kill_dead_locals();
 
-  make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
-                    OptoRuntime::rethrow_Type(),
-                    OptoRuntime::rethrow_stub(),
-                    nullptr, nullptr,
-                    ex_node);
+  { PreserveReexecuteState preexecs(this);
+    // When throwing an exception, set the reexecute flag for deoptimization.
+    // This is mostly needed to pass -XX:+VerifyStack sanity checks.
+    jvms()->set_should_reexecute(true);
+
+    make_runtime_call(RC_NO_LEAF | RC_MUST_THROW,
+                      OptoRuntime::rethrow_Type(),
+                      OptoRuntime::rethrow_stub(),
+                      nullptr, nullptr,
+                      ex_node);
+  }
 
   // Rethrow is a pure call, no side effects, only a result.
   // The result cannot be allocated, so we use I_O
@@ -1068,13 +1081,13 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
 #ifndef PRODUCT
 void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
-  if( CountCompiledCalls ) {
-    if( at_method_entry ) {
+  if (CountCompiledCalls) {
+    if (at_method_entry) {
       // bump invocation counter if top method (for statistics)
       if (CountCompiledCalls && depth() == 1) {
         const TypePtr* addr_type = TypeMetadataPtr::make(method());
         Node* adr1 = makecon(addr_type);
-        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset()));
+        Node* adr2 = off_heap_plus_addr(adr1, in_bytes(Method::compiled_invocation_counter_offset()));
         increment_counter(adr2);
       }
     } else if (is_inline) {

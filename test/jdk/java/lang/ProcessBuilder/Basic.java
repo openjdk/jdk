@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,32 @@
  */
 
 /*
- * @test
+ * @test id=POSIX_SPAWN
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
- *      8352533
+ *      8352533 8368192 8377907
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=360 Basic
- * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  * @author Martin Buchholz
  */
 
 /*
- * @test
+ * @test id=FORK
+ * @key intermittent
+ * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- *          java.base/jdk.internal.misc
- * @requires (os.family == "linux" & !vm.musl)
+ * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
  */
 
 import java.lang.ProcessBuilder.Redirect;
@@ -85,8 +84,8 @@ public class Basic {
     static final String libpath = System.getenv("LIBPATH");
 
     /* Used for regex String matching for long error messages */
-    static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
-    static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
+    static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error:13)";
+    static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error:2)";
     static final String SPAWNHELPER_FAILURE_MSG = "(Possible reasons:)";
 
     /**
@@ -777,30 +776,29 @@ public class Basic {
         return Pattern.compile(regex).matcher(str).find();
     }
 
-    private static String matchAndExtract(String str, String regex) {
-        Matcher matcher = Pattern.compile(regex).matcher(str);
-        if (matcher.find()) {
-            return matcher.group();
-        } else {
-            return "";
-        }
+    // Return the string with the matching regex removed
+    private static String matchAndRemove(String str, String regex) {
+        return Pattern.compile(regex)
+                .matcher(str)
+                .replaceAll("");
     }
 
     /* Only used for Mac OS X --
-     * Mac OS X (may) add the variable __CF_USER_TEXT_ENCODING to an empty
-     * environment. The environment variable JAVA_MAIN_CLASS_<pid> may also
-     * be set in Mac OS X.
-     * Remove them both from the list of env variables
+     * Mac OS X (may) add the variables: __CF_USER_TEXT_ENCODING, JAVA_MAIN_CLASS_<pid>,
+     * and TMPDIR.
+     * Remove them from the list of env variables
      */
     private static String removeMacExpectedVars(String vars) {
         // Check for __CF_USER_TEXT_ENCODING
-        String cleanedVars = vars.replace("__CF_USER_TEXT_ENCODING="
-                                            +cfUserTextEncoding+",","");
+        String cleanedVars = matchAndRemove(vars,
+                "__CF_USER_TEXT_ENCODING=" + cfUserTextEncoding + ",");
         // Check for JAVA_MAIN_CLASS_<pid>
-        String javaMainClassStr
-                = matchAndExtract(cleanedVars,
-                                    "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
-        return cleanedVars.replace(javaMainClassStr,"");
+        cleanedVars = matchAndRemove(cleanedVars,
+                "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
+        // Check and remove TMPDIR
+        cleanedVars = matchAndRemove(cleanedVars,
+                "TMPDIR=[^,]*,");
+        return cleanedVars;
     }
 
     /* Only used for AIX --
@@ -1231,6 +1229,20 @@ public class Basic {
             equal(r.out(), "standard output");
             equal(r.err(), "standard error");
         }
+
+        //----------------------------------------------------------------
+        // Default: should go to pipes (use a fresh ProcessBuilder)
+        //----------------------------------------------------------------
+        {
+            ProcessBuilder pb2 = new ProcessBuilder(childArgs);
+            Process p = pb2.start();
+            new PrintStream(p.getOutputStream()).print("standard input");
+            p.getOutputStream().close();
+            ProcessResults r = run(p);
+            equal(r.exitValue(), 0);
+            equal(r.out, "standard output");
+            equal(r.err, "standard error");
+        }
     }
 
     static void checkProcessPid() {
@@ -1268,6 +1280,8 @@ public class Basic {
             System.out.println("This appears to be a Unix system.");
         if (UnicodeOS.is())
             System.out.println("This appears to be a Unicode-based OS.");
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
 
         try { testIORedirection(); }
         catch (Throwable t) { unexpected(t); }

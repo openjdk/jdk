@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,7 @@
 #define NOT_ZERO_RETURN
 #endif
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
 #define X86
 #define X86_ONLY(code) code
 #define NOT_X86(code)
@@ -460,14 +460,6 @@
 #undef X86
 #define X86_ONLY(code)
 #define NOT_X86(code) code
-#endif
-
-#ifdef IA32
-#define IA32_ONLY(code) code
-#define NOT_IA32(code)
-#else
-#define IA32_ONLY(code)
-#define NOT_IA32(code) code
 #endif
 
 #ifdef AMD64
@@ -556,6 +548,9 @@
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+#if defined(__APPLE__) && defined(AARCH64)
+#define MACOS_AARCH64 1
+#endif
 
 #if defined(RISCV32) || defined(RISCV64)
 #define RISCV
@@ -591,6 +586,18 @@
 #define BIG_ENDIAN_ONLY(code) code
 #endif
 
+#ifdef _LP64
+#define INCLUDE_CLASS_SPACE 1
+#define CLASS_SPACE_ONLY(x) x
+#define NOT_CLASS_SPACE(x)
+#else
+// On 32-bit we use fake "narrow class pointers" which are really just 32-bit pointers,
+// but we don't use a class space (would cause too much address space fragmentation)
+#define INCLUDE_CLASS_SPACE 0
+#define CLASS_SPACE_ONLY(x)
+#define NOT_CLASS_SPACE(x) x
+#endif
+
 #define define_pd_global(type, name, value) const type pd_##name = value;
 
 // Helper macros for constructing file names for includes.
@@ -623,7 +630,7 @@
 #define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
 #define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
-#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64)
+#if INCLUDE_CDS && defined(_LP64)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
 #define NOT_CDS_JAVA_HEAP(x)

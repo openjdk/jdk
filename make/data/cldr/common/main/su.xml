@@ -346,7 +346,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
@@ -383,9 +382,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">taun kamari</relative>
 				<relative type="0">taun ieu</relative>
 				<relative type="1">taun payun</relative>
-			</field>
-			<field type="year-short">
-				<displayName>tn.</displayName>
 			</field>
 			<field type="quarter">
 				<displayName>triwulan</displayName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @requires vm.opt.final.ClassUnloading
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build jdk.test.whitebox.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
+ *          test-classes/CustomLoadee5.java test-classes/CustomLoadee5Child.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
@@ -49,12 +50,19 @@ public class UnloadUnregisteredLoaderTest {
         CDSOptions.disableRuntimePrefixForEpsilonGC();
     }
     public static void main(String[] args) throws Exception {
-        String appJar1 = JarBuilder.build("UnloadUnregisteredLoader_app1", "UnloadUnregisteredLoader");
+        String appJar1 = JarBuilder.build("UnloadUnregisteredLoader_app1",
+                                          "UnloadUnregisteredLoader",
+                                          "UnloadUnregisteredLoader$CustomLoader",
+                                          "CustomLoadee5",
+                                          "Util");
         String appJar2 = JarBuilder.build(true, "UnloadUnregisteredLoader_app2",
                                           "jdk/test/lib/classloader/ClassUnloadCommon",
                                           "jdk/test/lib/classloader/ClassUnloadCommon$1",
                                           "jdk/test/lib/classloader/ClassUnloadCommon$TestFailure");
-        String customJarPath = JarBuilder.build("UnloadUnregisteredLoader_custom", "CustomLoadee");
+        String customJarPath = JarBuilder.build("UnloadUnregisteredLoader_custom",
+                                                "CustomLoadee",
+                                                "CustomLoadee5",
+                                                "CustomLoadee5Child");
         String wbJar = JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
 
@@ -66,6 +74,8 @@ public class UnloadUnregisteredLoaderTest {
             "jdk/test/lib/classloader/ClassUnloadCommon$TestFailure",
             "java/lang/Object id: 1",
             "CustomLoadee id: 2 super: 1 source: " + customJarPath,
+            "CustomLoadee5 id: 3 super: 1 source: " + customJarPath,
+            "CustomLoadee5Child id: 4 super: 3 source: " + customJarPath,
         };
 
         OutputAnalyzer output;

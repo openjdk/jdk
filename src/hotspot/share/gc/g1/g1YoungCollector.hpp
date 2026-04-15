@@ -45,7 +45,6 @@ class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
 class G1ParScanThreadStateSet;
 class G1Policy;
-class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
 class G1YoungGCAllocationFailureInjector;
@@ -90,7 +89,7 @@ class G1YoungCollector {
   // returning the total time taken.
   Tickspan run_task_timed(WorkerTask* task);
 
-  void wait_for_root_region_scanning();
+  void complete_root_region_scan();
 
   void calculate_collection_set(G1EvacInfo* evacuation_info, double target_pause_time_ms);
 

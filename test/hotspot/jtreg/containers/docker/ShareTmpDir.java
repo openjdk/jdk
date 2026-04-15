@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build WaitForFlagFile
  * @run driver ShareTmpDir
  */
@@ -50,18 +51,13 @@ public class ShareTmpDir {
     private static final String imageName = Common.imageName("sharetmpdir");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             test();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
@@ -70,31 +66,45 @@ public class ShareTmpDir {
     private static void test() throws Exception {
         File sharedtmpdir = new File("sharedtmpdir");
         File flag = new File(sharedtmpdir, "flag");
-        File started = new File(sharedtmpdir, "started");
+        File started1 = new File(sharedtmpdir, "started-1");
+        File started2 = new File(sharedtmpdir, "started-2");
         sharedtmpdir.mkdir();
         flag.delete();
-        started.delete();
+        started1.delete();
+        started2.delete();
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "WaitForFlagFile");
+        Object lock = new Object();
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp/");
-        opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf+memops=debug", "-cp", "/test-classes/");
+        opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf*=debug", "-cp", "/test-classes/");
 
         Thread t1 = new Thread() {
                 public void run() {
+                    synchronized(lock) {
+                        opts.addClassOptions("1");
+                    }
                     try { out1 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
         t1.start();
 
+        while (!started1.exists()) {
+            System.out.println("Waiting for first JVM to start");
+            Thread.sleep(1000);
+        }
+
         Thread t2 = new Thread() {
                 public void run() {
+                    synchronized(lock) {
+                        opts.addClassOptions("2");
+                    }
                     try { out2 = Common.run(opts); } catch (Exception e) { e.printStackTrace(); }
                 }
             };
         t2.start();
 
-        while (!started.exists()) {
-            System.out.println("Wait for at least one JVM to start");
+        while (!started2.exists()) {
+            System.out.println("Waiting for second JVM to start");
             Thread.sleep(1000);
         }
 
@@ -105,12 +115,13 @@ public class ShareTmpDir {
         t1.join();
         t2.join();
 
-        Pattern pattern = Pattern.compile("perf,memops.*Trying to open (/tmp/hsperfdata_[a-z0-9]*/[0-9]*)");
+        Pattern pattern = Pattern.compile("perf,memops.*Trying to open (/tmp/hsperfdata_[a-z0-9]*/(\\d+))");
         Matcher matcher;
 
         matcher = pattern.matcher(out1.getStdout());
         Asserts.assertTrue(matcher.find());
         String file1 =  matcher.group(1);
+        String pid1  = matcher.group(2);
 
         matcher = pattern.matcher(out2.getStdout());
         Asserts.assertTrue(matcher.find());
@@ -124,8 +135,11 @@ public class ShareTmpDir {
             // have pid==1.
             // One of the two containers must fail to create the hsperf file.
             String s = "Cannot use file " + file1 + " because it is locked by another process";
+            String s2 = "could not create file " + pid1 + ": existing file is not provably stale";
             Asserts.assertTrue(out1.getStdout().contains(s) ||
-                               out2.getStdout().contains(s));
+                               out2.getStdout().contains(s) ||
+                               out1.getStdout().contains(s2) ||
+                               out2.getStdout().contains(s2));
         } else {
             throw new SkippedException("Java in the two containers don't have the same pid: " + file1 + " vs " + file2);
         }

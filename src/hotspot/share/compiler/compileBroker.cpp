@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1064,7 +1064,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  size_t free_memory = 0;
+  physical_memory_size_type free_memory = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
@@ -2346,12 +2346,18 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
       /* Repeat compilation without installing code for profiling purposes */
       int repeat_compilation_count = directive->RepeatCompilationOption;
-      while (repeat_compilation_count > 0) {
-        ResourceMark rm(thread);
-        task->print_ul("NO CODE INSTALLED");
-        thread->timeout()->reset();
-        comp->compile_method(&ci_env, target, osr_bci, false, directive);
-        repeat_compilation_count--;
+      if (repeat_compilation_count > 0) {
+        CHeapStringHolder failure_reason;
+        failure_reason.set(ci_env._failure_reason.get());
+        while (repeat_compilation_count > 0) {
+          ResourceMark rm(thread);
+          task->print_ul("NO CODE INSTALLED");
+          thread->timeout()->reset();
+          ci_env._failure_reason.clear();
+          comp->compile_method(&ci_env, target, osr_bci, false, directive);
+          repeat_compilation_count--;
+        }
+        ci_env._failure_reason.set(failure_reason.get());
       }
     }
 

@@ -118,6 +118,12 @@ public class AddLShortcutTest {
             HelloApp.createBundle(JavaAppDesc.parse(addLauncherApp + "*another.jar:Welcome"), cmd.inputDir());
         });
 
+        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
+            // Ensure launchers are executable because the output bundle will be installed
+            // and launchers will be attempted to be executed through their shortcuts.
+            packageTest.addInitializer(JPackageCommand::ignoreFakeRuntime);
+        }
+
         new FileAssociations(packageName).applyTo(packageTest);
 
         new AdditionalLauncher("Foo")
@@ -190,27 +196,22 @@ public class AddLShortcutTest {
         // and applies shortcut configuration to the main launcher in the native packaging jpackage command.
         //
 
-        Path[] predefinedAppImage = new Path[1];
+        var appImageCmd = JPackageCommand.helloAppImage()
+                .setArgumentValue("--name", "foo")
+                .setFakeRuntime();
 
-        new PackageTest().addRunOnceInitializer(() -> {
-            var cmd = JPackageCommand.helloAppImage()
-                    .setArgumentValue("--name", "foo")
-                    .setFakeRuntime();
+        for (var i = 1; i != cfgs.length; ++i) {
+            var al = new AdditionalLauncher("launcher-" + i);
+            cfgs[i].applyToAdditionalLauncher(al);
+            al.withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(appImageCmd);
+        }
 
-            for (var i = 1; i != cfgs.length; ++i) {
-                var al = new AdditionalLauncher("launcher-" + i);
-                cfgs[i].applyToAdditionalLauncher(al);
-                al.withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(cmd);
-            }
-
-            cmd.execute();
-
-            predefinedAppImage[0] = cmd.outputBundle();
-        }).addInitializer(cmd -> {
+        new PackageTest()
+        .addRunOnceInitializer(appImageCmd::execute)
+        .usePredefinedAppImage(appImageCmd)
+        .addInitializer(cmd -> {
             cfgs[0].applyToMainLauncher(cmd);
-            cmd.removeArgumentWithValue("--input");
             cmd.setArgumentValue("--name", "AddLShortcutDir2Test");
-            cmd.addArguments("--app-image", predefinedAppImage[0]);
         }).run(RunnablePackageTest.Action.CREATE_AND_UNPACK);
     }
 
@@ -231,20 +232,15 @@ public class AddLShortcutTest {
             shortcutArgs.add(startupDirectory.asStringValue());
         }
 
-        Path[] predefinedAppImage = new Path[1];
+        var appImageCmd = JPackageCommand.helloAppImage()
+                .setArgumentValue("--name", "foo")
+                .setFakeRuntime();
 
-        new PackageTest().addRunOnceInitializer(() -> {
-            var cmd = JPackageCommand.helloAppImage()
-                    .setArgumentValue("--name", "foo")
-                    .setFakeRuntime();
-
-            cmd.execute();
-
-            predefinedAppImage[0] = cmd.outputBundle();
-        }).addInitializer(cmd -> {
-            cmd.removeArgumentWithValue("--input");
+        new PackageTest()
+        .addRunOnceInitializer(appImageCmd::execute)
+        .usePredefinedAppImage(appImageCmd)
+        .addInitializer(cmd -> {
             cmd.setArgumentValue("--name", "AddLShortcutDir3Test");
-            cmd.addArguments("--app-image", predefinedAppImage[0]);
             cmd.ignoreDefaultVerbose(true);
         }).addInitializer(cmd -> {
             cmd.addArguments(shortcutArgs);

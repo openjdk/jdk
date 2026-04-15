@@ -169,9 +169,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
     // Shrink.
     MemRegion delta = MemRegion(new_committed.end(),
                                 old_committed.word_size() - new_committed.word_size());
-    bool res = os::uncommit_memory((char*)delta.start(),
-                                   delta.byte_size());
-    assert(res, "uncommit should succeed");
+    os::uncommit_memory((char*)delta.start(), delta.byte_size());
   }
 
   log_trace(gc, barrier)("CardTable::resize_covered_region: ");
@@ -225,6 +223,9 @@ uintx CardTable::ct_max_alignment_constraint() {
 
 #ifndef PRODUCT
 void CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
+  if (mr.is_empty()) {
+    return;
+  }
   CardValue* start    = byte_for(mr.start());
   CardValue* end      = byte_for(mr.last());
   bool failures = false;
@@ -255,7 +256,8 @@ void CardTable::verify_dirty_region(MemRegion mr) {
 }
 #endif
 
-void CardTable::print_on(outputStream* st) const {
-  st->print_cr("Card table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+void CardTable::print_on(outputStream* st, const char* description) const {
+  st->print_cr("%s table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+               description,
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(_byte_map_base));
 }

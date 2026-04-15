@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLayout;
 
+import java.nio.file.Files;
 import java.util.Objects;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
@@ -47,7 +48,7 @@ final class MacPackageBuilder {
         return pkgBuilder;
     }
 
-    MacPackage create() throws ConfigException {
+    MacPackage create() {
 
         final var app = (MacApplication)pkgBuilder.app();
 
@@ -57,7 +58,21 @@ final class MacPackageBuilder {
                 .installedPackageLayout(pkg.installedPackageLayout());
 
         pkg = pkgBuilder.create();
-        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+
+        var macPkg = MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+        validatePredefinedAppImage(macPkg);
+        return macPkg;
+    }
+
+    private static void validatePredefinedAppImage(MacPackage pkg) {
+        if (pkg.predefinedAppImageSigned().orElse(false) && !pkg.isRuntimeInstaller()) {
+            pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
+                var thePackageFile = PackageFile.getPathInAppImage(APPLICATION_LAYOUT);
+                if (!Files.exists(predefinedAppImage.resolve(thePackageFile))) {
+                    Log.info(I18N.format("warning.per.user.app.image.signed", thePackageFile));
+                }
+            });
+        }
     }
 
     private final PackageBuilder pkgBuilder;

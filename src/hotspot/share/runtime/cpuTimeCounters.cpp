@@ -36,6 +36,8 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
       return "gc_conc_mark";
     case CPUTimeType::gc_conc_refine:
       return "gc_conc_refine";
+    case CPUTimeType::gc_conc_refine_control:
+      return "gc_conc_refine_control";
     case CPUTimeType::gc_service:
       return "gc_service";
     case CPUTimeType::vm:
@@ -53,6 +55,7 @@ bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
     case CPUTimeType::gc_parallel_workers:
     case CPUTimeType::gc_conc_mark:
     case CPUTimeType::gc_conc_refine:
+    case CPUTimeType::gc_conc_refine_control:
     case CPUTimeType::gc_service:
       return true;
     default:
@@ -115,8 +118,5 @@ ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
 }
 
 void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
-  // The default code path (fast_thread_cpu_time()) asserts that
-  // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-  // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -65,6 +66,10 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#ifdef COMPILER2
+#include "runtime/hotCodeCollector.hpp"
+#endif // COMPILER2
+#include "runtime/icache.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -465,14 +470,6 @@ static int adjust_pcs_size(int pcs_size) {
   return nsize;
 }
 
-bool nmethod::is_method_handle_return(address return_pc) {
-  if (!has_method_handle_invokes())  return false;
-  PcDesc* pd = pc_desc_at(return_pc);
-  if (pd == nullptr)
-    return false;
-  return pd->is_method_handle_invoke();
-}
-
 // Returns a string version of the method state.
 const char* nmethod::state() const {
   int state = get_state();
@@ -762,7 +759,7 @@ Method* nmethod::attached_method_before_pc(address pc) {
 }
 
 void nmethod::clear_inline_caches() {
-  assert(SafepointSynchronize::is_at_safepoint(), "clearing of IC's only allowed at safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || (NMethodState_lock->owned_by_self() && is_not_installed()), "clearing of IC's only allowed at safepoint or when not installed");
   RelocIterator iter(this);
   while (iter.next()) {
     iter.reloc()->clear_inline_cache();
@@ -791,15 +788,9 @@ class CheckClass : public MetadataClosure {
 };
 #endif // ASSERT
 
-
-static void clean_ic_if_metadata_is_dead(CompiledIC *ic) {
-  ic->clean_metadata();
-}
-
 // Clean references to unloaded nmethods at addr from this one, which is not unloaded.
 template <typename CallsiteT>
-static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, nmethod* from,
-                                         bool clean_all) {
+static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, bool clean_all) {
   CodeBlob* cb = CodeCache::find_blob(callsite->destination());
   if (!cb->is_nmethod()) {
     return;
@@ -874,15 +865,15 @@ void nmethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all
       if (unloading_occurred) {
         // If class unloading occurred we first clear ICs where the cached metadata
         // is referring to an unloaded klass or method.
-        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter));
+        CompiledIC_at(&iter)->clean_metadata();
       }
 
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), clean_all);
       break;
 
     case relocInfo::opt_virtual_call_type:
     case relocInfo::static_call_type:
-      clean_if_nmethod_is_unloaded(CompiledDirectCall::at(iter.reloc()), this, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledDirectCall::at(iter.reloc()), clean_all);
       break;
 
     case relocInfo::static_stub_type: {
@@ -951,7 +942,8 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print_on(&ss);
-    method()->print_codes_on(&ss);
+    // Buffering to a stringStream, disable internal buffering so it's not done twice.
+    method()->print_codes_on(&ss, 0, false);
     print_code_on(&ss);
     print_pcs_on(&ss);
     tty->print("%s", ss.as_string()); // print all at once
@@ -1165,6 +1157,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
   if (immutable_data_size > 0) {
+    immutable_data_size += ImmutableDataRefCountSize;
     immutable_data = (address)os::malloc(immutable_data_size, mtCode);
     if (immutable_data == nullptr) {
       vm_exit_out_of_memory(immutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
@@ -1237,7 +1230,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _state                      = not_installed;
 
   _has_unsafe_access          = 0;
-  _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
   _has_monitors               = 0;
   _has_scoped_access          = 0;
@@ -1265,7 +1257,15 @@ void nmethod::post_init() {
 
   finalize_relocations();
 
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
+
   Universe::heap()->register_nmethod(this);
+
+#ifdef COMPILER2
+  HotCodeCollector::register_nmethod(this);
+#endif // COMPILER2
+
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
@@ -1315,13 +1315,10 @@ nmethod::nmethod(
     }
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
-    _deopt_handler_offset    = 0;
-    _deopt_mh_handler_offset = 0;
+    _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
@@ -1337,6 +1334,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
+    _immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1387,8 +1385,275 @@ nmethod::nmethod(
   }
 }
 
+
+nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm._header_size)
+{
+
+  if (nm._oop_maps != nullptr) {
+    _oop_maps                   = nm._oop_maps->clone();
+  } else {
+    _oop_maps                   = nullptr;
+  }
+
+  _size                         = nm._size;
+  _relocation_size              = nm._relocation_size;
+  _content_offset               = nm._content_offset;
+  _code_offset                  = nm._code_offset;
+  _data_offset                  = nm._data_offset;
+  _frame_size                   = nm._frame_size;
+
+  S390_ONLY( _ctable_offset     = nm._ctable_offset; )
+
+  _header_size                  = nm._header_size;
+  _frame_complete_offset        = nm._frame_complete_offset;
+
+  _kind                         = nm._kind;
+
+  _caller_must_gc_arguments     = nm._caller_must_gc_arguments;
+
+#ifndef PRODUCT
+  _asm_remarks.share(nm._asm_remarks);
+  _dbg_strings.share(nm._dbg_strings);
+#endif
+
+  // Allocate memory and copy mutable data to C heap
+  _mutable_data_size            = nm._mutable_data_size;
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
+    }
+    memcpy(mutable_data_begin(), nm.mutable_data_begin(), nm.mutable_data_size());
+  } else {
+    _mutable_data               = nullptr;
+  }
+
+  _deoptimization_generation    = 0;
+  _gc_epoch                     = CodeCache::gc_epoch();
+  _method                       = nm._method;
+  _osr_link                     = nullptr;
+
+  _exception_cache              = nullptr;
+  _gc_data                      = nullptr;
+  _oops_do_mark_nmethods        = nullptr;
+  _oops_do_mark_link            = nullptr;
+  _compiled_ic_data             = nullptr;
+
+  if (nm._osr_entry_point != nullptr) {
+    _osr_entry_point            = (nm._osr_entry_point - (address) &nm) + (address) this;
+  } else {
+    _osr_entry_point            = nullptr;
+  }
+
+  _entry_offset                 = nm._entry_offset;
+  _verified_entry_offset        = nm._verified_entry_offset;
+  _entry_bci                    = nm._entry_bci;
+  _immutable_data_size          = nm._immutable_data_size;
+
+  _skipped_instructions_size    = nm._skipped_instructions_size;
+  _stub_offset                  = nm._stub_offset;
+  _exception_offset             = nm._exception_offset;
+  _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
+  _unwind_handler_offset        = nm._unwind_handler_offset;
+  _num_stack_arg_slots          = nm._num_stack_arg_slots;
+#if INCLUDE_JVMCI
+  _metadata_size                = nm._metadata_size;
+#endif
+  _nul_chk_table_offset         = nm._nul_chk_table_offset;
+  _handler_table_offset         = nm._handler_table_offset;
+  _scopes_pcs_offset            = nm._scopes_pcs_offset;
+  _scopes_data_offset           = nm._scopes_data_offset;
+#if INCLUDE_JVMCI
+  _speculations_offset          = nm._speculations_offset;
+#endif
+  _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (_immutable_data_size > 0) {
+    _immutable_data             = nm._immutable_data;
+    inc_immutable_data_ref_count();
+  } else {
+    _immutable_data             = blob_end();
+  }
+
+  _orig_pc_offset               = nm._orig_pc_offset;
+  _compile_id                   = nm._compile_id;
+  _comp_level                   = nm._comp_level;
+  _compiler_type                = nm._compiler_type;
+  _is_unloading_state           = nm._is_unloading_state;
+  _state                        = not_installed;
+
+  _has_unsafe_access            = nm._has_unsafe_access;
+  _has_wide_vectors             = nm._has_wide_vectors;
+  _has_monitors                 = nm._has_monitors;
+  _has_scoped_access            = nm._has_scoped_access;
+  _has_flushed_dependencies     = nm._has_flushed_dependencies;
+  _is_unlinked                  = nm._is_unlinked;
+  _load_reported                = nm._load_reported;
+
+  _deoptimization_status        = nm._deoptimization_status;
+
+  if (nm._pc_desc_container != nullptr) {
+    _pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
+  } else {
+    _pc_desc_container          = nullptr;
+  }
+
+  // Copy nmethod contents excluding header
+  // - Constant part          (doubles, longs and floats used in nmethod)
+  // - Code part:
+  //   - Code body
+  //   - Exception handler
+  //   - Stub code
+  //   - OOP table
+  memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
+
+  // Fix relocation
+  RelocIterator iter(this);
+  CodeBuffer src(&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+    // After an nmethod is moved, some direct call sites may end up out of range.
+    // CallRelocation::fix_relocation_after_move() assumes the target is always
+    // reachable and does not check branch range. Calling it without range checks
+    // could cause us to write an offset too large for the instruction.
+    //
+    // If a call site has a trampoline, we skip the normal call relocation. The
+    // associated trampoline_stub_Relocation will handle the call and the
+    // trampoline, including range checks and updating the branch as needed.
+    //
+    // If no trampoline exists, we can assume the call target is always
+    // reachable and therefore within direct branch range, so calling
+    // CallRelocation::fix_relocation_after_move() is safe.
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    clear_inline_caches();
+  }
+
+  post_init();
+}
+
+nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
+  assert(NMethodRelocation, "must enable use of function");
+
+  // Locks required to be held by caller to ensure the nmethod
+  // is not modified or purged from code cache during relocation
+  assert_lock_strong(CodeCache_lock);
+  assert_lock_strong(Compile_lock);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
+
+  if (!is_relocatable()) {
+    return nullptr;
+  }
+
+  run_nmethod_entry_barrier();
+  nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
+
+  if (nm_copy == nullptr) {
+    return nullptr;
+  }
+
+  // To make dependency checking during class loading fast, record
+  // the nmethod dependencies in the classes it is dependent on.
+  // This allows the dependency checking code to simply walk the
+  // class hierarchy above the loaded class, checking only nmethods
+  // which are dependent on those classes.  The slow way is to
+  // check every nmethod for dependencies which makes it linear in
+  // the number of methods compiled.  For applications with a lot
+  // classes the slow way is too slow.
+  for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
+    if (deps.type() == Dependencies::call_site_target_value) {
+      // CallSite dependencies are managed on per-CallSite instance basis.
+      oop call_site = deps.argument_oop(0);
+      MethodHandles::add_dependent_nmethod(call_site, nm_copy);
+    } else {
+      InstanceKlass* ik = deps.context_type();
+      if (ik == nullptr) {
+        continue;  // ignore things like evol_method
+      }
+      // record this nmethod as dependent on this klass
+      ik->add_dependent_nmethod(nm_copy);
+    }
+  }
+
+  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+
+  // Verify the nm we copied from is still valid
+  if (!is_marked_for_deoptimization() && is_in_use()) {
+    assert(method() != nullptr && method()->code() == this, "should be if is in use");
+
+    // Attempt to start using the copy
+    if (nm_copy->make_in_use()) {
+      methodHandle mh(Thread::current(), nm_copy->method());
+      nm_copy->method()->set_code(mh, nm_copy);
+
+      make_not_entrant(InvalidationReason::RELOCATED);
+
+      nm_copy->post_compiled_method_load_event();
+
+      nm_copy->log_relocated_nmethod(this);
+
+      return nm_copy;
+    }
+  }
+
+  nm_copy->make_not_used();
+
+  return nullptr;
+}
+
+bool nmethod::is_relocatable() {
+  if (!is_java_method()) {
+    return false;
+  }
+
+  if (!is_in_use()) {
+    return false;
+  }
+
+  if (is_osr_method()) {
+    return false;
+  }
+
+  if (is_marked_for_deoptimization()) {
+    return false;
+  }
+
+#if INCLUDE_JVMCI
+  if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
+    return false;
+  }
+#endif
+
+  if (is_unloading()) {
+    return false;
+  }
+
+  if (has_evol_metadata()) {
+    return false;
+  }
+
+  return true;
+}
+
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
+}
+
+void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
+  return CodeCache::allocate(nmethod_size, code_blob_type);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
@@ -1460,29 +1725,26 @@ nmethod::nmethod(
         _exception_offset        = -1;
       }
       if (offsets->value(CodeOffsets::Deopt) != -1) {
-        _deopt_handler_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
+        _deopt_handler_entry_offset    = code_offset() + offsets->value(CodeOffsets::Deopt);
       } else {
-        _deopt_handler_offset    = -1;
-      }
-      if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = code_offset() + offsets->value(CodeOffsets::DeoptMH);
-      } else {
-        _deopt_mh_handler_offset = -1;
+        _deopt_handler_entry_offset    = -1;
       }
     } else
 #endif
     {
       // Exception handler and deopt handler are in the stub section
-      assert(offsets->value(CodeOffsets::Exceptions) != -1, "must be set");
       assert(offsets->value(CodeOffsets::Deopt     ) != -1, "must be set");
 
-      _exception_offset          = _stub_offset + offsets->value(CodeOffsets::Exceptions);
-      _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
-      if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
+      bool has_exception_handler = (offsets->value(CodeOffsets::Exceptions) != -1);
+      assert(has_exception_handler == (compiler->type() != compiler_c2),
+             "C2 compiler doesn't provide exception handler stub code.");
+      if (has_exception_handler) {
+        _exception_offset = _stub_offset + offsets->value(CodeOffsets::Exceptions);
       } else {
-        _deopt_mh_handler_offset = -1;
+        _exception_offset = -1;
       }
+
+      _deopt_handler_entry_offset = _stub_offset + offsets->value(CodeOffsets::Deopt);
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
@@ -1494,9 +1756,7 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
     assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
@@ -1520,10 +1780,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset  + align_up(speculations_len, oopSize); )
+    _immutable_data_ref_count_offset = _speculations_offset + align_up(speculations_len, oopSize);
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize); )
+    _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
 #endif
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
@@ -1555,6 +1816,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
+    init_immutable_data_ref_count();
 
     post_init();
 
@@ -1602,6 +1864,40 @@ void nmethod::log_new_nmethod() const {
     log_identity(xtty);
     xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", p2i(code_begin()), size());
     xtty->print(" address='" INTPTR_FORMAT "'", p2i(this));
+
+    LOG_OFFSET(xtty, relocation);
+    LOG_OFFSET(xtty, consts);
+    LOG_OFFSET(xtty, insts);
+    LOG_OFFSET(xtty, stub);
+    LOG_OFFSET(xtty, scopes_data);
+    LOG_OFFSET(xtty, scopes_pcs);
+    LOG_OFFSET(xtty, dependencies);
+    LOG_OFFSET(xtty, handler_table);
+    LOG_OFFSET(xtty, nul_chk_table);
+    LOG_OFFSET(xtty, oops);
+    LOG_OFFSET(xtty, metadata);
+
+    xtty->method(method());
+    xtty->stamp();
+    xtty->end_elem();
+  }
+}
+
+
+void nmethod::log_relocated_nmethod(nmethod* original) const {
+  if (LogCompilation && xtty != nullptr) {
+    ttyLocker ttyl;
+    xtty->begin_elem("relocated nmethod");
+    log_identity(xtty);
+    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", p2i(code_begin()), size());
+
+    const char* original_code_heap_name = CodeCache::get_code_heap_name(CodeCache::get_code_blob_type(original));
+    xtty->print(" original_address='" INTPTR_FORMAT "'", p2i(original));
+    xtty->print(" original_code_heap='%s'", original_code_heap_name);
+
+    const char* new_code_heap_name = CodeCache::get_code_heap_name(CodeCache::get_code_blob_type(this));
+    xtty->print(" new_address='" INTPTR_FORMAT "'", p2i(this));
+    xtty->print(" new_code_heap='%s'", new_code_heap_name);
 
     LOG_OFFSET(xtty, relocation);
     LOG_OFFSET(xtty, consts);
@@ -1750,7 +2046,7 @@ void nmethod::copy_values(GrowableArray<jobject>* array) {
   // The code and relocations have already been initialized by the
   // CodeBlob constructor, so it is valid even at this early point to
   // iterate over relocations and patch the code.
-  fix_oop_relocations(nullptr, nullptr, /*initialize_immediates=*/ true);
+  fix_oop_relocations(/*initialize_immediates=*/ true);
 }
 
 void nmethod::copy_values(GrowableArray<Metadata*>* array) {
@@ -1762,23 +2058,41 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+bool nmethod::fix_oop_relocations(bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
-  RelocIterator iter(this, begin, end);
+  RelocIterator iter(this);
+  bool modified_code = false;
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
-      if (initialize_immediates && reloc->oop_is_immediate()) {
+      if (!reloc->oop_is_immediate()) {
+        // Refresh the oop-related bits of this instruction.
+        reloc->set_value(reloc->value());
+        modified_code = true;
+      } else if (initialize_immediates) {
         oop* dest = reloc->oop_addr();
         jobject obj = *reinterpret_cast<jobject*>(dest);
         initialize_immediate_oop(dest, obj);
       }
-      // Refresh the oop-related bits of this instruction.
-      reloc->fix_oop_relocation();
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
+      modified_code |= !reloc->metadata_is_immediate();
     }
+  }
+  return modified_code;
+}
+
+void nmethod::fix_oop_relocations() {
+  ICacheInvalidationContext icic;
+  fix_oop_relocations(&icic);
+}
+
+void nmethod::fix_oop_relocations(ICacheInvalidationContext* icic) {
+  assert(icic != nullptr, "must provide context to track if code was modified");
+  bool modified_code = fix_oop_relocations(/*initialize_immediates=*/ false);
+  if (modified_code) {
+    icic->set_has_modified_code();
   }
 }
 
@@ -1846,6 +2160,9 @@ void nmethod::make_deoptimized() {
 
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
+
+  // Assume there will be some calls to make deoptimized.
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   while (iter.next()) {
 
@@ -1923,6 +2240,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   AtomicAccess::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2014,6 +2332,8 @@ bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
     // No need for fencing either.
     return false;
   }
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   {
     // Enter critical section.  Does not block for safepoint.
@@ -2153,12 +2473,22 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    os::free(_immutable_data);
+    // Free memory if this was the last nmethod referencing immutable data
+    if (dec_immutable_data_ref_count() == 0) {
+      os::free(_immutable_data);
+    }
+
     _immutable_data = blob_end(); // Valid not null address
   }
+
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
+
+#ifdef COMPILER2
+  HotCodeCollector::unregister_nmethod(this);
+#endif // COMPILER2
+
   CodeCache::unregister_old_nmethod(this);
 
   JVMCI_ONLY( _metadata_size = 0; )
@@ -2225,11 +2555,48 @@ void nmethod::post_compiled_method(CompileTask* task) {
   maybe_print_nmethod(directive);
 }
 
+#if INCLUDE_CDS
+static GrowableArrayCHeap<nmethod*, mtClassShared>* _delayed_compiled_method_load_events = nullptr;
+
+void nmethod::add_delayed_compiled_method_load_event(nmethod* nm) {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  precond(!ServiceThread::has_started());
+
+  // We are still in single threaded stage of VM bootstrap. No need to lock.
+  if (_delayed_compiled_method_load_events == nullptr) {
+    _delayed_compiled_method_load_events = new GrowableArrayCHeap<nmethod*, mtClassShared>();
+  }
+  _delayed_compiled_method_load_events->append(nm);
+}
+
+void nmethod::post_delayed_compiled_method_load_events() {
+  precond(ServiceThread::has_started());
+  if (_delayed_compiled_method_load_events != nullptr) {
+    for (int i = 0; i < _delayed_compiled_method_load_events->length(); i++) {
+      nmethod* nm = _delayed_compiled_method_load_events->at(i);
+      nm->post_compiled_method_load_event();
+    }
+    delete _delayed_compiled_method_load_events;
+    _delayed_compiled_method_load_events = nullptr;
+  }
+}
+#endif
+
 // ------------------------------------------------------------------
 // post_compiled_method_load_event
 // new method for install_code() path
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
+#if INCLUDE_CDS
+  if (!ServiceThread::has_started()) {
+    // With AOT-linked classes, we could compile wrappers for native methods before the
+    // ServiceThread has been started, so we must delay the events to be posted later.
+    assert(state == nullptr, "must be");
+    add_delayed_compiled_method_load_event(this);
+    return;
+  }
+#endif
+
   // This is a bad time for a safepoint.  We don't want
   // this nmethod to get unloaded while we're queueing the event.
   NoSafepointVerifier nsv;
@@ -2321,7 +2688,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
 // Main purpose is to reduce code cache pressure and get rid of
 // nmethods that don't seem to be all that relevant any longer.
 bool nmethod::is_cold() {
-  if (!MethodFlushing || is_native_method() || is_not_installed()) {
+  if (!MethodFlushing || is_not_installed()) {
     // No heuristic unloading at all
     return false;
   }
@@ -2407,6 +2774,8 @@ bool nmethod::is_unloading() {
   state_unloading_cycle = current_cycle;
   state_is_unloading = IsUnloadingBehaviour::is_unloading(this);
   uint8_t new_state = IsUnloadingState::create(state_is_unloading, state_unloading_cycle);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Note that if an nmethod has dead oops, everyone will agree that the
   // nmethod is_unloading. However, the is_cold heuristics can yield
@@ -2698,15 +3067,6 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   assert(prev_offset == PcDesc::upper_offset_limit,
          "must end with a sentinel");
 #endif //ASSERT
-
-  // Search for MethodHandle invokes and tag the nmethod.
-  for (int i = 0; i < count; i++) {
-    if (pcs[i].is_method_handle_invoke()) {
-      set_has_method_handle_invokes(true);
-      break;
-    }
-  }
-  assert(has_method_handle_invokes() == (_deopt_mh_handler_offset != -1), "must have deopt mh handler");
 
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
@@ -3717,12 +4077,11 @@ const char* nmethod::nmethod_section_label(address pos) const {
   if (pos == code_begin())                                              label = "[Instructions begin]";
   if (pos == entry_point())                                             label = "[Entry Point]";
   if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
-  if (has_method_handle_invokes() && (pos == deopt_mh_handler_begin())) label = "[Deopt MH Handler Code]";
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
   if (JVMCI_ONLY(_exception_offset >= 0 &&) pos == exception_begin())          label = "[Exception Handler]";
-  if (JVMCI_ONLY(_deopt_handler_offset != -1 &&) pos == deopt_handler_begin()) label = "[Deopt Handler Code]";
+  if (JVMCI_ONLY(_deopt_handler_entry_offset != -1 &&) pos == deopt_handler_entry()) label = "[Deopt Handler Entry Point]";
   return label;
 }
 
@@ -3999,6 +4358,46 @@ void nmethod::print_value_on_impl(outputStream* st) const {
 #if defined(SUPPORT_DATA_STRUCTS)
   print_on_with_msg(st, nullptr);
 #endif
+}
+
+void nmethod::print_code_snippet(outputStream* st, address addr) const {
+  if (entry_point() <= addr && addr < code_end()) {
+    // Pointing into the nmethod's code. Try to disassemble some instructions around addr.
+    // Determine conservative start and end points.
+    address start;
+    if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+        addr >= code_begin() + frame_complete_offset()) {
+      start = code_begin() + frame_complete_offset();
+    } else {
+      start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    }
+    address start_for_hex_dump = start; // We can choose a different starting point for hex dump, below.
+    address end = code_end();
+
+    // Try using relocations to find closer instruction start and end points.
+    // (Some platforms have variable length instructions and can only
+    // disassemble correctly at instruction start addresses.)
+    RelocIterator iter((nmethod*)this, start);
+    while (iter.next() && iter.addr() < addr) { // find relocation before addr
+      // Note: There's a relocation which doesn't point to an instruction start:
+      // ZBarrierRelocationFormatStoreGoodAfterMov with ZGC on x86_64
+      // We could detect and skip it, but hex dump is still usable when
+      // disassembler produces garbage in such a very rare case.
+      start = iter.addr();
+      // We want at least 64 Bytes ahead in hex dump.
+      if (iter.addr() <= (addr - 64)) start_for_hex_dump = iter.addr();
+    }
+    if (iter.has_current()) {
+      if (iter.addr() == addr) iter.next(); // find relocation after addr
+      if (iter.has_current()) end = iter.addr();
+    }
+
+    // Always print hex. Disassembler may still have problems when hitting an incorrect instruction start.
+    os::print_hex_dump(st, start_for_hex_dump, end, 1, /* print_ascii=*/false);
+    if (!Disassembler::is_abstract()) {
+      Disassembler::decode(start, end, st);
+    }
+  }
 }
 
 #ifndef PRODUCT

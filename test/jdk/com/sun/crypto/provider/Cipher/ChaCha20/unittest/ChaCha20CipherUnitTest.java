@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153029
+ * @bug 8153029 8360463 8368984
  * @library /test/lib
  * @run main ChaCha20CipherUnitTest
  * @summary Unit test for com.sun.crypto.provider.ChaCha20Cipher.
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -66,32 +67,38 @@ public class ChaCha20CipherUnitTest {
     private static void testTransformations() throws Exception {
         System.out.println("== transformations ==");
 
-        checkTransformation("ChaCha20", true);
-        checkTransformation("ChaCha20/None/NoPadding", true);
-        checkTransformation("ChaCha20-Poly1305", true);
-        checkTransformation("ChaCha20-Poly1305/None/NoPadding", true);
+        Class NSAE = NoSuchAlgorithmException.class;
+        Class NSPE = NoSuchPaddingException.class;
 
-        checkTransformation("ChaCha20/ECB/NoPadding", false);
-        checkTransformation("ChaCha20/None/PKCS5Padding", false);
-        checkTransformation("ChaCha20-Poly1305/ECB/NoPadding", false);
-        checkTransformation("ChaCha20-Poly1305/None/PKCS5Padding", false);
+        checkTransformation("ChaCha20", null);
+        checkTransformation("ChaCha20/None/NoPadding", null);
+        checkTransformation("ChaCha20/None//", NSAE);
+        checkTransformation("ChaCha20/ECB/NoPadding", NSAE);
+        checkTransformation("ChaCha20/None/PKCS5Padding", NSPE);
+        checkTransformation("ChaCha20-Poly1305", null);
+        checkTransformation("ChaCha20-Poly1305/None/NoPadding", null);
+        checkTransformation("ChaCha20-Poly1305/None//", NSAE);
+        checkTransformation("ChaCha20-Poly1305/ECB/NoPadding", NSAE);
+        checkTransformation("ChaCha20-Poly1305/None/PKCS5Padding", NSPE);
     }
 
-    private static void checkTransformation(String transformation,
-            boolean expected) throws Exception {
+    private static void checkTransformation(String transformation, Class exCls)
+            throws Exception {
         try {
-            Cipher.getInstance(transformation);
-            if (!expected) {
-                throw new RuntimeException(
-                        "Unexpected transformation: " + transformation);
+            Cipher.getInstance(transformation,
+                    System.getProperty("test.provider.name", "SunJCE"));
+            if (exCls != null) {
+                throw new RuntimeException("Expected Exception not thrown: " +
+                        exCls);
             } else {
-                System.out.println("Expected transformation: " + transformation);
+                System.out.println(transformation + ": pass");
             }
-        } catch (NoSuchAlgorithmException e) {
-            if (!expected) {
-                System.out.println("Unexpected transformation: " + transformation);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            if (e.getClass() != exCls) {
+                throw new RuntimeException("Unexpected Exception", e);
             } else {
-                throw new RuntimeException("Unexpected fail: " + transformation, e);
+                System.out.println(transformation + ": got expected " +
+                        exCls.getName());
             }
         }
     }

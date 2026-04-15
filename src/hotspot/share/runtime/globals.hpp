@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,19 +198,6 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, NUMAInterleaveGranularity, 2*M,                           \
           "Granularity to use for NUMA interleaving on Windows OS")         \
           constraint(NUMAInterleaveGranularityConstraintFunc, AtParse)      \
-                                                                            \
-  product(uintx, NUMAChunkResizeWeight, 20,                                 \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponentially decaying average for "                   \
-          "AdaptiveNUMAChunkSizing")                                        \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
-          "Do not reallocate more than this amount per collection")         \
-          range(0, max_uintx)                                               \
-                                                                            \
-  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
-          "Enable adaptive chunk sizing for NUMA")                          \
                                                                             \
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
@@ -502,7 +489,7 @@ const int ObjectAlignmentInBytes = 8;
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
-          range(0, 17)                                                      \
+          range(0, 18)                                                      \
                                                                             \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
@@ -809,9 +796,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
-                                                                            \
-  product(bool, UseXMMForArrayCopy, false,                                  \
-          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+          range(0, 1024)                                                    \
                                                                             \
   develop(bool, PrintFieldLayout, false,                                    \
           "Print field layout for each class")                              \
@@ -883,20 +868,8 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
-  develop(bool, TraceNewOopMapGeneration, false,                            \
-          "Trace OopMapGeneration")                                         \
-                                                                            \
-  develop(bool, TraceNewOopMapGenerationDetailed, false,                    \
-          "Trace OopMapGeneration: print detailed cell states")             \
-                                                                            \
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
-                                                                            \
-  develop(bool, TimeOopMap2, false,                                         \
-          "Time calls to GenerateOopMap::compute_map() individually")       \
-                                                                            \
-  develop(bool, TraceOopMapRewrites, false,                                 \
-          "Trace rewriting of methods during oop map generation")           \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
@@ -1369,6 +1342,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
+          range(0, 100)                                                     \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
@@ -1393,9 +1367,6 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
           constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
-                                                                            \
-  product(bool, UseCompressedClassPointers, true,                           \
-          "(Deprecated) Use 32-bit class pointers.")                        \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
@@ -1506,8 +1477,9 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 1024)                                                    \
           constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
-  product_pd(intx, CodeEntryAlignment, EXPERIMENTAL,                        \
-          "Code entry alignment for generated code (in bytes)")             \
+  product_pd(uint, CodeEntryAlignment, EXPERIMENTAL,                        \
+          "Code entry alignment for generated code"                         \
+          " (in bytes, power of two)")                                      \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
@@ -1542,6 +1514,10 @@ const int ObjectAlignmentInBytes = 8;
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
+  product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
+          "Size of code heap with predicted hot methods (in bytes)")        \
+          range(0, SIZE_MAX)                                                \
+                                                                            \
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
           range(32*K, SIZE_MAX)                                             \
@@ -1564,6 +1540,9 @@ const int ObjectAlignmentInBytes = 8;
   product(uintx, StartAggressiveSweepingAt, 10,                             \
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
+                                                                            \
+  product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
+          "Enables use of experimental function nmethod::relocate()")       \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
@@ -1668,8 +1647,9 @@ const int ObjectAlignmentInBytes = 8;
           "putback")                                                        \
                                                                             \
   /* new oopmap storage allocation */                                       \
-  develop(intx, MinOopMapAllocation,     8,                                 \
+  develop(int, MinOopMapAllocation, 8,                                      \
           "Minimum number of OopMap entries in an OopMapSet")               \
+          range(0, max_jint)                                                \
                                                                             \
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
@@ -1950,15 +1930,15 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
-          "With Lightweight Locking mode, use a table to record inflated "  \
-          "monitors rather than the first word of the object.")             \
+  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
+          "Use a table to record inflated monitors rather than the first "  \
+          "word of the object.")                                            \
                                                                             \
-  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
-          "Specifies the number of times lightweight fast locking will "    \
-          "attempt to CAS the markWord before inflating. Between each "     \
-          "CAS it will spin for exponentially more time, resulting in "     \
-          "a total number of spins on the order of O(2^value)")             \
+  product(int, FastLockingSpins, 13, DIAGNOSTIC,                            \
+          "Specifies the number of times fast locking will attempt to "     \
+          "CAS the markWord before inflating. Between each CAS it will "    \
+          "spin for exponentially more time, resulting in a total number "  \
+          "of spins on the order of O(2^value)")                            \
           range(1, 30)                                                      \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \

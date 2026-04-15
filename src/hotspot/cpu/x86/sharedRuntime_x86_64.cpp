@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1007,8 +1007,8 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  address i2c_entry = __ pc();
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  entry_address[AdapterBlob::I2C] = __ pc();
 
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
@@ -1021,7 +1021,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   // On exit from the interpreter, the interpreter will restore our SP (lest the
   // compiled code, which relies solely on SP and not RBP, get sick).
 
-  address c2i_unverified_entry = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified] = __ pc();
   Label skip_fixup;
 
   Register data = rax;
@@ -1039,37 +1039,33 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
-    Register method = rbx;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
+  Register method = rbx;
 
-    { // Bypass the barrier for non-static methods
-      Register flags = rscratch1;
-      __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
-      __ testl(flags, JVM_ACC_STATIC);
-      __ jcc(Assembler::zero, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  Register flags = rscratch1;
+  __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
+  __ testl(flags, JVM_ACC_STATIC);
+  __ jcc(Assembler::zero, L_skip_barrier); // non-static
 
-    Register klass = rscratch1;
-    __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
+  Register klass = rscratch1;
+  __ load_method_holder(klass, method);
+  __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
-    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
-    __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -1354,11 +1350,8 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------
@@ -1382,49 +1375,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // rax may hold an exception oop, save it before the call
-    __ push(rax);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    __ pop(rax);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
   __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
@@ -1952,7 +1902,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = r10;
     __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
@@ -2189,7 +2140,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
-    __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
+    __ fast_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -2314,7 +2265,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+    __ fast_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);
@@ -3650,4 +3601,3 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
-

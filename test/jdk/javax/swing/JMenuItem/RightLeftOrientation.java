@@ -45,7 +45,7 @@
 
 /*
  * @test id=windows
- * @bug 4211052
+ * @bug 4211052 8370465
  * @requires (os.family == "windows")
  * @summary Verifies if menu items lay out correctly when their
  *     ComponentOrientation property is set to RIGHT_TO_LEFT.
@@ -153,6 +153,16 @@ public class RightLeftOrientation {
         menuItem = new JMenuItem("Text leads icon", new MyMenuItemIcon());
         menuItem.setComponentOrientation(o);
         menuItem.setHorizontalTextPosition(SwingConstants.LEADING);
+        menu.add(menuItem);
+
+        menuItem = new JMenuItem("Text to the left", new MyMenuItemIcon());
+        menuItem.setComponentOrientation(o);
+        menuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        menu.add(menuItem);
+
+        menuItem = new JMenuItem("Text to the right", new MyMenuItemIcon());
+        menuItem.setComponentOrientation(o);
+        menuItem.setHorizontalTextPosition(SwingConstants.RIGHT);
         menu.add(menuItem);
 
         menuItem = new JRadioButtonMenuItem("Radio Button Menu Item");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 import static jdk.jpackage.internal.model.LauncherShortcut.toRequest;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -51,6 +50,7 @@ import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
+import jdk.jpackage.internal.util.Enquoter;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 
@@ -67,7 +67,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
+    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) {
 
         associations = launcher.fileAssociations().stream().map(
                 LinuxFileAssociation::create).toList();
@@ -81,18 +81,12 @@ final class DesktopIntegration extends ShellCustomAction {
         //  - user explicitly requested to create a shortcut
         boolean withDesktopFile = !associations.isEmpty() || toRequest(launcher.shortcut()).orElse(false);
 
-        var curIconResource = createLauncherIconResource(pkg.app(), launcher,
-                env::createResource);
-
-        if (curIconResource.isEmpty()) {
+        if (!launcher.hasIcon()) {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
-        } else {
-            final Path nullPath = null;
-            if (curIconResource.get().saveToFile(nullPath) != OverridableResource.Source.DefaultResource) {
-                // This launcher has custom icon configured.
-                withDesktopFile = true;
-            }
+        } else if (launcher.hasCustomIcon()) {
+            // This launcher has custom icon configured.
+            withDesktopFile = true;
         }
 
         desktopFileResource = env.createResource("template.desktop")
@@ -114,17 +108,12 @@ final class DesktopIntegration extends ShellCustomAction {
         if (withDesktopFile) {
             desktopFile = Optional.of(createDesktopFile(desktopFileName));
             iconFile = Optional.of(createDesktopFile(escapedAppFileName + ".png"));
-
-            if (curIconResource.isEmpty()) {
-                // Create default icon.
-                curIconResource = createLauncherIconResource(pkg.app(), pkg.app().mainLauncher().orElseThrow(), env::createResource);
-            }
         } else {
             desktopFile = Optional.empty();
             iconFile = Optional.empty();
         }
 
-        iconResource = curIconResource;
+        iconResource = createLauncherIconResource(launcher, env::createResource);
 
         desktopFileData = createDataForDesktopFile();
 
@@ -135,13 +124,13 @@ final class DesktopIntegration extends ShellCustomAction {
                 return (LinuxLauncher)v;
             }).filter(l -> {
                 return toRequest(l.shortcut()).orElse(true);
-            }).map(toFunction(l -> {
+            }).map(l -> {
                 return new DesktopIntegration(env, pkg, l);
-            })).toList();
+            }).toList();
         }
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }

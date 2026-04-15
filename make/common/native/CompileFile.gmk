@@ -94,6 +94,14 @@ DEPENDENCY_TARGET_SED_PATTERN := \
     #
 
 ################################################################################
+# Setup compiler-specific argument to specify output file
+ifeq ($(call isCompiler, microsoft), true)
+  CC_OUT_OPTION := -Fo
+else
+  CC_OUT_OPTION := -o$(SPACE)
+endif
+
+################################################################################
 # Create the recipe needed to compile a single native source file.
 #
 # Parameter 1 is the name of the rule, based on the name of the library/
@@ -334,7 +342,7 @@ define CreateWindowsResourceFile
 		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$($1_BASENAME)))
 		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
 		$$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
-		    $$($1_RC) $$($1_RCFLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_RC) $$($1_RCFLAGS) $$($1_SYSROOT_CFLAGS) -Fo$$@ \
 		    $$($1_VERSIONINFO_RESOURCE) 2>&1 ))
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL
                 # for this. Filter out RC specific arguments that are unknown to CL.
@@ -344,7 +352,7 @@ define CreateWindowsResourceFile
 		$$(call ExecuteWithLog, $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX), \
 		    $$($1_CC) $$(filter-out -l%, $$($1_RCFLAGS)) \
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		        $(CC_OUT_OPTION)$$($1_RES_DEPS_FILE)$(OBJ_SUFFIX) -P -Fi$$($1_RES_DEPS_FILE).pp \
+		        -Fo$$($1_RES_DEPS_FILE)$(OBJ_SUFFIX) -P -Fi$$($1_RES_DEPS_FILE).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
 		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \

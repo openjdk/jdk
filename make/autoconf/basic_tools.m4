@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -363,12 +363,16 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Check if it's a GNU date compatible version
   AC_MSG_CHECKING([if date is a GNU compatible version])
-  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox\|uutils"`
   if test "x$check_date" != x; then
     AC_MSG_RESULT([yes])
     IS_GNU_DATE=yes
   else
     AC_MSG_RESULT([no])
+    # Likely at the AIX provided version of the date utility here, which is not compatible
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      AC_MSG_ERROR([gnu date from AIX toolbox is required])
+    fi
     IS_GNU_DATE=no
   fi
   AC_SUBST(IS_GNU_DATE)

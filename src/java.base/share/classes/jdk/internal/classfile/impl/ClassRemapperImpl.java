@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
             case Signature.ClassTypeSig cts ->
                 Signature.ClassTypeSig.of(
                         cts.outerType().map(this::mapSignature).orElse(null),
-                        map(cts.classDesc()),
+                        Util.toInternalName(map(cts.classDesc())),
                         cts.typeArgs().stream().map(ta -> switch (ta) {
                             case Signature.TypeArg.Unbounded u -> u;
                             case Signature.TypeArg.Bounded bta -> Signature.TypeArg.bounded(

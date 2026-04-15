@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,9 +410,9 @@ class SuperWord : public ResourceObj {
   PairSet _pairset;
   PackSet _packset;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
  public:
@@ -549,8 +549,6 @@ class SuperWord : public ResourceObj {
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  int            _num_work_vecs;   // Number of non memory vector operations
-  int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
   Arena* arena()                   { return &_arena; }
@@ -655,9 +653,9 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const;
 
-  bool schedule_and_apply() const;
+  bool do_vtransform() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

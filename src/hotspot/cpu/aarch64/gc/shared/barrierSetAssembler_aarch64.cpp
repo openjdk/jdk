@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,14 +398,18 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 OptoReg::Name BarrierSetAssembler::encode_float_vector_register_size(const Node* node, OptoReg::Name opto_reg) {
   switch (node->ideal_reg()) {
     case Op_RegF:
+    case Op_RegI: // RA may place scalar values (Op_RegI/N/L/P) in FP registers when UseFPUForSpilling is enabled
+    case Op_RegN:
       // No need to refine. The original encoding is already fine to distinguish.
-      assert(opto_reg % 4 == 0, "Float register should only occupy a single slot");
+      assert(opto_reg % 4 == 0, "32-bit register should only occupy a single slot");
       break;
     // Use different encoding values of the same fp/vector register to help distinguish different sizes.
     // Such as V16. The OptoReg::name and its corresponding slot value are
     // "V16": 64, "V16_H": 65, "V16_J": 66, "V16_K": 67.
     case Op_RegD:
     case Op_VecD:
+    case Op_RegL:
+    case Op_RegP:
       opto_reg &= ~3;
       opto_reg |= 1;
       break;
@@ -435,6 +439,11 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
   }
 
   return opto_reg;
+}
+
+void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle.
+  __ ldr(obj, Address(obj));
 }
 
 #undef __

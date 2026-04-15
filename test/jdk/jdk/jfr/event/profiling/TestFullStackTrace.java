@@ -32,6 +32,7 @@ import jdk.test.lib.jfr.EventNames;
  * @library /test/lib
  * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
  * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
+ * @run main/othervm -XX:CompileCommand=compileonly,jdk.test.lib.jfr.RecurseThread::recurse* -XX:+PreserveFramePointer jdk.jfr.event.profiling.TestFullStackTrace
  */
 public class TestFullStackTrace {
 

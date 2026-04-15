@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,12 @@ class CDSConfig : public AllStatic {
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
-  static const int IS_DUMPING_ARCHIVE              = 1 << 0;
-  static const int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
-  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
-  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
-  static const int IS_USING_ARCHIVE                = 1 << 4;
+  static const int IS_DUMPING_AOT_LINKED_CLASSES   = 1 << 0;
+  static const int IS_DUMPING_ARCHIVE              = 1 << 1;
+  static const int IS_DUMPING_METHOD_HANDLES       = 1 << 2;
+  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 3;
+  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 4;
+  static const int IS_USING_ARCHIVE                = 1 << 5;
 
   static int get_status() NOT_CDS_RETURN_(0);
 
@@ -186,7 +187,9 @@ public:
   static void disable_heap_dumping()                         { CDS_ONLY(_disable_heap_dumping = true); }
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_loading_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static bool is_initing_classes_at_dump_time()              NOT_CDS_JAVA_HEAP_RETURN_(false);
+
+  static bool is_dumping_klass_subgraphs()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_using_klass_subgraphs()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static bool is_dumping_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_dumping_method_handles()                    NOT_CDS_JAVA_HEAP_RETURN_(false);

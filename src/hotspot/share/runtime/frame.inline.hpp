@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,10 @@ inline address frame::get_deopt_original_pc() const {
 
   nmethod* nm = _cb->as_nmethod_or_null();
   if (nm != nullptr && nm->is_deopt_pc(_pc)) {
-    return nm->get_original_pc(this);
+    address original_pc = nm->get_original_pc(this);
+    assert(nm->insts_contains_inclusive(original_pc),
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
+    return original_pc;
   }
   return nullptr;
 }

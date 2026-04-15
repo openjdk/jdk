@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,11 +175,13 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static bool is_jfr_event_class(InstanceKlass *k);
+  static void link_all_exclusion_check_candidates(InstanceKlass* ik);
   static bool should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info);
 
   // exclusion checks
   static void check_exclusion_for_self_and_dependencies(InstanceKlass *k);
   static bool check_self_exclusion(InstanceKlass* k);
+  static const char* check_self_exclusion_helper(InstanceKlass* k, bool& log_warning);
   static bool check_dependencies_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static bool check_verification_constraint_exclusion(InstanceKlass* k, Symbol* constraint_class_name);
   static bool is_dependency_excluded(InstanceKlass* k, InstanceKlass* dependency, const char* type);
@@ -197,7 +199,6 @@ private:
   static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
-  static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);
   static void set_has_archived_enum_objs(InstanceKlass* ik);
 
@@ -234,6 +235,7 @@ public:
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
 
+  static void check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) NOT_CDS_RETURN;
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,
                                            Handle protection_domain,
@@ -277,7 +279,7 @@ public:
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
   static void set_from_class_file_load_hook(InstanceKlass* k) NOT_CDS_RETURN;
-  static bool warn_excluded(InstanceKlass* k, const char* reason);
+  static void log_exclusion(InstanceKlass* k, const char* reason, bool is_warning = false);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive(bool is_static_archive = true);
   static void serialize_dictionary_headers(class SerializeClosure* soc,

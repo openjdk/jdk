@@ -278,11 +278,9 @@ bool Runtime1::initialize(BufferBlob* blob) {
     if (!generate_blob_for(blob, id)) {
       return false;
     }
-    if (id == StubId::c1_forward_exception_id) {
-      // publish early c1 stubs at this point so later stubs can refer to them
-      AOTCodeCache::init_early_c1_table();
-    }
   }
+  // disallow any further c1 stub generation
+  AOTCodeCache::set_c1_stubs_complete();
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
@@ -541,9 +539,7 @@ extern void vm_exit(int code);
 // unpack_with_exception entry instead. This makes life for the exception blob easier
 // because making that same check and diverting is painful from assembly language.
 JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* current, oopDesc* ex, address pc, nmethod*& nm))
-  // Reset method handle flag.
-  current->set_is_method_handle_return(false);
-
+  MACOS_AARCH64_ONLY(current->wx_enable_write());
   Handle exception(current, ex);
 
   // This function is called when we are about to throw an exception. Therefore,
@@ -622,8 +618,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   if (guard_pages_enabled) {
     address fast_continuation = nm->handler_for_exception_and_pc(exception, pc);
     if (fast_continuation != nullptr) {
-      // Set flag if return address is a method handle call site.
-      current->set_is_method_handle_return(nm->is_method_handle_return(pc));
       return fast_continuation;
     }
   }
@@ -660,8 +654,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   }
 
   current->set_vm_result_oop(exception());
-  // Set flag if return address is a method handle call site.
-  current->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
   if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,8 @@ public:
 
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
+
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 };
 
 #endif // CPU_X86_STUBROUTINES_X86_HPP

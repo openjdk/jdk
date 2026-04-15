@@ -47,17 +47,15 @@ final class PostHandshakeContext extends HandshakeContext {
             context.conSession.getLocalSupportedSignatureSchemes());
 
         // Add the potential post-handshake consumers.
-        if (context.sslConfig.isClientMode) {
+        if (!context.sslConfig.isQuic) {
             handshakeConsumers.putIfAbsent(
                     SSLHandshake.KEY_UPDATE.id,
                     SSLHandshake.KEY_UPDATE);
+        }
+        if (context.sslConfig.isClientMode) {
             handshakeConsumers.putIfAbsent(
                     SSLHandshake.NEW_SESSION_TICKET.id,
                     SSLHandshake.NEW_SESSION_TICKET);
-        } else {
-            handshakeConsumers.putIfAbsent(
-                    SSLHandshake.KEY_UPDATE.id,
-                    SSLHandshake.KEY_UPDATE);
         }
 
         handshakeFinished = true;
@@ -93,6 +91,15 @@ final class PostHandshakeContext extends HandshakeContext {
 
     static boolean isConsumable(TransportContext context, byte handshakeType) {
         if (handshakeType == SSLHandshake.KEY_UPDATE.id) {
+            // Quic doesn't allow KEY_UPDATE TLS message. It has its own
+            // Quic-specific key update mechanism, RFC-9001, section 6:
+            // Endpoints MUST NOT send a TLS KeyUpdate message. Endpoints
+            // MUST treat the receipt of a TLS KeyUpdate message as a
+            // connection error of type 0x010a, equivalent to a fatal
+            // TLS alert of unexpected_message;
+            if (context.sslConfig.isQuic) {
+                return false;
+            }
             // The KeyUpdate handshake message does not apply to TLS 1.2 and
             // previous protocols.
             return context.protocolVersion.useTLS13PlusSpec();
