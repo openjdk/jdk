@@ -41,7 +41,18 @@
 #define CHECK_BAILOUT() { if (ce->compilation()->bailed_out()) return; }
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
-  ShouldNotReachHere();
+  __ bind(_entry);
+  address safepoint_pc = ce->masm()->pc() - ce->masm()->offset() + safepoint_offset();
+
+  __ load_const_optimized(Z_R1_scratch, (intptr_t)safepoint_pc);
+  __ z_stg(Z_R1_scratch, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
+
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+         "polling page return stub not created yet");
+
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  __ load_const_optimized(Z_R1_scratch, (intptr_t)stub);
+  __ z_br(Z_R1_scratch);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {

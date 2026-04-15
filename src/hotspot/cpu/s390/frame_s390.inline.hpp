@@ -336,7 +336,7 @@ inline void frame::set_offset_unextended_sp(int value) {
 //------------------------------------------------------------------------------
 // frame::sender
 
-inline frame frame::sender(RegisterMap* map) const {
+inline frame frame::sender_raw(RegisterMap* map) const {
   // Default is we don't have to follow them. The sender_for_xxx will
   // update it accordingly.
   map->set_include_argument_oops(false);
@@ -351,6 +351,16 @@ inline frame frame::sender(RegisterMap* map) const {
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
   return frame(sender_sp(), sender_pc());
+}
+
+inline frame frame::sender(RegisterMap* map) const {
+  frame result = sender_raw(map);
+
+  if (map->process_frames()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
 }
 
 inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
