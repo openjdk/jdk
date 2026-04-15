@@ -25,7 +25,7 @@ package compiler.c2.igvn;
 
 /*
  * @test
- * @bug JDK-8375645
+ * @bug 8375645
  * @summary In PhiNode::Ideal, we attempt to split phis through memory merges.
  *          While doing that, we might end up creating new phis that conflict
  *          with existing ones (same region and slice). This creates an
