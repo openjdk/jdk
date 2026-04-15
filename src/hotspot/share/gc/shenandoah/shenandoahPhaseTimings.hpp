@@ -108,8 +108,8 @@ class outputStream;
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
-  f(conc_evac,                                      "Concurrent Evacuation")           \
   f(conc_final_roots,                               "Concurrent Final Roots")          \
+  f(conc_evac,                                      "Concurrent Evacuation")           \
   f(promote_in_place,                               "  Promote Regions")               \
   f(final_roots_gross,                              "Pause Verify Final Roots (G)")    \
   f(final_roots,                                    "Pause Verify Final Roots (N)")    \
