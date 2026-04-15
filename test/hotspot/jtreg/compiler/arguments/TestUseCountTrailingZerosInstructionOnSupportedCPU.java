@@ -67,7 +67,7 @@ public class TestUseCountTrailingZerosInstructionOnSupportedCPU
                 TestUseCountTrailingZerosInstructionOnSupportedCPU.DISABLE_BMI);
 
         /*
-          Verify that option cannot be turned on when BMI1 instructions 
+          Verify that option cannot be turned on when BMI1 instructions
           are explicitly turned off. VM will be launched with following
           options: -XX:-UseBMI1Instructions
           -XX:+UseCountTrailingZerosInstruction -version
