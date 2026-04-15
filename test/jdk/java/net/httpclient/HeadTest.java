@@ -27,7 +27,7 @@
  * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

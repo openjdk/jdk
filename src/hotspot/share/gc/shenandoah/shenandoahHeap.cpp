@@ -261,7 +261,7 @@ jint ShenandoahHeap::initialize() {
   //
   // Worker threads must be initialized after the barrier is configured
   //
-  _workers = new ShenandoahWorkerThreads("Shenandoah GC Threads", _max_workers);
+  _workers = new ShenandoahWorkerThreads("ShenWorker", _max_workers);
   if (_workers == nullptr) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
@@ -1182,20 +1182,20 @@ public:
     }
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-      assert(plab != nullptr, "PLAB should be initialized for %s", thread->name());
+      ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+      assert(shenandoah_plab != nullptr, "PLAB should be initialized for %s", thread->name());
 
       // There are two reasons to retire all plabs between old-gen evacuation passes.
       //  1. We need to make the plab memory parsable by remembered-set scanning.
       //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab, thread);
+      shenandoah_plab->retire();
 
       // Re-enable promotions for the next evacuation phase.
-      ShenandoahThreadLocalData::enable_plab_promotions(thread);
+      shenandoah_plab->enable_promotions();
 
       // Reset the fill size for next evacuation phase.
-      if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
-        ShenandoahThreadLocalData::set_plab_size(thread, 0);
+      if (_resize && shenandoah_plab->desired_size() > 0) {
+        shenandoah_plab->set_desired_size(0);
       }
     }
   }
@@ -1353,12 +1353,21 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   // Copy the object:
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
-  // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
+
+  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+  // relativize derived pointers and set gc_mode before that happens. Skip if the
+  // copy's mark word is already a forwarding pointer (another thread won the race
+  // and overwrote the original's header before we copied it).
+  if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
+  }
+
+  // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
     if (ShenandoahEvacTracking) {
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
@@ -1465,9 +1474,9 @@ public:
     assert(gclab->words_remaining() == 0, "GCLAB should not need retirement");
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-      assert(plab != nullptr, "PLAB should be initialized for %s", thread->name());
-      assert(plab->words_remaining() == 0, "PLAB should not need retirement");
+      ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+      assert(shenandoah_plab != nullptr, "PLAB should be initialized for %s", thread->name());
+      assert(shenandoah_plab->plab()->words_remaining() == 0, "PLAB should not need retirement");
     }
   }
 };
@@ -2700,10 +2709,7 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
 }
 
 MemoryUsage ShenandoahHeap::memory_usage() {
-  assert(_initial_size <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  assert(used() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  assert(committed() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  return MemoryUsage(_initial_size, used(), committed(), max_capacity());
+  return shenandoah_memory_usage(_initial_size, used(), committed(), max_capacity());
 }
 
 ShenandoahRegionIterator::ShenandoahRegionIterator() :
