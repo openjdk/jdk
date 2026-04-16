@@ -103,7 +103,12 @@ static address limb_0() {
   return (address)LIMB0;
 }
 
-ATTRIBUTE_ALIGNED(64) static const uint64_t TERM = 0x13;
+ATTRIBUTE_ALIGNED(64) static const uint64_t TERM[] = {
+  0x0000000000000013ULL, 0x0000000000000013ULL,
+  0x0000000000000013ULL, 0x0000000000000013ULL,
+  0x0000000000000013ULL, 0x0000000000000013ULL,
+  0x0000000000000013ULL, 0x0000000000000013ULL
+};
 static address term() {
   return (address)TERM;
 }
@@ -226,7 +231,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Pseudo-Marsenne reduction
   // The term is only 5 bits, the limbs 51 bits, and the elements are 64 bits,
   // therefore a scalar multiplication will not overflow the element radix here
-  __ vpbroadcastq(B, ExternalAddress(term()), Assembler::AVX_512bit);
+  __ evmovdqaq(B, allLimbs, ExternalAddress(term()), false, Assembler::AVX_512bit);
   __ evpmullq(Acc1, allLimbs, Acc1, B, false, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, allLimbs, Acc1L, Acc1, false, Assembler::AVX_512bit);
 
