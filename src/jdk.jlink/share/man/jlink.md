@@ -241,9 +241,9 @@ Options
 :   `--cacerts=`*alias*\[`,`*alias*\]\*
 
 Description
-:   Create the `cacerts` keystore in the output image with the certificates of
-    the specified aliases only. *alias* is the name of an alias in the
-    `cacerts` keystore.
+:   Create the `cacerts` keystore in the output image with only the
+    certificates of the specified aliases. *alias* is the name of an alias
+    in the `cacerts` keystore in the java.base module.
 
 ## jlink Examples
 
