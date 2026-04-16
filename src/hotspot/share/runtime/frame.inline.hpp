@@ -84,7 +84,12 @@ inline address frame::get_deopt_original_pc() const {
   return nullptr;
 }
 
-inline void frame::set_deopt_state() {
+inline bool frame::is_deoptimized_frame() const {
+  assert(_deopt_state != unknown, "not answerable");
+  return _deopt_state == is_deoptimized;
+}
+
+inline void frame::set_deoptimized() {
   assert(is_compiled_frame(), "invalid operation");
   assert(_cb == CodeCache::find_blob(_pc), "invalid _pc");
   DEBUG_ONLY(nmethod* nm = _cb->as_nmethod();)

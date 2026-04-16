@@ -2868,7 +2868,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   assert(!f.is_deoptimized_frame(), "");
   if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
-    f.set_deopt_state();
+    f.set_deoptimized();
   } else if (_thread->is_interp_only_mode()
               || (stub_caller && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
