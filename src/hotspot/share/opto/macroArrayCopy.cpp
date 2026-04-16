@@ -1010,6 +1010,17 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
     // This is a common case, since abase can be odd mod 8.
     if (((src_off | dest_off) & (BytesPerLong-1)) == BytesPerInt &&
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
+      if (dest_uninitialized) {
+        // When the destination is an uninitialized tightly-coupled allocation,
+        // the typed load created here for the source can be incorrectly
+        // optimized to zero by the IGVN. This happens because the source
+        // array may have been initialized by an arraycopy (e.g. clone) that
+        // wrote to raw memory, while the typed memory slice still appears
+        // uninitialized. Bail out and let the arraycopy stub handle the
+        // unaligned copy. This is triggered by compact object headers where
+        // the array data offset (12) is not 8-byte aligned.
+        return false;
+      }
       Node* sptr = basic_plus_adr(src,  src_off);
       Node* dptr = basic_plus_adr(dest, dest_off, adr_type == TypeRawPtr::BOTTOM);
       const TypePtr* s_adr_type = _igvn.type(sptr)->is_ptr();
