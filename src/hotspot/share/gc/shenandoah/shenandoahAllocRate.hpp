@@ -45,7 +45,7 @@ public:
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
 private:
-  static constexpr size_t MINIMUM_SAMPLE_SIZE = 1024;
+  static constexpr size_t MINIMUM_SAMPLE_SIZE = 1024 * 1024;
 
   volatile size_t _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
@@ -121,15 +121,19 @@ public:
     return _sampled_rates;
   }
 
-  double average() const {
+  double average() {
+    MonitorLocker locker(&_sample_lock);
     return _sampled_rates.avg();
   }
 
-  double upper_bound(const double standard_deviations) const {
-    return _sampled_rates.predict_next() + (standard_deviations * _sampled_rates.dsd());
+  double upper_bound(const double standard_deviations) {
+    MonitorLocker locker(&_sample_lock);
+    const double max_rate = MAX2(_sampled_rates.predict_next(), _sampled_rates.davg());
+    return max_rate + (standard_deviations * _sampled_rates.dsd());
   }
 
-  double predict_next() const {
+  double predict_next() {
+    MonitorLocker locker(&_sample_lock);
     return _sampled_rates.predict_next();
   }
 };

@@ -27,6 +27,8 @@
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 
 class ShenandoahYoungGeneration;
+class ShenandoahOldGeneration;
+class ShenandoahOldHeuristics;
 
 /*
  * This is a specialization of the generational heuristic which chooses
@@ -51,6 +53,10 @@ private:
                                    const RegionData* data,
                                    size_t size, size_t actual_free) const;
 
+  bool old_collection_needs_more_time(ShenandoahOldGeneration* old_generation,
+                                      ShenandoahOldHeuristics* old_heuristics);
+
+  bool trigger_rate(ShenandoahGenerationalHeap *heap, size_t available, size_t capacity);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP

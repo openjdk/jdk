@@ -34,6 +34,9 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(bool, ShenandoahUseNewAllocRate, false, EXPERIMENTAL,             \
+          "Enable experimental alloc rate tracker")                         \
+                                                                            \
   product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
           "When at least this much time (measured in ms) has passed "       \
           "since the acceleration allocation rate was most recently "       \

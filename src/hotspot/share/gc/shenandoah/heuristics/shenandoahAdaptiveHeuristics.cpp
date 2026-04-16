@@ -480,7 +480,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return ShenandoahHeuristics::should_start_gc();
   }
 
-  auto& new_rate = ShenandoahHeap::heap()->alloc_rate();
+  ShenandoahAllocRate<>& new_rate = ShenandoahHeap::heap()->alloc_rate();
   auto old_rate = _allocation_rate.rate()->avg();
   auto old_upper = _allocation_rate.upper_bound(_margin_of_error_sd);
   auto old_next = _allocation_rate.rate()->predict_next();
@@ -892,7 +892,8 @@ double ShenandoahAllocationRate::upper_bound(double sds) const {
   // average, rather than the standard deviation of the samples that went
   // into the moving average. This is a much more stable value and is tied
   // to the actual statistic in use (moving average over samples of averages).
-  return _rate.davg() + (sds * _rate_avg.dsd());
+  const double max_rate = MAX2(_rate.davg(), _rate.predict_next());
+  return max_rate + (sds * _rate_avg.dsd());
 }
 
 void ShenandoahAllocationRate::allocation_counter_reset() {

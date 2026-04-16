@@ -247,7 +247,7 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
-  const ShenandoahAllocRate<>& alloc_rate() {
+  ShenandoahAllocRate<>& alloc_rate() {
     return _alloc_rate;
   }
 
