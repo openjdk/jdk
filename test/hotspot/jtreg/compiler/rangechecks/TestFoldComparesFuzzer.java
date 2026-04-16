@@ -60,10 +60,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * I'm only covering some basic cases to test the fundamental
  * logic inside IfNode::fold_compares_helper. In the future, we could
  * add more cases:
- * - Cases with array length, so a null-check is added between
- *   the two conditions, see test_array_length_and_null_check_1
- * - TODO: IR rule example with arr.length
- *
  * - Extend to long
  * - Add IR rules - Currently difficult because not all cases are
  *   consistently optimized, not all permutations are covered.
@@ -576,16 +572,65 @@ public class TestFoldComparesFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
 
+    // Cases with array length, so a null-check is added between
+    // the two conditions, see test_array_length_and_null_check_1
+    // TODO: IR rule example with arr.length
+    static class TestMethodGeneratorArrLength implements TestMethodGenerator {
+        private final int n_hi = INT_GEN.next();
+        private final int n_lo = INT_GEN.next();
+        private final int a_hi = INT_GEN.next();
+        private final int a_lo = INT_GEN.next();
+        private final int size = INT_GEN.restricted(0, 10_000).next();
+
+        // Get checks like: n < a || n >= arr.length
+        private final Comparison c_lo = new Comparison("n", Comparator.random(), "a").permuteRandom();
+        private final Comparison c_hi = new Comparison("n", Comparator.random(), "arr.length").permuteRandom();
+        private final boolean swap = RANDOM.nextBoolean();
+        private final Comparison c1Permuted = (swap ? c_lo : c_hi).permuteRandom();
+        private final Comparison c2Permuted = (swap ? c_hi : c_lo).permuteRandom();
+        // n >  lo && n <  hi -> check for inside range
+        // n <= lo || n >= hi -> chedk for outside range
+        private final boolean withAnd = RANDOM.nextBoolean();
+        private final String operator = withAnd ? "&&" : "||";
+        private final Comparison c1 = withAnd ? c1Permuted : c1Permuted.negateCmp();
+        private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
+
+        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("n_hi", n_hi),
+            let("n_lo", n_lo),
+            let("a_hi", a_hi),
+            let("a_lo", a_lo),
+            let("size", size),
+            let("c1", c1),
+            let("c2", c2),
+            let("op", operator),
+            """
+            static boolean #methodName(int n, int a, int b) {
+                int[] arr = $arr;
+                n = Math.min(#n_hi, Math.max(#n_lo, n));
+                a = Math.min(#a_hi, Math.max(#a_lo, a));
+                if (#c1 #op #c2) {
+                    return true;
+                }
+                return false;
+            }
+            static int[] $arr = new int[#size];
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+    }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = new TestMethodGeneratorSwitch();
+        TestMethodGenerator tg = new TestMethodGeneratorArrLength();
         // TODO: revert to all cases
-        //TestMethodGenerator tg = switch(RANDOM.nextInt(5)) {
+        //TestMethodGenerator tg = switch(RANDOM.nextInt(6)) {
         //    case 0 -> new TestMethodGeneratorConst();
         //    case 1 -> new TestMethodGeneratorWithIf();
         //    case 2 -> new TestMethodGeneratorRanges();
         //    case 3 -> new TestMethodGeneratorConstIR();
         //    case 4 -> new TestMethodGeneratorSwitch();
+        //    case 5 -> new TestMethodGeneratorArrLength();
         //    default -> throw new RuntimeException("not expected");
         //};
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
