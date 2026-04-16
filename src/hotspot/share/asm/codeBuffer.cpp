@@ -1052,16 +1052,6 @@ void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset
 }
 
 #ifndef PRODUCT
-bool CodeBuffer::collect_comments() {
-  return (  PrintAssembly
-         || PrintStubCode
-         || PrintMethodHandleStubs
-         || PrintInterpreter
-         || PrintSignatureHandlers
-         || (UnlockDiagnosticVMOptions && !AOTCodeCache::maybe_dumping_code())
-         );
-}
-
 void CodeBuffer::block_comment(ptrdiff_t offset, const char* comment) {
   if (insts()->scratch_emit()) {
     return;

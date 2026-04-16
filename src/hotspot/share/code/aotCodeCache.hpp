@@ -629,9 +629,6 @@ public:
   static void disable_caching() NOT_CDS_RETURN;
   static bool is_caching_enabled() NOT_CDS_RETURN_(false);
 
-  // It is used before AOTCodeCache is initialized.
-  static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
-
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
   static void print_on(outputStream* st) NOT_CDS_RETURN;

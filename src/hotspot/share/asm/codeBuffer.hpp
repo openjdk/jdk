@@ -579,7 +579,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   bool         _collect_comments; // Indicate if we need to collect block comments at all.
   address      _decode_begin;     // start address for decode
   address      decode_begin();
-  static bool  collect_comments();
 #endif
 
   void initialize_misc(const char * name) {
@@ -609,7 +608,13 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 #ifndef PRODUCT
     _decode_begin    = nullptr;
     // Collect block comments, but restrict collection to cases where a disassembly is output.
-    _collect_comments = collect_comments();
+    _collect_comments = ( PrintAssembly
+                       || PrintStubCode
+                       || PrintMethodHandleStubs
+                       || PrintInterpreter
+                       || PrintSignatureHandlers
+                       || UnlockDiagnosticVMOptions
+                        );
 #endif
   }
 
