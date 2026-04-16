@@ -58,11 +58,18 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * For more basic examples, see TestFoldCompares.java
  *
  * I'm only covering some basic cases to test the fundamental
- * logic inside IfNode::fold_compares_helper. In the future, we could
- * add more cases:
- * - Extend to long
- * - Add IR rules - Currently difficult because not all cases are
- *   consistently optimized, not all permutations are covered.
+ * logic inside IfNode::fold_compares_helper.
+ * - TestMethodGeneratorConstIR does extensive result and IR verification
+ *   for the cases a-d) in IfNode::fold_compares_helper, but only with
+ *   constant lo and hi.
+ * - Other test generators currently don't have IR rules, but check
+ *   correctness in various relevant scenarios I came across during
+ *   the bugfix of JDK-8346420.
+ *
+ * In the future, we could add more cases:
+ * - Extend to long - though the optimization does not yet cover longs anyway.
+ * - More IR rules: difficult to make stable. Not all permutations are covered
+ *   by the optimizations, edge-cases could make IR rules brittle.
  */
 public class TestFoldComparesFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -539,7 +546,7 @@ public class TestFoldComparesFuzzer {
 
     // switch cases can also be implemented with range checks using
     // constants, and then we can optimize 2 CmpI with a single CmpU,
-    // at least in some cases
+    // at least in some cases.
     static class TestMethodGeneratorSwitch implements TestMethodGenerator {
         Set<Short> cases = new HashSet<>();
         { // instance initializer
@@ -572,15 +579,15 @@ public class TestFoldComparesFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
 
-    // Cases with array length, so a null-check is added between
-    // the two conditions, see test_array_length_and_null_check_1
-    // TODO: IR rule example with arr.length
+    // If arr.length is in the second check, the null-check for arr
+    // is located between the two checks.
+    // I'm not adding any IR rules here, just checking for correctness.
     static class TestMethodGeneratorArrLength implements TestMethodGenerator {
         private final int n_hi = INT_GEN.next();
         private final int n_lo = INT_GEN.next();
         private final int a_hi = INT_GEN.next();
         private final int a_lo = INT_GEN.next();
-        private final int size = INT_GEN.restricted(0, 10_000).next();
+        private final int size = INT_GEN.restricted(0, 100_000).next();
 
         // Get checks like: n < a || n >= arr.length
         private final Comparison c_lo = new Comparison("n", Comparator.random(), "a").permuteRandom();
@@ -622,17 +629,15 @@ public class TestFoldComparesFuzzer {
     }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = new TestMethodGeneratorArrLength();
-        // TODO: revert to all cases
-        //TestMethodGenerator tg = switch(RANDOM.nextInt(6)) {
-        //    case 0 -> new TestMethodGeneratorConst();
-        //    case 1 -> new TestMethodGeneratorWithIf();
-        //    case 2 -> new TestMethodGeneratorRanges();
-        //    case 3 -> new TestMethodGeneratorConstIR();
-        //    case 4 -> new TestMethodGeneratorSwitch();
-        //    case 5 -> new TestMethodGeneratorArrLength();
-        //    default -> throw new RuntimeException("not expected");
-        //};
+        TestMethodGenerator tg = switch(RANDOM.nextInt(6)) {
+            case 0 -> new TestMethodGeneratorConst();
+            case 1 -> new TestMethodGeneratorWithIf();
+            case 2 -> new TestMethodGeneratorRanges();
+            case 3 -> new TestMethodGeneratorConstIR();
+            case 4 -> new TestMethodGeneratorSwitch();
+            case 5 -> new TestMethodGeneratorArrLength();
+            default -> throw new RuntimeException("not expected");
+        };
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
         Template.OneArg<String> testMethodTemplate = tg.getTestTemplate();
         Template.ZeroArgs testIRTemplate = tg.getIRTemplate(warmup >= 10_000);
