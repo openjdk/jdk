@@ -125,9 +125,27 @@ public class OpensslArtifactFetcher {
     }
 
     private static String getDefaultSystemOpensslPath(String version) {
-        String absolutePath = getOpenSslAbsolutePath();
-        if (verifyOpensslVersion(absolutePath, version)) {
-            return absolutePath;
+        System.out.println("Expected Openssl version is: "+version);
+        if (Platform.isWindows()) {
+            String output = null;
+            String windowsPath = null;
+            String cygwinPath = null;
+            try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("openssl","version","-d");
+            output = outputAnalyzer.getOutput();
+            cygwinPath = output.split(":")[1].trim().replace("\"", "");
+            System.out.println("cygwinPath: "+cygwinPath);
+            OutputAnalyzer windowsOutput = ProcessTools.executeProcess("cygpath", "-w", cygwinPath);
+            System.out.println("windowsPath: "+windowsPath);
+           } catch(Throwable t) {
+             t.printStackTrace();
+           }
+           return windowsPath;
+        } else {
+           String absolutePath = getOpenSslAbsolutePath();
+           if (verifyOpensslVersion(absolutePath, version)) {
+               return absolutePath;
+           }
         }
         return null;
     }
