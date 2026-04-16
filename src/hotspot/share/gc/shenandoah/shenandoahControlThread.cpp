@@ -45,7 +45,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _requested_gc_cause(GCCause::_no_gc),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true) {
-  set_name("Shenandoah Control Thread");
+  set_name("ShenControl");
   create_and_start();
 }
 
@@ -138,7 +138,10 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      heap->reset_bytes_allocated_since_gc_start();
+      if (mode != stw_degenerated) {
+        // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
+        heap->reset_bytes_allocated_since_gc_start();
+      }
 
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 

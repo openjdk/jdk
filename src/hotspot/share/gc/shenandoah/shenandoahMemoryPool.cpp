@@ -48,25 +48,7 @@ ShenandoahMemoryPool::ShenandoahMemoryPool(ShenandoahHeap* heap,
 
 
 MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
-  size_t initial   = initial_size();
-  size_t max       = max_size();
-  size_t used      = used_in_bytes();
-  size_t committed = _heap->committed();
-
-  // These asserts can never fail: max is stable, and all updates to other values never overflow max.
-  assert(initial <= max,    "initial: %zu, max: %zu",   initial,   max);
-  assert(used <= max,       "used: %zu, max: %zu",      used,      max);
-  assert(committed <= max,  "committed: %zu, max: %zu", committed, max);
-
-  // Committed and used are updated concurrently and independently. They can momentarily break
-  // the assert below, which would also fail in downstream code. To avoid that, adjust values
-  // to make sense under the race. See JDK-8207200.
-  committed = MAX2(used, committed);
-  assert(used <= committed, "used: %zu, committed: %zu", used, committed);
-  assert(initial <= _heap->max_capacity(), "sanity");
-  assert(committed <= _heap->max_capacity(), "sanity");
-  assert(max <= _heap->max_capacity(), "sanity");
-  return MemoryUsage(initial, used, committed, max);
+  return shenandoah_memory_usage(initial_size(), used_in_bytes(), _heap->committed(), max_size());
 }
 
 size_t ShenandoahMemoryPool::used_in_bytes() {
@@ -83,16 +65,7 @@ ShenandoahGenerationalMemoryPool::ShenandoahGenerationalMemoryPool(ShenandoahHea
         _generation(generation) { }
 
 MemoryUsage ShenandoahGenerationalMemoryPool::get_memory_usage() {
-  size_t initial   = initial_size();
-  size_t max       = max_size();
-  size_t used      = used_in_bytes();
-  size_t committed = _generation->used_regions_size();
-
-  assert(initial <= _heap->max_capacity(), "sanity");
-  assert(used <= _heap->max_capacity(), "sanity");
-  assert(committed <= _heap->max_capacity(), "sanity");
-  assert(max <= _heap->max_capacity(), "sanity");
-  return MemoryUsage(initial, used, committed, max);
+  return shenandoah_memory_usage(initial_size(), used_in_bytes(), _generation->used_regions_size(), max_size());
 }
 
 size_t ShenandoahGenerationalMemoryPool::used_in_bytes() {
