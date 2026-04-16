@@ -228,7 +228,7 @@ class MemoryAccess : StackObj {
   }
 
   jboolean normalize_for_read(jboolean x) {
-    return x != 0;
+    return (x & 1) != 0;
   }
 
 public:
