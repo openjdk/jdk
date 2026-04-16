@@ -1169,11 +1169,7 @@ public:
   // Printing
   void print_on(outputStream* st) const override;
   void print_value_on(outputStream* st) const override;
-#if !defined(PRODUCT) || INCLUDE_JVMTI
   void print_class_flags(outputStream* st) const;
-#else
-  void print_class_flags(outputStream* st) const PRODUCT_RETURN;
-#endif
 
   void oop_print_value_on(oop obj, outputStream* st) override;
 

@@ -2289,23 +2289,21 @@ void Method::print_linkage_flags(outputStream* st) const {
 }
 #endif //PRODUCT
 
-#if !defined(PRODUCT) || INCLUDE_JVMTI
 void Method::print_access_flags(outputStream* st) const {
   AccessFlags flags = access_flags();
-  if (flags.is_public       ()) st->print("public ");
-  if (flags.is_private      ()) st->print("private ");
-  if (flags.is_protected    ()) st->print("protected ");
-  if (flags.is_static       ()) st->print("static ");
-  if (flags.is_final        ()) st->print("final ");
-  if (flags.is_synchronized ()) st->print("synchronized ");
-  if (flags.is_bridge       ()) st->print("bridge ");
-  if (flags.has_vararg      ()) st->print("varargs ");
-  if (flags.is_native       ()) st->print("native ");
-  if (flags.is_abstract     ()) st->print("abstract ");
-  if (flags.is_strict_method()) st->print("strict ");
-  if (flags.is_synthetic    ()) st->print("synthetic ");
+  if (flags.is_public      ()) st->print("public ");
+  if (flags.is_private     ()) st->print("private ");
+  if (flags.is_protected   ()) st->print("protected ");
+  if (flags.is_static      ()) st->print("static ");
+  if (flags.is_final       ()) st->print("final ");
+  if (flags.is_synchronized()) st->print("synchronized ");
+  if (flags.is_bridge      ()) st->print("bridge ");
+  if (flags.is_varargs     ()) st->print("varargs ");
+  if (flags.is_native      ()) st->print("native ");
+  if (flags.is_abstract    ()) st->print("abstract ");
+  if (flags.is_strictfp    ()) st->print("strict ");
+  if (flags.is_synthetic   ()) st->print("synthetic ");
 }
-#endif // !defined(PRODUCT) || INCLUDE_JVMTI
 
 void Method::print_value_on(outputStream* st) const {
   assert(is_method(), "must be method");

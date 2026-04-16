@@ -55,13 +55,13 @@ class AccessFlags {
   bool is_volatile    () const         { return (_flags & JVM_ACC_VOLATILE    ) != 0; }
   bool is_bridge      () const         { return (_flags & JVM_ACC_BRIDGE      ) != 0; }
   bool is_transient   () const         { return (_flags & JVM_ACC_TRANSIENT   ) != 0; }
-  bool has_vararg     () const         { return (_flags & JVM_ACC_VARARGS     ) != 0; }
+  bool is_varargs     () const         { return (_flags & JVM_ACC_VARARGS     ) != 0; }
   bool is_native      () const         { return (_flags & JVM_ACC_NATIVE      ) != 0; }
   bool is_enum        () const         { return (_flags & JVM_ACC_ENUM        ) != 0; }
   bool is_annotation  () const         { return (_flags & JVM_ACC_ANNOTATION  ) != 0; }
   bool is_interface   () const         { return (_flags & JVM_ACC_INTERFACE   ) != 0; }
   bool is_abstract    () const         { return (_flags & JVM_ACC_ABSTRACT    ) != 0; }
-  bool is_strict_method() const        { return (_flags & JVM_ACC_STRICT      ) != 0; }
+  bool is_strictfp    () const         { return (_flags & JVM_ACC_STRICT      ) != 0; }
 
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }

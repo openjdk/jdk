@@ -3702,10 +3702,12 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
-#if !defined(PRODUCT) || INCLUDE_JVMTI
 void InstanceKlass::print_class_flags(outputStream* st) const {
-  AccessFlags flags = access_flags();
+  AccessFlags flags(compute_modifier_flags());
+  if (flags.is_private   ()) st->print("private ");
+  if (flags.is_protected ()) st->print("protected ");
   if (flags.is_public    ()) st->print("public ");
+  if (flags.is_static    ()) st->print("static ");
   if (flags.is_final     ()) st->print("final ");
   if (flags.is_interface ()) st->print("interface ");
   if (flags.is_abstract  ()) st->print("abstract ");
@@ -3713,7 +3715,6 @@ void InstanceKlass::print_class_flags(outputStream* st) const {
   if (flags.is_enum      ()) st->print("enum ");
   if (flags.is_synthetic ()) st->print("synthetic ");
 }
-#endif // !defined(PRODUCT) || INCLUDE_JVMTI
 
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");

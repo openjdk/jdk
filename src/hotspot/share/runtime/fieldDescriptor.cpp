@@ -108,7 +108,6 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo
   guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
 
-#if !defined(PRODUCT) || INCLUDE_JVMTI
 void fieldDescriptor::print_access_flags(outputStream* st) const {
   AccessFlags flags = access_flags();
   if (flags.is_public   ()) st->print("public ");
@@ -121,7 +120,6 @@ void fieldDescriptor::print_access_flags(outputStream* st) const {
   if (flags.is_enum     ()) st->print("enum ");
   if (flags.is_synthetic()) st->print("synthetic ");
 }
-#endif // !defined(PRODUCT) || INCLUDE_JVMTI
 
 void fieldDescriptor::print_on(outputStream* st) const {
   print_access_flags(st);

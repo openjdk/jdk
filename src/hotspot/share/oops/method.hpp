@@ -859,11 +859,7 @@ public:
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
-  #if !defined(PRODUCT) || INCLUDE_JVMTI
   void print_access_flags(outputStream* st) const;
-  #else
-  void print_access_flags(outputStream* st) const PRODUCT_RETURN;
-  #endif
   void print_linkage_flags(outputStream* st) const PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }

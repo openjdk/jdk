@@ -95,7 +95,21 @@ TEST_VM(InstanceKlass, class_flag_printer) {
   Klass* thread_state_klass = SystemDictionary::resolve_or_fail(thread_state_symbol, true, THREAD);
   ASSERT_FALSE(THREAD->has_pending_exception()) << "java/lang/Thread$State must resolve";
   InstanceKlass::cast(thread_state_klass)->print_class_flags(&st);
-  ASSERT_STREQ("public final enum ", st.base());
+  ASSERT_STREQ("public static final enum ", st.base());
+
+  st.reset();
+  Symbol* certificate_rep_symbol = SymbolTable::new_symbol("java/security/cert/Certificate$CertificateRep");
+  Klass* certificate_rep_klass = SystemDictionary::resolve_or_fail(certificate_rep_symbol, true, THREAD);
+  ASSERT_FALSE(THREAD->has_pending_exception()) << "java/security/cert/Certificate$CertificateRep must resolve";
+  InstanceKlass::cast(certificate_rep_klass)->print_class_flags(&st);
+  ASSERT_STREQ("protected static ", st.base());
+
+  st.reset();
+  Symbol* arrays_array_list_symbol = SymbolTable::new_symbol("java/util/Arrays$ArrayList");
+  Klass* arrays_array_list_klass = SystemDictionary::resolve_or_fail(arrays_array_list_symbol, true, THREAD);
+  ASSERT_FALSE(THREAD->has_pending_exception()) << "java/util/Arrays$ArrayList must resolve";
+  InstanceKlass::cast(arrays_array_list_klass)->print_class_flags(&st);
+  ASSERT_STREQ("private static ", st.base());
 }
 
 TEST_VM(FieldDescriptor, access_flag_printer) {
