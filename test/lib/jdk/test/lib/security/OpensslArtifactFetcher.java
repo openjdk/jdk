@@ -82,11 +82,11 @@ public class OpensslArtifactFetcher {
         }
         path = getDefaultSystemOpensslPathWithProviderPathPresent(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
-            System.out.println("Using OpenSSL from System Installed Library:"+path);
+            System.out.println("Using OpenSSL from System Installed Library: "+path);
             return path;
         }
         path = getArtifactsFromArtifactory();
-        if(path == null) {
+        if (path == null) {
            throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
                 OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
         }
