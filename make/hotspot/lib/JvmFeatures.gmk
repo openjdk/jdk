@@ -179,6 +179,10 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   ifneq ($(call isCompiler, microsoft), true)
     JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM)
   endif
+  # avoid elimination of Metadata vtable when using LTO (important for serviceability agent)
+  #ifeq ($(call isCompiler, gcc), true)
+  #  JVM_LDFLAGS_FEATURES += -Wl,--undefined=_ZTV8Metadata
+  #endif
 else
   JVM_LTO := false
   ifeq ($(call isCompiler, gcc), true)
