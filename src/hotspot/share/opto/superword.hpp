@@ -432,8 +432,14 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
 
+  // TODO: rm?
   bool reduction(const Node* n1, const Node* n2) const {
     return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
+  }
+
+  bool reduction(const VTransformNode* n1, const VTransformNode* n2) const {
+    assert(false, "TODO impl");
+    return false;
   }
 
   // VLoopMemorySlices accessors
@@ -477,8 +483,15 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.dependency_graph();
   }
 
+  // TODO: rm?
   bool independent(Node* n1, Node* n2) const {
     return _vloop_analyzer.dependency_graph().independent(n1, n2);
+  }
+
+  bool independent(VTransformNode* n1, VTransformNode* n2) const {
+    assert(false, "TODO impl");
+    // TODO: this probably requires getting a dependency graph query on a VTransform
+    return false;
   }
 
   bool mutually_independent(const Node_List* nodes) const {
@@ -544,16 +557,21 @@ private:
   void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
-  bool can_pack_into_pair(Node* s1, Node* s2);
+  bool can_pack_into_pair(Node* s1, Node* s2); // TODO: rm
+  bool can_pack_into_pair(VTransformNode* s1, VTransformNode* s2);
   // Is s1 immediately before s2 in memory?
-  bool are_adjacent_refs(Node* s1, Node* s2) const;
+  bool are_adjacent_refs(Node* s1, Node* s2) const; // TODO: rm
+  bool are_adjacent_refs(VTransformNode* s1, VTransformNode* s2) const;
   // Are s1 and s2 similar?
-  bool isomorphic(Node* s1, Node* s2);
+  bool isomorphic(Node* s1, Node* s2); // TODO: rm
+  bool isomorphic(VTransformNode* s1, VTransformNode* s2);
   // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
-  bool is_populate_index(const Node* n1, const Node* n2) const;
+  bool is_populate_index(const Node* n1, const Node* n2) const; // TODO: rm
+  bool is_populate_index(const VTransformNode* n1, const VTransformNode* n2) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
-  bool have_similar_inputs(Node* s1, Node* s2);
+  bool have_similar_inputs(Node* s1, Node* s2); // TODO: rm
+  bool have_similar_inputs(VTransformNode* s1, VTransformNode* s2);
 
   void extend_pairset_with_more_pairs_by_following_use_and_def();
   bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);

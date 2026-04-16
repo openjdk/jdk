@@ -470,6 +470,7 @@ bool SuperWord::SLP_extract() {
   // Find "seed" pairs.
   create_adjacent_memop_pairs();
   // TODO: continue here
+  assert(false, "TODO continue here");
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
@@ -617,32 +618,30 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
   }
 #endif
 
-  MemNode* first = memops.at(group_start).vtnode()->node();
-  const int element_size = data_size(first);
+  VTransformMemopScalarNode* first = memops.at(group_start).vtnode();
+  const int element_size = first->size_in_bytes();
 
   // For each ref in group: find others that can be paired:
   for (int i = group_start; i < group_end; i++) {
-    VTransformMemopScalarNode* s1 = memops.at(i).vtnode();
-    const VPointer& p1  = s1->vpointer();
-    MemNode* mem1 = s1->node();
+    VTransformMemopScalarNode* mem1 = memops.at(i).vtnode();
+    const VPointer& p1  = mem1->vpointer();
 
     bool found = false;
     // For each ref in group with larger or equal offset:
     for (int j = i + 1; j < group_end; j++) {
-      VTransformMemopScalarNode* s2 = memops.at(j).vtnode();
-      const VPointer& p2  = s2->vpointer();
-      MemNode* mem2 = s2->node();
+      VTransformMemopScalarNode* mem2 = memops.at(j).vtnode();
+      const VPointer& p2  = mem2->vpointer();
       assert(mem1 != mem2, "look only at pair of different memops");
 
       // Check for correct distance.
-      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
-      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
+      assert(mem1->size_in_bytes() == element_size, "all nodes in group must have the same element size");
+      assert(mem2->size_in_bytes() == element_size, "all nodes in group must have the same element size");
       assert(p1.con() <= p2.con(), "must be sorted by offset");
       if (p1.con() + element_size > p2.con()) { continue; }
       if (p1.con() + element_size < p2.con()) { break; }
 
       // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
-      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
+      if (_do_vector_loop && !same_origin_idx(mem1->node(), mem2->node())) { continue; }
 
       if (!can_pack_into_pair(mem1, mem2)) { continue; }
 
@@ -654,14 +653,14 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
           tty->print_cr(" pair:");
         }
         tty->print("  ");
-        s1->print();
+        mem1->print();
         tty->print("  ");
-        s2->print();
+        mem2->print();
       }
 #endif
 
       if (!found) {
-        _pairset.add_pair(s1, s2);
+        _pairset.add_pair(mem1, mem2);
       }
     }
   }
@@ -711,8 +710,10 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
 #endif
 }
 
+// TODO: rm
 // Check if two nodes can be packed into a pair.
 bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
+  assert(false, "TODO rm");
 
   // Do not use superword for non-primitives
   BasicType bt1 = velt_basic_type(s1);
@@ -737,9 +738,36 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   return false;
 }
 
+// Check if two nodes can be packed into a pair.
+bool SuperWord::can_pack_into_pair(VTransformNode* s1, VTransformNode* s2) {
+
+  // Do not use superword for non-primitives
+  BasicType bt1 = s1->array_element_basic_type();
+  BasicType bt2 = s2->array_element_basic_type();
+  if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
+    return false;
+  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2) {
+    return false; // No vectors for this type
+  }
+
+  // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
+  // and will still be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
+  if (s1->is_isomorphic_with(s2) && !is_populate_index(s1, s2)) {
+    if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
+      if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
+        if (s1->isa_MemopScalar() == nullptr || are_adjacent_refs(s1, s2)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 //------------------------------are_adjacent_refs---------------------------
 // Is s1 immediately before s2 in memory?
 bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
+  assert(false, "TODO rm");
   if (!s1->is_Mem() || !s2->is_Mem()) return false;
   if (!in_bb(s1)    || !in_bb(s2))    return false;
 
@@ -759,9 +787,35 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
   return p1.is_adjacent_to_and_before(p2);
 }
 
+//------------------------------are_adjacent_refs---------------------------
+// Is s1 immediately before s2 in memory?
+bool SuperWord::are_adjacent_refs(VTransformNode* s1, VTransformNode* s2) const {
+  assert(false, "TODO impl");
+  return false;
+  // if (!s1->is_Mem() || !s2->is_Mem()) return false;
+  // if (!in_bb(s1)    || !in_bb(s2))    return false;
+
+  // // Do not use superword for non-primitives
+  // if (!is_java_primitive(s1->as_Mem()->value_basic_type()) ||
+  //     !is_java_primitive(s2->as_Mem()->value_basic_type())) {
+  //   return false;
+  // }
+
+  // // Adjacent memory references must be on the same slice.
+  // if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
+  //   return false;
+  // }
+
+  // const VPointer& p1 = vpointer(s1->as_Mem());
+  // const VPointer& p2 = vpointer(s2->as_Mem());
+  // return p1.is_adjacent_to_and_before(p2);
+}
+
+
 //------------------------------isomorphic---------------------------
 // Are s1 and s2 similar?
 bool SuperWord::isomorphic(Node* s1, Node* s2) {
+  assert(false, "TODO rm");
   if (s1->Opcode() != s2->Opcode() ||
       s1->req() != s2->req() ||
       !same_velt_type(s1, s2) ||
@@ -786,6 +840,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 // PopulateIndex vector node. We skip the pack creation of these nodes. They
 // will be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
+  assert(false, "TODO rm");
   return n1->is_Add() &&
          n2->is_Add() &&
          n1->in(1) == iv() &&
@@ -793,6 +848,21 @@ bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
          n1->in(2)->is_Con() &&
          n2->in(2)->is_Con() &&
          n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
+}
+
+// Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to
+// PopulateIndex vector node. We skip the pack creation of these nodes. They
+// will be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
+bool SuperWord::is_populate_index(const VTransformNode* n1, const VTransformNode* n2) const {
+  assert(false, "TODO impl");
+  return false;
+  //return n1->is_Add() &&
+  //       n2->is_Add() &&
+  //       n1->in(1) == iv() &&
+  //       n2->in(1) == iv() &&
+  //       n1->in(2)->is_Con() &&
+  //       n2->in(2)->is_Con() &&
+  //       n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
 }
 
 // Is there no data path from s1 to s2 or s2 to s1?
@@ -881,6 +951,7 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
 bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
+  assert(false, "TODO rm");
   // assert(isomorphic(s1, s2) == true, "check isomorphic");
   // assert(independent(s1, s2) == true, "check independent");
   if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
@@ -898,6 +969,31 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
     }
   }
   return true;
+}
+
+//--------------------------have_similar_inputs-----------------------
+// For a node pair (s1, s2) which is isomorphic and independent,
+// do s1 and s2 have similar input edges?
+bool SuperWord::have_similar_inputs(VTransformNode* s1, VTransformNode* s2) {
+  assert(false, "TODO impl");
+  return false;
+  // // assert(isomorphic(s1, s2) == true, "check isomorphic");
+  // // assert(independent(s1, s2) == true, "check independent");
+  // if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
+  //   for (uint i = 1; i < s1->req(); i++) {
+  //     Node* s1_in = s1->in(i);
+  //     Node* s2_in = s2->in(i);
+  //     if (s1_in->is_Phi() && s2_in->is_Add() && s2_in->in(1) == s1_in) {
+  //       // Special handling for expressions with loop iv, like "b[i] = a[i] * i".
+  //       // In this case, one node has an input from the tripcount iv and another
+  //       // node has an input from iv plus an offset.
+  //       if (!s1_in->as_Phi()->is_tripcount(T_INT)) return false;
+  //     } else {
+  //       if (s1_in->Opcode() != s2_in->Opcode()) return false;
+  //     }
+  //   }
+  // }
+  // return true;
 }
 
 bool VLoopReductions::is_marked_reduction_pair(const Node* s1, const Node* s2) const {

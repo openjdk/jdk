@@ -545,12 +545,31 @@ public:
     }
   }
 
-  // Accessors to the type. Some can only be used by nodes with a vector type.
+  // Accessors to the type.
   const Type* type() const { return _type; }
+  // TODO: consider moving to a scalar type subclass?
+  BasicType array_element_basic_type() const { return _type->array_element_basic_type(); }
+  int size_in_bytes() const {
+    // TODO: generalize?
+    int size = type2aelembytes(array_element_basic_type());
+    assert(size != 0, "valid size");
+    return size;
+  }
+  bool has_same_type_as(const VTransformNode* n) const {
+    const Type* vt1 = type();
+    const Type* vt2 = n->type();
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer (subword) types.
+      return size_in_bytes() == n->size_in_bytes();
+    }
+    return vt1 == vt2;
+  }
+  // TODO: consider moving to a vector type subclass?
   uint vector_length() const { return type()->is_vect()->length(); }
   BasicType element_basic_type() const { return type()->is_vect()->element_basic_type(); }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
+  virtual const VTransformMemopScalarNode* isa_MemopScalar() const { return nullptr; }
   virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
   virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
@@ -568,6 +587,9 @@ public:
   virtual bool is_load_or_store_in_loop() const { return false; }
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
   virtual bool is_loop_head_phi() const { return false; }
+
+  // Core SuperWord queries
+  virtual bool is_isomorphic_with(const VTransformNode* n) const { return false; }
 
   virtual bool optimize(VTransformOptimize& vtoptimize) { return false; }
 
@@ -601,9 +623,12 @@ public:
 
   MemNode* node() const { return _node; }
   virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
+  virtual const VTransformMemopScalarNode* isa_MemopScalar() const override { return this; }
 
   virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return true; }
+
+  virtual bool is_isomorphic_with(const VTransformNode* n) const override;
 
   virtual const VPointer& vpointer() const override { return _vpointer; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -622,6 +647,8 @@ public:
   {
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
+
+  virtual bool is_isomorphic_with(const VTransformNode* n) const override;
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

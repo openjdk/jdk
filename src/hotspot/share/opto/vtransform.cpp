@@ -969,6 +969,20 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
   }
 }
 
+bool VTransformMemopScalarNode::is_isomorphic_with(const VTransformNode* n) const {
+  const VTransformMemopScalarNode* mem = n->isa_MemopScalar();
+  if (mem == nullptr) { return false; }
+
+  if (node()->Opcode() != mem->node()->Opcode() ||
+      !has_same_type_as(mem)) {
+    return false;
+  }
+  assert(req() == mem->req(), "load and stores must have fixed number of inputs");
+
+  // TODO: we used to have checks on ctrl. Do we need them?
+  return true;
+}
+
 float VTransformMemopScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   // This is an identity transform, but loads and stores must be counted.
   assert(!vloop_analyzer.has_zero_cost(_node), "memop nodes must be counted");
@@ -985,6 +999,11 @@ VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& app
   }
 
   return VTransformApplyResult::make_scalar(_node);
+}
+
+bool VTransformDataScalarNode::is_isomorphic_with(const VTransformNode* n) const {
+  assert(false, "TODO data scalar");
+  return false;
 }
 
 float VTransformDataScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
