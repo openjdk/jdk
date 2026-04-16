@@ -2184,7 +2184,7 @@ void AOTCodeAddressTable::set_stubgen_stubs_complete() {
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200
 #else
-#define MAX_STR_COUNT 500
+#define MAX_STR_COUNT 2000
 #endif
 #define _c_str_max  MAX_STR_COUNT
 static const int _c_str_base = _all_max;
@@ -2296,7 +2296,7 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
 
 int AOTCodeAddressTable::id_for_C_string(address str) {
   if (str == nullptr) {
-    return -1;
+    return BAD_ADDRESS_ID;
   }
   MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
   for (int i = 0; i < _C_strings_count; i++) {
@@ -2314,7 +2314,7 @@ int AOTCodeAddressTable::id_for_C_string(address str) {
       return id;
     }
   }
-  return -1;
+  return BAD_ADDRESS_ID;
 }
 
 address AOTCodeAddressTable::address_for_C_string(int idx) {
@@ -2381,13 +2381,13 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   }
   // Seach for C string
   id = id_for_C_string(addr);
-  if (id >= 0) {
+  if (id != BAD_ADDRESS_ID) {
     return id + _c_str_base;
   }
   if (StubRoutines::contains(addr) || CodeCache::find_blob(addr) != nullptr) {
     // Search for a matching stub entry
     id = search_address(addr, _stubs_addr, _stubs_max);
-    if (id < 0) {
+    if (id == BAD_ADDRESS_ID) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
       if (desc == nullptr) {
         desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
@@ -2400,7 +2400,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   } else {
     // Search in runtime functions
     id = search_address(addr, _extrs_addr, _extrs_length);
-    if (id < 0) {
+    if (id == BAD_ADDRESS_ID) {
       ResourceMark rm;
       const int buflen = 1024;
       char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
