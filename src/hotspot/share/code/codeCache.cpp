@@ -231,10 +231,10 @@ void CodeCache::initialize_heaps() {
   uint64_t compiler_buffer_size_uint64 = 0;
   COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
   COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
-  if (compiler_buffer_size_uint64 > MIN2((uint64_t)CODE_CACHE_SIZE_LIMIT, (uint64_t)SIZE_MAX)) {
+  if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
     vm_exit_during_initialization("CICompilerCount is too large: compiler buffer size exceeds the CodeCache size limit");
   }
-  size_t compiler_buffer_size = (size_t)compiler_buffer_size_uint64;
+  size_t compiler_buffer_size = checked_cast<size_t>(compiler_buffer_size_uint64);
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;

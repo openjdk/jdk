@@ -194,7 +194,7 @@ public class CheckCICompilerCount {
     };
 
     private static final String[] INVALID_EXPECTED_OUTPUTS = {
-        "Compiler buffer size exceeds the architectural CodeCache limit"
+        "compiler buffer size exceeds the CodeCache size limit"
     };
 
     private static final int[] INVALID_EXIT = {
