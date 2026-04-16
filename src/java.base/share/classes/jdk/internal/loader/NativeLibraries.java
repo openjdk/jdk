@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public final class NativeLibraries {
                 if (loadLibraryOnlyIfPresent && !file.exists()) {
                     return null;
                 }
-                name = file.getCanonicalPath();
+                name = ClassLoaderHelper.mapToNativeLibraryName(file.getCanonicalPath());
             } catch (IOException e) {
                 return null;
             }
