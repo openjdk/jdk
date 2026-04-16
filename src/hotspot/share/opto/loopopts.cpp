@@ -4545,7 +4545,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   // - if-conversion
   // - ...
 
-  assert(false, "done optimizing scalar graph?");
+  //assert(false, "done optimizing scalar graph?");
 
   // TODO: do we need this?
   const VTransformAnalyzer vtransform_analyzer(scalar_vtransform);
