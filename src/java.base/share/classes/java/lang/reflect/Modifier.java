@@ -289,7 +289,7 @@ public final class Modifier {
      * be obtained from the {@code accessFlags()} methods on the reflective
      * objects, such as {@link Class#accessFlags()}.
      * <p>
-     * To print an access flags value for debug output, consider using the
+     * To print an access flags value for debug output, consider using the hex
      * format {@code %04x} instead of this method; this method omits all class
      * file access flags without a corresponding source modifier.
      *
