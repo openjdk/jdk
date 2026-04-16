@@ -1677,37 +1677,25 @@ public final class SSLSocketImpl
             SSLLogger.warning("handling exception", cause);
         }
 
-        // Don't close the Socket in case of timeouts or interrupts.
-        if (cause instanceof SocketTimeoutException) {
-            throw (IOException)cause;
-        }
-
-        // need to perform error shutdown
-        boolean isSSLException = (cause instanceof SSLException);
         Alert alert;
-        if (isSSLException) {
-            if (cause instanceof SSLHandshakeException) {
-                alert = Alert.HANDSHAKE_FAILURE;
-            } else {
-                alert = Alert.UNEXPECTED_MESSAGE;
-            }
-        } else {
-            if (cause instanceof IOException) {
-                alert = Alert.UNEXPECTED_MESSAGE;
-            } else {
-                // RuntimeException
-                alert = Alert.INTERNAL_ERROR;
-            }
+
+        switch (cause) {
+            // Don't close the Socket in case of timeouts.
+            case SocketTimeoutException ste -> throw ste;
+            // Set alert type based on exception type.
+            case SSLHandshakeException _ -> alert = Alert.HANDSHAKE_FAILURE;
+            case IOException _ -> alert = Alert.UNEXPECTED_MESSAGE;
+            default -> alert = Alert.INTERNAL_ERROR;
         }
 
-        if (cause instanceof SocketException) {
+        if (cause instanceof SocketException se) {
             try {
-                throw conContext.fatal(alert, cause);
+                throw conContext.fatal(alert, se);
             } catch (Exception e) {
                 // Just delivering the fatal alert, re-throw the socket exception instead.
             }
 
-            throw (SocketException)cause;
+            throw se;
         }
 
         throw conContext.fatal(alert, cause);
