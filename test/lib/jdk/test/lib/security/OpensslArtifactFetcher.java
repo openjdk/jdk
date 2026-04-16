@@ -155,7 +155,7 @@ public class OpensslArtifactFetcher {
     private static boolean verifyOpensslVersion(String path, String version) {
         if (path != null) {
             try {
-                System.out.println("path is:"+path+"version is "+version);
+                System.out.println("path is: "+path+"version is: "+version);
                 ProcessTools.executeCommand(path.trim(),"version")
                         .shouldHaveExitValue(0)
                         .shouldContain(version);
@@ -189,7 +189,7 @@ public class OpensslArtifactFetcher {
 
     private static Path isProviderPathPresent(String opensslAbsolutePath) {
         Path osslModulesPath = getProviderPath(opensslAbsolutePath);
-        if(Files.exists(osslModulesPath)) {
+        if (Files.exists(osslModulesPath)) {
              return osslModulesPath;
         } else {
              return null;
