@@ -266,6 +266,7 @@ protected:
   const Type* const _type;      // What kind of value is loaded?
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
+  Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -1321,11 +1322,26 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreLoadNode : public MemBarNode {
+public:
+  MemBarStoreLoadNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
 public:
   MemBarVolatileNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };

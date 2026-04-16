@@ -122,6 +122,7 @@ public class TestVectorAlgorithms {
         testGroups.get("dotProductF").put("dotProductF_loop",                           i -> { return dotProductF_loop(d.aF, d.bF); });
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_naive",                i -> { return dotProductF_VectorAPI_naive(d.aF, d.bF); });
         testGroups.get("dotProductF").put("dotProductF_VectorAPI_reduction_after_loop", i -> { return dotProductF_VectorAPI_reduction_after_loop(d.aF, d.bF); });
+        testGroups.get("dotProductF").put("dotProductF_VectorAPI_fma",                  i -> { return dotProductF_VectorAPI_fma(d.aF, d.bF); });
 
         testGroups.put("hashCodeB", new HashMap<String,TestFunction>());
         testGroups.get("hashCodeB").put("hashCodeB_loop",         i -> { return hashCodeB_loop(d.aB); });
@@ -141,6 +142,12 @@ public class TestVectorAlgorithms {
         testGroups.put("findI", new HashMap<String,TestFunction>());
         testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI_findI[i]); });
         testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI_findI[i]); });
+
+        testGroups.put("mismatchB", new HashMap<String,TestFunction>());
+        testGroups.get("mismatchB").put("mismatchB_loop",          i -> { return d.wrap_mismatchB(i, TestVectorAlgorithms::mismatchB_loop); });
+        testGroups.get("mismatchB").put("mismatchB_Arrays",        i -> { return d.wrap_mismatchB(i, TestVectorAlgorithms::mismatchB_Arrays); });
+        testGroups.get("mismatchB").put("mismatchB_MemorySegment", i -> { return d.wrap_mismatchB(i, TestVectorAlgorithms::mismatchB_MemorySegment); });
+        testGroups.get("mismatchB").put("mismatchB_VectorAPI",     i -> { return d.wrap_mismatchB(i, TestVectorAlgorithms::mismatchB_VectorAPI); });
 
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
         testGroups.get("reverseI").put("reverseI_loop",      i -> { return reverseI_loop(d.aI, d.rI1); });
@@ -192,6 +199,7 @@ public class TestVectorAlgorithms {
                  "dotProductF_loop",
                  "dotProductF_VectorAPI_naive",
                  "dotProductF_VectorAPI_reduction_after_loop",
+                 "dotProductF_VectorAPI_fma",
                  "hashCodeB_loop",
                  "hashCodeB_Arrays",
                  "hashCodeB_VectorAPI_v1",
@@ -203,6 +211,10 @@ public class TestVectorAlgorithms {
                  "findMinIndexI_VectorAPI",
                  "findI_loop",
                  "findI_VectorAPI",
+                 "mismatchB_loop",
+                 "mismatchB_Arrays",
+                 "mismatchB_MemorySegment",
+                 "mismatchB_VectorAPI",
                  "reverseI_loop",
                  "reverseI_VectorAPI",
                  "filterI_loop",
@@ -410,6 +422,16 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.FMA_VF,          "> 0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"},
+        applyIf = {"UseSuperWord", "true"})
+    public float dotProductF_VectorAPI_fma(float[] a, float[] b) {
+        return VectorAlgorithmsImpl.dotProductF_VectorAPI_fma(a, b);
+    }
+
+    @Test
     public int hashCodeB_loop(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_loop(a);
     }
@@ -510,6 +532,34 @@ public class TestVectorAlgorithms {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public static int mismatchB_loop(byte[] a, byte[] b) {
+        return VectorAlgorithmsImpl.mismatchB_loop(a, b);
+    }
+
+    @Test
+    // Inlining makes IR rules difficult. Just keep this as a correctness test.
+    public static int mismatchB_Arrays(byte[] a, byte[] b) {
+        return VectorAlgorithmsImpl.mismatchB_Arrays(a, b);
+    }
+
+    @Test
+    // Inlining makes IR rules difficult. Just keep this as a correctness test.
+    public static int mismatchB_MemorySegment(byte[] a, byte[] b) {
+        return VectorAlgorithmsImpl.mismatchB_MemorySegment(a, b);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B,   "> 0",
+                  IRNode.VECTOR_MASK_CMP, "> 0",
+                  IRNode.VECTOR_TEST,     "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
+    public static int mismatchB_VectorAPI(byte[] a, byte[] b) {
+        return VectorAlgorithmsImpl.mismatchB_VectorAPI(a, b);
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"})
     // Currently does not vectorize, but might in the future.
@@ -556,7 +606,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(a, r, threshold);
     }
@@ -566,7 +616,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(a, r, threshold);
     }
@@ -647,7 +697,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VI,        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object conditionalSumB_VectorAPI_v2(byte[] a) {
         return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v2(a);
     }
@@ -663,7 +713,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v1(a, r);
     }
@@ -672,7 +722,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v2(a, r);
     }

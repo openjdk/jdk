@@ -101,7 +101,6 @@ extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" f
 extern Mutex*   G1OldSets_lock;                  // protects the G1 old region sets
 extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel GC operations.
 extern Mutex*   G1ReviseYoungLength_lock;        // Protects access to young gen length revising operations.
-extern Monitor* G1RootRegionScan_lock;           // used to notify that the G1 CM threads have finished scanning the root regions
 extern Mutex*   G1Uncommit_lock;                 // protects the G1 uncommit list when not at safepoints
 #endif
 

@@ -73,7 +73,4 @@ define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
 
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
-
 #endif // CPU_X86_C2_GLOBALS_X86_HPP

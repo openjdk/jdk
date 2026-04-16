@@ -26,7 +26,7 @@
  * @bug 8319784
  * @summary Check that the JVM is able to dump the heap even when there are ReduceAllocationMerge in the scope.
  * @library /test/lib /
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  * @run main/othervm compiler.c2.TestReduceAllocationAndHeapDump
  */
 

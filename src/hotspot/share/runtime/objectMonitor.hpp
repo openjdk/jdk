@@ -89,10 +89,8 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   }
 };
 
-// The ObjectMonitor class implements the heavyweight version of a
-// JavaMonitor. The lightweight BasicLock/stack lock version has been
-// inflated into an ObjectMonitor. This inflation is typically due to
-// contention or use of Object.wait().
+// The ObjectMonitor class implements the heavyweight version of a JavaMonitor.
+// This inflation is typically due to contention or use of Object.wait().
 //
 // WARNING: This is a very sensitive and fragile class. DO NOT make any
 // changes unless you are fully aware of the underlying semantics.
