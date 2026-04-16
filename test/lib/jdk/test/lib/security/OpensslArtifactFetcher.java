@@ -25,9 +25,7 @@ package jdk.test.lib.security;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.io.*;
-import java.nio.*;
-import java.nio.file.*;
+import java.nio.file.Files;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -56,7 +54,7 @@ public class OpensslArtifactFetcher {
      * @throws SkippedException if a valid version of OpenSSL cannot be found
      *         or if OpenSSL is not available on the target platform
      */
-     public static String getOpensslPath() {
+    public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             System.out.println("Using OpenSSL from system property.");
@@ -64,7 +62,7 @@ public class OpensslArtifactFetcher {
         }
         path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
-            System.out.println("Using OpenSSL from System Installed Library:"+path);
+            System.out.println("Using OpenSSL from System Installed Library: "+path);
             return path;
         }
         path = getArtifactsFromArtifactory();
@@ -72,7 +70,7 @@ public class OpensslArtifactFetcher {
            throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
                 OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
         }
-        System.out.println("Artifacts Path is"+path);
+        System.out.println("Artifacts Path is: "+path);
         return path;
     }
 
@@ -92,7 +90,7 @@ public class OpensslArtifactFetcher {
            throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
                 OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
         }
-        System.out.println("Artifacts Path is:"+path);
+        System.out.println("Artifacts Path is: "+path);
         return path;
     }
 
@@ -147,7 +145,7 @@ public class OpensslArtifactFetcher {
         try {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeProcess("which","openssl");
             absolutePath = outputAnalyzer.getOutput();
-            System.out.println("absolutePath:"+absolutePath);
+            System.out.println("absolutePath: "+absolutePath);
         } catch(Throwable t) {
             t.printStackTrace();
         }
