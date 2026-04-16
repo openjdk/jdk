@@ -19,16 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "cds/aotGrowableArray.hpp"
-#include "cds/aotMetaspace.hpp"
-#include "memory/allocation.inline.hpp"
-#include "utilities/growableArray.hpp"
+/*
+ * @test
+ * @bug 8382057
+ * @requires vm.debug == true
+ *
+ * @run main/othervm -Xbatch -XX:+CountCompiledCalls ${test.main.class}
+ */
 
-void AOTGrowableArrayHelper::deallocate(void* mem) {
-  if (!AOTMetaspace::in_aot_cache(mem)) {
-    GrowableArrayCHeapAllocator::deallocate(mem);
-  }
+package compiler.debug;
+
+public class TestCountCompiledCalls {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
 }

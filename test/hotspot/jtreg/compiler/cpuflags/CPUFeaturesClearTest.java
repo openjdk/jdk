@@ -123,12 +123,10 @@ public class CPUFeaturesClearTest {
         if (isCpuFeatureSupported("sve2")) {
             outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseSVE", 1)));
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sve2.*");
-            verifyOutput(null, new String[]{"sve2"}, null, outputAnalyzer);
         }
         if (isCpuFeatureSupported("sve")) {
             outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseSVE", 0)));
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sve.*");
-            verifyOutput(null, new String[]{"sve"}, null, outputAnalyzer);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,7 @@
  *
  */
 
-#ifndef SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
-#define SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
+#include "runtime/icache.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-#include "cds/aotGrowableArray.hpp"
-
-#include "memory/metaspaceClosure.hpp"
-
-template <typename E>
-void AOTGrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array(AOTGrowableArray<E>::data_addr(), AOTGrowableArray<E>::capacity());
-}
-
-#endif // SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
+DEBUG_ONLY(THREAD_LOCAL AArch64ICacheInvalidationContext* AArch64ICacheInvalidationContext::_current_context = nullptr;)

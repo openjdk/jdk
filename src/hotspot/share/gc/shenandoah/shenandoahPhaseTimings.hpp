@@ -110,6 +110,7 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_final_roots,                               "Concurrent Final Roots")          \
   f(conc_evac,                                      "Concurrent Evacuation")           \
+  f(conc_update_card_table,                         "Concurrent Update Cards")         \
   f(complete_abbreviated,                           "Complete Abbreviated")            \
   f(complete_abbreviated_promote_in_place,          "  Promote Regions")               \
   f(complete_abbreviated_update_region_ages,        "  Update Region Ages")            \
@@ -256,7 +257,7 @@ public:
   void flush_cycle_to_global();
 
   static const char* phase_name(Phase phase) {
-    assert(phase >= 0 && phase < _num_phases, "Out of bound");
+    assert(phase >= 0 && phase < _num_phases, "Out of bounds: %d", phase);
     return _phase_names[phase];
   }
 
