@@ -29,6 +29,7 @@ import java.util.Properties;
 
 import jtreg.SkippedException;
 import jdk.test.lib.Asserts;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
 
 /* @test
@@ -37,20 +38,24 @@ import tests.Helper;
  * @library ../../lib /test/lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
  * @build tests.*
- * @run main SecurityPropertiesPluginTest
+ * @run main/othervm SecurityPropertiesPluginTest
  */
 
 public class SecurityPropertiesPluginTest {
 
     private static Helper helper;
 
-    private static String SECPROPS_PATH = "conf/security/java.security";
-    private static String TEST_DIR = System.getProperty("test.dir", ".");
+    private static final String SECPROPS_PATH = "conf/security/java.security";
+    private static final String TEST_DIR =
+            System.getProperty("test.dir", ".");
+    private static final boolean LINKABLE_RUNTIME =
+            LinkableRuntimeImage.isLinkableRuntime();
 
     public static void main(String[] args) throws Throwable {
 
-        helper = Helper.newHelper();
+        helper = Helper.newHelper(LINKABLE_RUNTIME);
         if (helper == null) {
             throw new SkippedException("Test not run");
         }
