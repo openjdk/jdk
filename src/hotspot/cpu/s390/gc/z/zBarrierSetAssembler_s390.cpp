@@ -81,12 +81,12 @@ private:
     //TODO: Optimize this function to only save the required registers
     //TODO: macroAssembler_s390.cpp:5921 save_volatile_regs
     bool preserve_R2 = _result != Z_R2;
-    _nbytes_save = (16 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
+    _nbytes_save = (15 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = 160;
 
     __ push_frame_abi160(_nbytes_save);   offset += 8;
     __ save_return_pc();                  offset += 8;
-    __ z_stmg(Z_R0, Z_R1, offset, Z_SP);  offset += 2 * 8;
+    __ z_stg(Z_R1, offset, Z_SP);         offset += 8;
     if(preserve_R2) {
       __ z_stg(Z_R2, offset, Z_SP);       offset += 8;
     }
@@ -103,11 +103,17 @@ private:
 
   void restore() {
     MacroAssembler* masm = _masm;
+    Register result = Z_RET;
     bool restore_R2 = _result != Z_R2;
+
+    if (restore_R2 && _result != noreg) {
+      __ z_lgr(Z_R0, result);
+      result = Z_R0;
+    }
     int offset = 168;
 
     __ restore_return_pc();               offset += 8;
-    __ z_lmg(Z_R0, Z_R1, offset, Z_SP);   offset += 2 * 8;
+    __ z_lg(Z_R1, offset, Z_SP);          offset += 8;
     if(restore_R2) {
       __ z_lg(Z_R2, offset, Z_SP);        offset += 8;
     }
@@ -121,6 +127,10 @@ private:
     __ z_ld(Z_F6, offset, Z_SP);          offset += 8;
     __ z_ld(Z_F7, offset, Z_SP);
     __ pop_frame();
+
+    if (_result != noreg) {
+      __ lgr_if_needed(_result, result);
+    }
   }
 
 public:
@@ -210,9 +220,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     __ z_lgr(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
-
-    // TODO: This is not needed in other architectures, but it makes sense to inlcude it and it also fixes some bugs
-    __ lgr_if_needed(dst, Z_ARG2);
 
     __ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
     __ z_agsi(0, Z_R3, 1);
