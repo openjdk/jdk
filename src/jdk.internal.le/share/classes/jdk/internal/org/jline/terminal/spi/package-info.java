@@ -15,4 +15,4 @@
  *
  * @since 3.0
  */
-package org.jline.terminal.spi;
+package jdk.internal.org.jline.terminal.spi;

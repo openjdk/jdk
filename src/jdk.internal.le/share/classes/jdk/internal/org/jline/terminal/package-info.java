@@ -85,4 +85,4 @@
  *
  * @since 3.0
  */
-package org.jline.terminal;
+package jdk.internal.org.jline.terminal;

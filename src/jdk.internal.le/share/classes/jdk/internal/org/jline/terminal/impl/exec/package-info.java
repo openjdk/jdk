@@ -63,4 +63,4 @@
  * @see org.jline.terminal.spi.TerminalProvider
  * @see org.jline.terminal.spi.Pty
  */
-package org.jline.terminal.impl.exec;
+package jdk.internal.org.jline.terminal.impl.exec;

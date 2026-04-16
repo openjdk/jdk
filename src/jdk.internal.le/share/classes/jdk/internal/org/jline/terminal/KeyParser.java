@@ -6,7 +6,7 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  */
-package org.jline.terminal;
+package jdk.internal.org.jline.terminal;
 
 import java.util.EnumSet;
 

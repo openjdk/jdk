@@ -46,4 +46,4 @@
  * @see org.jline.reader
  * @see org.jline.reader.LineReaderBuilder
  */
-package org.jline.reader.impl;
+package jdk.internal.org.jline.reader.impl;

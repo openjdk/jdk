@@ -33,4 +33,4 @@
  *
  * @since 3.0
  */
-package org.jline.keymap;
+package jdk.internal.org.jline.keymap;
