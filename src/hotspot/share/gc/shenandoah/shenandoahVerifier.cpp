@@ -1180,7 +1180,7 @@ void ShenandoahVerifier::verify_before_update_refs(ShenandoahGeneration* generat
   );
 }
 
-// We have not yet cleanup (reclaimed) the collection set
+// We have not yet cleaned up (reclaimed) the collection set
 void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
@@ -1197,7 +1197,7 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
   );
 }
 
-// We have not yet cleanup (reclaimed) the collection set
+// We have not yet cleaned up (reclaimed) the collection set
 void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
