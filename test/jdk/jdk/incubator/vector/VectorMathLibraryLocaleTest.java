@@ -42,9 +42,12 @@ public class VectorMathLibraryLocaleTest {
         VectorSpecies<Float> species = FloatVector.SPECIES_PREFERRED;
         FloatVector v = FloatVector.broadcast(species, 1.0f);
 
-        // EXP is SVML-supported at all vector sizes on x86,
-        // so it exercises the symbol name construction path.
+        // Without the fix, this throws InternalError due to locale-mangled symbol name.
+        // The assertion below is just a sanity check on the result.
         FloatVector result = v.lanewise(VectorOperators.EXP);
-        System.out.println("exp(1.0) = " + result);
+        float expected = (float) Math.E;
+        for (int i = 0; i < species.length(); i++) {
+            assert result.lane(i) == expected : "lane " + i + ": expected " + expected + ", got " + result.lane(i);
+        }
     }
 }
