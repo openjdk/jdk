@@ -49,10 +49,10 @@ public class TestLoopPeelingDisabled {
 
         // Then, run the same test with loop peeling disabled, which should
         // elide the {BEFORE,AFTER}_LOOP_PEELING compilation phases, causing the
-        // test to throw IRViolationException. We then check whether the
+        // test to throw an IRViolationException. We then check whether the
         // exception message matches our expectation (that the loop peeling
         // phase was not found). If IR verification is disabled, this test will
-        // not throw IRViolationException.
+        // not throw an IRViolationException.
         try {
             TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:LoopPeeling=0");
