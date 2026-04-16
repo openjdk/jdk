@@ -323,6 +323,11 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
     }
 
+    public static final String ADD_REDUCTION_VHF = PREFIX + "ADD_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VHF, "AddReductionVHF");
+    }
+
     public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
@@ -1223,6 +1228,16 @@ public class IRNode {
         vectorNode(MAX_VI, "MaxV", TYPE_INT);
     }
 
+    public static final String MAX_VB = VECTOR_PREFIX + "MAX_VB" + POSTFIX;
+    static {
+        vectorNode(MAX_VB, "MaxV", TYPE_BYTE);
+    }
+
+    public static final String MAX_VS = VECTOR_PREFIX + "MAX_VS" + POSTFIX;
+    static {
+        vectorNode(MAX_VS, "MaxV", TYPE_SHORT);
+    }
+
     public static final String MAX_VHF = VECTOR_PREFIX + "MAX_VHF" + POSTFIX;
     static {
         vectorNode(MAX_VHF, "MaxVHF", TYPE_SHORT);
@@ -1337,6 +1352,16 @@ public class IRNode {
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
         vectorNode(MIN_VI, "MinV", TYPE_INT);
+    }
+
+    public static final String MIN_VB = VECTOR_PREFIX + "MIN_VB" + POSTFIX;
+    static {
+        vectorNode(MIN_VB, "MinV", TYPE_BYTE);
+    }
+
+    public static final String MIN_VS = VECTOR_PREFIX + "MIN_VS" + POSTFIX;
+    static {
+        vectorNode(MIN_VS, "MinV", TYPE_SHORT);
     }
 
     public static final String MIN_VHF = VECTOR_PREFIX + "MIN_VHF" + POSTFIX;
@@ -1554,6 +1579,11 @@ public class IRNode {
     public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
+    }
+
+    public static final String MUL_REDUCTION_VHF = PREFIX + "MUL_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VHF, "MulReductionVHF");
     }
 
     public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
@@ -3128,6 +3158,11 @@ public class IRNode {
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
     static {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
+    }
+
+    public static final String REACHABILITY_FENCE = PREFIX + "REACHABILITY_FENCE" + POSTFIX;
+    static {
+        fromBeforeRemoveUselessToFinalCode(REACHABILITY_FENCE, "ReachabilityFence");
     }
 
     public static final String SELECT_FROM_TWO_VECTOR_VB = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VB" + POSTFIX;

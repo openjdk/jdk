@@ -26,34 +26,30 @@
  * @summary Test that querrying the mac address of the loopback interface
  *          returns null and doesn't throw a SocketException.
  * @library /test/lib
- * @run testng/othervm NullMacAddress
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true NullMacAddress
- * @run testng/othervm -Djava.net.preferIPv4Stack=true NullMacAddress
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
-import org.testng.SkipException;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
 import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
-import static org.testng.Assert.*;
 
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Locale;
-import java.util.Optional;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 public class NullMacAddress {
 
-    @BeforeTest
-    void setup() {
-        Optional<String> configurationIssue = diagnoseConfigurationIssue();
-        configurationIssue.map(SkipException::new).ifPresent(x -> {
-            throw x;
-        });
+    @BeforeAll
+    public static void setup() {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
     }
 
     @Test
@@ -64,13 +60,13 @@ public class NullMacAddress {
     private void testMacAddress(NetworkInterface ni) {
         try {
             var name = ni.getDisplayName();
-            System.out.println("Testing: " + name);
+            System.err.println("Testing: " + name);
             var loopback = ni.isLoopback();
             var macAddress = ni.getHardwareAddress();
             var hdr = macAddress == null ? "null"
                     : "0x" + new BigInteger(1, macAddress)
                     .toString(16).toUpperCase(Locale.ROOT);
-            System.out.println("   MAC address: " + hdr + (loopback ? " (loopback)" : ""));
+            System.err.println("   MAC address: " + hdr + (loopback ? " (loopback)" : ""));
             if (loopback) {
                 assertNull(macAddress, "Loopback interface \""
                         + name + "\" doesn't have a null MAC Address");

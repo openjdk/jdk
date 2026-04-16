@@ -236,9 +236,10 @@ private:
   // whether we are loading or storing stubs or have encountered any
   // invalid stubs.
   enum Flags {
-    USING   = 1 << 0,            // open and loading stubs
-    DUMPING = 1 << 1,            // open and storing stubs
-    INVALID = 1 << 2,            // found invalid stub when loading
+    OPEN    = 1 << 0,            // cache is open
+    USING   = 1 << 1,            // open and loading stubs
+    DUMPING = 1 << 2,            // open and storing stubs
+    INVALID = 1 << 3,            // found invalid stub when loading
   };
 
   uint32_t _flags;
@@ -253,6 +254,7 @@ public:
 
   ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
 
+  bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
   bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
