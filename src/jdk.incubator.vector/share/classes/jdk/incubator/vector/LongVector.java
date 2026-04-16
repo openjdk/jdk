@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code long} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class LongVector extends AbstractVector<Long> {
+public abstract sealed class LongVector extends AbstractVector<Long>
+         permits LongVector64, LongVector128, LongVector256, LongVector512, LongVectorMax {
 
     LongVector(long[] vec) {
         super(vec);
