@@ -2201,6 +2201,10 @@ void AOTCodeCache::load_strings() {
   if (strings_count == 0) {
     return;
   }
+  if (strings_count > MAX_STR_COUNT) {
+    fatal("Invalid strings_count loaded from AOT Code Cache: %d > MAX_STR_COUNT [%d]", strings_count, MAX_STR_COUNT);
+    return;
+  }
   uint strings_offset = _load_header->strings_offset();
   uint* string_lengths = (uint*)addr(strings_offset);
   strings_offset += (strings_count * sizeof(uint));
@@ -2211,7 +2215,6 @@ void AOTCodeCache::load_strings() {
   char* p = NEW_C_HEAP_ARRAY(char, strings_size+1, mtCode);
   memcpy(p, addr(strings_offset), strings_size);
   _C_strings_buf = p;
-  assert(strings_count <= MAX_STR_COUNT, "sanity");
   for (uint i = 0; i < strings_count; i++) {
     _C_strings[i] = p;
     uint len = string_lengths[i];
