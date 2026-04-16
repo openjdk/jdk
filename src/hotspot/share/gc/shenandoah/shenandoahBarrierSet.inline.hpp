@@ -60,8 +60,8 @@ template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load_addr) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
 
-  bool on_weak    = HasDecorator<decorators, ON_WEAK_OOP_REF>::value;
-  bool on_phantom = HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value;
+  constexpr bool on_weak    = HasDecorator<decorators, ON_WEAK_OOP_REF>::value;
+  constexpr bool on_phantom = HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value;
 
   // Handle nulls. Strong loads filtered nulls with cset checks.
   // Weak/phantom loads need to check for nulls here.
