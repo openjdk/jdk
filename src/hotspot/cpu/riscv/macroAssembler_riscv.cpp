@@ -49,6 +49,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
@@ -1947,14 +1948,12 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
   }
 }
 
-void MacroAssembler::push_reg(Register Rs)
-{
+void MacroAssembler::push_reg(Register Rs) {
   subi(esp, esp, wordSize);
   sd(Rs, Address(esp, 0));
 }
 
-void MacroAssembler::pop_reg(Register Rd)
-{
+void MacroAssembler::pop_reg(Register Rd) {
   ld(Rd, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
@@ -1973,7 +1972,11 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
 
 // Push integer registers in the bitset supplied. Don't push sp.
 // Return the number of words pushed
-int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
+int MacroAssembler::push_reg(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1993,7 +1996,11 @@ int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_reg(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2015,7 +2022,11 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
 
 // Push floating-point registers in the bitset supplied.
 // Return the number of words pushed
-int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::push_fp(FloatRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2035,7 +2046,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_fp(FloatRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2721,7 +2736,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 #ifdef COMPILER2
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
-int MacroAssembler::push_v(unsigned int bitset, Register stack) {
+int MacroAssembler::push_v(VectorRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -2736,7 +2755,11 @@ int MacroAssembler::push_v(unsigned int bitset, Register stack) {
   return count * vector_size_in_bytes / wordSize;
 }
 
-int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_v(VectorRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
