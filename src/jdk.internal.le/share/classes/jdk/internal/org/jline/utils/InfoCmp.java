@@ -634,7 +634,7 @@ public final class InfoCmp {
         } else {
             caps = getDefaultInfoCmp(terminal);
             if (caps == null) {
-                caps = getDefaultInfoCmp(Terminal.TYPE_DUMB);
+                throw error;
             }
         }
         return caps;
