@@ -29,7 +29,8 @@ import java.util.StringJoiner;
 
 /**
  * The Modifier class provides {@code static} methods and
- * constants to decode class and member access modifiers.  The sets of
+ * constants to decode {@linkplain AccessFlag classfile access and property
+ * flags} with corresponding Java language source modifier.  The sets of
  * modifiers are represented as integers with distinct bit positions
  * representing different modifiers.  The values for the constants
  * representing the modifiers are taken from the tables in sections
@@ -37,26 +38,50 @@ import java.util.StringJoiner;
  * <cite>The Java Virtual Machine Specification</cite>.
  *
  * @apiNote
- * {@code Modifier} was designed with two assumptions:
- * <ol>
- * <li>A source modifier corresponds to a JVM access flag;</li>
- * <li>An access flag bit represents the same access flag in different structures.</li>
- * </ol>
- * These assumptions are no longer valid:
- * <ol>
- * <li>Java language modifiers like method modifier {@code default} does not
- *     have a corresponding access flag</li>
- * <li>The same bit may represent different flags in different structures, like
- *     {@code 0x0040} represents {@link #VOLATILE ACC_VOLATILE} in fields and
- *     {@code ACC_BRIDGE} in interfaces</li>
- * </ol>
- * To mitigate, {@code Modifier} class only include source modifiers that
- * <em>also</em> have a corresponding JVM access flag.  Use {@link AccessFlag}
- * to decode the access flags values, which takes the location of the flags and
- * the class file version into account.
+ * When Java Platform 1.1 introduced the {@code Modifier} class and {@code int
+ * getModifiers()} methods in reflective objects, most access and property flags
+ * in the {@code class} file format had corresponding Java language modifiers.
+ * An exception was {@link AccessFlag#SUPER ACC_SUPER}; however, {@link
+ * Class#getModifiers() Class::getModifiers} filtered that flag.
+ * Users could interpret {@code getModifiers()} result as Java language
+ * modifiers via {@link #toString(int) Modifier::toString(int)} without
+ * ambiguity: each bit that may be set represents exactly one Java language
+ * modifier across all locations.
+ * <p>
+ * Java SE 5.0 introduced many new access and property flags, such as {@link
+ * AccessFlag#SYNTHETIC ACC_SYNTHETIC}.  Unlike {@code ACC_SUPER}, these access
+ * and property flags are reported by the {@code getModifier()} methods.
+ * However, they were not introduced to the {@code Modifier} class as new
+ * constants; they had no corresponding Java programming language modifier, and
+ * sometimes their bits could be interpreted as other access and property flags
+ * in other contexts.  This led to possibility of interpreting modifiers
+ * incorrectly - for example, the modifiers of a {@link Method#isBridge()
+ * ACC_BRIDGE} method would be interpreted by {@code toString(int)} as {@code
+ * volatile}.
+ * <p>
+ * To reduce this ambiguity, Java SE 7 introduced various masks like {@link
+ * #methodModifiers() Modifier::methodModifiers} to filter the modifiers, so
+ * only flags corresponding to the right Java language modifiers for the
+ * designated location would be retained, dropping access and property flags
+ * without language modifiers.
+ * <p>
+ * Since Java SE 8, the Java programming language has introduced many modifiers
+ * that do no have corresponding access or property flags, such as {@code
+ * default}, {@code sealed}, and {@code non-sealed}.  The growth of the Java
+ * programming language makes restoring the Java language modifiers from a bit
+ * field of access and property flags impossible.  Even if {@code toString(int)}
+ * can correctly report some modifiers, it is difficult for users to mix these
+ * modifiers with other recovered modifiers in the suggested modifier order.
+ * <p>
+ * Java SE 20 introduced {@link AccessFlag} and {@code Set<AccessFlag>
+ * accessFlags()} methods in reflective objects.  This is now the preferred way
+ * to interpret the access and property flags, including for {@linkplain
+ * AccessFlag#sourceModifier restoration} of source modifiers.
  *
+ * @see AccessFlag
  * @see Class#getModifiers()
  * @see Member#getModifiers()
+ * @see Parameter#getModifiers()
  *
  * @author Nakul Saraiya
  * @author Kenneth Russell
@@ -241,34 +266,24 @@ public final class Modifier {
      * {@code toString} with the appropriate mask from a method like
      * {@link #constructorModifiers} or {@link #methodModifiers}.
      *
-     * @apiNote
-     * To make a high-fidelity representation of the Java source
-     * modifiers of a class or member, source-level modifiers that do
-     * <em>not</em> have a constant in this class should be included
-     * and appear in an order consistent with the full recommended
-     * ordering for that kind of declaration as given in <cite>The
-     * Java Language Specification</cite>. For example, for a
-     * {@linkplain Method#toGenericString() method} the "{@link
-     * Method#isDefault() default}" modifier is ordered immediately
-     * before "{@code static}" (JLS {@jls 9.4}). For a {@linkplain
-     * Class#toGenericString() class object}, the "{@link
-     * Class#isSealed() sealed}" or {@code "non-sealed"} modifier is
-     * ordered immediately after "{@code final}" for a class (JLS
-     * {@jls 8.1.1}) and immediately after "{@code static}" for an
-     * interface (JLS {@jls 9.1.1}).
-     *
      * @deprecated
-     * This method tries to describe the source modifiers from an access flags
-     * value.  Since the introduction of this API, new source modifiers are
-     * often represented by {@code class} file constructs other than access
-     * flags, and access flags values in different {@code class} file
-     * structures have different interpretations.  As a result, the source
-     * modifiers reported by this API may be incomplete or incorrect.
+     * {@code Modifier.toString(int)} was introduced when the Java Platform had
+     * a high-fidelity mapping from {@code class} file access flags to Java
+     * language modifiers: each flag bit that may be set represents exactly one
+     * Java language modifier across all locations.
      * <p>
-     * The source modifiers of a declaration should be reconstructed manually,
-     * by examining its reflective object.  In addition, the reflective object
-     * methods that provide user-friendly text representations, such as {@link
-     * Class#toGenericString()}, render the source modifiers.
+     * The Java programming language has since introduced new modifiers
+     * represented by {@code class} file constructs other than access flags.
+     * The {@code class} file format has since introduced new access flags with
+     * identical bit positions, distinguished by the structures that they are
+     * present in.  As a result, {@code Modifier.toString(int)} now may report
+     * an incomplete or incorrect list of Java language modifiers.
+     * <p>
+     * The Java language modifiers of a declaration should be reconstructed by
+     * examining a reflective object in addition to its modifiers alone.
+     * In addition, reflective objects declare methods that provide
+     * user-friendly text representations that include the source modifiers,
+     * such as {@link Class#toGenericString()}.
      * <p>
      * The access flags of a declaration, with the correct interpretation, can
      * be obtained from the {@code accessFlags()} methods on the reflective
@@ -478,14 +493,15 @@ public final class Modifier {
      * modifiers that can be applied to a class.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#CLASS
      * @see AccessFlag.Location#INNER_CLASS
@@ -504,14 +520,15 @@ public final class Modifier {
      * modifiers that can be applied to an interface.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString()} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#CLASS
      * @see AccessFlag.Location#INNER_CLASS
@@ -530,14 +547,15 @@ public final class Modifier {
      * modifiers that can be applied to a constructor.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString()} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#METHOD
      * @jls 8.8.3 Constructor Modifiers
@@ -555,14 +573,15 @@ public final class Modifier {
      * modifiers that can be applied to a method.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString()} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#METHOD
      * @jls 8.4.3 Method Modifiers
@@ -580,14 +599,15 @@ public final class Modifier {
      * modifiers that can be applied to a field.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString()} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#FIELD
      * @jls 8.3.1 Field Modifiers
@@ -605,14 +625,15 @@ public final class Modifier {
      * modifiers that can be applied to a parameter.
      *
      * @deprecated
-     * This method is intended to be used in conjunction with {@link #toString()
-     * Modifier.toString()} to filter out flags that would be incorrectly
-     * interpreted as source modifiers from other locations.  {@code toString()}
-     * is now deprecated.
+     * This method intends to sanitize the argument to {@link #toString(int)
+     * Modifier::toString(int)} to filter out flag bit positions that would be
+     * incorrectly interpreted as source modifiers from other locations.
+     * {@code Modifier::toString(int)} is now deprecated.
      * <p>
      * Use {@link AccessFlag.Location#flags()} and {@link
      * AccessFlag#sourceModifier()} to examine the source language modifiers
-     * that can be represented by {@code class} file access flags.
+     * that can be represented by {@code class} file access flags for a
+     * particular structure.
      *
      * @see AccessFlag.Location#METHOD_PARAMETER
      * @jls 8.4.1 Formal Parameters
