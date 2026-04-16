@@ -2496,31 +2496,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
     if (p == nullptr) { // Could not constant fold the load
       p = access_load_at(heap_base_oop, adr, adr_type, value_type, type, decorators);
-      // Normalize the value returned by getBoolean in the following cases
-      if (type == T_BOOLEAN &&
-          (mismatched ||
-           heap_base_oop == top() ||                  // - heap_base_oop is null or
-           (can_access_non_heap && field == nullptr)) // - heap_base_oop is potentially null
-                                                      //   and the unsafe access is made to large offset
-                                                      //   (i.e., larger than the maximum offset necessary for any
-                                                      //   field access)
-            ) {
-          IdealKit ideal = IdealKit(this);
-#define __ ideal.
-          IdealVariable normalized_result(ideal);
-          __ declarations_done();
-          __ set(normalized_result, p);
-          __ if_then(p, BoolTest::ne, ideal.ConI(0));
-          __ set(normalized_result, ideal.ConI(1));
-          ideal.end_if();
-          final_sync(ideal);
-          p = __ value(normalized_result);
-#undef __
-      }
     }
     if (type == T_ADDRESS) {
       p = gvn().transform(new CastP2XNode(nullptr, p));
       p = ConvX2UL(p);
+    } else if (type == T_BOOLEAN) {
+      // Truncate boolean values returned by unsafe operations.
+      p = gvn().transform(new AndINode(p, gvn().intcon(0x1)));
     }
     // The load node has the control of the preceding MemBarCPUOrder.  All
     // following nodes will have the control of the MemBarCPUOrder inserted at
