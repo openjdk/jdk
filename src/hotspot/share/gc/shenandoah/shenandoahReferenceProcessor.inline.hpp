@@ -92,6 +92,8 @@ void ShenandoahRefProcThreadLocal::do_mark_discovered_list(ClosureType* cl) {
     // in the list. Note that we cannot also simply remove young references from the list at the
     // end of young marking even if they are unreachable. If the reference has a queue associated
     // with it, we _must_ wait until old marking is complete before enqueueing the reference.
+    // Mark the reference itself as a root so it survives young GC.
+    cl->do_oop(list);
     discovered_ref->oop_iterate(&marker);
 
     // Discovered list terminates with a self-loop
