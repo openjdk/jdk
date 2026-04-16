@@ -337,22 +337,21 @@ static void print_rank_name_internal(outputStream* st, Mutex::Rank r) {
   }
 }
 
+// Requires caller to have ResourceMark.
 static const char* rank_name_internal(Mutex::Rank r) {
   stringStream st;
   print_rank_name_internal(&st, r);
   return st.as_string();
 }
 
+const char* Mutex::rank_name() const {
+  return rank_name_internal(_rank);
+}
+
 // Does not require caller to have ResourceMark, unless the outputStream already has one.
 void Mutex::print_rank_name(outputStream* st) const {
   print_rank_name_internal(st, _rank);
 }
-
-// Requires caller to have ResourceMark.
-const char* Mutex::rank_name() const {
-  rank_name_internal(_rank);
-}
-
 
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
