@@ -69,7 +69,8 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
   // length supported by the hardware), so we simply return the current VL.  If
   // the user sets `MaxVectorSize` that is not the same as the maximum possible
   // vector length, then the caller (`VM_Version::initialize()`) will print a
-  // warning and move on.
+  // warning, set `MaxVectorSize` to the value returned by this function, and
+  // move on.
   return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
