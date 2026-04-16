@@ -39,6 +39,7 @@ package compiler.rangechecks;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.HashSet;
 import java.util.Set;
 
 import jdk.test.lib.Utils;
@@ -61,8 +62,6 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * add more cases:
  * - Cases with array length, so a null-check is added between
  *   the two conditions, see test_array_length_and_null_check_1
- * - TODO: Cases with switch
- *         See: JavaTokenizer::isSpecial
  * - TODO: IR rule example with arr.length
  *
  * - Extend to long
@@ -401,6 +400,8 @@ public class TestFoldComparesFuzzer {
                 String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
                 String comment;
 
+                // If both branches are compiled (in -Xcomp mode, i.e. no warmup), then
+                // we can know very precisely what happens in each case.
                 if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
                     // a)   (n >  lo && n <  hi)
                     if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
@@ -540,14 +541,51 @@ public class TestFoldComparesFuzzer {
         };
     }
 
+    // switch cases can also be implemented with range checks using
+    // constants, and then we can optimize 2 CmpI with a single CmpU,
+    // at least in some cases
+    static class TestMethodGeneratorSwitch implements TestMethodGenerator {
+        Set<Short> cases = new HashSet<>();
+        { // instance initializer
+            int n = RANDOM.nextInt(1, 20);
+            for (int i = 0; i < n; i++) {
+                cases.add((short)(int)INT_GEN.next());
+            }
+        }
+
+        private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            """
+            static boolean #methodName(int n, int a, int b) {
+                switch((short)n) {
+            """,
+            cases.stream().map(i -> scope(
+                let("i", i),
+                """
+                case (short)#i:
+                """
+            )).toList(),
+            """
+                    return true;
+                default:
+                    return false;
+                }
+            }
+            """
+        ));
+
+        public Template.OneArg<String> getTestTemplate() { return testTemplate; }
+    }
+
+
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = new TestMethodGeneratorConstIR();
+        TestMethodGenerator tg = new TestMethodGeneratorSwitch();
         // TODO: revert to all cases
-        //TestMethodGenerator tg = switch(RANDOM.nextInt(4)) {
+        //TestMethodGenerator tg = switch(RANDOM.nextInt(5)) {
         //    case 0 -> new TestMethodGeneratorConst();
         //    case 1 -> new TestMethodGeneratorWithIf();
         //    case 2 -> new TestMethodGeneratorRanges();
         //    case 3 -> new TestMethodGeneratorConstIR();
+        //    case 4 -> new TestMethodGeneratorSwitch();
         //    default -> throw new RuntimeException("not expected");
         //};
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();
