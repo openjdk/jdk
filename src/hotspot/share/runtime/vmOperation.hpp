@@ -109,9 +109,8 @@
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
   template(RendezvousGCThreads)                   \
-  template(JFRInitializeCPUTimeSampler)       \
-  template(JFRTerminateCPUTimeSampler)        \
-  template(ReinitializeMDO)
+  template(JFRInitializeCPUTimeSampler)           \
+  template(JFRTerminateCPUTimeSampler)            \
 
 class Thread;
 class outputStream;

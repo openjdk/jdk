@@ -1940,7 +1940,6 @@ class MethodData : public Metadata {
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
-  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1957,20 +1956,13 @@ class MethodData : public Metadata {
   Mutex* volatile _extra_data_lock;
 
   MethodData(const methodHandle& method);
-
-  void initialize();
-
 public:
   MethodData();
 
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-
-  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
-  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
-  // readers will see consistent profile data.
-  void reinitialize();
+  void initialize();
 
   // Whole-method sticky bits and flags
   enum {
