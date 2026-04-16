@@ -1682,7 +1682,10 @@ public final class SSLSocketImpl
             case SocketTimeoutException ste -> ste;
             // Send TLS alert with "fatal", then throw the socket exception.
             case SocketException se -> {
-                conContext.fatal(Alert.UNEXPECTED_MESSAGE, se);
+                try {
+                    throw conContext.fatal(Alert.UNEXPECTED_MESSAGE, se);
+                } catch (Exception _) {
+                }
                 yield se;
             }
             case SSLHandshakeException sslhe ->
