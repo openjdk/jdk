@@ -1677,25 +1677,20 @@ public final class SSLSocketImpl
             SSLLogger.warning("handling exception", cause);
         }
 
-        Alert alert = switch (cause) {
+        throw switch (cause) {
             // Don't close the Socket in case of timeouts.
-            case SocketTimeoutException ste -> throw ste;
-            case SSLHandshakeException _ -> Alert.HANDSHAKE_FAILURE;
-            case IOException _ -> Alert.UNEXPECTED_MESSAGE;
-            default -> Alert.INTERNAL_ERROR;
-        };
-
-        if (cause instanceof SocketException se) {
-            try {
-                throw conContext.fatal(alert, se);
-            } catch (Exception e) {
-                // Just delivering the fatal alert, re-throw the socket exception instead.
+            case SocketTimeoutException ste -> ste;
+            // Send TLS alert with "fatal", then throw the socket exception.
+            case SocketException se -> {
+                conContext.fatal(Alert.UNEXPECTED_MESSAGE, se);
+                yield se;
             }
-
-            throw se;
-        }
-
-        throw conContext.fatal(alert, cause);
+            case SSLHandshakeException sslhe ->
+                    conContext.fatal(Alert.HANDSHAKE_FAILURE, sslhe);
+            case IOException ioe ->
+                    conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+            default -> conContext.fatal(Alert.INTERNAL_ERROR, cause);
+        };
     }
 
     private Plaintext handleEOF(EOFException eofe) throws IOException {
