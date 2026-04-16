@@ -24,6 +24,7 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -120,10 +121,11 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
       assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
     }
   } else {
-    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
-      // This is a regulator request. It is also possible that the regulator "canceled" an old mark,
-      // so we can clear that here. This clear operation will only clear the cancellation if it is
-      // a regulator request.
+    if (request.cause == GCCause::_shenandoah_concurrent_gc || ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+      // This is a regulator request or an explicit gc request. Note that an explicit gc request is allowed to
+      // "upgrade" a regulator request. It is possible that the regulator "canceled" an old mark, so we must
+      // clear that cancellation here or the explicit gc cycle will erroneously detect it as a cancellation.
+      // This clear operation will only clear the cancellation if it was set by regulator request.
       _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     }
     request.generation = _requested_generation;
@@ -254,7 +256,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if (gc_mode() != servicing_old) {
+  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
+    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
     _heap->reset_bytes_allocated_since_gc_start();
   }
 
@@ -270,6 +273,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   {
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
+
+    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // so that all young objects are promoted to old. This ensures that tests
+    // using WB.fullGC() to promote objects to old gen will not loop forever.
+    ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
+                                                 _heap->age_census());
 
     _heap->print_before_gc();
     switch (gc_mode()) {
@@ -413,12 +422,11 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       }
 
       // Coalescing threads completed and nothing was cancelled. it is safe to transition from this state.
-      old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+      old_generation->transition_to(ShenandoahOldGeneration::IDLE);
       return;
     }
-    case ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP:
-      old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
-    case ShenandoahOldGeneration::BOOTSTRAPPING: {
+    case ShenandoahOldGeneration::IDLE:
+      old_generation->transition_to(ShenandoahOldGeneration::MARKING);
       // Configure the young generation's concurrent mark to put objects in
       // old regions into the concurrent mark queues associated with the old
       // generation. The young cycle will run as normal except that rather than
@@ -441,8 +449,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       // and init mark for the concurrent mark. All of that work will have been
       // done by the bootstrapping young cycle.
       set_gc_mode(servicing_old);
-      old_generation->transition_to(ShenandoahOldGeneration::MARKING);
-    }
     case ShenandoahOldGeneration::MARKING: {
       ShenandoahGCSession session(request.cause, old_generation);
       bool marking_complete = resume_concurrent_old_cycle(old_generation, request.cause);
@@ -635,12 +641,6 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
   if (request.generation->is_global()) {
     assert(_heap->old_generation()->task_queues()->is_empty(), "Unexpected old generation marking tasks");
     assert(_heap->global_generation()->task_queues()->is_empty(), "Unexpected global generation marking tasks");
-  } else {
-    assert(request.generation->is_young(), "Expected degenerated young cycle, if not global.");
-    ShenandoahOldGeneration* old = _heap->old_generation();
-    if (old->is_bootstrapping()) {
-      old->transition_to(ShenandoahOldGeneration::MARKING);
-    }
   }
 }
 
@@ -672,7 +672,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     // Cancel the old GC and wait for the control thread to start servicing the new request.
     log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
-      ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
+      _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
       notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);
       ml.wait();
     }

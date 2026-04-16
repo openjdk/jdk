@@ -3842,7 +3842,7 @@ public final class Class<T> implements java.io.Serializable,
             return false;
         }
 
-        return getNestHost() == c.getNestHost();
+        return Reflection.areNestMates(this, c);
     }
 
     private native Class<?>[] getNestMembers0();

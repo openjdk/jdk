@@ -34,7 +34,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
@@ -1652,6 +1652,7 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
+  assert_not_at_safepoint();
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
@@ -3218,7 +3219,7 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
   G1HeapRegionPrinter::retire(alloc_region);
 }
 
-void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
   _cm->raw_mark_in_bitmap(obj);

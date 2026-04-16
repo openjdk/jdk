@@ -50,16 +50,6 @@
  * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
  */
 
-/*
- * @test id=VFORK
- * @modules java.base/java.lang:open
- *          java.base/java.io:open
- *          java.base/jdk.internal.misc
- * @requires (os.family == "linux")
- * @library /test/lib
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=vfork Basic
- */
-
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;

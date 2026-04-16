@@ -112,6 +112,24 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
   heap->concurrent_prepare_for_update_refs();
 }
 
+void ShenandoahConcurrentGC::entry_update_card_table() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+
+  static const char* msg = "Concurrent update cards";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_card_table);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              "concurrent update cards");
+
+  // Heap needs to be parsable here.
+  // Also, parallel heap region iterate must have a phase set.
+  assert(ShenandoahTimingsTracker::is_current_phase_valid(), "Current phase must be set");
+  ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
+}
+
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   _generation->ref_processor()->set_soft_reference_policy(
@@ -206,6 +224,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Perform update-refs phase.
     entry_concurrent_update_refs_prepare(heap);
+
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      entry_update_card_table();
+    }
+
     if (ShenandoahVerify) {
       vmop_entry_init_update_refs();
     }
@@ -721,9 +744,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Make above changes visible to worker threads
   OrderAccess::fence();
 
-  // Arm nmethods for concurrent mark
-  ShenandoahCodeRoots::arm_nmethods_for_mark();
-
+  // Arm nmethods/stack for concurrent processing
+  ShenandoahCodeRoots::arm_nmethods();
   ShenandoahStackWatermark::change_epoch_id();
 
   {
@@ -782,7 +804,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       heap->set_has_forwarded_objects(true);
 
       // Arm nmethods/stack for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods_for_evac();
+      ShenandoahCodeRoots::arm_nmethods();
       ShenandoahStackWatermark::change_epoch_id();
 
     } else {
@@ -1012,14 +1034,10 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
-  BarrierSetNMethod* const                  _bs;
   ShenandoahEvacuateUpdateMetadataClosure   _cl;
 
 public:
-  ShenandoahEvacUpdateCodeCacheClosure() :
-    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()),
-    _cl() {
-  }
+  ShenandoahEvacUpdateCodeCacheClosure() : _cl() {}
 
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
@@ -1027,8 +1045,8 @@ public:
     // Setup EvacOOM scope below reentrant lock to avoid deadlock with
     // nmethod_entry_barrier
     ShenandoahEvacOOMScope oom;
-    data->oops_do(&_cl, true/*fix relocation*/);
-    _bs->disarm(n);
+    data->oops_do(&_cl, /* fix_relocations = */ true);
+    ShenandoahNMethod::disarm_nmethod(n);
   }
 };
 
