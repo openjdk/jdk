@@ -400,15 +400,21 @@ private:
   uint _out_end_strong_edges;
   GrowableArray<VTransformNode*> _out;
 
+  // The type is used in many cases:
+  // - Vectors: element type and vector length
+  // - Scalars: element type, especially relevant for subword types
+  const Type* _type;
+
 public:
-  VTransformNode(VTransform& vtransform, const uint req) :
+  VTransformNode(VTransform& vtransform, const uint req, const Type* type) :
     _idx(vtransform.graph().new_idx()),
     _is_alive(true),
     _req(req),
     _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
     _out_end_strong_edges(0),
-    _out(vtransform.arena(), 4, 0, nullptr)
+    _out(vtransform.arena(), 4, 0, nullptr),
+    _type(type)
   {
     vtransform.graph().add_vtnode(this);
   }
@@ -571,6 +577,9 @@ public:
   NOT_PRODUCT(void print() const;)
   NOT_PRODUCT(virtual void print_spec() const {};)
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
+
+protected:
+  const Type* container_type(const VTransform& vtransform, Node* n) const;
 };
 
 // Identity transform for scalar loads and stores.
@@ -580,7 +589,7 @@ private:
   const VPointer _vpointer;
 public:
   VTransformMemopScalarNode(VTransform& vtransform, MemNode* n, const VPointer& vpointer) :
-    VTransformNode(vtransform, n->req()), _node(n), _vpointer(vpointer)
+    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n), _vpointer(vpointer)
   {
     assert(node()->is_Load() || node()->is_Store(), "must be memop");
   }
@@ -604,7 +613,7 @@ private:
   Node* _node;
 public:
   VTransformDataScalarNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n)
+    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
   {
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
@@ -621,7 +630,7 @@ private:
   PhiNode* _node;
 public:
   VTransformPhiScalarNode(VTransform& vtransform, PhiNode* n) :
-    VTransformNode(vtransform, n->req()), _node(n)
+    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
   {
     assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
   }
@@ -643,7 +652,7 @@ private:
   Node* _node;
 public:
   VTransformCFGNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n)
+    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
   {
     assert(_node->is_CFG(), "must be CFG node: %s", _node->Name());
   }
@@ -672,7 +681,7 @@ private:
   Node* _node;
 public:
   VTransformOuterNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n) {}
+    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n) {}
 
   virtual VTransformOuterNode* isa_Outer() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
@@ -684,11 +693,12 @@ public:
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
 private:
+  // TODO: remove, use _type instead - maybe even get the vt from outside?
   int _vlen;
   BasicType _element_type;
 public:
   VTransformReplicateNode(VTransform& vtransform, int vlen, BasicType element_type) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
+    VTransformNode(vtransform, 2, TypeVect::make(element_type, vlen)), _vlen(vlen), _element_type(element_type) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
@@ -698,7 +708,7 @@ public:
 // Transform introduces a scalar ConvI2LNode that was not previously in the C2 graph.
 class VTransformConvI2LNode : public VTransformNode {
 public:
-  VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2) {}
+  VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2, TypeLong::LONG) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
@@ -707,13 +717,14 @@ public:
 // Transform introduces a shift-count node that truncates the shift count for a vector shift.
 class VTransformShiftCountNode : public VTransformNode {
 private:
+  // TODO: remove, use _type instead - maybe even get the vt from outside?
   int _vlen;
   const BasicType _element_bt;
   juint _mask;
   int _shift_opcode;
 public:
   VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+    VTransformNode(vtransform, 2, TypeVect::make(element_bt, vlen)), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
@@ -723,11 +734,12 @@ public:
 // Transform introduces a PopulateIndex node: [phi, phi+1, phi+2, phi+3, ...].
 class VTransformPopulateIndexNode : public VTransformNode {
 private:
+  // TODO: remove, use _type instead - maybe even get the vt from outside?
   int _vlen;
   const BasicType _element_bt;
 public:
   VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt) {}
+    VTransformNode(vtransform, 2, TypeVect::make(element_bt, vlen)), _vlen(vlen), _element_bt(element_bt) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
@@ -739,6 +751,7 @@ class VTransformVectorNodeProperties : public StackObj {
 private:
   Node* _approximate_origin; // for proper propagation of node notes
   const int _scalar_opcode;
+  // TODO: remove, use _type instead - maybe even get the vt from outside?
   const uint _vector_length;
   const BasicType _element_basic_type;
 
@@ -773,10 +786,11 @@ public:
 // Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
+  // TODO: remove parts of it? use _type instead - maybe even get the vt from outside?
   const VTransformVectorNodeProperties _properties;
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
-    VTransformNode(vtransform, req), _properties(properties) {}
+    VTransformNode(vtransform, req, TypeVect::make(properties.element_basic_type(), properties.vector_length())), _properties(properties) {}
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
