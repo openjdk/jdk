@@ -743,18 +743,15 @@ class VTransformVectorNodeProperties : public StackObj {
 private:
   Node* _approximate_origin; // for proper propagation of node notes
   const int _scalar_opcode;
-  // TODO: remove, use _type instead - maybe even get the vt from outside?
-  const uint _vector_length;
-  const BasicType _element_basic_type;
+  // TODO: remove?
+  const TypeVect* _vt;
 
   VTransformVectorNodeProperties(Node* approximate_origin,
                                  int scalar_opcode,
-                                 uint vector_length,
-                                 BasicType element_basic_type) :
+                                 const TypeVect* vt) :
     _approximate_origin(approximate_origin),
     _scalar_opcode(scalar_opcode),
-    _vector_length(vector_length),
-    _element_basic_type(element_basic_type) {}
+    _vt(vt) {}
 
 public:
   static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
@@ -762,17 +759,19 @@ public:
     int opc = first->Opcode();
     int vlen = pack->size();
     BasicType bt = vloop_analyzer.types().velt_basic_type(first);
-    return VTransformVectorNodeProperties(first, opc, vlen, bt);
+    const TypeVect* vt = TypeVect::make(bt, vlen);
+    return VTransformVectorNodeProperties(first, opc, vt);
   }
 
-  static VTransformVectorNodeProperties make_for_phi_vector(PhiNode* phi, int vlen, BasicType bt) {
-    return VTransformVectorNodeProperties(phi, phi->Opcode(), vlen, bt);
+  static VTransformVectorNodeProperties make_for_phi_vector(PhiNode* phi, const TypeVect* vt) {
+    return VTransformVectorNodeProperties(phi, phi->Opcode(), vt);
   }
 
   Node* approximate_origin()     const { return _approximate_origin; }
   int scalar_opcode()            const { return _scalar_opcode; }
-  uint vector_length()           const { return _vector_length; }
-  BasicType element_basic_type() const { return _element_basic_type; }
+  // TODO: remove / replace?
+  uint vector_length()           const { return _vt->length(); }
+  BasicType element_basic_type() const { return _vt->element_basic_type(); }
 };
 
 // Abstract base class for all vector vtnodes.

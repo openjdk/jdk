@@ -1396,7 +1396,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   )
 
   // Create new vector phi
-  const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_for_phi_vector(old_phi, vlen, bt);
+  const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_for_phi_vector(old_phi, vt);
   VTransformPhiVectorNode* phi_vector = new (vtransform.arena()) VTransformPhiVectorNode(vtransform, 3, properties);
   phi_vector->init_req(0, phi_scalar->in_req(0));
   phi_vector->init_req(1, vtn_identity_vector);
