@@ -547,7 +547,7 @@ public:
 
   // Accessors to the type. Some can only be used by nodes with a vector type.
   const Type* type() const { return _type; }
-  int vlen() const { return type()->is_vect()->length(); }
+  uint vector_length() const { return type()->is_vect()->length(); }
   BasicType element_basic_type() const { return type()->is_vect()->element_basic_type(); }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
@@ -769,9 +769,7 @@ public:
 
   Node* approximate_origin()     const { return _approximate_origin; }
   int scalar_opcode()            const { return _scalar_opcode; }
-  // TODO: remove / replace?
-  uint vector_length()           const { return _vt->length(); }
-  BasicType element_basic_type() const { return _vt->element_basic_type(); }
+  const TypeVect* vt()           const { return _vt; }
 };
 
 // Abstract base class for all vector vtnodes.
@@ -781,7 +779,7 @@ private:
   const VTransformVectorNodeProperties _properties;
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
-    VTransformNode(vtransform, req, TypeVect::make(properties.element_basic_type(), properties.vector_length())), _properties(properties) {}
+    VTransformNode(vtransform, req, properties.vt()), _properties(properties) {}
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
@@ -791,8 +789,6 @@ protected:
   const VTransformVectorNodeProperties& properties() const { return _properties; }
   Node* approximate_origin()     const { return _properties.approximate_origin(); }
   int scalar_opcode()            const { return _properties.scalar_opcode(); }
-  uint vector_length()           const { return _properties.vector_length(); }
-  BasicType element_basic_type() const { return _properties.element_basic_type(); }
 };
 
 // Catch all for all element-wise vector operations.

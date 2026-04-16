@@ -181,8 +181,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   Node* p0 = pack->at(0);
   const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_from_pack(pack, _vloop_analyzer);
   const int sopc     = properties.scalar_opcode();
-  const uint vlen    = properties.vector_length();
-  const BasicType bt = properties.element_basic_type();
+  const uint vlen    = properties.vt()->length();
+  const BasicType bt = properties.vt()->element_basic_type();
 
   VTransformVectorNode* vtn = nullptr;
   if (p0->is_Load()) {

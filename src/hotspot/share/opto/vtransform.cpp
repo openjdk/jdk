@@ -1045,12 +1045,12 @@ VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_sta
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector_node(Op_Replicate, vlen(), element_basic_type());
+  return vloop_analyzer.cost_for_vector_node(Op_Replicate, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
   Node* val = apply_state.transformed_node(in_req(1));
-  VectorNode* vn = VectorNode::scalar2vector(val, vlen(), element_basic_type());
+  VectorNode* vn = VectorNode::scalar2vector(val, vector_length(), element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
@@ -1069,7 +1069,7 @@ VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_s
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
   return vloop_analyzer.cost_for_scalar_node(Op_AndI) +
-         vloop_analyzer.cost_for_vector_node(shift_count_opc, vlen(), element_basic_type());
+         vloop_analyzer.cost_for_vector_node(shift_count_opc, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
@@ -1082,14 +1082,14 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
   Node* shift_count_masked = new AndINode(shift_count_in, phase->intcon(_mask));
   register_new_node_from_vectorization(apply_state, shift_count_masked);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
-  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, vlen(), element_basic_type());
+  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, vector_length(), element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   // TODO: should we route the vt into the cost?
-  return vloop_analyzer.cost_for_vector_node(Op_PopulateIndex, vlen(), element_basic_type());
+  return vloop_analyzer.cost_for_vector_node(Op_PopulateIndex, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
@@ -1473,7 +1473,7 @@ VTransformApplyResult VTransformPhiVectorNode::apply(VTransformApplyState& apply
   // Note: the backedge is hooked up later.
 
   // Give the new phi node the correct vector type.
-  const TypeVect* vt = TypeVect::make(element_basic_type(), vector_length());
+  const TypeVect* vt = type()->is_vect();
   new_phi->as_Type()->set_type(vt);
   phase->igvn().set_type(new_phi, vt);
 
@@ -1646,12 +1646,10 @@ void VTransformShiftCountNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("Properties[orig=[%d %s] sopc=%s vlen=%d element_bt=%s]",
+  tty->print("Properties[orig=[%d %s] sopc=%s]",
              approximate_origin()->_idx,
              approximate_origin()->Name(),
-             NodeClassNames[scalar_opcode()],
-             vector_length(),
-             type2name(element_basic_type()));
+             NodeClassNames[scalar_opcode()]);
   if (is_load_or_store_in_loop()) {
     tty->print(" ");
     vpointer().print_on(tty, false);
