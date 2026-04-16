@@ -944,6 +944,7 @@ public:
 // parallel to VLoopAnalyzer
 // - types - or maybe store types in scalar vtnode?
 // - reductions
+// TODO: do we need this?
 class VTransformAnalyzer : StackObj {
 private:
   const VTransform& _vtransform;

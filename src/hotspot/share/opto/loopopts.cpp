@@ -4540,7 +4540,14 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
     ResourceMark rm;
     ScalarVTransformBuilder builder(scalar_vtransform);
   }
+  // TODO: optimze the scalar graph for vectorization:
+  // - subword
+  // - if-conversion
+  // - ...
 
+  assert(false, "done optimizing scalar graph?");
+
+  // TODO: do we need this?
   const VTransformAnalyzer vtransform_analyzer(scalar_vtransform);
 
   SuperWord sw(scalar_vtransform);
