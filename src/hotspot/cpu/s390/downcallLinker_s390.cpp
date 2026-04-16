@@ -253,7 +253,7 @@ void DowncallLinker::StubGenerator::generate() {
       __ z_fence(); // Order state change wrt. safepoint poll.
     }
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, tmp);
+    __ safepoint_poll(L_safepoint_poll_slow_path, tmp, true /* at_return */, false /* in_nmethod */);
 
     __ load_and_test_int(tmp, Address(Z_thread, JavaThread::suspend_flags_offset()));
     __ z_brne(L_safepoint_poll_slow_path);
