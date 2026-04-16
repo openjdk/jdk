@@ -717,14 +717,11 @@ public:
 // Transform introduces a shift-count node that truncates the shift count for a vector shift.
 class VTransformShiftCountNode : public VTransformNode {
 private:
-  // TODO: remove, use _type instead - maybe even get the vt from outside?
-  int _vlen;
-  const BasicType _element_bt;
   juint _mask;
   int _shift_opcode;
 public:
-  VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
-    VTransformNode(vtransform, 2, TypeVect::make(element_bt, vlen)), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+  VTransformShiftCountNode(VTransform& vtransform, const TypeVect* vt, juint mask, int shift_opcode) :
+    VTransformNode(vtransform, 2, vt), _mask(mask), _shift_opcode(shift_opcode) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
@@ -733,17 +730,12 @@ public:
 
 // Transform introduces a PopulateIndex node: [phi, phi+1, phi+2, phi+3, ...].
 class VTransformPopulateIndexNode : public VTransformNode {
-private:
-  // TODO: remove, use _type instead - maybe even get the vt from outside?
-  int _vlen;
-  const BasicType _element_bt;
 public:
-  VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
-    VTransformNode(vtransform, 2, TypeVect::make(element_bt, vlen)), _vlen(vlen), _element_bt(element_bt) {}
+  VTransformPopulateIndexNode(VTransform& vtransform, const TypeVect* vt) :
+    VTransformNode(vtransform, 2, vt) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
-  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 // Bundle the information needed for vector nodes.

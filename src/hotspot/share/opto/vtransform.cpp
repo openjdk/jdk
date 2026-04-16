@@ -1069,7 +1069,7 @@ VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_s
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
   return vloop_analyzer.cost_for_scalar_node(Op_AndI) +
-         vloop_analyzer.cost_for_vector_node(shift_count_opc, _vlen, _element_bt);
+         vloop_analyzer.cost_for_vector_node(shift_count_opc, vlen(), element_basic_type());
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
@@ -1082,22 +1082,22 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
   Node* shift_count_masked = new AndINode(shift_count_in, phase->intcon(_mask));
   register_new_node_from_vectorization(apply_state, shift_count_masked);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
-  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
+  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, vlen(), element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector_node(Op_PopulateIndex, _vlen, _element_bt);
+  // TODO: should we route the vt into the cost?
+  return vloop_analyzer.cost_for_vector_node(Op_PopulateIndex, vlen(), element_basic_type());
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   Node* val = apply_state.transformed_node(in_req(1));
   assert(val->is_Phi(), "expected to be iv");
-  assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
-  const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
-  VectorNode* vn = new PopulateIndexNode(val, phase->intcon(1), vt);
+  assert(VectorNode::is_populate_index_supported(element_basic_type()), "should support");
+  VectorNode* vn = new PopulateIndexNode(val, phase->intcon(1), type()->is_vect());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
@@ -1641,13 +1641,8 @@ void VTransformOuterNode::print_spec() const {
 }
 
 void VTransformShiftCountNode::print_spec() const {
-  tty->print("vlen=%d element_bt=%s mask=%d shift_opcode=%s",
-             _vlen, type2name(_element_bt), _mask,
-             NodeClassNames[_shift_opcode]);
-}
-
-void VTransformPopulateIndexNode::print_spec() const {
-  tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
+  tty->print("mask=%d shift_opcode=%s",
+             _mask, NodeClassNames[_shift_opcode]);
 }
 
 void VTransformVectorNode::print_spec() const {

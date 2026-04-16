@@ -295,7 +295,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // then the p0_bt can also be L/F/D but we need to produce ints for the input of
     // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, pack->size(), element_bt);
+    const TypeVect* vt = TypeVect::make(element_bt, pack->size());
+    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, vt);
     populate_index->init_req(1, iv_vtn);
     return populate_index;
   }
@@ -308,7 +309,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       // create a special ShiftCount node.
       BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, pack->size(), element_bt, mask, p0->Opcode());
+      const TypeVect* vt = TypeVect::make(element_bt, pack->size());
+      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, vt, mask, p0->Opcode());
       shift_count->init_req(1, same_input_vtn);
       return shift_count;
     } else {
