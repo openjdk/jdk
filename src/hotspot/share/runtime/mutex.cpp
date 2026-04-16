@@ -350,9 +350,7 @@ void Mutex::print_rank_name(outputStream* st) const {
 
 // Requires caller to have ResourceMark.
 const char* Mutex::rank_name() const {
-  stringStream st;
-  print_rank_name_internal(&st, _rank);
-  return st.as_string();
+  rank_name_internal(_rank);
 }
 
 
