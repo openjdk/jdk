@@ -24,7 +24,7 @@
 
 /**
  * @test id=nocoops_nocoh
- * @summary Test Loading of default archives in all configurations
+ * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-nocoh)
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -37,7 +37,7 @@
 
 /**
  * @test id=nocoops_coh
- * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
+ * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -50,7 +50,7 @@
 
 /**
  * @test id=coops_nocoh
- * @summary Test Loading of default archives in all configurations
+ * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-nocoh)
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -64,7 +64,7 @@
 
 /**
  * @test id=coops_coh
- * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
+ * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap

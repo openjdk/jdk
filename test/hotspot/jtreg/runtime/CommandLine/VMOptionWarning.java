@@ -76,6 +76,16 @@
  * @run driver VMOptionWarning CompactObjectHeaders
  */
 
+/* @test VMOptionWarningCompactObjectHeaders
+ * @bug 8360700
+ * @summary Warn if -XX:-UseObjectMonitorTable is used without -XX:-UseCompactObjectHeaders
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver VMOptionWarning UseObjectMonitorTable
+ */
+
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -121,7 +131,14 @@ public class VMOptionWarning {
                 pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompactObjectHeaders", "-XX:+UnlockDiagnosticVMOptions", "-XX:-UseObjectMonitorTable", "-version");
                 output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
-                output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders option; ignoring -UseObjectMonitorTable");
+                output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
+                break;
+            }
+            case "UseObjectMonitorTable": {
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:-UseObjectMonitorTable", "-version");
+                output = new OutputAnalyzer(pb.start());
+                output.shouldHaveExitValue(0);
+                output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
                 break;
             }
             default: {
