@@ -105,6 +105,8 @@ public class CACertsPlugin extends AbstractPlugin {
             var baos = new ByteArrayOutputStream();
             ks.store(baos, null);
             return baos.toByteArray();
+        } catch (PluginException pe) {
+            throw pe;
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
