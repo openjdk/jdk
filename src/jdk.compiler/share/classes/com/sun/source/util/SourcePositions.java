@@ -74,6 +74,7 @@ public interface SourcePositions {
      * </p>
      *
      * @param tree tree for which a position is sought
+     * @since 27
      */
      long getStartPosition(Tree tree);
 
@@ -130,6 +131,7 @@ public interface SourcePositions {
      * </p>
      *
      * @param tree tree for which a position is sought
+     * @since 27
      */
     long getEndPosition(Tree tree);
 }

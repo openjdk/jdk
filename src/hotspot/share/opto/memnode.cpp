@@ -1671,11 +1671,15 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
 
+  if (base == nullptr) {
+    return false;
+  }
+
   if (base->is_CastPP()) {
     base = base->in(1);
   }
 
-  if (req() > 3 || base == nullptr || !base->is_Phi()) {
+  if (req() > 3 || !base->is_Phi()) {
     return false;
   }
 
@@ -4081,7 +4085,7 @@ uint LoadStoreNode::ideal_reg() const {
 bool LoadStoreNode::result_not_used() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node *x = fast_out(i);
-    if (x->Opcode() == Op_SCMemProj) {
+    if (x->Opcode() == Op_SCMemProj || x->is_ReachabilityFence()) {
       continue;
     }
     if (x->bottom_type() == TypeTuple::MEMBAR &&

@@ -58,6 +58,12 @@ protected:
   // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
   // implemented as `movi; cpy(imm, merging)`.
   static constexpr bool _prefer_sve_merging_mode_cpy = true;
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
+
+  // IC IVAU trap probe for Neoverse N1 erratum 1542419.
+  // Set by get_os_cpu_info() on Linux via ic_ivau_probe_linux_aarch64.S.
+  static bool _ic_ivau_trapped;
 
   static SpinWait _spin_wait;
 
@@ -193,6 +199,8 @@ public:
     return (features & BIT_MASK(flag)) != 0;
   }
 
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
+
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
   static int cpu_model2()                     { return _model2; }
@@ -254,6 +262,10 @@ public:
   static bool use_neon_for_vector(int vector_length_in_bytes) {
     return vector_length_in_bytes <= 16;
   }
+
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
+  static bool is_ic_ivau_trapped()   { return _ic_ivau_trapped; }
 
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
 

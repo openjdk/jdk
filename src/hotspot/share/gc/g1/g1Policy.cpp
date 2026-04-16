@@ -962,12 +962,12 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
+  _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
     update_young_length_bounds();
 
-    _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
     if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
@@ -1256,7 +1256,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
-  // First, collector_state()->in_concurrent_start_gc() should not be already set. We
+  // First, collector_state()->is_in_concurrent_start_gc() should not already be set. We
   // will set it here if we have to. However, it should be cleared by
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.compiler.CompilerUtils
  * @modules jdk.compiler
- * @run testng SplitPackage
+ * @run junit ${test.main.class}
  */
 
 import java.net.URL;
@@ -40,17 +40,21 @@ import java.nio.file.StandardCopyOption;
 import java.util.jar.Manifest;
 import jdk.test.lib.compiler.CompilerUtils;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SplitPackage {
     private static final Path SRC_DIR = Paths.get(System.getProperty("test.src", "."));
     private static final Path FOO_DIR = Paths.get("foo");
     private static final Path BAR_DIR = Paths.get("bar");
 
-    @BeforeTest
-    private void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         Files.createDirectory(BAR_DIR);
 
         Path pkgDir = Paths.get("p");
@@ -80,14 +84,11 @@ public class SplitPackage {
         Package pForFoo = loader1.getDefinedPackage("p");
         Package pForBar = loader2.getDefinedPackage("p");
 
-        assertEquals(pForFoo.getName(), pForBar.getName());
-        assertTrue(pForFoo != pForBar);
+        assertEquals(pForBar.getName(), pForFoo.getName());
+        assertNotSame(pForBar, pForFoo);
 
-        try {
-            loader2.defineSplitPackage("p");
-        } catch (IllegalArgumentException e) {
-
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> loader2.defineSplitPackage("p"));
     }
 
     static class Loader extends URLClassLoader {
