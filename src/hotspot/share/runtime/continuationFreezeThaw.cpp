@@ -2565,6 +2565,7 @@ void ThawBase::finalize_thaw(frame& entry, int argsize) {
   assert(entry.sp() == _cont.entrySP(), "");
   assert(Continuation::is_continuation_enterSpecial(entry), "");
   assert(_cont.is_entry_frame(entry), "");
+  assert(entry.pc() == entry.raw_pc(), "");
   DEBUG_ONLY(_caller_raw_pc = entry.pc();)
 }
 
@@ -2815,6 +2816,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
   DEBUG_ONLY(address return_pc = ContinuationHelper::InterpretedFrame::return_pc(f);)
   assert(return_pc == _caller_raw_pc || (is_bottom_frame && return_pc == StubRoutines::cont_returnBarrier()), "wrong return pc");
+  assert(f.pc() == f.raw_pc(), "");
   DEBUG_ONLY(_caller_raw_pc = f.pc();)
   caller = f;
 }
