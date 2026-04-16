@@ -939,7 +939,8 @@ import java.util.Arrays;
  * <li> Conversion {@code int[4]:128 -> float[4]:128}:
  * invariant lane size (lanewise in-place, {@code ML=1}),
  * shape-invariant ({@code MP=1}).
- * No selection or insertion (in-place, {@code MO=MS=1}).
+ * The conversion is length-invariant, so
+ * no selection or insertion (in-place, {@code MO=MS=1}).
  *
  * <li> Conversion {@code byte[16]:128 -> long[2]:128}:
  * expanding lane size ({@code ML=8}),
