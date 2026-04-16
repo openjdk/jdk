@@ -130,7 +130,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
     return _skip_rank_check;
   }
 
-  const char*  rank_name() const;
+  const char* rank_name() const;
   void print_rank_name(outputStream* st) const;
 
  public:
