@@ -1093,11 +1093,13 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   // now we have added all the other data we can write details of any
   // extra the AOT relocations
 
-  bool write_ok;
+  bool write_ok = true;
   if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
-    CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
-    RelocIterator iter(cs);
-    write_ok = cache->write_relocations(blob, iter);
+    if (reloc_count > 0) {
+      CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
+      RelocIterator iter(cs);
+      write_ok = cache->write_relocations(blob, iter);
+    }
   } else {
     RelocIterator iter(&blob);
     write_ok = cache->write_relocations(blob, iter);
@@ -1403,13 +1405,15 @@ void AOTCodeReader::restore(CodeBlob* code_blob) {
     // reinstate the AOT-load time relocs we saved from the code
     // buffer that generated this blob in a new code buffer and use
     // the latter to iterate over them
-    CodeBuffer code_buffer(code_blob);
-    relocInfo* locs = (relocInfo*)_reloc_data;
-    code_buffer.insts()->initialize_shared_locs(locs, _reloc_count);
-    code_buffer.insts()->set_locs_end(locs + _reloc_count);
-    CodeSection *cs = code_buffer.code_section(CodeBuffer::SECT_INSTS);
-    RelocIterator reloc_iter(cs);
-    fix_relocations(code_blob, reloc_iter);
+    if (_reloc_count > 0) {
+      CodeBuffer code_buffer(code_blob);
+      relocInfo* locs = (relocInfo*)_reloc_data;
+      code_buffer.insts()->initialize_shared_locs(locs, _reloc_count);
+      code_buffer.insts()->set_locs_end(locs + _reloc_count);
+      CodeSection *cs = code_buffer.code_section(CodeBuffer::SECT_INSTS);
+      RelocIterator reloc_iter(cs);
+      fix_relocations(code_blob, reloc_iter);
+    }
   } else {
     // the AOT-load time relocs will be in the blob's restored relocs
     RelocIterator reloc_iter(code_blob);
@@ -1858,11 +1862,8 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // addresses, respectively, keyed by the relevant address
 
 void AOTCodeAddressTable::hash_address(address addr, int idx) {
-  // only do this if we are caching stubs and we have a non-null
-  // address to record
-  if (!AOTStubCaching) {
-    return;
-  }
+  // only do this if we have a non-null address to record and the
+  // cache is open for dumping
   if (addr == nullptr) {
     return;
   }
@@ -2200,6 +2201,10 @@ void AOTCodeCache::load_strings() {
   if (strings_count == 0) {
     return;
   }
+  if (strings_count > MAX_STR_COUNT) {
+    fatal("Invalid strings_count loaded from AOT Code Cache: %d > MAX_STR_COUNT [%d]", strings_count, MAX_STR_COUNT);
+    return;
+  }
   uint strings_offset = _load_header->strings_offset();
   uint* string_lengths = (uint*)addr(strings_offset);
   strings_offset += (strings_count * sizeof(uint));
@@ -2210,7 +2215,6 @@ void AOTCodeCache::load_strings() {
   char* p = NEW_C_HEAP_ARRAY(char, strings_size+1, mtCode);
   memcpy(p, addr(strings_offset), strings_size);
   _C_strings_buf = p;
-  assert(strings_count <= MAX_STR_COUNT, "sanity");
   for (uint i = 0; i < strings_count; i++) {
     _C_strings[i] = p;
     uint len = string_lengths[i];
@@ -2511,10 +2515,11 @@ AOTStubData::AOTStubData(BlobId blob_id) :
   // cannot be accessed before initialising the universe
   if (blob_id == BlobId::stubgen_preuniverse_id) {
     // invalidate any attempt to use this
-    _flags |= INVALID;
+    _flags = INVALID;
     return;
   }
   if (AOTCodeCache::is_on()) {
+    _flags = OPEN;
     // allow update of stub entry addresses
     if (AOTCodeCache::is_using_stub()) {
       // allow stub loading
