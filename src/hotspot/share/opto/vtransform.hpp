@@ -743,7 +743,6 @@ class VTransformVectorNodeProperties : public StackObj {
 private:
   Node* _approximate_origin; // for proper propagation of node notes
   const int _scalar_opcode;
-  // TODO: remove?
   const TypeVect* _vt;
 
   VTransformVectorNodeProperties(Node* approximate_origin,
@@ -754,6 +753,12 @@ private:
     _vt(vt) {}
 
 public:
+  static VTransformVectorNodeProperties make(Node* approximate_origin,
+                                             int scalar_opcode,
+                                             const TypeVect* vt) {
+    return VTransformVectorNodeProperties(approximate_origin, scalar_opcode, vt);
+  }
+
   static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
     Node* first = pack->at(0);
     int opc = first->Opcode();
@@ -775,20 +780,25 @@ public:
 // Abstract base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
-  // TODO: remove parts of it? use _type instead - maybe even get the vt from outside?
-  const VTransformVectorNodeProperties _properties;
+  Node* _approximate_origin; // for proper propagation of node notes
+  const int _scalar_opcode;
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorNodeProperties properties) :
-    VTransformNode(vtransform, req, properties.vt()), _properties(properties) {}
+    VTransformNode(vtransform, req, properties.vt()),
+    _approximate_origin(properties.approximate_origin()),
+    _scalar_opcode(properties.scalar_opcode()) {}
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
 
 protected:
-  const VTransformVectorNodeProperties& properties() const { return _properties; }
-  Node* approximate_origin()     const { return _properties.approximate_origin(); }
-  int scalar_opcode()            const { return _properties.scalar_opcode(); }
+  Node* approximate_origin()     const { return _approximate_origin; }
+  int scalar_opcode()            const { return _scalar_opcode; }
+
+  VTransformVectorNodeProperties properties() const {
+    return VTransformVectorNodeProperties::make(_approximate_origin, _scalar_opcode, type()->is_vect());
+  }
 };
 
 // Catch all for all element-wise vector operations.
