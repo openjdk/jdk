@@ -21,24 +21,23 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8382267
  * @summary VectorMathLibrary symbol names must not use locale-sensitive formatting
  * @modules jdk.incubator.vector
- * @run main/othervm -Duser.language=ar -Duser.country=SA VectorMathLibraryLocaleTest
+ * @run main/othervm -ea -Duser.language=ar -Duser.country=SA VectorMathLibraryLocaleTest
  */
 
 import java.util.Locale;
+
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class VectorMathLibraryLocaleTest {
     public static void main(String[] args) {
-        Locale locale = Locale.getDefault();
-        System.out.println("Locale: " + locale);
-        System.out.println("String.format(\"%d\", 16) = " + String.format("%d", 16));
+        assert !String.format("%d", 16).equals("16") : "expected non-ASCII digits for locale " + Locale.getDefault();
 
         VectorSpecies<Float> species = FloatVector.SPECIES_PREFERRED;
         FloatVector v = FloatVector.broadcast(species, 1.0f);
