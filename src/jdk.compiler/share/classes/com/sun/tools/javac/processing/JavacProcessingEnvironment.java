@@ -1204,6 +1204,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         //where:
             private final Predicate<JCDiagnostic> ACCEPT_NON_RECOVERABLE_LINTS =
                     d -> !Optional.of(d)
+                            .filter(diag -> !diag.isFlagSet(SYNTAX))
                             .map(JCDiagnostic::getLintCategory)
                             .map(lc -> lc.annotationSuppression ||
                                        lc == Lint.LintCategory.INCUBATING)

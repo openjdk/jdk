@@ -1000,30 +1000,6 @@ public:
     f(0b0101010, 31, 25), f(0, 24), sf(offset, 23, 5), f(0, 4), f(cond, 3, 0);
   }
 
-#define INSN(NAME, cond)                        \
-  void NAME(address dest) {                     \
-    br(cond, dest);                             \
-  }
-
-  INSN(beq, EQ);
-  INSN(bne, NE);
-  INSN(bhs, HS);
-  INSN(bcs, CS);
-  INSN(blo, LO);
-  INSN(bcc, CC);
-  INSN(bmi, MI);
-  INSN(bpl, PL);
-  INSN(bvs, VS);
-  INSN(bvc, VC);
-  INSN(bhi, HI);
-  INSN(bls, LS);
-  INSN(bge, GE);
-  INSN(blt, LT);
-  INSN(bgt, GT);
-  INSN(ble, LE);
-  INSN(bal, AL);
-  INSN(bnv, NV);
-
   void br(Condition cc, Label &L);
 
 #undef INSN

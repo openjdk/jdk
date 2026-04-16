@@ -19,16 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "cds/aotGrowableArray.hpp"
-#include "cds/aotMetaspace.hpp"
-#include "memory/allocation.inline.hpp"
-#include "utilities/growableArray.hpp"
+/**
+ * @test
+ * @bug 8374496
+ * @summary "C2: assert(val->find_edge(con) > 0) failed"
+ *
+ * @run main/othervm -Xbatch ${test.main.class}
+ */
+package compiler.types;
 
-void AOTGrowableArrayHelper::deallocate(void* mem) {
-  if (!AOTMetaspace::in_aot_cache(mem)) {
-    GrowableArrayCHeapAllocator::deallocate(mem);
-  }
+public class TestSubTypeCheckMismatch {
+    static class A {}
+
+    static Integer test(Object o, int a, int b) {
+        int i = -1;
+        if (o instanceof A) { // results in SubTypeCheck node and diamond-shape if
+            i = Math.min(a, b);
+        }
+        return Integer.valueOf(i); // late inlined
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(new A(),      0, 0);
+            test(new Object(), 0, 0);
+        }
+    }
 }

@@ -66,6 +66,9 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#ifdef COMPILER2
+#include "runtime/hotCodeCollector.hpp"
+#endif // COMPILER2
 #include "runtime/icache.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -1258,6 +1261,11 @@ void nmethod::post_init() {
   ICache::invalidate_range(code_begin(), code_size());
 
   Universe::heap()->register_nmethod(this);
+
+#ifdef COMPILER2
+  HotCodeCollector::register_nmethod(this);
+#endif // COMPILER2
+
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
@@ -1332,7 +1340,6 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
 
     post_init();
-    ICache::invalidate_range(code_begin(), code_size());
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -1812,7 +1819,6 @@ nmethod::nmethod(
     init_immutable_data_ref_count();
 
     post_init();
-    ICache::invalidate_range(code_begin(), code_size());
 
     // we use the information of entry points to find out if a method is
     // static or non static
@@ -2478,6 +2484,11 @@ void nmethod::purge(bool unregister_nmethod) {
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
+
+#ifdef COMPILER2
+  HotCodeCollector::unregister_nmethod(this);
+#endif // COMPILER2
+
   CodeCache::unregister_old_nmethod(this);
 
   JVMCI_ONLY( _metadata_size = 0; )
