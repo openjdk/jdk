@@ -80,9 +80,17 @@ public class JavaAgent2 {
                     "-Xlog:aot,cds",
                     "-XX:+AOTClassLinking",
                     // "-XX:CompileCommand=dontinline ShouldNotBeTransformed::doWork",
+                    "-XX:-TieredCompilation",
                     "-XX:+PrintCompilation",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+PrintInlining",
+                };
+            case RunMode.ASSEMBLY:
+                return new String[] {
+                    "-javaagent:" + agentJar,
+                    "-Xlog:aot,cds",
+                    "-XX:+AOTClassLinking",
+                    "-XX:+AOTPrintTrainingInfo",
                 };
             default:
                 return new String[] {
@@ -124,11 +132,17 @@ public class JavaAgent2 {
                 out.shouldContain("Skipping JavaAgentApp2$ShouldBeTransformed: From ClassFileLoadHook");
                 out.shouldContain("Skipping JavaAgentApp2$ShouldBeTransformed: Has been redefined");
                 out.shouldContain("Skipping JavaAgentRetransformer: Unsupported location");
-                out.shouldMatch("[0-9]* *[0-9]* *2 *JavaAgentApp2\\$ShouldNotBeTransformed::doWork");
+                // should see compilation of $ShouldNotBeTransformed::doWork
+                out.shouldMatch("^[0-9]* *[0-9]* *[0-9] *JavaAgentApp2\\$ShouldNotBeTransformed::doWork");
+                // should see inlining of $ShouldBeTransformed::doWork
                 out.shouldMatch("JavaAgentApp2\\$ShouldBeTransformed::doWork \\([0-9]* bytes\\) *inline");
                 break;
             case RunMode.ASSEMBLY:
                 out.shouldContain("Disabled all JVMTI agents during -XX:AOTMode=create");
+                // we should not be saving compiled training data for
+                // $ShouldBeTransformed.doWork as it depends on a
+                // method that was retransfromed
+                out.shouldNotMatch("^  C JavaAgentApp2\\$ShouldNotBeTransformed\\[.\\].doWork\\(\\)");
                 break;
             }
 
@@ -139,11 +153,14 @@ public class JavaAgent2 {
 class JavaAgentApp2 {
     public static void main(String[] args) {
         ShouldNotBeTransformed s = new ShouldNotBeTransformed();
+        // Force profile/compile of ShouldNotBeTransformed::dowork.
+        // The compiler should inline ShouldBeTransformed::doWork
         for (int i = 0; i < 10_000; i++) {
             s.doWork();
         }
-        // transform the class whose method shoudl be inlined
+        // transform ShouldBeTransformed::doWork to a simple return
         JavaAgentRetransformer.doRetransform(ShouldBeTransformed.class);
+        // Profile and compile again
         for (int i = 0; i < 10_000; i++) {
             s.doWork();
         }
