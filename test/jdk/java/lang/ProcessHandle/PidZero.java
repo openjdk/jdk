@@ -22,12 +22,13 @@
  */
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /*
  * @test
+ * @bug 8381567
  * @summary ProcessHandle.descendants fails with AIOOE for process 0
  * @requires os.family == "mac"
- * @library /test/lib
  * @run junit PidZero
  */
 public class PidZero {
@@ -39,6 +40,6 @@ public class PidZero {
      */
     @Test
     public void test() {
-         int num = ProcessHandle.of(0).orElseThrow().descendants().toList().size();
+         assertDoesNotThrow(() -> ProcessHandle.of(0).orElseThrow().descendants().toList().size());
     }
 }

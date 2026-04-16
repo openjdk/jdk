@@ -458,10 +458,10 @@ final class ProcessHandleImpl implements ProcessHandle {
                     next++;
                 }
             }
-            if (++count >= size) {
+            if (count+1 >= size) {
                 break;
             }
-            ppid = pids[count];   // pick up the next pid to scan for
+            ppid = pids[++count];   // pick up the next pid to scan for
             ppStart = starttimes[count];    // and its start time
         } while (count < next);
 
