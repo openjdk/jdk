@@ -327,7 +327,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, pack->size(), element_bt);
+      const TypeVect* vt = TypeVect::make(element_bt, pack->size());
+      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, vt);
       replicate->init_req(1, same_input_vtn);
       return replicate;
     }

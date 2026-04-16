@@ -545,6 +545,11 @@ public:
     }
   }
 
+  // Accessors to the type. Some can only be used by nodes with a vector type.
+  const Type* type() const { return _type; }
+  int vlen() const { return type()->is_vect()->length(); }
+  BasicType element_basic_type() const { return type()->is_vect()->element_basic_type(); }
+
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
   virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
   virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
@@ -692,17 +697,12 @@ public:
 
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
-private:
-  // TODO: remove, use _type instead - maybe even get the vt from outside?
-  int _vlen;
-  BasicType _element_type;
 public:
-  VTransformReplicateNode(VTransform& vtransform, int vlen, BasicType element_type) :
-    VTransformNode(vtransform, 2, TypeVect::make(element_type, vlen)), _vlen(vlen), _element_type(element_type) {}
+  VTransformReplicateNode(VTransform& vtransform, const TypeVect* vt) :
+    VTransformNode(vtransform, 2, vt) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
-  NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
 // Transform introduces a scalar ConvI2LNode that was not previously in the C2 graph.

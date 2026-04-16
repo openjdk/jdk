@@ -1045,12 +1045,12 @@ VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_sta
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector_node(Op_Replicate, _vlen, _element_type);
+  return vloop_analyzer.cost_for_vector_node(Op_Replicate, vlen(), element_basic_type());
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
   Node* val = apply_state.transformed_node(in_req(1));
-  VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
+  VectorNode* vn = VectorNode::scalar2vector(val, vlen(), element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
@@ -1380,7 +1380,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   phase->set_root_as_ctrl(identity);
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
 
-  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vt);
   vtn_identity_vector->init_req(1, vtn_identity);
 
   // Look at old scalar phi.
@@ -1604,6 +1605,8 @@ void VTransformNode::print() const {
     }
   }
   tty->print("] ");
+  _type->dump();
+  tty->print(" ");
   print_spec();
   tty->cr();
 }
@@ -1635,10 +1638,6 @@ void VTransformCFGNode::print_spec() const {
 
 void VTransformOuterNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
-}
-
-void VTransformReplicateNode::print_spec() const {
-  tty->print("vlen=%d element_type=%s", _vlen, type2name(_element_type));
 }
 
 void VTransformShiftCountNode::print_spec() const {

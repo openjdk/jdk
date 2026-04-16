@@ -2638,9 +2638,9 @@ void VLoopTypes::compute_vector_element_type() {
 #endif
 }
 
+// TODO: rm
 // Smallest type containing range of values
 const Type* VLoopTypes::container_type(Node* n) const {
-  assert(false, "TODO rm");
   int opc = n->Opcode();
   if (n->is_Mem()) {
     BasicType bt = n->as_Mem()->value_basic_type();
