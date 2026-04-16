@@ -2315,7 +2315,7 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
-  // Note that it holds heap lock to prevent additional allocations between sampling bytes_allocated_since_gc_start()
+  // Note that we obtain heap lock to prevent additional allocations between sampling bytes_allocated_since_gc_start()
   // and reset_bytes_allocated_since_gc_start()
   {
     ShenandoahHeapLocker locker(lock());

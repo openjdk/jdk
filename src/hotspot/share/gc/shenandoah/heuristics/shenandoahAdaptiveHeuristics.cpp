@@ -831,6 +831,11 @@ double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccoun
   double time_since_last_update = now - _last_sample_time;
   double rate = 0.0;
   if (time_since_last_update < MinSampleTime) {
+    // If we choose not to sample right now, the unaccounted_bytes_allocated will be added
+    // into the next sample taken. These unaccounted_bytes_allocated will be added to
+    // any additional bytes that are allocated during this GC cycle at the time the rate is
+    // next sampled. We do not overwrite _last_sample_time on this path, because the
+    // unaccounted_bytes_allocated were allocated following _last_sample_time.
     unaccounted_bytes_allocated = allocated - _last_sample_value;
   } else {
     rate = instantaneous_rate(now, allocated);
@@ -839,8 +844,12 @@ double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccoun
     _last_sample_time = now;
     unaccounted_bytes_allocated = 0;
   }
-  // force sample is done before when reset allocated since gc start,
-  // _last_sample_value must be reset 0.
+  // force_sample() is called when resetting bytes allocated since gc start. All subsequent
+  // requests to sample allocated bytes during this GC cycle are measured as a delta from
+  // _last_sample_value. In the case that we choose not to sample now, we will count the
+  // unaccounted_bytes_allocated as if they were allocated following the start of this GC
+  // cycle (but the time span over which these bytes were allocated begins at
+  // _last_sample_time, which we do not overwrite).
   _last_sample_value = 0;
   return rate;
 }
