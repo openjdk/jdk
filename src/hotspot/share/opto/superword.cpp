@@ -29,6 +29,7 @@
 #include "opto/superword.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 
 SuperWord::SuperWord(const VTransform& scalar_vtransform) :
   _scalar_vtransform(scalar_vtransform),
@@ -853,16 +854,21 @@ bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to
 // PopulateIndex vector node. We skip the pack creation of these nodes. They
 // will be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
-bool SuperWord::is_populate_index(const VTransformNode* n1, const VTransformNode* n2) const {
-  assert(false, "TODO impl");
-  return false;
-  //return n1->is_Add() &&
-  //       n2->is_Add() &&
-  //       n1->in(1) == iv() &&
-  //       n2->in(1) == iv() &&
-  //       n1->in(2)->is_Con() &&
-  //       n2->in(2)->is_Con() &&
-  //       n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
+bool SuperWord::is_populate_index(const VTransformNode* vtn1, const VTransformNode* vtn2) const {
+  const VTransformDataScalarNode* d1 = vtn1->isa_DataScalar();
+  const VTransformDataScalarNode* d2 = vtn2->isa_DataScalar();
+  if (d1 == nullptr || d2 == nullptr) { return false; }
+
+  // TODO: this is a bit hacky... would love to get rid of this...
+  Node* n1 = d1->node();
+  Node* n2 = d2->node();
+  return n1->is_Add() &&
+         n2->is_Add() &&
+         n1->in(1) == iv() &&
+         n2->in(1) == iv() &&
+         n1->in(2)->is_Con() &&
+         n2->in(2)->is_Con() &&
+         n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
 }
 
 // Is there no data path from s1 to s2 or s2 to s1?

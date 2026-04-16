@@ -570,6 +570,8 @@ public:
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
   virtual const VTransformMemopScalarNode* isa_MemopScalar() const { return nullptr; }
+  virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
+  virtual const VTransformDataScalarNode* isa_DataScalar() const { return nullptr; }
   virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
   virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
@@ -647,6 +649,10 @@ public:
   {
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
+
+  Node* node() const { return _node; }
+  virtual VTransformDataScalarNode* isa_DataScalar() override { return this; }
+  virtual const VTransformDataScalarNode* isa_DataScalar() const override { return this; }
 
   virtual bool is_isomorphic_with(const VTransformNode* n) const override;
 
