@@ -30,11 +30,13 @@
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build JavaAgent2 JavaAgentRetransformer Util
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp2 JavaAgentApp2$ShouldBeTransformed
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp2 JavaAgentApp2$ShouldNotBeTransformed JavaAgentApp2$ShouldBeTransformed
  * @run driver JavaAgent2 AOT
  */
 
 import java.util.random.RandomGenerator;
+import java.util.LinkedList;
+import java.util.Arrays;
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -71,11 +73,24 @@ public class JavaAgent2 {
 
         @Override
         public String[] vmArgs(RunMode runMode) {
-            return new String[] {
-                "-javaagent:" + agentJar,
-                "-Xlog:aot,cds",
-                "-XX:+AOTClassLinking",
-            };
+            switch (runMode) {
+            case RunMode.TRAINING:
+                return new String[] {
+                    "-javaagent:" + agentJar,
+                    "-Xlog:aot,cds",
+                    "-XX:+AOTClassLinking",
+                    // "-XX:CompileCommand=dontinline ShouldNotBeTransformed::doWork",
+                    "-XX:+PrintCompilation",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+PrintInlining",
+                };
+            default:
+                return new String[] {
+                    "-javaagent:" + agentJar,
+                    "-Xlog:aot,cds",
+                    "-XX:+AOTClassLinking",
+                };
+            }
         }
 
         @Override
@@ -109,6 +124,8 @@ public class JavaAgent2 {
                 out.shouldContain("Skipping JavaAgentApp2$ShouldBeTransformed: From ClassFileLoadHook");
                 out.shouldContain("Skipping JavaAgentApp2$ShouldBeTransformed: Has been redefined");
                 out.shouldContain("Skipping JavaAgentRetransformer: Unsupported location");
+                out.shouldMatch("[0-9]* *[0-9]* *2 *JavaAgentApp2\\$ShouldNotBeTransformed::doWork");
+                out.shouldMatch("JavaAgentApp2\\$ShouldBeTransformed::doWork \\([0-9]* bytes\\) *inline");
                 break;
             case RunMode.ASSEMBLY:
                 out.shouldContain("Disabled all JVMTI agents during -XX:AOTMode=create");
@@ -121,22 +138,30 @@ public class JavaAgent2 {
 
 class JavaAgentApp2 {
     public static void main(String[] args) {
-        ShouldBeTransformed s = new ShouldBeTransformed();
+        ShouldNotBeTransformed s = new ShouldNotBeTransformed();
         for (int i = 0; i < 10_000; i++) {
             s.doWork();
         }
+        // transform the class whose method shoudl be inlined
         JavaAgentRetransformer.doRetransform(ShouldBeTransformed.class);
         for (int i = 0; i < 10_000; i++) {
             s.doWork();
         }
     }
 
-    static class ShouldBeTransformed {
-        private RandomGenerator random = RandomGenerator.of("L64X128MixRandom");
+    static class ShouldNotBeTransformed {
+        private ShouldBeTransformed r = new ShouldBeTransformed();
         private int value = 0;
         public void doWork() {
-            value = (value * (random.nextInt(5) + 1) + random.nextInt(7));
+            value = r.doWork(value);
         }
         public int getValue() { return value; }
+    }
+
+    static class ShouldBeTransformed {
+        private RandomGenerator random = RandomGenerator.of("L64X128MixRandom");
+        public int doWork(int value) {
+            return (value * (random.nextInt(5) + 1) + random.nextInt(7));
+        }
     }
 }

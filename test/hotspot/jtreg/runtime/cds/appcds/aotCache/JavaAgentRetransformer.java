@@ -26,6 +26,8 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 
 import java.lang.System.Logger.Level;
 import java.lang.instrument.ClassFileTransformer;
@@ -85,19 +87,22 @@ public class JavaAgentRetransformer  implements ClassFileTransformer {
         return null;
     }
 
-    // replace the body of any public void instance method called
-    // doWork with a simple return
+    final static ClassDesc CD_int = ClassDesc.ofDescriptor("I");
+    final static MethodTypeDesc MTD_int_int = MethodTypeDesc.of(CD_int, CD_int);
+
+    // replace the body of any public void instance method that looks
+    // like "int doWork(int arg0)" with "return arg0"
     static byte[] transformDoWork(byte[] buffer) {
         ClassTransform t = (builder, element) -> {
             if (element instanceof MethodModel method &&
                 method.methodName().equalsString("doWork") &&
-                method.methodTypeSymbol() == ConstantDescs.MTD_void &&
+                method.methodTypeSymbol() == MTD_int_int &&
                 method.flags().has(AccessFlag.PUBLIC) &&
                 !method.flags().has(AccessFlag.STATIC)) {
                 builder.withMethodBody("doWork",
-                                       ConstantDescs.MTD_void,
+                                       MTD_int_int,
                                        ClassFile.ACC_PUBLIC,
-                                       cob -> cob.return_());
+                                       cob -> cob.iload(0).ireturn());
             } else {
                 builder.with(element);  // leaves the element in place
             }
