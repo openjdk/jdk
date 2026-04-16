@@ -1677,16 +1677,13 @@ public final class SSLSocketImpl
             SSLLogger.warning("handling exception", cause);
         }
 
-        Alert alert;
-
-        switch (cause) {
+        Alert alert = switch (cause) {
             // Don't close the Socket in case of timeouts.
             case SocketTimeoutException ste -> throw ste;
-            // Set alert type based on exception type.
-            case SSLHandshakeException _ -> alert = Alert.HANDSHAKE_FAILURE;
-            case IOException _ -> alert = Alert.UNEXPECTED_MESSAGE;
-            default -> alert = Alert.INTERNAL_ERROR;
-        }
+            case SSLHandshakeException _ -> Alert.HANDSHAKE_FAILURE;
+            case IOException _ -> Alert.UNEXPECTED_MESSAGE;
+            default -> Alert.INTERNAL_ERROR;
+        };
 
         if (cause instanceof SocketException se) {
             try {
