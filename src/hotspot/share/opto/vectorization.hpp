@@ -641,16 +641,6 @@ public:
     return vt1 == vt2;
   }
 
-  int vector_width(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
-  }
-
-  int vector_width_in_bytes(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return vector_width(n) * type2aelembytes(bt);
-  }
-
 private:
   void set_velt_type(Node* n, const Type* t) {
     assert(t != nullptr, "cannot set nullptr");

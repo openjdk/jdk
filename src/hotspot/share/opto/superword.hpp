@@ -472,14 +472,6 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().data_size(n);
   }
 
-  int vector_width(Node* n) const {
-    return _vloop_analyzer.types().vector_width(n);
-  }
-
-  int vector_width_in_bytes(const Node* n) const {
-    return _vloop_analyzer.types().vector_width_in_bytes(n);
-  }
-
   // VLoopDependencyGraph accessors
   const VLoopDependencyGraph& dependency_graph() const {
     return _vloop_analyzer.dependency_graph();
