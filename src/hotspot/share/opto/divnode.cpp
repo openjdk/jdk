@@ -62,8 +62,7 @@ ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntim
 }
 
 // Max recursion depth for is_integral_fp. Increasing accepts deeper expression trees
-// but grows worst-case compile cost (2^D recursive calls) and shrinks the constant
-// magnitude bound (2^(63-D)).
+// but grows worst-case compile cost (2^D recursive calls).
 //
 // Expressions beyond the limit fall to the speculative path (correct, just less optimized).
 static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
@@ -72,14 +71,14 @@ static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
 // in jlong (-2^63 <= value < 2^63), so ConvD2L does not saturate.
 //
 // Integrality is inductive: IEEE 754 add/sub/neg/abs of integral values always yields an
-// integral result. The depth limit D caps the tree at 2^D leaves.
-// Constant magnitudes are capped at 2^(63-D) so that 2^D * max_leaf < 2^63.
+// integral result. A sub-tree at depth d has magnitude < 2^(63-d).
+// Constants at depth d capped at < 2^(63-d); AddD/SubD doubles the bound per level up.
 // ConvI2D/ConvI2F leaves (max 2^31) have more headroom.
 // ConvL2D is depth-0 only (arithmetic above it could sum past 2^63).
 //
-// Recognized patterns:
-//   ConF(c) where |c| < 2^(63-D) and c == (float)(jlong)c  -> true
-//   ConD(c) where |c| < 2^(63-D) and c == (double)(jlong)c -> true
+// Recognized patterns (d = node depth):
+//   ConF(c) where |c| < 2^(63-d) and c == (float)(jlong)c  -> true
+//   ConD(c) where |c| < 2^(63-d) and c == (double)(jlong)c -> true
 //   ConvI2F/ConvI2D(x)                                     -> true
 //   ConvF2D(integral_fp)                                   -> true
 //   ConvL2D(x) at depth 0, type(x) won't round to 2^63     -> true
@@ -118,14 +117,14 @@ static bool is_integral_fp(PhaseGVN* phase, Node* n, int depth) {
     const TypeD* td = phase->type(n)->isa_double_constant();
     if (td != nullptr) {
       double d = td->getd();
-      // Integral double constant within sum-safe range
-      return g_isfinite(d) && fabs(d) < (1LL << (63 - INTEGRAL_FP_DEPTH_LIMIT)) && d == (double)(jlong)d;
+      // Integral double constant within sum-safe range at this depth
+      return g_isfinite(d) && fabs(d) < (1ULL << (63 - depth)) && d == (double)(jlong)d;
     }
     const TypeF* tf = phase->type(n)->isa_float_constant();
     if (tf != nullptr) {
       jfloat f = tf->getf();
-      // Integral float constant within sum-safe range
-      return g_isfinite(f) && fabsf(f) < (1LL << (63 - INTEGRAL_FP_DEPTH_LIMIT)) && f == (float)(jlong)f;
+      // Integral float constant within sum-safe range at this depth
+      return g_isfinite(f) && fabsf(f) < (1ULL << (63 - depth)) && f == (float)(jlong)f;
     }
     // Not a recognized integral pattern
     return false;

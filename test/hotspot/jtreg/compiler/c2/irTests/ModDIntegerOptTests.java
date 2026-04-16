@@ -80,7 +80,7 @@ public class ModDIntegerOptTests {
                 "staticFloatWithConst(" + v + ")");
             assertDremEQ(staticFloatLargeConst(v), ((float)v + 3e10f) % 42.0d,
                 "staticFloatLargeConst(" + v + ")");
-            assertDremEQ(staticHugeConst(v), ((double)v + 1e18) % 42.0d,
+            assertDremEQ(staticHugeConst(v), ((double)v + (1L << 62)) % 42.0d,
                 "staticHugeConst(" + v + ")");
             // Also exercise int values through speculative path
             assertDremEQ(speculativeDouble((double)v), (double)v % 42.0d, "speculative(int " + v + ")");
@@ -185,11 +185,11 @@ public class ModDIntegerOptTests {
         return ((float)a + 3e10f) % 42.0d;
     }
 
-    // Constant >= 2^59, rejected, falls to speculative
+    // Constant at 2^62 (depth-1 bound, strict <) rejected, falls to speculative
     @Test
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public double staticHugeConst(int a) {
-        return ((double)a + 1e18) % 42.0d;
+        return ((double)a + (1L << 62)) % 42.0d;
     }
 
     @Test
