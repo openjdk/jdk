@@ -179,14 +179,14 @@ public class JRTArchive implements Archive {
             imageResources.getEntryNames(module)
                     .filter(this::isNormalOrModifiedDiff)
                     .sorted()
-                    .map(name -> new JrtModuleFile(this, name, resDiff.get(name)))
+                    .map(name -> new JrtClassOrResource(this, name, resDiff.get(name)))
                     .forEach(files::add);
 
             // Finally add all files only present in the resource diff
             // That is, removed items in the run-time image.
             files.addAll(resDiff.values().stream()
                     .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
-                    .map(rd -> new JrtModuleFile(this, rd.getName(), rd))
+                    .map(rd -> new JrtClassOrResource(this, rd.getName(), rd))
                     .toList());
         }
     }
@@ -415,7 +415,7 @@ public class JRTArchive implements Archive {
         Entry toEntry();
     }
 
-    record JrtModuleFile(
+    record JrtClassOrResource(
             JRTArchive archive,
             String resPath,
             ResourceDiff diff) implements JRTFile {

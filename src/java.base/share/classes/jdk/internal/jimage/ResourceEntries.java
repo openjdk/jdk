@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 /**
  * Accesses the underlying resource entries in a jimage file.
  *
- * <p>This is a special-case API designed only for use by the jlink classes,
+ * <p>This is a special-case API designed only for use by the jlink tool,
  * which read the raw jimage files. It is not the correct API for accessing
  * jimage resources at runtime.
  *
