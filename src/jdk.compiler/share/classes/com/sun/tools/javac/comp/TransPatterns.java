@@ -285,10 +285,14 @@ public class TransPatterns extends TreeTranslator {
         if (exprVar != null && exprVar.getConstValue() == null) {
             return exprVar;
         }
-        return new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+        VarSymbol temp = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
                 names.fromString("patt" + variableIndex++ + target.syntheticNameChar() + "temp"),
                 tempType,
                 currentMethodSym);
+        if (exprVar != null) {
+            temp.setData(exprVar.getConstantValue());
+        }
+        return temp;
     }
 
     @Override
