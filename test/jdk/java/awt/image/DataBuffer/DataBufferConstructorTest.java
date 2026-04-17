@@ -565,16 +565,17 @@ public class DataBufferConstructorTest {
         // DataBufferByte(int size, numBanks)
         testByteConstructor(0, 1, IllegalArgumentException.class);
         testByteConstructor(-1, 0, IllegalArgumentException.class);
+        testByteConstructor(1, -1, IllegalArgumentException.class);
         testByteConstructor(-1, 1, IllegalArgumentException.class);
 
         // DataBufferByte(byte[] dataArray, int size)
-        testByteConstructor(nullByteArray, 0, NullPointerException.class);
+        testByteConstructor(nullByteArray, 1, NullPointerException.class);
         testByteConstructor(zeroByteArray, 0, IllegalArgumentException.class);
         testByteConstructor(oneByteArray, -1, IllegalArgumentException.class);
         testByteConstructor(oneByteArray, 2, IllegalArgumentException.class);
 
         // DataBufferByte(byte[] dataArray, int size, int offset)
-        testByteConstructor(nullByteArray, 0, 1, NullPointerException.class);
+        testByteConstructor(nullByteArray, 1, 1, NullPointerException.class);
         testByteConstructor(zeroByteArray, 0, 0, IllegalArgumentException.class);
         testByteConstructor(oneByteArray, -1, 1, IllegalArgumentException.class);
         testByteConstructor(oneByteArray, 2, 1, IllegalArgumentException.class);
@@ -618,16 +619,17 @@ public class DataBufferConstructorTest {
             // DataBufferShort(int size, int numBanks)
             testShortConstructor(0, 1, signed, IllegalArgumentException.class);
             testShortConstructor(-1, 0, signed, IllegalArgumentException.class);
+            testShortConstructor(1, -1, signed, IllegalArgumentException.class);
             testShortConstructor(-1, 1, signed, IllegalArgumentException.class);
 
             // DataBufferShort(short[] dataArray, int size)
-            testShortConstructor(nullShortArray, 0, signed, NullPointerException.class);
+            testShortConstructor(nullShortArray, 1, signed, NullPointerException.class);
             testShortConstructor(zeroShortArray, 0, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortArray, -1, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortArray, 2, signed, IllegalArgumentException.class);
 
             // DataBufferShort(short[] dataArray, int size, int offset)
-            testShortConstructor(nullShortArray, 0, 1, signed, NullPointerException.class);
+            testShortConstructor(nullShortArray, 1, 1, signed, NullPointerException.class);
             testShortConstructor(zeroShortArray, 0, 0, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortArray, -1, 1, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortArray, 2, 1, signed, IllegalArgumentException.class);
@@ -668,16 +670,17 @@ public class DataBufferConstructorTest {
         // DataBufferInt(int size, numBanks)
         testIntConstructor(0, 1, IllegalArgumentException.class);
         testIntConstructor(-1, 0, IllegalArgumentException.class);
+        testIntConstructor(1, -1, IllegalArgumentException.class);
         testIntConstructor(-1, 1, IllegalArgumentException.class);
 
         // DataBufferInt(byte[] dataArray, int size)
-        testIntConstructor(nullIntArray, 0, NullPointerException.class);
+        testIntConstructor(nullIntArray, 1, NullPointerException.class);
         testIntConstructor(zeroIntArray, 0, IllegalArgumentException.class);
         testIntConstructor(oneIntArray, -1, IllegalArgumentException.class);
         testIntConstructor(oneIntArray, 2, IllegalArgumentException.class);
 
         // DataBufferInt(byte[] dataArray, int size, int offset)
-        testIntConstructor(nullIntArray, 0, 1, NullPointerException.class);
+        testIntConstructor(nullIntArray, 1, 1, NullPointerException.class);
         testIntConstructor(zeroIntArray, 0, 0, IllegalArgumentException.class);
         testIntConstructor(oneIntArray, -1, 1, IllegalArgumentException.class);
         testIntConstructor(oneIntArray, 2, 1, IllegalArgumentException.class);
@@ -717,16 +720,17 @@ public class DataBufferConstructorTest {
         // DataBufferFloat(int size, numBanks)
         testFloatConstructor(0, 1, IllegalArgumentException.class);
         testFloatConstructor(-1, 0, IllegalArgumentException.class);
+        testFloatConstructor(1, -1, IllegalArgumentException.class);
         testFloatConstructor(-1, 1, IllegalArgumentException.class);
 
         // DataBufferFloat(byte[] dataArray, int size)
-        testFloatConstructor(nullFloatArray, 0, NullPointerException.class);
+        testFloatConstructor(nullFloatArray, 1, NullPointerException.class);
         testFloatConstructor(zeroFloatArray, 0, IllegalArgumentException.class);
         testFloatConstructor(oneFloatArray, -1, IllegalArgumentException.class);
         testFloatConstructor(oneFloatArray, 2, IllegalArgumentException.class);
 
         // DataBufferFloat(byte[] dataArray, int size, int offset)
-        testFloatConstructor(nullFloatArray, 0, 1, NullPointerException.class);
+        testFloatConstructor(nullFloatArray, 1, 1, NullPointerException.class);
         testFloatConstructor(zeroFloatArray, 0, 0, IllegalArgumentException.class);
         testFloatConstructor(oneFloatArray, -1, 1, IllegalArgumentException.class);
         testFloatConstructor(oneFloatArray, 2, 1, IllegalArgumentException.class);
@@ -766,16 +770,17 @@ public class DataBufferConstructorTest {
         // DataBufferDouble(int size, numBanks)
         testDoubleConstructor(0, 1, IllegalArgumentException.class);
         testDoubleConstructor(-1, 0, IllegalArgumentException.class);
+        testDoubleConstructor(1, -1, IllegalArgumentException.class);
         testDoubleConstructor(-1, 1, IllegalArgumentException.class);
 
         // DataBufferDouble(byte[] dataArray, int size)
-        testDoubleConstructor(nullDoubleArray, 0, NullPointerException.class);
+        testDoubleConstructor(nullDoubleArray, 1, NullPointerException.class);
         testDoubleConstructor(zeroDoubleArray, 0, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleArray, -1, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleArray, 2, IllegalArgumentException.class);
 
         // DataBufferDouble(byte[] dataArray, int size, int offset)
-        testDoubleConstructor(nullDoubleArray, 0, 1, NullPointerException.class);
+        testDoubleConstructor(nullDoubleArray, 1, 1, NullPointerException.class);
         testDoubleConstructor(zeroDoubleArray, 0, 0, IllegalArgumentException.class);
         testDoubleConstructor(tenDoubleArray, 1, -1, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleArray, -1, 1, IllegalArgumentException.class);

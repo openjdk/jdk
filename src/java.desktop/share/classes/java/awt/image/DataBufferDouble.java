@@ -69,7 +69,6 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public DataBufferDouble(int size) {
         super(STABLE, TYPE_DOUBLE, size);
-        checkSize(size);
         data = new double[size];
         bankdata = new double[1][];
         bankdata[0] = data;
@@ -83,13 +82,10 @@ public final class DataBufferDouble extends DataBuffer {
      * @param size The number of elements in each bank of the
      *        {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
-     *         or {@code numBanks} is less than one.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
      */
     public DataBufferDouble(int size, int numBanks) {
         super(STABLE, TYPE_DOUBLE, size, numBanks);
-        checkSize(size);
-        checkNumBanks(numBanks);
         bankdata = new double[numBanks][];
         for (int i= 0; i < numBanks; i++) {
             bankdata[i] = new double[size];
@@ -181,8 +177,6 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public DataBufferDouble(double[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length);
-        checkSize(size);
-        checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, 0, dataArray[b].length);
@@ -220,8 +214,6 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public DataBufferDouble(double[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length, offsets);
-        checkSize(size);
-        checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, offsets[b], dataArray[b].length);

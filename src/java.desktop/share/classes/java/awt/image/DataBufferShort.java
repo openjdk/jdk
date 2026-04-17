@@ -75,7 +75,6 @@ public final class DataBufferShort extends DataBuffer
      */
     public DataBufferShort(int size) {
         super(STABLE, TYPE_SHORT,size);
-        checkSize(size);
         data = new short[size];
         bankdata = new short[1][];
         bankdata[0] = data;
@@ -87,13 +86,10 @@ public final class DataBufferShort extends DataBuffer
      *
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
-     * @throws IllegalArgumentException if {@code size} is less than or equal
-     *         to zero, or {@code numBanks} is less than one.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
      */
     public DataBufferShort(int size, int numBanks) {
         super(STABLE, TYPE_SHORT,size,numBanks);
-        checkSize(size);
-        checkNumBanks(numBanks);
         bankdata = new short[numBanks][];
         for (int i= 0; i < numBanks; i++) {
             bankdata[i] = new short[size];
@@ -180,8 +176,6 @@ public final class DataBufferShort extends DataBuffer
      */
     public DataBufferShort(short[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_SHORT, size, dataArray.length);
-        checkSize(size);
-        checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, 0, dataArray[b].length);
@@ -220,8 +214,6 @@ public final class DataBufferShort extends DataBuffer
      */
     public DataBufferShort(short[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_SHORT, size, dataArray.length, offsets);
-        checkSize(size);
-        checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, offsets[b], dataArray[b].length);

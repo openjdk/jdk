@@ -130,6 +130,7 @@ public abstract class DataBuffer {
      *
      *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
+     *  @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      */
     protected DataBuffer(int dataType, int size) {
         this(UNTRACKABLE, dataType, size);
@@ -142,11 +143,13 @@ public abstract class DataBuffer {
      *  @param initialState the initial {@link State State} state of the data
      *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
+     *  @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      *  @since 1.7
      */
     DataBuffer(State initialState,
                int dataType, int size)
     {
+        checkSize(size);
         this.theTrackable = StateTrackableDelegate.createInstance(initialState);
         this.dataType = dataType;
         this.banks = 1;
@@ -163,6 +166,7 @@ public abstract class DataBuffer {
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
      */
     protected DataBuffer(int dataType, int size, int numBanks) {
         this(UNTRACKABLE, dataType, size, numBanks);
@@ -178,11 +182,14 @@ public abstract class DataBuffer {
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
      *  @since 1.7
      */
     DataBuffer(State initialState,
                int dataType, int size, int numBanks)
     {
+        checkSize(size);
+        checkNumBanks(numBanks);
         this.theTrackable = StateTrackableDelegate.createInstance(initialState);
         this.dataType = dataType;
         this.banks = numBanks;
@@ -200,6 +207,8 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offset the offset for each bank
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code offset} is less than zero.
      */
     protected DataBuffer(int dataType, int size, int numBanks, int offset) {
         this(UNTRACKABLE, dataType, size, numBanks, offset);
@@ -217,10 +226,15 @@ public abstract class DataBuffer {
      *         {@code DataBuffer}
      *  @param offset the offset for each bank
      *  @since 1.7
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code offset} is less than zero.
      */
     DataBuffer(State initialState,
                int dataType, int size, int numBanks, int offset)
     {
+        checkSize(size);
+        checkNumBanks(numBanks);
+        checkOffset(offset);
         this.theTrackable = StateTrackableDelegate.createInstance(initialState);
         this.dataType = dataType;
         this.banks = numBanks;
@@ -243,6 +257,9 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws NullPointerException if {@code offsets} is {@code null}.
+     *  @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
      *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
      *          does not equal the length of {@code offsets}
      */
@@ -263,6 +280,9 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws NullPointerException if {@code offsets} is {@code null}.
+     *  @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
      *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
      *          does not equal the length of {@code offsets}
      *  @since 1.7
@@ -270,9 +290,14 @@ public abstract class DataBuffer {
     DataBuffer(State initialState,
                int dataType, int size, int numBanks, int[] offsets)
     {
+        checkSize(size);
+        checkNumBanks(numBanks);
         if (numBanks != offsets.length) {
             throw new ArrayIndexOutOfBoundsException("Number of banks" +
                  " does not match number of bank offsets");
+        }
+        for (int i = 0; i < offsets.length; i++) {
+            checkOffset(offsets[i]);
         }
         this.theTrackable = StateTrackableDelegate.createInstance(initialState);
         this.dataType = dataType;
@@ -582,6 +607,12 @@ public abstract class DataBuffer {
     static void checkSize(int size) {
         if (size <= 0) {
             throw new IllegalArgumentException("Size must be > 0");
+        }
+    }
+
+    static void checkOffset(int offset) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("Offset must be >= 0");
         }
     }
 
