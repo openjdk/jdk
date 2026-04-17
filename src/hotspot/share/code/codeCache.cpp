@@ -65,6 +65,7 @@
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -234,7 +235,7 @@ void CodeCache::initialize_heaps() {
   if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
     vm_exit_during_initialization("CICompilerCount is too large: compiler buffer size exceeds the CodeCache size limit");
   }
-  size_t compiler_buffer_size = checked_cast<size_t>(compiler_buffer_size_uint64);
+  size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
