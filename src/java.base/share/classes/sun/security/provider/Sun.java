@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,26 @@ public final class Sun extends Provider {
     "PKIX CertPathBuilder; LDAP, Collection CertStores, JavaPolicy Policy; " +
     "JavaLoginConfig Configuration)";
 
+    private static String INFO_NO_CRYPTO = "SUN no_crypto " +
+    "(X.509 certificates; PKCS12, JKS & DKS keystores; " +
+    "PKIX CertPathValidator; " +
+    "PKIX CertPathBuilder; LDAP, Collection CertStores, JavaPolicy Policy; " +
+    "JavaLoginConfig Configuration)";
+
+    // Additional JCE crypto services, e.g. Cipher, KDF, are not included
+    // in this list since SUN provider does not support them
+    private static final Set<String> CRYPTO_SERVICE_TYPES = Set.of(
+            "AlgorithmParameterGenerator",
+            "AlgorithmParameters",
+            "KeyFactory",
+            "KeyPairGenerator",
+            "MessageDigest",
+            "SecureRandom",
+            "Signature"
+    );
+
+    private transient String info = INFO;
+
     public Sun() {
         /* We are the SUN provider */
         super("SUN", PROVIDER_VER, INFO);
@@ -57,5 +77,24 @@ public final class Sun extends Provider {
         while (serviceIter.hasNext()) {
             putService(serviceIter.next());
         }
+    }
+
+    @Override
+    public Provider configure(String option) {
+        if ("no_crypto".equalsIgnoreCase(option)) {
+            getServices().stream()
+                    .filter(s -> CRYPTO_SERVICE_TYPES.contains(s.getType()))
+                    .forEach(this::removeService);
+            info = INFO_NO_CRYPTO;
+        } else {
+            throw new ProviderException("Unsupported configuration option " +
+                    option);
+        }
+        return this;
+    }
+
+    @Override
+    public String getInfo() {
+        return info;
     }
 }
