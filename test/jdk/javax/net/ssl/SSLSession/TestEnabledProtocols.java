@@ -88,9 +88,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             // log it for debugging
             System.out.println("Server SSLHandshakeException:");
             se.printStackTrace(System.out);
-        } catch (SocketTimeoutException _) {
-            // must have been interrupted, no harm
-        } catch (SSLException | SocketException se) {
+        } catch (SocketTimeoutException | SSLException | SocketException se) {
             // The client side may have closed the socket.
             System.out.println("Server SSLException:");
             se.printStackTrace(System.out);
