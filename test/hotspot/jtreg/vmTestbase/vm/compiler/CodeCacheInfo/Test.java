@@ -58,7 +58,7 @@ public class Test {
         String p2 = " bounds \\[0x[0-9a-f]+, 0x[0-9a-f]+, 0x[0-9a-f]+\\]\\n";
         String p3 = " blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
         String p4 = "CodeCache:.*\\n";
-        String p5 = " total_blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
+        String p5 = " total blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
         String p6 = "Compilation: enabled.*\\n";
 
         String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + p3 + ")+";

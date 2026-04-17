@@ -1888,7 +1888,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
       st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
                    "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
                    total_size, total_used, total_max_used, total_free);
-      st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+      st->print_cr(" total blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
                    ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
                    total_blob_count, total_nmethod_count, total_adapter_count, full_count);
     }
