@@ -69,6 +69,11 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
                 testIncompatibleFeature("-XX:UseAVX=0", "avx", IncompatibilityMode.MISSING);
                 testIncompatibleFeature("-XX:UseAVX=0", "avx", IncompatibilityMode.ADDITIONAL);
             }
+        } else if (Platform.isAArch64()) {
+            if (isCRC32Supported(cpuFeatures)) {
+                testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.MISSING);
+                testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.ADDITIONAL);
+            }
         }
     }
 
@@ -131,5 +136,10 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
     // Only used on x86-64 platform
     static boolean isAVXSupported(List<String> cpuFeatures) {
         return cpuFeatures.contains("avx");
+    }
+
+    // Only used on aarch64 platofrm
+    static boolean isCRC32Supported(List<String> cpuFeatures) {
+        return cpuFeatures.contains("crc32");
     }
 }
