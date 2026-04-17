@@ -482,25 +482,25 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
     log.print_cr("CPU features recorded in AOTCodeCache: %s", ss.as_string());
   }
 
-  if (VM_Version::supports_features(cached_cpu_features_buffer)) {
-    if (log.is_enabled()) {
-      ResourceMark rm; // required for stringStream::as_string()
-      stringStream ss;
-      char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
-      VM_Version::store_cpu_features(runtime_cpu_features);
-      VM_Version::get_missing_features_name(runtime_cpu_features, cached_cpu_features_buffer, ss);
-      if (!ss.is_empty()) {
-        log.print_cr("Additional runtime CPU features: %s", ss.as_string());
-      }
-    }
-  } else {
+  if (!VM_Version::verify_aot_code_cache_features(cached_cpu_features_buffer)) {
     if (load_failure_log().is_enabled()) {
       ResourceMark rm; // required for stringStream::as_string()
-      stringStream ss;
+      load_failure_log().print_cr("AOT Code Cache disabled: cpu features are incompatible");
       char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
       VM_Version::store_cpu_features(runtime_cpu_features);
-      VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, ss);
-      load_failure_log().print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
+
+      stringStream missing_features;
+      VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, missing_features);
+      if (!missing_features.is_empty()) {
+        load_failure_log().print_cr("cpu features that are required: \"%s\"", missing_features.as_string());
+      }
+
+      stringStream additional_features;
+      VM_Version::get_missing_features_name(runtime_cpu_features, cached_cpu_features_buffer, additional_features);
+      if (!additional_features.is_empty()) {
+        load_failure_log().print("cpu features that are additional: \"%s\"", additional_features.as_string());
+      }
+      load_failure_log().print_cr("");
     }
     return false;
   }
