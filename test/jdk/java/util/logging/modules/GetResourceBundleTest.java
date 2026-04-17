@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          java.logging
  * @build GetResourceBundleTest jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
- * @run junit GetResourceBundleTest
+ * @run junit ${test.main.class}
  * @summary Tests Logger.getLogger + logger.getResourceBundle in an named/unnamed module,
  *          resources are in named and unnamed modules respectively.
  *          Positive tests to ensure that a Logger can retrieve ResourceBundle in its current module.
