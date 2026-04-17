@@ -82,12 +82,18 @@ public class Lint {
         EnumSet<LintCategory> suppressions = suppressionsFrom(sym);
         boolean symWithinDeprecated = withinDeprecated || isDeprecatedDeclaration(sym);
         if (!suppressions.isEmpty() || symWithinDeprecated != withinDeprecated) {
-            Lint lint = new Lint(this, symWithinDeprecated);
+            Lint lint = new Lint(this);
             lint.values.removeAll(suppressions);
             lint.suppressedValues.addAll(suppressions);
+            lint.withinDeprecated = symWithinDeprecated;
             return lint;
         }
         return this;
+    }
+
+    // Does sym's declaration have a (non-useless) @Deprecated annotation?
+    public static boolean isDeprecatedDeclaration(Symbol sym) {
+        return sym.isDeprecated() && sym.isDeprecatableViaAnnotation();
     }
 
     /**
@@ -95,14 +101,10 @@ public class Lint {
      * @param lc one or more categories to be enabled
      */
     public Lint enable(LintCategory... lc) {
-        Lint l = new Lint(this, withinDeprecated);
+        Lint l = new Lint(this);
         l.values.addAll(Arrays.asList(lc));
         l.suppressedValues.removeAll(Arrays.asList(lc));
         return l;
-    }
-
-    public static boolean isDeprecatedDeclaration(Symbol sym) {
-        return sym.isDeprecated() && sym.isDeprecatableViaAnnotation();
     }
 
     /**
@@ -110,7 +112,7 @@ public class Lint {
      * @param lc one or more categories to be suppressed
      */
     public Lint suppress(LintCategory... lc) {
-        Lint l = new Lint(this, withinDeprecated);
+        Lint l = new Lint(this);
         l.values.removeAll(Arrays.asList(lc));
         l.suppressedValues.addAll(Arrays.asList(lc));
         return l;
@@ -127,7 +129,7 @@ public class Lint {
     // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
-    private final boolean withinDeprecated;
+    private boolean withinDeprecated;
 
     private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
@@ -137,11 +139,10 @@ public class Lint {
         context.put(lintKey, this);
         options = Options.instance(context);
         log = Log.instance(context);
-        withinDeprecated = false;
     }
 
-    // Instantiate a non-root ("symbol scoped") instance
-    protected Lint(Lint other, boolean withinDeprecated) {
+    // Copy constructor - used to instantiate a non-root ("symbol scoped") instances
+    protected Lint(Lint other) {
         other.initializeRootIfNeeded();
         this.context = other.context;
         this.options = other.options;
@@ -150,7 +151,7 @@ public class Lint {
         this.names = other.names;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
-        this.withinDeprecated = withinDeprecated;
+        this.withinDeprecated = other.withinDeprecated;
     }
 
     // Process command line options on demand to allow use of root Lint early during startup
