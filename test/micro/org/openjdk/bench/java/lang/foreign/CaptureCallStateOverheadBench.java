@@ -60,8 +60,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED",
-                            "--enable-native-access=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--enable-native-access=ALL-UNNAMED"})
 
 // This class benchmarks capturing the "errno" state.
 // Depending on the execution platform, there may be further states.
