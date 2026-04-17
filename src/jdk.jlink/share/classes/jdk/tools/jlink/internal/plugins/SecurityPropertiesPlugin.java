@@ -119,7 +119,7 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
                         String propName = line.substring(0, index);
                         String propValue = props.remove(propName.trim());
                         if (propValue != null) {
-                            // skip multi-line values
+                            // skip multi-line values in original
                             while (line.endsWith("\\")) {
                                 line = br.readLine();
                             }
