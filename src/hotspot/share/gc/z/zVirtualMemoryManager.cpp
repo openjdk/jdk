@@ -632,7 +632,8 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
 
   assert(reservation.is_empty(), "Must have handled all reserved memory");
 
-  const double heap_ratio = static_cast<double>(reserved) / static_cast<double>(max_capacity);
+  const size_t used_reserve = reserved - unreserved;
+  const double heap_ratio = static_cast<double>(used_reserve) / static_cast<double>(max_capacity);
   const uintptr_t lowest_offset = untype(lowest_available_address(0));
   const bool is_contiguous = reservation.is_contiguous();
 
@@ -640,7 +641,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
                        (is_contiguous ? "Contiguous" : "Discontiguous"),
                        (requested == desired ? "Unrestricted" : "Restricted"),
                        (reserved == desired ? "Complete" : ((reserved < desired_for_partitions) ? "Degraded"  : "NUMA-Degraded")));
-  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT " (x%.2f Heap Ratio)", EXACTFMTARGS(reserved - unreserved), heap_ratio);
+  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT " (x%.2f Heap Ratio)", EXACTFMTARGS(used_reserve), heap_ratio);
   log_debug_p(gc, init)("Reserved Space Span: " RANGE2EXACTFMT, ZAddressHeapBase + lowest_offset, ZAddressHeapBase + ZAddressOffsetUpperLimit,
                         EXACTFMTARGS(ZAddressOffsetUpperLimit - lowest_offset));
 
