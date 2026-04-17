@@ -244,28 +244,28 @@ bool ZVirtualMemoryWithHeapBaseReserver::reserve_contiguous(size_t size) {
 
 class ZHeapBaseIterator {
 private:
-  const size_t _initial;
   size_t       _current;
+  bool         _completed;
 
 public:
   ZHeapBaseIterator(size_t initial_heap_base_shift = ZGlobalsPointers::initial_heap_base_shift())
-    : _initial(initial_heap_base_shift),
-      _current(initial_heap_base_shift) {}
+    : _current(initial_heap_base_shift),
+      _completed(false) {}
 
   bool next(uintptr_t* out_heap_base) {
-    size_t next = ZGlobalsPointers::next_heap_base_shift(_current);
-    if (next == _initial) {
+    if (_completed) {
       // Iterator has completed
       return false;
     }
-
-    _current = next;
 
     const uintptr_t heap_base = uintptr_t(1) << _current;
 
     log_trace(gc, init)("Attempting Heap Base: " PTR_FORMAT, heap_base);
 
     *out_heap_base = heap_base;
+
+    // Try to advance the heap base shift
+    _completed = !ZGlobalsPointers::try_advance_heap_base_shift(&_current);
 
     return true;
   }
