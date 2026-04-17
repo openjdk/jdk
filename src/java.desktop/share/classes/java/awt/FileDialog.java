@@ -511,15 +511,15 @@ public class FileDialog extends Dialog {
      * When the dialog is shown, the specified file may be pre-selected.
      * The visible manifestation of this selection, if any, depends on factors
      * such as the file existence, the dialog mode, and the native platform.
-     * E.g., the file could be highlighted in the file list, or a
+     * For example, the file could be highlighted in the file list, or a
      * file name editbox could be populated with the file name.
      * <p>
      * This method accepts either a full file path, or a file name with an
      * extension if used together with the {@code setDirectory} method.
-     * It is platform specific how a full file path interacts with {@code setDirectory}.
+     * It is platform-specific how a full file path interacts with {@code setDirectory}.
      * It may be that the directory is always used instead of the file path, or
-     * the file path over-rides the directory, or even that the full file path
-     * is interpreted as a base file name. Therefore it is strongly recommended to
+     * the file path overrides the directory, or even that the full file path
+     * is interpreted as a base file name. Therefore, it is strongly recommended to
      * use {@code setDirectory} to set the folder and {@code setFile} to
      * set a base file name.
      * <p>
