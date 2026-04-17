@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "classfile/vmIntrinsics.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/rootnode.hpp"
@@ -164,9 +165,7 @@ bool VTransformGraph::schedule() {
         if (!use->is_alive()) { continue; }
 
         // Skip backedges.
-        if ((use->is_loop_head_phi() || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) {
-          continue;
-        }
+        if (use->has_backedge_from(vtn)) { continue; }
 
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
@@ -1692,5 +1691,57 @@ void VTransformBoolVectorNode::print_spec() const {
   const BoolTest bt(m);
   tty->print(" test=%s", m == _test._mask ? "" : "unsigned ");
   bt.dump_on(tty);
+}
+#endif
+
+
+// We iterate over the nodes according to the schedule, which is ordered by the dependencies.
+// With a single pass, we can compute the depth of every node, since we can assume that the
+// depth of all preds is already computed when we compute the depth of use.
+void VTransformDependency::compute_depth() {
+  const GrowableArray<VTransformNode*>& schedule = _vtransform.graph().get_schedule();
+  for (int i = 0; i < schedule.length(); i++) {
+    VTransformNode* n = schedule.at(i);
+    _depths.at_put(n->_idx, find_max_pred_depth(n) + 1);
+  }
+
+#ifdef ASSERT
+  for (int i = 0; i < schedule.length(); i++) {
+    VTransformNode* n = schedule.at(i);
+    int max_pred_depth = find_max_pred_depth(n);
+    if (_depths.at(n->_idx) != max_pred_depth + 1) {
+      print();
+      tty->print_cr("Incorrect depth: %d vs %d", _depths.at(n->_idx), max_pred_depth + 1);
+      n->print();
+    }
+    assert(_depths.at(n->_idx) == max_pred_depth + 1, "must have correct depth");
+  }
+#endif
+
+  // TODO: consider renaming tag!
+  NOT_PRODUCT( if (_vtransform.vloop().is_trace_dependency_graph()) { print(); } )
+}
+
+int VTransformDependency::find_max_pred_depth(const VTransformNode* n) const {
+  int max_pred_depth = 0;
+  // TODO: what about weak edges?
+  for (uint i = 0; i < n->req(); i++) {
+    const VTransformNode* in = n->in_req(i);
+    if (in == nullptr) { continue; }
+    if (n->has_backedge_from(in)) { continue; }
+    max_pred_depth = MAX2(max_pred_depth, _depths.at(in->_idx));
+  }
+  return max_pred_depth;
+}
+
+#ifndef PRODUCT
+void VTransformDependency::print() const {
+  const GrowableArray<VTransformNode*>& schedule = _vtransform.graph().get_schedule();
+  tty->print_cr("VTransformDependency::print:");
+  for (int i = 0; i < schedule.length(); i++) {
+    VTransformNode* n = schedule.at(i);
+    tty->print("  d%02d ", _depths.at(n->_idx));
+    n->print();
+  }
 }
 #endif

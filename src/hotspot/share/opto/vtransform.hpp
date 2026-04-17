@@ -131,7 +131,6 @@ public:
 
 // VTransformGraph: component of VTransform
 // See description at top of this file.
-// TODO: factor out schedule?
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -575,6 +574,7 @@ public:
   virtual const VTransformDataScalarNode* isa_DataScalar() const { return nullptr; }
   virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
   virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
+  virtual const VTransformCountedLoopNode* isa_CountedLoop() const { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
@@ -590,6 +590,10 @@ public:
   virtual bool is_load_or_store_in_loop() const { return false; }
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
   virtual bool is_loop_head_phi() const { return false; }
+
+  bool has_backedge_from(const VTransformNode* in) const {
+    return (is_loop_head_phi() || isa_CountedLoop() != nullptr) && in_req(2) == in;
+  }
 
   // Core SuperWord queries
   virtual bool is_isomorphic_with(const VTransformNode* n) const { return false; }
@@ -709,6 +713,7 @@ public:
     VTransformCFGNode(vtransform, n) {}
 
   virtual VTransformCountedLoopNode* isa_CountedLoop() override { return this; }
+  virtual const VTransformCountedLoopNode* isa_CountedLoop() const override { return this; }
   NOT_PRODUCT(virtual const char* name() const override { return "CountedLoop"; };)
 };
 
@@ -986,7 +991,34 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+// This class facilitates fast independecy checks. The VTransformGraph already
+// contains all dependency edges, but doing a full traversal each time can be
+// expensive. We use the node depth in the graph to constrain the traversals.
+class VTransformDependency : StackObj {
+private:
+  const VTransform& _vtransform;
 
+  // Node depth in scheduled VTransform (DAG): vtn->_idx -> depth.
+  GrowableArray<int> _depths;
+
+public:
+  VTransformDependency(Arena* arena, const VTransform& vtransform) :
+    _vtransform(vtransform),
+    _depths(arena,
+            vtransform.graph().vtnodes().length(),
+            vtransform.graph().vtnodes().length(),
+            0)
+  {
+    assert(vtransform.graph().is_scheduled(), "topological order required");
+    compute_depth();
+  }
+  NONCOPYABLE(VTransformDependency);
+
+private:
+  void compute_depth();
+  int find_max_pred_depth(const VTransformNode* n) const;
+  NOT_PRODUCT( void print() const; )
+};
 
 // parallel to VLoopAnalyzer
 // - dependency graph
@@ -997,12 +1029,19 @@ class VTransformAnalyzer : StackObj {
 private:
   const VTransform& _vtransform;
 
+  // Arena for all submodules
+  Arena                _arena;
+
+  // Submodules
+  VTransformDependency _dependency;
+
 public:
   VTransformAnalyzer(const VTransform& vtransform) :
-    _vtransform(vtransform)
-  {
-    assert(vtransform.graph().is_scheduled(), "require schedule for dependency graph");
-  }
+    _vtransform(vtransform),
+    _arena(mtCompiler, Arena::Tag::tag_superword), // TODO: rename?
+    _dependency(&_arena, vtransform)
+  {}
+  NONCOPYABLE(VTransformAnalyzer);
 };
 
 #endif // SHARE_OPTO_VTRANSFORM_HPP
