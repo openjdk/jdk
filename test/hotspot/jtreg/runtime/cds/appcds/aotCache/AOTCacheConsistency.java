@@ -25,7 +25,8 @@
 /*
  * @test
  * @key randomness
- * @summary AOTCacheConsistency
+ * @summary AOTCacheConsistency This test checks that there is a CRC validation of the AOT Cache regions.
+ * @bug 8382166
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox AOTCacheConsistency
