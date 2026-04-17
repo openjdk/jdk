@@ -244,8 +244,8 @@ private:
   (decltype(old)) (arena)->Arealloc((char*)(old), (old_size) * sizeof(*old), \
                                   (new_size) * sizeof(*old) )
 
-#define FREE_ARENA_ARRAY(arena, old, size) \
-  (arena)->Afree((char*)(old), (size) * sizeof(*old))
+#define FREE_ARENA_ARRAY(arena, obj, size) \
+  (arena)->Afree((char*)(obj), (size) * sizeof(*obj))
 
 #define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)

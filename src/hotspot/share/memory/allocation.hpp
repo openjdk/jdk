@@ -95,7 +95,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //
 // char* AllocateHeap(size_t size, MemTag mem_tag, const NativeCallStack& stack, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // char* AllocateHeap(size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-// char* ReallocateHeap(char *old, size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* ReallocateHeap(char* old, size_t size, MemTag mem_tag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
 
@@ -112,7 +112,7 @@ char* AllocateHeap(size_t size,
                    MemTag mem_tag,
                    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-char* ReallocateHeap(char *old,
+char* ReallocateHeap(char* old,
                      size_t size,
                      MemTag mem_tag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
@@ -374,9 +374,9 @@ extern char* resource_allocate_bytes(size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern char* resource_allocate_bytes(Thread* thread, size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
+extern char* resource_reallocate_bytes(char* old, size_t old_size, size_t new_size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern void resource_free_bytes( Thread* thread, char *old, size_t size );
+extern void resource_free_bytes(Thread* thread, char* obj, size_t size);
 
 //----------------------------------------------------------------------
 // Base class for objects allocated in the resource area.
@@ -504,13 +504,13 @@ protected:
   (REALLOC_RETURN_TYPE(old)) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(*old), \
                                                        (new_size) * sizeof(*old), AllocFailStrategy::RETURN_NULL)
 
-#define FREE_RESOURCE_ARRAY(old, size)\
-  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(*old))
+#define FREE_RESOURCE_ARRAY(obj, size)\
+  resource_free_bytes(Thread::current(), (char*)(obj), (size) * sizeof(*obj))
 
-#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, old, size)\
-  resource_free_bytes(thread, (char*)(old), (size) * sizeof(*old))
+#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, obj, size)\
+  resource_free_bytes(thread, (char*)(obj), (size) * sizeof(*obj))
 
-#define FREE_FAST(old)\
+#define FREE_FAST(obj)\
     /* nop */
 
 #define NEW_RESOURCE_OBJ(type)\
