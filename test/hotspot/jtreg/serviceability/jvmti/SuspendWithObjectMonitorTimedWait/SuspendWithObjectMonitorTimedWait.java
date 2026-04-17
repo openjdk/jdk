@@ -28,7 +28,6 @@ import java.lang.management.ThreadInfo;
 import java.util.Arrays;
 
 import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Asserts.fail;
 
 /**
  * @test
@@ -127,8 +126,6 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                 if (grabbedMonitor) {
                     // we have caught the race
                     System.out.println("Grabbed the monitor on iteration " + n);
-                    //status = DebugeeClass.TEST_FAILED;
-                    //break;
                     failureCounter++;
                 }
             } finally {
@@ -202,6 +199,4 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     }
 
 }
-
-/* =================================================================== */
 
