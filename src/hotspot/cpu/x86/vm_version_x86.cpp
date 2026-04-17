@@ -942,21 +942,21 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseSSE < 4) {
-    _features.clear_feature(CPU_SSE4_1);
-    _features.clear_feature(CPU_SSE4_2);
+    clear_feature(CPU_SSE4_1);
+    clear_feature(CPU_SSE4_2);
   }
 
   if (UseSSE < 3) {
-    _features.clear_feature(CPU_SSE3);
-    _features.clear_feature(CPU_SSSE3);
-    _features.clear_feature(CPU_SSE4A);
+    clear_feature(CPU_SSE3);
+    clear_feature(CPU_SSSE3);
+    clear_feature(CPU_SSE4A);
   }
 
   if (UseSSE < 2)
-    _features.clear_feature(CPU_SSE2);
+    clear_feature(CPU_SSE2);
 
   if (UseSSE < 1)
-    _features.clear_feature(CPU_SSE);
+    clear_feature(CPU_SSE);
 
   // ZX cpus specific settings
   if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
@@ -1030,67 +1030,67 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseAVX < 3) {
-    _features.clear_feature(CPU_AVX512F);
-    _features.clear_feature(CPU_AVX512DQ);
-    _features.clear_feature(CPU_AVX512CD);
-    _features.clear_feature(CPU_AVX512BW);
-    _features.clear_feature(CPU_AVX512ER);
-    _features.clear_feature(CPU_AVX512PF);
-    _features.clear_feature(CPU_AVX512VL);
-    _features.clear_feature(CPU_AVX512_VPOPCNTDQ);
-    _features.clear_feature(CPU_AVX512_VPCLMULQDQ);
-    _features.clear_feature(CPU_AVX512_VAES);
-    _features.clear_feature(CPU_AVX512_VNNI);
-    _features.clear_feature(CPU_AVX512_VBMI);
-    _features.clear_feature(CPU_AVX512_VBMI2);
-    _features.clear_feature(CPU_AVX512_BITALG);
-    _features.clear_feature(CPU_AVX512_IFMA);
-    _features.clear_feature(CPU_APX_F);
-    _features.clear_feature(CPU_AVX512_FP16);
-    _features.clear_feature(CPU_AVX10_1);
-    _features.clear_feature(CPU_AVX10_2);
+    clear_feature(CPU_AVX512F);
+    clear_feature(CPU_AVX512DQ);
+    clear_feature(CPU_AVX512CD);
+    clear_feature(CPU_AVX512BW);
+    clear_feature(CPU_AVX512ER);
+    clear_feature(CPU_AVX512PF);
+    clear_feature(CPU_AVX512VL);
+    clear_feature(CPU_AVX512_VPOPCNTDQ);
+    clear_feature(CPU_AVX512_VPCLMULQDQ);
+    clear_feature(CPU_AVX512_VAES);
+    clear_feature(CPU_AVX512_VNNI);
+    clear_feature(CPU_AVX512_VBMI);
+    clear_feature(CPU_AVX512_VBMI2);
+    clear_feature(CPU_AVX512_BITALG);
+    clear_feature(CPU_AVX512_IFMA);
+    clear_feature(CPU_APX_F);
+    clear_feature(CPU_AVX512_FP16);
+    clear_feature(CPU_AVX10_1);
+    clear_feature(CPU_AVX10_2);
   }
 
 
   if (UseAVX < 2) {
-    _features.clear_feature(CPU_AVX2);
-    _features.clear_feature(CPU_AVX_IFMA);
+    clear_feature(CPU_AVX2);
+    clear_feature(CPU_AVX_IFMA);
   }
 
   if (UseAVX < 1) {
-    _features.clear_feature(CPU_AVX);
-    _features.clear_feature(CPU_VZEROUPPER);
-    _features.clear_feature(CPU_F16C);
-    _features.clear_feature(CPU_SHA512);
+    clear_feature(CPU_AVX);
+    clear_feature(CPU_VZEROUPPER);
+    clear_feature(CPU_F16C);
+    clear_feature(CPU_SHA512);
   }
 
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
-    _features.clear_feature(CPU_HT);
+    clear_feature(CPU_HT);
   }
 
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
-      _features.clear_feature(CPU_VZEROUPPER);
-      _features.clear_feature(CPU_AVX512BW);
-      _features.clear_feature(CPU_AVX512VL);
-      _features.clear_feature(CPU_APX_F);
-      _features.clear_feature(CPU_AVX512DQ);
-      _features.clear_feature(CPU_AVX512_VNNI);
-      _features.clear_feature(CPU_AVX512_VAES);
-      _features.clear_feature(CPU_AVX512_VPOPCNTDQ);
-      _features.clear_feature(CPU_AVX512_VPCLMULQDQ);
-      _features.clear_feature(CPU_AVX512_VBMI);
-      _features.clear_feature(CPU_AVX512_VBMI2);
-      _features.clear_feature(CPU_CLWB);
-      _features.clear_feature(CPU_FLUSHOPT);
-      _features.clear_feature(CPU_GFNI);
-      _features.clear_feature(CPU_AVX512_BITALG);
-      _features.clear_feature(CPU_AVX512_IFMA);
-      _features.clear_feature(CPU_AVX_IFMA);
-      _features.clear_feature(CPU_AVX512_FP16);
-      _features.clear_feature(CPU_AVX10_1);
-      _features.clear_feature(CPU_AVX10_2);
+      clear_feature(CPU_VZEROUPPER);
+      clear_feature(CPU_AVX512BW);
+      clear_feature(CPU_AVX512VL);
+      clear_feature(CPU_APX_F);
+      clear_feature(CPU_AVX512DQ);
+      clear_feature(CPU_AVX512_VNNI);
+      clear_feature(CPU_AVX512_VAES);
+      clear_feature(CPU_AVX512_VPOPCNTDQ);
+      clear_feature(CPU_AVX512_VPCLMULQDQ);
+      clear_feature(CPU_AVX512_VBMI);
+      clear_feature(CPU_AVX512_VBMI2);
+      clear_feature(CPU_CLWB);
+      clear_feature(CPU_FLUSHOPT);
+      clear_feature(CPU_GFNI);
+      clear_feature(CPU_AVX512_BITALG);
+      clear_feature(CPU_AVX512_IFMA);
+      clear_feature(CPU_AVX_IFMA);
+      clear_feature(CPU_AVX512_FP16);
+      clear_feature(CPU_AVX10_1);
+      clear_feature(CPU_AVX10_2);
     }
   }
 
@@ -1098,13 +1098,13 @@ void VM_Version::get_processor_features() {
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
       FLAG_SET_DEFAULT(UseAPX, false); // by default UseAPX is false
-      _features.clear_feature(CPU_APX_F);
+      clear_feature(CPU_APX_F);
     } else if (!UseAPX) {
-      _features.clear_feature(CPU_APX_F);
+      clear_feature(CPU_APX_F);
     }
   } else {
     if (!os_supports_apx_egprs() || !supports_avx512vl()) {
-      _features.clear_feature(CPU_APX_F);
+      clear_feature(CPU_APX_F);
     }
     if (UseAPX) {
       if (!FLAG_IS_DEFAULT(UseAPX)) {
