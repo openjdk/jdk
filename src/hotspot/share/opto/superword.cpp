@@ -741,7 +741,7 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
 }
 
 // Check if two nodes can be packed into a pair.
-bool SuperWord::can_pack_into_pair(VTransformNode* s1, VTransformNode* s2) {
+bool SuperWord::can_pack_into_pair(const VTransformNode* s1, const VTransformNode* s2) const {
 
   // Do not use superword for non-primitives
   BasicType bt1 = s1->array_element_basic_type();
@@ -791,7 +791,7 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
 
 //------------------------------are_adjacent_refs---------------------------
 // Is s1 immediately before s2 in memory?
-bool SuperWord::are_adjacent_refs(VTransformNode* s1, VTransformNode* s2) const {
+bool SuperWord::are_adjacent_refs(const VTransformNode* s1, const VTransformNode* s2) const {
   assert(false, "TODO impl");
   return false;
   // if (!s1->is_Mem() || !s2->is_Mem()) return false;
@@ -1026,7 +1026,7 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
 //--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
-bool SuperWord::have_similar_inputs(VTransformNode* s1, VTransformNode* s2) {
+bool SuperWord::have_similar_inputs(const VTransformNode* s1, const VTransformNode* s2) const {
   assert(false, "TODO impl");
   return false;
   // // assert(isomorphic(s1, s2) == true, "check isomorphic");

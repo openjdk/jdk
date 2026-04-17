@@ -557,20 +557,20 @@ private:
 
   // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2); // TODO: rm
-  bool can_pack_into_pair(VTransformNode* s1, VTransformNode* s2);
+  bool can_pack_into_pair(const VTransformNode* s1, const VTransformNode* s2) const;
   // Is s1 immediately before s2 in memory?
   bool are_adjacent_refs(Node* s1, Node* s2) const; // TODO: rm
-  bool are_adjacent_refs(VTransformNode* s1, VTransformNode* s2) const;
+  bool are_adjacent_refs(const VTransformNode* s1, const VTransformNode* s2) const;
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2); // TODO: rm
-  bool isomorphic(VTransformNode* s1, VTransformNode* s2);
+  //bool isomorphic(const VTransformNode* s1, const VTransformNode* s2) const;
   // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
   bool is_populate_index(const Node* n1, const Node* n2) const; // TODO: rm
   bool is_populate_index(const VTransformNode* n1, const VTransformNode* n2) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2); // TODO: rm
-  bool have_similar_inputs(VTransformNode* s1, VTransformNode* s2);
+  bool have_similar_inputs(const VTransformNode* s1, const VTransformNode* s2) const;
 
   void extend_pairset_with_more_pairs_by_following_use_and_def();
   bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
