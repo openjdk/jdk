@@ -52,6 +52,7 @@
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
@@ -108,6 +109,7 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ShowSettingsDCmd>(full_export));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export));
@@ -464,6 +466,95 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
     int count = element_oop->int_field(count_fd.offset());
     output()->print_cr("%10d  %s", count, name);
   }
+}
+
+void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  const char* sec = _section.value();
+  if (sec == nullptr || sec[0] == '\0') {
+      sec = "all";
+  }
+
+  // Guard: only allow known sections
+  if (strcmp(sec, "all") != 0 &&
+      strcmp(sec, "vm") != 0 &&
+      strcmp(sec, "properties") != 0 &&
+      strcmp(sec, "locale") != 0 &&
+      strcmp(sec, "security") != 0 &&
+      strcmp(sec, "system") != 0) {
+    output()->print_cr("Unknown section: %s", sec);
+    output()->print_cr("Valid sections: all, vm, properties, locale, security, system");
+    return;
+  }
+
+  // Build full flag: "-XshowSettings:<section>"
+  char flag_buf[64];
+  jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
+
+  // Compute Java thread stack size on VM side.
+  // Use whatever helper is appropriate in your tree.
+  size_t stack_size_in_bytes = ThreadStackSize * K;
+  jlong stack_size = (jlong)stack_size_in_bytes;
+
+  // Resolve sun.launcher.LauncherHelper
+  Symbol* klass_sym = vmSymbols::sun_launcher_LauncherHelper();
+  Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->should_be_initialized()) {
+    ik->initialize(THREAD);
+  }
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // Call LauncherHelper.showSettingsBytes(Settings, String)
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+
+  // Create Settings enum instance: Settings.valueOf(sec.toUpperCase())
+  // To keep it simple, add an overload in Java:
+  //
+  //   public static byte[] showSettingsBytes(String section, String value) {
+  //       Settings s = Settings.valueOf(section.toUpperCase());
+  //       return showSettingsBytes(s, value);
+  //   }
+  //
+  // Then, from VM we just pass a String.
+
+  Handle option_str = java_lang_String::create_from_str(flag_buf, CHECK);
+  args.push_oop(option_str);
+  args.push_long(stack_size);
+
+  JavaCalls::call_static(&result,
+                         ik,
+                         vmSymbols::showSettingsBytes_name(),          // "showSettingsBytes"
+                         vmSymbols::showSettingsBytes_signature(), // (String,long)byte[]
+                         &args,
+                         THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  oop res = result.get_oop();
+  if (res == nullptr) {
+    return;
+  }
+
+  assert(res->is_typeArray(), "LauncherHelper.showSettingsBytes must return byte[]");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be byte[]");
+
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = ba->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
 }
 
 #if INCLUDE_SERVICES // Heap dumping/inspection supported

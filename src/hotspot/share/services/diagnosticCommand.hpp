@@ -867,6 +867,25 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ShowSettingsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _section; // "all", "vm", "properties", "locale", "security"
+public:
+  ShowSettingsDCmd(outputStream* output, bool heap) :
+      DCmdWithParser(output, heap),
+      _section("section",
+               "Settings section: all, vm, properties, locale, security",
+               "STRING", false, "all") {
+    _dcmdparser.add_dcmd_argument(&_section);
+  }
+
+  static const char* name()        { return "VM.show_settings"; }
+  static const char* description() { return "Print information similar to -XshowSettings eg. 'VM.show_settings locale'"; }
+  static const char* impact()      { return "Low"; }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // LINUX, WINDOWS or MACOS
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

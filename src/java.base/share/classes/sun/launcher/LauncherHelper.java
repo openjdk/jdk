@@ -25,10 +25,7 @@
 
 package sun.launcher;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -46,6 +43,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -156,10 +154,9 @@ public final class LauncherHelper {
      *    this code determine this value, using a suitable method or omit the
      *    line entirely.
      */
-    static void showSettings(boolean printToStderr, String optionFlag,
+    static void showSettingsTo(String optionFlag,
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
-        initOutput(printToStderr);
         Option component = validateOption(optionFlag);
         switch (component) {
             case ALL -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, true);
@@ -174,6 +171,30 @@ public final class LauncherHelper {
             case VM -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
             case DEFAULT -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, false);
         }
+    }
+
+    static void showSettings(boolean printToStderr, String optionFlag,
+                             long initialHeapSize, long maxHeapSize, long stackSize) {
+        initOutput(printToStderr);
+        showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+    }
+
+    public static byte[] showSettingsBytes(String optionFlag, long stackSize) {
+        // Compute heap sizes here programmatically (same logic you’d use for java.c)
+        long initialHeapSize = Runtime.getRuntime().totalMemory(); // or a more precise source
+        long maxHeapSize     = Runtime.getRuntime().maxMemory();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintStream ps = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
+            PrintStream old = ostream;
+            try {
+                ostream = ps;
+                showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+            } finally {
+                ostream = old;
+            }
+        }
+        return baos.toByteArray();
     }
 
     /*
@@ -597,7 +618,8 @@ public final class LauncherHelper {
                 File.pathSeparator));
     }
 
-    static void initOutput(boolean printToStderr) {
+    static void
+    initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }
 
