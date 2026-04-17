@@ -1714,7 +1714,7 @@ enum FP_PREC {
   fp_prec_dbl
 };
 
-tatic inline void emit_fp_ucom(MacroAssembler* masm, enum FP_PREC pt,
+static inline void emit_fp_ucom(MacroAssembler* masm, enum FP_PREC pt,
                                 XMMRegister p, XMMRegister q) {
   if (VM_Version::supports_avx10_2()) {
     if (pt == fp_prec_hlf) {
