@@ -268,7 +268,15 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
-  __ evmovdquq(Address(rLimbs, 0), allLimbs, Acc1L, false, Assembler::AVX_512bit);
+  __ movq(Address(rLimbs, 0), Acc1L);
+  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
+  __ movq(Address(rLimbs, 8), Acc1L);
+  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
+  __ movq(Address(rLimbs, 16), Acc1L);
+  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
+  __ movq(Address(rLimbs, 24), Acc1L);
+  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
+  __ movq(Address(rLimbs, 32), Acc1L);
 
   // Cleanup
   // Zero out zmm0-zmm15, higher registers not used by intrinsics
