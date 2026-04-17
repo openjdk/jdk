@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
@@ -445,8 +446,10 @@ public class Lint {
             return true;
 
         // Certain warnings within @Deprecated declarations are automatically suppressed (JLS 9.6.4.6)
-        if (withinDeprecated && diag.isFlagSet(DEPRECATION_SENSITIVE))
+        if (withinDeprecated && diag.isFlagSet(DEPRECATION_SENSITIVE)) {
+            Assert.check(diag.isFlagSet(DEFAULT_ENABLED) && category.annotationSuppression);
             return false;
+        }
 
         // If the warning is not enabled by default, then emit only when its lint category is explicitly enabled
         if (!diag.isFlagSet(DEFAULT_ENABLED))
