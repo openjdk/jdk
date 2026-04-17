@@ -1014,7 +1014,11 @@ public:
   }
   NONCOPYABLE(VTransformDependency);
 
+  bool independent(const VTransformNode* n1, const VTransformNode* n2) const;
+
 private:
+  void set_depth(const VTransformNode* n, int d) { _depths.at_put(n->_idx, d); }
+  int depth(const VTransformNode* n) const { return _depths.at(n->_idx); }
   void compute_depth();
   int find_max_pred_depth(const VTransformNode* n) const;
   NOT_PRODUCT( void print() const; )
@@ -1042,6 +1046,9 @@ public:
     _dependency(&_arena, vtransform)
   {}
   NONCOPYABLE(VTransformAnalyzer);
+
+  const VTransform& vtransform() const { return _vtransform; }
+  const VTransformDependency& dependency() const { return _dependency; }
 };
 
 #endif // SHARE_OPTO_VTRANSFORM_HPP

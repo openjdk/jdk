@@ -1702,19 +1702,19 @@ void VTransformDependency::compute_depth() {
   const GrowableArray<VTransformNode*>& schedule = _vtransform.graph().get_schedule();
   for (int i = 0; i < schedule.length(); i++) {
     VTransformNode* n = schedule.at(i);
-    _depths.at_put(n->_idx, find_max_pred_depth(n) + 1);
+    set_depth(n, find_max_pred_depth(n) + 1);
   }
 
 #ifdef ASSERT
   for (int i = 0; i < schedule.length(); i++) {
     VTransformNode* n = schedule.at(i);
     int max_pred_depth = find_max_pred_depth(n);
-    if (_depths.at(n->_idx) != max_pred_depth + 1) {
+    if (depth(n) != max_pred_depth + 1) {
       print();
-      tty->print_cr("Incorrect depth: %d vs %d", _depths.at(n->_idx), max_pred_depth + 1);
+      tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
       n->print();
     }
-    assert(_depths.at(n->_idx) == max_pred_depth + 1, "must have correct depth");
+    assert(depth(n) == max_pred_depth + 1, "must have correct depth");
   }
 #endif
 
@@ -1729,7 +1729,7 @@ int VTransformDependency::find_max_pred_depth(const VTransformNode* n) const {
     const VTransformNode* in = n->in_req(i);
     if (in == nullptr) { continue; }
     if (n->has_backedge_from(in)) { continue; }
-    max_pred_depth = MAX2(max_pred_depth, _depths.at(in->_idx));
+    max_pred_depth = MAX2(max_pred_depth, depth(in));
   }
   return max_pred_depth;
 }
@@ -1740,7 +1740,7 @@ void VTransformDependency::print() const {
   tty->print_cr("VTransformDependency::print:");
   for (int i = 0; i < schedule.length(); i++) {
     VTransformNode* n = schedule.at(i);
-    tty->print("  d%02d ", _depths.at(n->_idx));
+    tty->print("  d%02d ", depth(n));
     n->print();
   }
 }

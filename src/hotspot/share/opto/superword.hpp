@@ -391,6 +391,7 @@ public:
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
+  const VTransformAnalyzer& _scalar_vtransform_analyzer;
   const VTransform&    _scalar_vtransform;
   const VLoopAnalyzer& _vloop_analyzer; // TODO: consider not using it...
   const VLoop&         _vloop;
@@ -410,7 +411,7 @@ class SuperWord : public ResourceObj {
   int _aw_for_main_loop_alignment;
 
  public:
-  SuperWord(const VTransform& scalar_vtransform);
+  SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -488,10 +489,8 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.dependency_graph().independent(n1, n2);
   }
 
-  bool independent(VTransformNode* n1, VTransformNode* n2) const {
-    assert(false, "TODO impl independent");
-    // TODO: this probably requires getting a dependency graph query on a VTransform
-    return false;
+  bool independent(const VTransformNode* n1, const VTransformNode* n2) const {
+    return _scalar_vtransform_analyzer.dependency().independent(n1, n2);
   }
 
   bool mutually_independent(const Node_List* nodes) const {

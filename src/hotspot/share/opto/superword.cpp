@@ -31,9 +31,10 @@
 #include "opto/vectornode.hpp"
 #include "opto/vtransform.hpp"
 
-SuperWord::SuperWord(const VTransform& scalar_vtransform) :
-  _scalar_vtransform(scalar_vtransform),
-  _vloop_analyzer(scalar_vtransform.vloop_analyzer()),
+SuperWord::SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer) :
+  _scalar_vtransform_analyzer(scalar_vtransform_analyzer),
+  _scalar_vtransform(_scalar_vtransform_analyzer.vtransform()),
+  _vloop_analyzer(_scalar_vtransform.vloop_analyzer()),
   _vloop(_vloop_analyzer.vloop()),
   _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
@@ -873,6 +874,7 @@ bool SuperWord::is_populate_index(const VTransformNode* vtn1, const VTransformNo
 
 // Is there no data path from s1 to s2 or s2 to s1?
 bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
+  assert(false, "TODO rm");
   int d1 = depth(s1);
   int d2 = depth(s2);
 
@@ -911,6 +913,50 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   }
   return true; // not found -> independent
 }
+
+// Is there no data path from s1 to s2 or s2 to s1?
+bool VTransformDependency::independent(const VTransformNode* s1, const VTransformNode* s2) const {
+  int d1 = depth(s1);
+  int d2 = depth(s2);
+
+  if (d1 == d2) {
+    // Same depth:
+    //  1) same node       -> dependent
+    //  2) different nodes -> same level implies there is no path
+    return s1 != s2;
+  }
+
+  // Traversal starting at the deeper node to find the shallower one.
+  const VTransformNode* deep    = d1 > d2 ? s1 : s2;
+  const VTransformNode* shallow = d1 > d2 ? s2 : s1;
+  int min_d = MIN2(d1, d2); // prune traversal at min_d
+
+  assert(false, "TODO continue here for independence query");
+  return false;
+  // // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // // and later insert a runtime check.
+  // // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  // bool speculate_away_weak_edges = _vloop.use_speculative_aliasing_checks();
+
+  // ResourceMark rm;
+  // Unique_Node_List worklist;
+  // worklist.push(deep);
+  // for (uint i = 0; i < worklist.size(); i++) {
+  //   Node* n = worklist.at(i);
+  //   for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+  //     if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
+  //     Node* pred = preds.current();
+  //     if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
+  //       if (pred == shallow) {
+  //         return false; // found it -> dependent
+  //       }
+  //       worklist.push(pred);
+  //     }
+  //   }
+  // }
+  // return true; // not found -> independent
+}
+
 
 // Are all nodes in nodes list mutually independent?
 // We could query independent(s1, s2) for all pairs, but that results
