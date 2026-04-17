@@ -267,8 +267,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       }
     }
 
-    if (VerifyAfterGC) {
-      vmop_entry_verify_final_roots();
+    // In normal cycle, final-update-refs would verify at the end of the cycle.
+    // In abbreviated cycle, we need to verify separately.
+    if (ShenandoahVerify) {
+      vmop_entry_final_verify();
     }
   }
 
@@ -358,14 +360,14 @@ void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_verify_final_roots() {
+void ShenandoahConcurrentGC::vmop_entry_final_verify() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
-  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_verify_gross);
 
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
-  VM_ShenandoahFinalRoots op(this);
+  VM_ShenandoahFinalVerify op(this);
   VMThread::execute(&op);
 }
 
@@ -414,12 +416,12 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
   op_final_update_refs();
 }
 
-void ShenandoahConcurrentGC::entry_verify_final_roots() {
-  const char* msg = verify_final_roots_event_message();
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
+void ShenandoahConcurrentGC::entry_final_verify() {
+  const char* msg = verify_final_event_message();
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_verify);
   EventMark em("%s", msg);
 
-  op_verify_final_roots();
+  op_verify_final();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
@@ -1255,10 +1257,10 @@ void ShenandoahConcurrentGC::entry_final_roots() {
   heap->concurrent_final_roots();
 }
 
-void ShenandoahConcurrentGC::op_verify_final_roots() {
-  if (VerifyAfterGC) {
-    Universe::verify();
-  }
+void ShenandoahConcurrentGC::op_verify_final() {
+  assert(ShenandoahVerify, "Should have been checked before");
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->verifier()->verify_after_gc(_generation);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
@@ -1343,11 +1345,11 @@ const char* ShenandoahConcurrentGC::conc_reset_after_collect_event_message() con
   }
 }
 
-const char* ShenandoahConcurrentGC::verify_final_roots_event_message() const {
+const char* ShenandoahConcurrentGC::verify_final_event_message() const {
   if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", " (unload classes)");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final", " (unload classes)");
   } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", "");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final", "");
   }
 }
 

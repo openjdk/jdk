@@ -114,8 +114,8 @@ class outputStream;
   f(complete_abbreviated,                           "Complete Abbreviated")            \
   f(complete_abbreviated_promote_in_place,          "  Promote Regions")               \
   f(complete_abbreviated_update_region_ages,        "  Update Region Ages")            \
-  f(final_roots_gross,                              "Pause Verify Final Roots (G)")    \
-  f(final_roots,                                    "Pause Verify Final Roots (N)")    \
+  f(final_verify_gross,                             "Pause Final Verify (G)")          \
+  f(final_verify,                                   "Pause Final Verify (N)")          \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init Update Refs (G)")      \
   f(init_update_refs,                               "Pause Init Update Refs (N)")      \
