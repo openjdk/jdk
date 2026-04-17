@@ -28,7 +28,6 @@
  * @modules java.security.jgss/sun.security.krb5
  * @modules jdk.security.auth/com.sun.security.auth.module
  * @run main/othervm
- *      -Dsun.security.krb5.debug=true
  *      -Djava.security.krb5.conf=${test.src}/krb5.conf
  *      -Djava.security.auth.login.config=${test.src}/jaas.conf
  *      SRVLookupFailureTest
@@ -45,9 +44,9 @@ public class SRVLookupFailureTest {
         public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
             for (Callback cb : callbacks) {
                 if (cb instanceof NameCallback ncb) {
-                    ncb.setName("user@NONEXISTENT.INVALID");
+                    ncb.setName("user@IDONTEXIST");
                 } else if (cb instanceof PasswordCallback pcb) {
-                    pcb.setPassword("dummy".toCharArray());
+                    pcb.setPassword("password".toCharArray());
                 } else {
                     throw new UnsupportedCallbackException(cb);
                 }
@@ -57,13 +56,14 @@ public class SRVLookupFailureTest {
 
     public static void main(String[] args) throws Exception {
         try {
+            // trigger login failure to verify the exception is sanitized
             LoginContext lc = new LoginContext("KrbLogin", new Handler());
             lc.login();
             throw new RuntimeException("Login succeeded unexpectedly");
         } catch (LoginException e) {
             if (!containsSanitizedCause(e)) {
                 e.printStackTrace(System.out);
-                throw new RuntimeException("Expected sanitized DNS SRV failure cause not found");
+                throw new RuntimeException("Expected DNS SRV failure cause not found");
             }
         }
     }
@@ -71,8 +71,8 @@ public class SRVLookupFailureTest {
     static boolean containsSanitizedCause(Throwable t) {
         while (t != null) {
             String msg = t.getMessage();
+            // check for the DNS SRV failure cause
             if (msg != null && msg.contains("DNS SRV lookup failed:")) {
-                // Optionally assert one of the expected tokens
                 if (msg.contains("NXDOMAIN") || msg.contains("SERVFAIL") || msg.contains("COMMUNICATION_ERROR")) {
                     return true;
                 }
