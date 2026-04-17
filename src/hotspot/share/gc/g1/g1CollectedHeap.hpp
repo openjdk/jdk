@@ -1275,7 +1275,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the bitmap.
-  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
