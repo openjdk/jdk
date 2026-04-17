@@ -160,7 +160,7 @@ public class Lint {
     @Override
     public String toString() {
         initializeRootIfNeeded();
-        return "Lint:[enable" + values + ",suppress" + suppressedValues + "]";
+        return "Lint:[enable" + values + ",suppress" + suppressedValues + ",deprecated=" + withinDeprecated + "]";
     }
 
     /**
