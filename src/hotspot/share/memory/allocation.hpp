@@ -550,7 +550,7 @@ protected:
 #define NEW_C_HEAP_OBJ_RETURN_NULL(type, mem_tag)\
   NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, mem_tag)
 
-// deallocate obj of type in heap without calling dtor
+// deallocate obj in heap without calling dtor
 #define FREE_C_HEAP_OBJ(obj)\
   FREE_C_HEAP_ARRAY(obj)
 
