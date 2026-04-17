@@ -510,9 +510,6 @@ protected:
 #define FREE_RESOURCE_ARRAY_IN_THREAD(thread, obj, size)\
   resource_free_bytes(thread, (char*)(obj), (size) * sizeof(*obj))
 
-#define FREE_FAST(obj)\
-    /* nop */
-
 #define NEW_RESOURCE_OBJ(type)\
   NEW_RESOURCE_ARRAY(type, 1)
 
