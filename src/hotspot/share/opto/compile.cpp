@@ -2016,8 +2016,10 @@ void Compile::inline_vector_fallback(PhaseIterGVN& igvn) {
   while (_vector_late_inlines.length() > 0) {
     CallGenerator* cg = _vector_late_inlines.pop();
     assert(cg->is_vector_late_inline(), "");
-    cg->enable_fallback_generation();
-    cg->do_late_inline();
+    if (cg->inline_fallback()) {
+      cg->enable_fallback_generation();
+      cg->do_late_inline();
+    }
     if (failing())  return;
   }
   _vector_late_inlines.trunc_to(0);
@@ -2116,6 +2118,9 @@ bool Compile::inline_incrementally_one() {
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
+        if (cg->is_vector_late_inline()) {
+          C->vector_late_inlines()->remove_if_existing(cg);
+        }
         break; // process one call site at a time
       } else {
         bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
@@ -2126,6 +2131,9 @@ bool Compile::inline_incrementally_one() {
           // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
           assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
           cg->call_node()->set_generator(cg);
+          if (cg->is_vector_late_inline()) {
+            C->vector_late_inlines()->append_if_missing(cg);
+          }
         }
       }
     } else {
