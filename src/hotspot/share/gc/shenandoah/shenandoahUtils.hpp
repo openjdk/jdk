@@ -67,6 +67,8 @@ private:
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
+
+  static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
   ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();
@@ -185,7 +187,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
-           type == VM_Operation::VMOp_ShenandoahFinalRoots ||
+           type == VM_Operation::VMOp_ShenandoahFinalVerify ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||
            type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
   }
