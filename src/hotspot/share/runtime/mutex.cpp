@@ -348,7 +348,7 @@ const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
-// Does not require caller to have ResourceMark, unless the outputStream already has one.
+// Does not require caller to have ResourceMark.
 void Mutex::print_rank_name(outputStream* st) const {
   print_rank_name_internal(st, _rank);
 }
