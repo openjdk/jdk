@@ -96,6 +96,10 @@ gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
 
 #############################################################################
 
