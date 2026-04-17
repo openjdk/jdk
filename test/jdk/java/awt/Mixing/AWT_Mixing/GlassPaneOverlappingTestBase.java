@@ -121,6 +121,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         if (!testResize) {
             return true;
         }
+
         final CountDownLatch latch = new CountDownLatch(1);
         f.addFocusListener(new FocusAdapter() {
             @Override
@@ -140,7 +141,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                             .getCurrentKeyboardFocusManager()
                             .getFocusOwner();
                     if (focusOwner == f) {
-                        // frame already had focus
+                        // frame already has focus
                         latch.countDown();
                     } else {
                         f.requestFocusInWindow();

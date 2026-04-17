@@ -26,7 +26,6 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.Override;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
