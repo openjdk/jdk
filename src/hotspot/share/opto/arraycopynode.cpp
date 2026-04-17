@@ -507,13 +507,21 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
       Node* out_mem = proj_out(TypeFunc::Memory);
 
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      if (out_mem->outcnt() != 1 || !out_mem->raw_out(0)->is_MergeMem() ||
-          out_mem->raw_out(0)->outcnt() != 1 || !out_mem->raw_out(0)->raw_out(0)->is_MemBar()) {
+      // Expected pattern: out_mem → MergeMem → MemBar, or
+      // out_mem → MemBar (when MergeMem was folded away).
+      Node* mem_use = out_mem->raw_out(0);
+      if (out_mem->outcnt() != 1 ||
+          !(mem_use->is_MergeMem() || mem_use->is_MemBar()) ||
+          (mem_use->is_MergeMem() &&
+           (mem_use->outcnt() != 1 || !mem_use->raw_out(0)->is_MemBar()))) {
         assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
         return false;
       }
 
-      igvn->replace_node(out_mem->raw_out(0), mem);
+      // Replace the MergeMem (or MemBar if MergeMem was folded) with
+      // the new memory from the decomposed clone.
+      Node* replace_target = mem_use->is_MergeMem() ? mem_use : out_mem;
+      igvn->replace_node(replace_target, mem);
 
       Node* out_ctl = proj_out(TypeFunc::Control);
       igvn->replace_node(out_ctl, ctl);
