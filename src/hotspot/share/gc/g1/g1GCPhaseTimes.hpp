@@ -193,8 +193,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   // Not included in _gc_pause_time_ms
   double _root_region_scan_time_ms;
 
-  double _external_accounted_time_ms;
-
   double _recorded_prepare_heap_roots_time_ms;
 
   double _recorded_young_cset_choice_time_ms;
@@ -371,10 +369,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_verify_after_time_ms(double time_ms) {
     _cur_verify_after_time_ms = time_ms;
-  }
-
-  void inc_external_accounted_time_ms(double time_ms) {
-    _external_accounted_time_ms += time_ms;
   }
 
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
