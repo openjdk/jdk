@@ -29,9 +29,9 @@
  * @bug 8382166
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox AOTCacheConsistency
+ * @build jdk.test.whitebox.WhiteBox AOTCacheConsistency HelloWorld
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AOTCacheConsistency
  */
 
@@ -45,7 +45,7 @@ public class AOTCacheConsistency {
         // Train and run the app
         SimpleCDSAppTester tester = SimpleCDSAppTester.of("AOTCacheConsistency")
             .classpath("app.jar")
-            .appCommandLine("HelloApp")
+            .appCommandLine("HelloWorld")
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("HelloWorld");
                 })
@@ -72,11 +72,5 @@ public class AOTCacheConsistency {
                 tester.rerunProduction(extraVMArgs);
             }
         }
-    }
-}
-
-class HelloApp {
-    public static void main(String[] args) {
-        System.out.println("HelloWorld");
     }
 }
