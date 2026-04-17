@@ -449,10 +449,12 @@ public class FileDialog extends Dialog {
      * Gets the selected file of this file dialog.  If the user
      * selected {@code CANCEL}, the returned file is {@code null}.
      * <p>
-     * It is platform-specific as to what happens for {@code LOAD} mode of a non-existent file.
-     * For example, it may be possible for the user to "accept" the result of a {@code setFile}
-     * value or to edit in the name some other file to load/open even if it is not present.
-     * Applications should therefore verify the file represented by the {@code String} exists.
+     * It is platform-specific as to what happens for {@code LOAD} mode of a
+     * non-existent file. For example, it may be possible for the user to
+     * "accept" the result of a {@code setFile} value or to edit in the name
+     * of some other file to load/open even if it is not present.
+     * Applications should therefore verify the file represented by the
+     * {@code String} exists.
      * The value is usually the basename, not a full path name.
      *
      * @return    the currently selected file of this file dialog window,
