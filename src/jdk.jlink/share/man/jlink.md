@@ -241,8 +241,10 @@ Options
 :   `--security-properties=*filename*`
 
 Description
-:   Override the security properties in the `java.security` configuration
-    file with the properties in the specified file.
+:   Overrides the security properties - if they exist - in the
+    `conf/security/java.security` configuration file with the properties in
+    the specified file. Adds properties not present in the `java.security`
+    file to the end of the file.
 
 ## jlink Examples
 
