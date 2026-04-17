@@ -72,7 +72,7 @@ public class CodeCacheTest {
      *  bounds [0x00007f20934d9000, 0x00007f2093949000, 0x00007f2093d3a000]
      *  blobs=478, nmethods=0, adapters=387, full_count=0
      * CodeCache: size=245764Kb, used=6965Kb, max_used=7010Kb, free=238796Kb
-     *  total_blobs=1966, nmethods=1488, adapters=387, full_count=0
+     *  total blobs=1966, nmethods=1488, adapters=387, full_count=0
      * Compilation: enabled, stopped_count=0, restarted_count=0
      */
 
