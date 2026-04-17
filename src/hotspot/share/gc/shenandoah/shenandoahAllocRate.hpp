@@ -122,18 +122,18 @@ public:
   }
 
   double average() {
-    MonitorLocker locker(&_sample_lock);
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _sampled_rates.avg();
   }
 
   double upper_bound(const double standard_deviations) {
-    MonitorLocker locker(&_sample_lock);
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     const double max_rate = MAX2(_sampled_rates.predict_next(), _sampled_rates.davg());
     return max_rate + (standard_deviations * _sampled_rates.dsd());
   }
 
   double predict_next() {
-    MonitorLocker locker(&_sample_lock);
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _sampled_rates.predict_next();
   }
 };
