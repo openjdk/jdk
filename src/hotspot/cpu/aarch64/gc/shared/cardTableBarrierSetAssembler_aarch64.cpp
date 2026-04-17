@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst, Register tmp1, Register tmp2) {
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2) {
   precond(tmp1 != noreg);
   precond(tmp2 != noreg);
   assert_different_registers(obj, tmp1, tmp2);
@@ -114,10 +114,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.offset() == 0)) {
-      store_check(masm, dst.base(), dst, tmp1, tmp2);
+      store_check(masm, dst.base(), tmp1, tmp2);
     } else {
       __ lea(tmp3, dst);
-      store_check(masm, tmp3, dst, tmp1, tmp2);
+      store_check(masm, tmp3, tmp1, tmp2);
     }
   }
 }
