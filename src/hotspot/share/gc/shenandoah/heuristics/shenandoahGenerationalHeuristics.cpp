@@ -69,15 +69,27 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
         : ShenandoahAdaptiveHeuristics(generation), _generation(generation), _add_regions_to_old(0) {
 }
 
-void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
+void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* collection_set,
+                                                                             RegionData* data, size_t data_size,
+                                                                             size_t free) {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-
-  assert(collection_set->is_empty(), "Collection set must be empty here");
 
   _add_regions_to_old = 0;
 
-  // Choose the collection set
-  filter_regions(collection_set);
+  // Find the amount that will be promoted, regions that will be promoted in
+  // place, and preselected older regions that will be promoted by evacuation.
+  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
+  compute_evacuation_budgets(in_place_promotions, heap);
+
+  // Call the subclasses to add regions into the collection set.
+  select_collection_set_regions(collection_set, data, data_size, free);
+
+  // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
+  adjust_evacuation_budgets(heap, collection_set);
+
+  if (collection_set->has_old_regions()) {
+    heap->shenandoah_policy()->record_mixed_cycle();
+  }
 
   if (_generation->is_global()) {
     // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
@@ -91,6 +103,14 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     // after a global cycle for old regions that were not included in this collection set.
     heap->old_generation()->transition_old_generation_after_global_gc();
   }
+
+  ShenandoahTracer::report_promotion_info(collection_set,
+                                          in_place_promotions.humongous_region_stats().count,
+                                          in_place_promotions.humongous_region_stats().garbage,
+                                          in_place_promotions.humongous_region_stats().free,
+                                          in_place_promotions.regular_region_stats().count,
+                                          in_place_promotions.regular_region_stats().garbage,
+                                          in_place_promotions.regular_region_stats().free);
 }
 
 void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions,
@@ -214,106 +234,6 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
 
   // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the
   // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
-}
-
-void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* collection_set) {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-
-  // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status(_generation);
-
-  // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
-
-  const size_t num_regions = heap->num_regions();
-
-  RegionData* candidates = _region_data;
-
-  size_t cand_idx = 0;
-
-  size_t total_garbage = 0;
-
-  size_t immediate_garbage = 0;
-  size_t immediate_regions = 0;
-
-  size_t free = 0;
-  size_t free_regions = 0;
-
-  for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!_generation->contains(region)) {
-      continue;
-    }
-    const size_t garbage = region->garbage();
-    total_garbage += garbage;
-    if (region->is_empty()) {
-      free_regions++;
-      free += region_size_bytes;
-    } else if (region->is_regular()) {
-      if (!region->has_live()) {
-        // We can recycle it right away and put it in the free set.
-        immediate_regions++;
-        immediate_garbage += garbage;
-        region->make_trash_immediate();
-      } else {
-        // This is our candidate for later consideration. Note that this region
-        // could still be promoted in place and may not necessarily end up in the
-        // collection set.
-        assert(region->get_top_before_promote() == nullptr, "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
-        candidates[cand_idx].set_region_and_garbage(region, garbage);
-        cand_idx++;
-      }
-    } else if (region->is_humongous_start()) {
-      // Reclaim humongous regions here, and count them as the immediate garbage
-      DEBUG_ONLY(assert_humongous_mark_consistency(region));
-      if (!region->has_live()) {
-        heap->trash_humongous_region_at(region);
-
-        // Count only the start. Continuations would be counted on "trash" path
-        immediate_regions++;
-        immediate_garbage += garbage;
-      }
-    } else if (region->is_trash()) {
-      // Count in just trashed humongous continuation regions
-      immediate_regions++;
-      immediate_garbage += garbage;
-    }
-  }
-
-  // Step 2. Look back at garbage statistics, and decide if we want to collect anything,
-  // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
-  assert(immediate_garbage <= total_garbage,
-         "Cannot have more immediate garbage than total garbage: " PROPERFMT " vs " PROPERFMT,
-         PROPERFMTARGS(immediate_garbage), PROPERFMTARGS(total_garbage));
-
-  const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
-  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
-  if (immediate_percent <= ShenandoahImmediateThreshold) {
-
-    // Find the amount that will be promoted, regions that will be promoted in
-    // place, and preselected older regions that will be promoted by evacuation.
-    compute_evacuation_budgets(in_place_promotions, heap);
-
-    // Call the subclasses to add young-gen regions into the collection set.
-    choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-
-    // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
-    adjust_evacuation_budgets(heap, collection_set);
-
-    if (collection_set->has_old_regions()) {
-      heap->shenandoah_policy()->record_mixed_cycle();
-    }
-  }
-
-  collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
-  ShenandoahTracer::report_evacuation_info(collection_set,
-                                           free_regions,
-                                           in_place_promotions.humongous_region_stats().count,
-                                           in_place_promotions.regular_region_stats().count,
-                                           in_place_promotions.regular_region_stats().garbage,
-                                           in_place_promotions.regular_region_stats().free,
-                                           immediate_regions,
-                                           immediate_garbage);
 }
 
 void ShenandoahGenerationalHeuristics::add_tenured_regions_to_collection_set(const size_t old_promotion_reserve,
