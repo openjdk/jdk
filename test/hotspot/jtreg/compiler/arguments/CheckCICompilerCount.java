@@ -194,7 +194,10 @@ public class CheckCICompilerCount {
     };
 
     private static final String[] INVALID_EXPECTED_OUTPUTS = {
-        "compiler buffer size exceeds the CodeCache size limit"
+        // "CICompilerCount is too large" is a common prefix for two different messages:
+        // - product build: flag constraint fires early: "CICompilerCount is too large for current active processor count N"
+        // - debug build: CodeCache overflow guard fires: "CICompilerCount is too large: compiler buffer size exceeds the CodeCache size limit"
+        "CICompilerCount is too large"
     };
 
     private static final int[] INVALID_EXIT = {
