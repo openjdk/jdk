@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.security.Security;
 import java.util.Arrays;
 
@@ -88,7 +88,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             // log it for debugging
             System.out.println("Server SSLHandshakeException:");
             se.printStackTrace(System.out);
-        } catch (InterruptedIOException ioe) {
+        } catch (SocketTimeoutException _) {
             // must have been interrupted, no harm
         } catch (SSLException | SocketException se) {
             // The client side may have closed the socket.
