@@ -3704,9 +3704,9 @@ const char* InstanceKlass::init_state_name() const {
 
 void InstanceKlass::print_class_flags(outputStream* st) const {
   AccessFlags flags(compute_modifier_flags());
+  if (flags.is_public    ()) st->print("public ");
   if (flags.is_private   ()) st->print("private ");
   if (flags.is_protected ()) st->print("protected ");
-  if (flags.is_public    ()) st->print("public ");
   if (flags.is_static    ()) st->print("static ");
   if (flags.is_final     ()) st->print("final ");
   if (flags.is_interface ()) st->print("interface ");
