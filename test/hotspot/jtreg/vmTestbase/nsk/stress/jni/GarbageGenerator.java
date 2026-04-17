@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 
 package nsk.stress.jni;
+import jdk.test.lib.thread.ThreadWrapper;
 
-class GarbageGenerator extends Thread {
+class GarbageGenerator extends ThreadWrapper {
     class Garbage {
         Garbage() {
             this(1024);
