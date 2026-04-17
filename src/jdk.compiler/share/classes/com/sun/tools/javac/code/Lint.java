@@ -105,7 +105,9 @@ public class Lint {
     private Symtab syms;
     private Names names;
 
-    // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
+    // Invariants:
+    //  - It's never the case that a category is in both "values" and "suppressedValues"
+    //  - All categories in "suppressedValues" have annotationSuppression = true
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
     private boolean withinDeprecated;
@@ -475,6 +477,10 @@ public class Lint {
 
     /**
      * Check if a warning category has been specifically suppressed by means of @SuppressWarnings.
+     *
+     * <p>
+     * Always returns false for categories that are not suppressible by the annotation, even
+     * if they (uselessly) happen to appear in one.
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
@@ -485,7 +491,8 @@ public class Lint {
      * Obtain the set of recognized lint warning categories suppressed at the given symbol's declaration.
      *
      * <p>
-     * This set can be non-empty only if the symbol is annotated with @SuppressWarnings.
+     * This set can be non-empty only if the symbol is annotated with @SuppressWarnings, and only categories
+     * for which {@code annotationSuppression} is true are included.
      *
      * @param symbol symbol corresponding to a possibly-annotated declaration
      * @return new warning suppressions applied to sym
