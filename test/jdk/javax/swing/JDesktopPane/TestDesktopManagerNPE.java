@@ -26,8 +26,8 @@
  * @key headful
  * @summary Verifies iconifying internalframe after setting DesktopManager
  *          does not return NPE
- * @run main -Dswing.volatileImageBufferEnabled=false TestDesktopManagerNPE
- * @run main -Dswing.volatileImageBufferEnabled=true TestDesktopManagerNPE
+ * @run main TestDesktopManagerNPE
+ * @run main/othervm -Dswing.volatileImageBufferEnabled=false TestDesktopManagerNPE
  */
 
 import java.awt.Dimension;
