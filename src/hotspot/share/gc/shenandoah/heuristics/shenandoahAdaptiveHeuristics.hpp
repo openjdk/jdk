@@ -34,65 +34,6 @@
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
-/**
- * ShenandoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
- * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
- * truncated history.  More recently sampled allocations are weighted more heavily than older samples when computing
- * averages and standard deviations.
- */
-class ShenandoahAllocationRate : public CHeapObj<mtGC> {
- public:
-  explicit ShenandoahAllocationRate();
-
-  // Reset the _last_sample_value to zero, _last_sample_time to current time.
-  void allocation_counter_reset();
-
-  // Force an allocation rate sample to be taken, even if the time since last sample is not greater than
-  // 1s/ShenandoahAdaptiveSampleFrequencyHz, except when current_time - _last_sample_time < MinSampleTime (2 ms).
-  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
-  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
-  // In the case that a new sample is not taken, overwrite unaccounted_bytes_allocated with bytes allocated since
-  // the previous sample was taken (allocated - _last_sample_value).  Otherwise, overwrite unaccounted_bytes_allocated
-  // with 0.
-  double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
-
-  // Add an allocation rate sample if the time since last sample is greater than 1s/ShenandoahAdaptiveSampleFrequencyHz.
-  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
-  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
-  double sample(size_t allocated);
-
-  // Return an estimate of the upper bound on allocation rate, with the upper bound computed as the weighted average
-  // of recently sampled instantaneous allocation rates added to sds times the standard deviation computed for the
-  // sequence of recently sampled average allocation rates.
-  double upper_bound(double sds) const;
-
-  TruncatedSeq* rate() {
-    return &_rate;
-  }
-
- private:
-
-  // Return the instantaneous rate calculated from (allocated - _last_sample_value) / (time - _last_sample_time).
-  // Return Sentinel value 0.0 if (time - _last_sample_time) == 0 or if (allocated <= _last_sample_value).
-  double instantaneous_rate(double time, size_t allocated) const;
-
-  // Time at which previous allocation rate sample was collected.
-  double _last_sample_time;
-
-  // Bytes allocated as of the time at which previous allocation rate sample was collected.
-  size_t _last_sample_value;
-
-  // The desired interval of time between consecutive samples of the allocation rate.
-  double _interval_sec;
-
-  // Holds a sequence of the most recently sampled instantaneous allocation rates
-  TruncatedSeq _rate;
-
-  // Holds a sequence of the most recently computed weighted average of allocation rates, with each weighted average
-  // computed immediately after an instantaneous rate was sampled
-  TruncatedSeq _rate_avg;
-};
-
 /*
  * The adaptive heuristic tracks the allocation behavior and average cycle
  * time of the application. It attempts to start a cycle with enough time
@@ -131,10 +72,9 @@ public:
 
 
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                       RegionData* data, size_t size,
-                                                       size_t actual_free) override;
+                                             RegionData* data, size_t size,
+                                             size_t actual_free) override;
 
-  void record_cycle_start() override;
   void record_success_concurrent() override;
   void record_degenerated() override;
   void record_success_full() override;
@@ -181,8 +121,6 @@ protected:
   enum Trigger {
     SPIKE, RATE, OTHER
   };
-
-  ShenandoahAllocationRate _allocation_rate;
 
   // Invocations of should_start_gc() happen approximately once per ms.  Queries of allocation rate only happen if a
   // a certain amount of time has passed since the previous query.

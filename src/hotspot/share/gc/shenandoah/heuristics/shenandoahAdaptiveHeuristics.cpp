@@ -295,11 +295,6 @@ void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double times
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_cycle_start() {
-  ShenandoahHeuristics::record_cycle_start();
-  _allocation_rate.allocation_counter_reset();
-}
-
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
   double now = os::elapsedTime();
@@ -785,68 +780,6 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   double time_delta = get_planned_sleep_interval() + predicted_cycle_time;
   size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
   return words_to_be_consumed;
-}
-
-ShenandoahAllocationRate::ShenandoahAllocationRate() :
-  _last_sample_time(os::elapsedTime()),
-  _last_sample_value(0),
-  _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
-  _rate(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor),
-  _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
-}
-
-double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
-  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
-  double now = os::elapsedTime();
-  double time_since_last_update = now - _last_sample_time;
-  if (time_since_last_update < MinSampleTime) {
-    unaccounted_bytes_allocated = allocated - _last_sample_value;
-    _last_sample_value = 0;
-    return 0.0;
-  } else {
-    double rate = instantaneous_rate(now, allocated);
-    _rate.add(rate);
-    _rate_avg.add(_rate.avg());
-    _last_sample_time = now;
-    _last_sample_value = allocated;
-    unaccounted_bytes_allocated = 0;
-    return rate;
-  }
-}
-
-double ShenandoahAllocationRate::sample(size_t allocated) {
-  double now = os::elapsedTime();
-  double rate = 0.0;
-  if (now - _last_sample_time > _interval_sec) {
-    rate = instantaneous_rate(now, allocated);
-    _rate.add(rate);
-    _rate_avg.add(_rate.avg());
-    _last_sample_time = now;
-    _last_sample_value = allocated;
-  }
-  return rate;
-}
-
-double ShenandoahAllocationRate::upper_bound(double sds) const {
-  // Here we are using the standard deviation of the computed running
-  // average, rather than the standard deviation of the samples that went
-  // into the moving average. This is a much more stable value and is tied
-  // to the actual statistic in use (moving average over samples of averages).
-  const double max_rate = MAX2(_rate.davg(), _rate.predict_next());
-  return max_rate + (sds * _rate_avg.dsd());
-}
-
-void ShenandoahAllocationRate::allocation_counter_reset() {
-  _last_sample_time = os::elapsedTime();
-  _last_sample_value = 0;
-}
-
-double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
-  size_t last_value = _last_sample_value;
-  double last_time = _last_sample_time;
-  size_t allocation_delta = (allocated > last_value) ? (allocated - last_value) : 0;
-  double time_delta_sec = time - last_time;
-  return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
 
 #undef PROPERFMT_F
