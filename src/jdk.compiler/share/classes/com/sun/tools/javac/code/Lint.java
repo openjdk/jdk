@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,13 @@ import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
+
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.DEFAULT_ENABLED;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.DEPRECATION_SENSITIVE;
 
 /**
  * A class for handling -Xlint suboptions and @SuppressWarnings.
@@ -76,8 +80,9 @@ public class Lint {
      */
     public Lint augment(Symbol sym) {
         EnumSet<LintCategory> suppressions = suppressionsFrom(sym);
-        if (!suppressions.isEmpty()) {
-            Lint lint = new Lint(this);
+        boolean symWithinDeprecated = withinDeprecated || isDeprecatedDeclaration(sym);
+        if (!suppressions.isEmpty() || symWithinDeprecated != withinDeprecated) {
+            Lint lint = new Lint(this, symWithinDeprecated);
             lint.values.removeAll(suppressions);
             lint.suppressedValues.addAll(suppressions);
             return lint;
@@ -90,10 +95,14 @@ public class Lint {
      * @param lc one or more categories to be enabled
      */
     public Lint enable(LintCategory... lc) {
-        Lint l = new Lint(this);
+        Lint l = new Lint(this, withinDeprecated);
         l.values.addAll(Arrays.asList(lc));
         l.suppressedValues.removeAll(Arrays.asList(lc));
         return l;
+    }
+
+    public static boolean isDeprecatedDeclaration(Symbol sym) {
+        return sym.isDeprecated() && sym.isDeprecatableViaAnnotation();
     }
 
     /**
@@ -101,7 +110,7 @@ public class Lint {
      * @param lc one or more categories to be suppressed
      */
     public Lint suppress(LintCategory... lc) {
-        Lint l = new Lint(this);
+        Lint l = new Lint(this, withinDeprecated);
         l.values.removeAll(Arrays.asList(lc));
         l.suppressedValues.addAll(Arrays.asList(lc));
         return l;
@@ -118,6 +127,7 @@ public class Lint {
     // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
+    private final boolean withinDeprecated;
 
     private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
@@ -127,10 +137,11 @@ public class Lint {
         context.put(lintKey, this);
         options = Options.instance(context);
         log = Log.instance(context);
+        withinDeprecated = false;
     }
 
     // Instantiate a non-root ("symbol scoped") instance
-    protected Lint(Lint other) {
+    protected Lint(Lint other, boolean withinDeprecated) {
         other.initializeRootIfNeeded();
         this.context = other.context;
         this.options = other.options;
@@ -139,6 +150,7 @@ public class Lint {
         this.names = other.names;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
+        this.withinDeprecated = withinDeprecated;
     }
 
     // Process command line options on demand to allow use of root Lint early during startup
@@ -444,6 +456,32 @@ public class Lint {
     }
 
     /**
+     * Determine if the given diagnostic should be emitted given the state of this instance.
+     */
+    public boolean shouldEmit(JCDiagnostic diag) {
+
+        // Check category
+        LintCategory category = diag.getLintCategory();
+        if (category == null)
+            return true;
+
+        // Certain warnings within @Deprecated declarations are automatically suppressed (JLS 9.6.4.6)
+        if (withinDeprecated && diag.isFlagSet(DEPRECATION_SENSITIVE))
+            return false;
+
+        // If the warning is not enabled by default, then emit only when its lint category is explicitly enabled
+        if (!diag.isFlagSet(DEFAULT_ENABLED))
+            return isEnabled(category);
+
+        // If the lint category doesn't support @SuppressWarnings, then we just check the -Xlint:category flag
+        if (!category.annotationSuppression)
+            return !options.isDisabled(Option.XLINT, category);
+
+        // Check whether the lint category is currently suppressed
+        return !isSuppressed(category);
+    }
+
+    /**
      * Checks if a warning category is enabled. A warning category may be enabled
      * on the command line, or by default, and can be temporarily disabled with
      * the SuppressWarnings annotation.
@@ -454,10 +492,7 @@ public class Lint {
     }
 
     /**
-     * Checks is a warning category has been specifically suppressed, by means
-     * of the SuppressWarnings annotation, or, in the case of the deprecated
-     * category, whether it has been implicitly suppressed by virtue of the
-     * current entity being itself deprecated.
+     * Check if a warning category has been specifically suppressed by means of @SuppressWarnings.
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
@@ -468,17 +503,13 @@ public class Lint {
      * Obtain the set of recognized lint warning categories suppressed at the given symbol's declaration.
      *
      * <p>
-     * This set can be non-empty only if the symbol is annotated with either
-     * @SuppressWarnings or @Deprecated.
+     * This set can be non-empty only if the symbol is annotated with @SuppressWarnings.
      *
      * @param symbol symbol corresponding to a possibly-annotated declaration
      * @return new warning suppressions applied to sym
      */
     public EnumSet<LintCategory> suppressionsFrom(Symbol symbol) {
-        EnumSet<LintCategory> suppressions = suppressionsFrom(symbol.getDeclarationAttributes().stream());
-        if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
-            suppressions.add(LintCategory.DEPRECATION);
-        return suppressions;
+        return suppressionsFrom(symbol.getDeclarationAttributes().stream());
     }
 
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
