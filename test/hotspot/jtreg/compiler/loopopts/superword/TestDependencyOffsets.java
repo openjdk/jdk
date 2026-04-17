@@ -96,6 +96,7 @@
 /*
  * @test id=sse4-v004-A
  * @bug 8298935 8308606 8310308 8312570 8310190
+ * @key randomness
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
