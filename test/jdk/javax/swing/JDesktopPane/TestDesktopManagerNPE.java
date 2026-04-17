@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 /* @test
- * @bug 8170794
+ * @bug 8170794 8382396
  * @key headful
  * @summary Verifies iconifying internalframe after setting DesktopManager
  *          does not return NPE
- *  @run main TestDesktopManagerNPE
+ * @run main -Dswing.volatileImageBufferEnabled=false TestDesktopManagerNPE
+ * @run main -Dswing.volatileImageBufferEnabled=true TestDesktopManagerNPE
  */
 
 import java.awt.Dimension;
