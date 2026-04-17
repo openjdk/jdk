@@ -30,6 +30,7 @@
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/vtransform.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 SuperWord::SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer) :
   _scalar_vtransform_analyzer(scalar_vtransform_analyzer),
@@ -472,7 +473,6 @@ bool SuperWord::SLP_extract() {
   // Find "seed" pairs.
   create_adjacent_memop_pairs();
   // TODO: continue here
-  assert(false, "TODO continue here");
 
   if (_pairset.is_empty()) {
 #ifndef PRODUCT
@@ -485,6 +485,7 @@ bool SuperWord::SLP_extract() {
   }
 
   extend_pairset_with_more_pairs_by_following_use_and_def();
+  assert(false, "TODO continue here");
 
   combine_pairs_to_longer_packs();
 
@@ -792,25 +793,23 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
 //------------------------------are_adjacent_refs---------------------------
 // Is s1 immediately before s2 in memory?
 bool SuperWord::are_adjacent_refs(const VTransformNode* s1, const VTransformNode* s2) const {
-  assert(false, "TODO impl");
-  return false;
-  // if (!s1->is_Mem() || !s2->is_Mem()) return false;
-  // if (!in_bb(s1)    || !in_bb(s2))    return false;
+  const VTransformMemopScalarNode* m1 = s1->isa_MemopScalar();
+  const VTransformMemopScalarNode* m2 = s2->isa_MemopScalar();
+  if (m1 == nullptr || m2 == nullptr) { return false; }
 
-  // // Do not use superword for non-primitives
-  // if (!is_java_primitive(s1->as_Mem()->value_basic_type()) ||
-  //     !is_java_primitive(s2->as_Mem()->value_basic_type())) {
-  //   return false;
-  // }
+  // Do not use superword for non-primitives
+  if (!is_java_primitive(m1->node()->value_basic_type()) ||
+      !is_java_primitive(m2->node()->value_basic_type())) {
+    return false;
+  }
 
-  // // Adjacent memory references must be on the same slice.
-  // if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
-  //   return false;
-  // }
+  // Adjacent memory references must be on the same slice.
+  if (_vloop.phase()->C->get_alias_index(m1->node()->adr_type()) !=
+      _vloop.phase()->C->get_alias_index(m2->node()->adr_type())) {
+    return false;
+  }
 
-  // const VPointer& p1 = vpointer(s1->as_Mem());
-  // const VPointer& p2 = vpointer(s2->as_Mem());
-  // return p1.is_adjacent_to_and_before(p2);
+  return m1->vpointer().is_adjacent_to_and_before(m2->vpointer());
 }
 
 
@@ -1027,8 +1026,8 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
 bool SuperWord::have_similar_inputs(const VTransformNode* s1, const VTransformNode* s2) const {
-  assert(false, "TODO impl");
-  return false;
+  return true;
+  // TODO: investigate if this is even so necessary
   // // assert(isomorphic(s1, s2) == true, "check isomorphic");
   // // assert(independent(s1, s2) == true, "check independent");
   // if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
@@ -2855,6 +2854,7 @@ const Type* VTransformNode::container_type(const VTransform& vtransform, Node* n
   return t;
 }
 
+// TODO: rm?
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
   return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
          _vloop.phase()->C->get_alias_index(m2->adr_type());
