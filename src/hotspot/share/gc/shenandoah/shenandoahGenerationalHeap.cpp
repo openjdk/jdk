@@ -800,13 +800,13 @@ private:
   template<class T>
   void update_references_in_remembered_set(uint worker_id, T &cl, const ShenandoahMarkingContext* ctx, bool is_mixed) {
 
-    struct ShenandoahRegionChunk assignment;
+    ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
-      if (r->is_active() && !r->is_cset() && r->is_old()) {
+      if (r != nullptr && r->is_active() && !r->is_cset() && r->is_old()) {
         HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
         HeapWord* end_of_range = r->get_update_watermark();
         if (end_of_range > start_of_range + assignment._chunk_size) {

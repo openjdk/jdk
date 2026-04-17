@@ -383,7 +383,7 @@ inline bool ShenandoahRegionChunkIterator::has_next() const {
   return _index.load_relaxed() < _total_chunks;
 }
 
-inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
+inline bool ShenandoahRegionChunkIterator::next(ShenandoahRegionChunk* assignment) {
   if (_index.load_relaxed() >= _total_chunks) {
     return false;
   }
