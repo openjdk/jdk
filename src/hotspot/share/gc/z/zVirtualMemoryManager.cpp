@@ -547,10 +547,6 @@ bool ZVirtualMemoryReservation::is_empty() const {
   return _registry.is_empty();
 }
 
-bool ZVirtualMemoryReservation::is_contiguous() const {
-  return _registry.is_contiguous();
-}
-
 size_t ZVirtualMemoryReservation::reserved() const {
   size_t reserved = 0;
 
@@ -635,7 +631,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   const size_t used_reserve = reserved - unreserved;
   const double heap_ratio = static_cast<double>(used_reserve) / static_cast<double>(max_capacity);
   const uintptr_t lowest_offset = untype(lowest_available_address(0));
-  const bool is_contiguous = reservation.is_contiguous();
+  const bool is_contiguous = this->is_contiguous();
 
   log_info_p(gc, init)("Reserved Space Type: %s/%s/%s",
                        (is_contiguous ? "Contiguous" : "Discontiguous"),
@@ -676,6 +672,33 @@ void ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReservation* res
 
 bool ZVirtualMemoryManager::is_initialized() const {
   return _initialized;
+}
+
+bool ZVirtualMemoryManager::is_contiguous() const {
+  zoffset_end last_end = zoffset_end::invalid;
+  ZPerNUMAConstIterator<ZVirtualMemoryRegistry> iter(&_partition_registries);
+  for (const ZVirtualMemoryRegistry* registry; iter.next(&registry);) {
+    if (registry->is_empty()) {
+      // Empty registry advance to next
+      continue;
+    }
+
+    if (!registry->is_contiguous()) {
+      // Found a non-contiguous registry, the whole cannot be contiguous
+      return false;
+    }
+
+    if (last_end != zoffset_end::invalid && last_end != registry->peek_low_address()) {
+      assert(last_end < registry->peek_low_address(), "Registries should be ordered");
+      return false;
+    }
+
+    last_end = registry->peak_high_address_end();
+
+    postcond(last_end != zoffset_end::invalid);
+  }
+
+  return true;
 }
 
 ZVirtualMemoryRegistry& ZVirtualMemoryManager::registry(uint32_t partition_id) {
