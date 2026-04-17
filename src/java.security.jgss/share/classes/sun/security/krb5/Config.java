@@ -1305,7 +1305,7 @@ public class Config {
             if (defaultKDC != null) {
                 return defaultKDC;
             }
-            KrbException ke = new KrbException("Cannot locate KDC");
+            KrbException ke = new KrbException("Cannot locate KDC for " + realm);
             if (cause != null) {
                 ke.initCause(cause);
             }
@@ -1415,7 +1415,7 @@ public class Config {
                 "Unable to locate KDC for realm " + realm);
 
             Exception last = (tcpNE != null) ? tcpNE : udpNE;
-            String exceptionCause = sanitizeFaiulre(last);
+            String exceptionCause = sanitizeFailure(last);
             if (exceptionCause != null) {
                 ke.initCause(new KrbException(Krb5.KRB_ERR_GENERIC,
                         "DNS SRV lookup failed: " + exceptionCause));
@@ -1435,7 +1435,7 @@ public class Config {
         return kdcs;
     }
 
-    private static String sanitizeFaiulre(Exception e) {
+    private static String sanitizeFailure(Exception e) {
         if (e == null) return null;
 
         String exceptionName = e.getClass().getName();

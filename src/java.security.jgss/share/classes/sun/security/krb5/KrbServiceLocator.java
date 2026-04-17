@@ -115,7 +115,7 @@ class KrbServiceLocator {
                 }
             }
         } catch (NamingException e) {
-
+            // ignore
         }
         return records;
     }
