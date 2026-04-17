@@ -386,6 +386,7 @@ public:
   void free_node(RBNode<K, V>* node);
 
   // Updates the key in the given node or node cursor.
+  // This will never trigger a tree rebalancing.
   // The user must ensure that no tree properties are broken:
   // There must not exist any node with the new key
   // For all nodes with key < old_key, must also have key < new_key
