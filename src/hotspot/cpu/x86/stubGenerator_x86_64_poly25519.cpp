@@ -241,30 +241,49 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
     __ kmovql(masks[i], t0);
   }
 
-  // Only need to do this once given SIMD and no interdependencies between limbs
-  __ evpaddq(Carry, allLimbs, Acc1L, CarryAdd, false, Assembler::AVX_512bit);
-  __ evpsraq(Carry, allLimbs, Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, allLimbs, Carry, Mask51, false, Assembler::AVX_512bit);
-
+  // Limb 3
+  __ evpaddq(Carry, masks[3], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[3], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[3], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
+  // Limb 4
+  __ evpaddq(Carry, masks[4], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[4], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[4], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[4], Acc1L, CarryH, true, Assembler::AVX_512bit);
 
   // Reduction with c4+ (with B=19) back into c0
-  __ evpmullq(B, allLimbs, Carry, B, false, Assembler::AVX_512bit);
+  __ evpmullq(B, masks[4], Carry, B, false, Assembler::AVX_512bit);
   __ evpermq(B, masks[0], Limb0, B, false, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[0], Acc1L, B, true, Assembler::AVX_512bit);
 
+  // Limb 0
+  __ evpaddq(Carry, masks[0], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[0], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[0], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[0], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[1], Acc1L, Carry, true, Assembler::AVX_512bit);
 
+  // Limb 1
+  __ evpaddq(Carry, masks[1], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[1], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[1], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[1], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[2], Acc1L, Carry, true, Assembler::AVX_512bit);
 
+  // Limb 2
+  __ evpaddq(Carry, masks[2], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[2], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[2], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[2], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[3], Acc1L, Carry, true, Assembler::AVX_512bit);
 
+  // Limb 3
+  __ evpaddq(Carry, masks[3], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsraq(Carry, masks[3], Carry, 51, false, Assembler::AVX_512bit);
+  __ evpandq(CarryH, masks[3], Carry, Mask51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
