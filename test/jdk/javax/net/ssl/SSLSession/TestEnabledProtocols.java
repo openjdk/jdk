@@ -90,7 +90,7 @@ public class TestEnabledProtocols extends SSLSocketTemplate {
             se.printStackTrace(System.out);
         } catch (SocketTimeoutException | SSLException | SocketException se) {
             // The client side may have closed the socket.
-            System.out.println("Server SSLException:");
+            System.out.println("Server exception:");
             se.printStackTrace(System.out);
         } catch (Exception e) {
             System.out.println("Server exception:");
