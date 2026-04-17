@@ -74,7 +74,7 @@ public class TestLinuxVirtualAddressSpace {
     private static final long G = 1024 * M;
     private static final long T = 1024 * G;
 
-    private static final int SIGKILL = 127;
+    private static final int SIGKILL = 137;
 
     private static String toXmxFlag(long xmx) {
         if (xmx % T == 0) { return "-Xmx" + (xmx / T) + "T"; }
