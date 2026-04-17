@@ -257,10 +257,10 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
 
   out->print_cr("%5zu Full GCs (%.2f%%)", _success_full_gcs, percent_of(_success_full_gcs, completed_gcs));
   if (!ExplicitGCInvokesConcurrent) {
-    out->print_cr("  %5zu invoked explicitly (%.2f%%)", explicit_requests, percent_of(explicit_requests, _success_concurrent_gcs));
+    out->print_cr("  %5zu invoked explicitly (%.2f%%)", explicit_requests, percent_of(explicit_requests, _success_full_gcs));
   }
   if (!ShenandoahImplicitGCInvokesConcurrent) {
-    out->print_cr("  %5zu invoked implicitly (%.2f%%)", implicit_requests, percent_of(implicit_requests, _success_concurrent_gcs));
+    out->print_cr("  %5zu invoked implicitly (%.2f%%)", implicit_requests, percent_of(implicit_requests, _success_full_gcs));
   }
   out->print_cr("  %5zu caused by allocation failure (%.2f%%)", _alloc_failure_full, percent_of(_alloc_failure_full, _success_full_gcs));
   out->print_cr("  %5zu upgraded from Degenerated GC (%.2f%%)", _alloc_failure_degenerated_upgrade_to_full, percent_of(_alloc_failure_degenerated_upgrade_to_full, _success_full_gcs));

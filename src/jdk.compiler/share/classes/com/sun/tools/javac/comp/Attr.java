@@ -1281,6 +1281,7 @@ public class Attr extends JCTree.Visitor {
                 try {
                     annotate.blockAnnotations();
                     memberEnter.memberEnter(tree, env);
+                    typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree);
                 } finally {
                     annotate.unblockAnnotations();
                 }
@@ -4226,7 +4227,6 @@ public class Attr extends JCTree.Visitor {
         } else {
             type = resultInfo.pt;
         }
-        tree.type = tree.var.type = type;
         BindingSymbol v = new BindingSymbol(tree.var.mods.flags | tree.var.declKind.additionalSymbolFlags,
                                             tree.var.name, type, env.info.scope.owner);
         v.pos = tree.pos;
@@ -4244,7 +4244,8 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v);
         }
         annotate.flush();
-        result = tree.type;
+        typeAnnotations.organizeTypeAnnotationsSignaturesForLocalVarType(env, tree.var);
+        result = tree.type = tree.var.type = v.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
         } else {
@@ -5269,11 +5270,15 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType = attribType(tree.underlyingType, env);
-        Type annotatedType = underlyingType.preannotatedType();
+        Type underlyingType = attribTree(tree.underlyingType, env, resultInfo);
+        if (underlyingType.getTag() == PACKAGE) {
+            result = tree.type = underlyingType;
+        } else {
+            Type annotatedType = underlyingType.preannotatedType();
 
-        annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
-        result = tree.type = annotatedType;
+            annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
+            result = tree.type = annotatedType;
+        }
     }
 
     public void visitErroneous(JCErroneous tree) {

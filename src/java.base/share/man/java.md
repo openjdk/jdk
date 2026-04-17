@@ -2944,26 +2944,6 @@ they're used.
     the configuration of the computer (RAM and CPU). By default, the option
     is disabled and the heap sizes are configured less aggressively.
 
-[`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use is set to 1GB by default. The string "emulated-client" is added
-    to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2975,6 +2955,26 @@ when they're used.
     This option was deprecated in JDK 16 by [JEP
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
+
+[`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
+:   Enabled the "Client VM emulation" mode, which used only the C1 JIT compiler,
+    a 32Mb CodeCache, and the Serial GC. The maximum amount of memory that the
+    JVM could use was set to 1GB by default. The string "emulated-client" was added
+    to the JVM version string.
+
+    By default the flag was set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode was not enabled if any of the following
+    flags were used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
 
 ## Removed Java Options
 

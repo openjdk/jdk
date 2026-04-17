@@ -1000,30 +1000,6 @@ public:
     f(0b0101010, 31, 25), f(0, 24), sf(offset, 23, 5), f(0, 4), f(cond, 3, 0);
   }
 
-#define INSN(NAME, cond)                        \
-  void NAME(address dest) {                     \
-    br(cond, dest);                             \
-  }
-
-  INSN(beq, EQ);
-  INSN(bne, NE);
-  INSN(bhs, HS);
-  INSN(bcs, CS);
-  INSN(blo, LO);
-  INSN(bcc, CC);
-  INSN(bmi, MI);
-  INSN(bpl, PL);
-  INSN(bvs, VS);
-  INSN(bvc, VC);
-  INSN(bhi, HI);
-  INSN(bls, LS);
-  INSN(bge, GE);
-  INSN(blt, LT);
-  INSN(bgt, GT);
-  INSN(ble, LE);
-  INSN(bal, AL);
-  INSN(bnv, NV);
-
   void br(Condition cc, Label &L);
 
 #undef INSN
@@ -1094,6 +1070,10 @@ public:
   INSN(xpaclri,   0b0000, 0b111);
 
 #undef INSN
+
+  void wfet(Register rt) {
+    system(0b00, 0b011, 0b0001, 0b0000, 0b000, rt);
+  }
 
   // we only provide mrs and msr for the special purpose system
   // registers where op1 (instr[20:19]) == 11
@@ -3814,8 +3794,8 @@ public:
   }
 
 private:
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
-               bool isMerge, bool isFloat) {
+  void _sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
+                bool isMerge, bool isFloat) {
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
@@ -3839,11 +3819,11 @@ private:
 public:
   // SVE copy signed integer immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
-    sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
+    _sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    _sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
