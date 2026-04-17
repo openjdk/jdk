@@ -749,9 +749,8 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
     // TypeRawPtr::BOTTOM would only update the raw slice, leaving typed
     // per-instance slices (from escape analysis) pointing to the
     // pre-clone memory state via the Initialize's NarrowMemProj.
-    kit->set_control(kit->gvn().transform(new ProjNode(ac, TypeFunc::Control)));
-    Node* mem_proj = kit->gvn().transform(new ProjNode(ac, TypeFunc::Memory));
-    kit->set_all_memory(mem_proj);
+    kit->set_predefined_output_for_runtime_call(ac);
+    kit->set_all_memory_call(ac);
   } else {
     kit->set_all_memory(n);
   }
