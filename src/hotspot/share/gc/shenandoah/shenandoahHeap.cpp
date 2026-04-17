@@ -1650,7 +1650,8 @@ void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   _active_generation = generation;
 }
 
-void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
+void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                    bool is_degenerated, bool is_out_of_cycle) {
   shenandoah_policy()->record_collection_cause(cause);
 
   const GCCause::Cause current = gc_cause();
@@ -1659,7 +1660,11 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
 
   set_gc_cause(cause);
 
-  generation->heuristics()->record_cycle_start();
+  if (is_degenerated) {
+    generation->heuristics()->record_degenerated_cycle_start(is_out_of_cycle);
+  } else {
+    generation->heuristics()->record_cycle_start();
+  }
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
