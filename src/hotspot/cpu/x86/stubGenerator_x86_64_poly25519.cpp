@@ -94,10 +94,10 @@ static address perm_lowH() {
 
 // Permutate element 4 to 0, otherwise setting index to 0 (zero)
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t LIMB0[] = {
+  0x0000000000000004ULL, 0x0000000000000000ULL,
   0x0000000000000000ULL, 0x0000000000000000ULL,
   0x0000000000000000ULL, 0x0000000000000000ULL,
-  0x0000000000000000ULL, 0x0000000000000000ULL,
-  0x0000000000000000ULL, 0x0000000000000004ULL
+  0x0000000000000000ULL, 0x0000000000000000ULL
 };
 static address limb_0() {
   return (address)LIMB0;
@@ -151,8 +151,8 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ kmovql(permL, t0);
   __ mov64(t0, 0x18);
   __ kmovql(permLH, t0);
-  __ evmovdqaq(shift1L, allLimbs, ExternalAddress(shift_1L()), false, Assembler::AVX_512bit, rscratch);
-  __ evmovdqaq(shift1R, allLimbs, ExternalAddress(shift_1R()), false, Assembler::AVX_512bit, rscratch);
+  __ evmovdqaq(shift1L, ExternalAddress(shift_1L()), Assembler::AVX_512bit, rscratch);
+  __ evmovdqaq(shift1R, ExternalAddress(shift_1R()), Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLow, allLimbs, ExternalAddress(perm_low()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLowH, allLimbs, ExternalAddress(perm_lowH()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(Mask51, allLimbs, ExternalAddress(x25519_mask51()), false, Assembler::AVX_512bit, rscratch);
