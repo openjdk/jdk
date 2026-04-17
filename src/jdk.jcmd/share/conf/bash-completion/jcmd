@@ -21,7 +21,7 @@
 # questions.
 #
 
-# Bash completion for jcmd.
+# Bash completion for jcmd tool.
 #
 # Source this file from an interactive shell:
 #   source /path/to/bash-completion/jcmd
@@ -47,7 +47,7 @@ function _jcmd__list_processes() {
 }
 
 # query the list of commands known by the target JVM
-function _jcmd__list_commands_for_pid() {
+function _jcmd__list_commands_for_jvm() {
   local -r jvm_identifier=$1 # can also be a main class name
 
   jcmd "${jvm_identifier}" help 2>/dev/null | awk '
@@ -61,11 +61,11 @@ function _jcmd__list_commands_for_pid() {
 function _jcmd__complete_first_arg() {
   local -r cur=$1
 
-  # include generic options a well
+  # include generic options as well
   local -a candidates=("-l" "--help")
 
-  local pid main_class rest
-  while read -r pid main_class rest; do
+  local pid main_class _rest
+  while read -r pid main_class _rest; do
     candidates+=("${pid}" "${main_class}")
   done < <(_jcmd__list_processes)
 
@@ -78,14 +78,14 @@ function _jcmd__complete_command() {
   local -r jvm_identifier=$1
   local -r cur=$2
 
-  # include reading commands from file flag
+  # include "read commands from file" -f flag
   local -a commands=("-f")
 
   local cmd
   while read -r cmd; do
     [[ -z $cmd ]] && continue
     commands+=("$cmd")
-  done < <(_jcmd__list_commands_for_pid "${jvm_identifier}")
+  done < <(_jcmd__list_commands_for_jvm "${jvm_identifier}")
 
   printf -v wordlist '%s ' "${commands[@]}"
   COMPREPLY=( $(compgen -W "${wordlist}" -- "${cur}") )
@@ -102,7 +102,7 @@ function _jcmd__complete_help_command() {
   while read -r cmd; do
     [[ -z ${cmd} || ${cmd} == help ]] && continue
     commands+=("${cmd}")
-  done < <(_jcmd__list_commands_for_pid "${jvm_identifier}")
+  done < <(_jcmd__list_commands_for_jvm "${jvm_identifier}")
 
   printf -v wordlist '%s ' "${commands[@]}"
   COMPREPLY=( $(compgen -W "${wordlist}" -- "${cur}") )
@@ -112,7 +112,7 @@ function _jcmd__complete_help_command() {
 function _jcmd_completion() {
   COMPREPLY=()
 
-  # latest argument, potentially incomplete
+  # current word, possibly incomplete
   local -r cur=${COMP_WORDS[COMP_CWORD]}
 
   #  COMP_WORDS
@@ -152,5 +152,6 @@ function _jcmd_completion() {
   fi
 }
 
-
+# Avoid alphabetical sorting of completion candidates on double-TAB. This
+# keeps each JVM identifier (main class or JAR path) next to its PID.
 complete -o nosort -F _jcmd_completion jcmd
