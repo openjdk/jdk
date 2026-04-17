@@ -62,8 +62,8 @@
 // and stored in the PackSet.
 class PairSet : public StackObj {
 private:
+  const VTransform& _scalar_vtransform;
   const VLoop& _vloop;
-  const VLoopBody& _body; // TODO: consider removing, replace with VTransform
 
   // Doubly-linked pairs. If not linked: -1
   GrowableArray<int> _left_to_right; // vtn idx -> vtn idx
@@ -108,41 +108,39 @@ private:
 
 public:
   // Initialize empty, i.e. all not linked (-1).
-  PairSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
-    _vloop(vloop_analyzer.vloop()),
-    _body(vloop_analyzer.body()),
-    _left_to_right(arena, _body.body().length(), _body.body().length(), -1),
-    _right_to_left(arena, _body.body().length(), _body.body().length(), -1),
+  PairSet(Arena* arena, const VTransform& scalar_vtransform) :
+    _scalar_vtransform(scalar_vtransform),
+    _vloop(scalar_vtransform.vloop()),
+    _left_to_right(arena, _scalar_vtransform.graph().vtnodes().length(), _scalar_vtransform.graph().vtnodes().length(), -1),
+    _right_to_left(arena, _scalar_vtransform.graph().vtnodes().length(), _scalar_vtransform.graph().vtnodes().length(), -1),
     _lefts_in_insertion_order(arena, 8, 0, 0) {}
 
-  const VLoopBody& body() const { return _body; }
+  const VTransform& scalar_vtransform() const { return _scalar_vtransform; }
 
   bool is_empty() const { return _lefts_in_insertion_order.is_empty(); }
 
   bool is_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool is_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool is_left(const Node* n)  const { assert(false, "depr"); return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
-  bool is_right(const Node* n) const { assert(false, "depr"); return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
   bool is_left(const VTransformNode* n)  const { return is_left(n->_idx); }
   bool is_right(const VTransformNode* n)  const { return is_right(n->_idx); }
 
-  bool is_pair(const Node* n1, const Node* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
+  bool is_pair(const VTransformNode* n1, const VTransformNode* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
 
   bool is_left_in_a_left_most_pair(int i)   const { return is_left(i) && !is_right(i); }
   bool is_right_in_a_right_most_pair(int i) const { return !is_left(i) && is_right(i); }
-  bool is_left_in_a_left_most_pair(const Node* n)   const { return is_left_in_a_left_most_pair( _body.bb_idx(n)); }
-  bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
+  bool is_left_in_a_left_most_pair(const VTransformNode* n)   const { return is_left_in_a_left_most_pair(n->_idx); }
+  bool is_right_in_a_right_most_pair(const VTransformNode* n) const { return is_right_in_a_right_most_pair(n->_idx); }
 
   int get_right_for(int i) const { return _left_to_right.at(i); }
-  Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
-  Node* get_right_or_null_for(const Node* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
+  const VTransformNode* get_right_for(const VTransformNode* n) const { return idx2vtn(get_right_for(n->_idx)); }
+  const VTransformNode* get_right_or_null_for(const VTransformNode* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
 
   // To access elements in insertion order:
   int length() const { return _lefts_in_insertion_order.length(); }
-  Node* left_at_in_insertion_order(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
-  Node* right_at_in_insertion_order(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
+  const VTransformNode* left_at_in_insertion_order(int i)  const { return idx2vtn(_lefts_in_insertion_order.at(i)); }
+  const VTransformNode* right_at_in_insertion_order(int i) const { return idx2vtn(get_right_for(_lefts_in_insertion_order.at(i))); }
 
-  void add_pair(VTransformNode* n1, VTransformNode* n2) {
+  void add_pair(const VTransformNode* n1, const VTransformNode* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
     _left_to_right.at_put(n1->_idx, n2->_idx);
     _right_to_left.at_put(n2->_idx, n1->_idx);
@@ -150,11 +148,11 @@ public:
     assert(is_left(n1) && is_right(n2), "must be set now");
   }
 
-  void add_pair(Node* n1, Node* n2) {
-    assert(false, "deprecated");
-  }
-
   NOT_PRODUCT(void print() const;)
+
+  // TODO: consider making some more methods above private...
+private:
+  const VTransformNode* idx2vtn(int idx) const { return _scalar_vtransform.idx2vtn(idx); }
 };
 
 // Iterate over the PairSet, pair-chain by pair-chain.
@@ -165,51 +163,51 @@ public:
 class PairSetIterator : public StackObj {
 private:
   const PairSet& _pairset;
-  const VLoopBody& _body;
 
-  int _chain_start_bb_idx; // bb_idx of left-element in the left-most pair.
-  int _current_bb_idx;     // bb_idx of left-element of the current pair.
-  const int _end_bb_idx;
+  int _chain_start_idx; // idx of left-element in the left-most pair.
+  int _current_idx;     // idx of left-element of the current pair.
+  const int _end_idx;
 
 public:
   PairSetIterator(const PairSet& pairset) :
     _pairset(pairset),
-    _body(pairset.body()),
-    _chain_start_bb_idx(-1),
-    _current_bb_idx(-1),
-    _end_bb_idx(_body.body().length())
+    _chain_start_idx(-1),
+    _current_idx(-1),
+    _end_idx(pairset.scalar_vtransform().graph().vtnodes().length())
   {
     next_chain();
   }
 
   bool done() const {
-    return _chain_start_bb_idx >= _end_bb_idx;
+    return _chain_start_idx >= _end_idx;
   }
 
-  Node* left() const {
-    return _body.body().at(_current_bb_idx);
+  const VTransformNode* left() const {
+    return idx2vtn(_current_idx);
   }
 
-  Node* right() const {
-    int bb_idx_2 = _pairset.get_right_for(_current_bb_idx);
-    return _body.body().at(bb_idx_2);
+  const VTransformNode* right() const {
+    int idx_2 = _pairset.get_right_for(_current_idx);
+    return idx2vtn(idx_2);
   }
 
   // Try to keep walking on the current pair-chain, else find a new pair-chain.
   void next() {
-    assert(_pairset.is_left(_current_bb_idx), "current was valid");
-    _current_bb_idx = _pairset.get_right_for(_current_bb_idx);
-    if (!_pairset.is_left(_current_bb_idx)) {
+    assert(_pairset.is_left(_current_idx), "current was valid");
+    _current_idx = _pairset.get_right_for(_current_idx);
+    if (!_pairset.is_left(_current_idx)) {
       next_chain();
     }
   }
 
 private:
+  const VTransformNode* idx2vtn(int idx) const { return _pairset.scalar_vtransform().idx2vtn(idx); }
+
   void next_chain() {
     do {
-      _chain_start_bb_idx++;
-    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_bb_idx));
-    _current_bb_idx = _chain_start_bb_idx;
+      _chain_start_idx++;
+    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_idx));
+    _current_idx = _chain_start_idx;
   }
 };
 
@@ -573,12 +571,12 @@ private:
   bool have_similar_inputs(const VTransformNode* s1, const VTransformNode* s2) const;
 
   void extend_pairset_with_more_pairs_by_following_use_and_def();
-  bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
-  bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
-  void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
+  bool extend_pairset_with_more_pairs_by_following_def(const VTransformNode* s1, const VTransformNode* s2);
+  bool extend_pairset_with_more_pairs_by_following_use(const VTransformNode* s1, const VTransformNode* s2);
+  void order_inputs_of_all_use_pairs_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2);
   enum PairOrderStatus { Ordered, Unordered, Unknown };
-  PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
-  int estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const;
+  PairOrderStatus order_inputs_of_uses_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2, const VTransformNode* use1, const VTransformNode* use2);
+  int estimate_cost_savings_when_packing_as_pair(const VTransformNode* s1, const VTransformNode* s2) const;
 
   void combine_pairs_to_longer_packs();
 

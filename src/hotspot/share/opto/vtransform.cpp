@@ -53,6 +53,12 @@ VTransformNode* VTransformOptimize::worklist_pop() {
   return vtn;
 }
 
+const VTransformNode* VTransform::idx2vtn(int idx) const {
+  const VTransformNode* vtn = _graph.vtnodes().at(idx);
+  assert(vtn->_idx == idx, "idx must match");
+  return vtn;
+}
+
 void VTransform::optimize() {
   NOT_PRODUCT( if (vloop().is_trace_optimization()) { tty->print_cr("\nVTransform::optimize"); } )
   ResourceMark rm;

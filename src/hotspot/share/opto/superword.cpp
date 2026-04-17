@@ -39,7 +39,7 @@ SuperWord::SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer) :
   _vloop(_vloop_analyzer.vloop()),
   _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
-  _pairset(&_arena, _vloop_analyzer),
+  _pairset(&_arena, _scalar_vtransform),
   _packset(&_arena, _vloop_analyzer),
   _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
@@ -718,26 +718,26 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
 bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   assert(false, "TODO rm");
 
-  // Do not use superword for non-primitives
-  BasicType bt1 = velt_basic_type(s1);
-  BasicType bt2 = velt_basic_type(s2);
-  if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
-    return false;
-  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2) {
-    return false; // No vectors for this type
-  }
+  //// Do not use superword for non-primitives
+  //BasicType bt1 = velt_basic_type(s1);
+  //BasicType bt2 = velt_basic_type(s2);
+  //if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
+  //  return false;
+  //if (Matcher::max_vector_size_auto_vectorization(bt1) < 2) {
+  //  return false; // No vectors for this type
+  //}
 
-  // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
-  // and will still be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
-  if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
-    if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
-      if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
-        if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
-          return true;
-        }
-      }
-    }
-  }
+  //// Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
+  //// and will still be vectorized by SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_index.
+  //if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
+  //  if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
+  //    if (!_pairset.is_left(s1) && !_pairset.is_right(s2)) {
+  //      if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
+  //        return true;
+  //      }
+  //    }
+  //  }
+  //}
   return false;
 }
 
@@ -1069,8 +1069,8 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     changed = false;
     // Iterate the pairs in insertion order.
     for (int i = 0; i < _pairset.length(); i++) {
-      Node* left  = _pairset.left_at_in_insertion_order(i);
-      Node* right = _pairset.right_at_in_insertion_order(i);
+      const VTransformNode* left  = _pairset.left_at_in_insertion_order(i);
+      const VTransformNode* right = _pairset.right_at_in_insertion_order(i);
       changed |= extend_pairset_with_more_pairs_by_following_def(left, right);
       changed |= extend_pairset_with_more_pairs_by_following_use(left, right);
     }
@@ -1084,8 +1084,8 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   // all pair-chains from left-to-right, we essencially impose the order of the first
   // element on all other elements in the pair-chain.
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-    Node* left  = pair.left();
-    Node* right = pair.right();
+    const VTransformNode* left  = pair.left();
+    const VTransformNode* right = pair.right();
     order_inputs_of_all_use_pairs_to_match_def_pair(left, right);
   }
 
@@ -1097,22 +1097,21 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
 #endif
 }
 
-bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
+bool SuperWord::extend_pairset_with_more_pairs_by_following_def(const VTransformNode* s1, const VTransformNode* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
 
-  if (s1->is_Load()) return false;
+  if (s1->is_load_in_loop()) return false;
 
   bool changed = false;
-  int start = s1->is_Store() ? MemNode::ValueIn   : 1;
-  int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
+  int start = s1->is_store_in_loop() ? MemNode::ValueIn   : 1;
+  int end   = s1->is_store_in_loop() ? MemNode::ValueIn+1 : s1->req();
   for (int j = start; j < end; j++) {
-    Node* t1 = s1->in(j);
-    Node* t2 = s2->in(j);
-    if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
-      // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
-      continue;
-    }
+    const VTransformNode* t1 = s1->in_req(j);
+    const VTransformNode* t2 = s2->in_req(j);
+    if (t1 == nullptr || t2 == nullptr) { continue; }
+    // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+    if (t1->is_load_or_store_in_loop() || t2->is_load_or_store_in_loop()) { continue; }
     if (can_pack_into_pair(t1, t2)) {
       if (estimate_cost_savings_when_packing_as_pair(t1, t2) >= 0) {
         _pairset.add_pair(t1, t2);
@@ -1126,28 +1125,26 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
 // Note: we only extend with a single pair (the one with most savings) for every call. Since we keep
 //       calling this method as long as there are some changes, we will eventually pack all pairs that
 //       can be packed.
-bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
+bool SuperWord::extend_pairset_with_more_pairs_by_following_use(const VTransformNode* s1, const VTransformNode* s2) {
   assert(_pairset.is_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
 
-  if (s1->is_Store()) return false;
+  if (s1->is_store_in_loop()) return false;
 
   int savings = -1;
-  Node* u1 = nullptr;
-  Node* u2 = nullptr;
-  for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-    Node* t1 = s1->fast_out(i);
-    if (!in_bb(t1) || t1->is_Mem()) {
+  const VTransformNode* u1 = nullptr;
+  const VTransformNode* u2 = nullptr;
+  for (uint i1 = 0; i1 < s1->out_strong_edges(); i1++) {
+    const VTransformNode* t1 = s1->out_strong_edge(i1);
+    // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+    if (t1->is_load_or_store_in_loop()) { continue; }
+    for (uint i2 = 0; i2 < s2->out_strong_edges(); i2++) {
+      const VTransformNode* t2 = s2->out_strong_edge(i2);
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
-      continue;
-    }
-    for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
-      Node* t2 = s2->fast_out(j);
-      if (!in_bb(t2) || t2->is_Mem()) {
-        // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
-        continue;
-      }
-      if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
+      if (t2->is_load_or_store_in_loop()) { continue; }
+
+      // TODO: this is kinda hacky here.
+      //if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
       if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
       if (can_pack_into_pair(t1, t2)) {
         int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
@@ -1168,28 +1165,29 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
 
 // For a pair (def1, def2), find all use packs (use1, use2), and ensure that their inputs have an order
 // that matches the (def1, def2) pair.
-void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2) {
+void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2) {
   assert(_pairset.is_pair(def1, def2), "(def1, def2) must be a pair");
 
-  if (def1->is_Store()) return;
+  if (def1->is_store_in_loop()) return;
 
-  // reductions are always managed beforehand
-  if (is_marked_reduction(def1)) return;
+  assert(false, "TODO impl");
+  //// reductions are always managed beforehand
+  //if (is_marked_reduction(def1)) return;
 
-  for (DUIterator_Fast imax, i = def1->fast_outs(imax); i < imax; i++) {
-    Node* use1 = def1->fast_out(i);
+  //for (DUIterator_Fast imax, i = def1->fast_outs(imax); i < imax; i++) {
+  //  Node* use1 = def1->fast_out(i);
 
-    // Only allow operand swap on commuting operations
-    if (!use1->is_Add() && !use1->is_Mul() && !VectorNode::is_muladds2i(use1)) {
-      break;
-    }
+  //  // Only allow operand swap on commuting operations
+  //  if (!use1->is_Add() && !use1->is_Mul() && !VectorNode::is_muladds2i(use1)) {
+  //    break;
+  //  }
 
-    // Find pair (use1, use2)
-    Node* use2 = _pairset.get_right_or_null_for(use1);
-    if (use2 == nullptr) { break; }
+  //  // Find pair (use1, use2)
+  //  Node* use2 = _pairset.get_right_or_null_for(use1);
+  //  if (use2 == nullptr) { break; }
 
-    order_inputs_of_uses_to_match_def_pair(def1, def2, use1, use2);
-  }
+  //  order_inputs_of_uses_to_match_def_pair(def1, def2, use1, use2);
+  //}
 }
 
 // For a def-pair (def1, def2), and their use-nodes (use1, use2):
@@ -1226,62 +1224,64 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
 //
 //    use1->in(i) == def1 || use2->in(i) == def2   ->    use1->in(i) == def1 && use2->in(i) == def2
 //
-SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2) {
+SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(const VTransformNode* def1, const VTransformNode* def2, const VTransformNode* use1, const VTransformNode* use2) {
   assert(_pairset.is_pair(def1, def2), "(def1, def2) must be a pair");
 
-  // 1. Reduction
-  if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
-    Node* use1_in2 = use1->in(2);
-    if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
-      use1->swap_edges(1, 2);
-    }
-    Node* use2_in2 = use2->in(2);
-    if (use2_in2->is_Phi() || is_marked_reduction(use2_in2)) {
-      use2->swap_edges(1, 2);
-    }
-    return PairOrderStatus::Ordered;
-  }
+  assert(false, "TODO impl");
+  return PairOrderStatus::Unordered;
+  // // 1. Reduction
+  // if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
+  //   Node* use1_in2 = use1->in(2);
+  //   if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
+  //     use1->swap_edges(1, 2);
+  //   }
+  //   Node* use2_in2 = use2->in(2);
+  //   if (use2_in2->is_Phi() || is_marked_reduction(use2_in2)) {
+  //     use2->swap_edges(1, 2);
+  //   }
+  //   return PairOrderStatus::Ordered;
+  // }
 
-  uint ct = use1->req();
-  if (ct != use2->req()) { return PairOrderStatus::Unordered; };
-  uint i1 = 0;
-  uint i2 = 0;
-  do {
-    for (i1++; i1 < ct; i1++) { if (use1->in(i1) == def1) { break; } }
-    for (i2++; i2 < ct; i2++) { if (use2->in(i2) == def2) { break; } }
-    if (i1 != i2) {
-      if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
-        // 2. Commutative: swap edges, and hope the other position matches too.
-        use2->swap_edges(i1, i2);
-      } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
-        // 3.a/b: MulAddS2I.
-        if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
-          use2->swap_edges(1, 2);
-          use2->swap_edges(3, 4);
-        }
-        if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
-          use2->swap_edges(2, 3);
-          use2->swap_edges(1, 4);
-        }
-        return PairOrderStatus::Unknown;
-      } else {
-        // 4. The inputs are not ordered, and we cannot do anything about it.
-        return PairOrderStatus::Unordered;
-      }
-    } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
-      // 3.c: MulAddS2I.
-      use2->swap_edges(1, 3);
-      use2->swap_edges(2, 4);
-      return PairOrderStatus::Unknown;
-    }
-  } while (i1 < ct);
+  // uint ct = use1->req();
+  // if (ct != use2->req()) { return PairOrderStatus::Unordered; };
+  // uint i1 = 0;
+  // uint i2 = 0;
+  // do {
+  //   for (i1++; i1 < ct; i1++) { if (use1->in(i1) == def1) { break; } }
+  //   for (i2++; i2 < ct; i2++) { if (use2->in(i2) == def2) { break; } }
+  //   if (i1 != i2) {
+  //     if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
+  //       // 2. Commutative: swap edges, and hope the other position matches too.
+  //       use2->swap_edges(i1, i2);
+  //     } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
+  //       // 3.a/b: MulAddS2I.
+  //       if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
+  //         use2->swap_edges(1, 2);
+  //         use2->swap_edges(3, 4);
+  //       }
+  //       if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
+  //         use2->swap_edges(2, 3);
+  //         use2->swap_edges(1, 4);
+  //       }
+  //       return PairOrderStatus::Unknown;
+  //     } else {
+  //       // 4. The inputs are not ordered, and we cannot do anything about it.
+  //       return PairOrderStatus::Unordered;
+  //     }
+  //   } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
+  //     // 3.c: MulAddS2I.
+  //     use2->swap_edges(1, 3);
+  //     use2->swap_edges(2, 4);
+  //     return PairOrderStatus::Unknown;
+  //   }
+  // } while (i1 < ct);
 
-  // 4. All inputs match.
-  return PairOrderStatus::Ordered;
+  // // 4. All inputs match.
+  // return PairOrderStatus::Ordered;
 }
 
 // Estimate the savings from executing s1 and s2 as a pair.
-int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const {
+int SuperWord::estimate_cost_savings_when_packing_as_pair(const VTransformNode* s1, const VTransformNode* s2) const {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
 
   const int adjacent_profit = 2;
@@ -1290,8 +1290,8 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
 
   // inputs
   for (uint i = 1; i < s1->req(); i++) {
-    Node* x1 = s1->in(i);
-    Node* x2 = s2->in(i);
+    const VTransformNode* x1 = s1->in_req(i);
+    const VTransformNode* x2 = s2->in_req(i);
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
         save_in += adjacent_profit;
@@ -1306,15 +1306,15 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
   // uses of result
   uint number_of_packed_use_pairs = 0;
   int save_use = 0;
-  for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-    Node* use1 = s1->fast_out(i);
+  for (uint i1 = 0; i1 < s1->out_strong_edges(); i1++) {
+    const VTransformNode* use1 = s1->out_strong_edge(i1);
 
     // Find pair (use1, use2)
-    Node* use2 = _pairset.get_right_or_null_for(use1);
+    const VTransformNode* use2 = _pairset.get_right_or_null_for(use1);
     if (use2 == nullptr) { continue; }
 
-    for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
-      if (use2 == s2->fast_out(k)) {
+    for (uint i2 = 0; i2 < s2->out_strong_edges(); i2++) {
+      if (use2 == s1->out_strong_edge(i2)) {
         // We have pattern:
         //
         //   s1    s2
@@ -1329,8 +1329,8 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const Node* s1, const 
     }
   }
 
-  if (number_of_packed_use_pairs < s1->outcnt()) save_use += unpack_cost(1);
-  if (number_of_packed_use_pairs < s2->outcnt()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s1->out_strong_edges()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s2->out_strong_edges()) save_use += unpack_cost(1);
 
   return MAX2(save_in, save_use);
 }
@@ -1345,8 +1345,8 @@ void SuperWord::combine_pairs_to_longer_packs() {
   // Iterate pair-chain by pair-chain, each from left-most to right-most.
   Node_List* pack = nullptr;
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-    Node* left  = pair.left();
-    Node* right = pair.right();
+    const VTransformNode* left  = pair.left();
+    const VTransformNode* right = pair.right();
     if (_pairset.is_left_in_a_left_most_pair(left)) {
       assert(pack == nullptr, "no unfinished pack");
       pack = new (arena()) Node_List(arena());

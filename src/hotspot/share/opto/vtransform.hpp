@@ -221,6 +221,7 @@ public:
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
   const VTransformGraph& graph() const { return _graph; }
+  const VTransformNode* idx2vtn(int idx) const;
 
   void optimize();
   bool schedule() { return _graph.schedule(); }
@@ -502,6 +503,8 @@ public:
   uint req() const { return _req; }
   uint out_strong_edges() const { return _out_end_strong_edges; }
   uint out_weak_edges() const { return _out.length() - _out_end_strong_edges; }
+  // TODO: I fear we have to split req and memory edges, so we can traverse
+  // outputs in SuperWord.
 
   VTransformNode* in_req(uint i) const {
     assert(i < _req, "must be a req");
@@ -588,6 +591,7 @@ public:
 
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
+  bool is_store_in_loop() const { return is_load_or_store_in_loop() && !is_load_in_loop(); }
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
   virtual bool is_loop_head_phi() const { return false; }
 
