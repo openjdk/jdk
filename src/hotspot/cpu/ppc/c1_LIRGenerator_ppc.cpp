@@ -1127,16 +1127,23 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
 #ifdef _LP64
   __ store(value, address, info);
 #else
   Unimplemented();
 //  __ volatile_store_mem_reg(value, address, info);
 #endif
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  }
 #ifdef _LP64
   __ load(address, result, info);
 #else

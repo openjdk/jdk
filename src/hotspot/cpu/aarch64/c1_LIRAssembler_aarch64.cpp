@@ -629,51 +629,41 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
 }
 
 void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide) {
+  const2mem(src, dest, type, info, wide, /*is_volatile*/false);
+}
+
+void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide, bool is_volatile) {
   assert(src->is_constant(), "should not call otherwise");
   LIR_Const* c = src->as_constant_ptr();
   LIR_Address* to_addr = dest->as_address_ptr();
-
-  void (Assembler::* insn)(Register Rt, const Address &adr);
+  Address addr = as_Address(to_addr, rscratch1);
 
   switch (type) {
-  case T_ADDRESS:
+  case T_ADDRESS: // fall through
+  case T_INT:     // fall through
+  case T_CHAR:    // fall through
+  case T_SHORT:   // fall through
+  case T_BOOLEAN: // fall through
+  case T_BYTE:
     assert(c->as_jint() == 0, "should be");
-    insn = &Assembler::str;
     break;
   case T_LONG:
     assert(c->as_jlong() == 0, "should be");
-    insn = &Assembler::str;
     break;
-  case T_INT:
-    assert(c->as_jint() == 0, "should be");
-    insn = &Assembler::strw;
-    break;
-  case T_OBJECT:
+  case T_OBJECT:  // fall through
   case T_ARRAY:
     assert(c->as_jobject() == nullptr, "should be");
-    if (UseCompressedOops && !wide) {
-      insn = &Assembler::strw;
-    } else {
-      insn = &Assembler::str;
-    }
-    break;
-  case T_CHAR:
-  case T_SHORT:
-    assert(c->as_jint() == 0, "should be");
-    insn = &Assembler::strh;
-    break;
-  case T_BOOLEAN:
-  case T_BYTE:
-    assert(c->as_jint() == 0, "should be");
-    insn = &Assembler::strb;
     break;
   default:
     ShouldNotReachHere();
-    insn = &Assembler::str;  // unreachable
   }
 
-  if (info) add_debug_info_for_null_check_here(info);
-  (_masm->*insn)(zr, as_Address(to_addr, rscratch1));
+  if (is_volatile) {
+    assert(!wide, "unexpected for volatile_move_op");
+    store_volatile</*is_store_zero=*/true>(addr, LIR_Opr::illegalOpr(), type, info);
+  } else {
+    store_unordered</*is_store_zero=*/true>(addr, LIR_Opr::illegalOpr(), type, wide, info);
+  }
 }
 
 void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
@@ -757,9 +747,12 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
+  return reg2mem(src, dest, type, patch_code, info, wide, /*is_volatile*/false);
+}
+
+void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool is_volatile) {
   LIR_Address* to_addr = dest->as_address_ptr();
-  PatchingStub* patch = nullptr;
-  Register compressed_src = rscratch1;
+  Address addr = as_Address(to_addr, rscratch1);
 
   if (patch_code != lir_patch_none) {
     deoptimize_trap(info);
@@ -768,70 +761,22 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 
   if (is_reference_type(type)) {
     __ verify_oop(src->as_register());
-
-    if (UseCompressedOops && !wide) {
-      __ encode_heap_oop(compressed_src, src->as_register());
-    } else {
-      compressed_src = src->as_register();
-    }
   }
 
-  int null_check_here = code_offset();
-  switch (type) {
-    case T_FLOAT: {
-      __ strs(src->as_float_reg(), as_Address(to_addr));
-      break;
-    }
-
-    case T_DOUBLE: {
-      __ strd(src->as_double_reg(), as_Address(to_addr));
-      break;
-    }
-
-    case T_ARRAY:   // fall through
-    case T_OBJECT:  // fall through
-      if (UseCompressedOops && !wide) {
-        __ strw(compressed_src, as_Address(to_addr, rscratch2));
-      } else {
-         __ str(compressed_src, as_Address(to_addr));
-      }
-      break;
-    case T_METADATA:
-      // We get here to store a method pointer to the stack to pass to
-      // a dtrace runtime call. This can't work on 64 bit with
-      // compressed klass ptrs: T_METADATA can be a compressed klass
-      // ptr or a 64 bit method pointer.
-      ShouldNotReachHere();
-      __ str(src->as_register(), as_Address(to_addr));
-      break;
-    case T_ADDRESS:
-      __ str(src->as_register(), as_Address(to_addr));
-      break;
-    case T_INT:
-      __ strw(src->as_register(), as_Address(to_addr));
-      break;
-
-    case T_LONG: {
-      __ str(src->as_register_lo(), as_Address_lo(to_addr));
-      break;
-    }
-
-    case T_BYTE:    // fall through
-    case T_BOOLEAN: {
-      __ strb(src->as_register(), as_Address(to_addr));
-      break;
-    }
-
-    case T_CHAR:    // fall through
-    case T_SHORT:
-      __ strh(src->as_register(), as_Address(to_addr));
-      break;
-
-    default:
-      ShouldNotReachHere();
+  LIR_Opr src_maybe_compressed_oop;
+  if (is_reference_type(type) && UseCompressedOops && !wide) {
+    // Use rscratch2 because rscratch1 might be used for address lowering
+    __ encode_heap_oop(rscratch2, src->as_register());
+    src_maybe_compressed_oop = FrameMap::rscratch2_opr;
+  } else {
+    src_maybe_compressed_oop = src;
   }
-  if (info != nullptr) {
-    add_debug_info_for_null_check(null_check_here, info);
+
+  if (is_volatile) {
+    assert(!wide, "unexpected for volatile_move_op");
+    store_volatile</*is_store_zero=*/false>(addr, src_maybe_compressed_oop, type, info);
+  } else {
+    store_unordered</*is_store_zero=*/false>(addr, src_maybe_compressed_oop, type, wide, info);
   }
 }
 
@@ -921,11 +866,10 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide, bool is_volatile) {
-  LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
-  if (addr->base()->type() == T_OBJECT) {
-    __ verify_oop(addr->base()->as_pointer_register());
+  if (from_addr->base()->type() == T_OBJECT) {
+    __ verify_oop(from_addr->base()->as_pointer_register());
   }
 
   if (patch_code != lir_patch_none) {
@@ -933,10 +877,12 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
     return;
   }
 
+  Address addr = as_Address(from_addr);
+
   if (is_volatile) {
-    load_volatile(from_addr, dest, type, info);
+    load_volatile(addr, dest, type, info);
   } else {
-    load_unordered(from_addr, dest, type, wide, info);
+    load_unordered(addr, dest, type, wide, info);
   }
 
   if (is_reference_type(type)) {
@@ -948,7 +894,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   }
 }
 
-void LIR_Assembler::load_unordered(LIR_Address *from_addr, LIR_Opr dest,
+void LIR_Assembler::load_unordered(Address addr, LIR_Opr dest,
                                    BasicType type, bool wide, CodeEmitInfo* info) {
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
@@ -956,21 +902,21 @@ void LIR_Assembler::load_unordered(LIR_Address *from_addr, LIR_Opr dest,
 
   switch (type) {
     case T_FLOAT: {
-      __ ldrs(dest->as_float_reg(), as_Address(from_addr));
+      __ ldrs(dest->as_float_reg(), addr);
       break;
     }
 
     case T_DOUBLE: {
-      __ ldrd(dest->as_double_reg(), as_Address(from_addr));
+      __ ldrd(dest->as_double_reg(), addr);
       break;
     }
 
     case T_ARRAY:   // fall through
     case T_OBJECT:  // fall through
       if (UseCompressedOops && !wide) {
-        __ ldrw(dest->as_register(), as_Address(from_addr));
+        __ ldrw(dest->as_register(), addr);
       } else {
-        __ ldr(dest->as_register(), as_Address(from_addr));
+        __ ldr(dest->as_register(), addr);
       }
       break;
     case T_METADATA:
@@ -979,33 +925,33 @@ void LIR_Assembler::load_unordered(LIR_Address *from_addr, LIR_Opr dest,
       // compressed klass ptrs: T_METADATA can be a compressed klass
       // ptr or a 64 bit method pointer.
       ShouldNotReachHere();
-      __ ldr(dest->as_register(), as_Address(from_addr));
+      __ ldr(dest->as_register(), addr);
       break;
     case T_ADDRESS:
-      __ ldr(dest->as_register(), as_Address(from_addr));
+      __ ldr(dest->as_register(), addr);
       break;
     case T_INT:
-      __ ldrw(dest->as_register(), as_Address(from_addr));
+      __ ldrw(dest->as_register(), addr);
       break;
 
     case T_LONG: {
-      __ ldr(dest->as_register_lo(), as_Address_lo(from_addr));
+      __ ldr(dest->as_register_lo(), addr);
       break;
     }
 
     case T_BYTE:
-      __ ldrsb(dest->as_register(), as_Address(from_addr));
+      __ ldrsb(dest->as_register(), addr);
       break;
     case T_BOOLEAN: {
-      __ ldrb(dest->as_register(), as_Address(from_addr));
+      __ ldrb(dest->as_register(), addr);
       break;
     }
 
     case T_CHAR:
-      __ ldrh(dest->as_register(), as_Address(from_addr));
+      __ ldrh(dest->as_register(), addr);
       break;
     case T_SHORT:
-      __ ldrsh(dest->as_register(), as_Address(from_addr));
+      __ ldrsh(dest->as_register(), addr);
       break;
 
     default:
@@ -1013,9 +959,79 @@ void LIR_Assembler::load_unordered(LIR_Address *from_addr, LIR_Opr dest,
   }
 }
 
-void LIR_Assembler::load_volatile(LIR_Address *from_addr, LIR_Opr dest,
+template<bool is_store_zero>
+void LIR_Assembler::store_unordered(Address addr, LIR_Opr src,
+                                    BasicType type, bool wide, CodeEmitInfo* info) {
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
+  }
+
+  if (type == T_FLOAT) {
+    __ strs(src->as_float_reg(), addr);
+  } else if (type == T_DOUBLE) {
+    __ strd(src->as_double_reg(), addr);
+  } else {
+    Register src_reg;
+    if (is_store_zero) {
+      assert(src == LIR_Opr::illegalOpr(), "no operand expected");
+      src_reg = zr;
+    } else if (type == T_LONG) {
+      src_reg = src->as_register_lo();
+    } else {
+      src_reg = src->as_register();
+    }
+
+    switch (type) {
+      case T_ARRAY:   // fall through
+      case T_OBJECT:
+        if (UseCompressedOops && !wide) {
+          __ strw(src_reg, addr);
+        } else {
+          __ str(src_reg, addr);
+        }
+        break;
+      case T_METADATA:
+        // We get here to store a method pointer to the stack to pass to
+        // a dtrace runtime call. This can't work on 64 bit with
+        // compressed klass ptrs: T_METADATA can be a compressed klass
+        // ptr or a 64 bit method pointer.
+        ShouldNotReachHere();
+      case T_ADDRESS: // fall through
+      case T_LONG:
+        __ str(src_reg, addr);
+        break;
+      case T_INT:
+        __ strw(src_reg, addr);
+        break;
+
+      case T_BYTE:    // fall through
+      case T_BOOLEAN: {
+        __ strb(src_reg, addr);
+        break;
+      }
+
+      case T_CHAR:    // fall through
+      case T_SHORT:
+        __ strh(src_reg, addr);
+        break;
+
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}
+
+void LIR_Assembler::load_volatile(Address addr, LIR_Opr dest,
                                   BasicType type, CodeEmitInfo* info) {
-  __ lea(rscratch1, as_Address(from_addr));
+  Register addr_reg;
+
+  if (addr.getMode() == Address::base_plus_offset
+      && addr.offset() == 0) {
+    addr_reg = addr.base();
+  } else {
+    addr_reg = rscratch1;
+    __ lea(addr_reg, addr);
+  }
 
   Register dest_reg = rscratch2;
   if (!is_floating_point_type(type)) {
@@ -1028,7 +1044,7 @@ void LIR_Assembler::load_volatile(LIR_Address *from_addr, LIR_Opr dest,
   }
 
   // Uses LDAR to ensure memory ordering.
-  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
+  __ load_store_volatile(dest_reg, type, addr_reg, /*is_load*/true);
 
   switch (type) {
     // LDAR is unsigned so need to sign-extend for byte and short
@@ -1048,6 +1064,47 @@ void LIR_Assembler::load_volatile(LIR_Address *from_addr, LIR_Opr dest,
     default:
       break;
   }
+}
+
+template<bool is_store_zero>
+void LIR_Assembler::store_volatile(Address addr, LIR_Opr src,
+                                   BasicType type, CodeEmitInfo* info) {
+  Register addr_reg;
+  Register src_reg;
+
+  if (is_store_zero) {
+    assert(src == LIR_Opr::illegalOpr(), "no operand expected");
+    src_reg = zr;
+  } else {
+    // Need to move from FPR to GPR before STLR with FMOV for floating types
+    if (type == T_FLOAT) {
+      src_reg = rscratch2;
+      __ fmovs(src_reg, src->as_float_reg());
+    } else if (type == T_DOUBLE) {
+      src_reg = rscratch2;
+      __ fmovd(src_reg, src->as_double_reg());
+    } else if (type == T_LONG) {
+      src_reg = src->as_register_lo();
+    } else {
+      src_reg = src->as_register();
+    }
+    assert(src_reg != rscratch1, "rscratch1 is reserved for the address");
+  }
+
+  if (addr.getMode() == Address::base_plus_offset
+      && addr.offset() == 0) {
+    addr_reg = addr.base();
+  } else {
+    addr_reg = rscratch1;
+    __ lea(addr_reg, addr);
+  }
+
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
+  }
+
+  // Uses STLR to ensure memory ordering.
+  __ load_store_volatile(src_reg, type, addr_reg, /*is_load*/false);
 }
 
 int LIR_Assembler::array_element_size(BasicType type) const {
@@ -2818,8 +2875,16 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
   if (src->is_address()) {
     mem2reg(src, dest, type, lir_patch_none, info, /*wide*/false, /*is_volatile*/true);
   } else if (dest->is_address()) {
-    move_op(src, dest, type, lir_patch_none, info, /*wide*/false);
+    if (src->is_register()) {
+      reg2mem(src, dest, type, lir_patch_none, info, /*wide*/false, /*is_volatile*/true);
+    } else if (src->is_constant()) {
+      const2mem(src, dest, type, info, /*wide*/false, /*is_volatile*/true);
+    } else {
+      // Volatile operations should involve memory and can't involve stack.
+      ShouldNotReachHere();
+    }
   } else {
+    // Volatile operations should involve memory
     ShouldNotReachHere();
   }
 }

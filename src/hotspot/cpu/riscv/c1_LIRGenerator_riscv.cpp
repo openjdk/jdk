@@ -1163,7 +1163,9 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) { Unimplemented(); }
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   __ volatile_store_mem_reg(value, address, info);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
