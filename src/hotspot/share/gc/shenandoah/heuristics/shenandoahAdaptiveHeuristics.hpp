@@ -66,9 +66,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // sequence of recently sampled average allocation rates.
   double upper_bound(double sds) const;
 
-  // Test whether rate significantly diverges from the computed average allocation rate.  If so, return true.
-  // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
-  bool is_spiking(double rate, double threshold) const;
   TruncatedSeq* rate() {
     return &_rate;
   }
@@ -268,20 +265,11 @@ protected:
 
   void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
-    ShenandoahHeuristics::accept_trigger();
+    accept_trigger();
   }
 
   bool trigger_min_free_threshold(size_t available);
   bool trigger_learning(size_t available, size_t capacity);
-
-public:
-  // Sample the allocation rate at GC trigger time if possible.  Return the number of allocated bytes that were
-  // not accounted for in the sample.  This must be called before resetting bytes allocated since gc start.
-  size_t force_alloc_rate_sample(size_t bytes_allocated) override {
-    size_t unaccounted_bytes;
-    _allocation_rate.force_sample(bytes_allocated, unaccounted_bytes);
-    return unaccounted_bytes;
-  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

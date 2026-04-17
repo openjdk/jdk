@@ -437,9 +437,6 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
-  size_t _total_bytes_previously_allocated;
-  size_t _mutator_bytes_at_last_sample;
-
   // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
   size_t _prepare_to_rebuild_mutator_free;
 
@@ -662,51 +659,6 @@ public:
   inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
                                                                 idx_t low_idx, idx_t high_idx, size_t num_regions) {
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
-  }
-
-  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
-
-  void increase_bytes_allocated(size_t bytes);
-
-  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
-  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
-  // the start of the current GC cycle.
-  inline size_t get_bytes_allocated_since_gc_start() const {
-    return _mutator_bytes_allocated_since_gc_start;
-  }
-
-  inline size_t get_total_bytes_allocated() {
-    return  _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated;
-  }
-
-  inline size_t get_bytes_allocated_since_previous_sample() {
-    size_t total_bytes = get_total_bytes_allocated();
-    size_t result;
-    if (total_bytes < _mutator_bytes_at_last_sample) {
-      // This rare condition may occur if bytes allocated overflows (wraps around) size_t tally of allocations.
-      // This may also occur in the very rare situation that get_total_bytes_allocated() is queried in the middle of
-      // reset_bytes_allocated_since_gc_start().  Note that there is no lock to assure that the two global variables
-      // it modifies are modified atomically (_total_bytes_previously_allocated and _mutator_byts_allocated_since_gc_start)
-      // This has been observed to occur when an out-of-cycle degenerated cycle is starting (and thus calls
-      // reset_bytes_allocated_since_gc_start()) at the same time that the control (non-generational mode) or
-      // regulator (generational-mode) thread calls should_start_gc() (which invokes get_bytes_allocated_since_previous_sample()).
-      //
-      // Handle this rare situation by responding with the "innocent" value 0 and resetting internal state so that the
-      // the next query can recalibrate.
-      result = 0;
-    } else {
-      // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
-      // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
-      //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
-      //                        and _total_words is 0x0000_0000_0000_0800 (                    32,768 Decimal)
-      // Then, total_words - _mutator_words_at_last_sample can be done adding 1's complement of subtrahend:
-      //   1's complement of _mutator_words_at_last_sample is: 0x0000_0000_0000_0010 (    16 Decimal))
-      //                                     plus total_words: 0x0000_0000_0000_0800 (32,768 Decimal)
-      //                                                  sum: 0x0000_0000_0000_0810 (32,784 Decimal)
-      result = total_bytes - _mutator_bytes_at_last_sample;
-    }
-    _mutator_bytes_at_last_sample = total_bytes;
-    return result;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.

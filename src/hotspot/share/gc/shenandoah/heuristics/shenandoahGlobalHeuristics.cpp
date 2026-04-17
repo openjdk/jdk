@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/quickSort.hpp"
 
 bool ShenandoahEvacuationBudget::try_reserve(size_t bytes) {

@@ -2319,28 +2319,6 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
   return (address) heap->collection_set()->biased_map_address();
 }
 
-void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
-  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
-  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
-  // allocation rate computations.  This effect is considered to be be negligible.
-
-  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
-  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
-  // bytes are allocated after the start of subsequent gc.
-  size_t unaccounted_bytes;
-  ShenandoahFreeSet* _free_set = free_set();
-  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
-  if (mode()->is_generational()) {
-    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-  } else {
-    // Single-gen Shenandoah uses global heuristics.
-    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
-  }
-  ShenandoahHeapLocker locker(lock());
-  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
-}
-
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
   _degenerated_gc_in_progress.set_cond(in_progress);
 }

@@ -230,6 +230,10 @@ public:
     // Default implementation does nothing.
   }
 
+  double cycle_start_time_seconds() const {
+    return _cycle_start;
+  }
+
   virtual void record_cycle_start();
 
   void record_degenerated_cycle_start(bool out_of_cycle);

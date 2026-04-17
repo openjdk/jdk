@@ -87,6 +87,8 @@ public:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
+  size_t bytes_allocated_since_gc_start() const override;
+
   virtual size_t used() const override = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;

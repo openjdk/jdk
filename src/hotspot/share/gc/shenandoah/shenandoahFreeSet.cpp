@@ -287,32 +287,6 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
-
-void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
-  shenandoah_assert_heaplocked();
-  // Future inquiries of get_total_bytes_allocated() will return the sum of
-  //    _total_bytes_previously_allocated and _mutator_bytes_allocated_since_gc_start.
-  // Since _mutator_bytes_allocated_since_gc_start does not start at zero, we subtract initial_bytes_allocated so as
-  // to not double count these allocated bytes.
-  size_t original_mutator_bytes_allocated_since_gc_start = _mutator_bytes_allocated_since_gc_start;
-
-  // Setting _mutator_bytes_allocated_since_gc_start before _total_bytes_previously_allocated reduces the damage
-  // in the case that the control or regulator thread queries get_bytes_allocated_since_previous_sample() between
-  // the two assignments.
-  //
-  // These are not declared as volatile so the compiler or hardware may reorder the assignments.  The implementation of
-  // get_bytes_allocated_since_previous_cycle() is robust to this possibility, as are triggering heuristics.  The current
-  // implementation assumes we are better off to tolerate the very rare race rather than impose a synchronization penalty
-  // on every update and fetch.  (Perhaps it would be better to make the opposite tradeoff for improved maintainability.)
-  _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
-  _total_bytes_previously_allocated += original_mutator_bytes_allocated_since_gc_start - initial_bytes_allocated;
-}
-
-void ShenandoahFreeSet::increase_bytes_allocated(size_t bytes) {
-  shenandoah_assert_heaplocked();
-  _mutator_bytes_allocated_since_gc_start += bytes;
-}
-
 inline idx_t ShenandoahRegionPartitions::leftmost(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   idx_t idx = _leftmosts[int(which_partition)];
@@ -1227,8 +1201,6 @@ inline void ShenandoahRegionPartitions::assert_bounds_sanity() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _total_bytes_previously_allocated(0),
-  _mutator_bytes_at_last_sample(0),
   _total_humongous_waste(0),
   _alloc_bias_weight(0),
   _total_young_used(0),
@@ -1659,7 +1631,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     if (req.is_mutator_alloc()) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
       _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
-      increase_bytes_allocated(req.actual_size() * HeapWordSize);
     } else {
       assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
 
@@ -1698,7 +1669,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
     DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
-      increase_bytes_allocated(waste_bytes);
+      // TODO: include waste bytes in new alloc rate
+      // increase_bytes_allocated(waste_bytes);
     }
   }
 
@@ -1873,12 +1845,16 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     if (waste_bytes > 0) {
       // For humongous allocations, waste_bytes are included in total_used.  Since this is not humongous,
       // we need to account separately for the waste_bytes.
-      increase_bytes_allocated(waste_bytes);
+      // TODO: new alloc rate doesn't account for wastage
+      // increase_bytes_allocated(waste_bytes);
     }
   }
 
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
-  increase_bytes_allocated(total_used);
+
+  // TODO: new alloc rate doesn't account for wastage
+  // increase_bytes_allocated(total_used);
+
   req.set_actual_size(words_size);
   // If !is_humongous, the "waste" is made availabe for new allocation
   if (waste_bytes > 0) {

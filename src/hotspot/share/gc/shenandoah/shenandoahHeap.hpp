@@ -235,8 +235,6 @@ public:
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
 
-  void reset_bytes_allocated_since_gc_start();
-
   size_t min_capacity()      const;
   size_t max_capacity()      const override;
   size_t soft_max_capacity() const;

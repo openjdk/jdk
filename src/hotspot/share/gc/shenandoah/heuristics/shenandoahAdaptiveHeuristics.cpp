@@ -40,6 +40,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
+#define PROPERFMT_F         "%.0f %s"
+#define PROPERFMT_F_ARGS(s) byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+
 // These constants are used to adjust the margin of error for the moving
 // average of the allocation rate and cycle time. The units are standard
 // deviations.
@@ -403,38 +406,19 @@ static double saturate(double value, double min, double max) {
 //    in operation mode.  We want some way to decide that the average rate has changed, while keeping average
 //    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
-  // TODO: Test this again:
-  // const ShenandoahAllocRate<>& shenandoah_alloc_rate = ShenandoahHeap::heap()->alloc_rate();
-  // double avg_alloc_rate2 = shenandoah_alloc_rate.upper_bound(_margin_of_error_sd);
-  // double predicted_rate = shenandoah_alloc_rate.predict_next();
+  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t available = _space_info->soft_mutator_available();
+  const size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_mutator_available();
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
-
-  double avg_cycle_time = 0;
-  double avg_alloc_rate = 0;
-  double now = get_most_recent_wake_time();
-  size_t allocatable_words = this->allocatable(available);
-  double predicted_future_accelerated_gc_time = 0.0;
-  size_t allocated_bytes_since_last_sample = 0;
-  double instantaneous_rate_words_per_second = 0.0;
-  size_t consumption_accelerated = 0;
-  double acceleration = 0.0;
-  double current_rate_by_acceleration = 0.0;
+  const double now = get_most_recent_wake_time();
+  const size_t allocatable_words = allocatable(available);
   double predicted_future_gc_time = 0;
   double future_planned_gc_time = 0;
   bool future_planned_gc_time_is_average = false;
-  double avg_time_to_deplete_available = 0.0;
-  bool is_spiking = false;
-  double spike_time_to_deplete_available = 0.0;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
                 PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
-
-  // Track allocation rate even if we decide to start a cycle for other reasons.
-  double rate = _allocation_rate.sample(allocated);
 
   if (_start_gc_is_pending) {
     log_trigger("GC start is already pending");
@@ -481,23 +465,15 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   ShenandoahAllocRate<>& new_rate = ShenandoahHeap::heap()->alloc_rate();
-  auto old_rate = _allocation_rate.rate()->avg();
-  auto old_upper = _allocation_rate.upper_bound(_margin_of_error_sd);
-  auto old_next = _allocation_rate.rate()->predict_next();
-  auto new_average = new_rate.average();
-  auto new_upper = new_rate.upper_bound(_margin_of_error_sd);
-  auto new_next = new_rate.predict_next();
-  log_debug(gc, alloc, ergo)("Old Average: %0.2f, Old Upper Bound: %0.2f, Old Next: %0.2f"
-    " New Average: %0.2f, New Upper Bound: %0.2f, New Next: %0.2f"
-    " Diff Average: %0.2f, Diff Upper Bound: %0.2f, Diff Next: %0.2f",
-    old_rate, old_upper, old_next, new_average, new_upper, new_next,
-    (old_rate - new_average), (old_upper - new_upper), (old_next - new_next));
 
-  avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-  avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  const double avg_alloc_rate = new_rate.upper_bound(_margin_of_error_sd);
   if ((now - _previous_acceleration_sample_timestamp) >= (ShenandoahAccelerationSamplePeriod / 1000.0)) {
-    predicted_future_accelerated_gc_time =
-      predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0));
+    double acceleration = 0.0;
+
+    // TODO: Factor linear regression for gc times into a separate class
+    const double predicted_future_accelerated_gc_time = predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0));
+
     double future_accelerated_planned_gc_time;
     bool future_accelerated_planned_gc_time_is_average;
     if (predicted_future_accelerated_gc_time > avg_cycle_time) {
@@ -507,14 +483,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       future_accelerated_planned_gc_time = avg_cycle_time;
       future_accelerated_planned_gc_time_is_average = true;
     }
-    allocated_bytes_since_last_sample = _free_set->get_bytes_allocated_since_previous_sample();
-    instantaneous_rate_words_per_second =
-      (allocated_bytes_since_last_sample / HeapWordSize) / (now - _previous_acceleration_sample_timestamp);
+
+    const double instantaneous_rate_words_per_second = new_rate.rate().avg() / HeapWordSize;
 
     _previous_acceleration_sample_timestamp = now;
     add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
-    current_rate_by_acceleration = instantaneous_rate_words_per_second;
-    consumption_accelerated =
+    double current_rate_by_acceleration = instantaneous_rate_words_per_second;
+    const size_t consumption_accelerated =
       accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
                               (ShenandoahAccelerationSamplePeriod / 1000.0) + future_accelerated_planned_gc_time);
 
@@ -601,27 +576,23 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 8 and
     // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
     if (consumption_accelerated > allocatable_words) {
-      size_t size_t_alloc_rate = (size_t) current_rate_by_acceleration * HeapWordSize;
       if (acceleration > 0) {
-        size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
         log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                    "current rate (" PROPERFMT "/s) with acceleration (" PROPERFMT "/s/s) for planned %s GC time (%.2f ms)",
+                    "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for planned %s GC time (%.2f ms)",
                     PROPERFMTARGS(consumption_accelerated * HeapWordSize),
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
-                    PROPERFMTARGS(size_t_alloc_rate),
-                    PROPERFMTARGS(size_t_acceleration),
+                    PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
+                    PROPERFMT_F_ARGS(acceleration * HeapWordSize),
                     future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                     future_accelerated_planned_gc_time * 1000);
       } else {
         log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                    "current rate (" PROPERFMT "/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
+                    "current rate (" PROPERFMT_F "/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
                     PROPERFMTARGS(consumption_accelerated * HeapWordSize),
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
-                    PROPERFMTARGS(size_t_alloc_rate),
+                    PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
                     future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                     future_accelerated_planned_gc_time * 1000, _spike_threshold_sd);
-
-
       }
       _spike_acceleration_num_samples = 0;
       _spike_acceleration_first_sample_index = 0;
@@ -643,46 +614,20 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     future_planned_gc_time_is_average = true;
   }
 
-  log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: %.0f %s/s",
-                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
-                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-  size_t allocatable_bytes = allocatable_words * HeapWordSize;
-  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
+  log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: " PROPERFMT_F "/s",
+                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
 
+  const size_t allocatable_bytes = allocatable_words * HeapWordSize;
+  const double avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
   if (future_planned_gc_time > avg_time_to_deplete_available) {
-    log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+    log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (" PROPERFMT_F "B/s)"
+                " to deplete free headroom (" PROPERFMT "s) (margin of error = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
-                byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
-                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
-                _margin_of_error_sd);
-
-    size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-    size_t penalties      = capacity / 100 * _gc_time_penalties;
-    size_t allocation_headroom = available;
-    allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-    allocation_headroom -= MIN2(allocation_headroom, penalties);
-    log_info(gc, ergo)("Free headroom: " PROPERFMT " (free) - " PROPERFMT "(spike) - " PROPERFMT " (penalties) = " PROPERFMT,
-                       PROPERFMTARGS(available),
-                       PROPERFMTARGS(spike_headroom),
-                       PROPERFMTARGS(penalties),
-                       PROPERFMTARGS(allocation_headroom));
+                PROPERFMT_F_ARGS(avg_alloc_rate), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd);
     accept_trigger_with_type(RATE);
     return true;
   }
 
-  is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  spike_time_to_deplete_available = (rate == 0)? 0: allocatable_bytes / rate;
-  if (is_spiking && (rate != 0) && (future_planned_gc_time > spike_time_to_deplete_available)) {
-    log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
-                byte_size_in_proper_unit(rate),        proper_unit_for_byte_size(rate),
-                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
-                _spike_threshold_sd);
-    accept_trigger_with_type(SPIKE);
-    return true;
-  }
   return ShenandoahHeuristics::should_start_gc();
 }
 
@@ -798,11 +743,6 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
       total_weight += sample_weight;
     }
     momentary_rate = weighted_y_sum / total_weight;
-    bool is_spiking = _allocation_rate.is_spiking(momentary_rate, _spike_threshold_sd);
-    if (!is_spiking) {
-      // Disable momentary spike trigger unless allocation rate delta from average exceeds sd
-      momentary_rate = 0.0;
-    }
   } else {
     momentary_rate = 0.0;
   }
@@ -901,25 +841,6 @@ void ShenandoahAllocationRate::allocation_counter_reset() {
   _last_sample_value = 0;
 }
 
-bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
-  if (rate <= 0.0) {
-    return false;
-  }
-
-  double sd = _rate.sd();
-  if (sd > 0) {
-    // There is a small chance that that rate has already been sampled, but it seems not to matter in practice.
-    // Note that z_score reports how close the rate is to the average.  A value between -1 and 1 means we are within one
-    // standard deviation.  A value between -3 and +3 means we are within 3 standard deviations.  We only check for z_score
-    // greater than threshold because we are looking for an allocation spike which is greater than the mean.
-    double z_score = (rate - _rate.avg()) / sd;
-    if (z_score > threshold) {
-      return true;
-    }
-  }
-  return false;
-}
-
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
   size_t last_value = _last_sample_value;
   double last_time = _last_sample_time;
@@ -927,3 +848,6 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   double time_delta_sec = time - last_time;
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
+
+#undef PROPERFMT_F
+#undef PROPERFMT_F_ARGS
