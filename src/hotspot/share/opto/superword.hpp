@@ -489,7 +489,7 @@ class SuperWord : public ResourceObj {
   }
 
   bool independent(VTransformNode* n1, VTransformNode* n2) const {
-    assert(false, "TODO impl");
+    assert(false, "TODO impl independent");
     // TODO: this probably requires getting a dependency graph query on a VTransform
     return false;
   }

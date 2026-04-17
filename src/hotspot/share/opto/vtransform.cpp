@@ -158,6 +158,7 @@ bool VTransformGraph::schedule() {
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
       for (uint i = 0; i < vtn->out_strong_edges(); i++) {
         VTransformNode* use = vtn->out_strong_edge(i);
+        // TODO: scalar schedule needs to also respect weak edges!
 
         // Skip dead nodes
         if (!use->is_alive()) { continue; }

@@ -131,6 +131,7 @@ public:
 
 // VTransformGraph: component of VTransform
 // See description at top of this file.
+// TODO: factor out schedule?
 class VTransformGraph : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -985,7 +986,10 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+
+
 // parallel to VLoopAnalyzer
+// - dependency graph
 // - types - or maybe store types in scalar vtnode?
 // - reductions
 // TODO: do we need this?
@@ -995,7 +999,10 @@ private:
 
 public:
   VTransformAnalyzer(const VTransform& vtransform) :
-    _vtransform(vtransform) {}
+    _vtransform(vtransform)
+  {
+    assert(vtransform.graph().is_scheduled(), "require schedule for dependency graph");
+  }
 };
 
 #endif // SHARE_OPTO_VTRANSFORM_HPP

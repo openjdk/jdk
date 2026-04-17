@@ -863,6 +863,7 @@ public:
 // Analyze the C2 loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
+// TODO: reference VTransformAnalyzer
 class VLoopAnalyzer : StackObj {
 private:
   static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
@@ -878,12 +879,12 @@ private:
   bool                 _success;
 
   // Submodules
-  VLoopReductions      _reductions;
+  VLoopReductions      _reductions;       // TODO: rm
   VLoopBody            _body;
   VLoopMemorySlices    _memory_slices;
-  VLoopTypes           _types;
+  VLoopTypes           _types;            // TODO: rm
   VLoopVPointers       _vpointers;
-  VLoopDependencyGraph _dependency_graph;
+  VLoopDependencyGraph _dependency_graph; // TODO: rm
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :

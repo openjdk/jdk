@@ -4545,9 +4545,14 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   // - if-conversion
   // - ...
 
-  //assert(false, "done optimizing scalar graph?");
+  // Some of the analysis below requires a linear order
+  // that respects all edges (incl. weak edges).
+  if (!scalar_vtransform.schedule()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
 
-  // TODO: do we need this?
+  // Now that the scalar VTransform is ready for vectorization,
+  // analyze its structure (dependency graph etc.)
   const VTransformAnalyzer vtransform_analyzer(scalar_vtransform);
 
   SuperWord sw(scalar_vtransform);
