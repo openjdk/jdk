@@ -491,11 +491,20 @@ public class TestFoldComparesFuzzer {
                 }
 
                 // All the precise counting above assumes that both ifs get compiled, and hence
-                // both CmpI are generated. But unstable-if could speculate that the first if
-                // always goes away from the second if. Still, we know that we always at least
-                // start out with at least one CmpI, and end up with at most one CmpI or CmpU.
+                // both CmpI are generated. Further, it assumes that both of the "or" branches
+                // (fail1 and fail2) end up "in the same place": either at the same region, or
+                // both in an uncommon trap. With profiling, the following cases are possible:
+                // - The first if always leads to fail1, and away from the second if, and so we
+                //   only have a single CmpI in the graph after parsing.
+                // - The first if always leads towards the second if, and away from fail1. And
+                //   the second if always points towards fail2 and away from succ. We get an
+                //   uncommon trap for fail1 and succ, and only the fail2 path is compiled.
+                //   Hence, we have two CmpI, but fail1 and fail2 do not end up "in the same place".
+                // This makes our IR rule quite weak, sadly. We could make the IR rules stronger,
+                // but we would need to control warmup, and generate corresponding inputs that
+                // ensure the right paths are compiled or not compiled.
                 if (withWarmup) {
-                    cmpIParse = "> 0"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "< 2";
+                    cmpIParse = "> 0"; cmpUParse = "= 0"; cmpIFinal = "<= 2"; cmpUFinal = "< 2";
                     comment = "with warmup: unstable-if makes precise counting hard.";
                 }
 
