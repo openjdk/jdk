@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
@@ -35,6 +34,7 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,6 +56,7 @@ import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
@@ -140,11 +141,9 @@ public final class ErrorTest {
             var appImageDir = (Path)APP_IMAGE.expand(cmd).orElseThrow();
             // Replace the default Info.plist file with an empty one.
             var plistFile = new MacBundle(appImageDir).infoPlistFile();
-            TKit.trace(String.format("Create invalid plist file in [%s]", plistFile));
+            TKit.trace(String.format("Create invalid plist file [%s]", plistFile));
             createXml(plistFile, xml -> {
                 writePList(xml, toXmlConsumer(() -> {
-                    writeDict(xml, toXmlConsumer(() -> {
-                    }));
                 }));
             });
             return appImageDir;
@@ -702,10 +701,47 @@ public final class ErrorTest {
     }
 
     @Test(ifOS = MACOS)
+    public static void testMacSignAppStoreInvalidRuntime() throws IOException {
+
+        // Create app image with the runtime directory content that will fail the subsequent signing jpackage command.
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+        appImageCmd.executeAndAssertImageCreated();
+        Files.createDirectory(appImageCmd.appLayout().runtimeHomeDirectory().resolve("bin"));
+
+        final var keychain = SignEnvMock.SingleCertificateKeychain.FOO.keychain();
+
+        var spec = testSpec()
+                .noAppDesc()
+                .addArgs("--mac-app-store", "--mac-sign", "--app-image", appImageCmd.outputBundle().toString())
+                .error("error.invalid-app-image-runtime-image-bin-dir",
+                        ApplicationLayout.macAppImage().runtimeHomeDirectory(), appImageCmd.outputBundle())
+                .create();
+
+        TKit.withNewState(() -> {
+            var script = Script.build()
+                    // Disable the mutation making mocks "run once".
+                    .commandMockBuilderMutator(null)
+                    // Replace "/usr/bin/security" with the mock bound to the keychain mock.
+                    .map(MacSignMockUtils.securityMock(SignEnvMock.VALUE))
+                    // Don't mock other external commands.
+                    .use(VerbatimCommandMock.INSTANCE)
+                    .createLoop();
+
+            // Create jpackage tool provider using the /usr/bin/security mock.
+            var jpackage = JPackageMockUtils.createJPackageToolProvider(OperatingSystem.MACOS, script);
+
+            // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
+            JPackageCommand.useToolProviderByDefault(jpackage);
+
+            spec.test();
+        });
+    }
+
+    @Test(ifOS = MACOS)
     @ParameterSupplier
     @ParameterSupplier("testMacPkgSignWithoutIdentity")
     public static void testMacSignWithoutIdentity(TestSpec spec) {
-        // The test called JPackage Command.useToolProviderBy Default(),
+        // The test calls JPackageCommand.useToolProviderByDefault(),
         // which alters global variables in the test library,
         // so run the test case with a new global state to isolate the alteration of the globals.
         TKit.withNewState(() -> {
@@ -715,7 +751,7 @@ public final class ErrorTest {
 
    private static void testMacSignWithoutIdentityWithNewTKitState(TestSpec spec) {
         final Token keychainToken = spec.expectedMessages().stream().flatMap(cannedStr -> {
-            return Stream.of(cannedStr.args()).filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
+            return cannedStr.args().stream().filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
                 switch (token) {
                     case EMPTY_KEYCHAIN, KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
                         return true;
@@ -945,13 +981,13 @@ public final class ErrorTest {
                             .error("error.msi-product-version-components", "1.2.3.4.5")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range", "256.1")
+                            .error("error.msi-product-version-major-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range", "1.256")
+                            .error("error.msi-product-version-minor-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range", "1.2.65536")
+                            .error("error.msi-product-version-build-out-of-range")
                             .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
@@ -966,12 +1002,6 @@ public final class ErrorTest {
         final List<TestSpec> testCases = new ArrayList<>();
 
         testCases.addAll(Stream.of(
-                testSpec().addArgs("--app-version", "0.2")
-                        .error("message.version-string-first-number-not-zero")
-                        .advice("error.invalid-cfbundle-version.advice"),
-                testSpec().addArgs("--app-version", "1.2.3.4")
-                        .error("message.version-string-too-many-components")
-                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),
@@ -979,8 +1009,8 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1")
-                        .advice("message.invalid-identifier.advice"),
+                        .error("error.parameter-not-mac-bundle-identifier", "#1", "--mac-package-identifier")
+                        .advice("error.parameter-not-mac-bundle-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
@@ -1000,8 +1030,7 @@ public final class ErrorTest {
         // Test a few app-image options that should not be used when signing external app image
         testCases.addAll(Stream.of(
                 new ArgumentGroup("--app-version", "2.0"),
-                new ArgumentGroup("--name", "foo"),
-                new ArgumentGroup("--mac-app-store")
+                new ArgumentGroup("--name", "foo")
         ).flatMap(argGroup -> {
             var withoutSign = testSpec()
                     .noAppDesc()

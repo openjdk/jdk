@@ -524,12 +524,28 @@
     bitmap->rows       = (unsigned int)height;
     bitmap->pitch      = pitch;
 
-    if ( pbox.xMin < -0x8000 || pbox.xMax > 0x7FFF ||
-         pbox.yMin < -0x8000 || pbox.yMax > 0x7FFF )
+    /* Flag the bounding box size unsuitable for rendering. */
+    /* FT_Renderer modules should check the return value.   */
+    /* The limit is based on the ppem value when available. */
     {
-      FT_TRACE3(( "ft_glyphslot_preset_bitmap: [%ld %ld %ld %ld]\n",
-                  pbox.xMin, pbox.yMin, pbox.xMax, pbox.yMax ));
-      return 1;
+      FT_Face  face = slot->face;
+      FT_Pos   xlim = 0x8000;
+      FT_Pos   ylim = 0x8000;
+
+
+      if ( face )
+      {
+        xlim = FT_MIN( xlim, 10 * face->size->metrics.x_ppem );
+        ylim = FT_MIN( ylim, 10 * face->size->metrics.y_ppem );
+      }
+
+      if ( pbox.xMin < -xlim || pbox.xMax >= xlim ||
+           pbox.yMin < -ylim || pbox.yMax >= ylim )
+      {
+        FT_TRACE3(( "ft_glyphslot_preset_bitmap: [%ld %ld %ld %ld]\n",
+                    pbox.xMin, pbox.yMin, pbox.xMax, pbox.yMax ));
+        return 1;
+      }
     }
 
     return 0;
@@ -549,8 +565,7 @@
 
 
   FT_BASE_DEF( FT_Error )
-  ft_glyphslot_alloc_bitmap( FT_GlyphSlot  slot,
-                             FT_ULong      size )
+  ft_glyphslot_alloc_bitmap( FT_GlyphSlot  slot )
   {
     FT_Memory  memory = FT_FACE_MEMORY( slot->face );
     FT_Error   error;
@@ -561,7 +576,10 @@
     else
       slot->internal->flags |= FT_GLYPH_OWN_BITMAP;
 
-    FT_MEM_ALLOC( slot->bitmap.buffer, size );
+    /* dimensions must be preset */
+    FT_MEM_ALLOC_MULT( slot->bitmap.buffer,
+                       slot->bitmap.rows,
+                       slot->bitmap.pitch );
     return error;
   }
 
@@ -1413,7 +1431,10 @@
         if ( ( cur[0]->platform_id == TT_PLATFORM_MICROSOFT &&
                cur[0]->encoding_id == TT_MS_ID_UCS_4        )     ||
              ( cur[0]->platform_id == TT_PLATFORM_APPLE_UNICODE &&
-               cur[0]->encoding_id == TT_APPLE_ID_UNICODE_32    ) )
+               cur[0]->encoding_id == TT_APPLE_ID_UNICODE_32    ) ||
+             ( cur[0]->platform_id == TT_PLATFORM_APPLE_UNICODE &&
+               cur[0]->encoding_id == TT_APPLE_ID_FULL_UNICODE  &&
+               FT_Get_CMap_Format( cur[0] ) == 13               ) )
         {
           face->charmap = cur[0];
           return FT_Err_Ok;
@@ -2798,11 +2819,6 @@
       internal->refcount = 1;
 
       internal->no_stem_darkening = -1;
-
-#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-      /* Per-face filtering can only be set up by FT_Face_Properties */
-      internal->lcd_filter_func = NULL;
-#endif
     }
 
     if ( aface )
@@ -4032,18 +4048,8 @@
       }
       else if ( properties->tag == FT_PARAM_TAG_LCD_FILTER_WEIGHTS )
       {
-#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-        if ( properties->data )
-        {
-          ft_memcpy( face->internal->lcd_weights,
-                     properties->data,
-                     FT_LCD_FILTER_FIVE_TAPS );
-          face->internal->lcd_filter_func = ft_lcd_filter_fir;
-        }
-#else
         error = FT_THROW( Unimplemented_Feature );
         goto Exit;
-#endif
       }
       else if ( properties->tag == FT_PARAM_TAG_RANDOM_SEED )
       {
