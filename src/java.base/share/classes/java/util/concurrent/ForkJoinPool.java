@@ -2802,11 +2802,9 @@ public class ForkJoinPool extends AbstractExecutorService
         }
 
         if (now) {
-            DelayScheduler ds;
             releaseWaiters();
-            if ((ds = delayScheduler) != null)
-                ds.signal();
             for (;;) {
+                DelayScheduler ds;
                 if (((e = runState) & CLEANED) == 0L) {
                     boolean clean = cleanQueues();
                     if (((e = runState) & CLEANED) == 0L && clean)
@@ -2816,9 +2814,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     break;
                 if ((ds = delayScheduler) != null && ds.signal() >= 0)
                     break;
-                if (ctl != 0L) // else loop if didn't finish cleaning
+                if (ctl != 0L)
                     break;
-                if ((e & CLEANED) != 0L) {
+                if ((e & CLEANED) != 0L) { // else loop if didn't finish cleaning
                     e |= TERMINATED;
                     if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0L) {
                         CountDownLatch done; SharedThreadContainer ctr;
@@ -2879,7 +2877,10 @@ public class ForkJoinPool extends AbstractExecutorService
      * Interrupts all workers
      */
     private void interruptAll() {
+        DelayScheduler ds;
         Thread current = Thread.currentThread();
+        if ((ds = delayScheduler) != null && ds != current)
+            ds.signal();
         WorkQueue[] qs = queues;
         int n = (qs == null) ? 0 : qs.length;
         for (int i = 1; i < n; i += 2) {
@@ -3519,10 +3520,23 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Arranges execution of a ScheduledForkJoinTask whose delay has
-     * elapsed
+     * elapsed unless pool is stopping
      */
     final void executeEnabledScheduledTask(ScheduledForkJoinTask<?> task) {
-        externalSubmissionQueue(false).push(task, this, false);
+        if (task != null) {
+            boolean cancel = false;
+            if ((runState & STOP) != 0L)
+                cancel = true;
+            else if (task.status >= 0) {
+                try {
+                    externalSubmissionQueue(false).push(task, this, false);
+                } catch (Error | RuntimeException ex) {
+                    cancel = true;
+                }
+            }
+            if (cancel)
+                task.trySetCancelled();
+        }
     }
 
     /**
