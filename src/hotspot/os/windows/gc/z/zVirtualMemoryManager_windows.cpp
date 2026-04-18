@@ -205,6 +205,15 @@ private:
   }
 
   virtual void unreserve(uintptr_t addr, size_t size) {
+    // TODO: VirtualFree with MEM_RELEASE only works for the whole reservation
+    //       returned by VirtualAlloc2, and requires the base to be the same,
+    //       and size to be 0. As such this will not work when a split
+    //       reservation is unreserved. Currently we only unreserve all, where
+    //       this works, or the end, where this does not work, but is benign. We
+    //       do not currently unreserve start of a reservation where size is
+    //       less than the reserved size. But this means we may end up holding
+    //       on to virtual address space which we no longer account for in our
+    //       reserver or NMT. We might want to fix this in the future.
     ZMapper::unreserve_for_shared_awe(addr, size);
   }
 
