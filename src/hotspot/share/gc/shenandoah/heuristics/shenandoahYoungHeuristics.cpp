@@ -129,7 +129,7 @@ bool ShenandoahYoungHeuristics::old_collection_needs_more_time(ShenandoahOldGene
 }
 
 bool ShenandoahYoungHeuristics::trigger_rate(ShenandoahGenerationalHeap *heap, const size_t available, const size_t capacity) {
-  const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  const double avg_cycle_time = _cycles.average(_margin_of_error_sd);
   const double avg_alloc_rate = heap->alloc_rate().upper_bound(_margin_of_error_sd);
   size_t allocation_headroom = available;
   const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
@@ -147,6 +147,38 @@ bool ShenandoahYoungHeuristics::trigger_rate(ShenandoahGenerationalHeap *heap, c
   return false;
 }
 
+bool ShenandoahYoungHeuristics::trigger_expedite_promotions(ShenandoahGenerationalHeap *heap, ShenandoahOldGeneration *old_generation) {
+  // Get through promotions and mixed evacuations as quickly as possible.  These cycles sometimes require significantly
+  // more time than traditional young-generation cycles so start them up as soon as possible.  This is a "mitigation"
+  // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
+  // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
+  // gets priority over old-gen marking.
+  const size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
+  const size_t promo_potential = old_generation->get_promotion_potential();
+  if (promo_potential > promo_expedite_threshold) {
+    // Detect unsigned arithmetic underflow
+    assert(promo_potential < heap->capacity(), "Sanity");
+    log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
+    accept_trigger();
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahYoungHeuristics::trigger_expedite_mixed(ShenandoahGenerationalHeap *heap, ShenandoahOldHeuristics *old_heuristics) {
+  const size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
+  if (mixed_candidates > ShenandoahExpediteMixedThreshold && !heap->is_concurrent_weak_root_in_progress()) {
+    // We need to run young GC in order to open up some free heap regions so we can finish mixed evacuations.
+    // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
+    // candidates, but has not completed. There is no point in trying to start the young cycle before the old
+    // cycle completes.
+    log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
+    accept_trigger();
+    return true;
+  }
+  return false;
+}
+
 bool ShenandoahYoungHeuristics::should_start_gc() {
   auto heap = ShenandoahGenerationalHeap::heap();
   ShenandoahOldGeneration* old_generation = heap->old_generation();
@@ -158,50 +190,26 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     return false;
   }
 
-  const size_t capacity = heap->soft_max_capacity();
-  const size_t available = _space_info->soft_mutator_available();
-
-  if (trigger_learning(available, capacity)) {
+  if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
+    // Inherited triggers have already decided to start a cycle, so no further evaluation is required
+    // ShenandoahAdaptiveHeuristics::should_start_gc() has already accepted trigger, or declined it.
     return true;
   }
 
-  if (trigger_min_free_threshold(available)) {
+  // if (trigger_rate(heap, available, capacity)) {
+  //   return true;
+  // }
+
+  if (trigger_expedite_promotions(heap, old_generation)) {
     return true;
   }
 
-  if (trigger_rate(heap, available, capacity)) {
-    return true;
-  }
-
-
-  // Get through promotions and mixed evacuations as quickly as possible.  These cycles sometimes require significantly
-  // more time than traditional young-generation cycles so start them up as soon as possible.  This is a "mitigation"
-  // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
-  // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
-  // gets priority over old-gen marking.
-  size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
-  size_t promo_potential = old_generation->get_promotion_potential();
-  if (promo_potential > promo_expedite_threshold) {
-    // Detect unsigned arithmetic underflow
-    assert(promo_potential < heap->capacity(), "Sanity");
-    log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
-    accept_trigger();
-    return true;
-  }
-
-  size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
-  if (mixed_candidates > ShenandoahExpediteMixedThreshold && !heap->is_concurrent_weak_root_in_progress()) {
-    // We need to run young GC in order to open up some free heap regions so we can finish mixed evacuations.
-    // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
-    // candidates, but has not completed. There is no point in trying to start the young cycle before the old
-    // cycle completes.
-    log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
-    accept_trigger();
+  if (trigger_expedite_mixed(heap, old_heuristics)) {
     return true;
   }
 
   // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
-  return ShenandoahHeuristics::should_start_gc();
+  return false;
 }
 
 // Return a conservative estimate of how much memory can be allocated before we need to start GC. The estimate is based
@@ -236,7 +244,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   // similarly, evac_slack_spiking is MIN2(0, available - avg_cycle_time * rate + penalties + spike_headroom)
   // but evac_slack_spiking is only relevant if is_spiking, as defined below.
 
-  const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  const double avg_cycle_time = _cycles.average(_margin_of_error_sd);
   const double avg_alloc_rate = ShenandoahHeap::heap()->alloc_rate().upper_bound(_margin_of_error_sd);
   size_t evac_slack_avg;
   if (anticipated_available > avg_cycle_time * avg_alloc_rate + penalties + spike_headroom) {

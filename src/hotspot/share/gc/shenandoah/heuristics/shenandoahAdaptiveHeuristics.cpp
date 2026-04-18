@@ -68,7 +68,7 @@ const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 // To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
 // for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
 // allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
-const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
+const size_t ShenandoahCycleDuration::GC_TIME_SAMPLE_SIZE = 3;
 
 // We also keep separate track of recently sampled allocation rates for two purposes:
 //  1. The number of samples examined to determine acceleration of allocation is represented by
@@ -86,15 +86,8 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 // detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
 // than the assumed constant allocation rate consumption of available memory.
 
-ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info),
-  _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
-  _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
-  _last_trigger(OTHER),
-  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
-  _free_set(nullptr),
-  _previous_acceleration_sample_timestamp(0.0),
-  _gc_time_first_sample_index(0),
+ShenandoahCycleDuration::ShenandoahCycleDuration()
+: _gc_time_first_sample_index(0),
   _gc_time_num_samples(0),
   _gc_time_timestamps(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
   _gc_time_samples(NEW_C_HEAP_ARRAY(double, GC_TIME_SAMPLE_SIZE, mtGC)),
@@ -107,6 +100,117 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _gc_time_m(0.0),
   _gc_time_b(0.0),
   _gc_time_sd(0.0),
+  _gc_cycle_time_history(new TruncatedSeq(100, ShenandoahAdaptiveDecayFactor)){
+}
+
+ShenandoahCycleDuration::~ShenandoahCycleDuration() {
+  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
+  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
+  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
+  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
+}
+
+void ShenandoahCycleDuration::add_gc_time(double time_at_start, double gc_time) {
+  _gc_cycle_time_history->add(gc_time);
+
+  // Update best-fit linear predictor of GC time
+  uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
+  if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
+    _gc_time_sum_of_timestamps -= _gc_time_timestamps[index];
+    _gc_time_sum_of_samples -= _gc_time_samples[index];
+    _gc_time_sum_of_xy -= _gc_time_xy[index];
+    _gc_time_sum_of_xx -= _gc_time_xx[index];
+  }
+  _gc_time_timestamps[index] = time_at_start;
+  _gc_time_samples[index] = gc_time;
+  _gc_time_xy[index] = time_at_start * gc_time;
+  _gc_time_xx[index] = time_at_start * time_at_start;
+
+  _gc_time_sum_of_timestamps += _gc_time_timestamps[index];
+  _gc_time_sum_of_samples += _gc_time_samples[index];
+  _gc_time_sum_of_xy += _gc_time_xy[index];
+  _gc_time_sum_of_xx += _gc_time_xx[index];
+
+  if (_gc_time_num_samples < GC_TIME_SAMPLE_SIZE) {
+    _gc_time_num_samples++;
+  } else {
+    _gc_time_first_sample_index = (_gc_time_first_sample_index + 1) % GC_TIME_SAMPLE_SIZE;
+  }
+
+  if (_gc_time_num_samples == 1) {
+    // The predictor is constant (horizontal line)
+    _gc_time_m = 0;
+    _gc_time_b = gc_time;
+    _gc_time_sd = 0.0;
+  } else if (_gc_time_num_samples == 2) {
+
+    assert(time_at_start > _gc_time_timestamps[_gc_time_first_sample_index],
+           "Two GC cycles cannot finish at same time: %.6f vs %.6f, with GC times %.6f and %.6f", time_at_start,
+           _gc_time_timestamps[_gc_time_first_sample_index], gc_time, _gc_time_samples[_gc_time_first_sample_index]);
+
+    // Two points define a line
+    double delta_x = time_at_start - _gc_time_timestamps[_gc_time_first_sample_index];
+    double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
+    _gc_time_m = delta_y / delta_x;
+    // y = mx + b
+    // so b = y0 - mx0
+    _gc_time_b = gc_time - _gc_time_m * time_at_start;
+    _gc_time_sd = 0.0;
+  } else {
+    // Since timestamps are monotonically increasing, denominator does not equal zero.
+    double denominator = _gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps;
+    assert(denominator != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_timestamps: %.6f",
+           _gc_time_num_samples, _gc_time_sum_of_xx, _gc_time_sum_of_timestamps);
+    _gc_time_m = ((_gc_time_num_samples * _gc_time_sum_of_xy - _gc_time_sum_of_timestamps * _gc_time_sum_of_samples) /
+                  denominator);
+    _gc_time_b = (_gc_time_sum_of_samples - _gc_time_m * _gc_time_sum_of_timestamps) / _gc_time_num_samples;
+    double sum_of_squared_deviations = 0.0;
+    for (size_t i = 0; i < _gc_time_num_samples; i++) {
+      uint index = (_gc_time_first_sample_index + i) % GC_TIME_SAMPLE_SIZE;
+      double x = _gc_time_timestamps[index];
+      double predicted_y = _gc_time_m * x + _gc_time_b;
+      double deviation = predicted_y - _gc_time_samples[index];
+      sum_of_squared_deviations += deviation * deviation;
+    }
+    _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
+  }
+}
+
+double ShenandoahCycleDuration::predict_gc_time(double timestamp_at_start, double margin_of_error) const {
+  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * margin_of_error;
+}
+
+ShenandoahCycleDuration::Prediction ShenandoahCycleDuration::predict(double timestamp_at_start, double margin_of_error) {
+  const double linear = predict_gc_time(timestamp_at_start, margin_of_error);
+  double prediction = average(margin_of_error);
+  Source source = AVERAGE;
+  if (linear > prediction) {
+    prediction = linear;
+    source = LINEAR;
+  }
+
+  const double next = _gc_cycle_time_history->predict_next() + (margin_of_error * _gc_cycle_time_history->dsd());
+  if (next > prediction) {
+    prediction = next;
+    source = NEXT;
+  }
+
+  return Prediction{prediction, source};
+}
+
+double ShenandoahCycleDuration::average(double margin_of_error) {
+  return _gc_cycle_time_history->davg() + (margin_of_error * _gc_cycle_time_history->dsd());
+}
+
+
+ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info),
+  _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
+  _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
+  _last_trigger(OTHER),
+  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
+  _free_set(nullptr),
+  _previous_acceleration_sample_timestamp(0.0),
   _spike_acceleration_buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize)),
   _spike_acceleration_first_sample_index(0),
   _spike_acceleration_num_samples(0),
@@ -117,10 +221,6 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
   FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_samples);
   FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
 }
 
 void ShenandoahAdaptiveHeuristics::initialize() {
@@ -215,77 +315,9 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
   // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
-  if (predict_gc_time(time_at_start) < gc_time) {
-    add_gc_time(time_at_start, gc_time);
+  if (_cycles.predict_gc_time(time_at_start, _margin_of_error_sd) < gc_time) {
+    _cycles.add_gc_time(time_at_start, gc_time);
   }
-}
-
-void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_time) {
-  // Update best-fit linear predictor of GC time
-  uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
-  if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
-    _gc_time_sum_of_timestamps -= _gc_time_timestamps[index];
-    _gc_time_sum_of_samples -= _gc_time_samples[index];
-    _gc_time_sum_of_xy -= _gc_time_xy[index];
-    _gc_time_sum_of_xx -= _gc_time_xx[index];
-  }
-  _gc_time_timestamps[index] = time_at_start;
-  _gc_time_samples[index] = gc_time;
-  _gc_time_xy[index] = time_at_start * gc_time;
-  _gc_time_xx[index] = time_at_start * time_at_start;
-
-  _gc_time_sum_of_timestamps += _gc_time_timestamps[index];
-  _gc_time_sum_of_samples += _gc_time_samples[index];
-  _gc_time_sum_of_xy += _gc_time_xy[index];
-  _gc_time_sum_of_xx += _gc_time_xx[index];
-
-  if (_gc_time_num_samples < GC_TIME_SAMPLE_SIZE) {
-    _gc_time_num_samples++;
-  } else {
-    _gc_time_first_sample_index = (_gc_time_first_sample_index + 1) % GC_TIME_SAMPLE_SIZE;
-  }
-
-  if (_gc_time_num_samples == 1) {
-    // The predictor is constant (horizontal line)
-    _gc_time_m = 0;
-    _gc_time_b = gc_time;
-    _gc_time_sd = 0.0;
-  } else if (_gc_time_num_samples == 2) {
-
-    assert(time_at_start > _gc_time_timestamps[_gc_time_first_sample_index],
-           "Two GC cycles cannot finish at same time: %.6f vs %.6f, with GC times %.6f and %.6f", time_at_start,
-           _gc_time_timestamps[_gc_time_first_sample_index], gc_time, _gc_time_samples[_gc_time_first_sample_index]);
-
-    // Two points define a line
-    double delta_x = time_at_start - _gc_time_timestamps[_gc_time_first_sample_index];
-    double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
-    _gc_time_m = delta_y / delta_x;
-    // y = mx + b
-    // so b = y0 - mx0
-    _gc_time_b = gc_time - _gc_time_m * time_at_start;
-    _gc_time_sd = 0.0;
-  } else {
-    // Since timestamps are monotonically increasing, denominator does not equal zero.
-    double denominator = _gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps;
-    assert(denominator != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_timestamps: %.6f",
-           _gc_time_num_samples, _gc_time_sum_of_xx, _gc_time_sum_of_timestamps);
-    _gc_time_m = ((_gc_time_num_samples * _gc_time_sum_of_xy - _gc_time_sum_of_timestamps * _gc_time_sum_of_samples) /
-                  denominator);
-    _gc_time_b = (_gc_time_sum_of_samples - _gc_time_m * _gc_time_sum_of_timestamps) / _gc_time_num_samples;
-    double sum_of_squared_deviations = 0.0;
-    for (size_t i = 0; i < _gc_time_num_samples; i++) {
-      uint index = (_gc_time_first_sample_index + i) % GC_TIME_SAMPLE_SIZE;
-      double x = _gc_time_timestamps[index];
-      double predicted_y = _gc_time_m * x + _gc_time_b;
-      double deviation = predicted_y - _gc_time_samples[index];
-      sum_of_squared_deviations += deviation * deviation;
-    }
-    _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
-  }
-}
-
-double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
-  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
 }
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
@@ -305,10 +337,11 @@ void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double times
 
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
-  double now = os::elapsedTime();
+
+  // TODO: Before we update, evaluate which formula most accurately predicted the actual cycle time.
 
   // Should we not add GC time if this was an abbreviated cycle?
-  add_gc_time(_cycle_start, elapsed_cycle_time());
+  _cycles.add_gc_time(_cycle_start, elapsed_cycle_time());
 
   size_t available = _space_info->available();
 
@@ -401,7 +434,7 @@ static double saturate(double value, double min, double max) {
 //       a) Between now and the next time I ask whether should_start_gc(), we might experience a spike representing
 //          the anticipated burst of allocations.  If that would put us over budget, then we should start GC immediately.
 //       b) Between now and the anticipated depletion of allocation pool, there may be two or more bursts of allocations.
-//          If there are more than one of these bursts, we can "approximate" that these will be separated by spans of
+//          If there are more than one of trhese bursts, we can "approximate" that these will be separated by spans of
 //          time with very little or no allocations so the "average" allocation rate should be a suitable approximation
 //          of how this will behave.
 //
@@ -412,12 +445,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
   const size_t allocated = _space_info->bytes_allocated_since_gc_start();
-
-  const double now = get_most_recent_wake_time();
-  const size_t allocatable_words = allocatable(available);
-  double predicted_future_gc_time = 0;
-  double future_planned_gc_time = 0;
-  bool future_planned_gc_time_is_average = false;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
@@ -468,25 +495,18 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   ShenandoahAllocRate<>& new_rate = ShenandoahHeap::heap()->alloc_rate();
+  const double now = get_most_recent_wake_time();
+  const size_t allocatable_words = allocatable(available);
 
-  const double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
+  const double avg_cycle_time = _cycles.average(_margin_of_error_sd);
   const double avg_alloc_rate = new_rate.upper_bound(_margin_of_error_sd);
   if ((now - _previous_acceleration_sample_timestamp) >= (ShenandoahAccelerationSamplePeriod / 1000.0)) {
     double acceleration = 0.0;
 
-    // TODO: Factor linear regression for gc times into a separate class
-    const double predicted_future_accelerated_gc_time = predict_gc_time(now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0));
+    double anticipated_gc_start_time = now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0);
+    ShenandoahCycleDuration::Prediction predicted_future_accelerated_gc_time = _cycles.predict(anticipated_gc_start_time, _margin_of_error_sd);
 
-    double future_accelerated_planned_gc_time;
-    bool future_accelerated_planned_gc_time_is_average;
-    if (predicted_future_accelerated_gc_time > avg_cycle_time) {
-      future_accelerated_planned_gc_time = predicted_future_accelerated_gc_time;
-      future_accelerated_planned_gc_time_is_average = false;
-    } else {
-      future_accelerated_planned_gc_time = avg_cycle_time;
-      future_accelerated_planned_gc_time_is_average = true;
-    }
-
+    // TODO: This could instead be last sampled rate?
     const double instantaneous_rate_words_per_second = new_rate.rate().avg() / HeapWordSize;
 
     _previous_acceleration_sample_timestamp = now;
@@ -494,7 +514,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     double current_rate_by_acceleration = instantaneous_rate_words_per_second;
     const size_t consumption_accelerated =
       accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
-                              (ShenandoahAccelerationSamplePeriod / 1000.0) + future_accelerated_planned_gc_time);
+                              (ShenandoahAccelerationSamplePeriod / 1000.0) + predicted_future_accelerated_gc_time.duration);
 
     // Note that even a single thread that wakes up and begins to allocate excessively can manifest as accelerating allocation
     // rate. This thread will initially allocate a TLAB of minimum size.  Then it will allocate a TLAB twice as big a bit later,
@@ -581,21 +601,21 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     if (consumption_accelerated > allocatable_words) {
       if (acceleration > 0) {
         log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                    "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for planned %s GC time (%.2f ms)",
+                    "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated %s GC time (%.2f ms)",
                     PROPERFMTARGS(consumption_accelerated * HeapWordSize),
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
                     PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
                     PROPERFMT_F_ARGS(acceleration * HeapWordSize),
-                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
-                    future_accelerated_planned_gc_time * 1000);
+                    predicted_future_accelerated_gc_time.get_source(),
+                    predicted_future_accelerated_gc_time.duration * 1000);
       } else {
         log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                     "current rate (" PROPERFMT_F "/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
                     PROPERFMTARGS(consumption_accelerated * HeapWordSize),
                     PROPERFMTARGS(allocatable_words * HeapWordSize),
                     PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
-                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
-                    future_accelerated_planned_gc_time * 1000, _spike_threshold_sd);
+                    predicted_future_accelerated_gc_time.get_source(),
+                    predicted_future_accelerated_gc_time.duration * 1000, _spike_threshold_sd);
       }
       _spike_acceleration_num_samples = 0;
       _spike_acceleration_first_sample_index = 0;
@@ -608,24 +628,19 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
-  predicted_future_gc_time = predict_gc_time(now + get_planned_sleep_interval());
-  if (predicted_future_gc_time > avg_cycle_time) {
-    future_planned_gc_time = predicted_future_gc_time;
-    future_planned_gc_time_is_average = false;
-  } else {
-    future_planned_gc_time = avg_cycle_time;
-    future_planned_gc_time_is_average = true;
-  }
-
+  // TODO: planned sleep interval should never be more than ShenandoahControlIntervalMax (default 10 ms)
+  // ShenandoahAccelerationSamplePeriod is 15 ms. Are we really going to see a difference between now,
+  // planned sleep interval and acceleration sample period?
+  ShenandoahCycleDuration::Prediction predicted_future_gc_time = _cycles.predict(now + get_planned_sleep_interval(), _margin_of_error_sd);
   log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: " PROPERFMT_F "/s",
-                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
+                _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time.duration * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
 
   const size_t allocatable_bytes = allocatable_words * HeapWordSize;
   const double avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
-  if (future_planned_gc_time > avg_time_to_deplete_available) {
+  if (predicted_future_gc_time.duration > avg_time_to_deplete_available) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (" PROPERFMT_F "B/s)"
                 " to deplete free headroom (" PROPERFMT "s) (margin of error = %.2f)",
-                future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
+                predicted_future_gc_time.get_source(), predicted_future_gc_time.duration * 1000,
                 PROPERFMT_F_ARGS(avg_alloc_rate), PROPERFMTARGS(allocatable_bytes), _margin_of_error_sd);
     accept_trigger_with_type(RATE);
     return true;

@@ -60,7 +60,6 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
@@ -247,7 +246,6 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
-  _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
 
   adjust_penalty(Concurrent_Adjust);

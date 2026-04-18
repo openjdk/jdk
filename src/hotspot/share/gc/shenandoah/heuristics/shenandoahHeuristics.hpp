@@ -181,7 +181,6 @@ protected:
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;

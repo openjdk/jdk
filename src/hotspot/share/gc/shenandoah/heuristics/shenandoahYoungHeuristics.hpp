@@ -57,6 +57,10 @@ private:
                                       ShenandoahOldHeuristics* old_heuristics);
 
   bool trigger_rate(ShenandoahGenerationalHeap *heap, size_t available, size_t capacity);
+
+  bool trigger_expedite_promotions(ShenandoahGenerationalHeap *heap, ShenandoahOldGeneration *old_generation);
+
+  bool trigger_expedite_mixed(ShenandoahGenerationalHeap *heap, ShenandoahOldHeuristics *old_heuristics);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP

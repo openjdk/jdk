@@ -34,6 +34,55 @@
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
+class ShenandoahCycleDuration {
+
+  const static size_t GC_TIME_SAMPLE_SIZE;
+
+  // Keep track of GC_TIME_SAMPLE_SIZE most recent concurrent GC cycle times
+  uint _gc_time_first_sample_index;
+  uint _gc_time_num_samples;
+  double* const _gc_time_timestamps;
+  double* const _gc_time_samples;
+  double* const _gc_time_xy;    // timestamp * sample
+  double* const _gc_time_xx;    // timestamp squared
+  double _gc_time_sum_of_timestamps;
+  double _gc_time_sum_of_samples;
+  double _gc_time_sum_of_xy;
+  double _gc_time_sum_of_xx;
+
+  double _gc_time_m;            // slope
+  double _gc_time_b;            // y-intercept
+  double _gc_time_sd;           // sd on deviance from prediction
+
+  TruncatedSeq* _gc_cycle_time_history;
+
+public:
+  enum Source { AVERAGE, LINEAR, NEXT };
+
+  struct Prediction {
+    double duration;
+    Source source;
+
+    const char* get_source() const {
+      switch (source) {
+        case AVERAGE: return "average";
+        case LINEAR:  return "linear prediction";
+        case NEXT:    return "next";
+        default:
+          ShouldNotReachHere();
+      }
+    }
+  };
+
+  ShenandoahCycleDuration();
+  ~ShenandoahCycleDuration();
+
+  void add_gc_time(double timestamp, double duration);
+  double predict_gc_time(double timestamp_at_start, double margin_of_error) const;
+  Prediction predict(double timestamp_at_start, double margin_of_error);
+  double average(double margin_of_error);
+};
+
 /*
  * The adaptive heuristic tracks the allocation behavior and average cycle
  * time of the application. It attempts to start a cycle with enough time
@@ -47,15 +96,14 @@
  */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
+  explicit ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
 
-  virtual ~ShenandoahAdaptiveHeuristics();
+  ~ShenandoahAdaptiveHeuristics() override;
 
-  virtual void initialize() override;
+  void initialize() override;
 
-  virtual void post_initialize() override;
+  void post_initialize() override;
 
-  virtual void adjust_penalty(intx step) override;
 
   // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
   // before we need to start the next GC.
@@ -69,11 +117,6 @@ public:
   // to consume if we start GC right now and gc takes predicted_cycle_time to complete.
   size_t accelerated_consumption(double& acceleration, double& current_rate,
                                  double avg_rate_words_per_sec, double predicted_cycle_time) const;
-
-
-  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                             RegionData* data, size_t size,
-                                             size_t actual_free) override;
 
   void record_success_concurrent() override;
   void record_degenerated() override;
@@ -98,11 +141,6 @@ public:
   const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
   const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
 
-  const static size_t GC_TIME_SAMPLE_SIZE;
-
-  friend class ShenandoahAllocationRate;
-
-
   void adjust_last_trigger_parameters(double amount);
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
@@ -113,6 +151,13 @@ public:
   }
 
 protected:
+  void adjust_penalty(intx step) override;
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                             RegionData* data, size_t size,
+                                             size_t actual_free) override;
+
+
+  ShenandoahCycleDuration _cycles;
 
   // Used to record the last trigger that signaled to start a GC.
   // This itself is used to decide whether or not to adjust the margin of
@@ -162,29 +207,11 @@ protected:
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
 
-  // Keep track of GC_TIME_SAMPLE_SIZE most recent concurrent GC cycle times
-  uint _gc_time_first_sample_index;
-  uint _gc_time_num_samples;
-  double* const _gc_time_timestamps;
-  double* const _gc_time_samples;
-  double* const _gc_time_xy;    // timestamp * sample
-  double* const _gc_time_xx;    // timestamp squared
-  double _gc_time_sum_of_timestamps;
-  double _gc_time_sum_of_samples;
-  double _gc_time_sum_of_xy;
-  double _gc_time_sum_of_xx;
-
-  double _gc_time_m;            // slope
-  double _gc_time_b;            // y-intercept
-  double _gc_time_sd;           // sd on deviance from prediction
-
   // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
   // detect when GC needs to trigger.
   void compute_headroom_adjustment() override;
 
-  void add_gc_time(double timestamp_at_start, double duration);
   void add_degenerated_gc_time(double timestamp_at_start, double duration);
-  double predict_gc_time(double timestamp_at_start);
 
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
   // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
