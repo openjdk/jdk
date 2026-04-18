@@ -29,9 +29,9 @@
 # also includes Central America and the Caribbean
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (1999-03-22):
 # A reliable and entertaining source about time zones is
@@ -1240,6 +1240,16 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # see Mark Fineman, "An Isle Rich in Guano and Discord",
 # _Los Angeles Times_ (1998-11-10), A1, A10; it cites
 # Jimmy Skaggs, _The Great Guano Rush_ (1994).
+
+# From Rob van Gent (2025-07-23):
+# Another useful source for historical time zone information appears to be
+# a series of circulars with the title "Standard Time Throughout the World"
+# issued between 1925 and 1950 by the U.S. Bureau of Standards.
+# I found the following issues online:
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular280.pdf (1925)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular399.pdf (1932)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular406.pdf (1935)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular496.pdf (1950)
 
 ################################################################################
 
@@ -2457,11 +2467,34 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # on the same dates or with a difference of one day.
 # So it may be easier to implement these changes as DST with rule CA
 # during this whole period.
+
+# From Alois Treindl (2025-07-29):
+# I did a quick newspaper archive research on https://hndm.iib.unam.mx/
+# and found that Periódico Oficial del Estado de Baja California Norte
+# (1973-04-20) states clearly that DST was observed from last Sunday
+# in April to last Sunday in October....  I have a few more data from the
+# official bulletin for DST begin or end in Baja California 1964 1967 1969
+# 1972 1973 (already sent) 1974 1975 1976 I do not know whether it is safe to
+# assume that it also applied in the years where I did not yet find proof.
+# The 1974 end of DST contains a reference to an Acuerdo of 1973-dec-20 which
+# I could not find....  One might assume that Baja California, which followed
+# US-CA in all these other yours, did the same.
 #
-# From Paul Eggert (2024-08-18):
-# For now, maintain the slightly-different history for Baja California,
+# From Paul Eggert (2025-08-04):
+# Assume that Tijuana agreed with San Diego from 1953 through 1996,
+# as this agrees with Alois Treindl's data and with Shanks.
+# For now, keep the slightly-different 1948/1952 history for Baja California,
 # as we have no information on whether 1948/1952 clocks in Tijuana followed
 # the decrees or followed San Diego.
+
+# From Mark Schapiro, writing in The Nation (2002-10-28):
+# https://www.thenation.com/article/archive/sowing-disaster/
+# When Mexican clocks were turned back for daylight saving time in the spring,
+# the Zapotecs refused to make the adjustment, insisting that they live in
+# "God's time," not in what they derisively call "Fox time," referring to
+# President Vicente Fox in far-off Mexico City.
+# From Paul Eggert (2025-08-04):
+# Unfortunately we have no data to track this informal practice.
 
 # From Alan Perry (1996-02-15):
 # A guy from our Mexico subsidiary finally found the Presidential Decree
@@ -2728,7 +2761,7 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 # Chihuahua (near US border - western side)
 # This includes the municipios of Janos, Ascensión, Juárez, Guadalupe, and
 # Práxedis G Guerrero.
-# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
+# https://gaceta.diputados.gob.mx/PDF/65/2022/nov/20221124-VII.pdf
 Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
@@ -2743,7 +2776,7 @@ Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 # Chihuahua (near US border - eastern side)
 # This includes the municipios of Coyame del Sotol, Ojinaga, and Manuel
 # Benavides.
-# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
+# https://gaceta.diputados.gob.mx/PDF/65/2022/nov/20221124-VII.pdf
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
@@ -2840,9 +2873,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  7:00u
 			-8:00	1:00	PDT	1951 Sep 30  2:00
 			-8:00	-	PST	1952 Apr 27  2:00
 			-8:00	1:00	PDT	1952 Sep 28  2:00
-			-8:00	-	PST	1954
-			-8:00	CA	P%sT	1961
-			-8:00	-	PST	1976
+			-8:00	CA	P%sT	1967
 			-8:00	US	P%sT	1996
 			-8:00	Mexico	P%sT	2001
 			-8:00	US	P%sT	2002 Feb 20

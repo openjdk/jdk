@@ -176,8 +176,7 @@ public:
     ASSERT_EQ(vmem, ZVirtualMemory(bottom_offset + 2 * ZGranuleSize, ZGranuleSize));
     reservation.unreserve(vmem);
 
-    const bool released = os::release_memory((char*)blocked, ZGranuleSize);
-    ASSERT_TRUE(released);
+    os::release_memory((char*)blocked, ZGranuleSize);
   }
 };
 

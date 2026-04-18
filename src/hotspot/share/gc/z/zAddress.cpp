@@ -194,18 +194,25 @@ size_t ZGlobalsPointers::initial_heap_base_shift() {
   return ZAddressInitialHeapBaseShift;
 }
 
-size_t ZGlobalsPointers::next_heap_base_shift(size_t heap_base_shift) {
+bool ZGlobalsPointers::try_advance_heap_base_shift(size_t* in_out_heap_base_shift) {
+  const size_t heap_base_shift = *in_out_heap_base_shift;
+
   validate_heap_base_shift(heap_base_shift);
 
   const size_t min_heap_base_shift = MAX2(ZAddressMaxHeapRequiredHeapBaseShift, ZAddressHeapBaseMinShift);
 
-  const size_t next_heap_base_shift = heap_base_shift == min_heap_base_shift
-      ? ZAddressPlatformHeapBaseMaxShift
-      : heap_base_shift - 1;
+  if (heap_base_shift == min_heap_base_shift) {
+    // heap_base_shift is already the smallest allowed heap base shift.
+    return false;
+  }
+
+  const size_t next_heap_base_shift = heap_base_shift - 1;
 
   validate_heap_base_shift(next_heap_base_shift);
 
-  return next_heap_base_shift;
+  *in_out_heap_base_shift = next_heap_base_shift;
+
+  return true;
 }
 
 void ZGlobalsPointers::flip_young_mark_start() {

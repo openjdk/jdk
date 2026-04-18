@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,9 @@
 // (see http://linux.die.net/man/3/dladdr)
 // dladdr(3) is not POSIX but a GNU extension, and is not available on AIX.
 //
-// Differences between AIX dladdr and Linux dladdr:
-//
-// 1) Dl_info.dli_fbase: can never work, is disabled.
-//   A loaded image on AIX is divided in multiple segments, at least two
-//   (text and data) but potentially also far more. This is because the loader may
-//   load each member into an own segment, as for instance happens with the libC.a
-// 2) Dl_info.dli_sname: This only works for code symbols (functions); for data, a
-//   zero-length string is returned ("").
-// 3) Dl_info.dli_saddr: For code, this will return the entry point of the function,
-//   not the function descriptor.
 
-typedef struct {
-  const char *dli_fname; // file path of loaded library
-  // void *dli_fbase;
-  const char *dli_sname; // symbol name; "" if not known
-  void *dli_saddr;       // address of *entry* of function; not function descriptor;
-} Dl_info;
+#include "dl_info.h"
 
-// Note: we export this to use it inside J2se too
 #ifdef __cplusplus
 extern "C"
 #endif

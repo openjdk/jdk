@@ -49,6 +49,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import static java.awt.event.ItemEvent.DESELECTED;
+import static java.awt.event.ItemEvent.ITEM_STATE_CHANGED;
+import static java.awt.event.ItemEvent.SELECTED;
+
 /**
  * Lightweight implementation of {@link ListPeer}. Delegates most of the work to
  * the {@link JList}, which is placed inside {@link JScrollPane}.
@@ -280,21 +284,18 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
 
         @Override
         public void valueChanged(final ListSelectionEvent e) {
-            if (!e.getValueIsAdjusting() && !isSkipStateChangedEvent()) {
-                final JList<?> source = (JList<?>) e.getSource();
-                for(int i = 0 ; i < source.getModel().getSize(); i++) {
-
-                    final boolean wasSelected = Arrays.binarySearch(oldSelectedIndices, i) >= 0;
-                    final boolean isSelected = source.isSelectedIndex(i);
-
-                    if (wasSelected == isSelected) {
-                        continue;
+            if (!e.getValueIsAdjusting()) {
+                JList<?> source = (JList<?>) e.getSource();
+                if (!isSkipStateChangedEvent()) {
+                    for (int i = 0; i < source.getModel().getSize(); i++) {
+                        boolean wasSelected =
+                                Arrays.binarySearch(oldSelectedIndices, i) >= 0;
+                        if (wasSelected != source.isSelectedIndex(i)) {
+                            int state = wasSelected ? DESELECTED : SELECTED;
+                            LWListPeer.this.postEvent(new ItemEvent(getTarget(),
+                                                ITEM_STATE_CHANGED, i, state));
+                        }
                     }
-
-                    final int state = !wasSelected && isSelected ? ItemEvent.SELECTED: ItemEvent.DESELECTED;
-
-                    LWListPeer.this.postEvent(new ItemEvent(getTarget(), ItemEvent.ITEM_STATE_CHANGED,
-                            i, state));
                 }
                 oldSelectedIndices = source.getSelectedIndices();
             }

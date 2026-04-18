@@ -244,28 +244,28 @@ bool ZVirtualMemoryWithHeapBaseReserver::reserve_contiguous(size_t size) {
 
 class ZHeapBaseIterator {
 private:
-  const size_t _initial;
   size_t       _current;
+  bool         _completed;
 
 public:
   ZHeapBaseIterator(size_t initial_heap_base_shift = ZGlobalsPointers::initial_heap_base_shift())
-    : _initial(initial_heap_base_shift),
-      _current(initial_heap_base_shift) {}
+    : _current(initial_heap_base_shift),
+      _completed(false) {}
 
   bool next(uintptr_t* out_heap_base) {
-    size_t next = ZGlobalsPointers::next_heap_base_shift(_current);
-    if (next == _initial) {
+    if (_completed) {
       // Iterator has completed
       return false;
     }
-
-    _current = next;
 
     const uintptr_t heap_base = uintptr_t(1) << _current;
 
     log_trace(gc, init)("Attempting Heap Base: " PTR_FORMAT, heap_base);
 
     *out_heap_base = heap_base;
+
+    // Try to advance the heap base shift
+    _completed = !ZGlobalsPointers::try_advance_heap_base_shift(&_current);
 
     return true;
   }
@@ -547,10 +547,6 @@ bool ZVirtualMemoryReservation::is_empty() const {
   return _registry.is_empty();
 }
 
-bool ZVirtualMemoryReservation::is_contiguous() const {
-  return _registry.is_contiguous();
-}
-
 size_t ZVirtualMemoryReservation::reserved() const {
   size_t reserved = 0;
 
@@ -632,15 +628,16 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
 
   assert(reservation.is_empty(), "Must have handled all reserved memory");
 
-  const double heap_ratio = static_cast<double>(reserved) / static_cast<double>(max_capacity);
+  const size_t used_reserve = reserved - unreserved;
+  const double heap_ratio = static_cast<double>(used_reserve) / static_cast<double>(max_capacity);
   const uintptr_t lowest_offset = untype(lowest_available_address(0));
-  const bool is_contiguous = reservation.is_contiguous();
+  const bool is_contiguous = this->is_contiguous();
 
   log_info_p(gc, init)("Reserved Space Type: %s/%s/%s",
                        (is_contiguous ? "Contiguous" : "Discontiguous"),
                        (requested == desired ? "Unrestricted" : "Restricted"),
                        (reserved == desired ? "Complete" : ((reserved < desired_for_partitions) ? "Degraded"  : "NUMA-Degraded")));
-  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT " (x%.2f Heap Ratio)", EXACTFMTARGS(reserved - unreserved), heap_ratio);
+  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT " (x%.2f Heap Ratio)", EXACTFMTARGS(used_reserve), heap_ratio);
   log_debug_p(gc, init)("Reserved Space Span: " RANGE2EXACTFMT, ZAddressHeapBase + lowest_offset, ZAddressHeapBase + ZAddressOffsetUpperLimit,
                         EXACTFMTARGS(ZAddressOffsetUpperLimit - lowest_offset));
 
@@ -675,6 +672,33 @@ void ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReservation* res
 
 bool ZVirtualMemoryManager::is_initialized() const {
   return _initialized;
+}
+
+bool ZVirtualMemoryManager::is_contiguous() const {
+  zoffset_end last_end = zoffset_end::invalid;
+  ZPerNUMAConstIterator<ZVirtualMemoryRegistry> iter(&_partition_registries);
+  for (const ZVirtualMemoryRegistry* registry; iter.next(&registry);) {
+    if (registry->is_empty()) {
+      // Empty registry advance to next
+      continue;
+    }
+
+    if (!registry->is_contiguous()) {
+      // Found a non-contiguous registry, the whole cannot be contiguous
+      return false;
+    }
+
+    if (last_end != zoffset_end::invalid && last_end != registry->peek_low_address()) {
+      assert(last_end < registry->peek_low_address(), "Registries should be ordered");
+      return false;
+    }
+
+    last_end = registry->peak_high_address_end();
+
+    postcond(last_end != zoffset_end::invalid);
+  }
+
+  return true;
 }
 
 ZVirtualMemoryRegistry& ZVirtualMemoryManager::registry(uint32_t partition_id) {

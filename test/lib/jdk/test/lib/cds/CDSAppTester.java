@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ abstract public class CDSAppTester {
     private int numProductionRuns = 0;
     private String whiteBoxJar = null;
     private boolean inOneStepTraining = false;
+    private boolean generateBaseArchive = false;
+    private String[] baseArchiveOptions = new String[0];
 
     /**
      * All files created in the CDS/AOT workflow will be name + extension. E.g.
@@ -343,7 +345,7 @@ abstract public class CDSAppTester {
     // VM options used by this test, we need to create a temporary static archive to be used with -XX:ArchiveClassesAtExit.
     private String getBaseArchiveForDynamicArchive() throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        if (wb.isSharingEnabled()) {
+        if (wb.isSharingEnabled() && !generateBaseArchive) {
             // This current JVM is able to use a default CDS archive included by the JDK, so
             // if we launch a JVM child process (with the same set of options as the current JVM),
             // that process is also able to use the same default CDS archive for creating
@@ -356,12 +358,23 @@ abstract public class CDSAppTester {
             if (!f.exists()) {
                 CDSOptions opts = new CDSOptions();
                 opts.setArchiveName(tempBaseArchiveFile);
+                opts.addSuffix(baseArchiveOptions);
                 opts.addSuffix("-Djava.class.path=");
                 OutputAnalyzer out = CDSTestUtils.createArchive(opts);
                 CDSTestUtils.checkBaseDump(out);
             }
             return tempBaseArchiveFile;
         }
+    }
+
+    public CDSAppTester setGenerateBaseArchive(boolean b) {
+        this.generateBaseArchive = b;
+        return this;
+    }
+
+    public CDSAppTester setBaseArchiveOptions(String... opts) {
+        this.baseArchiveOptions = opts;
+        return this;
     }
 
     private OutputAnalyzer dumpDynamicArchive() throws Exception {
@@ -467,10 +480,19 @@ abstract public class CDSAppTester {
     // See JEP 483
     public void runAOTWorkflow(String... args) throws Exception {
         this.workflow = Workflow.AOT;
-        boolean oneStepTraining = true; // by default use onestep trainning
+
+        // By default use twostep training -- tests are much easier to write this way, as
+        // the stdout/stderr of the training run is clearly separated from the assembly phase.
+        //
+        // Many older test cases written before JEP 514 were not aware of one step treaining
+        // and may not check the stdout/stderr correctly.
+        boolean oneStepTraining = false;
 
         if (System.getProperty("CDSAppTester.two.step.training") != null) {
             oneStepTraining = false;
+        }
+        if (System.getProperty("CDSAppTester.one.step.training") != null) {
+            oneStepTraining = true;
         }
 
         if (args.length > 1) {

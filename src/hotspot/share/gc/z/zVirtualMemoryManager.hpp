@@ -130,7 +130,6 @@ public:
   size_t unreserve_all();
 
   bool is_empty() const;
-  bool is_contiguous() const;
 
   size_t reserved() const;
 
@@ -155,6 +154,7 @@ public:
   bool is_initialized() const;
   bool is_multi_partition_enabled() const;
   bool is_in_multi_partition(const ZVirtualMemory& vmem) const;
+  bool is_contiguous() const;
 
   uint32_t lookup_partition_id(const ZVirtualMemory& vmem) const;
   zoffset lowest_available_address(uint32_t partition_id) const;

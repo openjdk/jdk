@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,9 +226,9 @@ int modify(bool enable) {
                 printf("Couldn't create file: %s\n", path);
                 perror("Error");
             } else {
-                char str[100] = "assistive_technologies=com.sun.java.accessibility.AccessBridge\n";
-                strcat_s(str, "screen_magnifier_present=true\n");
-                fprintf(origFile, str);
+                fprintf(origFile, "%s",
+                    "assistive_technologies=com.sun.java.accessibility.AccessBridge\n"
+                    "screen_magnifier_present=true\n");
                 fclose(origFile);
             }
         } else {
@@ -314,11 +314,11 @@ void printVersion() {
                pVSInfo->dwProductVersionMS & 0xFFFF,
                pVSInfo->dwProductVersionLS >> 16,
                pVSInfo->dwProductVersionLS & 0xFFFF );
-    char outputString[100];
-    strcpy_s(outputString, "jabswitch ");
-    strcat_s(outputString, versionString);
-    strcat_s(outputString, "\njabswitch enables or disables the Java Access Bridge.\n");
-    printf(outputString);
+    printf(
+        "jabswitch %s\n"
+        "jabswitch enables or disables the Java Access Bridge.\n",
+        versionString
+    );
 }
 
 int regEnable() {

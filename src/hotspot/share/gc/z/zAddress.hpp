@@ -342,7 +342,7 @@ public:
   static void set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper_limit);
 
   static size_t initial_heap_base_shift();
-  static size_t next_heap_base_shift(size_t heap_base_shift);
+  static bool try_advance_heap_base_shift(size_t* heap_base_shift);
   static void validate_heap_base_shift(size_t heap_base_shift);
 
   static void flip_young_mark_start();

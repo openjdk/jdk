@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,8 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,13 +35,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /* @test
  * @bug 8246129
  * @summary JDK add metadata to zip files with entries timestamped at the
  *          lower bound of the DOS time epoch, i.e., 1980-01-01T00:00:00Z
- * @run testng/othervm ZipEntryTimeBounds
+ * @run junit/othervm ZipEntryTimeBounds
  */
 public class ZipEntryTimeBounds {
 
@@ -59,17 +61,17 @@ public class ZipEntryTimeBounds {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         File f2 = createTempFile();
         makeZip(f2, new GregorianCalendar(1980, Calendar.JANUARY, 1, 0, 0, 0).getTimeInMillis());
-        assertEquals(Files.mismatch(f1.toPath(), f2.toPath()), -1L);
+        assertEquals(-1L, Files.mismatch(f1.toPath(), f2.toPath()));
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+01"));
         File f3 = createTempFile();
         makeZip(f3, new GregorianCalendar(1980, Calendar.JANUARY, 1, 0, 0, 0).getTimeInMillis());
-        assertEquals(Files.mismatch(f1.toPath(), f3.toPath()), -1L);
+        assertEquals(-1L, Files.mismatch(f1.toPath(), f3.toPath()));
 
         // Check that the milliseconds part of the time is exactly preserved
-        assertEquals(new ZipFile(f1).getEntry("entry.txt").getTime() % 60000, 0);
-        assertEquals(new ZipFile(f2).getEntry("entry.txt").getTime() % 60000, 0);
-        assertEquals(new ZipFile(f3).getEntry("entry.txt").getTime() % 60000, 0);
+        assertEquals(0, new ZipFile(f1).getEntry("entry.txt").getTime() % 60000);
+        assertEquals(0, new ZipFile(f2).getEntry("entry.txt").getTime() % 60000);
+        assertEquals(0, new ZipFile(f3).getEntry("entry.txt").getTime() % 60000);
     }
 
     @Test
@@ -85,22 +87,22 @@ public class ZipEntryTimeBounds {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         File f2 = createTempFile();
         makeZip(f2, new GregorianCalendar(1980, Calendar.JANUARY, 1, 0, 0, 1).getTimeInMillis());
-        assertEquals(Files.mismatch(f1.toPath(), f2.toPath()), -1L);
+        assertEquals(-1L, Files.mismatch(f1.toPath(), f2.toPath()));
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+01"));
         File f3 = createTempFile();
         makeZip(f3, new GregorianCalendar(1980, Calendar.JANUARY, 1, 0, 0, 1).getTimeInMillis() + 999);
-        assertEquals(Files.mismatch(f1.toPath(), f3.toPath()), -1L);
+        assertEquals(-1L, Files.mismatch(f1.toPath(), f3.toPath()));
 
         // Check that the seconds part of the time is lossily preserved,
         // rounding down to the previous 2s step since epoch
-        assertEquals(new ZipFile(f1).getEntry("entry.txt").getTime() % 60000, 0);
-        assertEquals(new ZipFile(f2).getEntry("entry.txt").getTime() % 60000, 0);
-        assertEquals(new ZipFile(f3).getEntry("entry.txt").getTime() % 60000, 0);
+        assertEquals(0, new ZipFile(f1).getEntry("entry.txt").getTime() % 60000);
+        assertEquals(0, new ZipFile(f2).getEntry("entry.txt").getTime() % 60000);
+        assertEquals(0, new ZipFile(f3).getEntry("entry.txt").getTime() % 60000);
 
         File f4 = createTempFile();
         makeZip(f4, new GregorianCalendar(1980, Calendar.JANUARY, 1, 0, 0, 2).getTimeInMillis());
-        assertEquals(new ZipFile(f4).getEntry("entry.txt").getTime() % 60000, 2000);
+        assertEquals(2000, new ZipFile(f4).getEntry("entry.txt").getTime() % 60000);
     }
 
     @Test
@@ -116,20 +118,20 @@ public class ZipEntryTimeBounds {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         File f2 = createTempFile();
         makeZip(f2, new GregorianCalendar(1979, Calendar.DECEMBER, 31, 23, 59, 59).getTimeInMillis());
-        assertNotEquals(Files.mismatch(f1.toPath(), f2.toPath()), -1L);
+        assertNotEquals(-1L, Files.mismatch(f1.toPath(), f2.toPath()));
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+01"));
         File f3 = createTempFile();
         makeZip(f3, new GregorianCalendar(1979, Calendar.DECEMBER, 31, 23, 59, 59).getTimeInMillis() + 500);
-        assertNotEquals(Files.mismatch(f1.toPath(), f3.toPath()), -1L);
+        assertNotEquals(-1L, Files.mismatch(f1.toPath(), f3.toPath()));
 
         // Check that the time is preserved at second precision, no rounding
         // to 2s
-        assertEquals(new ZipFile(f1).getEntry("entry.txt").getTime() % 60000, 59000);
-        assertEquals(new ZipFile(f2).getEntry("entry.txt").getTime() % 60000, 59000);
+        assertEquals(59000, new ZipFile(f1).getEntry("entry.txt").getTime() % 60000);
+        assertEquals(59000, new ZipFile(f2).getEntry("entry.txt").getTime() % 60000);
         // Milliseconds are discarded even when storing entries with extended
         // time metadata
-        assertEquals(new ZipFile(f3).getEntry("entry.txt").getTime() % 60000, 59000);
+        assertEquals(59000, new ZipFile(f3).getEntry("entry.txt").getTime() % 60000);
     }
 
     private static void makeZip(File f, long time) throws Exception {

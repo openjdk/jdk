@@ -167,11 +167,6 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector,
-      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
-  }
-
 #ifdef __riscv_ztso
   // Hotspot is compiled with TSO support, it will only run on hardware which
   // supports Ztso
@@ -240,6 +235,11 @@ void VM_Version::c2_initialize() {
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
   // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
@@ -418,11 +418,6 @@ void VM_Version::c2_initialize() {
   if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
-  }
-
-  // UseSHA
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   // AES

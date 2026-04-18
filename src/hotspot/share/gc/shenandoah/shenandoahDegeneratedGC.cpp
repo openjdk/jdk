@@ -55,7 +55,7 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->old_generation()->is_bootstrapping();
+    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
     heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc);
     const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
     heap->log_heap_status(msg);
@@ -277,6 +277,11 @@ void ShenandoahDegenGC::op_degenerated() {
         _abbreviated = true;
       }
 
+      // labs are retired, walk the old regions and update remembered set
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
+      }
+
     case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
         op_update_refs();
@@ -313,8 +318,13 @@ void ShenandoahDegenGC::op_degenerated() {
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-  } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+    _generation->heuristics()->record_degenerated();
+    heap->start_idle_span();
+  } else if (policy->should_upgrade_degenerated_gc()) {
+    // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
+  } else {
+    _generation->heuristics()->record_degenerated();
   }
 }
 
