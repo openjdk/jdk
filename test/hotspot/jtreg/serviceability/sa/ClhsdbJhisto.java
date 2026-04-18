@@ -49,6 +49,7 @@ public class ClhsdbJhisto {
         LingeredAppWithInterface theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
+            test.allowStderrOutput(); // command status would be printed into stderr
 
             theApp = new LingeredAppWithInterface();
             LingeredApp.startApp(theApp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,20 @@ public class ClhsdbLauncher {
 
     private Process toolProcess;
     private boolean ignoreExceptions;
+    private boolean allowStderrOutput;
 
     public ClhsdbLauncher() {
         toolProcess = null;
         ignoreExceptions = false;
+        allowStderrOutput = false;
     }
 
     public void ignoreExceptions() {
         ignoreExceptions = true;
+    }
+
+    public void allowStderrOutput() {
+        allowStderrOutput = true;
     }
 
     /**
@@ -146,6 +152,9 @@ public class ClhsdbLauncher {
         }
 
         oa.shouldHaveExitValue(0);
+        if (!allowStderrOutput) {
+            oa.stderrShouldBeEmptyIgnoreVMWarnings();
+        }
         output = oa.getOutput();
         System.out.println("Output: ");
         System.out.println(output);
