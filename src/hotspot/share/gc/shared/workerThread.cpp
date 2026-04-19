@@ -26,7 +26,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -211,8 +210,6 @@ WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTask
 }
 
 void WorkerThread::run() {
-  os::set_priority(this, NearMaxPriority);
-
   while (true) {
     _dispatcher->worker_run_task();
   }

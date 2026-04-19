@@ -377,15 +377,6 @@ void JavaThread::check_possible_safepoint() {
   // Clear unhandled oops in JavaThreads so we get a crash right away.
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
-
-  // Macos/aarch64 should be in the right state for safepoint (e.g.
-  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
-  // happens in practice, making such issues hard to find and reproduce.
-#if defined(__APPLE__) && defined(AARCH64)
-  if (AssertWXAtThreadSync) {
-    assert_wx_state(WXWrite);
-  }
-#endif
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
@@ -519,6 +510,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
 #if INCLUDE_JFR
   _last_freeze_fail_result(freeze_ok),
+#endif
+
+#ifdef MACOS_AARCH64
+  _cur_wx_enable(nullptr),
+  _cur_wx_mode(nullptr),
 #endif
 
   _lock_stack(this),

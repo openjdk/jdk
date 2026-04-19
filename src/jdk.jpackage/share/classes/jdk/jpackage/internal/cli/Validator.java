@@ -44,7 +44,7 @@ interface Validator<T, U extends Exception> {
      */
     List<U> validate(OptionName optionName, ParsedValue<T> optionValue) throws ValidatorException;
 
-    default Validator<T, ? extends Exception> and(Validator<T, ? extends Exception> after) {
+    default Validator<T, ? extends Exception> andGreedy(Validator<T, ? extends Exception> after) {
         Objects.requireNonNull(after);
         var before = this;
         return (optionName, optionValue) -> {
@@ -52,6 +52,19 @@ interface Validator<T, U extends Exception> {
                     before.validate(optionName, optionValue).stream(),
                     after.validate(optionName, optionValue).stream()
             ).toList();
+        };
+    }
+
+    default Validator<T, ? extends Exception> andLazy(Validator<T, ? extends Exception> after) {
+        Objects.requireNonNull(after);
+        var before = this;
+        return (optionName, optionValue) -> {
+            var bErrors = before.validate(optionName, optionValue);
+            if (!bErrors.isEmpty()) {
+                return bErrors.stream().map(Exception.class::cast).toList();
+            } else {
+                return after.validate(optionName, optionValue).stream().map(Exception.class::cast).toList();
+            }
         };
     }
 
@@ -74,8 +87,13 @@ interface Validator<T, U extends Exception> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T, U extends Exception> Validator<T, U> and(Validator<T, U> first, Validator<T, U> second) {
-        return (Validator<T, U>)first.and(second);
+    static <T, U extends Exception> Validator<T, U> andGreedy(Validator<T, U> first, Validator<T, U> second) {
+        return (Validator<T, U>)first.andGreedy(second);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, U extends Exception> Validator<T, U> andLazy(Validator<T, U> first, Validator<T, U> second) {
+        return (Validator<T, U>)first.andLazy(second);
     }
 
     @SuppressWarnings("unchecked")

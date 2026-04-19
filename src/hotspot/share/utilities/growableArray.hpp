@@ -116,12 +116,6 @@ protected:
 
   ~GrowableArrayView() {}
 
-protected:
-  // Used by AOTGrowableArray for MetaspaceClosure support.
-  E** data_addr() {
-    return &_data;
-  }
-
 public:
   bool operator==(const GrowableArrayView& rhs) const {
     if (_len != rhs._len)
@@ -302,6 +296,11 @@ public:
       tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
     }
     tty->print("}\n");
+  }
+
+  // MetaspaceClosure support
+  E** data_addr() {
+    return &_data;
   }
 };
 
@@ -493,16 +492,16 @@ public:
     return false;
   }
 
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
+  // Remove all elements in the range [0; end). The order is preserved.
+  void remove_till(int end) {
+    remove_range(0, end);
   }
 
-  // Remove all elements in the range [start - end). The order is preserved.
+  // Remove all elements in the range [start; end). The order is preserved.
   void remove_range(int start, int end) {
     assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= this->_len,
-           "erase called with invalid range (%d, %d) for length %d",
+    assert(start <= end && end <= this->_len,
+           "erase called with invalid range [%d, %d) for length %d",
            start, end, this->_len);
 
     for (int i = start, j = end; j < this->length(); i++, j++) {
@@ -821,6 +820,8 @@ public:
       this->clear_and_deallocate();
     }
   }
+
+  void assert_on_C_heap() { assert(on_C_heap(), "must be on C heap"); }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.
