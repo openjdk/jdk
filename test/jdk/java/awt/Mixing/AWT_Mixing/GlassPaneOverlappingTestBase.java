@@ -150,21 +150,20 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             });
         } catch (InterruptedException | InvocationTargetException ex) {
             fail(ex.getMessage());
-            return false;
         }
-        final Point[] points = new Point[1];
-        final CountDownLatch edtLatch = new CountDownLatch(1);
-        SwingUtilities.invokeLater(() -> {
-            Point lLoc = testedComponent.getLocationOnScreen();
-            points[0] = lLoc;
-            lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
-            edtLatch.countDown();
-        });
 
         try {
             if (!latch.await(1, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Ancestor frame didn't receive focus");
             }
+            final CountDownLatch edtLatch = new CountDownLatch(1);
+            final Point[] points = new Point[1];
+            SwingUtilities.invokeLater(() -> {
+                Point lLoc = testedComponent.getLocationOnScreen();
+                points[0] = lLoc;
+                lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
+                edtLatch.countDown();
+            });
             if (!edtLatch.await(1, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Point location was not received!");
             }
