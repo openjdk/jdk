@@ -80,7 +80,7 @@ import org.junit.jupiter.api.Test;
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.disableHostnameVerification
  *                   -Djdk.internal.httpclient.debug=true
- *                    AltSvcRegistryTest
+ *                    ${test.main.class}
  */
 
 public class AltSvcRegistryTest implements HttpServerAdapters {

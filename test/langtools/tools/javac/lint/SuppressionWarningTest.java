@@ -952,6 +952,26 @@ public class SuppressionWarningTest extends TestRunner {
           String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
+    @Test
+    public void testDeprecatedScenario() throws Exception {
+        compileAndExpect(
+          "compiler.warn.unnecessary.warning.suppression",
+          """
+          public class Test {
+              @Deprecated                       // this suppresses deprecation warnings implicitly
+              @SuppressWarnings("deprecation")  // this does nothing -> "suppression" warning here
+              public void m() {
+                  new Depred();     // no warning happens here because of the containing @Deprecated
+              }
+          }
+          @Deprecated
+          class Depred {
+          }
+          """,
+          String.format("-Xlint:%s", DEPRECATION.option),
+          String.format("-Xlint:%s", SUPPRESSION.option));
+    }
+
 // Support Stuff
 
     // Run a test on a sequence of test cases

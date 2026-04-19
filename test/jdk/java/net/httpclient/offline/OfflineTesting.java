@@ -25,7 +25,7 @@
  * @test
  * @summary Demonstrates how to achieve testing without network connections
  * @build DelegatingHttpClient FixedHttpResponse FixedResponseHttpClient
- * @run junit/othervm OfflineTesting
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

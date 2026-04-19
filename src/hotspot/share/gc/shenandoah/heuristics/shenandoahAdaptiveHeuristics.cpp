@@ -209,14 +209,14 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double timestamp, double gc_time) {
+void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
   // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
-  if (predict_gc_time(timestamp) < gc_time) {
-    add_gc_time(timestamp, gc_time);
+  if (predict_gc_time(time_at_start) < gc_time) {
+    add_gc_time(time_at_start, gc_time);
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time) {
+void ShenandoahAdaptiveHeuristics::add_gc_time(double time_at_start, double gc_time) {
   // Update best-fit linear predictor of GC time
   uint index = (_gc_time_first_sample_index + _gc_time_num_samples) % GC_TIME_SAMPLE_SIZE;
   if (_gc_time_num_samples == GC_TIME_SAMPLE_SIZE) {
@@ -225,10 +225,10 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
     _gc_time_sum_of_xy -= _gc_time_xy[index];
     _gc_time_sum_of_xx -= _gc_time_xx[index];
   }
-  _gc_time_timestamps[index] = timestamp;
+  _gc_time_timestamps[index] = time_at_start;
   _gc_time_samples[index] = gc_time;
-  _gc_time_xy[index] = timestamp * gc_time;
-  _gc_time_xx[index] = timestamp * timestamp;
+  _gc_time_xy[index] = time_at_start * gc_time;
+  _gc_time_xx[index] = time_at_start * time_at_start;
 
   _gc_time_sum_of_timestamps += _gc_time_timestamps[index];
   _gc_time_sum_of_samples += _gc_time_samples[index];
@@ -247,18 +247,26 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
     _gc_time_b = gc_time;
     _gc_time_sd = 0.0;
   } else if (_gc_time_num_samples == 2) {
-    // Two points define a line
-    double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
-    double delta_x = timestamp - _gc_time_timestamps[_gc_time_first_sample_index];
-    _gc_time_m = delta_y / delta_x;
 
+    assert(time_at_start > _gc_time_timestamps[_gc_time_first_sample_index],
+           "Two GC cycles cannot finish at same time: %.6f vs %.6f, with GC times %.6f and %.6f", time_at_start,
+           _gc_time_timestamps[_gc_time_first_sample_index], gc_time, _gc_time_samples[_gc_time_first_sample_index]);
+
+    // Two points define a line
+    double delta_x = time_at_start - _gc_time_timestamps[_gc_time_first_sample_index];
+    double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
+    _gc_time_m = delta_y / delta_x;
     // y = mx + b
     // so b = y0 - mx0
-    _gc_time_b = gc_time - _gc_time_m * timestamp;
+    _gc_time_b = gc_time - _gc_time_m * time_at_start;
     _gc_time_sd = 0.0;
   } else {
+    // Since timestamps are monotonically increasing, denominator does not equal zero.
+    double denominator = _gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps;
+    assert(denominator != 0.0, "Invariant: samples: %u, sum_of_xx: %.6f, sum_of_timestamps: %.6f",
+           _gc_time_num_samples, _gc_time_sum_of_xx, _gc_time_sum_of_timestamps);
     _gc_time_m = ((_gc_time_num_samples * _gc_time_sum_of_xy - _gc_time_sum_of_timestamps * _gc_time_sum_of_samples) /
-                  (_gc_time_num_samples * _gc_time_sum_of_xx - _gc_time_sum_of_timestamps * _gc_time_sum_of_timestamps));
+                  denominator);
     _gc_time_b = (_gc_time_sum_of_samples - _gc_time_m * _gc_time_sum_of_timestamps) / _gc_time_num_samples;
     double sum_of_squared_deviations = 0.0;
     for (size_t i = 0; i < _gc_time_num_samples; i++) {
