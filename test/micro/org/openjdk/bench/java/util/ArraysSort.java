@@ -165,29 +165,6 @@ public class ArraysSort {
         }
     }
 
-    public static class Char extends ArraysSort {
-        char[] a;
-
-        @Setup
-        public void setup() {
-            a = new char[size];
-        }
-
-        @Setup(Level.Invocation)
-        public void build() {
-            builder.build(b);
-
-            for (int i = 0; i < size; ++i) {
-                a[i] = (char) b[i];
-            }
-        }
-
-        @Benchmark
-        public void testSort() {
-            Arrays.sort(a);
-        }
-    }
-
     public static class Byte extends ArraysSort {
         byte[] a;
 
@@ -202,6 +179,29 @@ public class ArraysSort {
 
             for (int i = 0; i < size; ++i) {
                 a[i] = (byte) b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+    }
+
+    public static class Char extends ArraysSort {
+        char[] a;
+
+        @Setup
+        public void setup() {
+            a = new char[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (char) b[i];
             }
         }
 
