@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public final class XTrayIconPeer implements TrayIconPeer,
 
     @Override
     public void dispose() {
-        if (SunToolkit.isDispatchThreadForAppContext(target)) {
+        if (EventQueue.isDispatchThread()) {
             disposeOnEDT();
         } else {
             try {
@@ -329,7 +329,7 @@ public final class XTrayIconPeer implements TrayIconPeer,
                 }
             };
 
-        if (!SunToolkit.isDispatchThreadForAppContext(target)) {
+        if (!EventQueue.isDispatchThread()) {
             SunToolkit.executeOnEventHandlerThread(target, r);
         } else {
             r.run();
@@ -355,7 +355,7 @@ public final class XTrayIconPeer implements TrayIconPeer,
         if (isDisposed())
             return;
 
-        assert SunToolkit.isDispatchThreadForAppContext(target);
+        assert EventQueue.isDispatchThread();
 
         PopupMenu newPopup = target.getPopupMenu();
         if (popup != newPopup) {
@@ -476,7 +476,7 @@ public final class XTrayIconPeer implements TrayIconPeer,
             // other class tries to cast source field to Component).
             // We already filter DRAG events out (CR 6565779).
             e.setSource(xtiPeer.target);
-            XToolkit.postEvent(XToolkit.targetToAppContext(e.getSource()), e);
+            XToolkit.postEvent(e);
         }
         @Override
         @SuppressWarnings("deprecation")
@@ -487,7 +487,7 @@ public final class XTrayIconPeer implements TrayIconPeer,
                 ActionEvent aev = new ActionEvent(xtiPeer.target, ActionEvent.ACTION_PERFORMED,
                                                   xtiPeer.target.getActionCommand(), e.getWhen(),
                                                   e.getModifiers());
-                XToolkit.postEvent(XToolkit.targetToAppContext(aev.getSource()), aev);
+                XToolkit.postEvent(aev);
             }
             if (xtiPeer.balloon.isVisible()) {
                 xtiPeer.balloon.hide();

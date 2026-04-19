@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8369505
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @run driver TestJhsdbJstackWithVirtualThread
  */

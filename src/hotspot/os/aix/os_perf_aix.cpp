@@ -143,12 +143,6 @@ static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
   return OS_OK;
 }
 
-static void update_prev_time(jvm_time_store_t* from, jvm_time_store_t* to) {
-  if (from && to) {
-    memcpy(to, from, sizeof(jvm_time_store_t));
-  }
-}
-
 static void update_prev_ticks(cpu_tick_store_t* from, cpu_tick_store_t* to) {
   if (from && to) {
     memcpy(to, from, sizeof(cpu_tick_store_t));
