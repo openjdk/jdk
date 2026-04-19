@@ -972,6 +972,22 @@ public class SuppressionWarningTest extends TestRunner {
           String.format("-Xlint:%s", SUPPRESSION.option));
     }
 
+    @Test
+    public void testUnrecognizedValues() throws Exception {
+        compileAndExpectSuccess(
+          """
+          @SuppressWarnings("foobar")
+          public class Test {
+              @SuppressWarnings({ "", "  ", "foobar", "uncheckedddd", "all", "boxing" })
+              public void m() {
+              }
+          }
+          """,
+          "-Xlint:all",
+          "-Werror"
+        );
+    }
+
 // Support Stuff
 
     // Run a test on a sequence of test cases
