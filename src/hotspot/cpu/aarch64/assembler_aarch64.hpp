@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1000,30 +1000,6 @@ public:
     f(0b0101010, 31, 25), f(0, 24), sf(offset, 23, 5), f(0, 4), f(cond, 3, 0);
   }
 
-#define INSN(NAME, cond)                        \
-  void NAME(address dest) {                     \
-    br(cond, dest);                             \
-  }
-
-  INSN(beq, EQ);
-  INSN(bne, NE);
-  INSN(bhs, HS);
-  INSN(bcs, CS);
-  INSN(blo, LO);
-  INSN(bcc, CC);
-  INSN(bmi, MI);
-  INSN(bpl, PL);
-  INSN(bvs, VS);
-  INSN(bvc, VC);
-  INSN(bhi, HI);
-  INSN(bls, LS);
-  INSN(bge, GE);
-  INSN(blt, LT);
-  INSN(bgt, GT);
-  INSN(ble, LE);
-  INSN(bal, AL);
-  INSN(bnv, NV);
-
   void br(Condition cc, Label &L);
 
 #undef INSN
@@ -1094,6 +1070,10 @@ public:
   INSN(xpaclri,   0b0000, 0b111);
 
 #undef INSN
+
+  void wfet(Register rt) {
+    system(0b00, 0b011, 0b0001, 0b0000, 0b000, rt);
+  }
 
   // we only provide mrs and msr for the special purpose system
   // registers where op1 (instr[20:19]) == 11
@@ -2658,6 +2638,8 @@ template<typename R, typename... Rx>
   INSN(uminv,  1, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(umaxp,  1, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(uminp,  1, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sqdmulh,0, 0b101101, false); // accepted arrangements: T4H, T8H, T2S, T4S
   INSN(shsubv, 0, 0b001001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
 
@@ -3490,7 +3472,9 @@ public:
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
   INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
+  INSN(sve_umaxv, 0b00000100, 0b001001001); // unsigned maximum reduction to scalar
   INSN(sve_umin,  0b00000100, 0b001011000); // unsigned minimum vectors
+  INSN(sve_uminv, 0b00000100, 0b001011001); // unsigned minimum reduction to scalar
 #undef INSN
 
 // SVE floating-point arithmetic - predicate
@@ -3810,8 +3794,8 @@ public:
   }
 
 private:
-  void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
-               bool isMerge, bool isFloat) {
+  void _sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8,
+                bool isMerge, bool isFloat) {
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
@@ -3835,11 +3819,11 @@ private:
 public:
   // SVE copy signed integer immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int imm8, bool isMerge) {
-    sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
+    _sve_cpy(Zd, T, Pg, imm8, isMerge, /*isFloat*/false);
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    _sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
@@ -4325,6 +4309,7 @@ public:
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   }
 
   // Stack overflow checking

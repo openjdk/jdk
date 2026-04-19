@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,23 @@ class VectorSupport : AllStatic {
     NUM_VEC_SIZES = 5
   };
 
+  // Values in this enum correspond to the jdk.incubator.vector.LaneType ordinal values.
+  enum LaneType : int {
+    LT_FLOAT     = 0,
+    LT_DOUBLE    = 1,
+    LT_BYTE      = 2,
+    LT_SHORT     = 3,
+    LT_INT       = 4,
+    LT_LONG      = 5
+  };
+
   enum {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
-  static int vop2ideal(jint vop, BasicType bt);
+  static int vop2ideal(jint vop, LaneType lt);
+  static const char* lanetype2name(LaneType lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
 

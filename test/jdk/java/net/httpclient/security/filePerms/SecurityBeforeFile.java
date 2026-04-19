@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Verifies security checks are performed before existence checks
  *          in pre-defined body processors APIs
- * @run testng/othervm SecurityBeforeFile
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.FileNotFoundException;
@@ -35,11 +35,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.nio.file.StandardOpenOption.*;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SecurityBeforeFile {
 
@@ -57,8 +59,7 @@ public class SecurityBeforeFile {
         }
     }
 
-    @DataProvider(name = "handlerOpenOptions")
-    public Object[][] handlerOpenOptions() {
+    public static Object[][] handlerOpenOptions() {
         return new Object[][] {
                 { new OpenOption[] {               } },
                 { new OpenOption[] { CREATE        } },
@@ -66,7 +67,8 @@ public class SecurityBeforeFile {
         };
     }
 
-    @Test(dataProvider = "handlerOpenOptions")
+    @ParameterizedTest
+    @MethodSource("handlerOpenOptions")
     public void BodyHandlersOfFileDownload(OpenOption[] openOptions) {
         Path p = Paths.get("doesNotExistDir");
         if (Files.exists(p))

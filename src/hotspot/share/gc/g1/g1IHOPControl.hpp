@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,11 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   const G1OldGenAllocationTracker* _old_gen_alloc_tracker;
 
   const G1Predictions* _predictor;
-  TruncatedSeq _marking_times_s;
-  TruncatedSeq _allocation_rate_s;
+  // Wall-clock time in seconds from marking start to the first mixed GC,
+  // excluding GC Pause time.
+  TruncatedSeq _marking_start_to_mixed_time_s;
+  // Old generation allocation rate in bytes per second.
+  TruncatedSeq _old_gen_alloc_rate;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
   // factor in the calculation of the threshold, as the threshold is based on
@@ -68,18 +71,18 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Since we cannot know what young gen sizes are used in the future, we will just
   // use the current one. We expect that this one will be one with a fairly large size,
   // as there is no marking or mixed gc that could impact its size too much.
-  size_t _last_unrestrained_young_size;
+  size_t _expected_young_gen_at_first_mixed_gc;
 
   // Get a new prediction bounded below by zero from the given sequence.
   double predict(const TruncatedSeq* seq) const;
 
   bool have_enough_data_for_prediction() const;
-  double last_marking_length_s() const;
+  double last_marking_start_to_mixed_time_s() const;
 
-  // The "actual" target threshold the algorithm wants to keep during and at the
-  // end of marking. This is typically lower than the requested threshold, as the
+  // The "effective" target occupancy the algorithm wants to keep until the start
+  // of Mixed GCs. This is typically lower than the target occupancy, as the
   // algorithm needs to consider restrictions by the environment.
-  size_t actual_target_threshold() const;
+  size_t effective_target_occupancy() const;
 
  void print_log(size_t non_young_occupancy);
  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
@@ -95,22 +98,24 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Adjust target occupancy.
   void update_target_occupancy(size_t new_target_occupancy);
 
-  // Update information about time during which allocations in the Java heap occurred,
-  // how large these allocations were in bytes, and an additional buffer.
-  // The allocations should contain any amount of space made unusable for further
-  // allocation, e.g. any waste caused by TLAB allocation, space at the end of
-  // humongous objects that can not be used for allocation, etc.
-  // Together with the target occupancy, this additional buffer should contain the
-  // difference between old gen size and total heap size at the start of reclamation,
-  // and space required for that reclamation.
-  void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
+  void update_target_after_marking_phase();
+
+  // Update allocation rate information and current expected young gen size for the
+  // first mixed gc needed for the predictor. Allocation rate is given as the
+  // separately passed in allocation increment and the time passed (mutator time)
+  // for the latest allocation increment here. Allocation size is the memory needed
+  // during the mutator before and the first mixed gc pause itself.
+  // Contents include young gen at that point, and the memory required for evacuating
+  // the collection set in that first mixed gc (including waste caused by PLAB
+  // allocation etc.).
+  void update_allocation_info(double allocation_time_s, size_t expected_young_gen_size);
 
   // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
-  void update_marking_length(double marking_length_s);
+  void add_marking_start_to_mixed_length(double length_s);
 
   // Get the current non-young occupancy at which concurrent marking should start.
-  size_t get_conc_mark_start_threshold();
+  size_t old_gen_threshold_for_conc_mark_start();
 
   void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };

@@ -21,17 +21,12 @@
  * questions.
  */
 
-import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.ProcessHandle;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -39,21 +34,37 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /*
- * @test
+ * @test id=FORK
  * @bug 8289643 8291760 8291986
- * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
+ * @requires os.family == "mac" | os.family == "linux"
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
- * @run junit/othervm PipelineLeaksFD
+ * @library /test/lib
+ * @run junit/othervm/timeout=240 -Djdk.lang.Process.launchMechanism=FORK PipelineLeaksFD
+ */
+
+/*
+ * @test id=POSIX_SPAWN
+ * @bug 8289643 8291760 8291986 8379182
+ * @requires os.family == "mac" | os.family == "linux"
+ * @summary File descriptor leak detection with ProcessBuilder.startPipeline
+ * @library /test/lib
+ * @run junit/othervm/native/timeout=240 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN PipelineLeaksFD
  */
 
 public class PipelineLeaksFD {
 
-    private static final String OS_NAME = System.getProperty("os.name", "Unknown");
+    private static final String TEST_JDK = System.getProperty("test.jdk");
+
+    private static final String JAVA_LIBRARY_PATH = System.getProperty("java.library.path");
 
     private static final long MY_PID =  ProcessHandle.current().pid();
 
-    private static final boolean LSOF_AVAILABLE = checkForLSOF();
+    // Maximum file descriptor to probe for being a pipe,
+    private static final int MAX_FD = 100;
 
     // Test cases for pipelines with a number of pipeline sequences
     public static Object[][] builders() {
@@ -69,37 +80,17 @@ public class PipelineLeaksFD {
         };
     }
 
-    // True if lsof is runnable and collect pipe usage.
-    private static boolean lsofAvailable() {
-        return LSOF_AVAILABLE;
-    }
-
-    // Check if lsof is available
-    private static boolean checkForLSOF() {
-        try {
-            lsofForAll();
-            return true;
-        } catch (IOException ioe) {
-            System.err.println("Skipping: " + ioe);
-            return false;
-        }
-    }
-
-    @EnabledIf("lsofAvailable")
     @ParameterizedTest
     @MethodSource("builders")
     void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
 
-        List<String> lsofLines = lsofForAll();
-        Set<PipeRecord> pipesBefore = pipesFromLSOF(lsofLines, MY_PID);
-        if (pipesBefore.size() < 3) {
-            // Dump all lsof output to aid debugging
-            System.out.println("Output from lsof");
-            lsofLines.forEach(System.err::println);
-            System.err.println(pipesBefore);
-            fail("There should be at least 3 pipes before, (0, 1, 2)");
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
+        Set<PipeRecord> beforePipes = pipesFromSelf();
+        if (beforePipes.size() < 3) {
+            fail("There should be at least 3 pipes before, (0, 1, 2): is " +
+                    beforePipes.size());
         }
-        printPipes(pipesBefore, "Before start");
+        printPipes(beforePipes, "Before start");
 
         List<Process> processes = ProcessBuilder.startPipeline(builders);
 
@@ -126,18 +117,14 @@ public class PipelineLeaksFD {
 
         processes.forEach(PipelineLeaksFD::waitForQuiet);
 
-        lsofLines = lsofForAll();
-        Set<PipeRecord> pipesAfter = pipesFromLSOF(lsofLines, MY_PID);
-        if (!pipesBefore.equals(pipesAfter)) {
-            Set<PipeRecord> missing = new HashSet<>(pipesBefore);
-            missing.removeAll(pipesAfter);
-            printPipes(missing, "Missing from pipesAfter");
-            Set<PipeRecord> extra = new HashSet<>(pipesAfter);
-            extra.removeAll(pipesBefore);
-            printPipes(extra, "Extra pipes in pipesAfter");
-            // Dump all lsof output to aid debugging
-            System.out.println("\nOutput from lsof");
-            lsofLines.forEach(System.err::println);
+        Set<PipeRecord> afterPipes = pipesFromSelf();
+        if (!beforePipes.equals(afterPipes)) {
+            Set<PipeRecord> missing = new HashSet<>(beforePipes);
+            missing.removeAll(afterPipes);
+            printPipes(missing, "Missing from beforePipes()");
+            Set<PipeRecord> extra = new HashSet<>(afterPipes);
+            extra.removeAll(beforePipes);
+            printPipes(extra, "Extra pipes in afterPipes()");
             fail("More or fewer pipes than expected");
         }
     }
@@ -150,31 +137,46 @@ public class PipelineLeaksFD {
         };
     }
 
-    // Test redirectErrorStream  (true/false) has the right number of pipes in use
-    @EnabledIf("lsofAvailable")
+    // Test redirectErrorStream  (true/false) has the right number of pipes in use.
+    // Spawn the child to report its pipe inode info.
     @ParameterizedTest()
     @MethodSource("redirectCases")
-    void checkRedirectErrorStream(boolean redirectError) throws IOException {
-        try (Process p = new ProcessBuilder("cat")
+    void checkRedirectErrorStream(boolean redirectError) {
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
+
+        try (Process p = new ProcessBuilder(TEST_JDK + "/bin/java",
+                "--enable-preview",
+                "-Djava.library.path=" + JAVA_LIBRARY_PATH,
+                "--enable-native-access=ALL-UNNAMED", "LinuxFDInfo")
                 .redirectErrorStream(redirectError)
                 .start()) {
-            System.err.printf("Parent PID; %d, Child Pid: %d\n", MY_PID, p.pid());
-            List<String> lsofLines = lsofForAll();
-            final Set<PipeRecord> pipes = pipesFromLSOF(lsofLines, p.pid());
-            printPipes(pipes, "Parent and waiting child pipes");
-            int uniquePipes = redirectError ? 8 : 9;
-            if (uniquePipes != pipes.size()) {
-                // Dump all lsof output to aid debugging
-                System.out.println("\nOutput from lsof");
-                lsofLines.forEach(System.err::println);
-            }
-            assertEquals(uniquePipes, pipes.size(),
-                    "wrong number of pipes for redirect: " + redirectError);
+
+            final Set<PipeRecord> pipes = pipesFromSelf();
+            printPipes(pipes, "Parent pipes");
+
+            List<String> lines = p.inputReader().readAllLines();
+            Set<PipeRecord> childPipes = lines.stream().map(s -> {
+                var fdAndInode = LinuxFDInfo.parseFdAndInode(s);
+                return PipeRecord.lookup(fdAndInode.fd(), "0x%08x".formatted(fdAndInode.inode()), p.pid());
+            })
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            printPipes(childPipes, "child pipes");
+            int uniquePipes = childPipes.stream().map(PipeRecord::myKey).collect(Collectors.toSet()).size();
+            // Number of pipe references depending on whether stderr is redirected to stdout
+            long expected = redirectError ? 2 : 3;
+            assertEquals(expected, uniquePipes, "Wrong number of unique pipes");
+
             String expectedTypeName = redirectError
                     ? "java.lang.ProcessBuilder$NullInputStream"
                     : "java.lang.ProcessImpl$ProcessPipeInputStream";
             assertEquals(expectedTypeName, p.getErrorStream().getClass().getName(),
                     "errorStream type is incorrect");
+
+            final Set<PipeRecord> afterPipes = pipesFromSelf();
+            if (!pipes.equals(afterPipes)) {
+                printPipes(afterPipes, "Parent pipes after are different");
+            }
         } catch (IOException ioe) {
             fail("Process start", ioe);
         }
@@ -191,102 +193,26 @@ public class PipelineLeaksFD {
             if (st != 0) {
                 System.err.println("non-zero exit status: " + p);
             }
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException ignore) {
         }
     }
 
-    /**
-     * Collect a Set of file descriptors and identifying information.
-     * To identify the pipes in use the `lsof` command is invoked and output scrapped for
-     * fd's, pids, unique identities of the pipes (to match with parent).
-     * @return A set of PipeRecords, possibly empty
-     */
-    private static Set<PipeRecord> pipesForPid(long pid) throws IOException {
-        var lines = lsofForAll();
-        return pipesFromLSOF(lines, pid);
-    }
-
-    /**
-     * Extract the PipeRecords from the `lsof` output for this process and a designated child process.
-     *
-     * @param lines lines of lsof output
-     * @param pid pid of child process of interest
-     * @return a Set of PipeRecords for parent and child
-     */
-    private static LinkedHashSet<PipeRecord> pipesFromLSOF(List<String> lines, long pid) {
-        return lines.stream()
-                .map(PipelineLeaksFD::pipeFromLSOF)
-                .filter(pr -> pr != null &&
-                        (pr.pid() == pid || pr.pid() == MY_PID))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Collect the output of `lsof` for all files.
-     * Files are used for `lsof` input and output to avoid creating pipes.
-     * @return a List of lines output from `lsof`.
-     */
-    private static List<String> lsofForAll() throws IOException {
-        Path tmpDir = Path.of(".");
-        String tmpPrefix = "lsof-";
-        Path lsofEmptyInput = Files.createTempFile(tmpDir, tmpPrefix, ".empty");
-        Path lsofOutput = Files.createTempFile(tmpDir, tmpPrefix, ".tmp");
-        try (Process p = new ProcessBuilder("lsof")
-                .redirectOutput(lsofOutput.toFile())
-                .redirectInput(lsofEmptyInput.toFile()) // empty input
-                .redirectError(ProcessBuilder.Redirect.DISCARD) // ignored output
-                .start()) {
-            int status = p.waitFor();
-            assertEquals(0, status, "Process 'lsof' failed");
-
-            return Files.readAllLines(lsofOutput);
-        } catch (InterruptedException ie) {
-            throw new IOException("Waiting for lsof exit interrupted", ie);
+    static Set<PipeRecord> pipesFromSelf() {
+        Set<PipeRecord> pipes = new LinkedHashSet<>(MAX_FD);
+        for (int fd = 0; fd < MAX_FD; fd++) {
+            long inode = LinuxFDInfo.getPipeInodeNum(fd);
+            if (inode != 0) {
+                pipes.add(PipeRecord.lookup(fd, "0x%08x".formatted(inode), MY_PID));
+            }
         }
-    }
-
-    // Return pipe records by parsing the appropriate platform specific `lsof` output.
-    static PipeRecord pipeFromLSOF(String s) {
-        return switch (OS_NAME) {
-            case "Linux" -> pipeFromLinuxLSOF(s);
-            case "Mac OS X" -> pipeFromMacLSOF(s);
-            default -> throw new RuntimeException("lsof not supported on platform: " + OS_NAME);
-        };
-    }
-
-    // Return Pipe from lsof output put, or null (on Mac OS X)
-    // lsof      55221 rriggs    0      PIPE 0xc76402237956a5cb      16384  ->0xfcb0c07ae447908c
-    // lsof      55221 rriggs    1      PIPE 0xb486e02f86da463e      16384  ->0xf94eacc85896b4e6
-    static PipeRecord pipeFromMacLSOF(String s) {
-        String[] fields = s.split("\\s+");
-        if ("PIPE".equals(fields[4])) {
-            final int pid = Integer.parseInt(fields[1]);
-            final String myKey = (fields.length > 5) ? fields[5] : "";
-            final String otherKey = (fields.length > 7) ? fields[7].substring(2) : "";
-            return PipeRecord.lookup(Integer.parseInt(fields[3]), myKey, otherKey, pid);
-        }
-        return null;
-    }
-
-    // Return Pipe from lsof output put, or null (on Linux)
-    // java    7612 rriggs   14w  FIFO   0,12       0t0   117662267 pipe
-    // java    7612 rriggs   15r  FIFO   0,12       0t0   117662268 pipe
-    static PipeRecord pipeFromLinuxLSOF(String s) {
-        String[] fields = s.split("\\s+");
-        if ("FIFO".equals(fields[4])) {
-            final int pid = Integer.parseInt(fields[1]);
-            final String key = (fields.length > 7) ? fields[7] : "";
-            final int fdNum = Integer.parseInt(fields[3].substring(0, fields[3].length() - 1));
-            return PipeRecord.lookup(fdNum, key, null, pid);
-        }
-        return null;
+        return pipes;
     }
 
     // Identify a pipe by pid, fd, and a key (unique across processes)
     // Mac OS X has separate keys for read and write sides, both are matched to the same "name"
     record PipeRecord(long pid, int fd, KeyedString myKey) {
-        static PipeRecord lookup(int fd, String myKey, String otherKey, int pid) {
-            return new PipeRecord(pid, fd, KeyedString.getKey(myKey, otherKey));
+        static PipeRecord lookup(int fd, String myKey, long pid) {
+            return new PipeRecord(pid, fd, KeyedString.getKey(myKey));
         }
     }
 
@@ -297,11 +223,9 @@ public class PipelineLeaksFD {
         private static int nextInt = 1;
         private final String key;
         private final String name;
-        private int count;
         KeyedString(String key, String name) {
             this.key = key;
             this.name = name;
-            this.count = 0;
         }
 
         KeyedString(String s) {
@@ -309,17 +233,12 @@ public class PipelineLeaksFD {
             this(s, k);
         }
 
-        static KeyedString getKey(String key, String otherKey) {
-            var k = map.computeIfAbsent(key, KeyedString::new);
-            k.count++;
-            if (otherKey != null) {
-                map.putIfAbsent(otherKey, k);
-            }
-            return k;
+        static KeyedString getKey(String key) {
+            return map.computeIfAbsent(key, KeyedString::new);
         }
 
         public String toString() {
-            return name + "(" + count + ")";
+            return name + ": osInfo: " + key;
         }
     }
 }
