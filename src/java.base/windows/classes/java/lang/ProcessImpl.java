@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,12 @@ final class ProcessImpl extends Process {
                     stdHandles[1] = -1L;
                 } else if (redirects[1] == Redirect.INHERIT) {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
+                    if (stdHandles[1] == -1L) {
+                        // FileDescriptor.out has been closed.
+                        f1 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[1] = fdAccess.getHandle(f1.getFD());
+                    }
                 } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
                     // Force getInputStream to return a null stream,
@@ -134,6 +140,12 @@ final class ProcessImpl extends Process {
                     stdHandles[2] = -1L;
                 } else if (redirects[2] == Redirect.INHERIT) {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
+                    if (stdHandles[2] == -1L) {
+                        // FileDescriptor.err has been closed.
+                        f2 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[2] = fdAccess.getHandle(f2.getFD());
+                    }
                 } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[2] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
                 } else {

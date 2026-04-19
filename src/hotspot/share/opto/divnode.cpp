@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,8 +419,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     if (!d_pos) {
       q = new SubLNode(phase->longcon(0), phase->transform(q));
     }
-  } else if ( !Matcher::use_asm_for_ldiv_by_con(d) ) { // Use hardware DIV instruction when
-                                                       // it is faster than code generated below.
+  } else {
     // Attempt the jlong constant divide -> multiply transform found in
     //   "Division by Invariant Integers using Multiplication"
     //     by Granlund and Montgomery
@@ -1112,8 +1111,6 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
 
-  Node *hook = new Node(1);
-
   // First, special check for modulo 2^k-1
   if( con >= 0 && con < max_jint && is_power_of_2(con+1) ) {
     uint k = exact_log2(con+1);  // Extract k
@@ -1129,7 +1126,9 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndINode(x,divisor) );
@@ -1185,6 +1184,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivI to MulL
@@ -1407,8 +1407,6 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !tl->is_con() ) return nullptr;
   jlong con = tl->get_con();
 
-  Node *hook = new Node(1);
-
   // Expand mod
   if(con >= 0 && con < max_jlong && is_power_of_2(con + 1)) {
     uint k = log2i_exact(con + 1);  // Extract k
@@ -1426,13 +1424,15 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
-      hook->init_req(0, x);       // Add a use to x to prevent him from dying
+      // Add a use to x to prevent it from dying
+      Node* hook = new Node(1);
+      hook->init_req(0, x);
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
         Node *xl = phase->transform( new AndLNode(x,divisor) );
         Node *xh = phase->transform( new RShiftLNode(x,phase->intcon(k)) ); // Must be signed
         x = phase->transform( new AddLNode(xh,xl) );
-        hook->set_req(0, x);    // Add a use to x to prevent him from dying
+        hook->set_req(0, x);    // Add a use to x to prevent it from dying
       }
 
       // Generate sign-fixup code.  Was original value positive?
@@ -1482,6 +1482,8 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Save in(1) so that it cannot be changed or deleted
+  // Add a use to x to prevent him from dying
+  Node* hook = new Node(1);
   hook->init_req(0, in(1));
 
   // Divide using the transform from DivL to MulL
@@ -1589,41 +1591,25 @@ const Type* ModDNode::get_result_if_constant(const Type* dividend, const Type* d
   return TypeD::make(jdouble_cast(xr));
 }
 
-Node* ModFloatingNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (can_reshape) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-
-    // Either input is TOP ==> the result is TOP
-    const Type* dividend_type = phase->type(dividend());
-    const Type* divisor_type = phase->type(divisor());
-    if (dividend_type == Type::TOP || divisor_type == Type::TOP) {
-      return phase->C->top();
-    }
-    const Type* constant_result = get_result_if_constant(dividend_type, divisor_type);
-    if (constant_result != nullptr) {
-      return make_tuple_of_input_state_and_constant_result(igvn, constant_result);
-    }
+const Type* ModFloatingNode::Value(PhaseGVN* phase) const {
+  const Type* t = CallLeafPureNode::Value(phase);
+  if (t == Type::TOP) { return Type::TOP; }
+  const Type* dividend_type = phase->type(dividend());
+  const Type* divisor_type = phase->type(divisor());
+  if (dividend_type == Type::TOP || divisor_type == Type::TOP) {
+    return Type::TOP;
   }
-
-  return CallLeafPureNode::Ideal(phase, can_reshape);
-}
-
-/* Give a tuple node for ::Ideal to return, made of the input state (control to return addr)
- * and the given constant result. Idealization of projections will make sure to transparently
- * propagate the input state and replace the result by the said constant.
- */
-TupleNode* ModFloatingNode::make_tuple_of_input_state_and_constant_result(PhaseIterGVN* phase, const Type* con) const {
-  Node* con_node = phase->makecon(con);
-  TupleNode* tuple = TupleNode::make(
-      tf()->range(),
-      in(TypeFunc::Control),
-      in(TypeFunc::I_O),
-      in(TypeFunc::Memory),
-      in(TypeFunc::FramePtr),
-      in(TypeFunc::ReturnAdr),
-      con_node);
-
-  return tuple;
+  const Type* constant_result = get_result_if_constant(dividend_type, divisor_type);
+  if (constant_result != nullptr) {
+    const TypeTuple* tt = t->is_tuple();
+    uint cnt = tt->cnt();
+    uint param_cnt = cnt - TypeFunc::Parms;
+    const Type** fields = TypeTuple::fields(param_cnt);
+    fields[TypeFunc::Parms] = constant_result;
+    if (param_cnt > 1) { fields[TypeFunc::Parms + 1] = Type::HALF; }
+    return TypeTuple::make(cnt, fields);
+  }
+  return t;
 }
 
 //=============================================================================

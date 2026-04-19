@@ -40,17 +40,18 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_generations() override;
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
@@ -82,6 +83,8 @@ public:
 
   inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
 
+  void start_idle_span() override;
+
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
   void update_region_ages(ShenandoahMarkingContext* ctx);
@@ -99,9 +102,6 @@ public:
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
 
-  void retire_plab(PLAB* plab);
-  void retire_plab(PLAB* plab, Thread* thread);
-
   // ---------- Update References
   //
   // In the generational mode, we will use this function for young, mixed, and global collections.
@@ -110,10 +110,6 @@ public:
   void final_update_refs_update_region_states() override;
 
 private:
-  HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
-
   const size_t _min_plab_size;
   const size_t _max_plab_size;
 
@@ -136,7 +132,7 @@ public:
   void reset_generation_reserves();
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
-  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

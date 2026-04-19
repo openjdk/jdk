@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,8 @@ static void print_method_profiling_data() {
           ss.fill_to(2);
           m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes_on(&ss);
+        // Buffering to a stringStream, disable internal buffering so it's not done twice.
+        m->print_codes_on(&ss, 0, false);
         tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
@@ -466,10 +467,7 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  // 2nd argument (emit_event_shutdown) should be set to false
-  // because EventShutdown would be emitted at Threads::destroy_vm().
-  // (one of the callers of before_exit())
-  JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.

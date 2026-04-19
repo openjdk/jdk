@@ -43,7 +43,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -68,6 +67,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _top_before_promoted(nullptr),
+  _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
   _tlab_allocs(0),
@@ -75,6 +75,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
+  _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
@@ -383,7 +384,7 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
-  _live_data = (s >> LogHeapWordSize);
+  _live_data.store_relaxed(s >> LogHeapWordSize);
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
@@ -434,7 +435,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
   st->print("|UWM " SHR_PTR_FORMAT,
-            p2i(_update_watermark));
+            p2i(_update_watermark.load_relaxed()));
   st->print("|U %5zu%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T %5zu%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
   st->print("|G %5zu%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
@@ -565,24 +566,34 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  set_top(bottom());
+  _top_at_evac_start = _bottom;
+  _mixed_candidate_garbage_words = 0;
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
+  if (is_old()) {
+    heap->old_generation()->clear_cards_for(this);
+  }
+
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
   }
-
-  make_empty();
+  set_top(bottom());
   set_affiliation(FREE);
+
+  // Lastly, set region state to empty
+  make_empty();
 }
 
 // Upon return, this region has been recycled.  We try to recycle it.
 // We may fail if some other thread recycled it before we do.
 void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
-  if (is_trash() && _recycling.try_set()) {
+  if (!is_trash()) {
+    return;
+  }
+  if (_recycling.try_set()) {
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
       // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
@@ -593,6 +604,8 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
     _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
+    // the racing GC worker thread overwrite its affiliation to FREE.
     while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
@@ -600,12 +613,18 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
         os::naked_yield();
       }
     }
+    assert(!is_trash(), "Must not");
   }
 }
 
+// Note that return from try_recycle() does not mean the region has been recycled.  It only means that
+// some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
-  if (is_trash() && _recycling.try_set()) {
+  if (!is_trash()) {
+    return;
+  }
+  if (_recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
@@ -811,11 +830,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
-    if (!success) {
-      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
-      assert(false, "Region uncommit should always succeed");
-    }
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
@@ -833,20 +848,20 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  AtomicAccess::store(&_state, to);
+  _state.release_store(to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  AtomicAccess::add(&_critical_pins, (size_t)1);
+  _critical_pins.add_then_fetch((size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  AtomicAccess::sub(&_critical_pins, (size_t)1);
+  _critical_pins.sub_then_fetch((size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {
-  return AtomicAccess::load(&_critical_pins);
+  return _critical_pins.load_relaxed();
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
@@ -858,7 +873,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     log_debug(gc)("Setting affiliation of Region %zu from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
-                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
+                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark.load_relaxed()), p2i(ctx->top_bitmap(this)));
   }
 
 #ifdef ASSERT
