@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -154,7 +155,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 bool OptoRuntime::generate(ciEnv* env) {
 
   C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
-
+  // disallow any further c2 stub generation
+  AOTCodeCache::set_c2_stubs_complete();
   return true;
 }
 
@@ -1864,6 +1866,8 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // The stack watermark barrier takes care of detecting that and ensuring the frame
   // has updated oops.
   StackWatermarkSet::after_unwind(current);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general

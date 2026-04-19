@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -972,6 +972,10 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
   endif
 
+  ifneq ($$(findstring -XX:+UseCompactObjectHeaders, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-coh.txt
+  endif
+
 
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
@@ -1016,6 +1020,9 @@ define SetupRunJtregTestBody
         VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-AotJdk.txt) \
+    ))
   endif
 
 

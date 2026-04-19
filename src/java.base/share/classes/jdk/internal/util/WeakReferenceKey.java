@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,5 +87,19 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
     @Override
     public String toString() {
         return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
+    }
+
+    // WeakReferenceKey.equals() is usually executed in the AOT assembly phase. However,
+    // in some rare occasions, it's not executed (due to peculiarity of hash code and
+    // memory addressing??). As a result, the constant pool entries used by
+    // equals() are not resolved.
+    //
+    // The JVM calls ensureDeterministicAOTCache() during the AOT assembly phase to ensure
+    // that the constant pool entries used by equals() are resolved, so that the
+    // the JDK's default CDS archives have deterministic contents.
+    private static boolean ensureDeterministicAOTCache() {
+        WeakReferenceKey<String> k1 = new WeakReferenceKey<>("1", null);
+        WeakReferenceKey<String> k2 = new WeakReferenceKey<>("2", null);
+        return k1.equals(k2);
     }
 }
