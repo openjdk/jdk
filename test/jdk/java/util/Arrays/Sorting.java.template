@@ -54,7 +54,7 @@ public class Sorting {
 
     // Lengths of arrays for long run (default)
     private static final int[] LONG_LENGTHS =
-        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000, 64_000};
+        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000, 67_000};
 
     private static final Random random = new Random(0xC0FFEE);
 
@@ -413,6 +413,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build($type$[] a, int m) {
@@ -436,11 +437,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build($type$[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = ($type$) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -449,7 +451,7 @@ public class Sorting {
                 @Override
                 public void build($type$[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = ($type$) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -457,13 +459,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build($type$[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = ($type$) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -472,7 +474,7 @@ public class Sorting {
                 @Override
                 public void build($type$[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = ($type$) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -481,7 +483,7 @@ public class Sorting {
                 @Override
                 public void build($type$[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = ($type$) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -491,10 +493,10 @@ public class Sorting {
                 public void build($type$[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = ($type$) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = ($type$) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -504,13 +506,18 @@ public class Sorting {
                 @Override
                 public void build($type$[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = ($type$) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static $type$ convert(int i) {
+                return {#if[ByteCharShort]?($type$) }{#if[Float]?Float.intBitsToFloat(}{#if[Double]?Double.longBitsToDouble(}i{#if[Long]? & 0xFFFF_FF00}{#if[FloatDouble]? & 0x3FFF_FF00)};
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build($type$[] a, int m) {
@@ -629,6 +636,7 @@ public class Sorting {
 #if[FloatDouble]
 
         private enum FloatingPointBuilder implements Builder {
+
             NEGATIVE_ZERO_AND_NAN {
                 @Override
                 public void build($type$[] a, int m) {

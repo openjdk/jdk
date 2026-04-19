@@ -42,17 +42,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * There are also additional algorithms, invoked from the Dual-Pivot
  * Quicksort such as merging sort, sorting network, heap sort, mixed
- * insertion sort, counting sort and parallel merge sort. The actual
- * sorting algorithm depends on the data type and array size.
+ * insertion sort, counting sort and parallel merge sort.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
  * @author Josh Bloch
  * @author Doug Lea
  *
- * @version 2024.06.14
+ * @version 2025.06.14
  *
- * @since 1.7 * 14 ^ 26
+ * @since 1.7 * 14 ^ 27
  */
 final class DualPivotQuicksort {
 
@@ -62,10 +61,9 @@ final class DualPivotQuicksort {
      * <b>Type: int/long/float/double</b><p>
      *
      * If the array size is small, invoke mixed insertion sort on
-     * non-leftmost parts or insertion sort on leftmost part.<p>
+     * non-leftmost parts or insertion sort on the leftmost part.<p>
      *
-     * Then try merging sort which is the best on almost
-     * sorted arrays.<p>
+     * Then try merging sort which is the best on almost sorted arrays.<p>
      *
      * Then check the recursion depth to avoid quadratic time
      * with heap sort.<p>
@@ -79,21 +77,10 @@ final class DualPivotQuicksort {
      * negative zeros -0.0 and NaNs (Not-a-Number) and re-arrange
      * negative zeros at the end.<p>
      *
-     * <b>Type: byte</b><p>
+     * <b>Type: byte/char/short</b><p>
      *
      * Invoke insertion sort, if the array size is small,
      * otherwise switch to counting sort.<p>
-     *
-     * <b>Type: char/short</b><p>
-     *
-     * Invoke counting sort on large array, otherwise run
-     * insertion sort on small array.<p>
-     *
-     * Then check the recursion depth to avoid quadratic time
-     * with counting sort.<p>
-     *
-     * Then apply Quicksort with two pivots on random data,
-     * otherwise run one-pivot Quicksort.<p>
      *
      * <b>Parallel sorting (int/long/float/double)</b><p>
      *
@@ -132,12 +119,7 @@ final class DualPivotQuicksort {
     /**
      * Min size of array to use counting sort (the best on random data).
      */
-    private static final int MIN_COUNTING_SORT_SIZE = 640;
-
-    /**
-     * Min size of array to use numerical sort (the best on repeated data).
-     */
-    private static final int MIN_NUMERICAL_SORT_SIZE = 9 << 10;
+    private static final int MIN_COUNTING_SORT_SIZE = 9 << 10;
 
     /* ----------------------- Parallel sort ------------------------ */
 
@@ -361,41 +343,6 @@ final class DualPivotQuicksort {
         }
     }
 #end[FloatDouble]
-#if[Byte]
-
-    /**
-     * Sorts the specified range of the array using insertion sort or counting sort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    static void sort(byte[] a, int low, int high) {
-        if (high - low < MAX_INSERTION_SORT_SIZE) {
-            insertionSort(a, low, high);
-        } else {
-            countingSort(a, low, high);
-        }
-    }
-#end[Byte]
-#if[CharShort]
-
-    /**
-     * Sorts the specified range of the array using counting sort
-     * Dual-Pivot Quicksort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    static void sort($type$[] a, int low, int high) {
-        if (high - low > MIN_COUNTING_SORT_SIZE) {
-            countingSort(a, low, high);
-        } else {
-            sort(a, 0, low, high);
-        }
-    }
-#end[CharShort]
 #if[IntLongFloatDouble]
 
     /**
@@ -422,7 +369,7 @@ final class DualPivotQuicksort {
             }
 
             /*
-             * Invoke adaptive insertion sort on small leftmost part.
+             * Invoke adaptive insertion sort on the small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE + bits * 3) {
                 sort($type$.class, a, Unsafe.ARRAY_$TYPE$_BASE_OFFSET,
@@ -548,129 +495,7 @@ final class DualPivotQuicksort {
         }
     }
 #end[IntLongFloatDouble]
-#if[CharShort]
-
-    /**
-     * Sorts the specified range of the array using Dual-Pivot Quicksort.
-     *
-     * @param a the array to be sorted
-     * @param bits the combination of recursion depth and bit flag, where
-     *        the right bit "0" indicates that range is the leftmost part
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    static void sort($type$[] a, int bits, int low, int high) {
-        while (true) {
-            int size = high - low;
-
-            /*
-             * Invoke insertion sort on small part.
-             */
-            if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSort(a, low, high);
-                return;
-            }
-
-            /*
-             * Divide the given array into the golden ratio using
-             * an inexpensive approximation to select five sample
-             * elements and determine pivots.
-             */
-            int step = (size >> 2) + (size >> 3) + (size >> 7);
-
-            /*
-             * Five elements around (and including) the central element
-             * will be used for pivot selection as described below. The
-             * unequal choice of spacing these elements was empirically
-             * determined to work well on a wide variety of inputs.
-             */
-            int e1 = low + step;
-            int e5 = high - step;
-            int e3 = (e1 + e5) >>> 1;
-            int e2 = (e1 + e3) >>> 1;
-            int e4 = (e3 + e5) >>> 1;
-
-            /*
-             * Sort these elements in-place by the combination
-             * of 4-element sorting network and insertion sort.
-             *
-             *   1 ---------o---------------o-----------------
-             *              |               |
-             *   2 ---------|-------o-------o-------o---------
-             *              |       |               |
-             *   3 ---------|-------|---------------|---------
-             *              |       |               |
-             *   4 ---------o-------|-------o-------o---------
-             *                      |       |
-             *   5 -----------------o-------o-----------------
-             */
-            if (a[e1] > a[e4]) { $type$ t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-            if (a[e2] > a[e5]) { $type$ t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-            if (a[e4] > a[e5]) { $type$ t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-            if (a[e1] > a[e2]) { $type$ t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-            if (a[e2] > a[e4]) { $type$ t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
-
-            /*
-             * Insert the third element.
-             */
-            if (a[e3] < a[e2]) {
-                if (a[e3] < a[e1]) {
-                    $type$ t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
-                } else {
-                    $type$ t = a[e3]; a[e3] = a[e2]; a[e2] = t;
-                }
-            } else if (a[e3] > a[e4]) {
-                if (a[e3] > a[e5]) {
-                    $type$ t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
-                } else {
-                    $type$ t = a[e3]; a[e3] = a[e4]; a[e4] = t;
-                }
-            }
-
-            /*
-             * Switch to counting sort to avoid quadratic time.
-             */
-            if ((bits += 2) > MAX_RECURSION_DEPTH) {
-                countingSort(a, low, high);
-                return;
-            }
-
-            /*
-             * indices[0] - the index of the last element of the left part
-             * indices[1] - the index of the first element of the right part
-             */
-            int[] indices;
-
-            /*
-             * Partitioning with two pivots on array of fully random elements.
-             */
-            if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                indices = partitionWithTwoPivots(a, low, high, e1, e5);
-
-                /*
-                 * Sort non-left parts recursively (possibly in parallel),
-                 * excluding known pivots.
-                 */
-                sort(a, bits | 1, indices[0] + 1, indices[1]);
-                sort(a, bits | 1, indices[1] + 1, high);
-
-            } else { // Partitioning with one pivot
-
-                indices = partitionWithOnePivot(a, low, high, e3, e3);
-
-                /*
-                 * Sort the right part (possibly in parallel), excluding
-                 * known pivot. All elements from the central part are
-                 * equal and therefore already sorted.
-                 */
-                sort(a, bits | 1, indices[1], high);
-            }
-            high = indices[0]; // Iterate along the left part
-        }
-    }
-#end[CharShort]
-#if[AllExceptByte]
+#if[IntLongFloatDouble]
 
     /**
      * Partitions the specified range of the array using two given pivots.
@@ -836,7 +661,7 @@ final class DualPivotQuicksort {
 
         return new int[] { lower, upper };
     }
-#end[AllExceptByte]
+#end[IntLongFloatDouble]
 #if[IntLongFloatDouble]
 
     /**
@@ -859,7 +684,7 @@ final class DualPivotQuicksort {
         /*
          * Split the array for pin and pair insertion sorts.
          */
-        int end = high - ((3 * ((high - low) >> 2)) & ~1);
+        int end = high - (((high - low) * 3 >> 3) << 1);
 
         /*
          * Start with pin insertion sort.
@@ -922,6 +747,24 @@ final class DualPivotQuicksort {
         }
     }
 #end[IntLongFloatDouble]
+#if[ByteCharShort]
+
+    /**
+     * Sorts the specified range of the array using counting sort
+     * or insertion sort.
+     *
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     */
+    static void sort($type$[] a, int low, int high) {
+        if (high - low < MAX_INSERTION_SORT_SIZE) {
+            insertionSort(a, low, high);
+        } else {
+            countingSort(a, low, high);
+        }
+    }
+#end[ByteCharShort]
 #if[AllTypes]
 
     /**
@@ -992,6 +835,7 @@ final class DualPivotQuicksort {
                 }
 
             } else { // Identify constant sequence
+
                 for ($type$ ak = a[k]; ++k < high && ak == a[k]; );
 
                 // Check the next sequence
@@ -1157,6 +1001,7 @@ final class DualPivotQuicksort {
                         mi1 = mid;
                     }
                 }
+
             } else {
 
                 /*
@@ -1328,13 +1173,21 @@ final class DualPivotQuicksort {
         /*
          * Place values on their final positions.
          */
-        for (int value = Byte.MIN_VALUE; high > low; ) {
-            while (count[--value & 0xFF] == 0);
-            int num = count[value & 0xFF];
+        if (high - low > MIN_COUNTING_SORT_SIZE) {
+            for (int value = Byte.MIN_VALUE; low < high; ) {
+                while (count[--value & 0xFF] == 0);
+                int num = count[value & 0xFF];
 
-            do {
-                a[--high] = (byte) value;
-            } while (--num > 0);
+                do {
+                    a[--high] = (byte) value;
+                } while (--num > 0);
+            }
+        } else {
+            for (int value = Byte.MIN_VALUE; low < high; ) {
+                for (int k = high - count[--value & 0xFF]; k < high; ) {
+                    a[--high] = (byte) value;
+                }
+            }
         }
     }
 #end[Byte]
@@ -1350,7 +1203,7 @@ final class DualPivotQuicksort {
     static void countingSort($type$[] a, int low, int high) {
         int size = high - low;
 
-        if (size > MIN_NUMERICAL_SORT_SIZE) {
+        if (size > MIN_COUNTING_SORT_SIZE) {
             /*
              * Count the number of all values.
              */
@@ -1364,9 +1217,9 @@ final class DualPivotQuicksort {
             /*
              * Place values on their final positions.
              */
-            for (int value = {#if[Char]?count.length}{#if[Short]?Short.MIN_VALUE}; high > low; ) {
-                while (count[--value{#if[Short]? & 0xFFFF}] == 0);
-                int num = count[value{#if[Short]? & 0xFFFF}];
+            for (int value = {#if[Char]?Character}{#if[Short]?Short}.MIN_VALUE; low < high; ) {
+                while (count[--value & 0xFFFF] == 0);
+                int num = count[value & 0xFFFF];
 
                 do {
                     a[--high] = ($type$) value;

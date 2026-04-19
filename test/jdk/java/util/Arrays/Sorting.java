@@ -53,7 +53,7 @@ public class Sorting {
 
     // Lengths of arrays for long run (default)
     private static final int[] LONG_LENGTHS =
-        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000, 64_000};
+        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000, 67_000};
 
     private static final Random random = new Random(0xC0FFEE);
 
@@ -336,6 +336,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(int[] a, int m) {
@@ -359,11 +360,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(int[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (int) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -372,7 +374,7 @@ public class Sorting {
                 @Override
                 public void build(int[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (int) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -380,13 +382,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(int[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (int) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -395,7 +397,7 @@ public class Sorting {
                 @Override
                 public void build(int[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (int) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -404,7 +406,7 @@ public class Sorting {
                 @Override
                 public void build(int[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (int) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -414,10 +416,10 @@ public class Sorting {
                 public void build(int[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (int) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (int) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -427,13 +429,18 @@ public class Sorting {
                 @Override
                 public void build(int[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (int) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static int convert(int i) {
+                return i;
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(int[] a, int m) {
@@ -812,6 +819,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(long[] a, int m) {
@@ -835,11 +843,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(long[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (long) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -848,7 +857,7 @@ public class Sorting {
                 @Override
                 public void build(long[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (long) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -856,13 +865,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(long[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (long) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -871,7 +880,7 @@ public class Sorting {
                 @Override
                 public void build(long[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (long) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -880,7 +889,7 @@ public class Sorting {
                 @Override
                 public void build(long[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (long) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -890,10 +899,10 @@ public class Sorting {
                 public void build(long[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (long) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (long) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -903,13 +912,18 @@ public class Sorting {
                 @Override
                 public void build(long[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (long) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static long convert(int i) {
+                return i & 0xFFFF_FF00;
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(long[] a, int m) {
@@ -1285,6 +1299,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(byte[] a, int m) {
@@ -1308,11 +1323,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(byte[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -1321,7 +1337,7 @@ public class Sorting {
                 @Override
                 public void build(byte[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -1329,13 +1345,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(byte[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -1344,7 +1360,7 @@ public class Sorting {
                 @Override
                 public void build(byte[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -1353,7 +1369,7 @@ public class Sorting {
                 @Override
                 public void build(byte[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (byte) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -1363,10 +1379,10 @@ public class Sorting {
                 public void build(byte[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (byte) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (byte) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -1376,13 +1392,18 @@ public class Sorting {
                 @Override
                 public void build(byte[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (byte) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static byte convert(int i) {
+                return (byte) i;
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(byte[] a, int m) {
@@ -1758,6 +1779,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(char[] a, int m) {
@@ -1781,11 +1803,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(char[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -1794,7 +1817,7 @@ public class Sorting {
                 @Override
                 public void build(char[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -1802,13 +1825,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(char[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -1817,7 +1840,7 @@ public class Sorting {
                 @Override
                 public void build(char[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -1826,7 +1849,7 @@ public class Sorting {
                 @Override
                 public void build(char[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (char) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -1836,10 +1859,10 @@ public class Sorting {
                 public void build(char[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (char) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (char) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -1849,13 +1872,18 @@ public class Sorting {
                 @Override
                 public void build(char[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (char) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static char convert(int i) {
+                return (char) i;
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(char[] a, int m) {
@@ -2231,6 +2259,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(short[] a, int m) {
@@ -2254,11 +2283,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(short[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -2267,7 +2297,7 @@ public class Sorting {
                 @Override
                 public void build(short[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -2275,13 +2305,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(short[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -2290,7 +2320,7 @@ public class Sorting {
                 @Override
                 public void build(short[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -2299,7 +2329,7 @@ public class Sorting {
                 @Override
                 public void build(short[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (short) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -2309,10 +2339,10 @@ public class Sorting {
                 public void build(short[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (short) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (short) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -2322,13 +2352,18 @@ public class Sorting {
                 @Override
                 public void build(short[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (short) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static short convert(int i) {
+                return (short) i;
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(short[] a, int m) {
@@ -2760,6 +2795,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(float[] a, int m) {
@@ -2783,11 +2819,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(float[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (float) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -2796,7 +2833,7 @@ public class Sorting {
                 @Override
                 public void build(float[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (float) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -2804,13 +2841,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(float[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (float) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -2819,7 +2856,7 @@ public class Sorting {
                 @Override
                 public void build(float[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (float) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -2828,7 +2865,7 @@ public class Sorting {
                 @Override
                 public void build(float[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (float) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -2838,10 +2875,10 @@ public class Sorting {
                 public void build(float[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (float) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (float) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -2851,13 +2888,18 @@ public class Sorting {
                 @Override
                 public void build(float[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (float) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static float convert(int i) {
+                return Float.intBitsToFloat(i & 0x3FFF_FF00);
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(float[] a, int m) {
@@ -2975,6 +3017,7 @@ public class Sorting {
         }
 
         private enum FloatingPointBuilder implements Builder {
+
             NEGATIVE_ZERO_AND_NAN {
                 @Override
                 public void build(float[] a, int m) {
@@ -3317,6 +3360,7 @@ public class Sorting {
         }
 
         private enum SortedBuilder implements Builder {
+
             ANGLE {
                 @Override
                 public void build(double[] a, int m) {
@@ -3340,11 +3384,12 @@ public class Sorting {
         }
 
         private enum UnsortedBuilder implements Builder {
+
             RANDOM {
                 @Override
                 public void build(double[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (double) random.nextInt();
+                        a[i] = convert(random.nextInt());
                     }
                 }
             },
@@ -3353,7 +3398,7 @@ public class Sorting {
                 @Override
                 public void build(double[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (double) (m + i);
+                        a[i] = convert(m + i);
                     }
                     for (int i = a.length; i > 1; --i) {
                         swap(a, i - 1, random.nextInt(i));
@@ -3361,13 +3406,13 @@ public class Sorting {
                 }
             },
 
-            UNIFORM {
+            MASK {
                 @Override
                 public void build(double[] a, int m) {
                     int mask = (m << 15) - 1;
 
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (double) (random.nextInt() & mask);
+                        a[i] = convert(random.nextInt() & mask);
                     }
                 }
             },
@@ -3376,7 +3421,7 @@ public class Sorting {
                 @Override
                 public void build(double[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (double) (i % m);
+                        a[i] = convert(i % m);
                     }
                 }
             },
@@ -3385,7 +3430,7 @@ public class Sorting {
                 @Override
                 public void build(double[] a, int m) {
                     for (int i = 0; i < a.length; ++i) {
-                        a[i] = (double) random.nextInt(m);
+                        a[i] = convert(random.nextInt(m));
                     }
                 }
             },
@@ -3395,10 +3440,10 @@ public class Sorting {
                 public void build(double[] a, int m) {
                     for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (double) (++plus);
+                            a[i] = convert(++plus);
                         }
                         for (int k = 0; ++k <= m && i < a.length; ++i) {
-                            a[i] = (double) (--minus);
+                            a[i] = convert(--minus);
                         }
                     }
                 }
@@ -3408,13 +3453,18 @@ public class Sorting {
                 @Override
                 public void build(double[] a, int m) {
                     for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
-                        a[i] = (double) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                        a[i] = convert(random.nextInt(m) > 0 ? (j += 2) : (k += 2));
                     }
                 }
+            };
+
+            private static double convert(int i) {
+                return Double.longBitsToDouble(i & 0x3FFF_FF00);
             }
         }
 
         private enum StructuredBuilder implements Builder {
+
             ASCENDING {
                 @Override
                 public void build(double[] a, int m) {
@@ -3532,6 +3582,7 @@ public class Sorting {
         }
 
         private enum FloatingPointBuilder implements Builder {
+
             NEGATIVE_ZERO_AND_NAN {
                 @Override
                 public void build(double[] a, int m) {

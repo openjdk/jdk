@@ -28,9 +28,9 @@ package java.util;
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2024.06.14
+ * @version 2025.06.14
  *
- * @since 14 * 20 ^ 26
+ * @since 14 * 20 ^ 27
  */
 public enum SortingHelper {
 
@@ -67,10 +67,10 @@ public enum SortingHelper {
         @Override
         public void sort(Object a, int low, int high) {
             switch(a) {
-                case int[] ai -> checkMerging(DualPivotQuicksort.tryMergingSort(null, ai, low, high - low));
-                case long[] al -> checkMerging(DualPivotQuicksort.tryMergingSort(null, al, low, high - low));
-                case float[] af -> checkMerging(DualPivotQuicksort.tryMergingSort(null, af, low, high - low));
-                case double[] ad -> checkMerging(DualPivotQuicksort.tryMergingSort(null, ad, low, high - low));
+                case int[] ai -> check("Merging", DualPivotQuicksort.tryMergingSort(null, ai, low, high - low));
+                case long[] al -> check("Merging", DualPivotQuicksort.tryMergingSort(null, al, low, high - low));
+                case float[] af -> check("Merging", DualPivotQuicksort.tryMergingSort(null, af, low, high - low));
+                case double[] ad -> check("Merging", DualPivotQuicksort.tryMergingSort(null, ad, low, high - low));
                 default -> fail(a);
             }
         }
@@ -173,9 +173,9 @@ public enum SortingHelper {
         return name;
     }
 
-    private static void checkMerging(boolean result) {
+    private static void check(String name, boolean result) {
         if (!result) {
-            fail("Merging sort must return true");
+            fail(name + " sort must return true");
         }
     }
 

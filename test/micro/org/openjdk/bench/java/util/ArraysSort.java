@@ -45,9 +45,9 @@ import org.openjdk.jmh.annotations.Warmup;
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2024.06.14
+ * @version 2025.06.14
  *
- * @since 26
+ * @since 27
  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -59,7 +59,7 @@ public class ArraysSort {
 
     private static final int PARALLELISM = java.util.concurrent.ForkJoinPool.getCommonPoolParallelism();
 
-    @Param({ "600", "3000", "40000", "800000", "5000000" })
+    @Param({ "600", "3000", "50000", "200000", "7000000" })
     int size;
 
     @Param
@@ -77,10 +77,10 @@ public class ArraysSort {
         REPEATED {
             @Override
             void build(int[] b) {
-                Random random = new Random(0x111);
+                Random random = new Random(0x555);
 
                 for (int i = 0; i < b.length; ++i) {
-                    b[i] = random.nextInt(5);
+                    b[i] = random.nextInt(9);
                 }
             }
         },
@@ -100,7 +100,7 @@ public class ArraysSort {
                 Random random = new Random(0x999);
 
                 for (int i = 0, j = 0, k = 1; i < b.length; ++i) {
-                    b[i] = random.nextInt(11) > 0 ? (j += 2) : (k += 2);
+                    b[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
                 }
             }
         },
@@ -165,29 +165,6 @@ public class ArraysSort {
         }
     }
 
-    public static class Short extends ArraysSort {
-        short[] a;
-
-        @Setup
-        public void setup() {
-            a = new short[size];
-        }
-
-        @Setup(Level.Invocation)
-        public void build() {
-            builder.build(b);
-
-            for (int i = 0; i < size; ++i) {
-                a[i] = (short) b[i];
-            }
-        }
-
-        @Benchmark
-        public void testSort() {
-            Arrays.sort(a);
-        }
-    }
-
     public static class Byte extends ArraysSort {
         byte[] a;
 
@@ -225,6 +202,29 @@ public class ArraysSort {
 
             for (int i = 0; i < size; ++i) {
                 a[i] = (char) b[i];
+            }
+        }
+
+        @Benchmark
+        public void testSort() {
+            Arrays.sort(a);
+        }
+    }
+
+    public static class Short extends ArraysSort {
+        short[] a;
+
+        @Setup
+        public void setup() {
+            a = new short[size];
+        }
+
+        @Setup(Level.Invocation)
+        public void build() {
+            builder.build(b);
+
+            for (int i = 0; i < size; ++i) {
+                a[i] = (short) b[i];
             }
         }
 
