@@ -330,7 +330,8 @@ enum NamedGroup {
                     | NoSuchAlgorithmException exp) {
                 if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
                     mediator = false;
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
                             "No AlgorithmParameters or KeyFactory for " + name,
                                 exp);
@@ -352,7 +353,8 @@ enum NamedGroup {
                         // AlgorithmParameters.getInstance(name);
                     } catch (NoSuchAlgorithmException nsae) {
                         mediator = false;
-                        if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.warning(
                                 "No AlgorithmParameters for " + name, nsae);
                         }
@@ -445,7 +447,7 @@ enum NamedGroup {
             NamedGroup ng = NamedGroup.nameOf(ss);
             if (ng == null || !ng.isAvailable) {
                 if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                             "Ignore the named group (" + ss
                                     + "), unsupported or unavailable");
@@ -912,7 +914,8 @@ enum NamedGroup {
                 namedGroups = customizedNames;
             } else {
                 if (defaultNames.length == 0) {
-                    SSLLogger.logWarning("ssl", "No default named groups");
+                    SSLLogger.logWarning(SSLLogger.Opt.SSL,
+                            "No default named groups");
                 }
                 namedGroups = defaultNames;
             }

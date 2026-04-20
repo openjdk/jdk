@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,9 @@
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -221,37 +224,52 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
     } else {
+      const Register t1_hash = t1;
       Label monitor_found;
 
-      // Load cache address
-      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
+      // Save the mark, we might need it to extract the hash.
+      mov(t3, t1_mark);
 
-      const int num_unrolled = 2;
+      // Look for the monitor in the om_cache.
+
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1, Address(t3_t));
-        cmp(obj, t1);
+        ldr(t1_monitor, Address(rthread, cache_offset + monitor_offset));
+        ldr(t2, Address(rthread, cache_offset));
+        cmp(obj, t2);
         br(Assembler::EQ, monitor_found);
-        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      Label loop;
+      // Look for the monitor in the table.
 
-      // Search for obj in cache.
-      bind(loop);
+      // Get the hash code.
+      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
-      // Check for match.
-      ldr(t1, Address(t3_t));
-      cmp(obj, t1);
-      br(Assembler::EQ, monitor_found);
+      // Get the table and calculate the bucket's address
+      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      ldr(t3, Address(t3));
+      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+      ands(t1_hash, t1_hash, t2);
+      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      cbnz(t1, loop);
-      // Cache Miss, NE set from cmp above, cbnz does not set flags
-      b(slow_path);
+      // Read the monitor from the bucket.
+      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      br(Assembler::LO, slow_path);
+
+      // Check if object matches.
+      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
+      cmp(t3, obj);
+      br(Assembler::NE, slow_path);
 
       bind(monitor_found);
-      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
     }
 
     const Register t2_owner_addr = t2;
@@ -1866,6 +1884,27 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
 
   BLOCK_COMMENT("neon_reduce_mul_fp {");
     switch(bt) {
+      // The T_SHORT type below is for Float16 type which also uses floating-point
+      // instructions.
+      case T_SHORT:
+        fmulh(dst, fsrc, vsrc);
+        ext(vtmp, T8B, vsrc, vsrc, 2);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 6);
+        fmulh(dst, dst, vtmp);
+        if (isQ) {
+          ext(vtmp, T16B, vsrc, vsrc, 8);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 10);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 14);
+          fmulh(dst, dst, vtmp);
+        }
+        break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
         ins(vtmp, S, vsrc, 0, 1);
@@ -1888,6 +1927,33 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         ShouldNotReachHere();
     }
   BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Vector reduction add for half float type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                                             unsigned vector_length_in_bytes, FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_fp16 {");
+    faddh(dst, fsrc, vsrc);
+    ext(vtmp, T8B, vsrc, vsrc, 2);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 4);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 6);
+    faddh(dst, dst, vtmp);
+    if (isQ) {
+      ext(vtmp, T16B, vsrc, vsrc, 8);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 10);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 12);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 14);
+      faddh(dst, dst, vtmp);
+    }
+  BLOCK_COMMENT("} neon_reduce_add_fp16");
 }
 
 // Helper to select logical instruction
@@ -2397,17 +2463,17 @@ void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
       break;
     case T_LONG:
     case T_DOUBLE:
-      // Load the iota indices for Long type. The indices are ordered by
-      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
-      // the offset for L is 48.
-      lea(rscratch1,
-          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
-      ldrq(tmp, rscratch1);
-      // Check whether the input "shuffle" is the same with iota indices.
-      // Return "src" if true, otherwise swap the two elements of "src".
-      cm(EQ, dst, size2, shuffle, tmp);
-      ext(tmp, size1, src, src, 8);
-      bsl(dst, size1, src, tmp);
+      {
+        int idx = vector_iota_entry_index(T_LONG);
+        lea(rscratch1,
+            ExternalAddress(StubRoutines::aarch64::vector_iota_indices(idx)));
+        ldrq(tmp, rscratch1);
+        // Check whether the input "shuffle" is the same with iota indices.
+        // Return "src" if true, otherwise swap the two elements of "src".
+        cm(EQ, dst, size2, shuffle, tmp);
+        ext(tmp, size1, src, src, 8);
+        bsl(dst, size1, src, tmp);
+      }
       break;
     default:
       assert(false, "unsupported element type");
@@ -2857,4 +2923,46 @@ void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, 
   sve_sub(dst, size, 1);
   // dst  = 00 87 00 65 00 43 00 21
   sve_tbl(dst, size, src, dst);
+}
+
+// Optimized SVE cpy (imm, zeroing) instruction.
+//
+// `movi; cpy(imm, merging)` and `cpy(imm, zeroing)` have the same
+// functionality, but test results show that `movi; cpy(imm, merging)` has
+// higher throughput on some microarchitectures. This would depend on
+// microarchitecture and so may vary between implementations.
+void C2_MacroAssembler::sve_cpy(FloatRegister dst, SIMD_RegVariant T,
+                                PRegister pg, int imm8, bool isMerge) {
+  if (VM_Version::prefer_sve_merging_mode_cpy() && !isMerge) {
+    // Generates a NEON instruction `movi V<dst>.2d, #0`.
+    // On AArch64, Z and V registers alias in the low 128 bits, so V<dst> is
+    // the low 128 bits of Z<dst>. A write to V<dst> also clears all bits of
+    // Z<dst> above 128, so this `movi` instruction effectively zeroes the
+    // entire Z<dst> register. According to the Arm Software Optimization
+    // Guide, `movi` is zero latency.
+    movi(dst, T2D, 0);
+    isMerge = true;
+  }
+  Assembler::sve_cpy(dst, T, pg, imm8, isMerge);
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
+  }
 }

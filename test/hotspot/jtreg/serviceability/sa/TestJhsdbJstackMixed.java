@@ -27,16 +27,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import jtreg.SkippedException;
+
 /**
  * @test
  * @key randomness
- * @bug 8208091 8374469
- * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
+ * @bug 8208091 8374469 8377710
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires (os.family == "linux" | os.family == "windows")
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed
@@ -152,6 +157,11 @@ public class TestJhsdbJstackMixed {
             System.err.println(out.getStderr());
 
             out.shouldContain(LingeredAppWithNativeMethod.THREAD_NAME);
+            out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
+            if (Platform.isWindows()) {
+                // We need to check stdout/stderr only once on Windows.
+                break;
+            }
             if (isFibAndAlignedAddress(out.asLines())) {
                 System.out.println("DEBUG: Test triggered interesting condition.");
                 out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
@@ -160,13 +170,16 @@ public class TestJhsdbJstackMixed {
             }
             System.out.println("DEBUG: Iteration: " + (i + 1)
                                  + " - Test didn't trigger interesting condition.");
-            out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
         }
         System.out.println("DEBUG: Test didn't trigger interesting condition " +
                              "but no UnmappedAddressException was thrown. PASS!");
     }
 
     public static void main(String... args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 

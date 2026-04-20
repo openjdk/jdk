@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,17 +181,17 @@ public final class SourceLauncher {
         ProgramDescriptor program = context.getProgramDescriptor();
 
         // 1. Find a main method in the first class and if there is one - invoke it
-        Class<?> firstClass;
+        Class<?> mainClass;
         String firstClassName = program.qualifiedTypeNames().getFirst();
         ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
         Thread.currentThread().setContextClassLoader(loader);
         try {
-            firstClass = Class.forName(firstClassName, false, loader);
+            mainClass = Class.forName(firstClassName, false, loader);
         } catch (ClassNotFoundException e) {
             throw new Fault(Errors.CantFindClass(firstClassName));
         }
 
-        Method mainMethod = MethodFinder.findMainMethod(firstClass);
+        Method mainMethod = MethodFinder.findMainMethod(mainClass);
         if (mainMethod == null) {
             // 2. If the first class doesn't have a main method, look for a class with a matching name
             var compilationUnitName = program.fileObject().getFile().getFileName().toString();
@@ -206,22 +206,18 @@ public final class SourceLauncher {
                     .findFirst()
                     .orElseThrow(() -> new Fault(Errors.CantFindClass(expectedName)));
 
-            Class<?> actualClass;
             try {
-                actualClass = Class.forName(actualName, false, firstClass.getClassLoader());
+                mainClass = Class.forName(actualName, false, mainClass.getClassLoader());
             } catch (ClassNotFoundException ignore) {
                 throw new Fault(Errors.CantFindClass(actualName));
             }
-            mainMethod = MethodFinder.findMainMethod(actualClass);
+            mainMethod = MethodFinder.findMainMethod(mainClass);
             if (mainMethod == null) {
                 throw new Fault(Errors.CantFindMainMethod(actualName));
             }
         }
 
-        // selected main method instance points back to its declaring class
-        Class<?> mainClass = mainMethod.getDeclaringClass();
         String mainClassName = mainClass.getName();
-
         var isStatic = Modifier.isStatic(mainMethod.getModifiers());
 
         Object instance = null;

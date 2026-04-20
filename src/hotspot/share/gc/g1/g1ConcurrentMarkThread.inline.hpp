@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
-  return os::thread_cpu_time(this) + worker_threads_cpu_time_s();
+  return static_cast<double>(os::thread_cpu_time(this)) + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far
@@ -40,29 +40,64 @@ inline double G1ConcurrentMarkThread::worker_threads_cpu_time_s() {
   return _cm->worker_threads_cpu_time_s();
 }
 
+inline bool G1ConcurrentMarkThread::is_in_full_concurrent_cycle() const {
+  ServiceState state = _state;
+  return (state == FullCycleMarking || state == FullCycleRebuildOrScrub || state == FullCycleResetForNextCycle);
+}
+
 inline void G1ConcurrentMarkThread::set_idle() {
-  assert(_state == FullMark || _state == UndoMark, "must not be starting a new cycle");
+  // Concurrent cycle may be aborted any time.
+  assert(!is_idle(), "must not be idle");
   _state = Idle;
 }
 
-inline void G1ConcurrentMarkThread::start_full_mark() {
-  assert(_state == Idle, "cycle in progress");
-  _state = FullMark;
+inline void G1ConcurrentMarkThread::start_full_cycle() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  assert(is_idle(), "cycle in progress");
+  _state = FullCycleMarking;
 }
 
-inline void G1ConcurrentMarkThread::start_undo_mark() {
-  assert(_state == Idle, "cycle in progress");
-  _state = UndoMark;
+inline void G1ConcurrentMarkThread::start_undo_cycle() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  assert(is_idle(), "cycle in progress");
+  _state = UndoCycleResetForNextCycle;
 }
 
-inline bool G1ConcurrentMarkThread::idle() const { return _state == Idle; }
-
-inline bool G1ConcurrentMarkThread::in_progress() const {
-  return !idle();
+inline void G1ConcurrentMarkThread::set_full_cycle_rebuild_and_scrub() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  assert(_state == FullCycleMarking, "must be");
+  _state = FullCycleRebuildOrScrub;
 }
 
-inline bool G1ConcurrentMarkThread::in_undo_mark() const {
-  return _state == UndoMark;
+inline void G1ConcurrentMarkThread::set_full_cycle_reset_for_next_cycle() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  assert(_state == FullCycleRebuildOrScrub, "must be");
+  _state = FullCycleResetForNextCycle;
+}
+
+inline bool G1ConcurrentMarkThread::is_in_marking() const {
+  return _state == FullCycleMarking;
+}
+
+inline bool G1ConcurrentMarkThread::is_in_rebuild_or_scrub() const {
+  return _state == FullCycleRebuildOrScrub;
+}
+
+inline bool G1ConcurrentMarkThread::is_in_reset_for_next_cycle() const {
+  ServiceState state = _state;
+  return state == FullCycleResetForNextCycle || state == UndoCycleResetForNextCycle;
+}
+
+inline bool G1ConcurrentMarkThread::is_idle() const {
+  return _state == Idle;
+}
+
+inline bool G1ConcurrentMarkThread::is_in_progress() const {
+  return !is_idle();
+}
+
+inline bool G1ConcurrentMarkThread::is_in_undo_cycle() const {
+  return _state == UndoCycleResetForNextCycle;
 }
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP

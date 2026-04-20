@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class OopMapCacheEntry {
 
   Method method()        { return method; }
   int bci()              { return bci; }
-  int numberOfEntries()  { return maskSize; }
+  public int numberOfEntries() { return maskSize; }
   boolean entryAt(int offset) {
     return mask.at(offset);
   }
