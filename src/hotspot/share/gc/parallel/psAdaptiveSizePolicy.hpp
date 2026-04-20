@@ -29,6 +29,8 @@
 #include "gc/shared/gcUtil.hpp"
 #include "utilities/align.hpp"
 
+enum class PSYoungGenState : int;
+
 // This class keeps statistical information and computes the
 // optimal free space for both the young and old generation
 // based on current application characteristics (based on gc cost
@@ -89,8 +91,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size);
 
-  uint compute_tenuring_threshold(bool is_eden_squeezed,
-                                  bool young_can_commit_more,
+  uint compute_tenuring_threshold(PSYoungGenState young_gen_state,
                                   uint tenuring_threshold);
 
   size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);

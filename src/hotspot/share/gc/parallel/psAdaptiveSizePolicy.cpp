@@ -224,13 +224,22 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool is_eden_squeezed,
-                                                      bool young_can_commit_more,
-                                                      uint tenuring_threshold) {
-  if (!young_gen_policy_is_ready()) {
-    return tenuring_threshold;
+static const char* young_gen_state_to_string(PSYoungGenState young_gen_state) {
+  switch (young_gen_state) {
+    case PSYoungGenState::balanced:
+      return "balanced";
+    case PSYoungGenState::constrained:
+      return "constrained";
+    case PSYoungGenState::surplus:
+      return "surplus";
   }
 
+  ShouldNotReachHere();
+  return "unknown";
+}
+
+uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_state,
+                                                      uint tenuring_threshold) {
   if (AlwaysTenure || NeverTenure) {
     return tenuring_threshold;
   }
@@ -239,12 +248,12 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool is_eden_squeezed,
   constexpr uint min_tenuring_threshold = 1;
   constexpr uint tenuring_threshold_gc_limit = 5;
 
-  if (is_eden_squeezed) {
+  if (young_gen_state == PSYoungGenState::constrained) {
     _tenuring_threshold_gc_count = 0;
     if (tenuring_threshold > min_tenuring_threshold) {
       tenuring_threshold--;
     }
-  } else if (young_can_commit_more) {
+  } else if (young_gen_state == PSYoungGenState::surplus) {
     if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
       _tenuring_threshold_gc_count++;
     }
@@ -258,13 +267,13 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(bool is_eden_squeezed,
     _tenuring_threshold_gc_count = 0;
   }
 
-  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, eden squeezed: %s, can commit young: %s, increase gc count: %u)",
+  log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, young gen state: %s, increase count: %u/%u)",
                      original_threshold,
                      tenuring_threshold,
                      MaxTenuringThreshold,
-                     BOOL_TO_STR(is_eden_squeezed),
-                     BOOL_TO_STR(young_can_commit_more),
-                     _tenuring_threshold_gc_count);
+                     young_gen_state_to_string(young_gen_state),
+                     _tenuring_threshold_gc_count,
+                     tenuring_threshold_gc_limit);
 
   return tenuring_threshold;
 }

@@ -31,6 +31,12 @@
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 
+enum class PSYoungGenState : int {
+  balanced = 0,
+  constrained,
+  surplus
+};
+
 class ReservedSpace;
 
 class PSYoungGen : public CHeapObj<mtGC> {
@@ -50,8 +56,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
-  // True if eden is squeezed by survivor (i.e., survivor space is mostly used).
-  bool _is_eden_squeezed;
+  PSYoungGenState _young_gen_state;
 
   // Performance counters
   GenerationCounters*   _gen_counters;
@@ -130,7 +135,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t min_gen_size() const { return _min_gen_size; }
   size_t max_gen_size() const { return _max_gen_size; }
 
-  bool is_eden_squeezed() const { return _is_eden_squeezed; }
+  PSYoungGenState young_gen_state() const { return _young_gen_state; }
 
   // Allocation
   HeapWord* cas_allocate(size_t word_size) {

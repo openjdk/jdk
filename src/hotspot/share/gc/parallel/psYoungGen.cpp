@@ -43,7 +43,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _to_space(nullptr),
   _min_gen_size(min_size),
   _max_gen_size(max_size),
-  _is_eden_squeezed(false),
+  _young_gen_state(PSYoungGenState::balanced),
   _gen_counters(nullptr),
   _eden_counters(nullptr),
   _from_counters(nullptr),
@@ -366,12 +366,13 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 
   log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K", eden_size/K, survivor_size/K);
 
-  _is_eden_squeezed = false;
+  _young_gen_state = PSYoungGenState::balanced;
 
   const size_t new_gen_size = eden_size + 2 * survivor_size;
   if (max_gen_size() < new_gen_size) {
-    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
-
+    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
+    // Must reduce eden/survivor to satisfy the max_gen_size constraint. Prioritize survivor_space to reduce promotion.
+    // Check if survivor is actually using its requested size.
     if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {
       // When survivor usage is sparse, trim survivor reservation and keep more room for eden.
       size_t target_survivor_size = survivor_used + survivor_used / 4;
@@ -391,8 +392,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
       }
     }
 
-    // New capacity would still exceed max; need to revise these desired sizes.
-    // Favor survivor over eden in order to reduce promotion (overflow).
+    // Recheck after potential survivor_size adjustment.
     if (max_gen_size() < eden_size + 2 * survivor_size) {
       if (2 * survivor_size >= max_gen_size()) {
         // If requested survivor size is too large
@@ -402,15 +402,24 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
       // Respect survivor size and reduce eden
       eden_size = max_gen_size() - 2 * survivor_size;
 
-      // The survivor_size is conservative, so check if from_space is actually almost fully occupied.
-      _is_eden_squeezed = survivor_used > survivor_sparse_threshold * survivor_size;
+      _young_gen_state = PSYoungGenState::constrained;
     }
   }
 
   if (eden_size + 2 * survivor_size < min_gen_size()) {
     // Keep survivor and adjust eden to meet min-gen-size.
     eden_size = min_gen_size() - 2 * survivor_size;
+
+    _young_gen_state = PSYoungGenState::surplus;
   }
+
+  const size_t final_gen_size = eden_size + 2 * survivor_size;
+  if (_young_gen_state == PSYoungGenState::balanced) {
+    if (final_gen_size < max_gen_size()) {
+      _young_gen_state = PSYoungGenState::surplus;
+    }
+  }
+
 #ifdef ASSERT
   {
     assert(eden_size >= SpaceAlignment, "inv");
@@ -418,9 +427,12 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 
     assert(is_aligned(eden_size, SpaceAlignment), "inv");
     assert(is_aligned(survivor_size, SpaceAlignment), "inv");
-    const size_t final_gen_size = eden_size + 2 * survivor_size;
+
     assert(final_gen_size >= min_gen_size(), "inv");
     assert(final_gen_size <= max_gen_size(), "inv");
+    if (final_gen_size < max_gen_size()) {
+      assert(_young_gen_state == PSYoungGenState::surplus, "inv");
+    }
   }
 #endif
 }
