@@ -30,7 +30,12 @@
  */
 
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,17 +67,29 @@ public class DisabledCipherSuitesNotNegotiated {
         SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
         ctx.init(null, null, null);
         SSLServerSocketFactory factory = ctx.getServerSocketFactory();
+        InetAddress address = InetAddress.getLoopbackAddress();
+        System.out.println("SERVER listening on " + address);
         try(SSLServerSocket serverSocket = (SSLServerSocket)factory
-                .createServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
-            serverPort = serverSocket.getLocalPort();
-            waitForServer.countDown();
-
+                .createServerSocket(0, -1, address)) {
             if (disabledInClient) {
                 // set cipher suite to disabled ciphersuite
                 serverSocket.setEnabledCipherSuites(new String[]{DISABLED_CIPHERSUITE});
             }
 
-            try(SSLSocket clientSocket = (SSLSocket) serverSocket.accept()) {
+            serverPort = serverSocket.getLocalPort();
+            serverSocket.setSoTimeout(1000);
+            SSLSocket clientSocket = null;
+            waitForServer.countDown();while (clientSocket == null) {
+                try {
+                    clientSocket = (SSLSocket)serverSocket.accept();
+                } catch (SocketTimeoutException exc) {
+                    if (Files.exists(Path.of("client-failed"))) {
+                        throw new Exception("Client failed to connect.");
+                    }
+                }
+            }
+
+            try {
                 try {
                     clientSocket.getInputStream().readAllBytes();
                     throw new Exception("SERVER: The expected handshake exception was not thrown.");
@@ -80,6 +97,8 @@ public class DisabledCipherSuitesNotNegotiated {
                     System.out.println("Server caught expected SSLHandshakeException");
                     exc.printStackTrace(System.out);
                 }
+            } finally {
+                clientSocket.close();
             }
         }
     }
@@ -88,7 +107,9 @@ public class DisabledCipherSuitesNotNegotiated {
         SSLContext ctx = SSLContext.getInstance(TLS_PROTOCOL);
         ctx.init(null, null, null);
         SSLSocketFactory factory = ctx.getSocketFactory();
-        try(SSLSocket socket = (SSLSocket)factory.createSocket(InetAddress.getLoopbackAddress(), portNumber)) {
+        InetAddress address = InetAddress.getLoopbackAddress();
+        System.out.println("CLIENT: Connecting to " + address);
+        try(SSLSocket socket = (SSLSocket)factory.createSocket(address, portNumber)) {
             if (!disableInClient) {
                 socket.setEnabledCipherSuites(new String[]{DISABLED_CIPHERSUITE});
             }
@@ -104,23 +125,45 @@ public class DisabledCipherSuitesNotNegotiated {
 
     public static void main(String [] args) throws Exception {
         if (args.length == 1) {
-            // run server-side
-            final boolean disabledInClient = args[0].equals("client");
-            if (!disabledInClient) {
+            runTest(args[0].equals("client"));
+
+        } else if (args.length == 2) {
+            // run client-side
+            boolean disabledInClient = Boolean.parseBoolean(args[0]);
+            if (disabledInClient) {
                 SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
             }
-            try(ExecutorService executorService = Executors.newSingleThreadExecutor()) {
-                executorService.submit(() -> {
-                    try {
-                        runServer(disabledInClient);
-                    } catch (Exception exc) {
-                        System.out.println("Server Exception:");
-                        exc.printStackTrace(System.out);
-                        serverException = exc;
-                        throw new RuntimeException(exc);
-                    }
-                });
+            try {
+                runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
+            } catch (Exception exc) {
+                Files.writeString(Path.of("client-failed"), "failed");
+                throw exc;
+            }
 
+        } else {
+            throw new Exception(
+                    "DisabledCipherSuitesNotNegotiated called with invalid arguments");
+        }
+    }
+
+    private static void runTest(final boolean disabledInClient) throws Exception {
+        try(ExecutorService executorService = Executors.newFixedThreadPool(2)) {
+            Callable<Boolean> serverThread = () -> {
+                try {
+                    if (!disabledInClient) {
+                        SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
+                    }
+                    runServer(disabledInClient);
+                    return Boolean.TRUE;
+                } catch (Exception exc) {
+                    System.out.println("Server Exception:");
+                    exc.printStackTrace(System.out);
+                    serverException = exc;
+                    return Boolean.FALSE;
+                }
+            };
+
+            Callable<Boolean> clientThread = () -> {
                 if (!waitForServer.await(WAIT_FOR_SERVER_SECS, TimeUnit.SECONDS)) {
                     throw new Exception("Server did not start within " +
                             WAIT_FOR_SERVER_SECS + " seconds.");
@@ -130,28 +173,22 @@ public class DisabledCipherSuitesNotNegotiated {
                         serverPort);
 
                 OutputAnalyzer oa = ProcessTools.executeProcess(
-                        ProcessTools.createTestJavaProcessBuilder("DisabledCipherSuitesNotNegotiated",
+                        ProcessTools.createTestJavaProcessBuilder(
+                                "DisabledCipherSuitesNotNegotiated",
                                 "" + disabledInClient, "" + serverPort));
-                oa.shouldHaveExitValue(0);
+                oa.waitFor();
+                System.out.println("client process exited with status code: "
+                        + oa.getExitValue());
                 System.out.println("Client output:");
                 System.out.println(oa.getOutput());
-                if (serverException != null) {
-                    throw new Exception ("Server-side threw an unexpected exception: "
-                            + serverException);
-                }
-            }
+                return oa.getExitValue() == 0;
+            };
 
-        } else if (args.length == 2) {
-            // run client-side
-            boolean disabledInClient = Boolean.parseBoolean(args[0]);
-            if (disabledInClient) {
-                SecurityUtils.addToDisabledTlsAlgs(DISABLED_CIPHER_WILDCARD);
+            Boolean result = executorService.invokeAny(List.of(serverThread,
+                    clientThread));
+            if (result == Boolean.FALSE) {
+                throw new Exception("Test failed, check logs for details");
             }
-            runClient(Boolean.parseBoolean(args[0]), Integer.parseInt(args[1]));
-
-        } else {
-            throw new Exception(
-                    "DisabledCipherSuitesNotNegotiated called with invalid arguments");
         }
     }
 
