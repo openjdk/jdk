@@ -90,12 +90,15 @@ class InterpreterOopMap: ResourceObj {
 
  protected:
   int            _num_oops;
-  intptr_t       _bit_mask[N];    // the bit mask if
+  union {
+    uintptr_t    _bit_mask[N];    // the bit mask if
                                   // mask_size <= small_mask_limit,
                                   // ptr to bit mask otherwise
                                   // "protected" so that sub classes can
                                   // access it without using trickery in
                                   // method bit_mask().
+    uintptr_t*   _external_bit_mask;
+  };
 
   // access methods
   Method*        method() const                  { return _method; }
@@ -106,7 +109,9 @@ class InterpreterOopMap: ResourceObj {
   void           set_mask_size(int v)            { _mask_size = v; }
   // Test bit mask size and return either the in-line bit mask or allocated
   // bit mask.
-  uintptr_t*  bit_mask() const                   { return (uintptr_t*)(mask_size() <= small_mask_limit ? (intptr_t)_bit_mask : _bit_mask[0]); }
+  uintptr_t*     bit_mask() const                { return mask_size() <= small_mask_limit
+                                                       ? const_cast<uintptr_t*>(_bit_mask)
+                                                       : _external_bit_mask; }
 
   // return the word size of_bit_mask.  mask_size() <= 4 * MAX_USHORT
   size_t mask_word_size() const {
@@ -128,10 +133,9 @@ class InterpreterOopMap: ResourceObj {
   InterpreterOopMap();
   ~InterpreterOopMap();
 
-  // Copy the OopMapCacheEntry in parameter "src" into this
-  // InterpreterOopMap.  If the _bit_mask[0] in "src" points to
-  // allocated space (i.e., the bit mask was too large to hold
-  // in-line), allocate the space from the C heap.
+  // Copy the OopMapCacheEntry in parameter "src" into this InterpreterOopMap.
+  // If the _external_bit_mask in "src" points to allocated space (i.e., the bit
+  // mask was too large to hold in-line), allocate the space from the C heap.
   void copy_from(const OopMapCacheEntry* src);
 
   void iterate_oop(OffsetClosure* oop_closure) const;
