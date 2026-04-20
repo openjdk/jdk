@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,16 +174,8 @@ public class Log extends AbstractLog {
             }
 
             // Apply the lint configuration (if any) and discard the warning if it gets filtered out
-            if (lint != null) {
-                LintCategory category = diag.getLintCategory();
-                boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
-                  lint.isEnabled(category) :                            // then emit if the category is enabled
-                  category.annotationSuppression ?                      // else emit if the category is not suppressed, where
-                    !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
-                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
-                if (!emit)
-                    return;
-            }
+            if (lint != null && !lint.shouldEmit(diag))
+                return;
 
             // Proceed
             reportReady(diag);

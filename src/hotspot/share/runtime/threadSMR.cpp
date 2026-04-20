@@ -667,7 +667,7 @@ ThreadsList::ThreadsList(int entries) :
 
 ThreadsList::~ThreadsList() {
   if (_threads != empty_threads_list_data) {
-    FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+    FREE_C_HEAP_ARRAY(_threads);
   }
   _magic = 0xDEADBEEF;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,19 @@
  * @bug 7021373
  * @summary check that the DatagramPacket setter methods
  *          throw the correct exceptions
- * @run testng Setters
+ * @run junit ${test.main.class}
  */
 
 
 import java.net.DatagramPacket;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Setters {
 
@@ -50,11 +52,10 @@ public class Setters {
 
         // No Exception expected for null addresses
         pkt.setAddress(null);
-        assertTrue(pkt.getAddress() == null);
+        assertNull(pkt.getAddress());
     }
 
-    @DataProvider
-    Object[][] data() { // add checks for setAddress with null - add getAddress to verify
+    static Object[][] data() { // add checks for setAddress with null - add getAddress to verify
         return new Object[][]{
                 { buf,          0,      -1,     IAE  },
                 { buf,          -1,     1,      IAE  },
@@ -66,24 +67,24 @@ public class Setters {
         };
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("data")
     public void testSetData(byte[] buf,
                             int offset,
                             int length,
                             Class<? extends Exception> exception) {
         DatagramPacket pkt = new DatagramPacket(new byte[8], 8);
 
+
         if (exception != null) {
-            expectThrows(exception, () -> pkt.setData(buf, offset, length));
-        } else if (buf == null) {
-            expectThrows(exception, () -> pkt.setData(buf));
+            assertThrows(exception, () -> pkt.setData(buf, offset, length));
+            if (buf == null) assertThrows(exception, () -> pkt.setData(buf));
         } else {
-            pkt.setData(buf, offset, length);
+            assertDoesNotThrow(() -> pkt.setData(buf, offset, length));
         }
     }
 
-    @DataProvider
-    Object[][] lengths() {
+    static Object[][] lengths() {
         return new Object[][]{
                 { 0,     -1,     IAE  },
                 { 8,     1,      IAE  },
@@ -94,20 +95,20 @@ public class Setters {
         };
     }
 
-    @Test(dataProvider = "lengths")
+    @ParameterizedTest
+    @MethodSource("lengths")
     public void testSetLength(int offset, int length,
                               Class<? extends Exception> exception) {
         DatagramPacket pkt = new DatagramPacket(new byte[8], offset, 0);
 
         if (exception != null) {
-            expectThrows(exception, () -> pkt.setLength(length));
+            assertThrows(exception, () -> pkt.setLength(length));
         } else {
-            pkt.setLength(length);
+            assertDoesNotThrow(() -> pkt.setLength(length));
         }
     }
 
-    @DataProvider
-    Object[][] ports() {
+    static Object[][] ports() {
         return new Object[][]{
                 { -1,                IAE  },
                 { -666,              IAE  },
@@ -122,14 +123,15 @@ public class Setters {
         };
     }
 
-    @Test(dataProvider = "ports")
+    @ParameterizedTest
+    @MethodSource("ports")
     public void testSetPort(int port, Class<? extends Exception> exception) {
         DatagramPacket pkt = new DatagramPacket(new byte[8], 0);
 
         if (exception != null) {
-            expectThrows(exception, () -> pkt.setPort(port));
+            assertThrows(exception, () -> pkt.setPort(port));
         } else {
-            pkt.setPort(port);
+            assertDoesNotThrow(() -> pkt.setPort(port));
         }
     }
 }
