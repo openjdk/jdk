@@ -1049,7 +1049,7 @@ public class CLDRConverter {
 
     /*
      * Escapes control codes to ASCII escapes or encoded &#92;uxxxx
-     * and writes out double-quotes with a preceding slash
+     * and writes out ASCII quotation marks with a preceding slash
      */
     static String escape(String theString) {
         if (theString == null) {
@@ -1094,6 +1094,7 @@ public class CLDRConverter {
                     formatter.format("\\u%04x", (int)aChar);
                 } else {
                     if (aChar == 0x0022) {
+                        // Escape ASCII quotation marks
                         outBuffer.append('\\');
                     }
                     outBuffer.append(aChar);
