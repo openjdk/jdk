@@ -78,7 +78,7 @@ public class IncompatibleArgTypesInLambda {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = List.of(
-                "Test.java:8:34: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda: java.awt.event.ActionEvent, (compiler.misc.no.args))",
+                "Test.java:8:34: compiler.err.prob.found.req: (compiler.misc.wrong.number.args.in.lambda: java.awt.event.ActionListener)",
                 "- compiler.note.compressed.diags",
                 "1 error"
         );
@@ -96,7 +96,7 @@ public class IncompatibleArgTypesInLambda {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = List.of(
-                "Test.java:8:15: compiler.err.cant.apply.symbol: kindname.method, addActionListener, java.awt.event.ActionListener, @34, kindname.class, javax.swing.AbstractButton, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.arg.types.in.lambda: java.awt.event.ActionEvent, (compiler.misc.no.args)))",
+                "Test.java:8:15: compiler.err.cant.apply.symbol: kindname.method, addActionListener, java.awt.event.ActionListener, @34, kindname.class, javax.swing.AbstractButton, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.wrong.number.args.in.lambda: java.awt.event.ActionListener))",
                 "1 error"
         );
         tb.checkEqual(expected, log);

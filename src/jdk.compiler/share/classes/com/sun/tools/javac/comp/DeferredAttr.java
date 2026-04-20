@@ -845,7 +845,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
                     if (descriptorType.getParameterTypes().length() != tree.params.length()) {
                         checkContext.report(tree,
-                                diags.fragment(Fragments.WrongNumberArgsInLambda(Integer.toString(descriptorType.getParameterTypes().length()))));
+                                diags.fragment(Fragments.WrongNumberArgsInLambda(pt.tsym)));
                     }
 
                     Type currentReturnType = descriptorType.getReturnType();

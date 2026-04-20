@@ -3241,11 +3241,7 @@ public class Attr extends JCTree.Visitor {
                 attribStats(that.params, localEnv);
 
                 if (arityMismatch) {
-                    resultInfo.checkContext.report(that, diags.fragment(lambdaType.getParameterTypes().isEmpty()
-                            ? Fragments.IncompatibleArgTypesInLambda(Fragments.NoArgs, TreeInfo.types(that.params))
-                            : that.params.isEmpty()
-                                    ? Fragments.IncompatibleArgTypesInLambda(lambdaType.getParameterTypes(), Fragments.NoArgs)
-                                    : Fragments.IncompatibleArgTypesInLambda(lambdaType.getParameterTypes(), TreeInfo.types(that.params))));
+                    resultInfo.checkContext.report(that, diags.fragment(Fragments.WrongNumberArgsInLambda(currentTarget.tsym)));
                         result = that.type = types.createErrorType(currentTarget);
                         return;
                 }
@@ -3278,7 +3274,7 @@ public class Attr extends JCTree.Visitor {
             flow.analyzeLambda(env, that, make, isSpeculativeRound);
 
             that.type = currentTarget; //avoids recovery at this stage
-            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext);
+            checkLambdaCompatible(that, lambdaType, currentTarget.tsym, resultInfo.checkContext);
 
             if (!isSpeculativeRound) {
                 //add thrown types as bounds to the thrown types free variables if needed:
@@ -3554,7 +3550,7 @@ public class Attr extends JCTree.Visitor {
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
         * types must be compatible with the return type of the expected descriptor.
         */
-        void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
+        void checkLambdaCompatible(JCLambda tree, Type descriptor, TypeSymbol target, CheckContext checkContext) {
             Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
@@ -3571,11 +3567,9 @@ public class Attr extends JCTree.Visitor {
 
             List<Type> argTypes = checkContext.inferenceContext().asUndetVars(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
-                checkContext.report(tree, diags.fragment(argTypes.isEmpty()
-                        ? Fragments.IncompatibleArgTypesInLambda(Fragments.NoArgs, TreeInfo.types(tree.params))
-                        : tree.params.isEmpty()
-                                ? Fragments.IncompatibleArgTypesInLambda(argTypes, Fragments.NoArgs)
-                                : Fragments.IncompatibleArgTypesInLambda(argTypes, TreeInfo.types(tree.params))));
+                checkContext.report(tree, diags.fragment(argTypes.size() != tree.params.size()
+                        ? Fragments.WrongNumberArgsInLambda(target)
+                        : Fragments.IncompatibleArgTypesInLambda(argTypes, TreeInfo.types(tree.params))));
             }
         }
 
