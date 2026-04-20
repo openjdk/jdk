@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,11 +425,6 @@ char* stringStream::as_string(bool c_heap) const {
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
   copy[_written] = '\0';  // terminating null
-  if (c_heap) {
-    // Need to ensure our content is written to memory before we return
-    // the pointer to it.
-    OrderAccess::storestore();
-  }
   return copy;
 }
 
