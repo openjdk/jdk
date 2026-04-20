@@ -975,7 +975,7 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
   }
 }
 
-bool VTransformMemopScalarNode::is_isomorphic_with(const VTransformNode* n) const {
+bool VTransformMemopScalarNode::is_isomorphic_with(const VTransformScalarNode* n) const {
   const VTransformMemopScalarNode* mem = n->isa_MemopScalar();
   if (mem == nullptr) { return false; }
 
@@ -1008,7 +1008,7 @@ VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& app
 }
 
 // TODO: very similar as MemopScalar - consider unifying?
-bool VTransformDataScalarNode::is_isomorphic_with(const VTransformNode* n) const {
+bool VTransformDataScalarNode::is_isomorphic_with(const VTransformScalarNode* n) const {
   const VTransformDataScalarNode* s = n->isa_DataScalar();
   if (s == nullptr) { return false; }
 

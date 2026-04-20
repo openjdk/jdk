@@ -78,6 +78,7 @@
 typedef int VTransformNodeIDX;
 class VTransform;
 class VTransformNode;
+class VTransformScalarNode;
 class VTransformMemopScalarNode;
 class VTransformDataScalarNode;
 class VTransformPhiScalarNode;
@@ -551,26 +552,12 @@ public:
   // Accessors to the type.
   const Type* type() const { return _type; }
   // TODO: consider moving to a scalar type subclass?
-  BasicType array_element_basic_type() const { return _type->array_element_basic_type(); }
-  int size_in_bytes() const {
-    // TODO: generalize?
-    int size = type2aelembytes(array_element_basic_type());
-    assert(size != 0, "valid size");
-    return size;
-  }
-  bool has_same_type_as(const VTransformNode* n) const {
-    const Type* vt1 = type();
-    const Type* vt2 = n->type();
-    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
-      // Compare vectors element sizes for integer (subword) types.
-      return size_in_bytes() == n->size_in_bytes();
-    }
-    return vt1 == vt2;
-  }
   // TODO: consider moving to a vector type subclass?
   uint vector_length() const { return type()->is_vect()->length(); }
   BasicType element_basic_type() const { return type()->is_vect()->element_basic_type(); }
 
+  virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
+  virtual const VTransformScalarNode* isa_Scalar() const { return nullptr; }
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
   virtual const VTransformMemopScalarNode* isa_MemopScalar() const { return nullptr; }
   virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
@@ -599,9 +586,6 @@ public:
     return (is_loop_head_phi() || isa_CountedLoop() != nullptr) && in_req(2) == in;
   }
 
-  // Core SuperWord queries
-  virtual bool is_isomorphic_with(const VTransformNode* n) const { return false; }
-
   virtual bool optimize(VTransformOptimize& vtoptimize) { return false; }
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
@@ -620,14 +604,49 @@ protected:
   const Type* container_type(const VTransform& vtransform, Node* n) const;
 };
 
+// Abstract superclass for all scalar nodes.
+class VTransformScalarNode : public VTransformNode {
+public:
+  VTransformScalarNode(VTransform& vtransform, const uint req, const Type* type) :
+    VTransformNode(vtransform, req, type) {}
+
+  virtual VTransformScalarNode* isa_Scalar() override { return this; }
+  virtual const VTransformScalarNode* isa_Scalar() const override { return this; }
+
+  BasicType array_element_basic_type() const {
+    return type()->array_element_basic_type();
+  }
+
+  int size_in_bytes() const {
+    // TODO: generalize?
+    int size = type2aelembytes(array_element_basic_type());
+    assert(size != 0, "valid size");
+    return size;
+  }
+
+  bool has_same_type_as(const VTransformScalarNode* n) const {
+    const Type* vt1 = type();
+    const Type* vt2 = n->type();
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer (subword) types.
+      return size_in_bytes() == n->size_in_bytes();
+    }
+    return vt1 == vt2;
+  }
+
+  virtual bool is_isomorphic_with(const VTransformScalarNode* n) const { return false; }
+
+  void vector_operands(uint* start, uint* end) const; // TODO: impl
+};
+
 // Identity transform for scalar loads and stores.
-class VTransformMemopScalarNode : public VTransformNode {
+class VTransformMemopScalarNode : public VTransformScalarNode {
 private:
   MemNode* _node;
   const VPointer _vpointer;
 public:
   VTransformMemopScalarNode(VTransform& vtransform, MemNode* n, const VPointer& vpointer) :
-    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n), _vpointer(vpointer)
+    VTransformScalarNode(vtransform, n->req(), container_type(vtransform, n)), _node(n), _vpointer(vpointer)
   {
     assert(node()->is_Load() || node()->is_Store(), "must be memop");
   }
@@ -639,7 +658,7 @@ public:
   virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return true; }
 
-  virtual bool is_isomorphic_with(const VTransformNode* n) const override;
+  virtual bool is_isomorphic_with(const VTransformScalarNode* n) const override;
 
   virtual const VPointer& vpointer() const override { return _vpointer; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -649,12 +668,12 @@ public:
 };
 
 // Identity transform for scalar data nodes.
-class VTransformDataScalarNode : public VTransformNode {
+class VTransformDataScalarNode : public VTransformScalarNode {
 private:
   Node* _node;
 public:
   VTransformDataScalarNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
+    VTransformScalarNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
   {
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
@@ -663,7 +682,7 @@ public:
   virtual VTransformDataScalarNode* isa_DataScalar() override { return this; }
   virtual const VTransformDataScalarNode* isa_DataScalar() const override { return this; }
 
-  virtual bool is_isomorphic_with(const VTransformNode* n) const override;
+  virtual bool is_isomorphic_with(const VTransformScalarNode* n) const override;
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
@@ -672,12 +691,12 @@ public:
 };
 
 // Identity transform for loop head phi nodes.
-class VTransformPhiScalarNode : public VTransformNode {
+class VTransformPhiScalarNode : public VTransformScalarNode {
 private:
   PhiNode* _node;
 public:
   VTransformPhiScalarNode(VTransform& vtransform, PhiNode* n) :
-    VTransformNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
+    VTransformScalarNode(vtransform, n->req(), container_type(vtransform, n)), _node(n)
   {
     assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
   }

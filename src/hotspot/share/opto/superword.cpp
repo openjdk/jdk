@@ -741,7 +741,12 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
 }
 
 // Check if two nodes can be packed into a pair.
-bool SuperWord::can_pack_into_pair(const VTransformNode* s1, const VTransformNode* s2) const {
+bool SuperWord::can_pack_into_pair(const VTransformNode* n1, const VTransformNode* n2) const {
+  const VTransformScalarNode* s1 = n1->isa_Scalar();
+  const VTransformScalarNode* s2 = n2->isa_Scalar();
+  if (s1 == nullptr || s2 == nullptr) {
+    return false;
+  }
 
   // Do not use superword for non-primitives
   BasicType bt1 = s1->array_element_basic_type();
@@ -2289,10 +2294,10 @@ bool SuperWord::has_use_pack_superset(const VTransformNode* n_super, const VTran
 // This is a natural boundary to split a pack, to ensure that use and def packs match.
 // If no boundary is found, return zero.
 uint SuperWord::find_use_def_boundary(const Pack* pack) const {
-  assert(false, "TODO impl");
+  assert(false, "TODO");
   return 0;
-  //Node* p0 = pack->at(0);
-  //Node* p1 = pack->at(1);
+  //const VTransformNode* p0 = pack->at(0);
+  //const VTransformNode* p1 = pack->at(1);
 
   //const bool is_reduction_pack = reduction(p0, p1);
 
@@ -2302,14 +2307,14 @@ uint SuperWord::find_use_def_boundary(const Pack* pack) const {
 
   //for (int i = pack->length() - 2; i >= 0; i--) {
   //  // For all neighbours
-  //  Node* n0 = pack->at(i + 0);
-  //  Node* n1 = pack->at(i + 1);
+  //  const VTransformNode* n0 = pack->at(i + 0);
+  //  const VTransformNode* n1 = pack->at(i + 1);
 
 
   //  // 1. Check for matching defs
   //  for (uint j = start; j < end; j++) {
-  //    Node* n0_in = n0->in(j);
-  //    Node* n1_in = n1->in(j);
+  //    const VTransformNode* n0_in = n0->(j);
+  //    const VTransformNode* n1_in = n1->(j);
   //    // No boundary if:
   //    // 1) the same packs OR
   //    // 2) reduction edge n0->n1 or n1->n0

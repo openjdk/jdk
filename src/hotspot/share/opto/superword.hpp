@@ -453,7 +453,7 @@ class SuperWord : public ResourceObj {
   }
 
   bool reduction(const VTransformNode* n1, const VTransformNode* n2) const {
-    assert(false, "TODO impl");
+    // TODO: impl!
     return false;
   }
 
