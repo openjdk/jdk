@@ -79,7 +79,7 @@ compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 compiler/interpreter/Test6833129.java 8335266 generic-i586
 compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s390x
 
-compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
+compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
 compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
 
