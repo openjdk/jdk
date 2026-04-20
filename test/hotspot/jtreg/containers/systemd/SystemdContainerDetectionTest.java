@@ -76,13 +76,13 @@ public class SystemdContainerDetectionTest {
     private static void testMemoryLow() throws Exception {
         OutputAnalyzer out = runWithLimits("infinity", String.format("%dM", EXPECTED_LIMIT_MB), null, null);
         assertContainerized(out, true);
-        out.shouldContain(String.format("Memory Throttle Limit is: %d", EXPECTED_LIMIT_MB * MB));
+        out.shouldContain(String.format("Memory Soft Limit is: %d", EXPECTED_LIMIT_MB * MB));
     }
 
     private static void testMemoryHigh() throws Exception {
         OutputAnalyzer out = runWithLimits("infinity", null, String.format("%dM", EXPECTED_LIMIT_MB), null);
         assertContainerized(out, true);
-        out.shouldContain(String.format("Memory Soft Limit is: %d", EXPECTED_LIMIT_MB * MB));
+        out.shouldContain(String.format("Memory Throttle Limit is: %d", EXPECTED_LIMIT_MB * MB));
     }
 
     private static void assertContainerized(OutputAnalyzer out, boolean expected) {
