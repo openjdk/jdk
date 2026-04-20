@@ -31,10 +31,12 @@
  * @run driver TraceBytecodesSignatures
  */
 
-import module java.base;
+import java.io.IOException;
+import java.util.List;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.process.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessBuilder;
 
 public class TraceBytecodesSignatures {
 
@@ -44,6 +46,8 @@ public class TraceBytecodesSignatures {
             runTest();
             return;
         }
+        // Enable byteocde tracing but disable compilation of the key methods
+        // that we will trace.
         String[] processArgs = new String[] {
             "-XX:+TraceBytecodes",
             exclude("runTest"),
@@ -97,7 +101,7 @@ public class TraceBytecodesSignatures {
     // Ensure that the expected signatures are printed the correct nr of times.
     // The signatures here need to be changed if any of the test code is changed.
     private static void analyze(List<String> lines) {
-        IO.println("Analyzing " + lines.size() + " lines");
+        System.out.println("Analyzing " + lines.size() + " lines");
         int testSameMethodCount = 0;
         int testConstructorCount = 0;
         int testSelfRecursiveCount = 0;
