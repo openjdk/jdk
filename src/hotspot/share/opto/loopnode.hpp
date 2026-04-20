@@ -1868,6 +1868,7 @@ private:
   bool split_up( Node *n, Node *blk1, Node *blk2 );
 
   Node* place_outside_loop(Node* useblock, IdealLoopTree* loop) const;
+  bool try_move_load_before_loops(LoadNode* ld);
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);

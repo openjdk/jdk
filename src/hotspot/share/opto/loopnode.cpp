@@ -6495,6 +6495,15 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
       if (done) {
         // All of n's inputs have been processed, complete post-processing.
 
+        if (!_verify_me && !_verify_only && n->is_Load()) {
+          bool hoisted = try_move_load_before_loops(n->as_Load());
+          if (hoisted) {
+            // If n is hoisted, it has a new memory input, we may need to process that input again
+            nstack_top_i = MemNode::Memory;
+            continue;
+          }
+        }
+
         // Compute earliest point this Node can go.
         // CFG, Phi, pinned nodes already know their controlling input.
         if (!has_node(n)) {

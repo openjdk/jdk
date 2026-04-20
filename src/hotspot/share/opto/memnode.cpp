@@ -883,7 +883,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc)) {
+    } else if (MemNode::all_controls_dominate(_base, st_alloc)) {
       known_independent = true;
     }
 
