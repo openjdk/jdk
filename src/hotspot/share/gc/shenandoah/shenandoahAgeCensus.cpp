@@ -70,15 +70,15 @@ ShenandoahAgeCensus::~ShenandoahAgeCensus() {
   for (uint i = 0; i < MAX_SNAPSHOTS; i++) {
     delete _global_age_tables[i];
   }
-  FREE_C_HEAP_ARRAY(AgeTable*, _global_age_tables);
-  FREE_C_HEAP_ARRAY(uint, _tenuring_threshold);
-  CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _global_noise));
+  FREE_C_HEAP_ARRAY(_global_age_tables);
+  FREE_C_HEAP_ARRAY(_tenuring_threshold);
+  CENSUS_NOISE(FREE_C_HEAP_ARRAY(_global_noise));
   if (_local_age_tables) {
     for (uint i = 0; i < _max_workers; i++) {
       delete _local_age_tables[i];
     }
-    FREE_C_HEAP_ARRAY(AgeTable*, _local_age_tables);
-    CENSUS_NOISE(FREE_C_HEAP_ARRAY(ShenandoahNoiseStats, _local_noise));
+    FREE_C_HEAP_ARRAY(_local_age_tables);
+    CENSUS_NOISE(FREE_C_HEAP_ARRAY(_local_noise));
   }
 }
 
@@ -171,6 +171,15 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop) {
   NOT_PRODUCT(update_total();)
 }
 
+size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) const {
+  assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
+  size_t total = 0;
+  const AgeTable* pv = _global_age_tables[_epoch];
+  for (uint i = tenuring_threshold; i < MAX_COHORTS; i++) {
+    total += pv->sizes[i];
+  }
+  return total * HeapWordSize;
+}
 
 // Reset the epoch for the global age tables,
 // clearing all history.

@@ -1307,7 +1307,14 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
 
 
 bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If() || n->is_BaseCountedLoopEnd()) {
+  if (!n->is_If()) {
+    return false;
+  }
+  if (n->outcnt() != n->as_If()->required_outcnt()) {
+    assert(false, "malformed IfNode with %d outputs", n->outcnt());
+    return false;
+  }
+  if (n->is_BaseCountedLoopEnd()) {
     return false;
   }
   if (!n->in(0)->is_Region()) {
@@ -1433,7 +1440,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Check some safety conditions
     if (iff->is_If()) {        // Classic split-if?
-      if (iff->in(0) != n_ctrl) {
+      if (iff->outcnt() != iff->as_If()->required_outcnt()) {
+        assert(false, "malformed IfNode with %d outputs", iff->outcnt());
+        return;
+      } else if (iff->in(0) != n_ctrl) {
         return; // Compare must be in same blk as if
       }
     } else if (iff->is_CMove()) { // Trying to split-up a CMOVE

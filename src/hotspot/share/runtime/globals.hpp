@@ -871,6 +871,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
                                                                             \
+  develop(bool, GenerateOopMapALot, false,                                  \
+          "Generate interpreter oopmaps at all safepoints")                 \
+                                                                            \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
                                                                             \
