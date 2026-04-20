@@ -1007,9 +1007,19 @@ VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& app
   return VTransformApplyResult::make_scalar(_node);
 }
 
+// TODO: very similar as MemopScalar - consider unifying?
 bool VTransformDataScalarNode::is_isomorphic_with(const VTransformNode* n) const {
-  assert(false, "TODO data scalar");
-  return false;
+  const VTransformDataScalarNode* s = n->isa_DataScalar();
+  if (s == nullptr) { return false; }
+
+  if (node()->Opcode() != s->node()->Opcode() ||
+      !has_same_type_as(s)) {
+    return false;
+  }
+  assert(req() == s->req(), "same opcode should imply same number of inputs");
+  // TODO: assumption above might be wrong, then convert to test again
+
+  return true;
 }
 
 float VTransformDataScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {

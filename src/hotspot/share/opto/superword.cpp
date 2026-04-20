@@ -1076,18 +1076,19 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     }
   } while (changed);
 
-  // During extend_pairset_with_more_pairs_by_following_use, we may have re-ordered the
-  // inputs of some nodes, when calling order_inputs_of_uses_to_match_def_pair. If a def
-  // node has multiple uses, we may have re-ordered some of the inputs one use after
-  // packing another use with the old order. Now that we have all pairs, we must ensure
-  // that the order between the pairs is matching again. Since the PairSetIterator visits
-  // all pair-chains from left-to-right, we essencially impose the order of the first
-  // element on all other elements in the pair-chain.
-  for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-    const VTransformNode* left  = pair.left();
-    const VTransformNode* right = pair.right();
-    order_inputs_of_all_use_pairs_to_match_def_pair(left, right);
-  }
+  // TODO: this is soooo hacky. I don't want it, but unclear what's the alternative...
+  //// During extend_pairset_with_more_pairs_by_following_use, we may have re-ordered the
+  //// inputs of some nodes, when calling order_inputs_of_uses_to_match_def_pair. If a def
+  //// node has multiple uses, we may have re-ordered some of the inputs one use after
+  //// packing another use with the old order. Now that we have all pairs, we must ensure
+  //// that the order between the pairs is matching again. Since the PairSetIterator visits
+  //// all pair-chains from left-to-right, we essencially impose the order of the first
+  //// element on all other elements in the pair-chain.
+  //for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
+  //  const VTransformNode* left  = pair.left();
+  //  const VTransformNode* right = pair.right();
+  //  order_inputs_of_all_use_pairs_to_match_def_pair(left, right);
+  //}
 
 #ifndef PRODUCT
   if (_vloop.is_trace_superword_packset()) {
@@ -1145,7 +1146,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(const VTransform
 
       // TODO: this is kinda hacky here.
       //if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
-      if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
+      //if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
       if (can_pack_into_pair(t1, t2)) {
         int my_savings = estimate_cost_savings_when_packing_as_pair(t1, t2);
         if (my_savings > savings) {
