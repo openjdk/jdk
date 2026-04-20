@@ -345,22 +345,12 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * subset of the bands of this
      * {@code MultiPixelPackedSampleModel}.  Since a
      * {@code MultiPixelPackedSampleModel} only has one band, the
-     * bands argument must have a length of one and indicate the zeroth
-     * band.
-     * @param bands the specified bands
+     * bands argument is ignored.
+     * @param bands the specified bands (ignored)
      * @return a new {@code SampleModel} with a subset of bands of
      * this {@code MultiPixelPackedSampleModel}.
-     * @throws RasterFormatException if the number of bands requested
-     * is not one.
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
-        if (bands != null) {
-           if (bands.length != 1)
-            throw new RasterFormatException("MultiPixelPackedSampleModel has "
-                                            + "only one band.");
-        }
         SampleModel sm = createCompatibleSampleModel(width, height);
         return sm;
     }
