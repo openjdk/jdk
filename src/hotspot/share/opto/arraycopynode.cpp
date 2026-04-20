@@ -523,8 +523,8 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
         return false;
       }
 
-      // Replace the MergeMem (or MemBar if MergeMem was folded) with
-      // the new memory from the decomposed clone.
+      // Replace the MergeMem (or the out_mem projection if MergeMem
+      // was folded) with the new memory from the decomposed clone.
       Node* replace_target = mem_use->is_MergeMem() ? mem_use : out_mem;
       igvn->replace_node(replace_target, mem);
 
