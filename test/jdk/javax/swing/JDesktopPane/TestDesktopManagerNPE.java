@@ -37,11 +37,6 @@ import javax.swing.DefaultDesktopManager;
 import javax.swing.JInternalFrame;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JMenuBar;
-import javax.swing.KeyStroke;
-import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 public class TestDesktopManagerNPE {
