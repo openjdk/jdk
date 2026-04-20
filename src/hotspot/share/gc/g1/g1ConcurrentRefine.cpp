@@ -152,7 +152,8 @@ Tickspan G1ConcurrentRefineSweepState::get_duration(State start, State end) cons
 }
 
 Tickspan G1ConcurrentRefineSweepState::get_total_duration(Ticks completion_time) const {
-  return completion_time - _state_start[static_cast<uint>(State::Idle)];
+  assert(_state >= State::SwapGlobalCT, "precondition");
+  return completion_time - _state_start[static_cast<uint>(State::SwapGlobalCT)];
 }
 
 void G1ConcurrentRefineSweepState::reset_stats() {
@@ -163,14 +164,9 @@ void G1ConcurrentRefineSweepState::add_yield_during_sweep_duration(jlong duratio
   stats()->inc_yield_during_sweep_duration(duration);
 }
 
-void G1ConcurrentRefineSweepState::start_work() {
-  _stats.reset();
-  // Initialize state and record the start timestamp. Idle skips the transition assertion.
-  enter_state(State::Idle, Ticks::now());
-}
-
 bool G1ConcurrentRefineSweepState::swap_global_card_table() {
   enter_state(State::SwapGlobalCT, Ticks::now());
+  _stats.reset();
 
   GCTraceTime(Info, gc, refine) tm("Concurrent Refine Global Card Table Swap");
 
@@ -183,7 +179,7 @@ bool G1ConcurrentRefineSweepState::swap_global_card_table() {
 
     MutexLocker mu(Threads_lock);
     // A GC that advanced the epoch might have happened, which already switched
-    // The global card table. Do nothing.
+    // the global card table. Do nothing.
     if (is_in_progress()) {
       G1BarrierSet::g1_barrier_set()->swap_global_card_table();
     }
@@ -277,11 +273,13 @@ bool G1ConcurrentRefineSweepState::sweep_refinement_table(jlong& total_yield_dur
       G1ConcurrentRefineSweepTask task(_sweep_table, &_stats, cr->num_threads_wanted());
       cr->run_with_refinement_workers(&task);
 
+      assert(is_in_progress(), "inv");
       if (task.sweep_completed()) {
-        return is_in_progress();
+        return true;
       }
     }
 
+    assert(SuspendibleThreadSet::should_yield(), "must be");
     // Interrupted by safepoint request.
     {
       jlong yield_start = os::elapsed_counter();
@@ -291,7 +289,7 @@ bool G1ConcurrentRefineSweepState::sweep_refinement_table(jlong& total_yield_dur
         return false;
       } else {
         jlong yield_during_sweep_duration = os::elapsed_counter() - yield_start;
-        log_debug(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
+        log_trace(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
                               TimeHelper::counter_to_millis(yield_during_sweep_duration));
         total_yield_duration += yield_during_sweep_duration;
       }
@@ -327,7 +325,8 @@ static void print_refinement_stats(const Tickspan& total_duration,
                        );
 }
 
-void G1ConcurrentRefineSweepState::complete_for_merge() {
+void G1ConcurrentRefineSweepState::handle_ongoing_refinement_at_safepoint() {
+  assert_at_safepoint();
   if (!is_in_progress()) {
     return;
   }
@@ -335,7 +334,7 @@ void G1ConcurrentRefineSweepState::complete_for_merge() {
   const Ticks completion_time = Ticks::now();
 
   const Tickspan total_duration = get_total_duration(completion_time);
-  const Tickspan pre_sweep_duration = get_duration(State::Idle, MIN2(_state, State::SweepRT));
+  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, MIN2(_state, State::SweepRT));
 
   print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
 
@@ -356,7 +355,7 @@ void G1ConcurrentRefineSweepState::complete_for_merge() {
   _state = State::Idle;
 }
 
-void G1ConcurrentRefineSweepState::reset_to_idle() {
+void G1ConcurrentRefineSweepState::cancel_refinement() {
   _state = State::Idle;
 }
 
@@ -365,12 +364,14 @@ void G1ConcurrentRefineSweepState::complete_refinement(jlong total_yield_during_
                                                        jlong next_epoch_start) {
   enter_state(State::CompleteRefineWork, Ticks::now());
 
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Complete Work");
+
   add_yield_during_sweep_duration(total_yield_during_sweep_duration);
 
   const Ticks completion_time = Ticks::now();
 
   const Tickspan total_duration = get_total_duration(completion_time);
-  const Tickspan pre_sweep_duration = get_duration(State::Idle, State::SweepRT);
+  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, State::SweepRT);
 
   print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
 
@@ -457,7 +458,7 @@ jint G1ConcurrentRefine::initialize() {
 }
 
 G1ConcurrentRefineSweepState& G1ConcurrentRefine::sweep_state_for_merge() {
-  sweep_state().complete_for_merge();
+  sweep_state().handle_ongoing_refinement_at_safepoint();
   assert(!sweep_state().is_in_progress(), "postcondition");
   return sweep_state();
 }

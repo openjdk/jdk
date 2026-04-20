@@ -157,8 +157,6 @@ public:
   G1ConcurrentRefineSweepState(uint max_reserved_regions);
   ~G1ConcurrentRefineSweepState();
 
-  void start_work();
-
   bool swap_global_card_table();
   bool swap_java_threads_ct();
   bool swap_gc_threads_ct();
@@ -171,10 +169,10 @@ public:
                            jlong epoch_yield_duration,
                            jlong next_epoch_start);
 
-  void reset_to_idle();
-  // Called when refinement was interrupted and we need to merge state.
+  void cancel_refinement();
+  // Called at safepoint when refinement was interrupted and we need to merge state.
   // Logs any accumulated stats and creates a snapshot if SweepRT was not reached.
-  void complete_for_merge();
+  void handle_ongoing_refinement_at_safepoint();
 
   G1CardTableClaimTable* sweep_table() { return _sweep_table; }
   G1ConcurrentRefineStats* stats() { return &_stats; }

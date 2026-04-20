@@ -141,8 +141,6 @@ bool G1ConcurrentRefineThread::wait_for_work() {
 void G1ConcurrentRefineThread::do_refinement() {
   G1ConcurrentRefineSweepState& state = _cr->sweep_state();
 
-  state.start_work();
-
   // Swap card tables.
 
   // 1. Global card table
@@ -169,7 +167,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   // 4. Snapshot heap.
   state.snapshot_heap();
 
-  // 5. Sweep refinement table until done.
+  // 5. Sweep refinement table.
   log_info(gc, task)("Concurrent Refine Sweep Using %u of %u Workers", cr()->num_threads_wanted(), cr()->max_num_threads());
 
   jlong total_yield_during_sweep_duration = 0;
