@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.cli.StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -37,6 +39,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
@@ -138,20 +141,6 @@ final class MacApplicationBuilder {
         return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
     }
 
-    static boolean isValidBundleIdentifier(String id) {
-        for (int i = 0; i < id.length(); i++) {
-            char a = id.charAt(i);
-            // We check for ASCII codes first which we accept. If check fails,
-            // check if it is acceptable extended ASCII or unicode character.
-            if ((a >= 'A' && a <= 'Z') || (a >= 'a' && a <= 'z')
-                    || (a >= '0' && a <= '9') || (a == '-' || a == '.')) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-
     private static void validateAppVersion(Application app) {
         try {
             CFBundleVersion.of(app.version());
@@ -246,8 +235,8 @@ final class MacApplicationBuilder {
     }
 
     private String validatedBundleIdentifier(Application app) {
-        final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
-            return app.mainLauncher()
+        return Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
+            var derivedValue = app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
                     .map(li -> {
                         final var packageName = li.packageName();
@@ -258,15 +247,23 @@ final class MacApplicationBuilder {
                         }
                     })
                     .orElseGet(app::name);
+
+            if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                // Derived bundle identifier is invalid. Try to adjust it by dropping all invalid characters.
+                derivedValue = derivedValue.codePoints()
+                        .mapToObj(Character::toString)
+                        .filter(IS_VALID_MAC_BUNDLE_IDENTIFIER)
+                        .collect(Collectors.joining(""));
+                if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-bundle-identifier"),
+                            I18N.format("error.invalid-derived-bundle-identifier.advice"));
+                }
+            }
+
+            Log.verbose(I18N.format("message.derived-bundle-identifier", derivedValue));
+            return derivedValue;
         });
-
-        if (!isValidBundleIdentifier(value)) {
-            throw I18N.buildConfigException("message.invalid-identifier", value)
-                    .advice("message.invalid-identifier.advice")
-                    .create();
-        }
-
-        return value;
     }
 
     private String validatedCategory() {

@@ -32,7 +32,6 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -418,7 +417,7 @@ void CodeSection::expand_locs(int new_capacity) {
       new_capacity = old_capacity * 2;
     relocInfo* locs_start;
     if (_locs_own) {
-      locs_start = REALLOC_RESOURCE_ARRAY(relocInfo, _locs_start, old_capacity, new_capacity);
+      locs_start = REALLOC_RESOURCE_ARRAY(_locs_start, old_capacity, new_capacity);
     } else {
       locs_start = NEW_RESOURCE_ARRAY(relocInfo, new_capacity);
       Copy::conjoint_jbytes(_locs_start, locs_start, old_capacity * sizeof(relocInfo));
@@ -745,9 +744,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -862,6 +858,13 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 }
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
+#ifdef ASSERT
+  // The code below copies contents across temp buffers. The following
+  // sizes relate to buffer contents, and should not be changed by buffer
+  // expansion.
+  int old_total_skipped = total_skipped_instructions_size();
+#endif
+
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanding CodeBuffer:");
@@ -920,6 +923,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     assert(cb_sect->capacity() >= new_capacity[n], "big enough");
     address cb_start = cb_sect->start();
     cb_sect->set_end(cb_start + this_sect->size());
+    cb_sect->register_skipped(this_sect->_skipped_instructions_size);
     if (this_sect->mark() == nullptr) {
       cb_sect->clear_mark();
     } else {
@@ -956,6 +960,9 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     this->print_on(tty);
   }
 #endif //PRODUCT
+
+  assert(old_total_skipped == total_skipped_instructions_size(),
+         "Should match: %d == %d", old_total_skipped, total_skipped_instructions_size());
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
@@ -1140,7 +1147,7 @@ void AsmRemarks::clear() {
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
   const char* prefix = " ;; ";
-  const char* remstr = _remarks->lookup(offset);
+  const char* remstr = (_remarks ? _remarks->lookup(offset) : nullptr);
   while (remstr != nullptr) {
     strm->bol();
     strm->print("%s", prefix);

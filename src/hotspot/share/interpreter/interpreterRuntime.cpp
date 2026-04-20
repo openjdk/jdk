@@ -36,6 +36,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "interpreter/templateTable.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -243,9 +244,9 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* fi
   // We may want to pass in more arguments - could make this slightly faster
   LastFrameAccessor last_frame(current);
   ConstantPool* constants = last_frame.method()->constants();
-  int          i = last_frame.get_index_u2(Bytecodes::_multianewarray);
-  Klass* klass   = constants->klass_at(i, CHECK);
-  int   nof_dims = last_frame.number_of_dimensions();
+  int i = last_frame.get_index_u2(Bytecodes::_multianewarray);
+  Klass* klass = constants->klass_at(i, CHECK);
+  int nof_dims = last_frame.number_of_dimensions();
   assert(klass->is_klass(), "not a class");
   assert(nof_dims >= 1, "multianewarray rank must be nonzero");
 
@@ -756,11 +757,9 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   elem->set_obj(nullptr);
 JRT_END
 
-
 JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current))
   THROW(vmSymbols::java_lang_IllegalMonitorStateException());
 JRT_END
-
 
 JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThread* current))
   // Returns an illegal exception to install into the current thread. The
@@ -1528,5 +1527,18 @@ bool InterpreterRuntime::is_preemptable_call(address entry_point) {
   return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter) ||
          entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache) ||
          entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::_new);
+}
+
+void InterpreterRuntime::generate_oop_map_alot() {
+  JavaThread* current = JavaThread::current();
+  LastFrameAccessor last_frame(current);
+  if (last_frame.is_interpreted_frame()) {
+    ResourceMark rm(current);
+    InterpreterOopMap mask;
+    methodHandle mh(current, last_frame.method());
+    int bci = last_frame.bci();
+    log_info(generateoopmap)("Generating oopmap for method %s at bci %d", mh->name_and_sig_as_C_string(), bci);
+    OopMapCache::compute_one_oop_map(mh, bci, &mask);
+  }
 }
 #endif // ASSERT

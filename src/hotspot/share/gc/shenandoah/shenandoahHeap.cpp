@@ -1353,12 +1353,21 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   // Copy the object:
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
-  // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
+
+  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+  // relativize derived pointers and set gc_mode before that happens. Skip if the
+  // copy's mark word is already a forwarding pointer (another thread won the race
+  // and overwrote the original's header before we copied it).
+  if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
+  }
+
+  // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
     if (ShenandoahEvacTracking) {
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
@@ -1641,7 +1650,8 @@ void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   _active_generation = generation;
 }
 
-void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
+void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                    bool is_degenerated, bool is_out_of_cycle) {
   shenandoah_policy()->record_collection_cause(cause);
 
   const GCCause::Cause current = gc_cause();
@@ -1650,7 +1660,11 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
 
   set_gc_cause(cause);
 
-  generation->heuristics()->record_cycle_start();
+  if (is_degenerated) {
+    generation->heuristics()->record_degenerated_cycle_start(is_out_of_cycle);
+  } else {
+    generation->heuristics()->record_cycle_start();
+  }
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
@@ -1946,6 +1960,26 @@ void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const
   }
 }
 
+class ShenandoahHeapRegionIteratorTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+  ShenandoahHeapRegionClosure* _closure;
+
+public:
+  ShenandoahHeapRegionIteratorTask(ShenandoahHeapRegionClosure* closure)
+    : WorkerTask("Shenandoah Heap Region Iterator")
+    , _closure(closure) {}
+
+  void work(uint worker_id) override {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahHeapRegion* region = _regions.next();
+    while (region != nullptr) {
+      _closure->heap_region_do(region);
+      region = _regions.next();
+    }
+  }
+};
+
 class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
@@ -2000,6 +2034,11 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   } else {
     heap_region_iterate(blk);
   }
+}
+
+void ShenandoahHeap::heap_region_iterator(ShenandoahHeapRegionClosure* closure) const {
+  ShenandoahHeapRegionIteratorTask task(closure);
+  workers()->run_task(&task);
 }
 
 class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {

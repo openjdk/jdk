@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -72,7 +72,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
 }
 
 G1CollectionSet::~G1CollectionSet() {
-  FREE_C_HEAP_ARRAY(uint, _regions);
+  FREE_C_HEAP_ARRAY(_regions);
   abandon_all_candidates();
 }
 
@@ -766,7 +766,7 @@ public:
     }
   }
   ~G1VerifyYoungCSetIndicesClosure() {
-    FREE_C_HEAP_ARRAY(int, _heap_region_indices);
+    FREE_C_HEAP_ARRAY(_heap_region_indices);
   }
 
   virtual bool do_heap_region(G1HeapRegion* r) {

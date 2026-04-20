@@ -871,6 +871,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
                                                                             \
+  develop(bool, GenerateOopMapALot, false,                                  \
+          "Generate interpreter oopmaps at all safepoints")                 \
+                                                                            \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
                                                                             \
@@ -1368,9 +1371,6 @@ const int ObjectAlignmentInBytes = 8;
           "Maximum size of Metaspaces (in bytes)")                          \
           constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
                                                                             \
-  product(bool, UseCompressedClassPointers, true,                           \
-          "(Deprecated) Use 32-bit class pointers.")                        \
-                                                                            \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
@@ -1516,6 +1516,10 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
+                                                                            \
+  product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
+          "Size of code heap with predicted hot methods (in bytes)")        \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
@@ -1929,7 +1933,7 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
+  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
           "Use a table to record inflated monitors rather than the first "  \
           "word of the object.")                                            \
                                                                             \
