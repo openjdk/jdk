@@ -40,8 +40,9 @@
 #include "utilities/align.hpp"
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
-// An instance of this class is both destructive and ephemeral, intended only to print
-// a single bytecode. All state shared between multiple bytecodes needs to be in BytecodeTracerData.
+// Printing bytecodes is not an idempotent operation, as this relies on modifying state.
+// An instance of this class is thus intended to only print a single bytecode. All state
+// shared between multiple bytecodes needs to be in BytecodeTracerData.
 
 class BytecodePrinter {
  private:

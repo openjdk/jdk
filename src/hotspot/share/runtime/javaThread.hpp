@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -82,8 +85,6 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
 class ThreadWXEnable;
-
-class BytecodeTracerData;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -295,12 +296,11 @@ class JavaThread: public Thread {
 
 #ifndef PRODUCT
  private:
-  BytecodeTracerData*  _bytecode_tracer_data;
+  BytecodeTracerData _bytecode_tracer_data;
 
  public:
   BytecodeTracerData* bytecode_tracer_data() {
-    assert(_bytecode_tracer_data != nullptr, "_bytecode_tracer_data should be initialized");
-    return _bytecode_tracer_data;
+    return &_bytecode_tracer_data;
   }
 #endif // PRODUCT
 

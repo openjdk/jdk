@@ -35,7 +35,7 @@ class outputStream;
 class BytecodeClosure;
 
 // The BytecodeTracer is a helper class used by the interpreter for run-time
-// bytecode tracing. If TraceBytecodes turned on, trace_interpreter() will be called
+// bytecode tracing. If TraceBytecodes is turned on, trace_interpreter() will be called
 // for each bytecode.
 class BytecodeTracer: AllStatic {
  public:
@@ -46,7 +46,7 @@ class BytecodeTracer: AllStatic {
 // Provides tracing-centric context whose lifespan exceeds the printing of
 // a single bytecode. For instance, it is needed to determine method switches
 // in order to print the appropriate signature once a switch happens.
-class BytecodeTracerData : public CHeapObj<mtTracing> {
+class BytecodeTracerData {
  private:
   Method*         _current_method; // for method switches
   intptr_t*       _current_fp;     // for self-recursion
@@ -57,14 +57,17 @@ class BytecodeTracerData : public CHeapObj<mtTracing> {
                          _current_fp(nullptr),
                          _is_wide(false) {}
 
-  // This field is not GC-ed, and so can contain garbage
-  // between critical sections.  Use only pointer-comparison
-  // operations on the pointer, except within a critical section.
+  // The current method may point to a stale/garbage Method. While pointer
+  // comparison is safe, it should only be dereferenced while guaranteed to
+  // be valid. For example, if the current method is set to the result of a
+  // methodHandle call, current_method() may be dereferenced while the handle
+  // is live. It is always up to the caller to ensure that current_method()
+  // is safe to dereference.
   Method*         current_method() const                 { return _current_method; }
   void            set_current_method(Method* current)    { _current_method = current; }
 
-  // This field should only ever be used for pointer comparison
-  // not be dereferenced.
+  // The frame pointer should only ever be used for pointer comparison and may
+  // never be dereferenced.
   intptr_t*       current_fp() const                     { return _current_fp; }
   void            set_current_fp(intptr_t* current)      { _current_fp = current; }
 
