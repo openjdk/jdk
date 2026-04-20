@@ -909,7 +909,11 @@ class StubGenerator: public StubCodeGenerator {
     const int max_elems_small = 32 / granularity;
     if (max_elems_small > 0) {
       __ li(tmp0, max_elems_small);
-      __ bleu(cnt, tmp0, small_copy);
+      // For backward/conjoint copies, do not use the forward-style small_copy
+      // path below. It would violate memmove semantics on overlap.
+      if (!is_backward) {
+        __ bleu(cnt, tmp0, small_copy);
+      }
     }
 
     if (is_backward) {
@@ -982,10 +986,12 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(loop_bwd);
     {
       __ blt(cnt, saved_vl, tail_bwd);
-      __ vlex_v(v0, src, sew);
-      __ vsex_v(v0, dst, sew);
+      // src/dst currently point one-past-end. Step back before the first
+      // load/store of each iteration so we copy [end - bytes_per_iter, end).
       __ sub(src, src, bytes_per_iter);
       __ sub(dst, dst, bytes_per_iter);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
       __ sub(cnt, cnt, saved_vl);
       __ bnez(cnt, loop_bwd);
     }
