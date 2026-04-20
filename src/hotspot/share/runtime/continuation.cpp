@@ -412,15 +412,15 @@ void Continuation::set_cont_fastpath_thread_state(JavaThread* thread) {
   thread->set_cont_fastpath_thread_state(fast);
 }
 
-void Continuation::notify_deopt(JavaThread* thread, intptr_t* sp) {
+void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
   ContinuationEntry* entry = thread->last_continuation();
 
   if (entry == nullptr) {
     return;
   }
 
-  if (is_sp_in_continuation(entry, sp)) {
-    thread->push_cont_fastpath(sp);
+  if (is_sp_in_continuation(entry, f.sp())) {
+    thread->push_cont_fastpath(f.sp());
     return;
   }
 
@@ -428,14 +428,14 @@ void Continuation::notify_deopt(JavaThread* thread, intptr_t* sp) {
   do {
     prev = entry;
     entry = entry->parent();
-  } while (entry != nullptr && !is_sp_in_continuation(entry, sp));
+  } while (entry != nullptr && !is_sp_in_continuation(entry, f.sp()));
 
   if (entry == nullptr) {
     return;
   }
-  assert(is_sp_in_continuation(entry, sp), "");
-  if (sp > prev->parent_cont_fastpath()) {
-    prev->set_parent_cont_fastpath(sp);
+  assert(is_sp_in_continuation(entry, f.sp()), "");
+  if (f.sp() > prev->parent_cont_fastpath()) {
+    prev->set_parent_cont_fastpath(f.sp());
   }
 }
 
