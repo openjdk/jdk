@@ -28,16 +28,6 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(64) constexpr uint64_t X25519_MASK51[] = {
-  0x0007FFFFFFFFFFFFULL, 0x0007FFFFFFFFFFFFULL,
-  0x0007FFFFFFFFFFFFULL, 0x0007FFFFFFFFFFFFULL,
-  0x0007FFFFFFFFFFFFULL, 0x0007FFFFFFFFFFFFULL,
-  0x0007FFFFFFFFFFFFULL, 0x0007FFFFFFFFFFFFULL
-};
-static address x25519_mask51() {
-  return (address)X25519_MASK51;
-}
-
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t CARRY_ADD[] = {
   0x0004000000000000ULL, 0x0004000000000000ULL,
   0x0004000000000000ULL, 0x0004000000000000ULL,
@@ -133,7 +123,6 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   XMMRegister shift1R  = xmm8;
   XMMRegister permLow  = xmm9;
   XMMRegister permLowH = xmm10;
-  XMMRegister Mask51   = xmm11;
   XMMRegister CarryAdd = xmm12;
   XMMRegister CarryH   = xmm13;
   XMMRegister Limb0    = xmm14;
@@ -155,7 +144,6 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evmovdqaq(shift1R, ExternalAddress(shift_1R()), Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLow, allLimbs, ExternalAddress(perm_low()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLowH, allLimbs, ExternalAddress(perm_lowH()), false, Assembler::AVX_512bit, rscratch);
-  __ evmovdqaq(Mask51, allLimbs, ExternalAddress(x25519_mask51()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(CarryAdd, allLimbs, ExternalAddress(carry_add()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(Limb0, allLimbs, ExternalAddress(limb_0()), false, Assembler::AVX_512bit, rscratch);
 
@@ -228,7 +216,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Move c3..c4 to Acc1L for accumulation in reduction
   __ evpermq(Acc1L, permLH, permLowH, Acc1, true, Assembler::AVX_512bit);
 
-  // Pseudo-Marsenne reduction
+  // Pseudo-Mersenne reduction
   // The term is only 5 bits, the limbs 51 bits, and the elements are 64 bits,
   // therefore a scalar multiplication will not overflow the element radix here
   __ evmovdqaq(B, allLimbs, ExternalAddress(term()), false, Assembler::AVX_512bit);
@@ -244,14 +232,15 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Limb 3
   __ evpaddq(Carry, masks[3], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[3], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[3], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[3], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
+  __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   // Limb 4
   __ evpaddq(Carry, masks[4], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[4], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[4], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[4], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[4], Acc1L, CarryH, true, Assembler::AVX_512bit);
 
   // Reduction with c4+ (with B=19) back into c0
@@ -262,29 +251,33 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Limb 0
   __ evpaddq(Carry, masks[0], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[0], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[0], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[0], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[0], Acc1L, CarryH, true, Assembler::AVX_512bit);
+  __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[1], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   // Limb 1
   __ evpaddq(Carry, masks[1], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[1], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[1], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[1], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[1], Acc1L, CarryH, true, Assembler::AVX_512bit);
+  __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[2], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   // Limb 2
   __ evpaddq(Carry, masks[2], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[2], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[2], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[2], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[2], Acc1L, CarryH, true, Assembler::AVX_512bit);
+  __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[3], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   // Limb 3
   __ evpaddq(Carry, masks[3], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
   __ evpsraq(Carry, masks[3], Carry, 51, false, Assembler::AVX_512bit);
-  __ evpandq(CarryH, masks[3], Carry, Mask51, false, Assembler::AVX_512bit);
+  __ evpsllq(CarryH, masks[3], Carry, 51, false, Assembler::AVX_512bit);
   __ evpsubq(Acc1L, masks[3], Acc1L, CarryH, true, Assembler::AVX_512bit);
+  __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
   __ movq(Address(rLimbs, 0), Acc1L);
@@ -340,11 +333,12 @@ address StubGenerator::generate_intpoly_mult_25519() {
 void StubGenerator::init_AOTAddressTable_poly_25519(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   // use accessors to retrive all correct addresses
-  ADD(x25519_mask51());
   ADD(carry_add());
+  ADD(limb_0());
+  ADD(perm_low());
+  ADD(perm_lowH());
   ADD(shift_1R());
   ADD(shift_1L());
-  ADD(limb_0());
   ADD(term());
 #undef ADD
 }
