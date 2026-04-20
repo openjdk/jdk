@@ -88,6 +88,7 @@ public class DNSName implements GeneralNameInterface {
             throw new IOException("DNSName may not begin or end with a .");
         }
 
+        // RFC 1123 Section 2.1 and RFC 2181 Section 11
         if (name.length() > 253) {
             throw new IOException(
                     "DNSName can't be longer than 253 characters");
@@ -104,24 +105,22 @@ public class DNSName implements GeneralNameInterface {
                         "DNSName with empty labels is not permitted");
             }
 
+            // RFC 1123 Section 2.1
             if (label.length() > 63) {
                 throw new IOException(
                         "DNSName label can't be longer than 63 characters");
             }
 
+            // RFC 1035 Section 2.3.1
             if (label.startsWith("-") || label.endsWith("-")) {
                 throw new IOException(
                         "DNSName label may not begin or end with a hyphen");
             }
 
-            if (label.startsWith("*")) {
-                if (allowWildcard && label.equals("*") && i == 0
-                        && labels.length > 1) {
-                    continue;
-                } else {
-                    throw new IOException("Wildcard character is only allowed"
-                            + " as the complete first label of the DNSName");
-                }
+            // RFC 9525 Section 6.3
+            if (allowWildcard && label.equals("*") && i == 0
+                    && labels.length > 1) {
+                continue;
             }
 
             for (char c : label.toCharArray()) {
