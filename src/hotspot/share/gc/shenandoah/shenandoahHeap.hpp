@@ -564,7 +564,7 @@ public:
     return _evac_tracker;
   }
 
-  void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
+  void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation, bool is_degenerated, bool is_out_of_cycle);
   void on_cycle_end(ShenandoahGeneration* generation);
 
   ShenandoahVerifier*        verifier();

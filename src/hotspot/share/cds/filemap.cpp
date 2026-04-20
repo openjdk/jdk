@@ -402,7 +402,7 @@ public:
 
   ~FileHeaderHelper() {
     if (_header != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _header);
+      FREE_C_HEAP_ARRAY(_header);
     }
     if (_fd != -1) {
       ::close(_fd);

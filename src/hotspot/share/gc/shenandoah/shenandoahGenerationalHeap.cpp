@@ -406,11 +406,14 @@ template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, Y
 template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
+// Call this function at the end of a GC cycle in order to establish proper sizes of young and old reserves,
+// setting the old-generation balance so that GC can perform the anticipated evacuations.
+//
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
-// the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
-// for the idle span that precedes the next GC.
+// the maximum we're able to transfer from young to old. The mutator_xfer_limit constrains the transfer
+// of memory from young to old.  It does not limit young reserves.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
                                                                 size_t old_trashed_regions, size_t young_trashed_regions) {
   shenandoah_assert_heaplocked();
@@ -462,11 +465,17 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
                                   bound_on_old_reserve));
   assert(mutator_xfer_limit <= young_available,
          "Cannot transfer (%zu) memory that is not available (%zu)", mutator_xfer_limit, young_available);
-  // Young reserves are to be taken out of the mutator_xfer_limit.
-  if (young_reserve > mutator_xfer_limit) {
-    young_reserve = mutator_xfer_limit;
+
+  if (young_reserve > young_available) {
+    young_reserve = young_available;
   }
-  mutator_xfer_limit -= young_reserve;
+  // We allow young_reserve to exceed mutator_xfer_limit. Essentially, this means the GC is already behind the pace
+  // of mutator allocations, and we'll need to trigger the next GC as soon as possible.
+  if (mutator_xfer_limit > young_reserve) {
+    mutator_xfer_limit -= young_reserve;
+  } else {
+    mutator_xfer_limit = 0;
+  }
 
   // Decide how much old space we should reserve for a mixed collection
   size_t proposed_reserve_for_mixed = 0;
