@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
- * @run testng/othervm -Djdk.internal.httpclient.debug=true HandshakeUrlEncodingTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpHandler;
@@ -39,10 +39,6 @@ import com.sun.net.httpserver.HttpExchange;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -58,20 +54,25 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 public class HandshakeUrlEncodingTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpServer httpTestServer;
-    HttpsServer httpsTestServer;
-    String httpURI;
-    String httpsURI;
+    private static HttpServer httpTestServer;
+    private static HttpsServer httpsTestServer;
+    private static String httpURI;
+    private static String httpsURI;
 
     static String queryPart;
 
@@ -79,8 +80,7 @@ public class HandshakeUrlEncodingTest {
     // a shared executor helps reduce the amount of threads created by the test
     static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
             { httpURI,   false },
             { httpsURI,  false },
@@ -97,7 +97,8 @@ public class HandshakeUrlEncodingTest {
                          .build();
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(String uri, boolean sameClient) {
         HttpClient client = null;
         out.println("The url is " + uri);
@@ -119,22 +120,21 @@ public class HandshakeUrlEncodingTest {
                 final WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
                 assertNotNull(wse.getResponse().uri());
-                assertNotNull(wse.getResponse().statusCode());
                 final String rawQuery = wse.getResponse().uri().getRawQuery();
                 final String expectedRawQuery = "&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
-                assertEquals(rawQuery, expectedRawQuery);
+                assertEquals(expectedRawQuery, rawQuery);
                 final String body = (String) wse.getResponse().body();
                 final String expectedBody = "/?" + expectedRawQuery;
-                assertEquals(body, expectedBody);
+                assertEquals(expectedBody, body);
                 out.println("Status code is " + wse.getResponse().statusCode());
                 out.println("Response is " + wse.getResponse());
-                assertEquals(wse.getResponse().statusCode(), 400);
+                assertEquals(400, wse.getResponse().statusCode());
             }
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         queryPart = "?&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
         httpTestServer = HttpServer.create(sa, 10);
@@ -164,8 +164,8 @@ public class HandshakeUrlEncodingTest {
         httpsTestServer.start();
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         httpTestServer.stop(0);
         httpsTestServer.stop(0);
         executor.shutdownNow();

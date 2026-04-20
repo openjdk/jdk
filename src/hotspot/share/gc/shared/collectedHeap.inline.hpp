@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 
 #include "gc/shared/collectedHeap.hpp"
 
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
@@ -48,6 +50,11 @@ inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
 
 inline void CollectedHeap::add_vmthread_cpu_time(jlong time) {
   _vmthread_cpu_time += time;
+}
+
+inline bool CollectedHeap::is_filler_object(oop obj) {
+  Klass* k = obj->klass_without_asserts();
+  return k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass();
 }
 
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

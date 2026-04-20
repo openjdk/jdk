@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2025 Cosmin Truta
+ * Copyright (c) 2018-2026 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -259,7 +259,7 @@ png_set_strip_alpha(png_structrp png_ptr)
  *
  * Terminology (assuming power law, "gamma", encodings):
  *    "screen" gamma: a power law imposed by the output device when digital
- *    samples are converted to visible light output.  The EOTF - volage to
+ *    samples are converted to visible light output.  The EOTF - voltage to
  *    luminance on output.
  *
  *    "file" gamma: a power law used to encode luminance levels from the input
@@ -524,6 +524,9 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
    if (png_rtran_ok(png_ptr, 0) == 0)
       return;
 
+   if (palette == NULL)
+      return;
+
    png_ptr->transformations |= PNG_QUANTIZE;
 
    if (full_quantize == 0)
@@ -737,8 +740,8 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
                          break;
 
                      t->next = hash[d];
-                     t->left = (png_byte)i;
-                     t->right = (png_byte)j;
+                     t->left = png_ptr->palette_to_index[i];
+                     t->right = png_ptr->palette_to_index[j];
                      hash[d] = t;
                   }
                }
@@ -840,7 +843,13 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
    }
    if (png_ptr->palette == NULL)
    {
-      png_ptr->palette = palette;
+      /* Allocate an owned copy rather than aliasing the caller's pointer,
+       * so that png_read_destroy can free png_ptr->palette unconditionally.
+       */
+      png_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
+          PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+      memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
+          (sizeof (png_color)));
    }
    png_ptr->num_palette = (png_uint_16)num_palette;
 
@@ -1149,8 +1158,8 @@ png_set_rgb_to_gray(png_structrp png_ptr, int error_action, double red,
 #if defined(PNG_READ_USER_TRANSFORM_SUPPORTED) || \
     defined(PNG_WRITE_USER_TRANSFORM_SUPPORTED)
 void PNGAPI
-png_set_read_user_transform_fn(png_structrp png_ptr, png_user_transform_ptr
-    read_user_transform_fn)
+png_set_read_user_transform_fn(png_structrp png_ptr,
+    png_user_transform_ptr read_user_transform_fn)
 {
    png_debug(1, "in png_set_read_user_transform_fn");
 
@@ -1393,7 +1402,7 @@ png_resolve_file_gamma(png_const_structrp png_ptr)
    if (file_gamma != 0)
       return file_gamma;
 
-   /* If png_reciprocal oveflows it returns 0 which indicates to the caller that
+   /* If png_reciprocal overflows, it returns 0, indicating to the caller that
     * there is no usable file gamma.  (The checks added to png_set_gamma and
     * png_set_alpha_mode should prevent a screen_gamma which would overflow.)
     */
@@ -1872,6 +1881,7 @@ png_init_read_transformations(png_structrp png_ptr)
              * transformations elsewhere.
              */
             png_ptr->transformations &= ~(PNG_COMPOSE | PNG_GAMMA);
+            png_ptr->flags &= ~PNG_FLAG_OPTIMIZE_ALPHA;
          } /* color_type == PNG_COLOR_TYPE_PALETTE */
 
          /* if (png_ptr->background_gamma_type!=PNG_BACKGROUND_GAMMA_UNKNOWN) */
@@ -2088,6 +2098,21 @@ void /* PRIVATE */
 png_read_transform_info(png_structrp png_ptr, png_inforp info_ptr)
 {
    png_debug(1, "in png_read_transform_info");
+
+   if (png_ptr->transformations != 0)
+   {
+      if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE &&
+          info_ptr->palette != NULL && png_ptr->palette != NULL)
+      {
+         /* Sync info_ptr->palette with png_ptr->palette.
+          * The function png_init_read_transformations may have modified
+          * png_ptr->palette in place (e.g. for gamma correction or for
+          * background compositing).
+          */
+         memcpy(info_ptr->palette, png_ptr->palette,
+             PNG_MAX_PALETTE_LENGTH * (sizeof (png_color)));
+      }
+   }
 
 #ifdef PNG_READ_EXPAND_SUPPORTED
    if ((png_ptr->transformations & PNG_EXPAND) != 0)
@@ -2383,7 +2408,7 @@ png_do_unpack(png_row_infop row_info, png_bytep row)
       }
       row_info->bit_depth = 8;
       row_info->pixel_depth = (png_byte)(8 * row_info->channels);
-      row_info->rowbytes = row_width * row_info->channels;
+      row_info->rowbytes = (size_t)row_width * row_info->channels;
    }
 }
 #endif
@@ -2585,7 +2610,7 @@ png_do_scale_16_to_8(png_row_infop row_info, png_bytep row)
 
       row_info->bit_depth = 8;
       row_info->pixel_depth = (png_byte)(8 * row_info->channels);
-      row_info->rowbytes = row_info->width * row_info->channels;
+      row_info->rowbytes = (size_t)row_info->width * row_info->channels;
    }
 }
 #endif
@@ -2613,7 +2638,7 @@ png_do_chop(png_row_infop row_info, png_bytep row)
 
       row_info->bit_depth = 8;
       row_info->pixel_depth = (png_byte)(8 * row_info->channels);
-      row_info->rowbytes = row_info->width * row_info->channels;
+      row_info->rowbytes = (size_t)row_info->width * row_info->channels;
    }
 }
 #endif
@@ -2849,7 +2874,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             *(--dp) = lo_filler;
             row_info->channels = 2;
             row_info->pixel_depth = 16;
-            row_info->rowbytes = row_width * 2;
+            row_info->rowbytes = (size_t)row_width * 2;
          }
 
          else
@@ -2864,7 +2889,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             }
             row_info->channels = 2;
             row_info->pixel_depth = 16;
-            row_info->rowbytes = row_width * 2;
+            row_info->rowbytes = (size_t)row_width * 2;
          }
       }
 
@@ -2887,7 +2912,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             *(--dp) = hi_filler;
             row_info->channels = 2;
             row_info->pixel_depth = 32;
-            row_info->rowbytes = row_width * 4;
+            row_info->rowbytes = (size_t)row_width * 4;
          }
 
          else
@@ -2904,7 +2929,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             }
             row_info->channels = 2;
             row_info->pixel_depth = 32;
-            row_info->rowbytes = row_width * 4;
+            row_info->rowbytes = (size_t)row_width * 4;
          }
       }
 #endif
@@ -2928,7 +2953,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             *(--dp) = lo_filler;
             row_info->channels = 4;
             row_info->pixel_depth = 32;
-            row_info->rowbytes = row_width * 4;
+            row_info->rowbytes = (size_t)row_width * 4;
          }
 
          else
@@ -2945,7 +2970,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             }
             row_info->channels = 4;
             row_info->pixel_depth = 32;
-            row_info->rowbytes = row_width * 4;
+            row_info->rowbytes = (size_t)row_width * 4;
          }
       }
 
@@ -2972,7 +2997,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             *(--dp) = hi_filler;
             row_info->channels = 4;
             row_info->pixel_depth = 64;
-            row_info->rowbytes = row_width * 8;
+            row_info->rowbytes = (size_t)row_width * 8;
          }
 
          else
@@ -2994,7 +3019,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
 
             row_info->channels = 4;
             row_info->pixel_depth = 64;
-            row_info->rowbytes = row_width * 8;
+            row_info->rowbytes = (size_t)row_width * 8;
          }
       }
 #endif
@@ -4488,7 +4513,7 @@ png_do_expand_palette(png_structrp png_ptr, png_row_infop row_info,
                }
                row_info->bit_depth = 8;
                row_info->pixel_depth = 32;
-               row_info->rowbytes = row_width * 4;
+               row_info->rowbytes = (size_t)row_width * 4;
                row_info->color_type = 6;
                row_info->channels = 4;
             }
@@ -4496,7 +4521,7 @@ png_do_expand_palette(png_structrp png_ptr, png_row_infop row_info,
             else
             {
                sp = row + (size_t)row_width - 1;
-               dp = row + (size_t)(row_width * 3) - 1;
+               dp = row + (size_t)row_width * 3 - 1;
                i = 0;
 #ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
                i = png_do_expand_palette_rgb8_neon(png_ptr, row_info, row,
@@ -4515,7 +4540,7 @@ png_do_expand_palette(png_structrp png_ptr, png_row_infop row_info,
 
                row_info->bit_depth = 8;
                row_info->pixel_depth = 24;
-               row_info->rowbytes = row_width * 3;
+               row_info->rowbytes = (size_t)row_width * 3;
                row_info->color_type = 2;
                row_info->channels = 3;
             }

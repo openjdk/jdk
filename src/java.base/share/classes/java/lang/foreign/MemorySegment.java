@@ -1354,6 +1354,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code byteLength < 0}
+     * @since 27
      */
     String getString(long offset, Charset charset, long byteLength);
 
@@ -1551,6 +1552,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
      * the {@code NULL} segment is of 2<sup>62</sup>.
+     *
+     * @apiNote Clients should avoid using {@code ==} to compare a segment with
+     *          {@code MemorySegment.NULL}. A segment with address {@code 0L} may be
+     *          {@linkplain #ofAddress(long) created independently} and may therefore
+     *          have a different identity.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 
@@ -2669,6 +2675,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
      *         in bytes, of the substring of {@code src} encoded using the given charset
      * @return the number of copied bytes.
+     * @since 27
      */
     @ForceInline
     static long copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {

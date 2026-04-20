@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,8 @@ public:
 class PhaseTransform : public Phase {
 public:
   PhaseTransform(PhaseNumber pnum) : Phase(pnum) {
-#ifndef PRODUCT
     clear_progress();
+#ifndef PRODUCT
     clear_transforms();
     set_allow_progress(true);
 #endif
@@ -201,12 +201,31 @@ public:
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
-#ifndef PRODUCT
-  uint   _count_progress;       // For profiling, count transforms that make progress
-  void   set_progress()        { ++_count_progress; assert( allow_progress(),"No progress allowed during verification"); }
-  void   clear_progress()      { _count_progress = 0; }
-  uint   made_progress() const { return _count_progress; }
+  uint64_t _count_progress;      // Count transforms that make progress
+  void     set_progress()        { ++_count_progress; assert(allow_progress(), "No progress allowed during verification"); }
+  void     clear_progress()      { _count_progress = 0; }
+  uint64_t made_progress() const { return _count_progress; }
 
+  // RAII guard for speculative transforms. Restores _count_progress in the destructor
+  // unless commit() is called, so that abandoned speculative work does not count as progress.
+  // In case multiple nodes are created and only some are speculative, commit() should still be called.
+  class SpeculativeProgressGuard {
+    PhaseTransform* _phase;
+    uint64_t _saved_progress;
+    bool _committed;
+  public:
+    SpeculativeProgressGuard(PhaseTransform* phase) :
+      _phase(phase), _saved_progress(phase->made_progress()), _committed(false) {}
+    ~SpeculativeProgressGuard() {
+      if (!_committed) {
+        _phase->_count_progress = _saved_progress;
+      }
+    }
+
+    void commit() { _committed = true; }
+  };
+
+#ifndef PRODUCT
   uint   _count_transforms;     // For profiling, count transforms performed
   void   set_transforms()      { ++_count_transforms; }
   void   clear_transforms()    { _count_transforms = 0; }
@@ -224,7 +243,13 @@ public:
 // 3) NodeHash table, to find identical nodes (and remove/update the hash of a node on modification).
 class PhaseValues : public PhaseTransform {
 protected:
-  bool      _iterGVN;
+  enum class PhaseValuesType {
+    gvn,
+    iter_gvn,
+    ccp
+  };
+
+  PhaseValuesType _phase;
 
   // Hash table for value-numbering. Reference to "C->node_hash()",
   NodeHash &_table;
@@ -247,7 +272,7 @@ protected:
   void init_con_caches();
 
 public:
-  PhaseValues() : PhaseTransform(GVN), _iterGVN(false),
+  PhaseValues() : PhaseTransform(GVN), _phase(PhaseValuesType::gvn),
                   _table(*C->node_hash()), _types(*C->types())
   {
     NOT_PRODUCT( clear_new_values(); )
@@ -256,7 +281,7 @@ public:
     init_con_caches();
   }
   NOT_PRODUCT(~PhaseValues();)
-  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : nullptr; }
+  PhaseIterGVN* is_IterGVN();
 
   // Some Ideal and other transforms delete --> modify --> insert values
   bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
@@ -440,9 +465,29 @@ class PhaseIterGVN : public PhaseGVN {
 private:
   bool _delay_transform;  // When true simply register the node when calling transform
                           // instead of actually optimizing it
+  DEBUG_ONLY(uint _num_processed;) // Running count for trace_PhaseIterGVN_verbose
 
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
+
+  // Drain the IGVN worklist: process nodes until the worklist is empty.
+  // Returns true if compilation was aborted (node limit or infinite loop),
+  // false on normal completion.
+  bool drain_worklist();
+
+  // Walk all live nodes and push deep-inspection candidates to _worklist.
+  void push_deep_revisit_candidates();
+
+  // After the main worklist drains, re-process deep-inspection nodes to
+  // catch optimization opportunities from far-away changes. Repeats until
+  // convergence (no progress made) or max rounds reached.
+  // Returns true if converged.
+  bool deep_revisit();
+
+  // Returns true for nodes that inspect the graph beyond their direct
+  // inputs, and therefore may miss optimization opportunities when
+  // changes happen far away.
+  bool needs_deep_revisit(const Node* n) const;
 
   // Subsume users of node 'old' into node 'nn'
   void subsume_node( Node *old, Node *nn );
@@ -487,20 +532,25 @@ public:
   // Given def-use info and an initial worklist, apply Node::Ideal,
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
   // and dominator info to a fixed point.
-  void optimize();
+  // When deep is true, after the main worklist drains, re-process
+  // nodes that inspect the graph deeply (Load, CmpP, If, RangeCheck,
+  // CountedLoopEnd, LongCountedLoopEnd) to catch optimization opportunities
+  // from changes far away that the normal notification mechanism misses.
+  void optimize(bool deep = false);
+
 #ifdef ASSERT
-  void verify_optimize();
-  bool verify_Value_for(Node* n, bool strict = false);
-  bool verify_Ideal_for(Node* n, bool can_reshape);
-  bool verify_Identity_for(Node* n);
-  bool verify_node_invariants_for(const Node* n);
+  void verify_optimize(bool deep_revisit_converged);
+  void verify_Value_for(const Node* n, bool strict = false);
+  void verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit_converged);
+  void verify_Identity_for(Node* n);
+  void verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
 #endif
 
 #ifndef PRODUCT
-  void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
+  void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type, bool progress);
   void init_verifyPhaseIterGVN();
-  void verify_PhaseIterGVN();
+  void verify_PhaseIterGVN(bool deep_revisit_converged);
 #endif
 
 #ifdef ASSERT
@@ -516,15 +566,21 @@ public:
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
-  // Kill a globally dead Node.  All uses are also globally dead and are
+  // Origin of a dead node, describing why it is dying.
+  // Speculative: a temporarily created node that was never part of the graph
+  // (e.g., a speculative clone in split_if to test constant foldability).
+  // Its death does not count as progress for convergence tracking.
+  enum class NodeOrigin { Graph, Speculative };
+
+  // Kill a globally dead Node. All uses are also globally dead and are
   // aggressively trimmed.
-  void remove_globally_dead_node( Node *dead );
+  void remove_globally_dead_node(Node* dead, NodeOrigin origin);
 
   // Kill all inputs to a dead node, recursively making more dead nodes.
   // The Node must be dead locally, i.e., have no uses.
-  void remove_dead_node( Node *dead ) {
+  void remove_dead_node(Node* dead, NodeOrigin origin) {
     assert(dead->outcnt() == 0 && !dead->is_top(), "node must be dead");
-    remove_globally_dead_node(dead);
+    remove_globally_dead_node(dead, origin);
   }
 
   // Add users of 'n' to worklist
@@ -598,7 +654,6 @@ public:
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
-  bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
   static bool is_verify_def_use() {
@@ -620,6 +675,10 @@ public:
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
     return ((VerifyIterativeGVN % 100000) / 10000) == 1;
+  }
+  static bool is_verify_Ideal_return() {
+    // '-XX:VerifyIterativeGVN=100000'
+    return ((VerifyIterativeGVN % 1000000) / 100000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
@@ -643,6 +702,7 @@ class PhaseCCP : public PhaseIterGVN {
   Node* fetch_next_node(Unique_Node_List& worklist);
   static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
 
+  bool not_bottom_type(Node* n) const;
   void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
   void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
   void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;

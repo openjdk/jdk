@@ -104,6 +104,7 @@ public:
   WorkerThreads(const char* name, uint max_workers);
 
   void initialize_workers();
+  bool allow_inject_creation_failure() const;
 
   uint max_workers() const     { return _max_workers; }
   uint created_workers() const { return _created_workers; }
