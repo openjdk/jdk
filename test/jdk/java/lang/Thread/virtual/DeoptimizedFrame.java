@@ -30,18 +30,16 @@
  * @run main/othervm/native -agentlib:DeoptimizedFrame DeoptimizedFrame
  */
 
-import java.util.concurrent.CountDownLatch;
-
 import jdk.test.lib.Asserts;
 
 public class DeoptimizedFrame {
     private static final Object lock = new Object();
-    private static final CountDownLatch upCallDone = new CountDownLatch(1);
     private static A receiver = new A();
     private static volatile int result;
 
     private static native int setupReferences(Thread t, Object o);
-    private static native void waitForTarget();
+    private static native void waitForVThread();
+    private static native void notifyVThread();
 
     public static void foo() {
         synchronized (lock) {
@@ -55,12 +53,13 @@ public class DeoptimizedFrame {
 
         Thread vthread = Thread.ofVirtual().unstarted(() -> foo());
         int res = setupReferences(vthread, lock);
-        Asserts.assertTrue(res == 0, "error enabling MonitorContendedEnter event");
+        Asserts.assertTrue(res == 0, "error setting references");
 
         synchronized (lock) {
             vthread.start();
-            waitForTarget();
-            await(vthread, Thread.State.BLOCKED);
+            waitForVThread();
+            receiver = new B();
+            notifyVThread();
         }
         vthread.join();
         Asserts.assertTrue(result == 3, "unexpected result=" + result);
@@ -70,19 +69,6 @@ public class DeoptimizedFrame {
         for (int i = 0; i < 30_000; i++) {
             foo();
         }
-    }
-
-    private static void await(Thread thread, Thread.State expectedState) throws InterruptedException {
-        Thread.State state = thread.getState();
-        while (state != expectedState) {
-            Asserts.assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
-            Thread.sleep(10);
-            state = thread.getState();
-        }
-    }
-
-    public static void upCall() {
-        receiver = new B();
     }
 
     static class A {

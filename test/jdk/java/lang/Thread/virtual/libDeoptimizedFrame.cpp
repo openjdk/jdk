@@ -29,7 +29,6 @@
 extern "C" {
 
 static jvmtiEnv *jvmti = nullptr;
-static jclass test_class = nullptr;
 static jthread test_vthread = nullptr;
 static jobject test_monitor = nullptr;
 static jrawMonitorID agent_monitor = nullptr;
@@ -52,7 +51,7 @@ class RawMonitorLocker {
     check_jvmti_status(_jni, _jvmti->RawMonitorEnter(_monitor), "Fatal Error in RawMonitorEnter.");
   }
   ~RawMonitorLocker() {
-    check_jvmti_status(_jni, _jvmti->RawMonitorExit(_monitor), "Fatal Error in RawMonitorEnter.");
+    check_jvmti_status(_jni, _jvmti->RawMonitorExit(_monitor), "Fatal Error in RawMonitorExit.");
   }
   void wait() {
     check_jvmti_status(_jni, _jvmti->RawMonitorWait(_monitor, 0), "Fatal Error in RawMonitorWait.");
@@ -133,11 +132,10 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT jint JNICALL
 Java_DeoptimizedFrame_setupReferences(JNIEnv *jni, jclass cls, jthread vthread, jobject monitor) {
-  test_class = (jclass)jni->NewGlobalRef(cls);
   test_vthread = (jthread)jni->NewGlobalRef(vthread);
   test_monitor = jni->NewGlobalRef(monitor);
 
-  if (test_class == nullptr || test_vthread == nullptr || test_monitor == nullptr) {
+  if (test_vthread == nullptr || test_monitor == nullptr) {
     printf("GlobalRef null");
     return JNI_ERR;
   }
@@ -146,22 +144,16 @@ Java_DeoptimizedFrame_setupReferences(JNIEnv *jni, jclass cls, jthread vthread, 
 }
 
 JNIEXPORT void JNICALL
-Java_DeoptimizedFrame_waitForTarget(JNIEnv *jni, jclass cls) {
-  // Wait for target thread to reach MonitorContendedEnter
+Java_DeoptimizedFrame_waitForVThread(JNIEnv *jni, jclass cls) {
   RawMonitorLocker rml(jvmti, jni, agent_monitor);
   while (!called_contended_enter) {
     rml.wait();
   }
+}
 
-  jmethodID mid = jni->GetStaticMethodID(test_class, "upCall", "()V");
-  if (mid != NULL) {
-    jni->CallStaticVoidMethod(test_class, mid);
-    printf("Called method upCall\n");
-  } else {
-    printf("Method upCall not found\n");
-  }
-
-  // Notify target thread
+JNIEXPORT void JNICALL
+Java_DeoptimizedFrame_notifyVThread(JNIEnv *jni, jclass cls) {
+  RawMonitorLocker rml(jvmti, jni, agent_monitor);
   rml.notify_all();
 }
 
