@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -31,6 +32,7 @@ import jtreg.SkippedException;
  * @test
  * @summary Test verifies that jstack --mixed prints information about VM locks
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -42,6 +44,10 @@ public class TestJhsdbJstackPrintVMLocks {
 
     final static int MAX_ATTEMPTS = 5;
     public static void main(String[] args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         LingeredApp theApp = null;
