@@ -1580,10 +1580,6 @@ class Assembler : public AbstractAssembler {
   static bool is_nop(int x) {
     return x == 0x60000000;
   }
-  // endgroup opcode for Power6
-  static bool is_endgroup(int x) {
-    return is_ori(x) && inv_ra_field(x) == 1 && inv_rs_field(x) == 1 && inv_d1_field(x) == 0;
-  }
 
 
  private:
@@ -1658,9 +1654,6 @@ class Assembler : public AbstractAssembler {
   inline void mr(      Register d, Register s);
   inline void ori_opt( Register d, int ui16);
   inline void oris_opt(Register d, int ui16);
-
-  // endgroup opcode for Power6
-  inline void endgroup();
 
   // count instructions
   inline void cntlzw(  Register a, Register s);

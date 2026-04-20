@@ -154,6 +154,7 @@ public class MainTest extends JUnitAdapter {
 
         JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
+                .ignoreDefaultRuntime(true)
                 .useToolProvider(jpackageToolProviderMock)
                 .execute(jpackageExitCode);
     }
@@ -461,7 +462,11 @@ public class MainTest extends JUnitAdapter {
             var stdout = new StringWriter();
             var stderr = new StringWriter();
 
-            var exitCode = Main.run(new PrintWriter(stdout), new PrintWriter(stderr), args);
+            var os = OperatingSystem.current();
+            var exitCode = Main.run(os, () -> {
+                CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
+                return bundlingEnv;
+            }, new PrintWriter(stdout), new PrintWriter(stderr), args);
 
             return new ExecutionResult(lines(stdout.toString()), lines(stderr.toString()), exitCode);
         }

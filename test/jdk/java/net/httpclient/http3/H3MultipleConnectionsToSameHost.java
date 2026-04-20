@@ -30,6 +30,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=90
  *                     -Djdk.httpclient.quic.maxPtoBackoff=10
@@ -41,7 +44,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  */
 /*
@@ -53,6 +56,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -65,7 +71,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  *          on windows 10 and windows 2016 - but with -XX:-VMContinuations
  */
@@ -76,9 +82,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -89,7 +95,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
@@ -101,9 +107,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -114,7 +120,7 @@
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
  *                     -Djdk.internal.httpclient.quic.congestionController=reno
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with Reno congestion controller
