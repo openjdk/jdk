@@ -257,8 +257,9 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
                                         int width, int height)
     {
         int transparency = Transparency.OPAQUE;
-        if (target instanceof Window window && !window.isOpaque())
+        if (target instanceof Window window && !window.isOpaque()) {
             transparency = Transparency.TRANSLUCENT;
+        }
         ColorModel model = getColorModel(transparency);
         WritableRaster wr = model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
