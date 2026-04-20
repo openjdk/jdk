@@ -19,16 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "cds/aotGrowableArray.hpp"
-#include "cds/aotMetaspace.hpp"
-#include "memory/allocation.inline.hpp"
-#include "utilities/growableArray.hpp"
+package nsk.jdb.kill.kill003;
 
-void AOTGrowableArrayHelper::deallocate(void* mem) {
-  if (!AOTMetaspace::in_aot_cache(mem)) {
-    GrowableArrayCHeapAllocator::deallocate(mem);
-  }
+import nsk.share.jdb.*;
+
+/* This is debuggee application */
+public class kill003a {
+    static NullPointerException exception = new NullPointerException();
+
+    public static void main(String args[]) {
+        synchronized (args) {
+        }
+        System.out.println("done");
+        System.exit(JdbTest.JCK_STATUS_BASE);
+    }
 }

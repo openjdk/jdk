@@ -72,7 +72,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
 }
 
 G1CollectionSet::~G1CollectionSet() {
-  FREE_C_HEAP_ARRAY(uint, _regions);
+  FREE_C_HEAP_ARRAY(_regions);
   abandon_all_candidates();
 }
 
@@ -766,7 +766,7 @@ public:
     }
   }
   ~G1VerifyYoungCSetIndicesClosure() {
-    FREE_C_HEAP_ARRAY(int, _heap_region_indices);
+    FREE_C_HEAP_ARRAY(_heap_region_indices);
   }
 
   virtual bool do_heap_region(G1HeapRegion* r) {
