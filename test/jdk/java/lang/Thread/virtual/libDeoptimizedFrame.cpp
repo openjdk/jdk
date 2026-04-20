@@ -47,7 +47,7 @@ class RawMonitorLocker {
   }
 
  public:
-  RawMonitorLocker(jvmtiEnv *jvmti,JNIEnv* jni, jrawMonitorID monitor): _jvmti(jvmti), _jni(jni), _monitor(monitor) {
+  RawMonitorLocker(jvmtiEnv *jvmti, JNIEnv* jni, jrawMonitorID monitor): _jvmti(jvmti), _jni(jni), _monitor(monitor) {
     check_jvmti_status(_jni, _jvmti->RawMonitorEnter(_monitor), "Fatal Error in RawMonitorEnter.");
   }
   ~RawMonitorLocker() {
