@@ -40,7 +40,7 @@ SuperWord::SuperWord(const VTransformAnalyzer& scalar_vtransform_analyzer) :
   _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _scalar_vtransform),
-  _packset(&_arena, _vloop_analyzer),
+  _packset(&_arena, _scalar_vtransform),
   _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
   _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
@@ -1343,13 +1343,13 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 
   // Iterate pair-chain by pair-chain, each from left-most to right-most.
-  Node_List* pack = nullptr;
+  Pack* pack = nullptr;
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
     const VTransformNode* left  = pair.left();
     const VTransformNode* right = pair.right();
     if (_pairset.is_left_in_a_left_most_pair(left)) {
       assert(pack == nullptr, "no unfinished pack");
-      pack = new (arena()) Node_List(arena());
+      pack = new (arena()) Pack(arena());
       pack->push(left);
     }
     assert(pack != nullptr, "must have unfinished pack");
@@ -1372,10 +1372,10 @@ void SuperWord::combine_pairs_to_longer_packs() {
 }
 
 SplitStatus PackSet::split_pack(const char* split_name,
-                                Node_List* pack,
+                                Pack* pack,
                                 SplitTask task)
 {
-  uint pack_size = pack->size();
+  uint pack_size = pack->length();
 
   if (task.is_unchanged()) {
     return SplitStatus::make_unchanged(pack);
@@ -1426,13 +1426,13 @@ SplitStatus PackSet::split_pack(const char* split_name,
   // Just pop off a single node?
   if (new_size < 2) {
     assert(new_size == 1 && old_size >= 2, "implied");
-    Node* n = pack->pop();
+    const VTransformNode* n = pack->pop();
     unmap_node_in_pack(n);
 #ifndef PRODUCT
       if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
-        n->dump();
+        n->print();
       }
 #endif
     return SplitStatus::make_modified(pack);
@@ -1441,14 +1441,14 @@ SplitStatus PackSet::split_pack(const char* split_name,
   // Just remove a single node at front?
   if (old_size < 2) {
     assert(old_size == 1 && new_size >= 2, "implied");
-    Node* n = pack->at(0);
+    const VTransformNode* n = pack->at(0);
     pack->remove(0);
     unmap_node_in_pack(n);
 #ifndef PRODUCT
       if (_vloop.is_trace_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
-        n->dump();
+        n->print();
       }
 #endif
     return SplitStatus::make_modified(pack);
@@ -1456,10 +1456,10 @@ SplitStatus PackSet::split_pack(const char* split_name,
 
   // We will have two packs
   assert(old_size >= 2 && new_size >= 2, "implied");
-  Node_List* new_pack = new Node_List(new_size);
+  Pack* new_pack = new (_arena) Pack(_arena);
 
   for (uint i = 0; i < new_size; i++) {
-    Node* n = pack->at(old_size + i);
+    const VTransformNode* n = pack->at(old_size + i);
     new_pack->push(n);
     remap_node_in_pack(n, new_pack);
   }
@@ -1481,13 +1481,13 @@ void PackSet::split_packs(const char* split_name,
     changed = false;
     int new_packset_length = 0;
     for (int i = 0; i < _packs.length(); i++) {
-      Node_List* pack = _packs.at(i);
-      assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
+      Pack* pack = _packs.at(i);
+      assert(pack != nullptr && pack->length() >= 2, "no nullptr, at least size 2");
       SplitTask task = strategy(pack);
       SplitStatus status = split_pack(split_name, pack, task);
       changed |= !status.is_unchanged();
-      Node_List* first_pack = status.first_pack();
-      Node_List* second_pack = status.second_pack();
+      Pack* first_pack = status.first_pack();
+      Pack* second_pack = status.second_pack();
       _packs.at_put(i, nullptr); // take out pack
       if (first_pack != nullptr) {
         // The first pack can be put at the current position
@@ -1512,8 +1512,8 @@ void PackSet::split_packs(const char* split_name,
 
 // Split packs at boundaries where left and right have different use or def packs.
 void SuperWord::split_packs_at_use_def_boundaries() {
-  auto split_strategy = [&](const Node_List* pack) {
-    uint pack_size = pack->size();
+  auto split_strategy = [&](const Pack* pack) {
+    uint pack_size = pack->length();
     uint boundary = find_use_def_boundary(pack);
     assert(boundary < pack_size, "valid boundary %d", boundary);
     if (boundary != 0) {
@@ -1527,8 +1527,8 @@ void SuperWord::split_packs_at_use_def_boundaries() {
 // Split packs that are only implemented with a smaller pack size. Also splits packs
 // such that they eventually have power of 2 size.
 void SuperWord::split_packs_only_implemented_with_smaller_size() {
-  auto split_strategy = [&](const Node_List* pack) {
-    uint pack_size = pack->size();
+  auto split_strategy = [&](const Pack* pack) {
+    uint pack_size = pack->length();
     uint implemented_size = max_implemented_size(pack);
     if (implemented_size == 0)  {
       return SplitTask::make_rejected("not implemented at any smaller size");
@@ -1544,15 +1544,16 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
 
 // Split packs that have a mutual dependency, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
-  auto split_strategy = [&](const Node_List* pack) {
-    uint pack_size = pack->size();
-    assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
-    if (!is_marked_reduction(pack->at(0)) &&
-        !mutually_independent(pack)) {
-      // As a best guess, we split the pack in half. This way, we iteratively make the
-      // packs smaller, until there is no dependency.
-      return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
-    }
+  auto split_strategy = [&](const Pack* pack) {
+    assert(false, "TODO impl");
+    //uint pack_size = pack->length();
+    //assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
+    //if (!is_marked_reduction(pack->at(0)) &&
+    //    !mutually_independent(pack)) {
+    //  // As a best guess, we split the pack in half. This way, we iteratively make the
+    //  // packs smaller, until there is no dependency.
+    //  return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
+    //}
     return SplitTask::make_unchanged();
   };
   _packset.split_packs("SuperWord::split_packs_to_break_mutual_dependence", split_strategy);
@@ -1562,7 +1563,7 @@ template <typename FilterPredicate>
 void PackSet::filter_packs(const char* filter_name,
                              const char* rejection_message,
                              FilterPredicate filter) {
-  auto split_strategy = [&](const Node_List* pack) {
+  auto split_strategy = [&](const Pack* pack) {
     if (filter(pack)) {
       return SplitTask::make_unchanged();
     } else {
@@ -1573,8 +1574,8 @@ void PackSet::filter_packs(const char* filter_name,
 }
 
 void SuperWord::filter_packs_for_power_of_2_size() {
-  auto filter = [&](const Node_List* pack) {
-    return is_power_of_2(pack->size());
+  auto filter = [&](const Pack* pack) {
+    return is_power_of_2(pack->length());
   };
   _packset.filter_packs("SuperWord::filter_packs_for_power_of_2_size",
                         "size is not a power of 2", filter);
@@ -1601,27 +1602,28 @@ void SuperWord::filter_packs_for_power_of_2_size() {
 // for (int i ...) { v[i] = v[i + 1] + 5; }
 // for (int i ...) { v[i - 1] = v[i] + 5; }
 void SuperWord::filter_packs_for_mutual_independence() {
-  auto filter = [&](const Node_List* pack) {
-    // reductions are trivially connected
-    return is_marked_reduction(pack->at(0)) ||
-           mutually_independent(pack);
-  };
-  _packset.filter_packs("SuperWord::filter_packs_for_mutual_independence",
-                        "found dependency between nodes at distance greater than 1", filter);
+  assert(false, "TODO impl");
+  //auto filter = [&](const Pack* pack) {
+  //  // reductions are trivially connected
+  //  return is_marked_reduction(pack->at(0)) ||
+  //         mutually_independent(pack);
+  //};
+  //_packset.filter_packs("SuperWord::filter_packs_for_mutual_independence",
+  //                      "found dependency between nodes at distance greater than 1", filter);
 }
 
 // Find the set of alignment solutions for load/store pack.
-const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pack) {
-  assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
+const AlignmentSolution* SuperWord::pack_alignment_solution(const Pack* pack) {
+  const VTransformMemopScalarNode* first = pack->at(0)->isa_MemopScalar();
+  assert(first != nullptr, "only load/store packs");
 
-  const MemNode* mem_ref = pack->at(0)->as_Mem();
-  const VPointer& mem_ref_p = vpointer(mem_ref);
   const CountedLoopEndNode* pre_end = _vloop.pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
-  AlignmentSolver solver(mem_ref_p,
-                         pack->at(0)->as_Mem(),
-                         pack->size(),
+  // TODO: just pass in the vtn?
+  AlignmentSolver solver(first->vpointer(),
+                         first->node(),
+                         pack->length(),
                          pre_end->init_trip(),
                          pre_end->stride_con(),
                          iv_stride(),
@@ -1653,10 +1655,9 @@ void SuperWord::filter_packs_for_alignment() {
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
 
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Pack* pack) {
     // Only memops need to be aligned.
-    if (!pack->at(0)->is_Load() &&
-        !pack->at(0)->is_Store()) {
+    if (!pack->at(0)->is_load_or_store_in_loop()) {
       return true; // accept all non memops
     }
 
@@ -1697,18 +1698,19 @@ void SuperWord::filter_packs_for_alignment() {
   if (current->is_constrained()) {
     // Solution is constrained (not trivial)
     // -> must change pre-limit to achieve alignment
-    MemNode const* mem = current->as_constrained()->mem_ref();
-    Node_List* pack = get_pack(mem);
-    assert(pack != nullptr, "memop of final solution must still be packed");
-    _vpointer_for_main_loop_alignment = &vpointer(mem);
-    _aw_for_main_loop_alignment = pack->size() * mem->memory_size();
+    assert(false, "TODO impl");
+    //MemNode const* mem = current->as_constrained()->mem_ref();
+    //Pack* pack = get_pack(mem);
+    //assert(pack != nullptr, "memop of final solution must still be packed");
+    //_vpointer_for_main_loop_alignment = &vpointer(mem);
+    //_aw_for_main_loop_alignment = pack->length() * mem->memory_size();
   }
 }
 
 // Remove packs that are not implemented
 void SuperWord::filter_packs_for_implemented() {
-  auto filter = [&](const Node_List* pack) {
-    return implemented(pack, pack->size());
+  auto filter = [&](const Pack* pack) {
+    return implemented(pack, pack->length());
   };
   _packset.filter_packs("SuperWord::filter_packs_for_implemented",
                         "Unimplemented", filter);
@@ -1717,7 +1719,7 @@ void SuperWord::filter_packs_for_implemented() {
 // Remove packs that are not profitable.
 void SuperWord::filter_packs_for_profitable() {
   // Remove packs that are not profitable
-  auto filter = [&](const Node_List* pack) {
+  auto filter = [&](const Pack* pack) {
     return profitable(pack);
   };
   _packset.filter_packs("Superword::filter_packs_for_profitable",
@@ -1725,45 +1727,47 @@ void SuperWord::filter_packs_for_profitable() {
 }
 
 // Can code be generated for the pack, restricted to size nodes?
-bool SuperWord::implemented(const Node_List* pack, const uint size) const {
-  assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
+bool SuperWord::implemented(const Pack* pack, const int size) const {
+  assert(size >= 2 && size <= pack->length() && is_power_of_2(size), "valid size");
   bool retValue = false;
-  Node* p0 = pack->at(0);
-  if (p0 != nullptr) {
-    int opc = p0->Opcode();
-    if (is_marked_reduction(p0)) {
-      const Type* arith_type = p0->bottom_type();
-      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
-    } else if (VectorNode::is_convert_opcode(opc)) {
-      retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
-    } else if (VectorNode::is_reinterpret_opcode(opc)) {
-      retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
-    } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
-      // Java API for Math.min/max operations supports only int, long, float
-      // and double types. Thus, avoid generating vector min/max nodes for
-      // integer subword types with superword vectorization.
-      // See JDK-8294816 for miscompilation issues with shorts.
-      return false;
-    } else if (p0->is_Cmp()) {
-      // Cmp -> Bool -> Cmove
-      retValue = UseVectorCmov;
-    } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
-      // Requires extra vector long -> int conversion.
-      retValue = VectorNode::implemented(opc, size, T_LONG) &&
-                 VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
-    } else {
-      if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, velt_basic_type(p0))) {
-        opc = Op_RShiftI;
-      }
-      retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
-    }
-  }
-  return retValue;
+  assert(false, "TODO impl");
+  return false;
+  //Node* p0 = pack->at(0);
+  //if (p0 != nullptr) {
+  //  int opc = p0->Opcode();
+  //  if (is_marked_reduction(p0)) {
+  //    const Type* arith_type = p0->bottom_type();
+  //    retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+  //  } else if (VectorNode::is_convert_opcode(opc)) {
+  //    retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
+  //  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+  //    retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
+  //  } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
+  //    // Java API for Math.min/max operations supports only int, long, float
+  //    // and double types. Thus, avoid generating vector min/max nodes for
+  //    // integer subword types with superword vectorization.
+  //    // See JDK-8294816 for miscompilation issues with shorts.
+  //    return false;
+  //  } else if (p0->is_Cmp()) {
+  //    // Cmp -> Bool -> Cmove
+  //    retValue = UseVectorCmov;
+  //  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+  //    // Requires extra vector long -> int conversion.
+  //    retValue = VectorNode::implemented(opc, size, T_LONG) &&
+  //               VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
+  //  } else {
+  //    if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, velt_basic_type(p0))) {
+  //      opc = Op_RShiftI;
+  //    }
+  //    retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
+  //  }
+  //}
+  //return retValue;
 }
 
 // Find the maximal implemented size smaller or equal to the packs size
-uint SuperWord::max_implemented_size(const Node_List* pack) {
-  uint size = round_down_power_of_2(pack->size());
+uint SuperWord::max_implemented_size(const Pack* pack) {
+  uint size = round_down_power_of_2(pack->length());
   if (implemented(pack, size)) {
     return size;
   } else {
@@ -1778,258 +1782,266 @@ uint SuperWord::max_implemented_size(const Node_List* pack) {
 }
 
 // If the j-th input for all nodes in the pack is the same input: return it, else nullptr.
-Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int index) const {
-  Node* p0_in = pack->at(0)->in(index);
-  for (uint i = 1; i < pack->size(); i++) {
-    if (pack->at(i)->in(index) != p0_in) {
-      return nullptr; // not same
-    }
-  }
-  return p0_in;
+Node* PackSet::same_inputs_at_index_or_null(const Pack* pack, const int index) const {
+  assert(false, "TODO impl");
+  return nullptr;
+  //Node* p0_in = pack->at(0)->in(index);
+  //for (uint i = 1; i < pack->length(); i++) {
+  //  if (pack->at(i)->in(index) != p0_in) {
+  //    return nullptr; // not same
+  //  }
+  //}
+  //return p0_in;
 }
 
-VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
-  BoolNode* bol = bool_pack->at(0)->as_Bool();
-  BoolTest::mask mask = bol->_test._test;
-  bool is_negated = false;
-  assert(mask == BoolTest::eq ||
-         mask == BoolTest::ne ||
-         mask == BoolTest::ge ||
-         mask == BoolTest::gt ||
-         mask == BoolTest::lt ||
-         mask == BoolTest::le,
-         "Bool should be one of: eq, ne, ge, gt, lt, le");
-
-#ifdef ASSERT
-  for (uint j = 0; j < bool_pack->size(); j++) {
-    Node* m = bool_pack->at(j);
-    assert(m->as_Bool()->_test._test == mask,
-           "all bool nodes must have same test");
-  }
-#endif
-
-  CmpNode* cmp0 = bol->in(1)->as_Cmp();
-  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
-
-  switch (cmp0->Opcode()) {
-  case Op_CmpF:
-  case Op_CmpD:
-    // If we have a Float or Double comparison, we must be careful with
-    // handling NaN's correctly. CmpF and CmpD have a return code, as
-    // they are based on the java bytecodes fcmpl/dcmpl:
-    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
-    //  0: cmp_in1 == cmp_in2  (no NaN)
-    //  1: cmp_in1 >  cmp_in2  (no NaN)
-    //
-    // The "mask" selects which of the [-1, 0, 1] cases lead to "true".
-    //
-    // Note: ordered   (O) comparison returns "false" if either input is NaN.
-    //       unordered (U) comparison returns "true"  if either input is NaN.
-    //
-    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
-    // standard way (all comparisons are ordered, except NEQ is unordered).
-    //
-    // In the following, "mask" already matches the cmp code for VectorMaskCmpNode:
-    //   BoolTest::eq:  Case 0     -> EQ_O
-    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
-    //   BoolTest::ge:  Case 0, 1  -> GE_O
-    //   BoolTest::gt:  Case 1     -> GT_O
-    //
-    // But the lt and le comparisons must be converted from unordered to ordered:
-    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
-    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
-    //
-    if (mask == BoolTest::lt || mask == BoolTest::le) {
-      // Negating the mask gives us the negated result, since all non-NaN cases are
-      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
-      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
-      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
-      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
-      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
-      //
-      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
-      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
-      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
-      mask = bol->_test.negate();
-      is_negated = true;
-    }
-    break;
-  case Op_CmpU:
-  case Op_CmpUL:
-    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
-    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
-    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
-    // explicit.
-    mask = BoolTest::unsigned_mask(mask);
-    break;
-  case Op_CmpI:
-  case Op_CmpL:
-    // The mask of signed int/long scalar comparisons has the same semantics
-    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
-    break;
-  default:
-    // Other Cmp ops are not expected to get here.
-    ShouldNotReachHere();
-  } // switch
-
-  return VTransformBoolTest(mask, is_negated);
+VTransformBoolTest PackSet::get_bool_test(const Pack* bool_pack) const {
+  assert(false, "TODO impl");
+  return VTransformBoolTest(BoolTest::illegal, false);
+//  BoolNode* bol = bool_pack->at(0)->as_Bool();
+//  BoolTest::mask mask = bol->_test._test;
+//  bool is_negated = false;
+//  assert(mask == BoolTest::eq ||
+//         mask == BoolTest::ne ||
+//         mask == BoolTest::ge ||
+//         mask == BoolTest::gt ||
+//         mask == BoolTest::lt ||
+//         mask == BoolTest::le,
+//         "Bool should be one of: eq, ne, ge, gt, lt, le");
+//
+//#ifdef ASSERT
+//  for (uint j = 0; j < bool_pack->length(); j++) {
+//    Node* m = bool_pack->at(j);
+//    assert(m->as_Bool()->_test._test == mask,
+//           "all bool nodes must have same test");
+//  }
+//#endif
+//
+//  CmpNode* cmp0 = bol->in(1)->as_Cmp();
+//  assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
+//
+//  switch (cmp0->Opcode()) {
+//  case Op_CmpF:
+//  case Op_CmpD:
+//    // If we have a Float or Double comparison, we must be careful with
+//    // handling NaN's correctly. CmpF and CmpD have a return code, as
+//    // they are based on the java bytecodes fcmpl/dcmpl:
+//    // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+//    //  0: cmp_in1 == cmp_in2  (no NaN)
+//    //  1: cmp_in1 >  cmp_in2  (no NaN)
+//    //
+//    // The "mask" selects which of the [-1, 0, 1] cases lead to "true".
+//    //
+//    // Note: ordered   (O) comparison returns "false" if either input is NaN.
+//    //       unordered (U) comparison returns "true"  if either input is NaN.
+//    //
+//    // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+//    // standard way (all comparisons are ordered, except NEQ is unordered).
+//    //
+//    // In the following, "mask" already matches the cmp code for VectorMaskCmpNode:
+//    //   BoolTest::eq:  Case 0     -> EQ_O
+//    //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+//    //   BoolTest::ge:  Case 0, 1  -> GE_O
+//    //   BoolTest::gt:  Case 1     -> GT_O
+//    //
+//    // But the lt and le comparisons must be converted from unordered to ordered:
+//    //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+//    //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+//    //
+//    if (mask == BoolTest::lt || mask == BoolTest::le) {
+//      // Negating the mask gives us the negated result, since all non-NaN cases are
+//      // negated, and the unordered (U) comparisons are turned into ordered (O) comparisons.
+//      //          VectorMaskCmp(LT_U, in1_cmp, in2_cmp)
+//      // <==> NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp)
+//      //          VectorMaskCmp(LE_U, in1_cmp, in2_cmp)
+//      // <==> NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp)
+//      //
+//      // When a VectorBlend uses the negated mask, it can simply swap its blend-inputs:
+//      //      VectorBlend(    VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//      // <==> VectorBlend(NOT VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//      // <==> VectorBlend(    VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+//      //      VectorBlend(    VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//      // <==> VectorBlend(NOT VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in1_blend, in2_blend)
+//      // <==> VectorBlend(    VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+//      mask = bol->_test.negate();
+//      is_negated = true;
+//    }
+//    break;
+//  case Op_CmpU:
+//  case Op_CmpUL:
+//    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
+//    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
+//    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
+//    // explicit.
+//    mask = BoolTest::unsigned_mask(mask);
+//    break;
+//  case Op_CmpI:
+//  case Op_CmpL:
+//    // The mask of signed int/long scalar comparisons has the same semantics
+//    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
+//    break;
+//  default:
+//    // Other Cmp ops are not expected to get here.
+//    ShouldNotReachHere();
+//  } // switch
+//
+//  return VTransformBoolTest(mask, is_negated);
 }
 
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
-bool SuperWord::profitable(const Node_List* p) const {
-  Node* p0 = p->at(0);
-  uint start, end;
-  VectorNode::vector_operands(p0, &start, &end);
+bool SuperWord::profitable(const Pack* p) const {
+  assert(false, "TODO impl");
+  return false;
+  //Node* p0 = p->at(0);
+  //uint start, end;
+  //VectorNode::vector_operands(p0, &start, &end);
 
-  // Return false if some inputs are not vectors or vectors with different
-  // size or alignment.
-  // Also, for now, return false if not scalar promotion case when inputs are
-  // the same. Later, implement PackNode and allow differing, non-vector inputs
-  // (maybe just the ones from outside the block.)
-  for (uint i = start; i < end; i++) {
-    if (!is_vector_use(p0, i)) {
-      return false;
-    }
-  }
-  // Check if reductions are connected
-  if (is_marked_reduction(p0)) {
-    Node* second_in = p0->in(2);
-    Node_List* second_pk = get_pack(second_in);
-    if (second_pk == nullptr) {
-      // The second input has to be the vector we wanted to reduce,
-      // but it was not packed.
-      return false;
-    } else if (second_pk->size() != p->size()) {
-      return false;
-    }
-  }
-  if (VectorNode::is_shift(p0)) {
-    // For now, return false if shift count is vector or not scalar promotion
-    // case (different shift counts) because it is not supported yet.
-    Node* cnt = p0->in(2);
-    Node_List* cnt_pk = get_pack(cnt);
-    if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
-      return false;
-    }
-  }
-  if (!p0->is_Store()) {
-    // For now, return false if not all uses are vector.
-    // Later, implement ExtractNode and allow non-vector uses (maybe
-    // just the ones outside the block.)
-    for (uint i = 0; i < p->size(); i++) {
-      Node* def = p->at(i);
-      for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-        Node* use = def->fast_out(j);
-        for (uint k = 0; k < use->req(); k++) {
-          Node* n = use->in(k);
-          if (def == n) {
-            // Reductions should only have a Phi use at the loop head or a non-phi use
-            // outside of the loop if it is the last element of the pack (e.g. SafePoint).
-            if (is_marked_reduction(def) &&
-                ((use->is_Phi() && use->in(0) == lpt()->_head) ||
-                 (!lpt()->is_member(phase()->get_loop(phase()->ctrl_or_self(use))) && i == p->size()-1))) {
-              continue;
-            }
-            if (!is_vector_use(use, k)) {
-              return false;
-            }
-          }
-        }
-      }
-    }
-  }
-  if (p0->is_Cmp()) {
-    // Verify that Cmp pack only has Bool pack uses
-    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
-      Node* bol = p0->fast_out(j);
-      if (!bol->is_Bool() || bol->in(0) != nullptr || !is_vector_use(bol, 1)) {
-        return false;
-      }
-    }
-  }
-  if (p0->is_Bool()) {
-    // Verify that Bool pack only has CMove pack uses
-    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
-      Node* cmove = p0->fast_out(j);
-      if (!cmove->is_CMove() || cmove->in(0) != nullptr || !is_vector_use(cmove, 1)) {
-        return false;
-      }
-    }
-  }
-  if (p0->is_CMove()) {
-    // Verify that CMove has a matching Bool pack
-    BoolNode* bol = p0->in(1)->as_Bool();
-    if (bol == nullptr || get_pack(bol) == nullptr) {
-      return false;
-    }
-    // Verify that Bool has a matching Cmp pack
-    CmpNode* cmp = bol->in(1)->as_Cmp();
-    if (cmp == nullptr || get_pack(cmp) == nullptr) {
-      return false;
-    }
-  }
-  return true;
+  //// Return false if some inputs are not vectors or vectors with different
+  //// size or alignment.
+  //// Also, for now, return false if not scalar promotion case when inputs are
+  //// the same. Later, implement PackNode and allow differing, non-vector inputs
+  //// (maybe just the ones from outside the block.)
+  //for (uint i = start; i < end; i++) {
+  //  if (!is_vector_use(p0, i)) {
+  //    return false;
+  //  }
+  //}
+  //// Check if reductions are connected
+  //if (is_marked_reduction(p0)) {
+  //  Node* second_in = p0->in(2);
+  //  Pack* second_pk = get_pack(second_in);
+  //  if (second_pk == nullptr) {
+  //    // The second input has to be the vector we wanted to reduce,
+  //    // but it was not packed.
+  //    return false;
+  //  } else if (second_pk->size() != p->size()) {
+  //    return false;
+  //  }
+  //}
+  //if (VectorNode::is_shift(p0)) {
+  //  // For now, return false if shift count is vector or not scalar promotion
+  //  // case (different shift counts) because it is not supported yet.
+  //  Node* cnt = p0->in(2);
+  //  Pack* cnt_pk = get_pack(cnt);
+  //  if (cnt_pk != nullptr || _packset.same_inputs_at_index_or_null(p, 2) == nullptr) {
+  //    return false;
+  //  }
+  //}
+  //if (!p0->is_Store()) {
+  //  // For now, return false if not all uses are vector.
+  //  // Later, implement ExtractNode and allow non-vector uses (maybe
+  //  // just the ones outside the block.)
+  //  for (uint i = 0; i < p->size(); i++) {
+  //    Node* def = p->at(i);
+  //    for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
+  //      Node* use = def->fast_out(j);
+  //      for (uint k = 0; k < use->req(); k++) {
+  //        Node* n = use->in(k);
+  //        if (def == n) {
+  //          // Reductions should only have a Phi use at the loop head or a non-phi use
+  //          // outside of the loop if it is the last element of the pack (e.g. SafePoint).
+  //          if (is_marked_reduction(def) &&
+  //              ((use->is_Phi() && use->in(0) == lpt()->_head) ||
+  //               (!lpt()->is_member(phase()->get_loop(phase()->ctrl_or_self(use))) && i == p->size()-1))) {
+  //            continue;
+  //          }
+  //          if (!is_vector_use(use, k)) {
+  //            return false;
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
+  //if (p0->is_Cmp()) {
+  //  // Verify that Cmp pack only has Bool pack uses
+  //  for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+  //    Node* bol = p0->fast_out(j);
+  //    if (!bol->is_Bool() || bol->in(0) != nullptr || !is_vector_use(bol, 1)) {
+  //      return false;
+  //    }
+  //  }
+  //}
+  //if (p0->is_Bool()) {
+  //  // Verify that Bool pack only has CMove pack uses
+  //  for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+  //    Node* cmove = p0->fast_out(j);
+  //    if (!cmove->is_CMove() || cmove->in(0) != nullptr || !is_vector_use(cmove, 1)) {
+  //      return false;
+  //    }
+  //  }
+  //}
+  //if (p0->is_CMove()) {
+  //  // Verify that CMove has a matching Bool pack
+  //  BoolNode* bol = p0->in(1)->as_Bool();
+  //  if (bol == nullptr || get_pack(bol) == nullptr) {
+  //    return false;
+  //  }
+  //  // Verify that Bool has a matching Cmp pack
+  //  CmpNode* cmp = bol->in(1)->as_Cmp();
+  //  if (cmp == nullptr || get_pack(cmp) == nullptr) {
+  //    return false;
+  //  }
+  //}
+  //return true;
 }
 
 #ifdef ASSERT
 void SuperWord::verify_packs() const {
-  _packset.verify();
+  assert(false, "TODO impl");
+  //_packset.verify();
 
-  // All packs must be:
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
+  //// All packs must be:
+  //for (int i = 0; i < _packset.length(); i++) {
+  //  Pack* pack = _packset.at(i);
 
-    // 1. Mutually independent (or a reduction).
-    if (!is_marked_reduction(pack->at(0)) &&
-        !mutually_independent(pack)) {
-      tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
-      _packset.print_pack(pack);
-      assert(false, "pack nodes not mutually independent");
-    }
+  //  // 1. Mutually independent (or a reduction).
+  //  if (!is_marked_reduction(pack->at(0)) &&
+  //      !mutually_independent(pack)) {
+  //    tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
+  //    _packset.print_pack(pack);
+  //    assert(false, "pack nodes not mutually independent");
+  //  }
 
-    // 2. Implemented.
-    if (!implemented(pack, pack->size())) {
-      tty->print_cr("FAILURE: nodes not implementable in pack[%d]", i);
-      _packset.print_pack(pack);
-      assert(false, "pack not implementable");
-    }
+  //  // 2. Implemented.
+  //  if (!implemented(pack, pack->length())) {
+  //    tty->print_cr("FAILURE: nodes not implementable in pack[%d]", i);
+  //    _packset.print_pack(pack);
+  //    assert(false, "pack not implementable");
+  //  }
 
-    // 3. Profitable.
-    if (!profitable(pack)) {
-      tty->print_cr("FAILURE: nodes not profitable in pack[%d]", i);
-      _packset.print_pack(pack);
-      assert(false, "pack not profitable");
-    }
-  }
+  //  // 3. Profitable.
+  //  if (!profitable(pack)) {
+  //    tty->print_cr("FAILURE: nodes not profitable in pack[%d]", i);
+  //    _packset.print_pack(pack);
+  //    assert(false, "pack not profitable");
+  //  }
+  //}
 }
 
 void PackSet::verify() const {
-  // Verify all nodes in packset have pack set correctly.
-  ResourceMark rm;
-  Unique_Node_List processed;
-  for (int i = 0; i < _packs.length(); i++) {
-    Node_List* p = _packs.at(i);
-    for (uint k = 0; k < p->size(); k++) {
-      Node* n = p->at(k);
-      assert(_vloop.in_bb(n), "only nodes in bb can be in packset");
-      assert(!processed.member(n), "node should only occur once in packset");
-      assert(get_pack(n) == p, "n has consisten packset info");
-      processed.push(n);
-    }
-  }
+  assert(false, "TODO impl");
+  //// Verify all nodes in packset have pack set correctly.
+  //ResourceMark rm;
+  //Unique_Node_List processed;
+  //for (int i = 0; i < _packs.length(); i++) {
+  //  Pack* p = _packs.at(i);
+  //  for (uint k = 0; k < p->size(); k++) {
+  //    Node* n = p->at(k);
+  //    assert(_vloop.in_bb(n), "only nodes in bb can be in packset");
+  //    assert(!processed.member(n), "node should only occur once in packset");
+  //    assert(get_pack(n) == p, "n has consisten packset info");
+  //    processed.push(n);
+  //  }
+  //}
 
-  // Check that no other node has pack set.
-  for (int i = 0; i < _body.body().length(); i++) {
-    Node* n = _body.body().at(i);
-    if (!processed.member(n)) {
-      assert(get_pack(n) == nullptr, "should not have pack if not in packset");
-    }
-  }
+  //// Check that no other node has pack set.
+  //for (int i = 0; i < _body.body().length(); i++) {
+  //  Node* n = _body.body().at(i);
+  //  if (!processed.member(n)) {
+  //    assert(get_pack(n) == nullptr, "should not have pack if not in packset");
+  //  }
+  //}
 }
 #endif
 
@@ -2200,171 +2212,178 @@ void VTransform::apply_vectorization() const {
 // We check that every packset (name it p_def) only has vector uses (p_use),
 // which are proper vector uses of def.
 void SuperWord::verify_no_extract() {
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p_def = _packset.at(i);
+  assert(false, "TODO impl");
+  //for (int i = 0; i < _packset.length(); i++) {
+  //  Pack* p_def = _packset.at(i);
 
-    // A vector store has no uses
-    if (p_def->at(0)->is_Store()) { continue; }
+  //  // A vector store has no uses
+  //  if (p_def->at(0)->is_Store()) { continue; }
 
-    // for every def in p_def, and every use:
-    for (uint i = 0; i < p_def->size(); i++) {
-      Node* def = p_def->at(i);
-      for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-        Node* use = def->fast_out(j);
-        // find every use->def edge:
-        for (uint k = 0; k < use->req(); k++) {
-          Node* maybe_def = use->in(k);
-          if (def == maybe_def) {
-            Node_List* p_use = get_pack(use);
-            if (is_marked_reduction(def)) { continue; }
-            assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
-          }
-        }
-      }
-    }
-  }
+  //  // for every def in p_def, and every use:
+  //  for (uint i = 0; i < p_def->size(); i++) {
+  //    Node* def = p_def->at(i);
+  //    for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
+  //      Node* use = def->fast_out(j);
+  //      // find every use->def edge:
+  //      for (uint k = 0; k < use->req(); k++) {
+  //        Node* maybe_def = use->in(k);
+  //        if (def == maybe_def) {
+  //          Pack* p_use = get_pack(use);
+  //          if (is_marked_reduction(def)) { continue; }
+  //          assert(p_use != nullptr && is_vector_use(use, k), "all uses must be vector uses");
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 }
 #endif
 
 // Check if n_super's pack uses are a superset of n_sub's pack uses.
-bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
-  Node_List* pack = get_pack(n_super);
-  assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
+bool SuperWord::has_use_pack_superset(const VTransformNode* n_super, const VTransformNode* n_sub) const {
+  assert(false, "TODO impl");
+  return false;
+  //Pack* pack = get_pack(n_super);
+  //assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
 
-  // For all uses of n_sub that are in a pack (use_sub) ...
-  for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
-    Node* use_sub = n_sub->fast_out(j);
-    Node_List* pack_use_sub = get_pack(use_sub);
-    if (pack_use_sub == nullptr) { continue; }
+  //// For all uses of n_sub that are in a pack (use_sub) ...
+  //for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
+  //  Node* use_sub = n_sub->fast_out(j);
+  //  Pack* pack_use_sub = get_pack(use_sub);
+  //  if (pack_use_sub == nullptr) { continue; }
 
-    // ... and all input edges: use_sub->in(i) == n_sub.
-    uint start, end;
-    VectorNode::vector_operands(use_sub, &start, &end);
-    for (uint i = start; i < end; i++) {
-      if (use_sub->in(i) != n_sub) { continue; }
+  //  // ... and all input edges: use_sub->in(i) == n_sub.
+  //  uint start, end;
+  //  VectorNode::vector_operands(use_sub, &start, &end);
+  //  for (uint i = start; i < end; i++) {
+  //    if (use_sub->in(i) != n_sub) { continue; }
 
-      // Check if n_super has any use use_super in the same pack ...
-      bool found = false;
-      for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
-        Node* use_super = n_super->fast_out(k);
-        Node_List* pack_use_super = get_pack(use_super);
-        if (pack_use_sub != pack_use_super) { continue; }
+  //    // Check if n_super has any use use_super in the same pack ...
+  //    bool found = false;
+  //    for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
+  //      Node* use_super = n_super->fast_out(k);
+  //      Pack* pack_use_super = get_pack(use_super);
+  //      if (pack_use_sub != pack_use_super) { continue; }
 
-        // ... and where there is an edge use_super->in(i) == n_super.
-        // For MulAddS2I it is expected to have defs over different input edges.
-        if (use_super->in(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
+  //      // ... and where there is an edge use_super->in(i) == n_super.
+  //      // For MulAddS2I it is expected to have defs over different input edges.
+  //      if (use_super->in(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
 
-        found = true;
-        break;
-      }
-      if (!found) {
-        // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
-        // but n_super does not have any edge (use_super->in(i) == n_super) with
-        // use_super in the same packset. Hence, n_super does not have a use pack
-        // superset of n_sub.
-        return false;
-      }
-    }
-  }
-  // n_super has all edges that n_sub has.
-  return true;
+  //      found = true;
+  //      break;
+  //    }
+  //    if (!found) {
+  //      // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
+  //      // but n_super does not have any edge (use_super->in(i) == n_super) with
+  //      // use_super in the same packset. Hence, n_super does not have a use pack
+  //      // superset of n_sub.
+  //      return false;
+  //    }
+  //  }
+  //}
+  //// n_super has all edges that n_sub has.
+  //return true;
 }
 
 // Find a boundary in the pack, where left and right have different pack uses and defs.
 // This is a natural boundary to split a pack, to ensure that use and def packs match.
 // If no boundary is found, return zero.
-uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
-  Node* p0 = pack->at(0);
-  Node* p1 = pack->at(1);
-
-  const bool is_reduction_pack = reduction(p0, p1);
-
-  // Inputs range
-  uint start, end;
-  VectorNode::vector_operands(p0, &start, &end);
-
-  for (int i = pack->size() - 2; i >= 0; i--) {
-    // For all neighbours
-    Node* n0 = pack->at(i + 0);
-    Node* n1 = pack->at(i + 1);
-
-
-    // 1. Check for matching defs
-    for (uint j = start; j < end; j++) {
-      Node* n0_in = n0->in(j);
-      Node* n1_in = n1->in(j);
-      // No boundary if:
-      // 1) the same packs OR
-      // 2) reduction edge n0->n1 or n1->n0
-      if (get_pack(n0_in) != get_pack(n1_in) &&
-          !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
-        return i + 1;
-      }
-    }
-
-    // 2. Check for matching uses: equal if both are superset of the other.
-    //    Reductions have no pack uses, so they match trivially on the use packs.
-    if (!is_reduction_pack &&
-        !(has_use_pack_superset(n0, n1) &&
-          has_use_pack_superset(n1, n0))) {
-      return i + 1;
-    }
-  }
-
+uint SuperWord::find_use_def_boundary(const Pack* pack) const {
+  assert(false, "TODO impl");
   return 0;
+  //Node* p0 = pack->at(0);
+  //Node* p1 = pack->at(1);
+
+  //const bool is_reduction_pack = reduction(p0, p1);
+
+  //// Inputs range
+  //uint start, end;
+  //VectorNode::vector_operands(p0, &start, &end);
+
+  //for (int i = pack->length() - 2; i >= 0; i--) {
+  //  // For all neighbours
+  //  Node* n0 = pack->at(i + 0);
+  //  Node* n1 = pack->at(i + 1);
+
+
+  //  // 1. Check for matching defs
+  //  for (uint j = start; j < end; j++) {
+  //    Node* n0_in = n0->in(j);
+  //    Node* n1_in = n1->in(j);
+  //    // No boundary if:
+  //    // 1) the same packs OR
+  //    // 2) reduction edge n0->n1 or n1->n0
+  //    if (get_pack(n0_in) != get_pack(n1_in) &&
+  //        !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
+  //      return i + 1;
+  //    }
+  //  }
+
+  //  // 2. Check for matching uses: equal if both are superset of the other.
+  //  //    Reductions have no pack uses, so they match trivially on the use packs.
+  //  if (!is_reduction_pack &&
+  //      !(has_use_pack_superset(n0, n1) &&
+  //        has_use_pack_superset(n1, n0))) {
+  //    return i + 1;
+  //  }
+  //}
+
+  //return 0;
 }
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
-bool SuperWord::is_vector_use(Node* use, int u_idx) const {
-  Node_List* u_pk = get_pack(use);
-  if (u_pk == nullptr) return false;
+bool SuperWord::is_vector_use(const VTransformNode* use, int u_idx) const {
+  assert(false, "TODO impl");
+  return false;
+  //Pack* u_pk = get_pack(use);
+  //if (u_pk == nullptr) return false;
 
-  // Reduction: first input is internal connection.
-  if (is_marked_reduction(use) && u_idx == 1) {
-    for (uint i = 1; i < u_pk->size(); i++) {
-      if (u_pk->at(i - 1) != u_pk->at(i)->in(1)) {
-        return false; // not internally connected
-      }
-    }
-    return true;
-  }
+  //// Reduction: first input is internal connection.
+  //if (is_marked_reduction(use) && u_idx == 1) {
+  //  for (uint i = 1; i < u_pk->size(); i++) {
+  //    if (u_pk->at(i - 1) != u_pk->at(i)->in(1)) {
+  //      return false; // not internally connected
+  //    }
+  //  }
+  //  return true;
+  //}
 
-  Node* def = use->in(u_idx);
-  Node_List* d_pk = get_pack(def);
-  if (d_pk == nullptr) {
-    Node* n = u_pk->at(0)->in(u_idx);
-    if (n == iv()) {
-      // check for index population
-      BasicType bt = velt_basic_type(use);
-      if (!VectorNode::is_populate_index_supported(bt)) return false;
-      for (uint i = 1; i < u_pk->size(); i++) {
-        // We can create a vector filled with iv indices if all other nodes
-        // in use pack have inputs of iv plus node index.
-        Node* use_in = u_pk->at(i)->in(u_idx);
-        if (!use_in->is_Add() || use_in->in(1) != n) return false;
-        const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
-        if (offset_t == nullptr || !offset_t->is_con() ||
-            offset_t->get_con() != (jint) i) return false;
-      }
-    } else {
-      // check for scalar promotion
-      for (uint i = 1; i < u_pk->size(); i++) {
-        if (u_pk->at(i)->in(u_idx) != n) return false;
-      }
-    }
-    return true;
-  }
+  //Node* def = use->in(u_idx);
+  //Pack* d_pk = get_pack(def);
+  //if (d_pk == nullptr) {
+  //  Node* n = u_pk->at(0)->in(u_idx);
+  //  if (n == iv()) {
+  //    // check for index population
+  //    BasicType bt = velt_basic_type(use);
+  //    if (!VectorNode::is_populate_index_supported(bt)) return false;
+  //    for (uint i = 1; i < u_pk->size(); i++) {
+  //      // We can create a vector filled with iv indices if all other nodes
+  //      // in use pack have inputs of iv plus node index.
+  //      Node* use_in = u_pk->at(i)->in(u_idx);
+  //      if (!use_in->is_Add() || use_in->in(1) != n) return false;
+  //      const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
+  //      if (offset_t == nullptr || !offset_t->is_con() ||
+  //          offset_t->get_con() != (jint) i) return false;
+  //    }
+  //  } else {
+  //    // check for scalar promotion
+  //    for (uint i = 1; i < u_pk->size(); i++) {
+  //      if (u_pk->at(i)->in(u_idx) != n) return false;
+  //    }
+  //  }
+  //  return true;
+  //}
 
-  if (!is_velt_basic_type_compatible_use_def(use, def, d_pk->size())) {
-    return false;
-  }
+  //if (!is_velt_basic_type_compatible_use_def(use, def, d_pk->size())) {
+  //  return false;
+  //}
 
-  if (VectorNode::is_muladds2i(use)) {
-    return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
-  }
+  //if (VectorNode::is_muladds2i(use)) {
+  //  return _packset.is_muladds2i_pack_with_pack_inputs(u_pk);
+  //}
 
-  return _packset.pack_input_at_index_or_null(u_pk, u_idx) != nullptr;
+  //return _packset.pack_input_at_index_or_null(u_pk, u_idx) != nullptr;
 }
 
 // MulAddS2I takes 4 shorts and produces an int. We can reinterpret
@@ -2387,37 +2406,41 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
 // and (b0, b1) in the other input pack. Thus, both a and b are strided,
 // with stride = 2. Further, a0 and b0 have offset 0, whereas a1 and b1
 // have offset 1.
-bool PackSet::is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const {
-  assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
+bool PackSet::is_muladds2i_pack_with_pack_inputs(const Pack* pack) const {
+  assert(false, "TODO");
+  return false;
+  //assert(VectorNode::is_muladds2i(pack->at(0)), "must be MulAddS2I");
 
-  bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
-  Node_List* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
-  Node_List* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
-  Node_List* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
+  //bool pack1_has_offset_0 = (strided_pack_input_at_index_or_null(pack, 1, 2, 0) != nullptr);
+  //Pack* pack1 = strided_pack_input_at_index_or_null(pack, 1, 2, pack1_has_offset_0 ? 0 : 1);
+  //Pack* pack2 = strided_pack_input_at_index_or_null(pack, 2, 2, pack1_has_offset_0 ? 0 : 1);
+  //Pack* pack3 = strided_pack_input_at_index_or_null(pack, 3, 2, pack1_has_offset_0 ? 1 : 0);
+  //Pack* pack4 = strided_pack_input_at_index_or_null(pack, 4, 2, pack1_has_offset_0 ? 1 : 0);
 
-  return pack1 != nullptr &&
-         pack2 != nullptr &&
-         pack3 != nullptr &&
-         pack4 != nullptr &&
-         ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
-          (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
+  //return pack1 != nullptr &&
+  //       pack2 != nullptr &&
+  //       pack3 != nullptr &&
+  //       pack4 != nullptr &&
+  //       ((pack1 == pack3 && pack2 == pack4) || // case 1 or 3
+  //        (pack1 == pack4 && pack2 == pack3));  // case 2 or 4
 }
 
-Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const {
-  Node* def0 = pack->at(0)->in(index);
+Pack* PackSet::strided_pack_input_at_index_or_null(const Pack* pack, const int index, const int stride, const int offset) const {
+  assert(false, "TODO");
+  return nullptr;
+  //Node* def0 = pack->at(0)->in(index);
 
-  Node_List* pack_in = get_pack(def0);
-  if (pack_in == nullptr || pack->size() * stride != pack_in->size()) {
-    return nullptr; // size mismatch
-  }
+  //Pack* pack_in = get_pack(def0);
+  //if (pack_in == nullptr || pack->length() * stride != pack_in->size()) {
+  //  return nullptr; // size mismatch
+  //}
 
-  for (uint i = 0; i < pack->size(); i++) {
-    if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
-      return nullptr; // use-def mismatch
-    }
-  }
-  return pack_in;
+  //for (uint i = 0; i < pack->length(); i++) {
+  //  if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
+  //    return nullptr; // use-def mismatch
+  //  }
+  //}
+  //return pack_in;
 }
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
@@ -2860,13 +2883,14 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Node_List* pack) const {
+LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(const Pack* pack) const {
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (uint i = 0; i < pack->size(); i++) {
-    Node* n = pack->at(i);
-    assert(n->is_Load(), "only meaningful for loads");
-    if (!n->depends_only_on_test()) {
-      if (n->as_Load()->has_unknown_control_dependency() &&
+  for (int i = 0; i < pack->length(); i++) {
+    const VTransformMemopScalarNode* n = pack->at(i)->isa_MemopScalar();
+    assert(n != nullptr && n->is_load_in_loop(), "only meaningful for loads");
+    LoadNode* load = n->node()->as_Load();
+    if (!load->depends_only_on_test()) {
+      if (load->has_unknown_control_dependency() &&
           dep != LoadNode::Pinned) {
         // Upgrade to unknown control...
         dep = LoadNode::UnknownControl;
@@ -3317,16 +3341,16 @@ void PairSet::print() const {
   int chain = 0;
   int chain_index = 0;
   for (PairSetIterator pair(*this); !pair.done(); pair.next()) {
-    Node* left  = pair.left();
-    Node* right = pair.right();
+    const VTransformNode* left  = pair.left();
+    const VTransformNode* right = pair.right();
     if (is_left_in_a_left_most_pair(left)) {
       chain_index = 0;
       tty->print_cr(" Pair-chain %d:", chain++);
       tty->print("  %3d: ", chain_index++);
-      left->dump();
+      left->print();
     }
     tty->print("  %3d: ", chain_index++);
-    right->dump();
+    right->print();
   }
 }
 
@@ -3334,7 +3358,7 @@ void PackSet::print() const {
   tty->print_cr("\nPackSet::print: %d packs", _packs.length());
   for (int i = 0; i < _packs.length(); i++) {
     tty->print_cr(" Pack: %d", i);
-    Node_List* pack = _packs.at(i);
+    Pack* pack = _packs.at(i);
     if (pack == nullptr) {
       tty->print_cr("  nullptr");
     } else {
@@ -3343,10 +3367,10 @@ void PackSet::print() const {
   }
 }
 
-void PackSet::print_pack(Node_List* pack) {
-  for (uint i = 0; i < pack->size(); i++) {
+void PackSet::print_pack(Pack* pack) {
+  for (int i = 0; i < pack->length(); i++) {
     tty->print("  %3d: ", i);
-    pack->at(i)->dump();
+    pack->at(i)->print();
   }
 }
 #endif
