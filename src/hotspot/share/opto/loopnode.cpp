@@ -645,7 +645,7 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
   return true;
 }
 
-SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop) {
+SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* head, const IdealLoopTree* loop) {
   if (!back_control->in(0)->is_If()) {
     assert(StressDuplicateBackedge, "");
     return nullptr;
@@ -653,7 +653,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
   IfNode* exit_test = back_control->in(0)->as_If();
   SafePointNode* safepoint = nullptr;
   Node* c = back_control;
-  while (c != x && c->Opcode() != Op_SafePoint) {
+  while (c != head && c->Opcode() != Op_SafePoint) {
     c = idom(c);
   }
 
@@ -692,7 +692,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
     }
   }
 #endif
-  if (!no_side_effect_since_safepoint(C, x, mem, mm, this)) {
+  if (!no_side_effect_since_safepoint(C, head, mem, mm, this)) {
     safepoint = nullptr;
   } else {
     assert(mm == nullptr|| _igvn.transform(mm) == mem->as_MergeMem()->base_memory(),
@@ -700,7 +700,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
   }
 #ifdef ASSERT
   if (mm != nullptr) {
-    _igvn.remove_dead_node(mm);
+    _igvn.remove_dead_node(mm, PhaseIterGVN::NodeOrigin::Speculative);
   }
 #endif
   return safepoint;

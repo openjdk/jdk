@@ -4374,7 +4374,7 @@ private:
       return false;
     }
 
-    LoopExitTest loop_exit(back_control, loop, this);
+    PhaseIdealLoop::LoopExitTest loop_exit(back_control, _loop, _phase);
     loop_exit.build();
     if (!loop_exit.is_valid_with_bt(T_INT)) {
       return false;
@@ -4389,12 +4389,11 @@ private:
     }
 
     PathFrequency pf(head, _phase);
-    region = loop_incr->in(0);
+    _region = loop_incr->in(0);
 
     // Go over all paths for the extra phi's region and see if that
     // path is frequent enough and would match the expected iv shape
     // if the extra phi is removed
-    inner = 0;
     for (uint i = 1; i < loop_incr->req(); ++i) {
       CountedLoopConverter::TruncatedIncrement increment(T_INT);
       increment.build(loop_incr->in(i));
@@ -4403,13 +4402,13 @@ private:
       }
       assert(increment.incr()->Opcode() == Op_AddI, "wrong increment code");
 
-      LoopIVStride stride = LoopIVStride(T_INT);
+      PhaseIdealLoop::LoopIVStride stride(T_INT);
       stride.build(increment.incr());
       if (!stride.is_valid()) {
         continue;
       }
 
-      PhiNode* phi = _phsae->loop_iv_phi(stride.xphi(), nullptr, head);
+      PhiNode* phi = _phase->loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
           (increment.outer_trunc() == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
           (increment.outer_trunc() != nullptr && phi->in(LoopNode::LoopBackControl) != increment.outer_trunc())) {

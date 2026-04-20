@@ -2081,6 +2081,7 @@ public:
 
 class CountedLoopConverter {
   friend class PhaseIdealLoop;
+  friend class DuplicateLoopBackedge;
 
   // Match increment with optional truncation
   class TruncatedIncrement {
