@@ -435,10 +435,8 @@ void StubRoutines::init_AOTAddressTable() {
   AOTCodeCache::publish_external_addresses(external_addresses);
 }
 
-
-#define ADD(addr) external_addresses.append((address)addr);
-
 void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(_kyberConsts);
   ADD(_dilithiumConsts);
   // this is added in generic code
@@ -449,7 +447,6 @@ void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& externa
   ADD(_dcos_coef);
   ADD(_two_over_pi);
   ADD(_pio2);
-}
-
 #undef ADD
+}
 #endif // INCLUDE_CDS

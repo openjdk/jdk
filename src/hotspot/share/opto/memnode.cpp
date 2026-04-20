@@ -1671,11 +1671,15 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
 
+  if (base == nullptr) {
+    return false;
+  }
+
   if (base->is_CastPP()) {
     base = base->in(1);
   }
 
-  if (req() > 3 || base == nullptr || !base->is_Phi()) {
+  if (req() > 3 || !base->is_Phi()) {
     return false;
   }
 

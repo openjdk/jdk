@@ -249,7 +249,7 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(TaskQueueEntryChunk*, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
@@ -676,9 +676,9 @@ void G1ConcurrentMark::reset_at_marking_complete() {
 }
 
 G1ConcurrentMark::~G1ConcurrentMark() {
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _top_at_mark_starts);
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _top_at_rebuild_starts);
-  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _region_mark_stats);
+  FREE_C_HEAP_ARRAY(_top_at_mark_starts);
+  FREE_C_HEAP_ARRAY(_top_at_rebuild_starts);
+  FREE_C_HEAP_ARRAY(_region_mark_stats);
   // The G1ConcurrentMark instance is never freed.
   ShouldNotReachHere();
 }

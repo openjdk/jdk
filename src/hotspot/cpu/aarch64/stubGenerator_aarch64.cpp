@@ -12825,7 +12825,7 @@ class StubGenerator: public StubCodeGenerator {
 #if INCLUDE_CDS
   static void init_AOTAddressTable(GrowableArray<address>& external_addresses) {
     // external data defined in this file
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
     ADD(_sha256_round_consts);
     ADD(_sha512_round_consts);
     ADD(_sha3_round_consts);

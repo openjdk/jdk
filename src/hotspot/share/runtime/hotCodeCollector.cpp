@@ -29,6 +29,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/hotCodeCollector.hpp"
 #include "runtime/hotCodeSampler.hpp"
 #include "runtime/java.hpp"
