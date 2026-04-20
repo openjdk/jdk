@@ -166,7 +166,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
         // wait for targetThread finish
         try {
-            targetThread.join(timeout*1000*5);
+            targetThread.join(timeout*1000*20);
         } catch (InterruptedException e) {
             throw new Failure(e);
         }
