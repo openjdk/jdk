@@ -27,6 +27,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/debug.hpp"
 #include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
@@ -973,6 +974,19 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
       phase->igvn().replace_input_of(n, i, def);
     }
   }
+}
+
+void VTransformScalarNode::vector_operands(uint* start, uint* end) const {
+  // TODO: not the most elegant. Maybe we can later refactor this somehow?
+  const VTransformMemopScalarNode* m = isa_MemopScalar();
+  if (m != nullptr) {
+    return VectorNode::vector_operands(m->node(), start, end);
+  }
+  const VTransformDataScalarNode* d = isa_DataScalar();
+  if (d != nullptr) {
+    return VectorNode::vector_operands(d->node(), start, end);
+  }
+  ShouldNotReachHere();
 }
 
 bool VTransformMemopScalarNode::is_isomorphic_with(const VTransformScalarNode* n) const {

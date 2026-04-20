@@ -2294,46 +2294,44 @@ bool SuperWord::has_use_pack_superset(const VTransformNode* n_super, const VTran
 // This is a natural boundary to split a pack, to ensure that use and def packs match.
 // If no boundary is found, return zero.
 uint SuperWord::find_use_def_boundary(const Pack* pack) const {
-  assert(false, "TODO");
+  const VTransformNode* p0 = pack->at(0);
+  const VTransformNode* p1 = pack->at(1);
+
+  const bool is_reduction_pack = reduction(p0, p1);
+
+  // Inputs range
+  uint start, end;
+  p0->isa_Scalar()->vector_operands(&start, &end);
+
+  for (int i = pack->length() - 2; i >= 0; i--) {
+    // For all neighbours
+    const VTransformNode* n0 = pack->at(i + 0);
+    const VTransformNode* n1 = pack->at(i + 1);
+
+
+    // 1. Check for matching defs
+    for (uint j = start; j < end; j++) {
+      const VTransformNode* n0_in = n0->in_req(j);
+      const VTransformNode* n1_in = n1->in_req(j);
+      // No boundary if:
+      // 1) the same packs OR
+      // 2) reduction edge n0->n1 or n1->n0
+      if (get_pack(n0_in) != get_pack(n1_in) &&
+          !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
+        return i + 1;
+      }
+    }
+
+    // 2. Check for matching uses: equal if both are superset of the other.
+    //    Reductions have no pack uses, so they match trivially on the use packs.
+    if (!is_reduction_pack &&
+        !(has_use_pack_superset(n0, n1) &&
+          has_use_pack_superset(n1, n0))) {
+      return i + 1;
+    }
+  }
+
   return 0;
-  //const VTransformNode* p0 = pack->at(0);
-  //const VTransformNode* p1 = pack->at(1);
-
-  //const bool is_reduction_pack = reduction(p0, p1);
-
-  //// Inputs range
-  //uint start, end;
-  //VectorNode::vector_operands(p0, &start, &end);
-
-  //for (int i = pack->length() - 2; i >= 0; i--) {
-  //  // For all neighbours
-  //  const VTransformNode* n0 = pack->at(i + 0);
-  //  const VTransformNode* n1 = pack->at(i + 1);
-
-
-  //  // 1. Check for matching defs
-  //  for (uint j = start; j < end; j++) {
-  //    const VTransformNode* n0_in = n0->(j);
-  //    const VTransformNode* n1_in = n1->(j);
-  //    // No boundary if:
-  //    // 1) the same packs OR
-  //    // 2) reduction edge n0->n1 or n1->n0
-  //    if (get_pack(n0_in) != get_pack(n1_in) &&
-  //        !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
-  //      return i + 1;
-  //    }
-  //  }
-
-  //  // 2. Check for matching uses: equal if both are superset of the other.
-  //  //    Reductions have no pack uses, so they match trivially on the use packs.
-  //  if (!is_reduction_pack &&
-  //      !(has_use_pack_superset(n0, n1) &&
-  //        has_use_pack_superset(n1, n0))) {
-  //    return i + 1;
-  //  }
-  //}
-
-  //return 0;
 }
 
 //------------------------------is_vector_use---------------------------

@@ -636,7 +636,7 @@ public:
 
   virtual bool is_isomorphic_with(const VTransformScalarNode* n) const { return false; }
 
-  void vector_operands(uint* start, uint* end) const; // TODO: impl
+  void vector_operands(uint* start, uint* end) const;
 };
 
 // Identity transform for scalar loads and stores.
