@@ -19,19 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
-#define SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP
+/*
+ * @test
+ * @bug 8382057
+ * @requires vm.debug == true
+ *
+ * @run main/othervm -Xbatch -XX:+CountCompiledCalls ${test.main.class}
+ */
 
-#include "cds/aotGrowableArray.hpp"
+package compiler.debug;
 
-#include "memory/metaspaceClosure.hpp"
-
-template <typename E>
-void AOTGrowableArray<E>::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push_c_array(AOTGrowableArray<E>::data_addr(), AOTGrowableArray<E>::capacity());
+public class TestCountCompiledCalls {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
 }
-
-#endif // SHARE_CDS_AOTGROWABLEARRAY_INLINE_HPP

@@ -93,7 +93,7 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
     --_number_of_entries;
   }
   void free_buckets() {
-    FREE_C_HEAP_ARRAY(Bucket, _buckets);
+    FREE_C_HEAP_ARRAY(_buckets);
   }
   TableEntry* bucket(size_t i) { return _buckets[i].get_entry();}
   TableEntry** bucket_addr(size_t i) { return _buckets[i].entry_addr(); }
