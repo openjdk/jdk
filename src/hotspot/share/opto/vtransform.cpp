@@ -104,7 +104,7 @@ bool VTransformOptimize::optimize_step(VTransformNode* vtn) {
   bool progress = vtn->optimize(*this);
 
   // Nodes that have no use any more are dead.
-  if (vtn->out_strong_edges() == 0 &&
+  if (vtn->outcnt_req() == 0 &&
       // There are some exceptions:
       // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
       // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
@@ -1312,7 +1312,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   if (phi == nullptr) {
     return false;
   }
-  if (phi->out_strong_edges() != 1) {
+  if (phi->outcnt_req() != 1) {
     TRACE_OPTIMIZE(
       tty->print("  Cannot move out of loop, phi has multiple uses:");
       print();
@@ -1374,8 +1374,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     // Expect single use of the non strict order reduction. Except for the last_red.
     if (current_red == last_red) {
       // All uses must be outside loop body, except for the phi.
-      for (uint i = 0; i < current_red->out_strong_edges(); i++) {
-        VTransformNode* use = current_red->out_strong_edge(i);
+      for (uint i = 0; i < current_red->outcnt_req(); i++) {
+        VTransformNode* use = current_red->out_req(i);
         if (use->isa_PhiScalar() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
@@ -1384,7 +1384,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         }
       }
     } else {
-      if (current_red->out_strong_edges() != 1) {
+      if (current_red->outcnt_req() != 1) {
         TRACE_OPTIMIZE(
           tty->print("  Cannot move out of loop, other reduction node has use outside loop:");
           print();

@@ -372,6 +372,7 @@ private:
 //
 // Strong edges: union of data edges and strong memory edges.
 //               These must be respected by scheduling in all cases.
+  // TODO: make sure weak/strong always mentions memory, now that we split off the req edges!
 //
 // The C2 IR Node memory edges essentially define a linear order of all memory operations
 // (only Loads with the same memory input can be executed in an arbitrary order). This is
@@ -387,19 +388,22 @@ public:
 
 private:
   bool _is_alive;
+  // TODO: make sure weak/strong always mentions memory, now that we split off the req edges!
 
   // We split _in into 3 sections:
   // - data edges (req):     _in[0                           .. _req-1]
   // - strong memory edges:  _in[_req                        .. _in_end_strong_memory_edges-1]
-  // - weak memory edges:    _in[_in_end_strong_memory_edges .. ]
+  // - weak memory edges:    _in[_in_end_strong_memory_edges .. _in.length()-1]
   const uint _req;
   uint _in_end_strong_memory_edges;
   GrowableArray<VTransformNode*> _in;
 
-  // We split _out into 2 sections:
-  // - strong edges:         _out[0                     .. _out_end_strong_edges-1]
-  // - weak memory edges:    _out[_out_end_strong_edges .. _len-1]
-  uint _out_end_strong_edges;
+  // We split _out into 3 sections:
+  // - data edges (req):     _out[0                     .. _out_end_req-1]
+  // - strong edges:         _out[_out_end_req          .. _out_end_strong_memory_edges-1]
+  // - weak memory edges:    _out[_out_end_strong_memory_edges .. _out.length()-1]
+  uint _out_end_req;
+  uint _out_end_strong_memory_edges;
   GrowableArray<VTransformNode*> _out;
 
   // The type is used in many cases:
@@ -414,7 +418,8 @@ public:
     _req(req),
     _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
-    _out_end_strong_edges(0),
+    _out_end_req(0),
+    _out_end_strong_memory_edges(0),
     _out(vtransform.arena(), 4, 0, nullptr),
     _type(type)
   {
@@ -425,15 +430,15 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out_strong_edge(this);
+    n->add_out_req(this);
   }
 
   void set_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
     VTransformNode* old = _in.at(i);
-    if (old != nullptr) { old->del_out_strong_edge(this); }
+    if (old != nullptr) { old->del_out_req(this); }
     _in.at_put(i, n);
-    if (n != nullptr) { n->add_out_strong_edge(this); }
+    if (n != nullptr) { n->add_out_req(this); }
   }
 
   void swap_req(uint i, uint j) {
@@ -456,7 +461,7 @@ public:
       _in.push(n);
     }
     _in_end_strong_memory_edges++;
-    n->add_out_strong_edge(this);
+    n->add_out_strong_memory_edge(this);
   }
 
   void add_weak_memory_edge(VTransformNode* n) {
@@ -466,62 +471,98 @@ public:
   }
 
 private:
-  void add_out_strong_edge(VTransformNode* n) {
-    if (_out_end_strong_edges < (uint)_out.length()) {
-      // Put n in place of first weak memory edge, and move
-      // the weak memory edge to the end.
-      VTransformNode* first_weak = _out.at(_out_end_strong_edges);
-      _out.at_put(_out_end_strong_edges, n);
-      _out.push(first_weak);
-    } else {
+  void add_out_req(VTransformNode* n) {
+    if (_out_end_req == (uint)_out.length()) {
+      // No strong or weak memory edges
       _out.push(n);
+      _out_end_req++;
+      _out_end_strong_memory_edges++;
+    } else if (_out_end_req == _out_end_strong_memory_edges) {
+      // No strong memory edges
+      VTransformNode* first_weak = _out.at(_out_end_req);
+      _out.at_put(_out_end_req, n);
+      _out_end_req++;
+      _out_end_strong_memory_edges++;
+      add_out_weak_memory_edge(first_weak);
+    } else {
+      // Has a strong memory edge
+      VTransformNode* first_strong = _out.at(_out_end_req);
+      _out.at_put(_out_end_req, n);
+      _out_end_req++;
+      add_out_strong_memory_edge(first_strong);
     }
-    _out_end_strong_edges++;
+  }
+
+  void add_out_strong_memory_edge(VTransformNode* n) {
+    if (_out_end_strong_memory_edges == (uint)_out.length()) {
+      // No weak edges
+      _out.push(n);
+      _out_end_strong_memory_edges++;
+    } else {
+      // Has a weak memory edge
+      VTransformNode* first_weak = _out.at(_out_end_strong_memory_edges);
+      _out.at_put(_out_end_strong_memory_edges, n);
+      _out_end_strong_memory_edges++;
+      add_out_weak_memory_edge(first_weak);
+    }
   }
 
   void add_out_weak_memory_edge(VTransformNode* n) {
     _out.push(n);
   }
 
-  void del_out_strong_edge(VTransformNode* n) {
+  void del_out_req(VTransformNode* n) {
     int i = _out.find(n);
-    assert(0 <= i && i < (int)_out_end_strong_edges, "must be in strong edges");
+    assert(0 <= i && i < (int)_out_end_req, "must be in out req edges");
 
-    // Replace n with the last strong edge.
-    VTransformNode* last_strong = _out.at(_out_end_strong_edges - 1);
-    _out.at_put(i, last_strong);
+    // Replace n with the last req out.
+    VTransformNode* last_req = _out.at(_out_end_req - 1);
+    _out.at_put(i, last_req);
 
-    if (_out_end_strong_edges < (uint)_out.length()) {
-      // Now replace where last_strong was with the last weak edge.
+    if (_out_end_req < _out_end_strong_memory_edges) {
+      // Shift down strong memory edges
+      VTransformNode* last_strong = _out.at(_out_end_strong_memory_edges - 1);
+      _out.at_put(_out_end_req - 1, last_strong);
+    }
+    if (_out_end_strong_memory_edges < (uint)_out.length()) {
+      // Shift down weak memory edges
       VTransformNode* last_weak = _out.top();
-      _out.at_put(_out_end_strong_edges - 1, last_weak);
+      _out.at_put(_out_end_strong_memory_edges - 1, last_weak);
     }
     _out.pop();
-    _out_end_strong_edges--;
+    _out_end_req--;
+    _out_end_strong_memory_edges--;
   }
 
 public:
   uint req() const { return _req; }
-  uint out_strong_edges() const { return _out_end_strong_edges; }
-  uint out_weak_edges() const { return _out.length() - _out_end_strong_edges; }
-  // TODO: I fear we have to split req and memory edges, so we can traverse
-  // outputs in SuperWord.
+  uint outcnt_req() const { return _out_end_req; };
+  uint outcnt_strong_memory_edges() const { return _out_end_strong_memory_edges - _out_end_req; }
+  uint outcnt_weak_memory_edges() const { return _out.length() - _out_end_strong_memory_edges; }
 
   VTransformNode* in_req(uint i) const {
     assert(i < _req, "must be a req");
     return _in.at(i);
   }
 
-  VTransformNode* out_strong_edge(uint i) const {
-    assert(i < out_strong_edges(), "must be a strong memory edge or data edge");
+  VTransformNode* out_req(uint i) const {
+    assert(i < outcnt_req(), "must be a req");
     return _out.at(i);
   }
 
-  VTransformNode* out_weak_edge(uint i) const {
-    assert(i < out_weak_edges(), "must be a strong memory edge");
-    return _out.at(_out_end_strong_edges + i);
+  VTransformNode* out_strong_memory_edge(uint i) const {
+    assert(i < outcnt_strong_memory_edges(), "must be a strong memory edge or data edge");
+    return _out.at(_out_end_req + i);
   }
 
+  VTransformNode* out_weak_edge(uint i) const {
+    assert(i < outcnt_weak_memory_edges(), "must be a strong memory edge");
+    return _out.at(_out_end_strong_memory_edges + i);
+  }
+
+  // TODO: need an iterator that can do any of the above.
+
+  // TODO: memory?
   bool has_strong_in_edge() const {
     for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
       if (_in.at(i) != nullptr) { return true; }
@@ -529,8 +570,9 @@ public:
     return false;
   }
 
-  VTransformNode* unique_out_strong_edge() const {
-    assert(out_strong_edges() == 1, "must be unique");
+  // TODO: maybe it should be unique req out edge?
+  VTransformNode* unique_out_strong_memory_edge() const {
+    assert(outcnt_strong_memory_edges() == 1, "must be unique");
     return _out.at(0);
   }
 

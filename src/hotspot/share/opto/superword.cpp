@@ -1139,12 +1139,12 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(const VTransform
   int savings = -1;
   const VTransformNode* u1 = nullptr;
   const VTransformNode* u2 = nullptr;
-  for (uint i1 = 0; i1 < s1->out_strong_edges(); i1++) {
-    const VTransformNode* t1 = s1->out_strong_edge(i1);
+  for (uint i1 = 0; i1 < s1->outcnt_req(); i1++) {
+    const VTransformNode* t1 = s1->out_req(i1);
     // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
     if (t1->is_load_or_store_in_loop()) { continue; }
-    for (uint i2 = 0; i2 < s2->out_strong_edges(); i2++) {
-      const VTransformNode* t2 = s2->out_strong_edge(i2);
+    for (uint i2 = 0; i2 < s2->outcnt_req(); i2++) {
+      const VTransformNode* t2 = s2->out_req(i2);
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       if (t2->is_load_or_store_in_loop()) { continue; }
 
