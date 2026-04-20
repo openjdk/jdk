@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,18 @@
 - (NSAccessibilityRole _Nonnull)accessibilityRole
 {
     return NSAccessibilityCheckBoxRole;
+}
+
+- (NSAccessibilitySubrole _Nullable)accessibilitySubrole
+{
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    if (env != NULL) {
+        NSString *javaRole = [self javaRole];
+        if ([javaRole isEqualToString:@"togglebutton"]) {
+            return NSAccessibilityToggleSubrole;
+        }
+    }
+    return [super accessibilitySubrole];
 }
 
 - (id _Nonnull) accessibilityValue

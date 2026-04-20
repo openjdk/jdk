@@ -42,9 +42,13 @@ public class TestFrameworkSocket implements AutoCloseable {
 
     private final int serverSocketPort;
     private final ServerSocket serverSocket;
-    private boolean running;
-    private final ExecutorService executor;
-    private Future<JavaMessages> javaFuture;
+    private final ExecutorService acceptExecutor;
+    private final ExecutorService clientExecutor;
+
+    // Make these volatile such that the main thread can observe an update written by the worker threads in the executor
+    // services to avoid stale values.
+    private volatile boolean running;
+    private volatile Future<JavaMessages> javaFuture;
 
     public TestFrameworkSocket() {
         try {
@@ -54,29 +58,53 @@ public class TestFrameworkSocket implements AutoCloseable {
             throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
         serverSocketPort = serverSocket.getLocalPort();
-        executor = Executors.newCachedThreadPool();
+        acceptExecutor = Executors.newSingleThreadExecutor();
+        clientExecutor = Executors.newCachedThreadPool();
         if (TestFramework.VERBOSE) {
             System.out.println("TestFramework server socket uses port " + serverSocketPort);
         }
-        start();
     }
 
     public String getPortPropertyFlag() {
         return "-D" + SERVER_PORT_PROPERTY + "=" + serverSocketPort;
     }
 
-    private void start() {
+    public void start() {
         running = true;
-        executor.submit(this::acceptLoop);
+        CountDownLatch calledAcceptLoopLatch = new CountDownLatch(1);
+        startAcceptLoop(calledAcceptLoopLatch);
+    }
+
+    private void startAcceptLoop(CountDownLatch calledAcceptLoopLatch) {
+        acceptExecutor.submit(() -> acceptLoop(calledAcceptLoopLatch));
+        waitUntilAcceptLoopRuns(calledAcceptLoopLatch);
+    }
+
+    private void waitUntilAcceptLoopRuns(CountDownLatch calledAcceptLoopLatch) {
+        try {
+            if (!calledAcceptLoopLatch.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("acceptLoop did not start in time");
+            }
+        } catch (Exception e) {
+            throw new TestFrameworkException("Could not start TestFrameworkSocket", e);
+        }
     }
 
     /**
      * Main loop to wait for new client connections and handling them upon connection request.
      */
-    private void acceptLoop() {
+    private void acceptLoop(CountDownLatch calledAcceptLoopLatch) {
+        calledAcceptLoopLatch.countDown();
         while (running) {
             try {
                 acceptNewClientConnection();
+            }  catch (SocketException e) {
+                if (!running || serverSocket.isClosed()) {
+                    // Normal shutdown
+                    return;
+                }
+                running = false;
+                throw new TestFrameworkException("Server socket error", e);
             } catch (TestFrameworkException e) {
                 running = false;
                 throw e;
@@ -101,7 +129,7 @@ public class TestFrameworkSocket implements AutoCloseable {
      * over that connection.
      */
     private void submitTask(Socket client, BufferedReader reader) {
-        javaFuture = executor.submit(new TestVmMessageReader(client, reader));
+        javaFuture = clientExecutor.submit(new TestVmMessageReader(client, reader));
     }
 
     @Override
@@ -112,7 +140,8 @@ public class TestFrameworkSocket implements AutoCloseable {
         } catch (IOException e) {
             throw new TestFrameworkException("Could not close socket", e);
         }
-        executor.shutdown();
+        acceptExecutor.shutdown();
+        clientExecutor.shutdown();
     }
 
     public TestVMData testVmData(String hotspotPidFileName, boolean allowNotCompilable) {
