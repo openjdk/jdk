@@ -247,6 +247,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(NativeCall::instruction_size <= _bytes_to_copy && _bytes_to_copy <= 0xFF, "not enough room for call");
+
   Label call_patch;
 
   // static field accesses have special semantics while the class
