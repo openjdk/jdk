@@ -27,7 +27,7 @@ package gc.z;
  * @test id=BlockUpper
  * @summary Tests linux virtual address space and ZGC heap reservation interactions
  * @library /test/lib
- * @requires vm.flagless & vm.gc.Z & os.family == "linux"
+ * @requires !jdk.static & vm.flagless & vm.gc.Z & os.family == "linux"
  * @run driver gc.z.TestLinuxVirtualAddressSpace ScenarioBlockUpper
  */
 
@@ -35,7 +35,7 @@ package gc.z;
  * @test id=BlockLower
  * @summary Tests linux virtual address space and ZGC heap reservation interactions
  * @library /test/lib
- * @requires vm.flagless & vm.gc.Z & os.family == "linux"
+ * @requires !jdk.static & vm.flagless & vm.gc.Z & os.family == "linux"
  * @run driver gc.z.TestLinuxVirtualAddressSpace ScenarioBlockLower
  */
 
@@ -43,7 +43,7 @@ package gc.z;
  * @test id=ScenarioBlockPreferred
  * @summary Tests linux virtual address space and ZGC heap reservation interactions
  * @library /test/lib
- * @requires vm.flagless & vm.gc.Z & os.family == "linux"
+ * @requires !jdk.static & vm.flagless & vm.gc.Z & os.family == "linux"
  * @run driver gc.z.TestLinuxVirtualAddressSpace ScenarioBlockPreferred
  */
 
