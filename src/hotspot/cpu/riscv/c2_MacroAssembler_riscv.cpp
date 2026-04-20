@@ -3282,7 +3282,7 @@ VFCVT_SAFE(vfcvt_rtz_x_f_v);
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
 void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
-                                  BasicType bt, int idx, VectorRegister tmp) {
+                                  BasicType bt, int idx, VectorRegister vtmp) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
@@ -3290,15 +3290,15 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
   if (idx == 0) {
     vmv_x_s(dst, src);
   } else {
-    slidedown_v(tmp, src, idx);
-    vmv_x_s(dst, tmp);
+    slidedown_v(vtmp, src, idx);
+    vmv_x_s(dst, vtmp);
   }
 }
 
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of floating point type.
 void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src,
-                                     BasicType bt, int idx, VectorRegister tmp) {
+                                     BasicType bt, int idx, VectorRegister vtmp) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(idx >= 0, "idx cannot be negative");
   // Only need the first element after vector slidedown
@@ -3306,8 +3306,8 @@ void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src,
   if (idx == 0) {
     vfmv_f_s(dst, src);
   } else {
-    slidedown_v(tmp, src, idx);
-    vfmv_f_s(dst, tmp);
+    slidedown_v(vtmp, src, idx);
+    vfmv_f_s(dst, vtmp);
   }
 }
 

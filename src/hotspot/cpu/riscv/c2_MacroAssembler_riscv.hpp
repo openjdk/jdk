@@ -297,10 +297,10 @@
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
 
   void extract_v(Register dst, VectorRegister src,
-                 BasicType bt, int idx, VectorRegister tmp);
+                 BasicType bt, int idx, VectorRegister vtmp);
 
   void extract_fp_v(FloatRegister dst, VectorRegister src,
-                    BasicType bt, int idx, VectorRegister tmp);
+                    BasicType bt, int idx, VectorRegister vtmp);
 
   void slidedown_v(VectorRegister dst, VectorRegister src,
                    uint32_t offset, Register tmp = t0);
