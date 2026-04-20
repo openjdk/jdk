@@ -95,6 +95,9 @@ public class TestMultiplyReductionByte {
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
         applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
+    @IR(counts = {IRNode.MUL_REDUCTION_VI, "0"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     static byte testMulReduce256() {
         return ByteVector.fromArray(ByteVector.SPECIES_256, input, 0)
                          .reduceLanes(VectorOperators.MUL);
@@ -112,6 +115,9 @@ public class TestMultiplyReductionByte {
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
         applyIfCPUFeatureOr = {"avx512f", "true", "rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=64"})
+    @IR(counts = {IRNode.MUL_REDUCTION_VI, "0"},
+        applyIfCPUFeature = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     static byte testMulReduce512() {
         return ByteVector.fromArray(ByteVector.SPECIES_512, input, 0)
