@@ -36,7 +36,7 @@ import java.util.List;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessBuilder;
+import jdk.test.lib.process.ProcessTools;
 
 public class TraceBytecodesSignatures {
 
