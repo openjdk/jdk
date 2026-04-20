@@ -1176,7 +1176,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 lateInlineScope.push(site);
             } else if (expectStringConcatTrap == true) {
                 // Record the location of the replace_string_concat for the
-                // uncommon_trap 'intrinsic_or_type_checked_inlining' that should follow it
+                // uncommon_trap 'intrinsic' that should follow it
                 current_bci = Integer.parseInt(search(atts, "bci"));
                 Method m = method(search(atts, "method"));
                 site = new CallSite(current_bci, m);
