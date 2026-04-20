@@ -172,10 +172,6 @@ template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   NMethodToOopClosure update_nmethods(keep_alive, NMethodToOopClosure::FixRelocations);
   ShenandoahNMethodAndDisarmClosure nmethods_and_disarm_Cl(keep_alive);
-  NMethodToOopClosure* codes_cl = ShenandoahCodeRoots::use_nmethod_barriers_for_mark() ?
-                                  static_cast<NMethodToOopClosure*>(&nmethods_and_disarm_Cl) :
-                                  static_cast<NMethodToOopClosure*>(&update_nmethods);
-
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
   // Process light-weight/limited parallel roots then
@@ -184,7 +180,7 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
   _cld_roots.cld_do(&clds, worker_id);
 
   // Process heavy-weight/fully parallel roots the last
-  _code_roots.nmethods_do(codes_cl, worker_id);
+  _code_roots.nmethods_do(&nmethods_and_disarm_Cl, worker_id);
   _thread_roots.oops_do(keep_alive, nullptr, worker_id);
 }
 

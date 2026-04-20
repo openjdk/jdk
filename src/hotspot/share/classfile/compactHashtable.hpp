@@ -115,8 +115,13 @@ private:
   int _num_other_buckets;
   GrowableArray<Entry>** _buckets;
   CompactHashtableStats* _stats;
-  Array<u4>* _compact_buckets;
-  Array<u4>* _compact_entries;
+  u4* _compact_buckets;
+  size_t _num_compact_buckets;
+  u4* _compact_entries;
+  size_t _num_compact_entries;
+
+  void compact_buckets_set(u4 index, u4 value);
+  void compact_entries_set(u4 index, u4 value);
 
 public:
   // This is called at dump-time only
@@ -302,14 +307,9 @@ public:
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
 
-  template<typename Function>
-  inline void iterate(const Function& function) const { // lambda enabled API
-    iterate(const_cast<Function&>(function));
-  }
-
   // Iterate through the values in the table, stopping when the lambda returns false.
   template<typename Function>
-  inline void iterate(Function& function) const { // lambda enabled API
+  inline void iterate(Function function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
       u4 bucket_info = _buckets[i];
       u4 bucket_offset = BUCKET_OFFSET(bucket_info);

@@ -131,10 +131,10 @@ public class TestCompilerInlining {
         if (WHITE_BOX.getBooleanVMFlag("TieredCompilation")) {
             return IntStream.rangeClosed(LEVEL_SIMPLE, WHITE_BOX.getIntxVMFlag("TieredStopAtLevel").intValue()).toArray();
         }
-        if (Platform.isServer() && !Platform.isEmulatedClient()) {
+        if (Platform.isServer()) {
             return new int[] { LEVEL_FULL_OPTIMIZATION };
         }
-        if (Platform.isClient() || Platform.isEmulatedClient()) {
+        if (Platform.isClient()) {
             return new int[] { LEVEL_SIMPLE };
         }
         throw new Error("TESTBUG: unknown VM");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,9 +249,9 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
 }
 
 Deoptimization::UnrollBlock::~UnrollBlock() {
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_sizes);
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_pcs);
-  FREE_C_HEAP_ARRAY(intptr_t, _register_block);
+  FREE_C_HEAP_ARRAY(_frame_sizes);
+  FREE_C_HEAP_ARRAY(_frame_pcs);
+  FREE_C_HEAP_ARRAY(_register_block);
 }
 
 int Deoptimization::UnrollBlock::size_of_frames() const {
@@ -1686,7 +1686,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
         assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
+        assert(ObjectSynchronizer::read_monitor(obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
@@ -2021,7 +2021,7 @@ static void post_deoptimization_event(nmethod* nm,
 #endif // INCLUDE_JFR
 
 static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
-                              const char* reason_name, const char* reason_action) {
+                      const char* reason_name, const char* reason_action, const char* class_name) {
   LogTarget(Debug, deoptimization) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
@@ -2035,6 +2035,9 @@ static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_
     }
     ls.print("%s ", reason_name);
     ls.print("%s ", reason_action);
+    if (class_name != nullptr) {
+      ls.print("%s ", class_name);
+    }
     ls.print_cr("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
              pc, fr.pc() - nm->code_begin());
   }
@@ -2135,6 +2138,17 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     MethodData* trap_mdo =
       get_method_data(current, profiled_method, create_if_missing);
 
+    Symbol* class_name = nullptr;
+    bool unresolved = false;
+    if (unloaded_class_index >= 0) {
+      constantPoolHandle constants (current, trap_method->constants());
+      if (constants->tag_at(unloaded_class_index).is_unresolved_klass()) {
+        class_name = constants->klass_name_at(unloaded_class_index);
+        unresolved = true;
+      } else if (constants->tag_at(unloaded_class_index).is_symbol()) {
+        class_name = constants->symbol_at(unloaded_class_index);
+      }
+    }
     { // Log Deoptimization event for JFR, UL and event system
       Method* tm = trap_method();
       const char* reason_name = trap_reason_name(reason);
@@ -2142,10 +2156,24 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       intptr_t pc = p2i(fr.pc());
 
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      log_deopt(nm, tm, pc, fr, trap_bci, reason_name, reason_action);
-      Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
+
+      ResourceMark rm;
+
+      const char* class_name_str = nullptr;
+      const char* class_name_msg = nullptr;
+      stringStream st, stm;
+      if (class_name != nullptr) {
+        class_name->print_symbol_on(&st);
+        class_name_str = st.freeze();
+        stm.print("class=%s ", class_name_str);
+        class_name_msg = stm.freeze();
+      } else {
+        class_name_msg = "";
+      }
+      log_deopt(nm, tm, pc, fr, trap_bci, reason_name, reason_action, class_name_str);
+      Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s%s",
                                 reason_name, reason_action, pc,
-                                tm->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
+                                tm->name_and_sig_as_C_string(), trap_bci, class_name_msg, nm->compiler_name());
     }
 
     // Print a bunch of diagnostics, if requested.
@@ -2155,7 +2183,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
       // We must do this already now, since we cannot acquire this lock while
       // holding the tty lock (lock ordering by rank).
-      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+                                (trap_mdo != nullptr),
+                                Mutex::_no_safepoint_check_flag);
 
       ttyLocker ttyl;
 
@@ -2171,20 +2201,13 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #endif
         nm->log_identity(xtty);
       }
-      Symbol* class_name = nullptr;
-      bool unresolved = false;
-      if (unloaded_class_index >= 0) {
-        constantPoolHandle constants (current, trap_method->constants());
-        if (constants->tag_at(unloaded_class_index).is_unresolved_klass()) {
-          class_name = constants->klass_name_at(unloaded_class_index);
-          unresolved = true;
-          if (xtty != nullptr)
+      if (class_name != nullptr) {
+        if (xtty != nullptr) {
+          if (unresolved) {
             xtty->print(" unresolved='1'");
-        } else if (constants->tag_at(unloaded_class_index).is_symbol()) {
-          class_name = constants->symbol_at(unloaded_class_index);
-        }
-        if (xtty != nullptr)
+          }
           xtty->name(class_name);
+        }
       }
       if (xtty != nullptr && trap_mdo != nullptr && (int)reason < (int)MethodData::_trap_hist_limit) {
         // Dump the relevant MDO state.
