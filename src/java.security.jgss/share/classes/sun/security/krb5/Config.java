@@ -1414,12 +1414,20 @@ public class Config {
             KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate KDC for realm " + realm);
 
-            // add sanitized DNS discovery mode failure to exception
-            Exception last = (tcpNE != null) ? tcpNE : udpNE;
-            String exceptionCause = sanitizeFailure(last);
-            if (exceptionCause != null) {
-                ke.initCause(new KrbException(Krb5.KRB_ERR_GENERIC,
-                        "DNS SRV lookup failed: " + exceptionCause));
+            if (DEBUG != null) {
+                Exception lastEx = (tcpNE != null) ? tcpNE : udpNE;
+                Exception firstEx = (lastEx == tcpNE) ? udpNE : tcpNE;
+
+                String sanitizedLast = sanitizeFailure(lastEx);
+                if (sanitizedLast != null) {
+                    ke.initCause(new KrbException(Krb5.KRB_ERR_GENERIC,
+                            "DNS SRV lookup failed: " + sanitizedLast));
+                }
+                String sanitizedFirst = sanitizeFailure(firstEx);
+                if (sanitizedFirst != null) {
+                    ke.addSuppressed(new KrbException(Krb5.KRB_ERR_GENERIC,
+                            "DNS SRV lookup failed: " + sanitizedFirst));
+                }
             }
             throw ke;
         }

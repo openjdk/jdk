@@ -1,4 +1,4 @@
-/*
+package jdk.sun.security.krb5.SRVLookup;/*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,12 +25,11 @@
  * @test
  * @bug 8382403
  * @summary Kerberos SRV KDC discovery failure should include sanitized DNS failure cause
- * @modules java.security.jgss/sun.security.krb5
- * @modules jdk.security.auth/com.sun.security.auth.module
  * @run main/othervm
  *      -Djava.security.krb5.conf=${test.src}/krb5.conf
  *      -Djava.security.auth.login.config=${test.src}/jaas.conf
- *      SRVLookupFailureTest
+ *      -Dsun.security.krb5.debug=true
+ *      jdk.sun.security.krb5.SRVLookup.SRVLookupFailureTest
  */
 
 import javax.security.auth.callback.*;

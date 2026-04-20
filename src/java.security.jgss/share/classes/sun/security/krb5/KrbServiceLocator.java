@@ -25,8 +25,6 @@
 
 package sun.security.krb5;
 
-import sun.security.krb5.internal.Krb5;
-
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Random;
