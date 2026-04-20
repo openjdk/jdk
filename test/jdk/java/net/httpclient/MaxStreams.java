@@ -27,7 +27,7 @@
  * @summary Should HttpClient support SETTINGS_MAX_CONCURRENT_STREAMS from the server
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm MaxStreams
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

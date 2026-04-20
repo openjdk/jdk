@@ -33,11 +33,15 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import jtreg.SkippedException;
+
 /**
  * @test
  * @key randomness
  * @bug 8208091 8374469 8377710
- * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires (os.family == "linux" | os.family == "windows")
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed
@@ -172,6 +176,10 @@ public class TestJhsdbJstackMixed {
     }
 
     public static void main(String... args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
