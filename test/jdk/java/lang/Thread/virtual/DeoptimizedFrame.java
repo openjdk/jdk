@@ -41,6 +41,7 @@ public class DeoptimizedFrame {
     private static volatile int result;
 
     private static native int setupReferences(Thread t, Object o);
+    private static native void waitForTarget();
 
     public static void foo() {
         synchronized (lock) {
@@ -58,7 +59,7 @@ public class DeoptimizedFrame {
 
         synchronized (lock) {
             vthread.start();
-            upCallDone.await();
+            waitForTarget();
             await(vthread, Thread.State.BLOCKED);
         }
         vthread.join();
@@ -82,7 +83,6 @@ public class DeoptimizedFrame {
 
     public static void upCall() {
         receiver = new B();
-        upCallDone.countDown();
     }
 
     static class A {

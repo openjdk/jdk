@@ -29,10 +29,38 @@
 extern "C" {
 
 static jvmtiEnv *jvmti = nullptr;
-jclass test_class = nullptr;
-jthread test_vthread = nullptr;
-jobject test_monitor = nullptr;
+static jclass test_class = nullptr;
+static jthread test_vthread = nullptr;
+static jobject test_monitor = nullptr;
+static jrawMonitorID agent_monitor = nullptr;
+static bool called_contended_enter = false;
 
+class RawMonitorLocker {
+ private:
+  jvmtiEnv* _jvmti;
+  JNIEnv* _jni;
+  jrawMonitorID _monitor;
+
+  void check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
+    if (err != JVMTI_ERROR_NONE) {
+      jni->FatalError(msg);
+    }
+  }
+
+ public:
+  RawMonitorLocker(jvmtiEnv *jvmti,JNIEnv* jni, jrawMonitorID monitor): _jvmti(jvmti), _jni(jni), _monitor(monitor) {
+    check_jvmti_status(_jni, _jvmti->RawMonitorEnter(_monitor), "Fatal Error in RawMonitorEnter.");
+  }
+  ~RawMonitorLocker() {
+    check_jvmti_status(_jni, _jvmti->RawMonitorExit(_monitor), "Fatal Error in RawMonitorEnter.");
+  }
+  void wait() {
+    check_jvmti_status(_jni, _jvmti->RawMonitorWait(_monitor, 0), "Fatal Error in RawMonitorWait.");
+  }
+  void notify_all() {
+    check_jvmti_status(_jni, _jvmti->RawMonitorNotifyAll(_monitor), "Fatal Error in RawMonitorNotifyAll.");
+  }
+};
 
 JNIEXPORT void JNICALL
 MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject monitor) {
@@ -46,13 +74,10 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject mon
     return;
   }
 
-  jmethodID mid = jni->GetStaticMethodID(test_class, "upCall", "()V");
-  if (mid != NULL) {
-    jni->CallStaticVoidMethod(test_class, mid);
-    printf("Called method upCall\n");
-  } else {
-    printf("Method upCall not found\n");
-  }
+  RawMonitorLocker rml(jvmti, jni, agent_monitor);
+  called_contended_enter = true;
+  rml.notify_all();
+  rml.wait();
 }
 
 static
@@ -92,7 +117,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  printf("Agent_OnLoad finished\n");
+  err = jvmti->CreateRawMonitor("agent sync monitor", &agent_monitor);
+  if (err != JVMTI_ERROR_NONE) {
+    printf("Agent_OnLoad: Error in JVMTI CreateRawMonitor: %d\n", err);
+    return JNI_ERR;
+  }
+
   return JNI_OK;
 }
 
@@ -113,6 +143,26 @@ Java_DeoptimizedFrame_setupReferences(JNIEnv *jni, jclass cls, jthread vthread, 
   }
 
   return JNI_OK;
+}
+
+JNIEXPORT void JNICALL
+Java_DeoptimizedFrame_waitForTarget(JNIEnv *jni, jclass cls) {
+  // Wait for target thread to reach MonitorContendedEnter
+  RawMonitorLocker rml(jvmti, jni, agent_monitor);
+  while (!called_contended_enter) {
+    rml.wait();
+  }
+
+  jmethodID mid = jni->GetStaticMethodID(test_class, "upCall", "()V");
+  if (mid != NULL) {
+    jni->CallStaticVoidMethod(test_class, mid);
+    printf("Called method upCall\n");
+  } else {
+    printf("Method upCall not found\n");
+  }
+
+  // Notify target thread
+  rml.notify_all();
 }
 
 } // extern "C"
