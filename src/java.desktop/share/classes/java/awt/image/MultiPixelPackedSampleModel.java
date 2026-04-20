@@ -147,6 +147,8 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @throws RasterFormatException if the number of bits per pixel
      *                  is not a power of 2 or if a power of 2 number of
      *                  pixels do not fit in one data element.
+     * @throws IllegalArgumentException if {@code dataBitOffset} is less than zero,
+     *         or not a multiple of {@code numberOfBits}.
      */
     public MultiPixelPackedSampleModel(int dataType, int w, int h,
                                        int numberOfBits,
