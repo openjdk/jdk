@@ -1044,8 +1044,8 @@ public class RepaintManager
                   (proposedHeight > maxSize.height? maxSize.height : proposedHeight);
 
         if (doubleBuffer.needsReset || (doubleBuffer.image != null &&
-                (doubleBuffer.size.width < width ||
-                doubleBuffer.size.height < height))) {
+                                        (doubleBuffer.size.width < width ||
+                                         doubleBuffer.size.height < height))) {
             doubleBuffer.needsReset = false;
             if (doubleBuffer.image != null) {
                 doubleBuffer.image.flush();
