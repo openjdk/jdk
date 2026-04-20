@@ -181,7 +181,6 @@ void G1GCPhaseTimes::reset() {
   _cur_resize_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
   _root_region_scan_time_ms = 0.0;
-  _external_accounted_time_ms = 0.0;
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
