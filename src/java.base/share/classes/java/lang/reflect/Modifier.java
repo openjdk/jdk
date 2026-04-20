@@ -50,7 +50,7 @@ import java.util.StringJoiner;
  * <p>
  * Java SE 5.0 introduced many new access and property flags, such as {@link
  * AccessFlag#SYNTHETIC ACC_SYNTHETIC}.  Unlike {@code ACC_SUPER}, these access
- * and property flags are reported by the {@code getModifier()} methods.
+ * and property flags are reported by the {@code getModifiers()} methods.
  * However, they were not introduced to the {@code Modifier} class as new
  * constants; they had no corresponding Java programming language modifier, and
  * sometimes their bits could be interpreted as other access and property flags
@@ -76,7 +76,7 @@ import java.util.StringJoiner;
  * Java SE 20 introduced {@link AccessFlag} and {@code Set<AccessFlag>
  * accessFlags()} methods in reflective objects.  This is now the preferred way
  * to interpret the access and property flags, including for {@linkplain
- * AccessFlag#sourceModifier restoration} of source modifiers.
+ * AccessFlag#sourceModifier() restoration} of source modifiers.
  *
  * @see AccessFlag
  * @see Class#getModifiers()
