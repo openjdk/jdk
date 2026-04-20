@@ -2542,7 +2542,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
         new_cache[i] = cache[i];
       }
       _methods_jmethod_ids = new_cache;
-      FREE_C_HEAP_ARRAY(jmethodID, cache);
+      FREE_C_HEAP_ARRAY(cache);
     }
   }
 }
@@ -3016,7 +3016,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 #endif
 
-  FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+  FREE_C_HEAP_ARRAY(_source_debug_extension);
 
   if (release_sub_metadata) {
     constants()->release_C_heap_structures();

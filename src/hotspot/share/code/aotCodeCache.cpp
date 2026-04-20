@@ -876,7 +876,7 @@ bool AOTCodeCache::finish_write() {
       current += size;
       uint n = write_bytes(&(entries_address[i]), sizeof(AOTCodeEntry));
       if (n != sizeof(AOTCodeEntry)) {
-        FREE_C_HEAP_ARRAY(uint, search);
+        FREE_C_HEAP_ARRAY(search);
         return false;
       }
       search[entries_count*2 + 0] = entries_address[i].id();
@@ -897,7 +897,7 @@ bool AOTCodeCache::finish_write() {
     }
     if (entries_count == 0) {
       log_info(aot, codecache, exit)("AOT Code Cache was not created: no entires");
-      FREE_C_HEAP_ARRAY(uint, search);
+      FREE_C_HEAP_ARRAY(search);
       return true; // Nothing to write
     }
     assert(entries_count <= store_count, "%d > %d", entries_count, store_count);
@@ -913,7 +913,7 @@ bool AOTCodeCache::finish_write() {
     qsort(search, entries_count, 2*sizeof(uint), uint_cmp);
     search_size = 2 * entries_count * sizeof(uint);
     copy_bytes((const char*)search, (address)current, search_size);
-    FREE_C_HEAP_ARRAY(uint, search);
+    FREE_C_HEAP_ARRAY(search);
     current += search_size;
 
     // Write entries

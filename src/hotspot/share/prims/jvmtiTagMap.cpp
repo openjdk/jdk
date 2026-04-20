@@ -716,7 +716,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                    user_data);
 
   if (is_latin1 && s_len > 0) {
-    FREE_C_HEAP_ARRAY(jchar, value);
+    FREE_C_HEAP_ARRAY(value);
   }
   return res;
 }
