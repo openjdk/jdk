@@ -28,89 +28,136 @@
  *          `swing.volatileImageBufferEnabled=false`
  * @requires os.family == "mac"
  * @library /java/awt/regtesthelpers
- * @run main/othervm -Dsun.java2d.opengl=false TranslucentDialogTest
- * @run main/othervm -Dsun.java2d.opengl=true TranslucentDialogTest
+ * @run main/othervm -Dswing.volatileImageBufferEnabled=false TranslucentDialogTest
+ * @run main/othervm -Dswing.volatileImageBufferEnabled=true TranslucentDialogTest
  */
 
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.PanelUI;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Dimension;
-import java.awt.RenderingHints;
 import java.awt.Robot;
 import java.awt.geom.RoundRectangle2D;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-public class TranslucentDialogTest extends JDialog {
-    public static void main(String[] args)
-            throws ExecutionException, InterruptedException {
-        System.setProperty("swing.volatileImageBufferEnabled", "false");
-        CompletableFuture<Color> borderColorFuture = new CompletableFuture<>();
-
-        Thread testThread = new Thread() {
-            Robot robot;
-            JFrame whiteBackground;
-            JDialog translucentDialog;
-            public void run() {
-                try {
-                    robot = new Robot();
-                    SwingUtilities.invokeAndWait(() -> {
-                        whiteBackground = new JFrame();
-                        whiteBackground.setBackground(Color.white);
-                        whiteBackground.setPreferredSize(
-                                new Dimension(800, 800));
-                        whiteBackground.pack();
-                        whiteBackground.setLocationRelativeTo(null);
-                        whiteBackground.setVisible(true);
-                    });
-                    robot.waitForIdle();
-                    robot.delay(500);
-                    SwingUtilities.invokeAndWait(() -> {
-                        translucentDialog = new TranslucentDialogTest();
-                        translucentDialog.pack();
-                        translucentDialog.setLocationRelativeTo(null);
-                        translucentDialog.setVisible(true);
-                    });
-                    robot.waitForIdle();
-                    robot.delay(500);
-                    borderColorFuture.complete( robot.getPixelColor(
-                            translucentDialog.getX() + 4,
-                            translucentDialog.getY() + 4));
-                } catch(Exception e) {
-                    borderColorFuture.completeExceptionally(e);
-                }
-            }
-        };
-        testThread.start();
-
-        Color borderColor = borderColorFuture.get();
-        System.out.println("Observed border color: a = " +
-                borderColor.getAlpha() + ", r = " +
-                borderColor.getRed() + ", g = " +
-                borderColor.getGreen() + ", b = " +
-                borderColor.getBlue());
-        if (borderColor.getRGB() == 0xff000000)
-            throw new RuntimeException("The border should not be black.");
+public class TranslucentDialogTest {
+    public static void main(String[] args) {
+        TranslucentDialogTest test = new TranslucentDialogTest();
+        test.run();
     }
 
-    public TranslucentDialogTest() {
-        JTextPane instructions = new JTextPane();
-        instructions.setText(
-             "This test passes if the window does NOT have a black border.");
+    static class Sample {
+        final int x, y;
+        Color before, after;
+
+        Sample(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        void assignBeforeColor(Robot robot) {
+            before = robot.getPixelColor(x, y);
+        }
+
+        void assignAfterColor(Robot robot) {
+            after = robot.getPixelColor(x, y);
+        }
+
+        boolean isIdentical(int tolerance) {
+            int dRed = Math.abs(before.getRed() - after.getRed());
+            int dGreen = Math.abs(before.getGreen() - after.getGreen());
+            int dBlue = Math.abs(before.getBlue() - after.getBlue());
+            return dRed < tolerance && dGreen < tolerance && dBlue < tolerance;
+        }
+
+        @Override
+        public String toString() {
+            return "Sample[ x = " + x + ", y = " + y + ", " +
+                    "before = 0x" + Integer.toHexString(
+                    before.getRGB()) +
+                    " after = 0x" + Integer.toHexString(
+                    after.getRGB());
+        }
+    }
+
+    Sample transparentPixel, translucentPixel;
+    Robot robot;
+
+    private void run() {
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                JDialog translucentDialog = createDialog();
+                translucentDialog.pack();
+                translucentDialog.setLocationRelativeTo(null);
+                transparentPixel = new Sample(translucentDialog.getX() + 4,
+                        translucentDialog.getY() + 4);
+                translucentPixel = new Sample(translucentDialog.getX() +
+                        translucentDialog.getWidth()/2,
+                        translucentDialog.getY() +
+                                translucentDialog.getHeight()/2);
+                try {
+                    robot = new Robot();
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+                transparentPixel.assignBeforeColor(robot);
+                translucentPixel.assignBeforeColor(robot);
+                int gray = (transparentPixel.before.getRed() +
+                        transparentPixel.before.getGreen() +
+                        transparentPixel.before.getBlue()) / 3;
+                if (gray > 128) {
+                    System.out.println("using transparent black");
+                    translucentDialog.setBackground(new Color(0,0,0,0));
+                } else {
+                    System.out.println("using transparent white");
+                    translucentDialog.setBackground(
+                            new Color(255, 255, 255, 0));
+                }
+                translucentDialog.setVisible(true);
+            });
+
+            robot.waitForIdle();
+            robot.delay(50);
+
+            SwingUtilities.invokeAndWait(() -> {
+                transparentPixel.assignAfterColor(robot);
+                translucentPixel.assignAfterColor(robot);
+            });
+
+
+        } catch(Exception e) {
+            e.printStackTrace();
+            transparentPixel = translucentPixel = null;
+        }
+
+        System.out.println("transparent pixel (border): " + transparentPixel);
+        System.out.println("translucent pixel (center): " + translucentPixel);
+
+        if (!transparentPixel.isIdentical(10)) {
+            // this is the main problem with JDK-8382201
+            throw new RuntimeException("the border pixel wasn't supposed to change");
+        }
+        if (translucentPixel.isIdentical(10)) {
+            // if this fails: this test isn't capturing pixels correctly.
+            throw new RuntimeException("the center pixel was supposed to change");
+        }
+    }
+
+    private static JDialog createDialog() {
+        JDialog d = new JDialog();
+        d.getRootPane().putClientProperty("Window.shadow", "false");
+        JLabel instructions = new JLabel(
+                "This test passes if this window is translucent");
         instructions.setBorder(new EmptyBorder(10,10,10,10));
         instructions.setOpaque(false);
-        instructions.setEditable(false);
 
-        setUndecorated(true);
+        d.setUndecorated(true);
         JPanel p = new JPanel();
         p.setOpaque(false);
         p.setBorder(new EmptyBorder(10,10,10,10));
@@ -118,15 +165,13 @@ public class TranslucentDialogTest extends JDialog {
             @Override
             public void paint(Graphics g, JComponent c) {
                 Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(220, 180, 0, 200));
                 g2.fill(new RoundRectangle2D.Double(5, 5, c.getWidth() - 10,
                         c.getHeight() - 10,20,20));
             }
         });
         p.add(instructions);
-        getContentPane().add(p);
-        setBackground(new Color(0,0,0,0));
+        d.getContentPane().add(p);
+        return d;
     }
 }
