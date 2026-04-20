@@ -298,7 +298,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   void record_merge_heap_roots_time(double ms) {
-    _cur_merge_heap_roots_time_ms += ms;
+    _cur_merge_heap_roots_time_ms = ms;
   }
 
   void record_merge_refinement_table_time(double ms) {
