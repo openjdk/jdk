@@ -83,15 +83,24 @@ const char* aot_code_entry_kind_name[] = {
 static LogStream& load_failure_log() {
   static LogStream err_stream(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
   static LogStream dbg_stream(LogLevel::Debug, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
-  if (RequireSharedSpaces) {
+  if (RequireSharedSpaces || AbortVMOnAOTCodeFailure) {
     return err_stream;
   } else {
     return dbg_stream;
   }
 }
 
+// Report AOT code cache failure and exit VM
+// if (AOTMode is `on` and AbortVMOnAOTCodeFailure is default)
+//     or AbortVMOnAOTCodeFailure is `true`.
+//
+// Note, specifying -XX:-AbortVMOnAOTCodeFailure on command line
+// will prevent aborting VM when AOTMode is `on`. It is used for testing.
+
 static void report_load_failure() {
-  if (AbortVMOnAOTCodeFailure) {
+  bool abort_vm = AbortVMOnAOTCodeFailure ||
+                  (FLAG_IS_DEFAULT(AbortVMOnAOTCodeFailure) && RequireSharedSpaces);
+  if (abort_vm) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
   load_failure_log().print_cr("Unable to use AOT Code Cache.");

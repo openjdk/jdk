@@ -91,9 +91,16 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
                     }
                 } else if (runMode == RunMode.PRODUCTION) {
                     if (mode == IncompatibilityMode.MISSING) {
-                        return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
+                        return new String[] {vmOption,
+                                             "-XX:+UnlockDiagnosticVMOptions",
+                                             // Prevent exiting VM on failure
+                                             "-XX:-AbortVMOnAOTCodeFailure",
+                                             "-Xlog:aot+codecache*=debug"};
                     } else {
-                        return new String[] {"-Xlog:aot+codecache*=debug"};
+                        return new String[] {"-XX:+UnlockDiagnosticVMOptions",
+                                             // Prevent exiting VM on failure
+                                             "-XX:-AbortVMOnAOTCodeFailure",
+                                             "-Xlog:aot+codecache*=debug"};
                     }
                 }
                 return new String[]{};
