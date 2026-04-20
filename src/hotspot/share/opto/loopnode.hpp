@@ -27,6 +27,7 @@
 
 #include "opto/cfgnode.hpp"
 #include "opto/multnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates.hpp"
 #include "opto/subnode.hpp"
@@ -751,6 +752,11 @@ public:
   bool policy_peeling(PhaseIdealLoop *phase);
 
   uint estimate_peeling(PhaseIdealLoop *phase);
+
+  // If a store is executed on every path through a loop, its pointer and value inputs are
+  // loop-invariants, and there is no other interfering store in the loop, then the store can be
+  // elided from the loop after peeling.
+  bool can_elide_store_after_peeling(StoreNode* n, Node* dominating_store);
 
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.

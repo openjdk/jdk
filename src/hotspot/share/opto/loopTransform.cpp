@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -33,12 +34,14 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -622,9 +625,10 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   // ...otherwise, let's apply our heuristic.
 #endif
 
-  Node* test = tail();
-
-  while (test != _head) {   // Scan till run off top of loop
+  // Walk up dominators to loop _head looking for an exit test which is executed on every path
+  // through the loop. If the tested value is a loop-invariant, then the IfNode can be folded after
+  // peeling, giving us a reason to peel.
+  for (Node* test = tail(); test != _head; test = phase->idom(test)) {   // Scan till run off top of loop
     if (test->is_If()) {    // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
       if (ctrl->is_top()) {
@@ -642,17 +646,26 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
         return estimate;    // Found reason to peel!
       }
     }
-    // Walk up dominators to loop _head looking for test which is executed on
-    // every path through the loop.
-    test = phase->idom(test);
   }
+
+  // Walk up dominators to loop _head looking for a store which is executed on every path through
+  // the loop. If the pointer and value inputs are loop-invariants, and there is no interfering
+  // store in the loop, then the store can be elided after peeling, giving us a reason to peel.
+  for (uint i = 0; i < _body.size(); i++) {
+    Node* n = _body.at(i);
+    if (n->is_Store() && can_elide_store_after_peeling(n->as_Store(), nullptr)) {
+      return estimate;
+    }
+  }
+
   return 0;
 }
 
 //------------------------------peeled_dom_test_elim---------------------------
 // If we got the effect of peeling, either by actually peeling or by making
-// a pre-loop which must execute at least once, we can remove all
-// loop-invariant dominated tests in the main body.
+// a pre-loop which must execute at least once.
+// - We can remove all loop-invariant dominated tests in the main body.
+// - We can remove all loop-invariant dominated stores in the main body.
 void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_new) {
   bool progress = true;
   while (progress) {
@@ -686,6 +699,77 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
       test = idom(test);
     } // End of scan tests in loop
   } // End of while (progress)
+
+  // Remove all dominated loop-invariant stores in the loop if there is no interfering store in the
+  // loop
+  for (uint i = 0; i < loop->_body.size(); i++) {
+    Node* n = loop->_body.at(i);
+    if (n->is_Store() && loop->can_elide_store_after_peeling(n->as_Store(), old_new[n->_idx])) {
+      loop->_body.yank(n);
+      _loop_or_ctrl.map(n->_idx, nullptr);
+      _igvn.replace_node(n, n->in(MemNode::Memory));
+    }
+  }
+}
+
+// Determine whether 'store' can be elided after peeling. When analyzing if peeling is profitable,
+// 'dominating_store' is nullptr, and the function returns false if there is any interfering store
+// in the loop. Otherwise, after peeling, when trying to determine if 'store' can be elided,
+// 'dominating_store' is not nullptr, and the function returns false if there is any interfering
+// store in the loop 'store' is in or between the loop and 'dominating_store'.
+bool IdealLoopTree::can_elide_store_after_peeling(StoreNode* store, Node* dominating_store) {
+  if (store->req() > MemNode::ValueIn + 1) {
+    // Not applicable for StoreVectorMasked, StoreVectorScatter, and StoreVectorScatterMasked
+    return false;
+  } else if (!_phase->is_dominator(_phase->get_ctrl(store), tail())) {
+    // Must be a store that is executed in every path through the loop
+    return false;
+  } else if (!is_invariant(store->in(MemNode::Address)) || !is_invariant(store->in(MemNode::ValueIn))) {
+    return false;
+  }
+
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(store->in(MemNode::Memory));
+  AccessAnalyzer analyzer(&_phase->_igvn, store);
+  for (uint worklist_idx = 0; worklist_idx < worklist.size(); worklist_idx++) {
+    Node* mem = worklist.at(worklist_idx);
+    assert(mem != nullptr, "cannot be a nullptr");
+    if (mem == store || mem == dominating_store) {
+      continue;
+    }
+
+    if (dominating_store == nullptr && is_invariant(mem)) {
+      // We should only be able to step outside the loop from the loop phi, so this means the graph
+      // is broken, bail out for now
+      return false;
+    } else if (mem->in(0) == _phase->C->start()) {
+      // We should not be able to walk past 'dominating_store' since it dominates 'store', this
+      // means the graph is broken
+      return false;
+    }
+
+    if (mem->is_Phi()) {
+      if (dominating_store == nullptr && mem->in(0) == _head) {
+        // Loop Phi, only the LoopBack input is in the loop
+        worklist.push(mem->in(LoopNode::LoopBackControl));
+      } else {
+        for (uint i = 1; i < mem->req(); i++) {
+          worklist.push(mem->in(i));
+        }
+      }
+      continue;
+    }
+
+    AccessAnalyzer::AccessIndependence independence = analyzer.detect_access_independence(mem);
+    if (!independence.independent) {
+      return false;
+    }
+
+    worklist.push(independence.mem);
+  }
+
+  return true;
 }
 
 //------------------------------do_peeling-------------------------------------
