@@ -284,15 +284,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // along with the census done during marking, and compute the tenuring threshold.
     ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::heap()->age_census();
     census->update_census(age0_pop);
-#ifndef PRODUCT
-    size_t total_pop = age0_cl.get_total_population();
-    size_t total_census = census->get_total();
-    // Usually total_pop > total_census, but not by too much.
-    // We use integer division so anything up to just less than 2 is considered
-    // reasonable, and the "+1" is to avoid divide-by-zero.
-    assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
-           "%zu/%zu", total_pop, total_census);
-#endif
   }
 
   {

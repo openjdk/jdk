@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,34 +22,19 @@
  *
  */
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOBJARRAYALLOCATOR_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOBJARRAYALLOCATOR_HPP
 
-ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
-  _gc_state(0),
-  _oom_scope_nesting_level(0),
-  _oom_during_evac(false),
-  _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
-  _card_table(nullptr),
-  _gclab(nullptr),
-  _gclab_size(0),
-  _shenandoah_plab(nullptr),
-  _evacuation_stats(new ShenandoahEvacuationStats()),
-  _invisible_root(nullptr),
-  _invisible_root_word_size(0) {
-}
+#include "gc/shared/memAllocator.hpp"
 
-ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
-  if (_gclab != nullptr) {
-    delete _gclab;
-  }
-  if (_shenandoah_plab != nullptr) {
-    _shenandoah_plab->retire();
-    delete _shenandoah_plab;
-  }
+class ShenandoahObjArrayAllocator : public ObjArrayAllocator {
+private:
+  // Override: clearing with safepoint yields for large arrays
+  oop initialize(HeapWord* mem) const override;
 
-  delete _evacuation_stats;
-}
+public:
+  ShenandoahObjArrayAllocator(Klass* klass, size_t word_size, int length,
+                               bool do_zero, Thread* thread);
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHOBJARRAYALLOCATOR_HPP
