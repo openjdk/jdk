@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.awt.TimedWindowEvent;
@@ -84,25 +83,11 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     private TranslucentWindowPainter painter;
 
     /*
-     * A key used for storing a list of active windows in AppContext. The value
-     * is a list of windows, sorted by the time of activation: later a window is
-     * activated, greater its index is in the list.
-     */
-    private static final StringBuffer ACTIVE_WINDOWS_KEY =
-        new StringBuffer("active_windows_list");
-
-    /*
-     * Listener for 'activeWindow' KFM property changes. It is added to each
-     * AppContext KFM. See ActiveWindowListener inner class below.
+     * Listener for 'activeWindow' KFM property changes.
+     * See ActiveWindowListener inner class below.
      */
     private static PropertyChangeListener activeWindowListener =
         new ActiveWindowListener();
-
-    /*
-     * The object is a listener for the AppContext.GUI_DISPOSED property.
-     */
-    private static final PropertyChangeListener guiDisposedListener =
-        new GuiDisposedListener();
 
     /*
      * Called (on the Toolkit thread) before the appropriate
@@ -116,18 +101,17 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     private static native void initIDs();
     static {
         initIDs();
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addPropertyChangeListener("activeWindow", activeWindowListener);
     }
 
+    static List<WWindowPeer> activeWindows = new LinkedList<WWindowPeer>();
     // WComponentPeer overrides
     @Override
     @SuppressWarnings("unchecked")
     protected void disposeImpl() {
-        AppContext appContext = SunToolkit.targetToAppContext(target);
-        synchronized (appContext) {
-            List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
-            if (l != null) {
-                l.remove(this);
-            }
+        synchronized (activeWindows) {
+            activeWindows.remove(this);
         }
 
         // Remove ourself from the Map of DisplayChangeListeners
@@ -221,8 +205,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         GraphicsConfiguration gc = getGraphicsConfiguration();
         Win32GraphicsDevice gd = (Win32GraphicsDevice) gc.getDevice();
         gd.addDisplayChangedListener(this);
-
-        initActiveWindowsTracking((Window)target);
 
         updateIconImages();
 
@@ -530,22 +512,15 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     native void modalEnable(Dialog blocker);
 
     /*
-     * Returns all the ever active windows from the current AppContext.
+     * Returns all the active windows.
      * The list is sorted by the time of activation, so the latest
      * active window is always at the end.
      */
-    @SuppressWarnings("unchecked")
     public static long[] getActiveWindowHandles(Component target) {
-        AppContext appContext = SunToolkit.targetToAppContext(target);
-        if (appContext == null) return null;
-        synchronized (appContext) {
-            List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
-            if (l == null) {
-                return null;
-            }
-            long[] result = new long[l.size()];
-            for (int j = 0; j < l.size(); j++) {
-                result[j] = l.get(j).getHWnd();
+        synchronized (activeWindows) {
+            long[] result = new long[activeWindows.size()];
+            for (int j = 0; j < activeWindows.size(); j++) {
+                result[j] = activeWindows.get(j).getHWnd();
             }
             return result;
         }
@@ -824,57 +799,10 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     /*
-     * The method maps the list of the active windows to the window's AppContext,
-     * then the method registers ActiveWindowListener, GuiDisposedListener listeners;
-     * it executes the initilialization only once per AppContext.
-     */
-    @SuppressWarnings("unchecked")
-    private static void initActiveWindowsTracking(Window w) {
-        AppContext appContext = AppContext.getAppContext();
-        synchronized (appContext) {
-            List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
-            if (l == null) {
-                l = new LinkedList<WWindowPeer>();
-                appContext.put(ACTIVE_WINDOWS_KEY, l);
-                appContext.addPropertyChangeListener(AppContext.GUI_DISPOSED, guiDisposedListener);
-
-                KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-                kfm.addPropertyChangeListener("activeWindow", activeWindowListener);
-            }
-        }
-    }
-
-    /*
-     * The GuiDisposedListener class listens for the AppContext.GUI_DISPOSED property,
-     * it removes the list of the active windows from the disposed AppContext and
-     * unregisters ActiveWindowListener listener.
-     */
-    private static final class GuiDisposedListener implements PropertyChangeListener {
-        @Override
-        public void propertyChange(PropertyChangeEvent e) {
-            boolean isDisposed = (Boolean)e.getNewValue();
-            if (isDisposed != true) {
-                if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                    log.fine(" Assertion (newValue != true) failed for AppContext.GUI_DISPOSED ");
-                }
-            }
-            AppContext appContext = AppContext.getAppContext();
-            synchronized (appContext) {
-                appContext.remove(ACTIVE_WINDOWS_KEY);
-                appContext.removePropertyChangeListener(AppContext.GUI_DISPOSED, this);
-
-                KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-                kfm.removePropertyChangeListener("activeWindow", activeWindowListener);
-            }
-        }
-    }
-
-    /*
      * Static inner class, listens for 'activeWindow' KFM property changes and
-     * updates the list of active windows per AppContext, so the latest active
-     * window is always at the end of the list. The list is stored in AppContext.
+     * updates the list of active windows so the latest active
+     * window is always at the end of the list.
      */
-    @SuppressWarnings("unchecked")
     private static final class ActiveWindowListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent e) {
@@ -882,15 +810,11 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             if (w == null) {
                 return;
             }
-            AppContext appContext = SunToolkit.targetToAppContext(w);
-            synchronized (appContext) {
+            synchronized (activeWindows) {
                 WWindowPeer wp = AWTAccessor.getComponentAccessor().getPeer(w);
                 // add/move wp to the end of the list
-                List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
-                if (l != null) {
-                    l.remove(wp);
-                    l.add(wp);
-                }
+                 activeWindows.remove(wp);
+                 activeWindows.add(wp);
             }
         }
     }

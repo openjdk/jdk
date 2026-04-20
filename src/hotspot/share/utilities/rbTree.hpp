@@ -374,16 +374,25 @@ public:
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;
   using BaseType::insert_at_cursor;
-  using BaseType::remove_at_cursor;
   using BaseType::next;
   using BaseType::prev;
 
+  void remove_at_cursor(const Cursor& node_cursor);
   void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor);
 
   RBNode<K, V>* allocate_node(const K& key);
   RBNode<K, V>* allocate_node(const K& key, const V& val);
 
   void free_node(RBNode<K, V>* node);
+
+  // Updates the key in the given node or node cursor.
+  // This will never trigger a tree rebalancing.
+  // The user must ensure that no tree properties are broken:
+  // There must not exist any node with the new key
+  // For all nodes with key < old_key, must also have key < new_key
+  // For all nodes with key > old_key, must also have key > new_key
+  void update_key(const Cursor& node_cursor, const K& new_key);
+  void update_key(RBNode<K, V>* node, const K& new_key);
 
   // Inserts a node with the given key/value into the tree,
   // if the key already exist, the value is updated instead.
@@ -429,7 +438,12 @@ public:
   void free(void* ptr);
 };
 
-
+template <typename T>
+RBTreeOrdering rbtree_primitive_cmp(T a, T b) { // handy function
+  if (a < b) return RBTreeOrdering::LT;
+  if (a > b) return RBTreeOrdering::GT;
+  return RBTreeOrdering::EQ;
+}
 
 template <typename K, typename V, typename COMPARATOR, MemTag mem_tag, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
 using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag, strategy>>;
