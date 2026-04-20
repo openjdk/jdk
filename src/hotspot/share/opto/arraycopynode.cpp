@@ -498,6 +498,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
   return phase->C->top();
 }
 
+// mem - the cumulative memory state of all stores of the decomposed clone
 bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
                                      Node* ctl, Node *mem) {
   if (can_reshape) {
@@ -509,11 +510,15 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       // Expected pattern: out_mem → MergeMem → MemBar, or
       // out_mem → MemBar (when MergeMem was folded away).
+      if (out_mem->outcnt() != 1) {
+        assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
+        return false;
+      }
       Node* mem_use = out_mem->raw_out(0);
-      if (out_mem->outcnt() != 1 ||
-          (!mem_use->is_MemBar() &&
-           (!mem_use->is_MergeMem() ||
-            mem_use->outcnt() != 1 || !mem_use->raw_out(0)->is_MemBar()))) {
+      // Bail out unless mem_use is a MemBar, or it's a MergeMem with exactly one use that is a MemBar.
+      if (!(mem_use->is_MemBar() ||
+            (mem_use->is_MergeMem() &&
+             mem_use->outcnt() == 1 && mem_use->raw_out(0)->is_MemBar()))) {
         assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
         return false;
       }
