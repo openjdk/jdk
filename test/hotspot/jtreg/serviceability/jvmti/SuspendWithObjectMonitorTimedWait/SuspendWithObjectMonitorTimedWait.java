@@ -67,9 +67,9 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
     static long timeout = 10; // milliseconds
     static long sleepInterval = 20;
-    static int maxRetriesMainThread = 5000;
+    static int maxRetries = 2000;
     static long waitForTimedWaitingMills = 5000;
-    static double acceptableFailureRate = 0.02;
+    static double acceptableFailureRate = 0.01;
 
     // run debuggee
     public int runIt() {
@@ -99,7 +99,8 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         Thread.yield();
         System.out.println("Target Thread started");
 
-        for (int n = 0; n < maxRetriesMainThread; ++n) {
+        int usefulRun = 0;
+        for (int n = 0; n < maxRetries; ++n) {
 
             long deadlineNanos = System.nanoTime() + waitForTimedWaitingMills * 1000_000L;
             if (!waitUntilTimedWaiting(targetThread, deadlineNanos)) {
@@ -111,6 +112,8 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             }
 
             boolean is_suspended = false;
+            boolean grabbedMonitor = false;
+
             try {
                 JVMTIUtils.suspendThread(targetThread);
                 is_suspended = true;
@@ -120,14 +123,34 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                 assertTrue(threadInfo != null, "getThreadInfo() failed");
                 assertTrue(threadInfo[0] != null, "getThreadInfo() failed");
 
-                boolean grabbedMonitor =
+                grabbedMonitor =
                         Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
 
                 if (grabbedMonitor) {
-                    // we have caught the race
+                    // Cannot assert anything here.
+                    continue;
+                }
+
+                usefulRun += 1;
+
+                if (sleepInterval > 0) {
+                    try {
+                        Thread.sleep(sleepInterval);
+                    } catch (InterruptedException ex) {
+                        throw new Failure(ex);
+                    }
+                }
+
+                // Check if the target still does not own monitors
+                threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
+                grabbedMonitor =
+                        Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
+
+                if (grabbedMonitor) {
                     System.out.println("Grabbed the monitor on iteration " + n);
                     failureCounter++;
                 }
+
             } finally {
                 if (is_suspended) {
                     JVMTIUtils.resumeThread(targetThread);
@@ -137,14 +160,6 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             if (!targetThread.isAlive()) {
                 System.out.println("Target thread finished before retry " + n);
                 break;
-            }
-
-            if (sleepInterval > 0) {
-                try {
-                    Thread.sleep(sleepInterval);
-                } catch (InterruptedException ex) {
-                    throw new Failure(ex);
-                }
             }
         }
 
@@ -159,9 +174,15 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         assertTrue(!targetThread.isAlive(), "target thread is still alive");
         System.out.println("Sync: targetThread finished");
 
+        if (usefulRun == 0) {
+            // not representative
+            status = DebugeeClass.TEST_FAILED;
+            return status;
+        }
+
         // Determined this purely experimentally
-        if ((double)failureCounter / (double)maxRetriesMainThread > acceptableFailureRate) {
-            System.out.println("Grabbed the monitor in total " + failureCounter + " times out of " + maxRetriesMainThread + ", which exceed the failure rate of " + acceptableFailureRate * 100 +"%");
+        if ((double)failureCounter / (double)usefulRun > acceptableFailureRate) {
+            System.out.println("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which exceed the failure rate of " + acceptableFailureRate * 100 +"%");
             status = DebugeeClass.TEST_FAILED;
         }
         return status;
@@ -170,7 +191,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
     static class waitTask implements Runnable {
 
-        private int maxNRetries = 10000;
+        static int maxNRetries = (int) (1.2 * maxRetries);
 
         public void run() {
             synchronized (lock) {
