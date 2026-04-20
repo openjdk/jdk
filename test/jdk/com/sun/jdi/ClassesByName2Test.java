@@ -173,7 +173,7 @@ public class ClassesByName2Test extends TestScaffold {
 
                 List found = vm().classesByName(name);
                 if (found.contains(cls)) {
-                    System.out.println("Found class: " + name);
+                    //System.out.println("Found class: " + name);
                 } else {
                     System.out.println("CLASS NOT FOUND: " + name);
                     throw new Exception("CLASS NOT FOUND (by classesByName): " +
