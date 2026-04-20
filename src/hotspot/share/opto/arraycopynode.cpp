@@ -511,9 +511,9 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
       // out_mem → MemBar (when MergeMem was folded away).
       Node* mem_use = out_mem->raw_out(0);
       if (out_mem->outcnt() != 1 ||
-          !(mem_use->is_MergeMem() || mem_use->is_MemBar()) ||
-          (mem_use->is_MergeMem() &&
-           (mem_use->outcnt() != 1 || !mem_use->raw_out(0)->is_MemBar()))) {
+          (!mem_use->is_MemBar() &&
+           (!mem_use->is_MergeMem() ||
+            mem_use->outcnt() != 1 || !mem_use->raw_out(0)->is_MemBar()))) {
         assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
         return false;
       }
