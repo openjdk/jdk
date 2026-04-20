@@ -485,7 +485,6 @@ bool SuperWord::SLP_extract() {
   }
 
   extend_pairset_with_more_pairs_by_following_use_and_def();
-  assert(false, "TODO continue here");
 
   combine_pairs_to_longer_packs();
 

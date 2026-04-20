@@ -216,9 +216,9 @@ private:
   GrowableArray<const VTransformNode*> _pack;
 
 public:
-  Pack(Arena* arena) : _pack(arena, OptoNodeListSize, OptoNodeListSize, nullptr) {}
+  Pack(Arena* arena) : _pack(arena, OptoNodeListSize, 0, nullptr) {}
 
-  void push(const VTransformNode* n) { _pack.push(n); }
+  void push(const VTransformNode* n) { assert(n != nullptr, ""); _pack.push(n); }
   int length() const { return _pack.length(); } // TODO: go back to "size"? Rename all?
   const VTransformNode* at(int i) const { return _pack.at(i); }
   const VTransformNode* pop() { return _pack.pop(); }
