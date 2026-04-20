@@ -99,6 +99,11 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *         either {@code DataBuffer.TYPE_BYTE},
      *         {@code DataBuffer.TYPE_USHORT}, or
      *         {@code DataBuffer.TYPE_INT}
+     * @throws IllegalArgumentException if either {@code w} or {@code h}
+     *         is less than or equal to 0
+     * @throws RasterFormatException if the number of bits per pixel
+     *                  is not a power of 2 or if a power of 2 number of
+     *                  pixels do not fit in one data element.
      */
     public MultiPixelPackedSampleModel(int dataType,
                                        int w,
@@ -130,15 +135,18 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param scanlineStride the line stride of the image data
      * @param dataBitOffset the data bit offset for the region of image
      *                  data described
-     * @throws RasterFormatException if the number of bits per pixel
-     *                  is not a power of 2 or if a power of 2 number of
-     *                  pixels do not fit in one data element.
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
      * @throws IllegalArgumentException if {@code dataType} is not
      *         either {@code DataBuffer.TYPE_BYTE},
      *         {@code DataBuffer.TYPE_USHORT}, or
      *         {@code DataBuffer.TYPE_INT}
+     * @throws IllegalArgumentException if either {@code w} or {@code h}
+     *         is less than or equal to 0
+     * @throws RasterFormatException if
+     *         {@code (numberOfBits * w) / DataBuffer.getDataTypeSize(dataType)}
+     *         is greater than {@code scanlineStride}
+     * @throws RasterFormatException if the number of bits per pixel
+     *                  is not a power of 2 or if a power of 2 number of
+     *                  pixels do not fit in one data element.
      */
     public MultiPixelPackedSampleModel(int dataType, int w, int h,
                                        int numberOfBits,
@@ -152,6 +160,21 @@ public class MultiPixelPackedSampleModel extends SampleModel
                                                dataType);
         }
         this.dataType = dataType;
+        if ((numberOfBits <= 0) || ((numberOfBits & (numberOfBits - 1)) != 0)) {
+            throw new RasterFormatException("numberOfBits per pixel must be a power of 2");
+        }
+        if (scanlineStride <= 0) {
+            throw new IllegalArgumentException("scanlineStride must be > 0");
+        }
+        if (((numberOfBits * w) / DataBuffer.getDataTypeSize(dataType)) > scanlineStride) {
+            throw new RasterFormatException("scanlineStride is too small for width");
+        }
+        if (dataBitOffset < 0) {
+            throw new IllegalArgumentException("dataBitOffset must be >= 0");
+        }
+        if ((dataBitOffset % numberOfBits) != 0) {
+            throw new IllegalArgumentException("dataBitOffset must be a multiple of bits per pixel");
+        }
         this.pixelBitStride = numberOfBits;
         this.scanlineStride = scanlineStride;
         this.dataBitOffset = dataBitOffset;
