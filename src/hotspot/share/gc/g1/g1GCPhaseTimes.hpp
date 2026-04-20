@@ -175,7 +175,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_nmethod_list_cleanup_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
-  // Merge refinement table time. Note that this time is included in _cur_merge_heap_roots_time_ms.
   double _cur_merge_refinement_table_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
 
@@ -190,7 +189,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_resize_heap_time_ms;
   double _cur_ref_proc_time_ms;
 
-  // Not included in _gc_pause_time_ms
   double _root_region_scan_time_ms;
 
   double _recorded_prepare_heap_roots_time_ms;
@@ -208,7 +206,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_region_register_time;
 
-  // Not included in _gc_pause_time_ms
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
