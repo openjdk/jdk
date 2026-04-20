@@ -481,6 +481,10 @@ void TemplateTable::fast_aldc(LdcType type) {
   // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
   __ z_lg(Z_R1_scratch, Address(Z_R1_scratch));
+#ifdef ASSERT
+  Register excluded_register[] = {Z_R1, Z_R2};
+  __ clobber_volatile_registers(excluded_register, 2);
+#endif // ASSERT
   __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
   __ z_cgr(Z_tos, Z_R1_scratch);
   __ z_brne(L_resolved);
@@ -2479,6 +2483,11 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   if (is_static) {
     __ load_sized_value(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
     __ load_sized_value(obj, Address(obj, in_bytes(Klass::java_mirror_offset())), sizeof(void*), false);
+#ifdef ASSERT
+    Register excluded_register[] = {Z_R5};
+    // Obj is never volatile
+    __ clobber_volatile_registers(excluded_register, 1);
+#endif // ASSERT
     __ resolve_oop_handle(obj, Z_R0_scratch, Z_R1_scratch);
   }
 }

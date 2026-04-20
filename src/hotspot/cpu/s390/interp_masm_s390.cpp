@@ -411,6 +411,10 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
+#ifdef ASSERT
+  Register excluded_register[] = {Z_R1, Z_R2};
+  clobber_volatile_registers(excluded_register, 2);
+#endif // ASSERT
   resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;

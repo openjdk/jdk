@@ -5878,6 +5878,28 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
 #endif // ASSERT
 }
 
+#ifdef ASSERT
+bool is_excluded(Register excluded_register[], Register reg, int n) {
+  for (int i = 0; i < n; i++) {
+    if (excluded_register[i] == reg) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
+  const int magic_number = 0x82;
+
+  for (int i = 0; i < 6; i++) {
+    Register reg = as_Register(i);
+    if (!is_excluded(excluded_register, reg, n)) {
+      load_const_optimized(reg, magic_number);
+    }
+  }
+}
+#endif // ASSERT
+
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
   z_stmg(Z_R1, Z_R5, offset, dst); offset += 5 * BytesPerWord;

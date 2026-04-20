@@ -484,6 +484,10 @@ class MacroAssembler: public Assembler {
   // Pop current C frame and restore return PC register (Z_R14).
   void pop_frame_restore_retPC(int frame_size_in_bytes);
 
+#ifdef ASSERT
+  void clobber_volatile_registers(Register excluded_register[], int n);
+#endif // ASSERT
+
   //
   // Calls
   //
