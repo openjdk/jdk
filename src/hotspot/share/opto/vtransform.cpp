@@ -108,10 +108,10 @@ bool VTransformOptimize::optimize_step(VTransformNode* vtn) {
       // There are some exceptions:
       // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
       // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
-      // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
+      // 3. Outer node with req inputs: is a use after the loop that we must keep alive.
       !(vtn->isa_PhiScalar() != nullptr ||
         vtn->is_load_or_store_in_loop() ||
-        (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
+        (vtn->isa_Outer() != nullptr && vtn->has_req()))) {
     vtn->mark_dead(*this);
     return true;
   }
@@ -145,7 +145,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_strong_in_edges(stack);
+  collect_nodes_without_input_dependencies(stack);
   const int num_alive_nodes = count_alive_vtnodes();
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
@@ -164,8 +164,8 @@ bool VTransformGraph::schedule() {
       // We only need to respect the strong edges (data edges and strong memory edges).
       // Violated weak memory edges are allowed, but require a speculative aliasing
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
-      for (uint i = 0; i < vtn->out_strong_edges(); i++) {
-        VTransformNode* use = vtn->out_strong_edge(i);
+      for (VTransformNodeOutIterator it(vtn, true, true, false); !it.done(); it.next()) {
+        VTransformNode* use = it.current();
         // TODO: scalar schedule needs to also respect weak edges!
 
         // Skip dead nodes
@@ -209,18 +209,18 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no strong input edges (data edges and strong memory edges):
-void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no req or strong memory edges.
+void VTransformGraph::collect_nodes_without_input_dependencies(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
     if (!vtn->is_alive()) { continue; }
-    if (!vtn->has_strong_in_edge()) {
+    if (!vtn->has_req_or_strong_memory_edge()) {
       stack.push(vtn);
     }
     // If an Outer node has both inputs and outputs, we will most likely have cycles in the final graph.
     // This is not a correctness problem, but it just will prevent vectorization. If this ever happens
     // try to find a way to avoid the cycle somehow.
-    assert(vtn->isa_Outer() == nullptr || (vtn->has_strong_in_edge() != (vtn->out_strong_edges() > 0)),
+    assert(vtn->isa_Outer() == nullptr || (vtn->has_req() != (vtn->outcnt_req() > 0)),
            "Outer nodes should either be inputs or outputs, but not both, otherwise we may get cycles");
   }
 }
@@ -277,8 +277,8 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
         in_loop.set(vtn->_idx);
         continue;
     }
-    for (uint i = 0; i < vtn->out_strong_edges(); i++) {
-      VTransformNode* use = vtn->out_strong_edge(i);
+    for (auto it = VTransformNodeOutIterator::out_reqs(vtn); !it.done(); it.next()) {
+      VTransformNode* use = it.current();
       // Or is vtn a backedge or one of its transitive defs?
       if (in_loop.test(use->_idx) || use->is_loop_head_phi()) {
         in_loop.set(vtn->_idx);
@@ -481,8 +481,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
     for (int i = 0; i < schedule.length(); i++) {
       VTransformNode* vtn = schedule.at(i);
-      for (uint i = 0; i < vtn->out_weak_edges(); i++) {
-        VTransformNode* use = vtn->out_weak_edge(i);
+      for (auto it = VTransformNodeOutIterator::out_weak_memory_edges(vtn); !it.done(); it.next()) {
+        VTransformNode* use = it.current();
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
@@ -1472,7 +1472,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     )
     current_vector_accumulator = vector_accumulator;
     if (current_red == last_red) { break; }
-    current_red = current_red->unique_out_strong_edge()->isa_ReductionVector();
+    current_red = current_red->unique_out_req()->isa_ReductionVector();
   }
 
   // Feed vector accumulator into the backedge.
@@ -1644,12 +1644,18 @@ void VTransformNode::print() const {
     }
   }
   tty->print(") %s[", _is_alive ? "" : "dead ");
-  for (uint i = 0; i < _out_end_strong_edges; i++) {
+  for (uint i = 0; i < _out_end_req; i++) {
     print_node_idx(_out.at(i));
   }
-  if ((uint)_out.length() > _out_end_strong_edges) {
+  if (_out_end_strong_memory_edges > _out_end_req) {
+    tty->print(" | strong:");
+    for (uint i = _out_end_req; i < _out_end_strong_memory_edges; i++) {
+      print_node_idx(_out.at(i));
+    }
+  }
+  if ((uint)_out.length() > _out_end_strong_memory_edges) {
     tty->print(" | weak:");
-    for (uint i = _out_end_strong_edges; i < (uint)_out.length(); i++) {
+    for (uint i = _out_end_strong_memory_edges; i < (uint)_out.length(); i++) {
       print_node_idx(_out.at(i));
     }
   }

@@ -1311,15 +1311,16 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const VTransformNode* 
   // uses of result
   uint number_of_packed_use_pairs = 0;
   int save_use = 0;
-  for (uint i1 = 0; i1 < s1->out_strong_edges(); i1++) {
-    const VTransformNode* use1 = s1->out_strong_edge(i1);
+  for (auto it1 = VTransformNodeOutIterator::out_reqs(s1); !it1.done(); it1.next()) {
+    VTransformNode* use1 = it1.current();
 
     // Find pair (use1, use2)
     const VTransformNode* use2 = _pairset.get_right_or_null_for(use1);
     if (use2 == nullptr) { continue; }
 
-    for (uint i2 = 0; i2 < s2->out_strong_edges(); i2++) {
-      if (use2 == s1->out_strong_edge(i2)) {
+    for (auto it2 = VTransformNodeOutIterator::out_reqs(s2); !it2.done(); it2.next()) {
+      VTransformNode* use1 = it1.current();
+      if (use2 == it2.current()) {
         // We have pattern:
         //
         //   s1    s2
@@ -1334,8 +1335,8 @@ int SuperWord::estimate_cost_savings_when_packing_as_pair(const VTransformNode* 
     }
   }
 
-  if (number_of_packed_use_pairs < s1->out_strong_edges()) save_use += unpack_cost(1);
-  if (number_of_packed_use_pairs < s2->out_strong_edges()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s1->outcnt_req()) save_use += unpack_cost(1);
+  if (number_of_packed_use_pairs < s2->outcnt_req()) save_use += unpack_cost(1);
 
   return MAX2(save_in, save_use);
 }

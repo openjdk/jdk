@@ -171,7 +171,7 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
+  void collect_nodes_without_input_dependencies(GrowableArray<VTransformNode*>& stack) const;
   int count_alive_vtnodes() const;
   void mark_vtnodes_in_loop(VectorSet& in_loop) const;
 
@@ -389,6 +389,8 @@ public:
 private:
   bool _is_alive;
   // TODO: make sure weak/strong always mentions memory, now that we split off the req edges!
+  // Alternative: split into req, strong and weak. We may need more strong and weak edges
+  // in the future, when we have control as well... let's see.
 
   // We split _in into 3 sections:
   // - data edges (req):     _in[0                           .. _req-1]
@@ -545,35 +547,39 @@ public:
     return _in.at(i);
   }
 
+  // TODO: consider only using iterator? - rm outcnt too?
   VTransformNode* out_req(uint i) const {
     assert(i < outcnt_req(), "must be a req");
     return _out.at(i);
   }
 
+  // TODO: consider only using iterator? - rm outcnt too?
   VTransformNode* out_strong_memory_edge(uint i) const {
     assert(i < outcnt_strong_memory_edges(), "must be a strong memory edge or data edge");
     return _out.at(_out_end_req + i);
   }
 
-  VTransformNode* out_weak_edge(uint i) const {
+  // TODO: consider only using iterator? - rm outcnt too?
+  VTransformNode* out_weak_memory_edge(uint i) const {
     assert(i < outcnt_weak_memory_edges(), "must be a strong memory edge");
     return _out.at(_out_end_strong_memory_edges + i);
   }
 
-  // TODO: need an iterator that can do any of the above.
-
-  // TODO: memory?
-  bool has_strong_in_edge() const {
-    for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
-      if (_in.at(i) != nullptr) { return true; }
+  bool has_req() const {
+    for (uint i = 0; i < req(); i++) {
+      if (in_req(i) != nullptr) { return true; }
     }
     return false;
   }
 
-  // TODO: maybe it should be unique req out edge?
-  VTransformNode* unique_out_strong_memory_edge() const {
-    assert(outcnt_strong_memory_edges() == 1, "must be unique");
-    return _out.at(0);
+  bool has_req_or_strong_memory_edge() const {
+    uint strong = _in_end_strong_memory_edges - _req;
+    return strong > 0 || has_req();
+  }
+
+  VTransformNode* unique_out_req() const {
+    assert(outcnt_req() == 1, "must be unique");
+    return out_req(0);
   }
 
   bool is_alive() const { return _is_alive; }
@@ -644,6 +650,59 @@ public:
 
 protected:
   const Type* container_type(const VTransform& vtransform, Node* n) const;
+};
+
+class VTransformNodeOutIterator : public StackObj {
+private:
+  const VTransformNode* _vtn;
+  uint _req_idx;
+  uint _strong_memory_edge_idx;
+  uint _weak_memory_edge_idx;
+  VTransformNode* _current;
+
+public:
+  // TODO: consider nicer constructor?
+  VTransformNodeOutIterator(const VTransformNode* vtn, bool with_req, bool with_strong_memory_edges, bool with_weak_memory_edges) :
+    _vtn(vtn),
+    _req_idx(with_req ? 0 : vtn->outcnt_req()),
+    _strong_memory_edge_idx(with_strong_memory_edges ? 0 : vtn->outcnt_strong_memory_edges()),
+    _weak_memory_edge_idx(with_weak_memory_edges ? 0 : vtn->outcnt_weak_memory_edges())
+  {
+    next();
+  }
+
+  static VTransformNodeOutIterator out_reqs(const VTransformNode* vtn) {
+    return VTransformNodeOutIterator(vtn, true, false, false);
+  }
+
+  static VTransformNodeOutIterator out_weak_memory_edges(const VTransformNode* vtn) {
+    return VTransformNodeOutIterator(vtn, false, false, true);
+  }
+
+  bool done() const {
+    return _current == nullptr;
+  }
+
+  VTransformNode* current() const {
+    assert(_current != nullptr, "must not be done yet");
+    return _current;
+  }
+
+  void next() {
+    if (_req_idx < _vtn->outcnt_req()) {
+      _current = _vtn->out_req(_req_idx++);
+      return;
+    }
+    if (_strong_memory_edge_idx < _vtn->outcnt_strong_memory_edges()) {
+      _current = _vtn->out_strong_memory_edge(_strong_memory_edge_idx++);
+      return;
+    }
+    if (_weak_memory_edge_idx < _vtn->outcnt_weak_memory_edges()) {
+      _current = _vtn->out_weak_memory_edge(_weak_memory_edge_idx++);
+      return;
+    }
+    _current = nullptr;
+  }
 };
 
 // Abstract superclass for all scalar nodes.
