@@ -1,0 +1,5 @@
+#!/bin/csh -f
+foreach f (`cat file.list`)
+   sed -e "s/javaLangThrowable/javaStackTraceClasses/" $f > $f.new
+   mv $f.new $f
+end
