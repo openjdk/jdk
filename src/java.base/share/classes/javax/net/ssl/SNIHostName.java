@@ -31,6 +31,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharacterCodingException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -73,58 +74,113 @@ public final class SNIHostName extends SNIServerName {
 
     /**
      * Creates an {@code SNIHostName} using the specified hostname.
-     * <P>
-     * Note that per <A HREF="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</A>,
-     * the encoded server name value of a hostname is
-     * {@link StandardCharsets#US_ASCII}-compliant.  In this method,
-     * {@code hostname} can be a user-friendly Internationalized Domain Name
-     * (IDN).  {@link IDN#toASCII(String, int)} is used to enforce the
-     * restrictions on ASCII characters in hostnames (see
-     * <A HREF="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</A>,
-     * <A HREF="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</A>,
-     * <A HREF="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</A>) and
-     * translate the {@code hostname} into ASCII Compatible Encoding (ACE), as:
-     * <pre>
-     *     IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES);
-     * </pre>
-     * <P>
-     * The {@code hostname} argument is illegal if it:
+     * <p>
+     * The {@code hostname} argument is considered illegal if:
      * <ul>
-     * <li> {@code hostname} is empty,</li>
-     * <li> {@code hostname} ends with a trailing dot,</li>
-     * <li> {@code hostname} is an IP literal,</li>
-     * <li> {@code hostname} is not a valid Internationalized
-     *      Domain Name (IDN) compliant with the RFC 3490 specification.</li>
-     * </ul>
-     * @param  hostname
-     *         the hostname of this server name
+     * <li>It is empty
+     * <li>It ends with a trailing dot
+     * <li>It is not a valid Internationalized Domain Name (IDN)</li>
+     *
+     * <h2>Internationalized Domain Name (IDN) validation</h2>
+     *
+     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
+     * the server name value of a hostname is encoded in {@linkplain
+     * StandardCharsets#US_ASCII ASCII}. In this method, the {@code hostname}
+     * argument can be a user-friendly Internationalized Domain Name (IDN).
+     * {@link IDN#toASCII(String, int)} is used to enforce the
+     * restrictions on ASCII characters in hostnames (see
+     * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
+     * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
+     * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>) and
+     * translate the {@code hostname} into ASCII Compatible Encoding (ACE), as:
+     * {@snippet lang=java:
+     * IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES);
+     * }
+     *
+     * @apiNote
+     *
+     * Users are advised to prefer the {@link #ofString(String) ofString()}
+     * static factory method over this constructor, since the former performs
+     * stricter checks.
+     *
+     * @param hostname the hostname of this server name
      *
      * @throws NullPointerException if {@code hostname} is {@code null}
      * @throws IllegalArgumentException if {@code hostname} is illegal
      *
      * @spec https://www.rfc-editor.org/info/rfc1122
-     *      RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * RFC 1122: Requirements for Internet Hosts - Communication Layers
      * @spec https://www.rfc-editor.org/info/rfc1123
-     *      RFC 1123: Requirements for Internet Hosts - Application and Support
+     * RFC 1123: Requirements for Internet Hosts - Application and Support
      * @spec https://www.rfc-editor.org/info/rfc3490
-     *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      * @spec https://www.rfc-editor.org/info/rfc6066
-     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
+     * RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      */
     public SNIHostName(String hostname) {
-        // IllegalArgumentException will be thrown if {@code hostname} is
-        // not a valid IDN.
+        this(hostname, false);
+    }
+
+    private SNIHostName(String hostname, boolean strict) {
         super(StandardConstants.SNI_HOST_NAME,
-                (hostname = IDN.toASCII(
-                    Objects.requireNonNull(hostname,
-                        "Server name value of host_name cannot be null"),
-                    IDN.USE_STD3_ASCII_RULES))
-                .getBytes(StandardCharsets.US_ASCII));
+                // `IDN::toASCII` throws `IllegalArgumentException` on illegal input
+                (this.hostname = IDN.toASCII(
+                        Objects.requireNonNull(hostname,
+                                "Server name value of host_name cannot be null"),
+                        IDN.USE_STD3_ASCII_RULES))
+                        .getBytes(StandardCharsets.US_ASCII));
+        checkHostName(strict);
+    }
 
-        this.hostname = hostname;
-
-        // check the validity of the string hostname
-        checkHostName();
+    /**
+     * Creates an {@code SNIHostName} using the specified hostname.
+     * <p>
+     * The {@code hostname} argument is considered illegal if:
+     * <ul>
+     * <li>It is empty
+     * <li>It ends with a trailing dot
+     * <li>It is an {@linkplain java.net.InetAddress#ofLiteral(String) IP literal}
+     * <li>It is not a valid Internationalized Domain Name (IDN)</li>
+     *
+     * <h2>Internationalized Domain Name (IDN) validation</h2>
+     *
+     * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
+     * the server name value of a hostname is encoded in {@linkplain
+     * StandardCharsets#US_ASCII ASCII}. In this method, the {@code hostname}
+     * argument can be a user-friendly Internationalized Domain Name (IDN).
+     * {@link IDN#toASCII(String, int)} is used to enforce the
+     * restrictions on ASCII characters in hostnames (see
+     * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
+     * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
+     * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>) and
+     * translate the {@code hostname} into ASCII Compatible Encoding (ACE), as:
+     * {@snippet lang=java:
+     * IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES);
+     * }
+     *
+     * @apiNote
+     *
+     * Users are expected to appropriately handle thrown exceptions and
+     * make a decision about whether to propagate the failure, or report the
+     * issue and skip {@linkplain SSLParameters#setServerNames(List) the SNI
+     * server name configuration}.
+     *
+     * @param hostname the hostname of this server name
+     *
+     * @throws NullPointerException if {@code hostname} is {@code null}
+     * @throws IllegalArgumentException if {@code hostname} is illegal
+     *
+     * @spec https://www.rfc-editor.org/info/rfc1122
+     * RFC 1122: Requirements for Internet Hosts - Communication Layers
+     * @spec https://www.rfc-editor.org/info/rfc1123
+     * RFC 1123: Requirements for Internet Hosts - Application and Support
+     * @spec https://www.rfc-editor.org/info/rfc3490
+     * RFC 3490: Internationalizing Domain Names in Applications (IDNA)
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     * RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
+     */
+    public static SNIHostName ofString(String hostname) {
+        return new SNIHostName(hostname, true);
     }
 
     /**
@@ -212,7 +268,7 @@ public final class SNIHostName extends SNIServerName {
         }
 
         // check the validity of the string hostname
-        checkHostName();
+        checkHostName(false);
     }
 
     /**
@@ -347,13 +403,25 @@ public final class SNIHostName extends SNIServerName {
     }
 
     /**
-     * Validates the {@link #hostname host name}.
+     * Validates an SNI {@link #hostname hostname}.
+     * <p>
+     * A hostname is illegal if
+     * <ul>
+     * <li>It is empty
+     * <li>It ends with a dot
+     * </ul>
+     * Besides above conditions, when {@code strict} is {@code true}, a hostname
+     * is illegal if
+     * <ul>
+     * <li>It is an {@linkplain java.net.InetAddress#ofLiteral(String) IP
+     * literal}, which is not permitted per <a
+     * href="https://www.rfc-editor.org/rfc/rfc6066.html#page-6">RFC 6066</a>
+     * </ul>
      *
-     * @throws IllegalArgumentException If the host name is either empty, ends
-     * with a dot, or is an IP literal, which is not permitted per <a
-     * href="https://www.rfc-editor.org/rfc/rfc6066.html#page-6">RFC 6066</a>.
+     * @param strict Flag to toggle strict checks
+     * @throws IllegalArgumentException If the hostname is illegal
      */
-    private void checkHostName() {
+    private void checkHostName(boolean strict) {
 
         // Is it empty?
         if (hostname.isEmpty()) {
@@ -365,6 +433,16 @@ public final class SNIHostName extends SNIServerName {
         if (hostname.endsWith(".")) {
             throw new IllegalArgumentException(
                 "Server name value of host_name cannot have the trailing dot");
+        }
+
+        // The initial idea was to exercise strict checks, which were introduced
+        // several years after the incarnation of `SNIHostName`, in all
+        // `SNIHostName::new`. Though these constructors have widespread usage
+        // and not all call-sites have the sufficient `catch (IAE)` safety net.
+        // Hence, the strict checks enhancement is carried out as an opt-in
+        // feature.
+        if (!strict) {
+            return;
         }
 
         // Is it an IP literal?
