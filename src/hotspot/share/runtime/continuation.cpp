@@ -429,8 +429,8 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
     return;
   }
   assert(is_frame_in_continuation(entry, f), "");
-  if (f.sp() > prev->parent_cont_fastpath()) {
-    prev->set_parent_cont_fastpath(f.sp());
+  if (f.is_older(prev->parent_cont_fastpath())) {
+    prev->set_parent_cont_fastpath(f.id());
   }
 }
 
