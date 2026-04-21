@@ -2247,48 +2247,48 @@ void SuperWord::verify_no_extract() {
 
 // Check if n_super's pack uses are a superset of n_sub's pack uses.
 bool SuperWord::has_use_pack_superset(const VTransformNode* n_super, const VTransformNode* n_sub) const {
-  assert(false, "TODO impl");
-  return false;
-  //Pack* pack = get_pack(n_super);
-  //assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
+  Pack* pack = get_pack(n_super);
+  assert(pack != nullptr && pack == get_pack(n_sub), "must have the same pack");
 
-  //// For all uses of n_sub that are in a pack (use_sub) ...
-  //for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
-  //  Node* use_sub = n_sub->fast_out(j);
-  //  Pack* pack_use_sub = get_pack(use_sub);
-  //  if (pack_use_sub == nullptr) { continue; }
+  // For all uses of n_sub that are in a pack (use_sub) ...
+  for (auto it = VTransformNodeOutIterator::out_reqs(n_sub); !it.done(); it.next()) {
+    const VTransformNode* use_sub = it.current();
+    Pack* pack_use_sub = get_pack(use_sub);
+    if (pack_use_sub == nullptr) { continue; }
 
-  //  // ... and all input edges: use_sub->in(i) == n_sub.
-  //  uint start, end;
-  //  VectorNode::vector_operands(use_sub, &start, &end);
-  //  for (uint i = start; i < end; i++) {
-  //    if (use_sub->in(i) != n_sub) { continue; }
+    // ... and all input edges: use_sub->in(i) == n_sub.
+    uint start, end;
+    use_sub->isa_Scalar()->vector_operands(&start, &end);
+    for (uint i = start; i < end; i++) {
+      if (use_sub->in_req(i) != n_sub) { continue; }
 
-  //    // Check if n_super has any use use_super in the same pack ...
-  //    bool found = false;
-  //    for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
-  //      Node* use_super = n_super->fast_out(k);
-  //      Pack* pack_use_super = get_pack(use_super);
-  //      if (pack_use_sub != pack_use_super) { continue; }
+      // Check if n_super has any use use_super in the same pack ...
+      bool found = false;
+      for (auto k = VTransformNodeOutIterator::out_reqs(n_super); !k.done(); k.next()) {
+        const VTransformNode* use_super = k.current();
+        Pack* pack_use_super = get_pack(use_super);
+        if (pack_use_sub != pack_use_super) { continue; }
 
-  //      // ... and where there is an edge use_super->in(i) == n_super.
-  //      // For MulAddS2I it is expected to have defs over different input edges.
-  //      if (use_super->in(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
+        // ... and where there is an edge use_super->in(i) == n_super.
+        // For MulAddS2I it is expected to have defs over different input edges.
+        // TODO: find solution for muladds2i
+        //if (use_super->in_req(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
+        if (use_super->in_req(i) != n_super) { continue; }
 
-  //      found = true;
-  //      break;
-  //    }
-  //    if (!found) {
-  //      // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
-  //      // but n_super does not have any edge (use_super->in(i) == n_super) with
-  //      // use_super in the same packset. Hence, n_super does not have a use pack
-  //      // superset of n_sub.
-  //      return false;
-  //    }
-  //  }
-  //}
-  //// n_super has all edges that n_sub has.
-  //return true;
+        found = true;
+        break;
+      }
+      if (!found) {
+        // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
+        // but n_super does not have any edge (use_super->in(i) == n_super) with
+        // use_super in the same packset. Hence, n_super does not have a use pack
+        // superset of n_sub.
+        return false;
+      }
+    }
+  }
+  // n_super has all edges that n_sub has.
+  return true;
 }
 
 // Find a boundary in the pack, where left and right have different pack uses and defs.
