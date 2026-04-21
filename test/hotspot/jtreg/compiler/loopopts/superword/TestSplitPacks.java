@@ -1164,7 +1164,7 @@ public class TestSplitPacks {
                   IRNode.MUL_VI,         "> 0",
                   IRNode.POPULATE_INDEX, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     // Index Populate:
     // There can be an issue when all the (iv + 1), (iv + 2), ...
     // get packed, but not (iv). Then we have a pack that is one element

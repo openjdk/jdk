@@ -304,7 +304,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.POPULATE_INDEX, "> 0",
                   IRNode.STORE_VECTOR,   "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     // Note: the Vector API example below can also vectorize for AVX,
     //       because it does not use a PopulateIndex.
