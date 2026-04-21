@@ -296,7 +296,7 @@ public class JarExtractTest {
         final Path tempTestDir;
         try {
             // create a test specific directory in "/tmp" directory
-            tempTestDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-").toAbsolutePath();
+            tempTestDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-");
         } catch (IOException ioe) {
             Assumptions.abort("skipping test, since /tmp cannot be written to: " + ioe);
             return;
