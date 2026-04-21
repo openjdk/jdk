@@ -716,7 +716,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                    user_data);
 
   if (is_latin1 && s_len > 0) {
-    FREE_C_HEAP_ARRAY(jchar, value);
+    FREE_C_HEAP_ARRAY(value);
   }
   return res;
 }
@@ -1204,8 +1204,10 @@ void JvmtiTagMap::flush_object_free_events() {
   assert_not_at_safepoint();
   if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     {
+      // The other thread can block for safepoints during event callbacks, so ensure we
+      // are safepoint-safe while waiting.
+      ThreadBlockInVM tbivm(JavaThread::current());
       MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-      // If another thread is posting events, let it finish
       while (_posting_events) {
         ml.wait();
       }

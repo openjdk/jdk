@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.reflect.Array;
 /**
  * @test
  * @bug 8341137
+ * @key randomness
  * @summary Optimize long vector multiplication using x86 VPMUL[U]DQ instruction.
  * @modules jdk.incubator.vector
  * @library /test/lib /

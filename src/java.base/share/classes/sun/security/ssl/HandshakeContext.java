@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -130,6 +131,10 @@ abstract class HandshakeContext implements ConnectionContext {
     List<SignatureScheme>                   localSupportedCertSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
+
+    // CertificateCompressionAlgorithm
+    Map<Integer, Function<byte[], byte[]>>          certInflaters;
+    Map.Entry<Integer, Function<byte[], byte[]>>    certDeflater;
 
     // Known authorities
     X500Principal[]                         peerSupportedAuthorities = null;
@@ -284,14 +289,16 @@ abstract class HandshakeContext implements ConnectionContext {
                         found = true;
                         break;
                     }
-                } else if (SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
+                } else if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
                              " for " + protocol.name);
                 }
             }
 
-            if (!found && (SSLLogger.isOn()) && SSLLogger.isOn("handshake")) {
+            if (!found && (SSLLogger.isOn()) &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "No available cipher suite for " + protocol.name);
             }
@@ -335,7 +342,8 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
 
                 if (!isSupported &&
-                        SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
+                        SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest(
                             "Ignore unsupported cipher suite: " + suite);
                 }
@@ -556,7 +564,8 @@ abstract class HandshakeContext implements ConnectionContext {
                         cachedStatus.put(groupType, groupAvailable);
 
                         if (!groupAvailable &&
-                                SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
+                                SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.fine(
                                     "No activated named group in " + groupType);
                         }
@@ -570,13 +579,15 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
             }
 
-            if (!retval && SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
+            if (!retval && SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.fine("No active named group(s), ignore " + suite);
             }
 
             return retval;
 
-        } else if (SSLLogger.isOn() && SSLLogger.isOn("verbose")) {
+        } else if (SSLLogger.isOn() &&
+                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
             SSLLogger.fine("Ignore disabled cipher suite: " + suite);
         }
 

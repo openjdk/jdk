@@ -195,6 +195,7 @@ class InstructionValidationTest {
                 ensureFailFast(i, cob -> cob.iinc(i, 1));
             }
             check(fails, () -> IncrementInstruction.of(i, 1));
+            check(fails, () -> IncrementInstruction.of(IINC_W, i, 1));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(i));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(RET_W, i));
             check(fails, () -> LocalVariable.of(i, "test", CD_Object, dummyLabel, dummyLabel));
@@ -208,6 +209,7 @@ class InstructionValidationTest {
                 check(fails, () -> LoadInstruction.of(u1Op, i));
             for (var u1Op : List.of(ASTORE, ISTORE, LSTORE, FSTORE, DSTORE))
                 check(fails, () -> StoreInstruction.of(u1Op, i));
+            check(fails, () -> IncrementInstruction.of(IINC, i, 1));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(RET, i));
         }
 
@@ -250,12 +252,25 @@ class InstructionValidationTest {
         IncrementInstruction.of(0, 2);
         IncrementInstruction.of(0, Short.MAX_VALUE);
         IncrementInstruction.of(0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, 2);
+        IncrementInstruction.of(IINC, 0, Byte.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, Byte.MAX_VALUE);
+        IncrementInstruction.of(IINC_W, 0, 2);
+        IncrementInstruction.of(IINC_W, 0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC_W, 0, Short.MAX_VALUE);
+
         for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
             assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, i));
             TestUtil.runCodeHandler(cob -> {
                 assertThrows(IllegalArgumentException.class, () -> cob.iinc(0, i));
                 cob.return_();
             });
+        }
+        for (int i : new int[] {Byte.MIN_VALUE - 1, Byte.MAX_VALUE + 1}) {
+            assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(IINC, 0, i));
+        }
+        for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
+            assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(IINC_W, 0, i));
         }
     }
 

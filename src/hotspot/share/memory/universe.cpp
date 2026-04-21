@@ -1182,12 +1182,11 @@ bool universe_post_init() {
     Universe::heap()->update_capacity_and_used_at_gc();
   }
 
-  // ("weak") refs processing infrastructure initialization
+  // Initialize serviceability
+  MemoryService::initialize(Universe::heap());
+
+  // Complete initialization
   Universe::heap()->post_initialize();
-
-  MemoryService::add_metaspace_memory_pools();
-
-  MemoryService::set_universe_heap(Universe::heap());
 
 #if INCLUDE_CDS
   AOTMetaspace::post_initialize(CHECK_false);
@@ -1257,7 +1256,7 @@ void Universe::initialize_verify_flags() {
     }
     token = strtok_r(nullptr, delimiter, &save_ptr);
   }
-  FREE_C_HEAP_ARRAY(char, subset_list);
+  FREE_C_HEAP_ARRAY(subset_list);
 }
 
 bool Universe::should_verify_subset(uint subset) {

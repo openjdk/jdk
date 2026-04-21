@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #define SHARE_GC_Z_ZJNICRITICAL_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class JavaThread;
 class ZConditionLock;
 
 class ZJNICritical : public AllStatic {
 private:
-  static volatile int64_t _count;
-  static ZConditionLock*  _lock;
+  static Atomic<int64_t> _count;
+  static ZConditionLock* _lock;
 
   static void enter_inner(JavaThread* thread);
   static void exit_inner();

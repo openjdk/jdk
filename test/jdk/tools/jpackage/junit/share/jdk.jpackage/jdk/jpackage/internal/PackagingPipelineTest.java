@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -412,7 +412,7 @@ public class PackagingPipelineTest {
 
         final var expectedException = new Exception("foo");
         final var ex = testExceptionRethrow(expectedException, ExceptionBox.class, () -> {
-            rethrowUnchecked(expectedException);
+            throw toUnchecked(expectedException);
         });
         assertSame(expectedException, ex.getCause());
     }
@@ -616,7 +616,7 @@ public class PackagingPipelineTest {
                 "1.0",
                 "Acme",
                 "copyright",
-                Optional.empty(),
+                List.of(),
                 List.of(),
                 appImageLayout,
                 runtimeBuilder,
@@ -633,7 +633,12 @@ public class PackagingPipelineTest {
         Package create() {
             return new Package.Stub(
                     app,
-                    new PackageType() {},
+                    new PackageType() {
+                        @Override
+                        public String label() {
+                            throw new UnsupportedOperationException();
+                        }
+                    },
                     "the-package",
                     "My package",
                     "1.0",

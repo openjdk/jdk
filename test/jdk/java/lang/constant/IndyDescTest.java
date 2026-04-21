@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,19 @@ import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 
-import org.testng.annotations.Test;
 
 import static java.lang.constant.ConstantDescs.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.Test;
 
-/**
+/*
  * @test
  * @compile IndyDescTest.java
- * @run testng IndyDescTest
+ * @run junit IndyDescTest
  * @summary unit tests for java.lang.constant.IndyDescTest
  */
-@Test
 public class IndyDescTest {
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type,
                                      Object... args) {
@@ -54,6 +54,7 @@ public class IndyDescTest {
             return new ConstantCallSite(MethodHandles.constant(String.class, (String) args[0]));
     }
 
+    @Test
     public void testIndyDesc() throws Throwable {
         ClassDesc c = ClassDesc.of("IndyDescTest");
         MethodTypeDesc mt = MethodTypeDesc.of(CD_CallSite, CD_MethodHandles_Lookup, CD_String, CD_MethodType, CD_Object.arrayType());
@@ -96,6 +97,7 @@ public class IndyDescTest {
         assertEquals("foo", csd5.invocationName());
     }
 
+    @Test
     public void testEqualsHashToString() throws Throwable {
         ClassDesc c = ClassDesc.of("IndyDescTest");
         MethodTypeDesc mt = MethodTypeDesc.of(CD_CallSite, CD_MethodHandles_Lookup, CD_String, CD_MethodType, CD_Object.arrayType());
@@ -109,14 +111,14 @@ public class IndyDescTest {
         assertNotEquals(csd1, csd3);
         assertNotEquals(csd1.hashCode(), csd3.hashCode());
 
-        assertEquals(csd1.toString(), "DynamicCallSiteDesc[IndyDescTest::bootstrap(wooga/):()String]");
+        assertEquals("DynamicCallSiteDesc[IndyDescTest::bootstrap(wooga/):()String]", csd1.toString());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testEmptyInvocationName() throws Throwable {
         ClassDesc c = ClassDesc.of("IndyDescTest");
         MethodTypeDesc mt = MethodTypeDesc.of(CD_CallSite, CD_MethodHandles_Lookup, CD_String, CD_MethodType, CD_Object.arrayType());
         DirectMethodHandleDesc mh = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, c, "bootstrap", mt);
-        DynamicCallSiteDesc csd1 = DynamicCallSiteDesc.of(mh, "", MethodTypeDesc.of(CD_String));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> DynamicCallSiteDesc.of(mh, "", MethodTypeDesc.of(CD_String)));
     }
 }

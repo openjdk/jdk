@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,10 @@ import static jdk.jpackage.internal.cli.StandardOption.RESOURCE_DIR;
 import static jdk.jpackage.internal.cli.StandardOption.VENDOR;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -57,9 +59,10 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class FromOptions {
 
@@ -147,6 +150,13 @@ final class FromOptions {
             ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
             Optional<RuntimeLayout> predefinedRuntimeLayout) {
 
+        Objects.requireNonNull(options);
+        Objects.requireNonNull(launcherCtor);
+        Objects.requireNonNull(launcherOverrideCtor);
+        Objects.requireNonNull(appLayout);
+        Objects.requireNonNull(runtimeLayout);
+        Objects.requireNonNull(predefinedRuntimeLayout);
+
         final var appBuilder = new ApplicationBuilder();
 
         final var isRuntimeInstaller = isRuntimeInstaller(options);
@@ -168,15 +178,30 @@ final class FromOptions {
         APP_VERSION.ifPresentIn(options, appBuilder::version);
         VENDOR.ifPresentIn(options, appBuilder::vendor);
         COPYRIGHT.ifPresentIn(options, appBuilder::copyright);
-        INPUT.ifPresentIn(options, appBuilder::srcDir);
-        APP_CONTENT.ifPresentIn(options, appBuilder::contentDirs);
+        INPUT.ifPresentIn(options, appBuilder::appDirSources);
+        APP_CONTENT.findIn(options).map((List<Collection<RootedPath>> v) -> {
+            // Reverse the order of content sources.
+            // If there are multiple source files for the same
+            // destination file, only the first will be used.
+            // Reversing the order of content sources makes it use the last file
+            // from the original list of source files for the given destination file.
+            return v.reversed().stream().flatMap(Collection::stream).toList();
+        }).ifPresent(appBuilder::contentDirSources);
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);
         } else {
             appBuilder.appImageLayout(appLayout);
 
-            final var launchers = createLaunchers(options, launcherCtor);
+            // Adjust the value of the PREDEFINED_RUNTIME_IMAGE option to make it reference
+            // a directory with the standard Java runtime structure.
+            final var launcherOptions = predefinedRuntimeDirectory.filter(v -> {
+                return !predefinedRuntimeImage.get().equals(v);
+            }).map(v -> {
+                return Options.of(Map.of(PREDEFINED_RUNTIME_IMAGE, v)).copyWithParent(options);
+            }).orElse(options);
+
+            final var launchers = createLaunchers(launcherOptions, launcherCtor);
 
             if (PREDEFINED_APP_IMAGE.containsIn(options)) {
                 appBuilder.launchers(launchers);
@@ -186,19 +211,6 @@ final class FromOptions {
                 final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
                 runtimeBuilderBuilder.modulePath(ensureBaseModuleInModulePath(MODULE_PATH.findIn(options).orElseGet(List::of)));
-
-                if (!APP_VERSION.containsIn(options)) {
-                    // Version is not specified explicitly. Try to get it from the app's module.
-                    launchers.mainLauncher().startupInfo().ifPresent(startupInfo -> {
-                        if (startupInfo instanceof LauncherModularStartupInfo modularStartupInfo) {
-                            modularStartupInfo.moduleVersion().ifPresent(moduleVersion -> {
-                                appBuilder.version(moduleVersion);
-                                Log.verbose(I18N.format("message.module-version",
-                                        moduleVersion, modularStartupInfo.moduleName()));
-                            });
-                        }
-                    });
-                }
 
                 predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
@@ -213,6 +225,8 @@ final class FromOptions {
                 appBuilder.runtimeBuilder(runtimeBuilderBuilder.create());
             }
         }
+
+        predefinedRuntimeDirectory.map(RuntimeReleaseFile::releaseFilePathInRuntime).ifPresent(appBuilder::runtimeReleaseFile);
 
         return appBuilder;
     }

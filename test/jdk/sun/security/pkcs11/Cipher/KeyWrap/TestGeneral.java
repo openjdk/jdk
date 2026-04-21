@@ -273,6 +273,7 @@ public class TestGeneral extends PKCS11Test {
         for (String a : algos) {
             if (p.getService("Cipher", a) == null) {
                 skippedList.add(a);
+                continue;
             }
 
             System.out.println("Testing " + a);

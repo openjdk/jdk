@@ -54,9 +54,7 @@ public class DockerBasicTest {
             testHelloDocker();
             testJavaVersionWithCgMounts();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageNameAndTag);
-            }
+            DockerTestUtils.removeDockerImage(imageNameAndTag);
         }
     }
 

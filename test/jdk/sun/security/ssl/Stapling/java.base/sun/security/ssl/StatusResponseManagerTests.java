@@ -47,7 +47,17 @@ import static sun.security.ssl.CertStatusExtension.*;
  */
 public class StatusResponseManagerTests {
 
-    private static final boolean debug = true;
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl:respmgr
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     private static final boolean ocspDebug = false;
 
     private static Field responseCacheField;
@@ -72,6 +82,11 @@ public class StatusResponseManagerTests {
     static X509Certificate[] chain;
 
     public static void main(String[] args) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl:respmgr");
+        }
+
         responseCacheField =
                 StatusResponseManager.class.getDeclaredField("responseCache");
         responseCacheField.setAccessible(true);

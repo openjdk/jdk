@@ -191,8 +191,7 @@
 //
 // C2 stub blob/field names
 //
-// C2 stubs are provided with names in the format "C2 Runtime
-// <stubname> _blob".
+// C2 stubs are provided with names in the format "<stubname>_blob (C2 runtime)".
 //
 // A stub creation method OptoRuntime::generate(ciEnv* env) is
 // generated which invokes the C2 compiler to generate each stub in
@@ -540,18 +539,19 @@
 // generated.
 //
 // Architecture-specific entries need to be declared using the
-// do_arch_entry template
+// do_arch_entry templates
 //
 // do_arch_entry(arch, blob_name, stub_name, field_name, getter_name)
 //
 // do_arch_entry_init(arch, blob_name, stub_name, field_name,
 //                    getter_name, init_function)
 //
+// do_arch_entry_array(arch, blob_name, stub_name, field_name,
+//                     getter_name, count)
+//
 // The only difference between these templates and the generic ones is
 // that they receive an extra argument which identifies the current
 // architecture e.g. x86, aarch64 etc.
-//
-// Currently there is no support for a do_arch_array_entry template.
 
 // Include arch-specific stub and entry declarations and make sure the
 // relevant template macros have been defined
@@ -599,7 +599,8 @@
                                      do_entry, do_entry_init,           \
                                      do_entry_array,                    \
                                      do_arch_blob,                      \
-                                     do_arch_entry, do_arch_entry_init) \
+                                     do_arch_entry, do_arch_entry_init, \
+                                     do_arch_entry_array)               \
   do_blob(preuniverse)                                                  \
   do_stub(preuniverse, fence)                                           \
   do_entry(preuniverse, fence, fence_entry, fence_entry)                \
@@ -616,7 +617,8 @@
            atomic_cmpxchg_long_entry)                                   \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub, do_arch_blob,              \
-                                    do_arch_entry, do_arch_entry_init)  \
+                                    do_arch_entry, do_arch_entry_init,  \
+                                    do_arch_entry_array)                \
   end_blob(preuniverse)                                                 \
 
 #define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
@@ -624,7 +626,8 @@
                                  do_entry, do_entry_init,               \
                                  do_entry_array,                        \
                                  do_arch_blob,                          \
-                                 do_arch_entry, do_arch_entry_init)     \
+                                 do_arch_entry, do_arch_entry_init,     \
+                                 do_arch_entry_array)                   \
   do_blob(initial)                                                      \
   do_stub(initial, call_stub)                                           \
   do_entry(initial, call_stub, call_stub_entry, call_stub_entry)        \
@@ -668,19 +671,10 @@
   do_entry(initial, dcbrt, dcbrt, dcbrt)                                \
   do_stub(initial, fmod)                                                \
   do_entry(initial, fmod, fmod, fmod)                                   \
-  /* following generic entries should really be x86_32 only */          \
-  do_stub(initial, dlibm_sin_cos_huge)                                  \
-  do_entry(initial, dlibm_sin_cos_huge, dlibm_sin_cos_huge,             \
-           dlibm_sin_cos_huge)                                          \
-  do_stub(initial, dlibm_reduce_pi04l)                                  \
-  do_entry(initial, dlibm_reduce_pi04l, dlibm_reduce_pi04l,             \
-           dlibm_reduce_pi04l)                                          \
-  do_stub(initial, dlibm_tan_cot_huge)                                  \
-  do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
-           dlibm_tan_cot_huge)                                          \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, do_arch_blob,                  \
-                                do_arch_entry, do_arch_entry_init)      \
+                                do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   end_blob(initial)                                                     \
 
 
@@ -690,7 +684,8 @@
                                       do_entry_array,                   \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_blob(continuation)                                                 \
   do_stub(continuation, cont_thaw)                                      \
   do_entry(continuation, cont_thaw, cont_thaw, cont_thaw)               \
@@ -705,7 +700,8 @@
            cont_returnBarrierExc)                                       \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub, do_arch_blob,             \
-                                     do_arch_entry, do_arch_entry_init) \
+                                     do_arch_entry, do_arch_entry_init, \
+                                     do_arch_entry_array)               \
   end_blob(continuation)                                                \
 
 
@@ -714,7 +710,8 @@
                                   do_entry, do_entry_init,              \
                                   do_entry_array,                       \
                                   do_arch_blob,                         \
-                                  do_arch_entry, do_arch_entry_init)    \
+                                  do_arch_entry, do_arch_entry_init,    \
+                                  do_arch_entry_array)                  \
   do_blob(compiler)                                                     \
   do_stub(compiler, array_sort)                                         \
   do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
@@ -859,7 +856,8 @@
            bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub, do_arch_blob,                 \
-                                     do_arch_entry, do_arch_entry_init) \
+                                 do_arch_entry, do_arch_entry_init,     \
+                                 do_arch_entry_array)                   \
   end_blob(compiler)                                                    \
 
 
@@ -868,7 +866,8 @@
                                do_entry, do_entry_init,                 \
                                do_entry_array,                          \
                                do_arch_blob,                            \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   do_blob(final)                                                        \
   do_stub(final, verify_oop)                                            \
   do_entry(final, verify_oop, verify_oop_subroutine_entry,              \
@@ -963,9 +962,15 @@
   do_entry_init(final, arrayof_jlong_arraycopy,                         \
                 arrayof_jlong_arraycopy, arrayof_jlong_arraycopy,       \
                 StubRoutines::arrayof_jlong_copy)                       \
+  do_entry(final, arrayof_jlong_arraycopy,                             \
+            arrayof_jlong_arraycopy_nopush,                             \
+            arrayof_jlong_arraycopy_nopush)                             \
   do_stub(final, arrayof_oop_arraycopy)                                 \
   do_entry_init(final, arrayof_oop_arraycopy, arrayof_oop_arraycopy,    \
                 arrayof_oop_arraycopy, StubRoutines::arrayof_oop_copy)  \
+  do_entry(final, arrayof_oop_arraycopy,                                \
+           arrayof_oop_arraycopy_nopush,                                \
+           arrayof_oop_arraycopy_nopush)                                \
   do_stub(final, arrayof_oop_arraycopy_uninit)                          \
   do_entry_init(final, arrayof_oop_arraycopy_uninit,                    \
                 arrayof_oop_arraycopy_uninit,                           \
@@ -1074,7 +1079,8 @@
            lookup_secondary_supers_table_slow_path_stub)                \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,  do_arch_blob,                   \
-                              do_arch_entry, do_arch_entry_init)        \
+                              do_arch_entry, do_arch_entry_init,        \
+                              do_arch_entry_array)                      \
   end_blob(final)                                                       \
 
 
@@ -1087,37 +1093,43 @@
                        do_entry, do_entry_init,                         \
                        do_entry_array,                                  \
                        do_arch_blob,                                    \
-                       do_arch_entry, do_arch_entry_init)               \
+                       do_arch_entry, do_arch_entry_init,               \
+                       do_arch_entry_array)                             \
   STUBGEN_PREUNIVERSE_BLOBS_DO(do_blob, end_blob,                       \
                                do_stub,                                 \
                                do_entry, do_entry_init,                 \
                                do_entry_array,                          \
                                do_arch_blob,                            \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                           \
                            do_stub,                                     \
                            do_entry, do_entry_init,                     \
                            do_entry_array,                              \
                            do_arch_blob,                                \
-                           do_arch_entry, do_arch_entry_init)           \
+                           do_arch_entry, do_arch_entry_init,           \
+                           do_arch_entry_array)                         \
   STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                      \
                                 do_stub,                                \
                                 do_entry, do_entry_init,                \
                                 do_entry_array,                         \
                                 do_arch_blob,                           \
-                                do_arch_entry, do_arch_entry_init)      \
+                                do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                          \
                             do_stub,                                    \
                             do_entry, do_entry_init,                    \
                             do_entry_array,                             \
                             do_arch_blob,                               \
-                            do_arch_entry, do_arch_entry_init)          \
+                            do_arch_entry, do_arch_entry_init,          \
+                            do_arch_entry_array)                        \
   STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                             \
                          do_stub,                                       \
                          do_entry, do_entry_init,                       \
                          do_entry_array,                                \
                          do_arch_blob,                                  \
-                         do_arch_entry, do_arch_entry_init)             \
+                         do_arch_entry, do_arch_entry_init,             \
+                         do_arch_entry_array)                           \
 
 // Convenience macros for use by template implementations
 
@@ -1167,6 +1179,9 @@
 #define STUBGEN_COUNT5(_1, _2, _3, _4, count)   \
   + count
 
+#define STUBGEN_COUNT6(_1, _2, _3, _4, _5, count)        \
+  + count
+
 // Convenience templates that emit nothing
 
 // ignore do_blob(blob_name, type) declarations
@@ -1205,7 +1220,8 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator stubs
 
@@ -1215,7 +1231,8 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macros to operate only on StubGenerator blobs and stubs
 
@@ -1225,18 +1242,21 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6)             \
+                 DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6,             \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator generci and arch entries
 
 #define STUBGEN_ALL_ENTRIES_DO(do_entry, do_entry_init, do_entry_array, \
-                               do_arch_entry, do_arch_entry_init)       \
+                               do_arch_entry, do_arch_entry_init,       \
+                               do_arch_entry_array)                     \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
                  DO_STUB_EMPTY2,                                        \
                  do_entry, do_entry_init,                               \
                  do_entry_array,                                        \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 do_arch_entry, do_arch_entry_init)                     \
+                 do_arch_entry, do_arch_entry_init,                     \
+                 do_arch_entry_array)                                   \
 
 // client macro to operate only on StubGenerator entries
 
@@ -1246,7 +1266,8 @@
                  do_entry, do_entry_init,                               \
                  do_entry_array,                                        \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator arch blobs
 
@@ -1256,16 +1277,19 @@
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  do_arch_blob,                                          \
-                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6,            \
+                 DO_ARCH_ENTRY_EMPTY6)                                  \
 
 // client macro to operate only on StubGenerator arch entries
 
-#define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init)      \
+#define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init,      \
+                                do_arch_entry_array)                    \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
                  DO_STUB_EMPTY2,                                        \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
-                 do_arch_entry, do_arch_entry_init)                     \
+                 do_arch_entry, do_arch_entry_init,                     \
+                 do_arch_entry_array)                                   \
 
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP

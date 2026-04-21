@@ -152,7 +152,7 @@ public final class AdditionalLauncher {
     }
 
     public AdditionalLauncher setPersistenceHandler(
-            ThrowingBiConsumer<Path, Collection<Map.Entry<String, String>>> handler) {
+            ThrowingBiConsumer<Path, Collection<Map.Entry<String, String>>, ? extends Exception> handler) {
         if (handler != null) {
             createFileHandler = ThrowingBiConsumer.toBiConsumer(handler);
         } else {
@@ -182,7 +182,7 @@ public final class AdditionalLauncher {
                 Optional.ofNullable(defaultArguments), Optional.ofNullable(icon), rawProperties);
     }
 
-    private ThrowingConsumer<JPackageCommand> createVerifierAsConsumer() {
+    private ThrowingConsumer<JPackageCommand, ? extends Exception> createVerifierAsConsumer() {
         return cmd -> {
             createVerifier().verify(cmd, verifyActions.stream().sorted(Comparator.comparing(Action::ordinal)).toArray(Action[]::new));
         };
