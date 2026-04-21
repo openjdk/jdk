@@ -50,8 +50,7 @@ import com.sun.jdi.event.StepEvent;
  * @author Gordon Hirsch  (modified for HotSpot by tbell & rfield)
  */
 class FinalizerTarg {
-    static volatile boolean finalizerRun = false;
-    static final CountDownLatch FINALIZER_DONE = new CountDownLatch(1);
+    static final CountDownLatch finalizerDone = new CountDownLatch(1);
     static class BigObject {
         String name;
         byte[] foo = new byte[300000];
@@ -69,8 +68,7 @@ class FinalizerTarg {
              */
             super.finalize();
             //Thread.dumpStack();
-            finalizerRun = true;
-            FINALIZER_DONE.countDown();
+            finalizerDone.countDown();
         }
     }
 
@@ -81,22 +79,23 @@ class FinalizerTarg {
         System.gc();
         System.runFinalization();
         try {
-            FINALIZER_DONE.await(5, TimeUnit.SECONDS);
+            // finalize() run in another lower priority Finalizer thread,
+            // wait for it to finish
+            finalizerDone.await(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        // Now, we have to make sure the finalizer
-        // gets run. We will keep allocating more
-        // and more memory with the idea that eventually,
-        // the memory occupied by the BigObject will get reclaimed
-        // and the finalizer will be run.
+
+        // If System.gc() and System.runFinalization() did not trigger the
+        // finalizer, then finalizerDone.await() will timed out and the code
+        // below will be needed as second attempt to trigger finalization.
         List holdAlot = new ArrayList();
         for (int chunk=10000000; chunk > 10000; chunk = chunk / 2) {
-            if (finalizerRun) {
+            if (finalizerDone.getCount() == 0) {
                 return;
             }
             try {
-                while(!finalizerRun) {
+                while(finalizerDone.getCount() > 0) {
                     holdAlot.add(new byte[chunk]);
                     System.err.println("Allocated " + chunk);
                 }
@@ -108,7 +107,7 @@ class FinalizerTarg {
             }
             System.runFinalization();
         }
-        return;  // not reached
+        return;
     }
 
     public static void main(String[] args) throws Exception {
