@@ -1908,7 +1908,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       {
         ThreadBlockInVM tbvm(current, true);
       }
-      // Re-check the condition as the monitor waited events can be disabled whilst thread was suspended.
+
       if (JvmtiExport::should_post_monitor_waited()) {
         JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
       }

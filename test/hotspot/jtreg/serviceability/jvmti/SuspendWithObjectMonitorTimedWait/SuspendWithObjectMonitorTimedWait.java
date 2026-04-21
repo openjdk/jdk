@@ -32,7 +32,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 /**
  * @test
  * @bug 8382088
- * @summary Suspend thread  right after it timed out in wait()
+ * @summary Suspend thread right after it timed out in wait()
  * @requires vm.continuations
  * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/testlibrary
@@ -46,7 +46,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     static final Object lock = new Object();
 
     private static boolean waitUntilTimedWaiting(Thread thread, long deadlineNs) {
-        while(System.nanoTime() < deadlineNs) {
+        while (System.nanoTime() < deadlineNs) {
             if (!thread.isAlive()) {
                 return false;
             }
@@ -111,12 +111,10 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                 throw new RuntimeException("Timed out waiting to reach TIMED_WAITING state at retry " + n);
             }
 
-            boolean is_suspended = false;
             boolean grabbedMonitor = false;
 
+            JVMTIUtils.suspendThread(targetThread);
             try {
-                JVMTIUtils.suspendThread(targetThread);
-                is_suspended = true;
 
                 ThreadInfo [] threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
 
@@ -152,9 +150,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                 }
 
             } finally {
-                if (is_suspended) {
-                    JVMTIUtils.resumeThread(targetThread);
-                }
+                JVMTIUtils.resumeThread(targetThread);
             }
 
             if (!targetThread.isAlive()) {
@@ -166,12 +162,11 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
         // wait for targetThread finish
         try {
-            targetThread.join(timeout*1000*20);
+            targetThread.join();
         } catch (InterruptedException e) {
             throw new Failure(e);
         }
 
-        assertTrue(!targetThread.isAlive(), "target thread is still alive");
         System.out.println("Sync: targetThread finished");
 
         if (usefulRun == 0) {
@@ -180,10 +175,9 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             return status;
         }
 
-        // Determined this purely experimentally
-        if ((double)failureCounter / (double)usefulRun > acceptableFailureRate) {
-            System.out.println("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which exceed the failure rate of " + acceptableFailureRate * 100 +"%");
+        if (failureCounter > 0) {
             status = DebugeeClass.TEST_FAILED;
+            System.out.println("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which is more than 0.");
         }
         return status;
     }
