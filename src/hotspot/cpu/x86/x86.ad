@@ -1747,7 +1747,7 @@ static inline void movfp(MacroAssembler* masm, enum FP_PREC pt,
 }
 
 // Math.min()              # Math.max()
-// -----------------------------
+// ------------------------------------
 // (v)ucomis[h/s/d]        #
 // ja   -> b               # a
 // jp   -> NaN             # NaN
