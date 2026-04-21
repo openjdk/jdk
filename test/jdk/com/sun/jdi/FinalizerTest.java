@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,17 @@
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g FinalizerTest.java
  *
- * @run driver FinalizerTest
+ * @run driver FinalizerTest -Xmx256M
  */
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.*;
-
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.StepEvent;
 
 
 /*
@@ -48,8 +50,8 @@ import java.util.Iterator;
  * @author Gordon Hirsch  (modified for HotSpot by tbell & rfield)
  */
 class FinalizerTarg {
-    static String lockit = "lock";
-    static boolean finalizerRun = false;
+    static volatile boolean finalizerRun = false;
+    static final CountDownLatch FINALIZER_DONE = new CountDownLatch(1);
     static class BigObject {
         String name;
         byte[] foo = new byte[300000];
@@ -68,6 +70,7 @@ class FinalizerTarg {
             super.finalize();
             //Thread.dumpStack();
             finalizerRun = true;
+            FINALIZER_DONE.countDown();
         }
     }
 
@@ -77,9 +80,13 @@ class FinalizerTarg {
         b = null; // Drop the object, creating garbage...
         System.gc();
         System.runFinalization();
-
+        try {
+            FINALIZER_DONE.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         // Now, we have to make sure the finalizer
-        // gets run.  We will keep allocating more
+        // gets run. We will keep allocating more
         // and more memory with the idea that eventually,
         // the memory occupied by the BigObject will get reclaimed
         // and the finalizer will be run.
@@ -95,8 +102,11 @@ class FinalizerTarg {
                 }
             }
             catch ( Throwable thrown ) {  // OutOfMemoryError
+                holdAlot.clear();
                 System.gc();
             }
+            holdAlot.clear();
+            System.gc();
             System.runFinalization();
         }
         return;  // not reached
