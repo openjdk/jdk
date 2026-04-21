@@ -1668,15 +1668,15 @@ private:
 
   // Check whether two loads/stores can be merged into ldp/stp.
   template <typename T>
-  bool ldst_can_merge(T rx, const Address& adr, unsigned cur_size_in_bytes, bool is_store) const;
+  bool ldst_can_merge(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir) const;
 
   // Merge current load/store with previous load/store into ldp/stp.
   template <typename T>
-  void merge_ldst(T rx, const Address& adr, unsigned cur_size_in_bytes, bool is_store);
+  void merge_ldst(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
   // Try to merge two loads/stores into ldp/stp. If success, returns true else false.
   template <typename T>
-  bool try_merge_ldst(T rt, const Address& adr, unsigned cur_size_in_bytes, bool is_store);
+  bool try_merge_ldst(T rt, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
 public:
   void spill(Register Rx, bool is64, int offset) {

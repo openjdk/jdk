@@ -551,11 +551,13 @@ public:
   }
   size_t size_in_bytes() { return 1ULL << this->size(); }
   bool is_not_pre_post_index() { return is_ldst_ur() || is_ldst_unsigned_offset(); }
-  bool is_load() {
-    return Instruction_aarch64::extract(this->uint_at(0), 22, 22) == 0b1;
-  }
-  bool is_store() {
-    return Instruction_aarch64::extract(this->uint_at(0), 22, 22) == 0b0;
+
+  Assembler::AccessDir dir() {
+    switch(Instruction_aarch64::extract(this->uint_at(0), 22, 22)) {
+      case 0b0: return Assembler::STORE;
+      case 0b1: return Assembler::LOAD;
+      default: ShouldNotReachHere();
+    }
   }
 };
 

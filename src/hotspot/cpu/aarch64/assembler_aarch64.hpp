@@ -738,6 +738,8 @@ public:
 
   enum { instruction_size = 4 };
 
+  enum AccessDir { LOAD = false, STORE = true };
+
   //---<  calculate length of instruction  >---
   // We just use the values set above.
   // instruction must start at passed address
