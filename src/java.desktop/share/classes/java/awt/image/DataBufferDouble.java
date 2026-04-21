@@ -82,7 +82,8 @@ public final class DataBufferDouble extends DataBuffer {
      * @param size The number of elements in each bank of the
      *        {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
-     * @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *         is less than or equal to zero.
      */
     public DataBufferDouble(int size, int numBanks) {
         super(STABLE, TYPE_DOUBLE, size, numBanks);

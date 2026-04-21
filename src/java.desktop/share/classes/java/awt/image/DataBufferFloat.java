@@ -83,7 +83,8 @@ public final class DataBufferFloat extends DataBuffer {
      * {@code DataBuffer}.
      * @param numBanks The number of banks in the
      *        {@code DataBuffer}.
-     * @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *         is less than or equal to zero.
      */
     public DataBufferFloat(int size, int numBanks) {
         super(STABLE, TYPE_FLOAT, size, numBanks);

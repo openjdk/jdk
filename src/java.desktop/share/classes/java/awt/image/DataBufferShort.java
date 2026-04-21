@@ -86,7 +86,8 @@ public final class DataBufferShort extends DataBuffer
      *
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
-     * @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *         is less than or equal to zero.
      */
     public DataBufferShort(int size, int numBanks) {
         super(STABLE, TYPE_SHORT,size,numBanks);

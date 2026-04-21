@@ -166,7 +166,8 @@ public abstract class DataBuffer {
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      */
     protected DataBuffer(int dataType, int size, int numBanks) {
         this(UNTRACKABLE, dataType, size, numBanks);
@@ -182,7 +183,8 @@ public abstract class DataBuffer {
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      *  @since 1.7
      */
     DataBuffer(State initialState,
@@ -207,7 +209,8 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offset the offset for each bank
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      *  @throws IllegalArgumentException if {@code offset} is less than zero.
      */
     protected DataBuffer(int dataType, int size, int numBanks, int offset) {
@@ -225,9 +228,10 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offset the offset for each bank
-     *  @since 1.7
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      *  @throws IllegalArgumentException if {@code offset} is less than zero.
+     *  @since 1.7
      */
     DataBuffer(State initialState,
                int dataType, int size, int numBanks, int offset)
@@ -257,7 +261,8 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      *  @throws NullPointerException if {@code offsets} is {@code null}.
      *  @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
      *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
@@ -280,7 +285,8 @@ public abstract class DataBuffer {
      *  @param numBanks the number of banks in this
      *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
-     *  @throws IllegalArgumentException if {@code size} or {@code numBanks} is less than or equal to zero.
+     *  @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *          is less than or equal to zero.
      *  @throws NullPointerException if {@code offsets} is {@code null}.
      *  @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
      *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
