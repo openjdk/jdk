@@ -2993,17 +2993,17 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // Find surviving projection
       assert(iff->is_If(), "");
       ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
-      // Find loads off the surviving projection; remove their control edge
-      for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
-        Node* cd = dp->fast_out(i); // Control-dependent node
-        if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
-          // Allow the load to float around in the loop, or before it
-          // but NOT before the pre-loop.
-          _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not null
-          --i;
-          --imax;
-        }
-      }
+      // Note: we intentionally do NOT relax the control edges of loads
+      // off the surviving projection here. Previously, their control was
+      // set to the loop entry (above predicates) to allow them to float
+      // for better scheduling. However, after loop transformations like
+      // peeling and unrolling, this allows loads to be scheduled above
+      // predicate guards, causing out-of-bounds array accesses (see
+      // JDK-8382427). Instead, we leave the loads' control at the
+      // surviving projection. When IGVN later folds the constant-
+      // condition If, the loads will naturally get a control within the
+      // loop body, which still allows scheduling flexibility within the
+      // loop but prevents floating above guards.
     } // End of is IF
   }
   if (loop_entry != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
