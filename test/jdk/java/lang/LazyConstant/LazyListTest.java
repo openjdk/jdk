@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,15 @@ final class LazyListTest {
             assertEquals(i, lazy.lastIndexOf(i));
         }
         assertEquals(-1, lazy.lastIndexOf(SIZE + 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("lazyLists")
+    void bounds(List list) {
+        IntStream.range(0, list.size())
+                .forEach(i -> assertEquals(IDENTITY.apply(i), list.get(i)));
+        assertThrows(IndexOutOfBoundsException.class, () -> list.get(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> list.get(list.size()));
     }
 
     @Test
@@ -421,6 +430,11 @@ final class LazyListTest {
                 new Operation("listIter().add",    l -> l.listIterator().add(1)),
                 new Operation("listIter().set",    l -> l.listIterator().set(1))
         );
+    }
+
+    static Stream<List> lazyLists() {
+        return IntStream.rangeClosed(0, SIZE)
+                .mapToObj(i -> List.ofLazy(i, IDENTITY));
     }
 
     static List<Integer> newLazyList() {

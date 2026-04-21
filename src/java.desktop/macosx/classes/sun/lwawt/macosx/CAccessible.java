@@ -245,10 +245,6 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
-                        if (!Objects.equals(newValue, oldValue)) {
-                            valueChanged(ptr);
-                        }
-
                         // Notify native side to handle check box style menuitem
                         if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
                                 && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
@@ -258,21 +254,10 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send radio button state changes to native side
                     if (thisRole == AccessibleRole.RADIO_BUTTON) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
-                            valueChanged(ptr);
-                        }
-
                         // Notify native side to handle radio button style menuitem
                         if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
                             && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
                             menuItemSelected(ptr);
-                        }
-                    }
-
-                    // Do send toggle button state changes to native side
-                    if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
-                        if (!Objects.equals(newValue, oldValue)) {
-                            valueChanged(ptr);
                         }
                     }
                 } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
@@ -284,7 +269,10 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                     AccessibleRole thisRole = accessible.getAccessibleContext()
                                                         .getAccessibleRole();
                     if (thisRole == AccessibleRole.SLIDER ||
-                            thisRole == AccessibleRole.PROGRESS_BAR) {
+                            thisRole == AccessibleRole.PROGRESS_BAR ||
+                            thisRole == AccessibleRole.CHECK_BOX ||
+                            thisRole == AccessibleRole.RADIO_BUTTON ||
+                            thisRole == AccessibleRole.TOGGLE_BUTTON ) {
                         valueChanged(ptr);
                     }
                 }
