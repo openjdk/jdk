@@ -1003,6 +1003,11 @@ bool VTransformMemopScalarNode::is_isomorphic_with(const VTransformScalarNode* n
   return true;
 }
 
+bool VTransformMemopScalarNode::is_vectorization_implemented(const int size) const {
+  int opc = node()->Opcode();
+  return VectorNode::implemented(opc, size, array_element_basic_type());
+}
+
 float VTransformMemopScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   // This is an identity transform, but loads and stores must be counted.
   assert(!vloop_analyzer.has_zero_cost(_node), "memop nodes must be counted");
@@ -1034,6 +1039,43 @@ bool VTransformDataScalarNode::is_isomorphic_with(const VTransformScalarNode* n)
   // TODO: assumption above might be wrong, then convert to test again
 
   return true;
+}
+
+bool VTransformDataScalarNode::is_vectorization_implemented(const int size) const {
+  // TODO: I'm not very happy with the Opcode from the node, and other checks on node.
+  // Can we somehow refactor this later on?
+  int opc = node()->Opcode();
+  BasicType bt_dst = array_element_basic_type();
+
+  // TODO: reduction
+  //if (is_marked_reduction(p0)) {
+  //  const Type* arith_type = p0->bottom_type();
+  //  return ReductionNode::implemented(opc, size, arith_type->basic_type());
+  if (VectorNode::is_convert_opcode(opc)) {
+    BasicType bt_src = in_req(1)->isa_Scalar()->array_element_basic_type();
+    return VectorCastNode::implemented(opc, size, bt_src, bt_dst);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    return Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, bt_dst);
+  } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(bt_dst)) {
+    // Java API for Math.min/max operations supports only int, long, float
+    // and double types. Thus, avoid generating vector min/max nodes for
+    // integer subword types with superword vectorization.
+    // See JDK-8294816 for miscompilation issues with shorts.
+    return false;
+  } else if (node()->is_Cmp()) {
+    // Cmp -> Bool -> Cmove
+    return UseVectorCmov;
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+    // Requires extra vector long -> int conversion.
+    return VectorNode::implemented(opc, size, T_LONG) &&
+           VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
+  } else {
+    // TODO: this is probably even more hacky... we should not do that.
+    if (VectorNode::can_use_RShiftI_instead_of_URShiftI(node(), bt_dst)) {
+      opc = Op_RShiftI;
+    }
+    return VectorNode::implemented(opc, size, bt_dst);
+  }
 }
 
 float VTransformDataScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {

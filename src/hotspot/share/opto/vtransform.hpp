@@ -736,6 +736,7 @@ public:
   }
 
   virtual bool is_isomorphic_with(const VTransformScalarNode* n) const { return false; }
+  virtual bool is_vectorization_implemented(const int size) const { return false; }
 
   void vector_operands(uint* start, uint* end) const;
 };
@@ -760,6 +761,7 @@ public:
   virtual bool is_load_or_store_in_loop() const override { return true; }
 
   virtual bool is_isomorphic_with(const VTransformScalarNode* n) const override;
+  virtual bool is_vectorization_implemented(const int size) const override;
 
   virtual const VPointer& vpointer() const override { return _vpointer; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -784,6 +786,7 @@ public:
   virtual const VTransformDataScalarNode* isa_DataScalar() const override { return this; }
 
   virtual bool is_isomorphic_with(const VTransformScalarNode* n) const override;
+  virtual bool is_vectorization_implemented(const int size) const override;
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

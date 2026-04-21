@@ -1735,40 +1735,11 @@ void SuperWord::filter_packs_for_profitable() {
 // Can code be generated for the pack, restricted to size nodes?
 bool SuperWord::implemented(const Pack* pack, const int size) const {
   assert(size >= 2 && size <= pack->length() && is_power_of_2(size), "valid size");
-  bool retValue = false;
-  assert(false, "TODO impl");
-  return false;
-  //Node* p0 = pack->at(0);
-  //if (p0 != nullptr) {
-  //  int opc = p0->Opcode();
-  //  if (is_marked_reduction(p0)) {
-  //    const Type* arith_type = p0->bottom_type();
-  //    retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
-  //  } else if (VectorNode::is_convert_opcode(opc)) {
-  //    retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
-  //  } else if (VectorNode::is_reinterpret_opcode(opc)) {
-  //    retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
-  //  } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
-  //    // Java API for Math.min/max operations supports only int, long, float
-  //    // and double types. Thus, avoid generating vector min/max nodes for
-  //    // integer subword types with superword vectorization.
-  //    // See JDK-8294816 for miscompilation issues with shorts.
-  //    return false;
-  //  } else if (p0->is_Cmp()) {
-  //    // Cmp -> Bool -> Cmove
-  //    retValue = UseVectorCmov;
-  //  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
-  //    // Requires extra vector long -> int conversion.
-  //    retValue = VectorNode::implemented(opc, size, T_LONG) &&
-  //               VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
-  //  } else {
-  //    if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, velt_basic_type(p0))) {
-  //      opc = Op_RShiftI;
-  //    }
-  //    retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
-  //  }
-  //}
-  //return retValue;
+  const VTransformNode* p0 = pack->at(0);
+  assert(p0 != nullptr, "TODO do we even need this?");
+  const VTransformScalarNode* s0 = p0->isa_Scalar();
+  assert(s0 != nullptr, "TODO do we even need this?");
+  return s0->is_vectorization_implemented(size);
 }
 
 // Find the maximal implemented size smaller or equal to the packs size
