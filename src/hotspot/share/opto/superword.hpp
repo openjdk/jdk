@@ -443,8 +443,14 @@ class SuperWord : public ResourceObj {
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   // VLoopReductions accessors
+  // TODO: rm?
   bool is_marked_reduction(const Node* n) const {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
+  }
+
+  bool is_marked_reduction(const VTransformNode* n) const {
+    // TODO: impl!
+    return false;
   }
 
   // TODO: rm?

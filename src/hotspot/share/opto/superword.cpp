@@ -1551,15 +1551,14 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
 // Split packs that have a mutual dependency, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
   auto split_strategy = [&](const Pack* pack) {
-    assert(false, "TODO impl");
-    //uint pack_size = pack->length();
-    //assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
-    //if (!is_marked_reduction(pack->at(0)) &&
-    //    !mutually_independent(pack)) {
-    //  // As a best guess, we split the pack in half. This way, we iteratively make the
-    //  // packs smaller, until there is no dependency.
-    //  return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
-    //}
+    uint pack_size = pack->length();
+    assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
+    if (!is_marked_reduction(pack->at(0)) &&
+        !mutually_independent(pack)) {
+      // As a best guess, we split the pack in half. This way, we iteratively make the
+      // packs smaller, until there is no dependency.
+      return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
+    }
     return SplitTask::make_unchanged();
   };
   _packset.split_packs("SuperWord::split_packs_to_break_mutual_dependence", split_strategy);
