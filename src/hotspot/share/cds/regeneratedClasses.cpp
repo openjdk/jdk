@@ -91,6 +91,18 @@ address RegeneratedClasses::get_regenerated_object(address orig_obj) {
   return *p;
 }
 
+address RegeneratedClasses::maybe_get_regenerated_object(address orig_obj) {
+  precond(orig_obj != nullptr);
+  if (_regenerated_objs != nullptr) {
+    address* p = _regenerated_objs->get(orig_obj);
+    if (p != nullptr) {
+      precond(*p != nullptr);
+      return *p;
+    }
+  }
+  return orig_obj;
+}
+
 bool RegeneratedClasses::is_regenerated_object(address regen_obj) {
   if (_original_objs == nullptr) {
     return false;

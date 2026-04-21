@@ -44,6 +44,7 @@ class RegeneratedClasses : public AllStatic {
   static void cleanup();
   static bool has_been_regenerated(address orig_obj);
   static address get_regenerated_object(address orig_obj); // orig_obj -> regen_obj
+  static address maybe_get_regenerated_object(address orig_obj); // orig_obj -> regen_obj
   static void record_regenerated_objects();
 
   // Handy functions to avoid type casts
@@ -53,6 +54,12 @@ class RegeneratedClasses : public AllStatic {
   template <class T> static T get_regenerated_object(T orig_obj) {
     return (T)get_regenerated_object((address)orig_obj);
   }
+
+  template <class T> static T maybe_get_regenerated_object(T orig_obj) {
+    return (T)maybe_get_regenerated_object((address)orig_obj);
+  }
+
+
 
   static bool is_regenerated_object(address regen_obj);
   static address get_original_object(address regen_obj);  // regen_obj -> orig_obj

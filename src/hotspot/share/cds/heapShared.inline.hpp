@@ -96,9 +96,17 @@ inline oop HeapShared::maybe_remap_referent(bool is_java_lang_ref, size_t field_
 
   if (java_lang_Class::is_instance(referent)) {
     Klass* k = java_lang_Class::as_Klass(referent);
+#if 1
     if (RegeneratedClasses::has_been_regenerated(k)) {
       referent = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+
     }
+#else
+    Klass* regen_k = RegeneratedClasses::maybe_get_regenerated_object(k);
+    if (k != regen_k) {
+      referent = regen_k->java_mirror();
+    }
+#endif
     // When the source object points to a "real" mirror, the buffered object should point
     // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
     // at run time).
