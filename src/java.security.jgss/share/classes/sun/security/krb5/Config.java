@@ -1388,8 +1388,6 @@ public class Config {
         // use DNS to locate KDC
         String kdcs = "";
         String[] srvs = null;
-        NamingException udpNE = null;
-        NamingException tcpNE = null;
         // locate DNS SRV record using UDP
         if (DEBUG != null) {
             DEBUG.println("getKDCFromDNS using UDP");
@@ -1397,7 +1395,12 @@ public class Config {
         try {
             srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
         } catch (NamingException e) {
-            udpNE = e;
+            if (DEBUG != null) {
+                DEBUG.println("[KDC DNS] SRV lookup failed for _kerberos._udp." + realm +
+                        " ex=" + e.getClass().getName() +
+                        " msg=" + e.getMessage());
+                e.printStackTrace(DEBUG.getPrintStream());
+            }
         }
         if (srvs == null) {
             // locate DNS SRV record using TCP
@@ -1407,28 +1410,17 @@ public class Config {
             try {
                 srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
             } catch (NamingException e) {
-                tcpNE = e;
+                if (DEBUG != null) {
+                    DEBUG.println("[KDC DNS] SRV lookup failed for _kerberos._tcp." + realm +
+                            " ex=" + e.getClass().getName() +
+                            " msg=" + e.getMessage());
+                    e.printStackTrace(DEBUG.getPrintStream());
+                }
             }
         }
         if (srvs == null) {
             KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate KDC for realm " + realm);
-
-            if (DEBUG != null) {
-                Exception lastEx = (tcpNE != null) ? tcpNE : udpNE;
-                Exception firstEx = (lastEx == tcpNE) ? udpNE : tcpNE;
-
-                String sanitizedLast = sanitizeFailure(lastEx);
-                if (sanitizedLast != null) {
-                    ke.initCause(new KrbException(Krb5.KRB_ERR_GENERIC,
-                            "DNS SRV lookup failed: " + sanitizedLast));
-                }
-                String sanitizedFirst = sanitizeFailure(firstEx);
-                if (sanitizedFirst != null) {
-                    ke.addSuppressed(new KrbException(Krb5.KRB_ERR_GENERIC,
-                            "DNS SRV lookup failed: " + sanitizedFirst));
-                }
-            }
             throw ke;
         }
         if (srvs.length == 0) {
@@ -1442,18 +1434,6 @@ public class Config {
             return null;
         }
         return kdcs;
-    }
-
-    private static String sanitizeFailure(Exception e) {
-        if (e == null) return null;
-
-        String exceptionName = e.getClass().getName();
-        return switch (exceptionName) {
-            case "javax.naming.NameNotFoundException"      -> "NXDOMAIN";
-            case "javax.naming.ServiceUnavailableException"-> "SERVFAIL";
-            case "javax.naming.CommunicationException"     -> "COMMUNICATION_ERROR";
-            default -> e.getClass().getSimpleName();
-        };
     }
 
     private boolean fileExists(String name) {
