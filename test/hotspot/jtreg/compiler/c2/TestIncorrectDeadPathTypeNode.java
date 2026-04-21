@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8376587
  * @summary Fatal "dead path discovered by TypeNode during igvn" after C2 compilation
