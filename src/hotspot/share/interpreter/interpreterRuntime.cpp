@@ -23,6 +23,7 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaLangThrowable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"

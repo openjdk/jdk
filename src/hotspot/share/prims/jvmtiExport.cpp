@@ -24,6 +24,7 @@
 
 #include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaLangThrowable.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"

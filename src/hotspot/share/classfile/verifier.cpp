@@ -26,6 +26,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaLangThrowable.hpp"
 #include "classfile/stackMapFrame.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
