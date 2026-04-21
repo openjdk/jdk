@@ -6005,7 +6005,7 @@ instruct loadConF_Ex(regF dst, immF src, iRegLdst tmp) %{
 
   ins_cannot_rematerialize(true);
 
-  format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded (tmp=$tmp)" %}
+  format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
   postalloc_expand( postalloc_expand_load_float_constant(dst, src, tmp, constanttablebase) );
 %}
 
@@ -6057,7 +6057,7 @@ instruct loadConD_Ex(regD dst, immD src, iRegLdst tmp) %{
 
   ins_cannot_rematerialize(true);
 
-  format %{ "ConD    $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded (tmp=$tmp)" %}
+  format %{ "ConD    $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
   postalloc_expand( postalloc_expand_load_double_constant(dst, src, tmp, constanttablebase) );
 %}
 
