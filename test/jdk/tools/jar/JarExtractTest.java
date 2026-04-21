@@ -276,11 +276,21 @@ public class JarExtractTest {
      * Tests that extracting a jar using {@code -P} flag and without any explicit destination
      * directory works correctly if the jar contains entries with leading slashes and/or {@code ..}
      * parts preserved.
+     * The test creates a JAR file with an entry which has a leading slash in its name and
+     * another entry that has ".." in its entry name. jar tool is then used to extract that JAR file
+     * with the "-P" option which is to preserve leading '/' (absolute path)
+     * and ".." (parent directory) components when extracting those entries. This test then verifies
+     * that after successfully extracting that JAR file, these entries are present at the expected
+     * paths on the filesystem.
      */
     @Test
     public void testExtractNoDestDirWithPFlag() throws Exception {
-        // run this test only on those systems where "/tmp" directory is available and we
-        // can write to it
+        // This test requires that the entry in the JAR file have a leading slash, which
+        // upon extraction of that JAR file will correspond to a filesystem path. Not all
+        // environments may have a writable location that starts with "/". "/tmp" is one
+        // commonly available filesystem directory which is usually writable. Here we check the
+        // presence of "/tmp" directory and verify that files can be created in that directory.
+        // If we can't, then we skip this test.
         Assumptions.assumeTrue(Files.isDirectory(Path.of("/tmp")),
                 "skipping test, since /tmp isn't a directory");
         final Path tempTestDir;
