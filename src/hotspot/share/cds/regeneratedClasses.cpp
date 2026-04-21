@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,6 @@ bool RegeneratedClasses::has_been_regenerated(address orig_obj) {
   } else {
     return _regenerated_objs->get(orig_obj) != nullptr;
   }
-}
-
-address RegeneratedClasses::get_regenerated_object(address orig_obj) {
-  assert(_regenerated_objs != nullptr, "must be");
-  address* p =_regenerated_objs->get(orig_obj);
-  assert(p != nullptr, "must be");
-  return *p;
 }
 
 address RegeneratedClasses::maybe_get_regenerated_object(address orig_obj) {
