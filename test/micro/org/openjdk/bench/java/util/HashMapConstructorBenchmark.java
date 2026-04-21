@@ -23,6 +23,7 @@
 package org.openjdk.bench.java.util;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -30,7 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Benchmark comparing HashMap constructor performance against manual iteration.
+ * Benchmark comparing HashMap constructor performance against manual iteration - see
+ * JDK-8368292 for details of the targeted megamorphic issue and JDK-8371656 for details
+ * of the special-case optimization.
  *
  * Tests HashMap.<init>(Map) performance across different source map types, with and without
  * call site poisoning to simulate real-world megamorphic conditions.
@@ -38,8 +41,9 @@ import java.util.concurrent.TimeUnit;
  * Uses BigInteger keys whose hashCode() is not cached and scales with magnitude,
  * exposing the cost of hash recomputation in non-optimized paths.
  *
- * The setup poisons polymorphic call sites by using five different map types
+ * The setup poisons polymorphic call sites by using ten different map types
  * in both the constructor and manual iteration patterns to ensure megamorphic behavior.
+ *
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -49,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 1, jvmArgs = {"-XX:+UseParallelGC", "-Xmx3g"})
 public class HashMapConstructorBenchmark {
 
-    private static final int POISON_ITERATIONS = 40000;
+    private static final int POISON_ITERATIONS = 80000;
 
     @Param({"0", "5", "25", "150"})
     private int mapSize;
@@ -71,7 +75,7 @@ public class HashMapConstructorBenchmark {
     private Map<BigInteger, Integer> sourceMap;
 
     @Setup(Level.Trial)
-    public void setup() {
+    public void setup(Blackhole bh) {
         Random rng = new Random(0);
 
         inputHashMap = new HashMap<>();
@@ -103,58 +107,37 @@ public class HashMapConstructorBenchmark {
         };
 
         if (poisonCallSites) {
-            poisonCallSites();
+            poisonCallSites(bh);
         }
     }
 
-    private void poisonCallSites() {
-        @SuppressWarnings("unchecked")
-        Map<BigInteger, Integer>[] sources = new Map[] { inputHashMap, inputTreeMap, inputLinkedHashMap,
-                inputConcurrentHashMap, inputWeakHashMap };
+    private void poisonCallSites(Blackhole bh) {
+        List<Map<BigInteger, Integer>> sources = List.of(inputHashMap,
+                inputTreeMap,
+                inputLinkedHashMap,
+                inputConcurrentHashMap,
+                inputWeakHashMap,
+                inputUnmodifiableMap,
+                inputUnmodifiableTreeMap,
+                Collections.unmodifiableMap(inputLinkedHashMap),
+                Collections.unmodifiableMap(inputConcurrentHashMap),
+                Collections.unmodifiableMap(inputWeakHashMap));
 
         // Poison HashMap.<init>(Map) call site
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<BigInteger, Integer> source = sources[i % sources.length];
+            Map<BigInteger, Integer> source = sources.get(i % sources.size());
             HashMap<BigInteger, Integer> temp = new HashMap<>(source);
-            if (temp.size() != mapSize)
-                throw new RuntimeException();
+            bh.consume(temp);
         }
 
         // Poison entrySet iteration call sites
         for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<BigInteger, Integer> source = sources[i % sources.length];
-            HashMap<BigInteger, Integer> temp = new HashMap<>(source.size());
+            Map<BigInteger, Integer> source = sources.get(i % sources.size());
+            HashMap<BigInteger, Integer> temp = HashMap.newHashMap(source.size());
             for (Map.Entry<BigInteger, Integer> entry : source.entrySet()) {
                 temp.put(entry.getKey(), entry.getValue());
             }
-            if (temp.size() != mapSize)
-                throw new RuntimeException();
-        }
-
-        // Poison UnmodifiableMap call sites
-        @SuppressWarnings("unchecked")
-        Map<BigInteger, Integer>[] umSources = new Map[]{
-            Collections.unmodifiableMap(inputHashMap),
-            Collections.unmodifiableMap(inputTreeMap),
-            Collections.unmodifiableMap(inputLinkedHashMap),
-            Collections.unmodifiableMap(inputConcurrentHashMap),
-            Collections.unmodifiableMap(inputWeakHashMap)
-        };
-
-        for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<BigInteger, Integer> source = umSources[i % umSources.length];
-            HashMap<BigInteger, Integer> temp = new HashMap<>(source);
-            if (temp.size() != mapSize)
-                throw new RuntimeException();
-        }
-
-        for (int i = 0; i < POISON_ITERATIONS; i++) {
-            Map<BigInteger, Integer> source = umSources[i % umSources.length];
-            HashMap<BigInteger, Integer> temp = new HashMap<>(source.size());
-            for (Map.Entry<BigInteger, Integer> entry : source.entrySet()) {
-                temp.put(entry.getKey(), entry.getValue());
-            }
-            if (temp.size() != mapSize) throw new RuntimeException();
+            bh.consume(temp);
         }
     }
 
@@ -173,7 +156,7 @@ public class HashMapConstructorBenchmark {
      */
     @Benchmark
     public HashMap<BigInteger, Integer> manualEntrySetLoop() {
-        HashMap<BigInteger, Integer> result = new HashMap<>();
+        HashMap<BigInteger, Integer> result = HashMap.newHashMap(sourceMap.size());
         for (Map.Entry<BigInteger, Integer> entry : sourceMap.entrySet()) {
             result.put(entry.getKey(), entry.getValue());
         }

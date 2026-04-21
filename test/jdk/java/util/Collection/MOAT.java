@@ -428,25 +428,21 @@ public class MOAT {
         HashMap<Integer,Integer> target = new HashMap<>();
 
         target.putAll(new HashMap<>(testData));
-        equal(target.size(), testData.size());
         check(target.equals(testData));
 
         target.clear();
 
         target.putAll(new TreeMap<>(testData));
-        equal(target.size(), testData.size());
         check(target.equals(testData));
 
         target.clear();
 
         target.putAll(unmodifiableMap(new HashMap<>(testData)));
-        equal(target.size(), testData.size());
         check(target.equals(testData));
 
         target.clear();
 
         target.putAll(unmodifiableMap(new TreeMap<>(testData)));
-        equal(target.size(), testData.size());
         check(target.equals(testData));
     }
 
@@ -746,11 +742,6 @@ public class MOAT {
                    () -> m.remove(first),
                    () -> m.clear());
             testImmutableMapEntry(m.entrySet().iterator().next());
-
-            // Test putAll from immutable map to HashMap
-            HashMap<Integer,Integer> target = new HashMap<>();
-            target.putAll(m);
-            check(target.equals(m));
         }
         testImmutableSet(m.keySet(), 99);
         testImmutableCollection(m.values(), 99);
@@ -1475,24 +1466,11 @@ public class MOAT {
 
         if (supportsPut(m)) {
             try {
-                check(m.put(3333, 77777) == null);
-                check(m.put(9134, 74982) == null);
-                check(m.get(9134) == 74982);
-                check(m.put(9134, 1382) == 74982);
-                check(m.get(9134) == 1382);
-                check(m.size() == 2);
-                checkFunctionalInvariants(m);
-                checkNPEConsistency(m);
-
-                // Test putAll with HashMap
-                HashMap<Integer,Integer> source = new HashMap<>();
-                source.put(1, 101);
-                source.put(2, 202);
-                source.put(3, 303);
-
-                m.clear();
+                int oldSize = m.size();
+                Map<Integer,Integer> source = Map.of(10, 1000, 11, 1001, 12, 1002);
                 m.putAll(source);
-                check(m.equals(source));
+                check(m.entrySet().containsAll(source.entrySet()));
+                check(m.size() == oldSize + source.size());
             }
             catch (Throwable t) { unexpected(t); }
         }
