@@ -648,9 +648,6 @@
   product(bool, SpecialStringIndexOf, true, DIAGNOSTIC,                     \
           "special version of string indexOf")                              \
                                                                             \
-  product(bool, SpecialStringEquals, true, DIAGNOSTIC,                      \
-          "special version of string equals")                               \
-                                                                            \
   product(bool, SpecialArraysEquals, true, DIAGNOSTIC,                      \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \

@@ -102,7 +102,6 @@ public class TestStringIntrinsics {
 
     /**
      * Checks correctness of the String.equals, String.compareTo and String.indexOf intrinsics.
-     * -XX:SpecialStringEquals
      * -XX:SpecialStringCompareTo
      * -XX:SpecialStringIndexOf
      */
