@@ -1195,10 +1195,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror and store it in the frame as GC root for this Method*.
   __ mem2reg_opt(Z_R1_scratch, Address(tmp_constants_offset, ConstantPool::pool_holder_offset()));
   __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
-#ifdef ASSERT
-  Register excluded_register[] = {Z_R1, Z_R2, Z_R5};
-  __ clobber_volatile_registers(excluded_register, 3);
-#endif // ASSERT
   __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
@@ -2035,10 +2031,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
-#ifdef ASSERT
-  Register excluded_registers[] = {Z_R2};
-  __ clobber_volatile_registers(excluded_registers, 1);
-#endif // ASSERT
   __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
 
   // Restore caller sp for c2i case.
