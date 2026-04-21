@@ -695,13 +695,20 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     g.setColor(component.getCaretColor());
                 } else {
                     Color caretColor = component.getCaretColor();
+                    if (caretColor == null) {
+                        caretColor = g.getColor();
+                    }
                     Color bg = component.getBackground();
-                    int red = (caretColor.getRed() + bg.getRed()) / 2;
-                    int green = (caretColor.getGreen() + bg.getGreen()) / 2;
-                    int blue = (caretColor.getBlue() + bg.getBlue()) / 2;
-                    int alpha = 127;
-                    Color newCaretColor = new Color(red, green, blue, alpha);
-                    g.setColor(newCaretColor);
+                    if (bg == null) {
+                        g.setColor(caretColor);
+                    } else {
+                        int red = (caretColor.getRed() + bg.getRed()) / 2;
+                        int green = (caretColor.getGreen() + bg.getGreen()) / 2;
+                        int blue = (caretColor.getBlue() + bg.getBlue()) / 2;
+                        int alpha = 127;
+                        Color newCaretColor = new Color(red, green, blue, alpha);
+                        g.setColor(newCaretColor);
+                    }
                 }
                 int paintWidth = getCaretWidth(r.height);
                 r.x -= paintWidth  >> 1;
