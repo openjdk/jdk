@@ -1752,15 +1752,12 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
 
   if (java_lang_Class::is_instance(orig_obj)) {
     Klass* k = java_lang_Class::as_Klass(orig_obj);
-#if 1
-   if (RegeneratedClasses::has_been_regenerated(k)) {
-      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
-   }
-#else
     if (k != nullptr) {
-      orig_obj = RegeneratedClasses::maybe_get_regenerated_object(k)->java_mirror();
+      Klass* orig_k = RegeneratedClasses::maybe_get_regenerated_object(k);
+      if (k != orig_k) {
+        orig_obj = orig_k->java_mirror();
+      }
     }
-#endif
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
@@ -1966,14 +1963,12 @@ void HeapShared::verify_reachable_objects_from(oop obj) {
   _num_total_verifications ++;
   if (java_lang_Class::is_instance(obj)) {
     Klass* k = java_lang_Class::as_Klass(obj);
-#if 1
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      k = RegeneratedClasses::get_regenerated_object(k);
-      obj = k->java_mirror();
+    if (k != nullptr) {
+      Klass* regen_k = RegeneratedClasses::maybe_get_regenerated_object(k);
+      if (k != regen_k) {
+        obj = regen_k->java_mirror();
+      }
     }
-#else
-    obj = RegeneratedClasses::maybe_get_regenerated_object(k)->java_mirror();
-#endif
     obj = scratch_java_mirror(obj);
     assert(obj != nullptr, "must be");
   }
