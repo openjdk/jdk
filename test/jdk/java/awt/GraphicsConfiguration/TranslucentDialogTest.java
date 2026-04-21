@@ -28,8 +28,8 @@
  *          `swing.volatileImageBufferEnabled=false`
  * @requires os.family == "mac"
  * @library /java/awt/regtesthelpers
- * @run main/othervm -Dswing.volatileImageBufferEnabled=false TranslucentDialogTest
- * @run main/othervm -Dswing.volatileImageBufferEnabled=true TranslucentDialogTest
+ * @run main/othervm -Dsun.java2d.opengl=false TranslucentDialogTest
+ * @run main/othervm -Dsun.java2d.opengl=true TranslucentDialogTest
  */
 
 import javax.swing.JComponent;
@@ -47,6 +47,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class TranslucentDialogTest {
     public static void main(String[] args) {
+        System.setProperty("swing.volatileImageBufferEnabled", "false");
         TranslucentDialogTest test = new TranslucentDialogTest();
         test.run();
     }
