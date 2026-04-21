@@ -2285,6 +2285,11 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
+
+  if (mode()->is_generational()) {
+    old_generation()->set_parsable(false);
+  }
+
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
