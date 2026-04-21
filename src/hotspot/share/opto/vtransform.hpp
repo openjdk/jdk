@@ -1134,6 +1134,26 @@ public:
   void remove(int i) { _pack.remove_at(i); }
 };
 
+// Used instead of Unique_Node_List, for worklists.
+class Unique_VTransformNode_List : public StackObj {
+private:
+  GrowableArray<const VTransformNode*> _nodes;
+  VectorSet _in_nodes;
+
+public:
+  Unique_VTransformNode_List() {}
+  NONCOPYABLE(Unique_VTransformNode_List);
+
+  int length() const { return _nodes.length(); }
+  const VTransformNode* at(int i) const { return _nodes.at(i); }
+
+  void push(const VTransformNode* n) {
+    if (!_in_nodes.test_set(n->_idx)) {
+      _nodes.push(n);
+    }
+  }
+};
+
 // This class facilitates fast independecy checks. The VTransformGraph already
 // contains all dependency edges, but doing a full traversal each time can be
 // expensive. We use the node depth in the graph to constrain the traversals.
@@ -1158,7 +1178,7 @@ public:
   NONCOPYABLE(VTransformDependency);
 
   bool independent(const VTransformNode* n1, const VTransformNode* n2) const;
-  bool mutually_independent(const Pack* pack) const { return false; }
+  bool mutually_independent(const Pack* pack) const;
 
 private:
   void set_depth(const VTransformNode* n, int d) { _depths.at_put(n->_idx, d); }

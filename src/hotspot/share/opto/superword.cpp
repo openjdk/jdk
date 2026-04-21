@@ -970,6 +970,7 @@ bool VTransformDependency::independent(const VTransformNode* s1, const VTransfor
 // traversed all those nodes, and have not found another node from the
 // nodes list, we know that all nodes in the nodes list are independent.
 bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
+  assert(false, "TODO rm");
   ResourceMark rm;
   Unique_Node_List worklist;
   VectorSet nodes_set;
@@ -998,6 +999,50 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
         worklist.push(pred);
       }
     }
+  }
+  return true; // not found -> independent
+}
+
+// Are all nodes in nodes list mutually independent?
+// We could query independent(s1, s2) for all pairs, but that results
+// in O(size * size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the nodes list. Traverse
+// Preds recursively, for nodes that have at least depth min_d, which
+// is the smallest depth of all nodes from the nodes list. Once we have
+// traversed all those nodes, and have not found another node from the
+// nodes list, we know that all nodes in the nodes list are independent.
+bool VTransformDependency::mutually_independent(const Pack* pack) const {
+  ResourceMark rm;
+  Unique_VTransformNode_List worklist;
+  VectorSet pack_set;
+
+  // start traversal at all nodes in the pack
+  int min_d = depth(pack->at(0));
+  for (int k = 0; k < pack->length(); k++) {
+    const VTransformNode* n = pack->at(k);
+    min_d = MIN2(min_d, depth(n));
+    worklist.push(n);
+    pack_set.set(n->_idx);
+  }
+
+  // If we can speculate (using the aliasing runtime check), we can drop the weak edges,
+  // and later insert a runtime check.
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool speculate_away_weak_edges = _vtransform.vloop().use_speculative_aliasing_checks();
+
+  for (int i = 0; i < worklist.length(); i++) {
+    const VTransformNode* n = worklist.at(i);
+    assert(false, "TODO impl mutually_independent");
+    // for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+    //   if (speculate_away_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
+    //   Node* pred = preds.current();
+    //   if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
+    //     if (nodes_set.test(_body.bb_idx(pred))) {
+    //       return false; // found one -> dependent
+    //     }
+    //     worklist.push(pred);
+    //   }
+    // }
   }
   return true; // not found -> independent
 }
