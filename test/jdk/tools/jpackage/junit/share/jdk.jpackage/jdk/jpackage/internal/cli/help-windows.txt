@@ -189,16 +189,20 @@ Platform dependent options for creating the application package:
   --win-help-url <url>
           URL where user can obtain further information or technical support
   --win-menu [<shortcut startup directory>]
-          Request to add a Start menu shortcut for this application
+          Adds a Start menu shortcut for this application, or requests
+          to do so if --win-shortcut-prompt is specified
   --win-menu-group <menu group name>
           Start Menu group this application is placed in
   --win-per-user-install
-          Request to perform an install on a per-user basis
+          Installs the application on a per-user basis.
+          Without this option installs per-machine
   --win-shortcut [<shortcut startup directory>]
-          Request to add desktop shortcut for this application
+          Adds a desktop shortcut for this application, or requests
+          to do so if --win-shortcut-prompt is specified
   --win-shortcut-prompt
-          Adds a dialog to enable the user to choose if shortcuts
-          will be created by installer.
+          Adds a dialog if at least one of --win-menu or --win-shortcut
+          are specified to enable the user to choose if these shortcuts
+          will be created by the installer
   --win-update-url <url>
           URL of available application update information
   --win-upgrade-uuid <uuid>

@@ -53,6 +53,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
@@ -273,6 +274,10 @@ void VM_RedefineClasses::doit() {
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(current, _class_defs[i].klass, _scratch_classes[i]);
   }
+
+#if INCLUDE_CDS
+  TrainingData::cleanup_after_redefinition();
+#endif
 
   // Flush all compiled code that depends on the classes redefined.
   flush_dependent_code();

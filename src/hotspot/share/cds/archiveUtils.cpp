@@ -360,8 +360,8 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
   bool is_instance_class = is_class && ((Klass*)src)->is_instance_klass();
 
 #ifdef _LP64
-  // More strict alignments needed for UseCompressedClassPointers
-  if (is_class && UseCompressedClassPointers) {
+  // More strict alignments needed for Klass objects
+  if (is_class) {
     size_t klass_alignment = checked_cast<size_t>(nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()));
     alignment = MAX2(alignment, klass_alignment);
     precond(is_aligned(alignment, SharedSpaceObjectAlignment));
