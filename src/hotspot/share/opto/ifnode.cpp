@@ -1149,10 +1149,10 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   //
   //   Proof:
   //     Using a >= min_int, and b <= max_int:
-  //     a + 2^32 <= min_int + 2^32
+  //     a + 2^32 >= min_int + 2^32
   //               = max_int + 1
-  //              <= b       + 1
-  //              <  b
+  //              >= b       + 1
+  //              >  b
   // -------------------------------------------------------------------
 
   // Handle the 4 cases.
@@ -1189,7 +1189,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     //   Case lo < n < hi:
     //     (BEFORE) is always true, show (AFTER) is always true.
-    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overfaw):
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
     //     -> lo+1 <= hi
     //     -> n >= lo+1
     //     U(n - (lo + 1))           <  U(hi - (lo + 1))
@@ -1200,7 +1200,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     //
     //   Case n >= hi:
     //     (BEFORE) is always false, show (AFTER) is always false.
-    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overfaw):
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
     //     -> lo+1 <= hi
     //     U(n - (lo + 1))           <  U(hi - (lo + 1))
     //     -- Lemma1 (n >= lo+1) --    -- Lemma1 (lo+1 <= hi) --
@@ -1210,7 +1210,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     // QED.
     //
     // Note: we cannot use anything more relaxed than the assumption
-    //       lo < hi: with lo=hi the rhs of the CmpU would undeflow.
+    //       lo < hi: with lo=hi the rhs of the CmpU would underflow.
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
@@ -1282,7 +1282,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     // QED.
     //
     // Note: we cannot use anything more relaxed than the assumption
-    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would undeflow.
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
@@ -1334,7 +1334,7 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
     // QED.
     //
     /// Note: we cannot use anything more relaxed than the assumption
-    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would undeflow.
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
     if (lo_type->_hi >= hi_type->_lo) {
       return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
