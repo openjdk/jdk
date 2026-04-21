@@ -5965,7 +5965,7 @@ instruct loadConF(regF dst, immF src, iRegLdst toc, iRegLdst tmp) %{
   ins_num_consts(1);
   ins_toc_short_size(4);
 
-  format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC (tmp=$tmp)" %}
+  format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC" %}
   size(8);
   ins_encode %{
     bool is_short = ra_->C->output()->toc_is_short();
@@ -6014,7 +6014,7 @@ instruct loadConD(regD dst, immD src, iRegLdst toc, iRegLdst tmp) %{
   ins_cost(MEMORY_REF_COST);
   ins_num_consts(1);
   ins_toc_short_size(4);
-  format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC (tmp=$tmp)" %}
+  format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC" %}
   size(8);
   ins_encode %{
     bool is_short = ra_->C->output()->toc_is_short();
