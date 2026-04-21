@@ -95,6 +95,15 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
 
+  // If we degenerated from evacuation or update-refs, some objects in cset may
+  // have been self-forwarded by the failing thread. Clear those marks now so
+  // the remainder of this cycle (re-evac, update-refs, verification) sees a
+  // clean forwarding state.
+  if (_degen_point == ShenandoahDegenPoint::_degenerated_evac ||
+      _degen_point == ShenandoahDegenPoint::_degenerated_update_refs) {
+    heap->drain_evac_failure_queues();
+  }
+
   // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
   // without swapping the tables since no scan happens in passive mode anyway
   if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
@@ -303,6 +312,8 @@ void ShenandoahDegenGC::op_degenerated() {
     default:
       ShouldNotReachHere();
   }
+
+  DEBUG_ONLY(heap->assert_all_evac_failure_queues_empty());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);

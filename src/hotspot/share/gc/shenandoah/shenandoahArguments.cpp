@@ -44,6 +44,16 @@ void ShenandoahArguments::initialize() {
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
+  // Shenandoah relies on the object header bits (including the self-forwarded bit
+  // at markWord::self_fwd_mask_in_place) being preserved across monitor inflation,
+  // which only holds with UseObjectMonitorTable.
+  if (!UseObjectMonitorTable) {
+    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      vm_exit_during_initialization("Shenandoah requires UseObjectMonitorTable");
+    }
+    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+  }
+
 #if 0 // leave this block as stepping stone for future platforms
   log_warning(gc)("Shenandoah GC is not fully supported on this platform:");
   log_warning(gc)("  concurrent modes are not supported, only STW cycles are enabled;");

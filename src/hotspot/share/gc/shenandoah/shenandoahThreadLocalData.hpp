@@ -40,14 +40,12 @@
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
 private:
   char _gc_state;
-  // Evacuation OOM state
-  uint8_t                 _oom_scope_nesting_level;
-  bool                    _oom_during_evac;
 
   SATBMarkQueue           _satb_mark_queue;
 
@@ -66,6 +64,11 @@ private:
   ShenandoahPLAB* _shenandoah_plab;
 
   ShenandoahEvacuationStats* _evacuation_stats;
+
+  // Queue of objects that this thread has self-forwarded because their
+  // evacuation allocation failed. Drained at degenerated/full GC entry
+  // safepoints. Lazily allocated on first use.
+  GrowableArrayCHeap<oop, mtGC>* _evac_failure_queue;
 
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
@@ -160,37 +163,13 @@ public:
     return data(thread)->_shenandoah_plab;
   }
 
-  // Evacuation OOM handling
-  static bool is_oom_during_evac(Thread* thread) {
-    return data(thread)->_oom_during_evac;
-  }
-
-  static void set_oom_during_evac(Thread* thread, bool oom) {
-    data(thread)->_oom_during_evac = oom;
-  }
-
-  static uint8_t evac_oom_scope_level(Thread* thread) {
-    return data(thread)->_oom_scope_nesting_level;
-  }
-
-  // Push the scope one level deeper, return previous level
-  static uint8_t push_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level < 254, "Overflow nesting level"); // UINT8_MAX = 255
-    data(thread)->_oom_scope_nesting_level = level + 1;
-    return level;
-  }
-
-  // Pop the scope by one level, return previous level
-  static uint8_t pop_evac_oom_scope(Thread* thread) {
-    uint8_t level = evac_oom_scope_level(thread);
-    assert(level > 0, "Underflow nesting level");
-    data(thread)->_oom_scope_nesting_level = level - 1;
-    return level;
-  }
-
-  static bool is_evac_allowed(Thread* thread) {
-    return evac_oom_scope_level(thread) > 0;
+  // Evacuation failure queue: self-forwarded objects this thread has recorded.
+  // The queue is lazily allocated on first record_evac_failure and freed
+  // entirely on drain, so a null queue means "no outstanding failures".
+  static void record_evac_failure(Thread* thread, oop obj);
+  static void drain_evac_failure_queue(Thread* thread);
+  static bool has_evac_failure_queue(Thread* thread) {
+    return data(thread)->_evac_failure_queue != nullptr;
   }
 
   // Offsets

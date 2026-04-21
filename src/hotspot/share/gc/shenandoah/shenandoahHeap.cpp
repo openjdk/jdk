@@ -1149,12 +1149,10 @@ public:
   void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
-      ShenandoahEvacOOMScope oom_evac_scope;
+      SuspendibleThreadSetJoiner stsj;
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
@@ -1302,13 +1300,6 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol. It is safe to return
-    // the forward pointer. It must not attempt to evacuate any other objects.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   ShenandoahHeapRegion* r = heap_region_containing(p);
   assert(!r->is_humongous(), "never evacuate humongous objects");
@@ -1347,9 +1338,22 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   if (copy == nullptr) {
     control_thread()->handle_alloc_failure_evac(size);
 
-    _oom_evac_handler.handle_out_of_memory_during_evacuation();
-
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    // Install the self-forwarded bit on p so other evacuators/LRBs see
+    // the object as "already handled, do not try to evacuate". The CAS
+    // may fail if another thread concurrently installed a real forwardee
+    // (they succeeded where we failed) or self-forwarded first.
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // We own the self-forwarding. Record for cleanup at the recovery
+      // safepoint.
+      ShenandoahThreadLocalData::record_evac_failure(thread, p);
+      return p;
+    }
+    return winner;
   }
 
   if (ShenandoahEvacTracking) {
@@ -1403,6 +1407,36 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     return result;
   }
 }
+
+class ShenandoahDrainEvacFailureQueuesClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* t) override {
+    ShenandoahThreadLocalData::drain_evac_failure_queue(t);
+  }
+};
+
+void ShenandoahHeap::drain_evac_failure_queues() {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
+  ShenandoahDrainEvacFailureQueuesClosure cl;
+  Threads::threads_do(&cl);
+  DEBUG_ONLY(assert_all_evac_failure_queues_empty());
+}
+
+#ifdef ASSERT
+class ShenandoahAssertNoEvacFailuresClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* t) override {
+    assert(!ShenandoahThreadLocalData::has_evac_failure_queue(t),
+           "thread has outstanding evac failure queue");
+  }
+};
+
+void ShenandoahHeap::assert_all_evac_failure_queues_empty() const {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
+  ShenandoahAssertNoEvacFailuresClosure cl;
+  Threads::threads_do(&cl);
+}
+#endif
 
 void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapLocker locker(lock());
@@ -2502,7 +2536,7 @@ public:
   void work(uint worker_id) {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
+      SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
