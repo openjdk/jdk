@@ -140,19 +140,25 @@ static frame get_last_frame(JavaThread* jt) {
 class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
   Atomic<int>* _async_exceptions;
+  bool _processed;
+
+  // non-copyable to make sure counter remains consistent
+  NONCOPYABLE(ScopedAsyncExceptionHandshakeClosure);
 
 public:
   ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error, Atomic<int>* async_exceptions)
     : AsyncExceptionHandshakeClosure(error, "ScopedAsyncExceptionHandshakeClosure"),
-      _session(session), _async_exceptions(async_exceptions) {
+      _session(session), _async_exceptions(async_exceptions), _processed(false) {
     _async_exceptions->add_then_fetch(1);
   }
 
   ~ScopedAsyncExceptionHandshakeClosure() {
+    guarantee(_processed, "must process to avoid hang");
     _session.release(Universe::vm_global());
   }
 
   virtual void do_thread(Thread* thread) {
+    _processed = true;
     // We are stopped, safe to free memory.
     _async_exceptions->sub_then_fetch(1);
     JavaThread* jt = JavaThread::cast(thread);
