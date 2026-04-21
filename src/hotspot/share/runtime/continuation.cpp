@@ -224,8 +224,7 @@ bool Continuation::is_continuation_entry_frame(const frame& f, const RegisterMap
 // that even unextended_sp < entry_sp < sp is possible for an interpreted frame.
 static inline bool is_sp_in_continuation(const ContinuationEntry* entry, const frame& f) {
   // entry_sp() returns the unextended_sp which is always greater or equal to the actual sp
-  //return entry->entry_sp() > f.sp();
-  return entry->entry_fp() > f.real_fp();
+  return f.is_younger(entry->entry_fp());
 }
 
 bool Continuation::is_frame_in_continuation(const ContinuationEntry* entry, const frame& f) {
