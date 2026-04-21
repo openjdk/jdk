@@ -1618,7 +1618,7 @@ void Compile::grow_alias_types() {
   const int new_ats  = old_ats;          // how many more?
   const int grow_ats = old_ats+new_ats;  // how many now?
   _max_alias_types = grow_ats;
-  _alias_types =  REALLOC_ARENA_ARRAY(comp_arena(), AliasType*, _alias_types, old_ats, grow_ats);
+  _alias_types =  REALLOC_ARENA_ARRAY(comp_arena(), _alias_types, old_ats, grow_ats);
   AliasType* ats =    NEW_ARENA_ARRAY(comp_arena(), AliasType, new_ats);
   Copy::zero_to_bytes(ats, sizeof(AliasType)*new_ats);
   for (int i = 0; i < new_ats; i++)  _alias_types[old_ats+i] = &ats[i];
