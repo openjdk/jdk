@@ -207,7 +207,7 @@ void ShenandoahArguments::initialize() {
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
-  size_t align = next_power_of_2(ShenandoahMaxRegionSize);
+  size_t align = next_power_of_2(ShenandoahHeapRegion::MAX_REGION_SIZE);
   if (UseLargePages) {
     align = MAX2(align, os::large_page_size());
   }

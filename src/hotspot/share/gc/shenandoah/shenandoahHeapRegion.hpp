@@ -278,6 +278,7 @@ public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
   static const size_t MIN_NUM_REGIONS = 10;
+  static const size_t MAX_REGION_SIZE = 32*M;
 
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
