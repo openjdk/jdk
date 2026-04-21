@@ -2794,20 +2794,20 @@ encode %{
   // expand.
   enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst tmp, iRegLdst toc) %{
 
-      MachNode *m2;
-      m2 = new loadConFNode();
-      // inputs for new nodes
-      m2->add_req(nullptr, n_toc);
+    MachNode *m2;
+    m2 = new loadConFNode();
+    // inputs for new nodes
+    m2->add_req(nullptr, n_toc);
 
-      // operands for new nodes
-      m2->_opnds[0] = op_dst;
-      m2->_opnds[1] = op_src;
-      m2->_opnds[2] = new iRegPdstOper();  // constanttablebase (toc)
-      m2->_opnds[3] = op_tmp;              // reuse the tmp operand allocated by loadConF_Ex
+    // operands for new nodes
+    m2->_opnds[0] = op_dst;
+    m2->_opnds[1] = op_src;
+    m2->_opnds[2] = new iRegPdstOper();  // constanttablebase (toc)
+    m2->_opnds[3] = op_tmp;              // reuse the tmp operand allocated by loadConF_Ex
 
-      // register allocation for new nodes
-      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      nodes->push(m2);
+    // register allocation for new nodes
+    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    nodes->push(m2);
   %}
 
   // Enc_class needed as consttanttablebase is not supported by postalloc
