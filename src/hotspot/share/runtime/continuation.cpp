@@ -219,7 +219,7 @@ bool Continuation::is_continuation_entry_frame(const frame& f, const RegisterMap
 }
 
 bool Continuation::is_frame_in_continuation(const ContinuationEntry* entry, const frame& f) {
-  return f.is_younger(entry->entry_fp());
+  return entry->to_frame().is_older(f.id());
 }
 
 ContinuationEntry* Continuation::get_continuation_entry_for_sp(JavaThread* thread, const frame& f) {
