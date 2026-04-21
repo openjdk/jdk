@@ -36,6 +36,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.List;
 
 public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
@@ -71,9 +72,11 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             throw new Error("TESTBUG: test can not be run in interpreter");
         }
 
-        if (!CPUInfo.hasFeature(bmiTestCase.getCpuFlag())) {
-            System.out.println("Unsupported hardware, no required CPU flag " + bmiTestCase.getCpuFlag() + " , test SKIPPED");
-            return;
+        for (String cpuFlag: bmiTestCase.getCpuFlag()) {
+            if (!CPUInfo.hasFeature(cpuFlag)) {
+                System.out.println("Unsupported hardware, no required CPU flag " + cpuFlag + " , test SKIPPED");
+                return;
+            }
         }
 
         if (!Boolean.valueOf(getVMOption(bmiTestCase.getVMFlag()))) {
@@ -204,8 +207,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             }
         }
 
-        protected String getCpuFlag() {
-            return cpuFlag;
+        protected List<String> getCpuFlag() {
+            return List.of(cpuFlag);
         }
 
         protected String getVMFlag() {

@@ -41,6 +41,7 @@ package compiler.intrinsics.bmi.verifycode;
 import compiler.intrinsics.bmi.TestLzcntI;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
 
@@ -71,7 +72,7 @@ public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
     }
 
     @Override
-    protected String getCpuFlag() {
-        return "lzcnt";
+    protected List<String> getCpuFlag() {
+        return List.of("lzcnt");
     }
 }
