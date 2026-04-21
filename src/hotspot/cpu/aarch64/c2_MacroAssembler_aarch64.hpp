@@ -253,4 +253,5 @@
   void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
                bool isMerge);
   int vector_iota_entry_index(BasicType bt);
+  void neon_load_iota_indices(FloatRegister dst, BasicType bt);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

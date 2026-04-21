@@ -158,6 +158,11 @@ source %{
     // Check whether specific Op is supported.
     // Fail fast, otherwise fall through to common vector_size_supported() check.
     switch (opcode) {
+      case Op_PopulateIndex:
+        if (UseSVE == 0 && (is_unsigned_subword_type(bt) || is_reference_type(bt))) {
+          return false;
+        }
+        break;
       case Op_AndVMask:
       case Op_OrVMask:
       case Op_XorVMask:
@@ -167,7 +172,6 @@ source %{
       case Op_StoreVectorMasked:
       case Op_StoreVectorScatter:
       case Op_StoreVectorScatterMasked:
-      case Op_PopulateIndex:
       case Op_CompressM:
       case Op_CompressV:
         if (UseSVE == 0) {
@@ -5344,7 +5348,22 @@ instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
 
 // ------------------------------ Populate Index to a Vector -------------------
 
-instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
+instruct populateindex_neon_stride1(vReg dst, iRegIorL2I src1, immI_1 src2, vReg tmp) %{
+  predicate(UseSVE == 0);
+  match(Set dst (PopulateIndex src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "populateindex $dst, $src1, $src2\t # populate index, KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert($src2$$constant == 1, "required");
+    __ neon_load_iota_indices($dst$$FloatRegister, bt);
+    __ dup($tmp$$FloatRegister, get_arrangement(this), $src1$$Register);
+    __ addv($dst$$FloatRegister, get_arrangement(this), $dst$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct populateindex_sve(vReg dst, iRegIorL2I src1, immI src2) %{
   predicate(UseSVE > 0);
   match(Set dst (PopulateIndex src1 src2));
   format %{ "populateindex $dst, $src1, $src2\t # populate index (sve)" %}
