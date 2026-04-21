@@ -211,20 +211,6 @@ private:
   }
 };
 
-class Pack : public ArenaObj {
-private:
-  GrowableArray<const VTransformNode*> _pack;
-
-public:
-  Pack(Arena* arena) : _pack(arena, OptoNodeListSize, 0, nullptr) {}
-
-  void push(const VTransformNode* n) { assert(n != nullptr, ""); _pack.push(n); }
-  int length() const { return _pack.length(); } // TODO: go back to "size"? Rename all?
-  const VTransformNode* at(int i) const { return _pack.at(i); }
-  const VTransformNode* pop() { return _pack.pop(); }
-  void remove(int i) { _pack.remove_at(i); }
-};
-
 class SplitTask {
 private:
   enum Kind {
@@ -513,10 +499,8 @@ class SuperWord : public ResourceObj {
     return _scalar_vtransform_analyzer.dependency().independent(n1, n2);
   }
 
-  bool mutually_independent(const Pack* nodes) const {
-    assert(false, "TODO impl");
-    return false;
-    //return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  bool mutually_independent(const Pack* pack) const {
+    return _scalar_vtransform_analyzer.dependency().mutually_independent(pack);
   }
 
   // VLoopVPointer accessors

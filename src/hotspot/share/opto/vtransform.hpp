@@ -1118,6 +1118,22 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+// SuperWord packs multiple nodes from a scalar graph, and later converts that
+// pack into a vector node.
+class Pack : public ArenaObj {
+private:
+  GrowableArray<const VTransformNode*> _pack;
+
+public:
+  Pack(Arena* arena) : _pack(arena, OptoNodeListSize, 0, nullptr) {}
+
+  void push(const VTransformNode* n) { assert(n != nullptr, ""); _pack.push(n); }
+  int length() const { return _pack.length(); } // TODO: go back to "size"? Rename all?
+  const VTransformNode* at(int i) const { return _pack.at(i); }
+  const VTransformNode* pop() { return _pack.pop(); }
+  void remove(int i) { _pack.remove_at(i); }
+};
+
 // This class facilitates fast independecy checks. The VTransformGraph already
 // contains all dependency edges, but doing a full traversal each time can be
 // expensive. We use the node depth in the graph to constrain the traversals.
@@ -1142,6 +1158,7 @@ public:
   NONCOPYABLE(VTransformDependency);
 
   bool independent(const VTransformNode* n1, const VTransformNode* n2) const;
+  bool mutually_independent(const Pack* pack) const { return false; }
 
 private:
   void set_depth(const VTransformNode* n, int d) { _depths.at_put(n->_idx, d); }
