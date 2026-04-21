@@ -93,7 +93,7 @@ public:
   static freeze_result try_preempt(JavaThread* target, oop continuation);
 
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
-  static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, const frame& f);
+  static ContinuationEntry* get_continuation_entry_for_frame(JavaThread* thread, const frame& f);
   static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f);
 
   static bool is_continuation_mounted(JavaThread* thread, oop continuation);
