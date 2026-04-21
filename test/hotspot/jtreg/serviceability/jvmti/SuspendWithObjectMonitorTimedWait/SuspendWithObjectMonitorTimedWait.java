@@ -69,7 +69,6 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     static long sleepInterval = 20;
     static int maxRetries = 2000;
     static long waitForTimedWaitingMills = 5000;
-    static double acceptableFailureRate = 0.01;
 
     // run debuggee
     public int runIt() {
