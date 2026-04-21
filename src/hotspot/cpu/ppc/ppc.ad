@@ -2592,43 +2592,35 @@ encode %{
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
     bool is_short = ra_->C->output()->toc_is_short();
 
-  if (ra_->C->output()->in_scratch_emit_size()) {
-    // SCRATCH EMIT: Must emit the exact same number of bytes as the real phase.
-    // Use 0 as a placeholder for offsets.
-    if (is_short) {
-      __ ld($dst$$Register, 0, $toc$$Register);        // 4 bytes
-    } else {
-      __ addis($dst$$Register, $toc$$Register, 0);     // 4 bytes
-      __ ld($dst$$Register, 0, $dst$$Register);        // 4 bytes = 8 total
+    if (ra_->C->output()->in_scratch_emit_size()) {
+        if (is_short) {
+          __ ld($dst$$Register, 0, $toc$$Register);        // 4 bytes
+        } else {
+          __ addis($dst$$Register, $toc$$Register, 0);     // 4 bytes
+          __ ld($dst$$Register, 0, $dst$$Register);        // 4 bytes = 8 total
+        }
+        return;
     }
-    return;
-  }
 
-  // 2. REAL EMIT: Perform heavy lifting and side effects
-  address const_toc_addr = __ long_constant((jlong)$src$$constant);
-  if (const_toc_addr == nullptr) {
-    ciEnv::current()->record_out_of_memory_failure();
-    return;
-  }
+    address const_toc_addr = __ long_constant((jlong)$src$$constant);
+    if (const_toc_addr == nullptr) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
+    ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
 
-  // Record the offset ONLY during real emit to avoid corruption by scratch phases
-  ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
+    int toc_offset = __ offset_to_method_toc(const_toc_addr);
 
-  int toc_offset = __ offset_to_method_toc(const_toc_addr);
-
-  if (is_short) {
-    // We trust the global flag here to match the sizing phase
-    // You can add an assert(Assembler::is_simm(toc_offset, 16)) for safety.
-    __ ld($dst$$Register, toc_offset, $toc$$Register);
-  } else {
-    __ addis($dst$$Register, $toc$$Register,
-             MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-    __ ld($dst$$Register,
-          MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
-          $dst$$Register);
-  }
+    if (is_short) {
+      __ ld($dst$$Register, toc_offset, $toc$$Register);
+    } else {
+      __ addis($dst$$Register, $toc$$Register,
+              MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+      __ ld($dst$$Register,
+            MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
+            $dst$$Register);
+    }
   %}
-
 %} // encode
 
 source %{
@@ -2741,19 +2733,19 @@ encode %{
     bool is_short = ra_->C->output()->toc_is_short();
 
     if (ra_->C->output()->in_scratch_emit_size()) {
-      if (is_short) {
-        __ ld($dst$$Register, 0, $toc$$Register);              // 4 bytes
-      } else {
-        __ addis($dst$$Register, $toc$$Register, 0);           // 4 bytes
-        __ ld($dst$$Register, 0, $dst$$Register);              // 4 bytes = 8
-      }
+        if (is_short) {
+          __ ld($dst$$Register, 0, $toc$$Register);              // 4 bytes
+        } else {
+            __ addis($dst$$Register, $toc$$Register, 0);           // 4 bytes
+            __ ld($dst$$Register, 0, $dst$$Register);              // 4 bytes = 8
+        }
       return;
     }
 
     intptr_t val = $src$$constant;
     relocInfo::relocType constant_reloc = $src->constant_reloc();
     address const_toc_addr;
-    RelocationHolder r; // Initializes type to none.
+    RelocationHolder r;
     if (constant_reloc == relocInfo::oop_type) {
       AddressLiteral a = __ constant_oop_address((jobject)val);
       const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
@@ -2773,15 +2765,15 @@ encode %{
     int toc_offset = __ offset_to_method_toc(const_toc_addr);
 
     if (is_short) {
-      __ ld($dst$$Register, toc_offset, $toc$$Register);       // 4 bytes
+        __ ld($dst$$Register, toc_offset, $toc$$Register);
     } else {
-      __ addis($dst$$Register, $toc$$Register,
-               MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ ld($dst$$Register,
-            MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
-            $dst$$Register);                                    // 8 bytes
+        __ addis($dst$$Register, $toc$$Register,
+        MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ ld($dst$$Register,
+        MacroAssembler::largeoffset_si16_si16_lo(toc_offset),
+        $dst$$Register);
     }
-%}
+  %}
 
   // Postalloc expand emitter for loading a ptr constant from the method's TOC.
   // Enc_class needed as consttanttablebase is not supported by postalloc
@@ -2827,27 +2819,25 @@ enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst tmp,
 
   // Enc_class needed as consttanttablebase is not supported by postalloc
   // expand.
-  enc_class postalloc_expand_load_double_constant(regD dst, immD src, iRegLdst tmp, iRegLdst toc) %{
-    MachNode *m2;
-    m2 = new loadConDNode();
+    enc_class postalloc_expand_load_double_constant(regD dst, immD src, iRegLdst tmp, iRegLdst toc) %{
+      MachNode *m2;
+      m2 = new loadConDNode();
+      // inputs for new nodes
+      m2->add_req(nullptr, n_toc);
 
-    // inputs for new nodes
-    m2->add_req(nullptr, n_toc);
+      // operands for new nodes
+      m2->_opnds[0] = op_dst;
+      m2->_opnds[1] = op_src;
+      m2->_opnds[2] = new iRegPdstOper();  // constanttablebase (toc)
+      m2->_opnds[3] = op_tmp;              // reuse the tmp operand allocated by loadConD_Ex
 
-    // operands for new nodes
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper();  // constanttablebase (toc)
-    m2->_opnds[3] = op_tmp;              // reuse the tmp operand allocated by loadConD_Ex
-
-    // register allocation for new nodes
-    // dst: reuse this node's allocation (same as before)
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    // tmp: reuse the register already allocated to loadConD_Ex's tmp operand
-    // (no new allocation needed — RA already picked a GPR when it processed loadConD_Ex)
-
-    nodes->push(m2);
-%}
+      // register allocation for new nodes
+      // dst: reuse this node's allocation (same as before)
+      ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+      // tmp: reuse the register already allocated to loadConD_Ex's tmp operand
+      // (no new allocation needed — RA already picked a GPR when it processed loadConD_Ex)
+      nodes->push(m2);
+  %}
 
   enc_class enc_stw(iRegIsrc src, memory mem) %{
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
@@ -6018,7 +6008,6 @@ instruct loadConF(regF dst, immF src, iRegLdst toc, iRegLdst tmp) %{
   %}
   ins_pipe(pipe_class_memory);
 %}
-
 
 // Adlc adds toc node MachConstantTableBase.
 instruct loadConF_Ex(regF dst, immF src, iRegLdst tmp) %{

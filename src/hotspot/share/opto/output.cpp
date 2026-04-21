@@ -1331,7 +1331,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
       }
     }
 
-
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
