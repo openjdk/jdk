@@ -50,6 +50,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
