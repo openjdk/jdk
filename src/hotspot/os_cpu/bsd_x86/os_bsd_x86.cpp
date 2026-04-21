@@ -55,6 +55,7 @@
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>
+# include <sys/sysctl.h>
 # include <pthread.h>
 # include <signal.h>
 # include <errno.h>
