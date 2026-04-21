@@ -2719,6 +2719,7 @@ encode %{
     // Push new nodes.
     nodes->push(loadConLNodes._last);
 
+
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
