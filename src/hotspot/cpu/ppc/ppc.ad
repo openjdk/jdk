@@ -2613,7 +2613,7 @@ encode %{
 
   // Record the offset ONLY during real emit to avoid corruption by scratch phases
   ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
-  
+
   int toc_offset = __ offset_to_method_toc(const_toc_addr);
 
   if (is_short) {

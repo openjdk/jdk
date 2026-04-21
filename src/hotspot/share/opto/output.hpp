@@ -113,8 +113,8 @@ public:
   bool need_stack_bang(int frame_size_in_bytes) const;
   bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
-  bool toc_is_short() const { 
-    return PPC64_ONLY(_toc_is_short) NOT_PPC64(false); 
+  bool toc_is_short() const {
+    return PPC64_ONLY(_toc_is_short) NOT_PPC64(false);
   }
 
   void install_code(ciMethod*         target,
