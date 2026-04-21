@@ -3275,7 +3275,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// VirtualAlloc2 / MapViewOfFile3 (1803+). Resolved in os::init_2() via lookup_kernelbase_symbol.
+// VirtualAlloc2 / MapViewOfFile3 (Windows 1803+). Resolved in os::init_2() via lookup_kernelbase_symbol.
 os::win32::VirtualAlloc2Fn os::win32::VirtualAlloc2 = nullptr;
 
 os::win32::MapViewOfFile3Fn os::win32::MapViewOfFile3 = nullptr;
@@ -3312,7 +3312,7 @@ static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_ta
     aligned_base = align_up(extra_base, alignment);
     os::release_memory(extra_base, extra_size);
 
-    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
+    // Attempt to reserve, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
   }
