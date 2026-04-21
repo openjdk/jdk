@@ -38,7 +38,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gclab(nullptr),
   _gclab_size(0),
   _shenandoah_plab(nullptr),
-  _evacuation_stats(new ShenandoahEvacuationStats()) {
+  _evacuation_stats(new ShenandoahEvacuationStats()),
+  _invisible_root(nullptr),
+  _invisible_root_word_size(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
