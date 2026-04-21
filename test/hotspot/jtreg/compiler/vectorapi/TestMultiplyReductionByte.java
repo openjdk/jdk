@@ -98,6 +98,8 @@ public class TestMultiplyReductionByte {
     @IR(counts = {IRNode.MUL_REDUCTION_VI, "0"},
         applyIfCPUFeature = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
+    // AArch64 currently does not vectorize vectors larger than 128 bits, and
+    // that may change in the future.
     static byte testMulReduce256() {
         return ByteVector.fromArray(ByteVector.SPECIES_256, input, 0)
                          .reduceLanes(VectorOperators.MUL);
@@ -119,6 +121,8 @@ public class TestMultiplyReductionByte {
     @IR(counts = {IRNode.MUL_REDUCTION_VI, "0"},
         applyIfCPUFeature = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
+    // AArch64 currently does not vectorize vectors larger than 128 bits, and
+    // that may change in the future.
     static byte testMulReduce512() {
         return ByteVector.fromArray(ByteVector.SPECIES_512, input, 0)
                          .reduceLanes(VectorOperators.MUL);
