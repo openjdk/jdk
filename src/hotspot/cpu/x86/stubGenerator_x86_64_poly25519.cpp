@@ -28,16 +28,6 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(64) constexpr uint64_t CARRY_ADD[] = {
-  0x0004000000000000ULL, 0x0004000000000000ULL,
-  0x0004000000000000ULL, 0x0004000000000000ULL,
-  0x0004000000000000ULL, 0x0004000000000000ULL,
-  0x0004000000000000ULL, 0x0004000000000000ULL
-};
-static address carry_add() {
-  return (address)CARRY_ADD;
-}
-
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t SHIFT1R[] = {
   0x0000000000000001ULL, 0x0000000000000002ULL,
   0x0000000000000003ULL, 0x0000000000000004ULL,
@@ -93,16 +83,6 @@ static address limb_0() {
   return (address)LIMB0;
 }
 
-ATTRIBUTE_ALIGNED(64) static const uint64_t TERM[] = {
-  0x0000000000000013ULL, 0x0000000000000013ULL,
-  0x0000000000000013ULL, 0x0000000000000013ULL,
-  0x0000000000000013ULL, 0x0000000000000013ULL,
-  0x0000000000000013ULL, 0x0000000000000013ULL
-};
-static address term() {
-  return (address)TERM;
-}
-
 void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
   Register t0 = tmp;
   Register rscratch = tmp;
@@ -144,7 +124,6 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evmovdqaq(shift1R, ExternalAddress(shift_1R()), Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLow, allLimbs, ExternalAddress(perm_low()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(permLowH, allLimbs, ExternalAddress(perm_lowH()), false, Assembler::AVX_512bit, rscratch);
-  __ evmovdqaq(CarryAdd, allLimbs, ExternalAddress(carry_add()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(Limb0, allLimbs, ExternalAddress(limb_0()), false, Assembler::AVX_512bit, rscratch);
 
   // A = load(*aLimbs); masked evmovdquq() can be slow. Instead load full
@@ -219,7 +198,8 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Pseudo-Mersenne reduction
   // The term is only 5 bits, the limbs 51 bits, and the elements are 64 bits,
   // therefore a scalar multiplication will not overflow the element radix here
-  __ evmovdqaq(B, allLimbs, ExternalAddress(term()), false, Assembler::AVX_512bit);
+  __ mov64(rax, 0x13ULL);
+  __ evpbroadcastq(B, rax, Assembler::AVX_512bit);
   __ evpmullq(Acc1, allLimbs, Acc1, B, false, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, allLimbs, Acc1L, Acc1, false, Assembler::AVX_512bit);
 
@@ -228,6 +208,8 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
     __ mov64(t0, 1ULL << i);
     __ kmovql(masks[i], t0);
   }
+  __ mov64(rax, 0x0004000000000000ULL);
+  __ evpbroadcast(CarryAdd, rax, Assembler::AVX_512bit);
 
   // Limb 3
   __ evpaddq(Carry, masks[3], Acc1L, CarryAdd, false, Assembler::AVX_512bit);
@@ -280,15 +262,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(Acc1L, masks[4], Acc1L, Carry, true, Assembler::AVX_512bit);
 
-  __ movq(Address(rLimbs, 0), Acc1L);
-  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
-  __ movq(Address(rLimbs, 8), Acc1L);
-  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
-  __ movq(Address(rLimbs, 16), Acc1L);
-  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
-  __ movq(Address(rLimbs, 24), Acc1L);
-  __ vpermq(Acc1L, shift1R, Acc1L, Assembler::AVX_512bit);
-  __ movq(Address(rLimbs, 32), Acc1L);
+  __ evmovdquq(Address(rLimbs, 0), allLimbs, Accl1L, true, Assembler::AVX_512bit);
 
   // Cleanup
   // Zero out zmm0-zmm15, higher registers not used by intrinsics
@@ -333,13 +307,11 @@ address StubGenerator::generate_intpoly_mult_25519() {
 void StubGenerator::init_AOTAddressTable_poly_25519(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)addr);
   // use accessors to retrive all correct addresses
-  ADD(carry_add());
   ADD(limb_0());
   ADD(perm_low());
   ADD(perm_lowH());
   ADD(shift_1R());
   ADD(shift_1L());
-  ADD(term());
 #undef ADD
 }
 #endif // INCLUDE_CDS
