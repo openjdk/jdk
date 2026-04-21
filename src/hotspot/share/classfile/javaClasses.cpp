@@ -31,7 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaClassesImpl.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"

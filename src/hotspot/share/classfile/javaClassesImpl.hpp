@@ -27,7 +27,7 @@
 
 #include "cds/serializeClosure.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "runtime/continuationJavaClasses.hpp"
 #include "utilities/macros.hpp"
 

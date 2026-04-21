@@ -28,7 +28,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"

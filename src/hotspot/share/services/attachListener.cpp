@@ -23,7 +23,7 @@
  */
 
 #include "classfile/javaClasses.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/gcVMOperations.hpp"

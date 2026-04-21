@@ -29,7 +29,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"

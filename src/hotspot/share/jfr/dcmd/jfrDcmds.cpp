@@ -23,7 +23,7 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/jfr.hpp"

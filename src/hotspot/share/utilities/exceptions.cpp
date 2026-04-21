@@ -24,7 +24,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"

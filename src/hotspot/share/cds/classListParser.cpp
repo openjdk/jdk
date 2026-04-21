@@ -32,7 +32,7 @@
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/javaLangThrowable.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
