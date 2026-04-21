@@ -1248,6 +1248,21 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = nullptr;
 
   if (ac->is_clonebasic()) {
+    if (ac->_dest_type != TypeOopPtr::BOTTOM) {
+      MemBarNode* membar = ac->proj_out(TypeFunc::Control)->unique_ctrl_out()->as_MemBar();
+      MergeMemNode* mm = membar->in(TypeFunc::Memory)->as_MergeMem();
+      assert(mm->memory_at(Compile::AliasIdxRaw)->as_Proj()->in(0) == ac, "");
+      int mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+      Node* ctl = membar->in(0);
+      Node* mem = mm;
+      insert_mem_bar(&ctl, &mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
+      _igvn.replace_input_of(membar, 0, ctl);
+      _igvn.replace_input_of(membar, TypeFunc::Memory, mem);
+      assert(ctl->is_Proj(), "MemBar control projection");
+      assert(ctl->in(0)->isa_MemBar(), "MemBar node");
+      ctl->in(0)->isa_MemBar()->set_trailing_expanded_array_copy();
+    }
+
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
     return;

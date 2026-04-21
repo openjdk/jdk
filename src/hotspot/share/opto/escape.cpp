@@ -4521,7 +4521,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           const TypePtr* adr_type = proj->adr_type();
           const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
           if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
-            DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
+            uint alias_idx = _compile->get_alias_index(new_adr_type);
             assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
             NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
             igvn->set_type(new_proj, new_proj->bottom_type());
