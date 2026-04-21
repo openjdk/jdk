@@ -218,23 +218,14 @@ bool Continuation::is_continuation_entry_frame(const frame& f, const RegisterMap
   return m != nullptr && m->intrinsic_id() == vmIntrinsics::_Continuation_enter;
 }
 
-// The parameter `sp` should be the actual sp and not the unextended sp because at
-// least on PPC64 unextended_sp < sp is possible as interpreted frames are trimmed
-// to the actual size of the expression stack before calls. The problem there is
-// that even unextended_sp < entry_sp < sp is possible for an interpreted frame.
-static inline bool is_sp_in_continuation(const ContinuationEntry* entry, const frame& f) {
-  // entry_sp() returns the unextended_sp which is always greater or equal to the actual sp
-  return f.is_younger(entry->entry_fp());
-}
-
 bool Continuation::is_frame_in_continuation(const ContinuationEntry* entry, const frame& f) {
-  return is_sp_in_continuation(entry, f);
+  return f.is_younger(entry->entry_fp());
 }
 
 ContinuationEntry* Continuation::get_continuation_entry_for_sp(JavaThread* thread, const frame& f) {
   assert(thread != nullptr, "");
   ContinuationEntry* entry = thread->last_continuation();
-  while (entry != nullptr && !is_sp_in_continuation(entry, f)) {
+  while (entry != nullptr && !is_frame_in_continuation(entry, f)) {
     entry = entry->parent();
   }
   return entry;
@@ -419,7 +410,7 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
     return;
   }
 
-  if (is_sp_in_continuation(entry, f)) {
+  if (is_frame_in_continuation(entry, f)) {
     thread->push_cont_fastpath(f.sp());
     return;
   }
@@ -428,12 +419,12 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
   do {
     prev = entry;
     entry = entry->parent();
-  } while (entry != nullptr && !is_sp_in_continuation(entry, f));
+  } while (entry != nullptr && !is_frame_in_continuation(entry, f));
 
   if (entry == nullptr) {
     return;
   }
-  assert(is_sp_in_continuation(entry, f), "");
+  assert(is_frame_in_continuation(entry, f), "");
   if (f.sp() > prev->parent_cont_fastpath()) {
     prev->set_parent_cont_fastpath(f.sp());
   }
