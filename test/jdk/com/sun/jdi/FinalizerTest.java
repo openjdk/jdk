@@ -96,17 +96,16 @@ class FinalizerTarg {
                 return;
             }
             try {
-                while(true) {
+                while(!finalizerRun) {
                     holdAlot.add(new byte[chunk]);
                     System.err.println("Allocated " + chunk);
                 }
             }
             catch ( Throwable thrown ) {  // OutOfMemoryError
+            } finally {
                 holdAlot.clear();
                 System.gc();
             }
-            holdAlot.clear();
-            System.gc();
             System.runFinalization();
         }
         return;  // not reached
