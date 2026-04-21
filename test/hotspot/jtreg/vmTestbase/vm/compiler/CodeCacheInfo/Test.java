@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,15 +56,16 @@ public class Test {
     static {
         String p1 = " size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb\\n";
         String p2 = " bounds \\[0x[0-9a-f]+, 0x[0-9a-f]+, 0x[0-9a-f]+\\]\\n";
-        String p3 = "CodeCache:.*\\n";
-        String p4 = " total_blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
-        String p5 = "Compilation: enabled.*\\n";
+        String p3 = " blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
+        String p4 = "CodeCache:.*\\n";
+        String p5 = " total blobs=\\d+, nmethods=\\d+, adapters=\\d+, full_count=\\d+\\n";
+        String p6 = "Compilation: enabled.*\\n";
 
-        String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + ")+";
-        String nosegPrefix = "^CodeCache:" + p1 + p2;
+        String segPrefix = "^(CodeHeap '[^']+':" + p1 + p2 + p3 + ")+";
+        String nosegPrefix = "^CodeCache:" + p1 + p2 + p3;
 
-        SEG_REGEXP = segPrefix + p3 + p4 + p5;
-        NOSEG_REGEXP = nosegPrefix + p4 + p5;
+        SEG_REGEXP = segPrefix + p4 + p5 + p6;
+        NOSEG_REGEXP = nosegPrefix + p6;
     }
 
     public static void main(String[] args) throws Exception {
