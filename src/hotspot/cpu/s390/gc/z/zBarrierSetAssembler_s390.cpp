@@ -55,6 +55,10 @@ long load_slow_pre_fubar = 0;
 long store_fubar = 0;
 long some_fubar = 0;
 long store_slow_fubar = 0;
+long c1_load_fubar = 0;
+long c1_store_fubar = 0;
+long atomic_nmethod_fubar = 0;
+long non_atomic_nmethod_fubar = 0;
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -162,13 +166,20 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 
   // TODO: Implement a better solution
-  assert_different_registers(Z_R4, src.base());
 
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
   //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
-  __ z_ldgr(Z_F0, Z_R4);
-  Register scratch = Z_R4;
+  Register scratch = noreg;
+  if (dst != src.base()) {
+    scratch = src.base();
+  } else if (dst != Z_R4) {
+    scratch = Z_R4;
+  } else {
+    scratch = Z_R5;
+  }
+
+  __ z_ldgr(Z_F0, scratch);
 
   Label done;
   Label stop;
@@ -178,8 +189,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // Fast Path
   //
 
-  __ load_const_optimized(scratch, (uintptr_t)&load_fubar);
-  __ z_agsi(0, scratch, 1);
+  //__ load_const_optimized(scratch, (uintptr_t)&load_fubar);
+  //__ z_agsi(0, scratch, 1);
 
   // Load adress
   __ z_lay(scratch, src);
@@ -244,7 +255,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(done);
 
-  __ z_lgdr(Z_R4, Z_F0);
+  __ z_lgdr(scratch, Z_F0);
 }
 
 // Purpose  we are checking if the address stored at ref_addr is good, bad or null.
@@ -271,32 +282,35 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // we can only have good value for fast path, for others it can be good as well as null
 
     if (is_atomic) {
-      __ stop("in_nmethod atomic");
+      __ load_const_optimized(rnew_zpointer, (uintptr_t)&atomic_nmethod_fubar);
+      __ z_agsi(0, rnew_zpointer, 1);
       // Atomic operations must ensure that the contents of memory are store-good before
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-      __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
       // TODO: Check if this will work or else implement z_chy
       __ z_ch(rnew_zpointer, ref_addr);
+      __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     } else {
-      __ stop("in_nmethod non-atomic");
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
+      __ load_const_optimized(rnew_zpointer, (uintptr_t)&non_atomic_nmethod_fubar);
+      __ z_agsi(0, rnew_zpointer, 1);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
-      __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
       // RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
       // TODO: Check if this will work or else implement z_chy
-      __ z_ch(rnew_zpointer, ref_addr);
+      __ z_ng(rnew_zpointer, ref_addr);
+      __ branch_optimized(Assembler::bcondNotZero, medium_path);
     }
-    __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     assert_different_registers(rnew_zaddress, rnew_zpointer);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-    __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
+    __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
     // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
     __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
     __ z_ogr(rnew_zpointer, rnew_zaddress);
@@ -743,14 +757,13 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 #define __ ce->masm()->
 
 static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
-  __ stop("z uncolor");
   __ z_srlg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
   __ stop("z color");
   __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_oill(ref->as_register(), barrier_Relocation::unpatched);
 }
 
@@ -768,36 +781,49 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     LIR_Opr ref,
                                                     ZLoadBarrierStubC1* stub,
                                                     bool on_non_strong) const {
-  __ stop("generate c1 load barrier");
+  
+  __ z_ldgr(Z_F0, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F0);
   if (on_non_strong) {
     // Test against MarkBad mask
+    // TODO: This is not working
+    __ stop ("on non string");
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-    __ z_cghi(ref->as_register(), barrier_Relocation::unpatched);
+    __ z_nill(ref->as_register(), barrier_Relocation::unpatched);
 
     // Slow path if not zero
-    __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
+    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
     // Fast path: convert to colorless
     z_uncolor(ce, ref);
   } else {
     Label good;
     // TODO: double check this implementation, this follows aarch64 but ppc has done it differently
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
-    __ z_cghi(ref->as_register(), barrier_Relocation::unpatched);
-    __ branch_optimized(Assembler::bcondEqual, good);
+    __ z_nill(ref->as_register(), barrier_Relocation::unpatched);
+    __ branch_optimized(Assembler::bcondZero, good);
     __ branch_optimized(Assembler::bcondAlways, *stub->entry());
     __ bind(good);
     z_uncolor(ce, ref);
   }
+
+  //int relocFormat = on_non_strong ? ZBarrierRelocationFormatMarkBadBeforeTest
+                                  //: ZBarrierRelocationFormatLoadGoodBeforeTestBit;
+  //__ relocate(barrier_Relocation::spec(), relocFormat);
+  //__ z_nill(ref->as_register(), barrier_Relocation::unpatched);
+  //__ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+  //z_uncolor(ce, ref);
   __ bind(*stub->continuation());
 }
 
 // purpose: this is the slow path, it just set ups the arguments and call the runtime stub
 void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
-  __ stop("generate c1 load barrier stub");
   // Stub entry
   __ bind(*stub->entry());
 
+  __ stop("generate c1 load barrier stub");
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
   Register temp = noreg;
@@ -834,7 +860,10 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                                                      LIR_Opr new_zaddress,
                                                      LIR_Opr new_zpointer,
                                                      ZStoreBarrierStubC1* stub) const {
-  __ stop("generate c1 store barrier");
+  __ z_ldgr(Z_F1, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&c1_store_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F1);
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
@@ -852,16 +881,17 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
 // Purpose: This is the medium path and the slow path for the c1 store barrier
 void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                                                           ZStoreBarrierStubC1* stub) const {
-  __ stop("generate c1 store barrier stub");
   // Stub entry
   __ bind(*stub->entry());
 
+  __ stop("generate c1 store barrier stub");
   Label slow;
   Label slow_continuation;
+  breakpoint();
   store_barrier_medium(ce->masm(),
                        ce->as_Address(stub->ref_addr()->as_address_ptr()),
-                       Z_R0,
-                       Z_R1, /* RuntimeTODO: Check if we can use these */
+                       Z_R1,
+                       stub->new_zpointer()->as_register(), /* This is probelematic, R2, R3, R4 and R5 all are used here, I think I can pass stub->new_zpointer()->as_register() here */
                        false /* is_native */,
                        stub->is_atomic(),
                        *stub->continuation(),
@@ -1112,7 +1142,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
     case ZBarrierRelocationFormatStoreGoodBeforeLoad:
-    case ZBarrierRelocationFormatStoreGoodBits:
       return (uint16_t)ZPointerStoreGoodMask;
     case ZBarrierRelocationFormatStoreBadBeforeLoad:
       return (uint16_t)ZPointerStoreBadMask;
@@ -1138,6 +1167,6 @@ static uint16_t patch_barrier_relocation_value(int format) {
 // chi: 32 bit instruction with immediate bit placed at 16-31
 // oill: 32 bit instruction with immediate bit placed at 16-31
 void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
-  *(uint16_t*)(addr BIG_ENDIAN_ONLY(+2)) = patch_barrier_relocation_value(format);
+  *(uint16_t*)(addr + 2) = patch_barrier_relocation_value(format);
   ICache::invalidate_word(addr);
 }
