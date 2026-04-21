@@ -82,7 +82,9 @@ private:
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
   int                    _scratch_const_size;    // For temporary code buffers.
   bool                   _in_scratch_emit_size;  // true when in scratch_emit_size.
-  bool                    _toc_is_short;
+  bool                   _toc_is_short;          // true when the method's TOC fits in a 16-bit signed
+                                                 // immediate (≤ 32 KB), so constants can be loaded with
+                                                 // a single LD insruction.
   int                    _frame_slots;           // Size of total frame in stack slots
   CodeOffsets            _code_offsets;          // Offsets into the code for various interesting entries
 
