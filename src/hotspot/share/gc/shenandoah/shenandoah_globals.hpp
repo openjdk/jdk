@@ -560,9 +560,6 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
-          "Turn on/off stack watermark barriers in Shenandoah")             \
-                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \

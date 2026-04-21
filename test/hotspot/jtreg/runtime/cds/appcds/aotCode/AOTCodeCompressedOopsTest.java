@@ -33,12 +33,8 @@
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *             JavacBenchApp
- *             JavacBenchApp$ClassFile
- *             JavacBenchApp$FileManager
- *             JavacBenchApp$SourceFile
+ * @build AOTCodeCompressedOopsTest HelloWorld
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
  * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
@@ -149,9 +145,7 @@ public class AOTCodeCompressedOopsTest {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] {
-                "JavacBenchApp", "10"
-            };
+            return new String[] { "HelloWorld" };
         }
 
         @Override
