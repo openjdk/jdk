@@ -168,7 +168,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
         if (scanlineStride <= 0) {
             throw new IllegalArgumentException("scanlineStride must be > 0");
         }
-        if (((numberOfBits * w) / DataBuffer.getDataTypeSize(dataType)) > scanlineStride) {
+        if (((numberOfBits * (long)w) / DataBuffer.getDataTypeSize(dataType)) > scanlineStride) {
             throw new RasterFormatException("scanlineStride is too small for width");
         }
         if (dataBitOffset < 0) {
