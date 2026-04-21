@@ -131,10 +131,11 @@ public final class SwitchBootstraps {
 
     /**
      * Bootstrap method for linking an {@code invokedynamic} call site that
-     * implements a {@code switch} on a target. The static arguments are an array
-     * of case labels which must be non-null and of type {@code String},
-     * {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
-     * {@code Class}, or {@code EnumDesc}.
+     * implements a {@code switch} over a target value. The static arguments
+     * {@code labels} are an array of case labels which must be non-null and of
+     * type {@code String}, {@code Integer}, {@code Class}, or {@code EnumDesc}.
+     * In addition, when preview features are enabled, {@code Long}, {@code Float},
+     * {@code Double}, and {@code Boolean} labels are also permitted.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
@@ -149,11 +150,19 @@ public final class SwitchBootstraps {
      * the {@code restart} index matching one of the following conditions:
      * <ul>
      *   <li>the element is of type {@code Class} that is assignable
-     *       from the target's class; or</li>
-     *   <li>the element is of type {@code String}, {@code Integer}, {@code Long},
-     *       {@code Float}, {@code Double}, or {@code Boolean} and equals to the target.</li>
-     *   <li>the element is of type {@code EnumDesc}, that describes a constant that is
-     *       equals to the target.</li>
+     *       from the target's class</li>
+     *   <li>the element is of type {@code String} and equals to the target
+     *       (matched by content using {@code equals})</li>
+     *   <li>the element is of type {@code Integer} and equals to the target
+     *       (matched by value comparison using {@code ==} after unboxing if necessary)</li>
+     *   <li>the element is of type {@code Long} or {@code Boolean} (preview)
+     *       and equals to the target (matched by value comparison using {@code ==}
+     *       after unboxing if necessary)</li>
+     *   <li>the element is of type {@code Float} or {@code Double} (preview)
+     *       and equals to the target (matched by representation equivalence using
+     *       {@code equals} on boxed values)</li>
+     *   <li>the element is of type {@code EnumDesc}, that describes a constant
+     *       that is equal to the target (matched using {@code ==} on enum constants)</li>
      * </ul>
      * <p>
      * If no element in the {@code labels} array matches the target, then
@@ -163,22 +172,13 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
-     * <div class="preview-block">
-     *   <div class="preview-comment">
-     *     Case labels of type {@code Long}, {@code Float}, {@code Double}, or
-     *     {@code Boolean} are allowed only when preview features are enabled.
-     *   </div>
-     * </div>
-     *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a target type, an {@code int}, and {@code int} as a return type.
-     * @param labels case labels - {@code String}, {@code Integer}, {@code Long},
-     *               {@code Float}, {@code Double}, and {@code Boolean} constants
-     *               and {@code Class} and {@code EnumDesc} instances, in any combination
+     * @param labels case labels as described above
      * @return a {@code CallSite} returning the first matching element as described above
      *
      * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
