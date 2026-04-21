@@ -105,6 +105,7 @@ gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8382335
 
 # :hotspot_runtime
 
+runtime/cds/appcds/aotCache/AOTCacheConsistency.java 8382617 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
