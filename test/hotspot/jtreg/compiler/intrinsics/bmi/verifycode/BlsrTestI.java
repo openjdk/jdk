@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.graal.enabled & vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -41,7 +41,6 @@ package compiler.intrinsics.bmi.verifycode;
 import compiler.intrinsics.bmi.TestBlsrI;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 public class BlsrTestI extends BmiIntrinsicBase.BmiTestCase {
 
@@ -78,12 +77,6 @@ public class BlsrTestI extends BmiIntrinsicBase.BmiTestCase {
                 (byte) 0xF3,
                 (byte) 0b0000_1000}; // bits 543 == 001 (1)
 
-    }
-
-    @Override
-    protected List<String> getCpuFlag() {
-        // blsr instruction requires avx in addition to bmi1 flag
-        return List.of(cpuFlag, "avx");
     }
 
     public static void main(String[] args) throws Exception {

@@ -72,11 +72,9 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             throw new Error("TESTBUG: test can not be run in interpreter");
         }
 
-        for (String cpuFlag: bmiTestCase.getCpuFlag()) {
-            if (!CPUInfo.hasFeature(cpuFlag)) {
-                System.out.println("Unsupported hardware, no required CPU flag " + cpuFlag + " , test SKIPPED");
-                return;
-            }
+        if (!CPUInfo.hasFeature(bmiTestCase.getCpuFlag())) {
+            System.out.println("Unsupported hardware, no required CPU flag " + bmiTestCase.getCpuFlag() + " , test SKIPPED");
+            return;
         }
 
         if (!Boolean.valueOf(getVMOption(bmiTestCase.getVMFlag()))) {
@@ -207,8 +205,8 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
             }
         }
 
-        protected List<String> getCpuFlag() {
-            return List.of(cpuFlag);
+        protected String getCpuFlag() {
+            return cpuFlag;
         }
 
         protected String getVMFlag() {
