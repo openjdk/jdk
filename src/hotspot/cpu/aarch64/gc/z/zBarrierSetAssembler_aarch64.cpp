@@ -1329,9 +1329,6 @@ void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
 }
 
 #undef __
-#define __ masm->
-
-#undef __
 
 #endif // COMPILER2
 
