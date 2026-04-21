@@ -99,20 +99,16 @@ final class CAccessible extends CFRetainedResource implements Accessible {
             new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
-                    Component comp = (Component) evt.getSource();
-                    Accessible ax = comp instanceof Accessible z ? z : null;
-                    if (ax == null) {
-                        // it shouldn't be possible to get here, but just in case:
-                        return;
-                    }
-                    if (evt.getNewValue() == null) {
-                        CAccessible cax = CAccessible.getCAccessible(ax, false);
-                        if (cax != null) {
-                            cax.dispose();
+                    if (evt.getSource() instanceof Accessible ax) {
+                        if (evt.getNewValue() == null) {
+                            CAccessible cax = CAccessible.getCAccessible(ax, false);
+                            if (cax != null) {
+                                cax.dispose();
+                            }
+                        } else {
+                            // recreate our CAccessible
+                            getCAccessible(ax, true);
                         }
-                    } else {
-                        // recreate our CAccessible
-                        getCAccessible(ax, true);
                     }
                 }
             };
