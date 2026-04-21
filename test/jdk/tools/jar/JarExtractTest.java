@@ -26,8 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -280,15 +283,15 @@ public class JarExtractTest {
         // can write to it
         Assumptions.assumeTrue(Files.isDirectory(Path.of("/tmp")),
                 "skipping test, since /tmp isn't a directory");
-        // try and write into "/tmp"
-        final Path tmpDir;
+        final Path tempTestDir;
         try {
-            tmpDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-").toAbsolutePath();
+            // create a test specific directory in "/tmp" directory
+            tempTestDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-").toAbsolutePath();
         } catch (IOException ioe) {
             Assumptions.abort("skipping test, since /tmp cannot be written to: " + ioe);
             return;
         }
-        final String leadingSlashEntryName = tmpDir.toString() + "/foo/f1.txt";
+        final String leadingSlashEntryName = tempTestDir.toString() + "/foo/f1.txt";
         // create a jar which has leading slash (/) and dot-dot (..) preserved in entry names
         final Path jarPath = createJarWithPFlagSemantics(leadingSlashEntryName);
         final List<String[]> cmdArgs = new ArrayList<>();
@@ -315,8 +318,9 @@ public class JarExtractTest {
                         "Unexpected content in file " + f2);
             }
         } finally {
-            // clean up the file that might have been extracted into "/tmp/...." directory
-            Files.deleteIfExists(Path.of(leadingSlashEntryName));
+            // clean up the temp directory created by this test under "/tmp/...." directory
+            System.err.println("Deleting directory: " + tempTestDir);
+            deleteRecursively(tempTestDir);
         }
     }
 
@@ -513,5 +517,27 @@ public class JarExtractTest {
 
     private static void printJarCommand(final String[] cmdArgs) {
         System.out.println("Running 'jar " + String.join(" ", cmdArgs) + "'");
+    }
+
+    private static void deleteRecursively(final Path dir) throws IOException {
+        Files.walkFileTree(dir, new FileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                return FileVisitResult.CONTINUE;
+            }
+            @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file); // delete the file
+                return FileVisitResult.CONTINUE;
+            }
+            @Override public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                return FileVisitResult.CONTINUE;
+            }
+            @Override public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException {
+                Files.delete(dir); // delete the (empty) directory
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }
