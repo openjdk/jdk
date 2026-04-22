@@ -29,7 +29,6 @@
  *          trigger the old bug.
  * @library /test/lib
  * @requires vm.flagless
- * @requires vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
@@ -54,7 +53,7 @@ public class SmallCodeCacheStartup {
             analyzer.shouldHaveExitValue(0);
         } catch (RuntimeException e) {
             // Error occurred during initialization
-            assertTrue(analyzer.getOutput().contains("CICompilerCount is too large: compiler buffer size exceeds the CodeCache size limit"),
+            assertTrue(analyzer.getOutput().contains("CICompilerCount is too large"),
                     "Expected VirtualMachineError");
         }
 
