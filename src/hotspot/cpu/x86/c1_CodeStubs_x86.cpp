@@ -346,20 +346,23 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   // There are 2 cases:
   // - the existing instruction is a mov r64 imm64 from LIR_Assembler::klass2reg_with_patching
   // - or there are nops there (from higher in this function).
-  // In the first case, since a jmp rel32 is 5-byte long, but a mov r64 imm64 is 10-byte long, so we are left with
-  // the last 5 bytes of the immediate operand (which are all 0x00). When debugging, this confuses the disassembler
-  // because it tries to recognize an instruction starting immediately after the jmp rel32, leading to wrong instructions,
-  // and possibly failure to disassemble further the whole function.
+  // In the first case, since a jmp rel32 is 5-byte long, but a mov r64 imm64 is 10-byte long
+  // (resp. 11 if using a REX2 prefix), so we are left with the last 5 (resp. 6) bytes of the
+  // immediate operand (which are all 0x00). When debugging, this confuses the disassembler
+  // because it tries to recognize an instruction starting immediately after the jmp rel32,
+  // leading to wrong instructions, and possibly failure to disassemble further the whole function.
   //
   // To be disassembler-friendly, let's replace the leftover 0x00 with nops.
-  // To recognize a mov r64 imm64, we look for the 2-byte sequence
-  // REX prefix | MOV r64
+  // There are 2 shapes:
+  // - without REX2 prefix: REX prefix | MOV r64
+  // - with REX2 prefix: REX2 prefix | REX prefix | MOV r64
   // then, we know the 8 bytes after are the immediate operand.
-  if ((*_pc_start & Assembler::REX) == Assembler::REX && (*(_pc_start + 1) & 0xb8) == 0xb8) {
-    assert(*(long long int*)(_pc_start+2) == 0, "imm64 must be 0 in mov r64, imm64");
+  if (NativeInstruction* ni = nativeInstruction_at(_pc_start); ni->is_mov_literal64()) {
+    int length_before_immediate = ni->has_rex2_prefix() ? 3 : 2;
+    assert(*(long long int*)(_pc_start + length_before_immediate) == 0, "imm64 must be 0 in mov r64, imm64");
     // We don't need to replace the NativeGeneralJump::instruction_size first bytes, since insert_unconditional
     // will overwrite.
-    for (int i = NativeGeneralJump::instruction_size; i < 10; ++i) {
+    for (int i = NativeGeneralJump::instruction_size; i < length_before_immediate + BytesPerLong; ++i) {
       *(_pc_start + i) = NativeInstruction::nop_instruction_code;
     }
   }
