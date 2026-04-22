@@ -33,11 +33,11 @@ import java.util.StringJoiner;
  * {@linkplain java.compiler/javax.lang.model.element.Modifier Java
  * language modifiers}.
  * <p>
- * Modifier interpretation is context-sensitive: for example, the bit checked by
- * {@link #isSynchronized(int) isSynchronized} only represents the {@code
- * synchronized} modifier on methods, so a {@code true} return on a field
- * modifiers value does not indicate that field has the {@code synchronized}
- * modifier.
+ * Modifier interpretation is context-sensitive: for example, the {@link
+ * #isSynchronized(int) isSynchronized} check is only meaningful for method
+ * access flags, representing the {@code synchronized} modifier on methods.
+ * A {@code true} return on a field access flags does not indicate that field
+ * has the {@code synchronized} modifier.
  *
  * @apiNote
  * The mappings from classfile access flags to Java language modifiers have
@@ -445,7 +445,7 @@ public final class Modifier {
      * modifiers that can be applied to a class.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
@@ -467,7 +467,7 @@ public final class Modifier {
      * modifiers that can be applied to an interface.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
@@ -489,7 +489,7 @@ public final class Modifier {
      * modifiers that can be applied to a constructor.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
@@ -510,7 +510,7 @@ public final class Modifier {
      * modifiers that can be applied to a method.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
@@ -531,7 +531,7 @@ public final class Modifier {
      * modifiers that can be applied to a field.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
@@ -552,7 +552,7 @@ public final class Modifier {
      * modifiers that can be applied to a parameter.
      *
      * @deprecated
-     * This method exists solely to support the now-deprecated
+     * This method was originally created to support the now-deprecated
      * {@link #toString(int) Modifier::toString(int)} method.
      * Use {@link AccessFlag.Location} to inspect structure-specific
      * access modifier properties.
