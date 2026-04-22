@@ -10899,10 +10899,11 @@ instruct xaddB(memory mem, rRegI newval, rFlagsReg cr) %{
   predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddB mem newval));
   effect(KILL cr);
-  format %{ "xaddb_lock  $mem, $newval" %}
+  format %{ "xaddb_lock  $mem, $newval\t# $newval -> byte" %}
   ins_encode %{
     __ lock();
     __ xaddb($mem$$Address, $newval$$Register);
+    __ narrow_subword_type($newval$$Register, T_BYTE);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -10935,10 +10936,11 @@ instruct xaddS(memory mem, rRegI newval, rFlagsReg cr) %{
   predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddS mem newval));
   effect(KILL cr);
-  format %{ "xaddw_lock  $mem, $newval" %}
+  format %{ "xaddw_lock  $mem, $newval\t# $newval -> short" %}
   ins_encode %{
     __ lock();
     __ xaddw($mem$$Address, $newval$$Register);
+    __ narrow_subword_type($newval$$Register, T_SHORT);
   %}
   ins_pipe(pipe_cmpxchg);
 %}
@@ -11017,18 +11019,20 @@ instruct xaddL(memory mem, rRegL newval, rFlagsReg cr) %{
 
 instruct xchgB( memory mem, rRegI newval) %{
   match(Set newval (GetAndSetB mem newval));
-  format %{ "XCHGB  $newval,[$mem]" %}
+  format %{ "XCHGB  $newval,[$mem]\t# $newval -> byte" %}
   ins_encode %{
     __ xchgb($newval$$Register, $mem$$Address);
+    __ narrow_subword_type($newval$$Register, T_BYTE);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
 
 instruct xchgS( memory mem, rRegI newval) %{
   match(Set newval (GetAndSetS mem newval));
-  format %{ "XCHGW  $newval,[$mem]" %}
+  format %{ "XCHGW  $newval,[$mem]\t# $newval -> short" %}
   ins_encode %{
     __ xchgw($newval$$Register, $mem$$Address);
+    __ narrow_subword_type($newval$$Register, T_SHORT);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -25317,6 +25321,7 @@ instruct reinterpretHF2S(rRegI dst, regF src)
   format %{ "evmovw $dst, $src" %}
   ins_encode %{
     __ evmovw($dst$$Register, $src$$XMMRegister);
+    __ narrow_subword_type($dst$$Register, T_SHORT);
   %}
   ins_pipe(pipe_slow);
 %}
