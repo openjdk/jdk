@@ -218,7 +218,7 @@ public:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return _state.load_relaxed(); }
+  RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
@@ -246,6 +246,7 @@ private:
   double _empty_time;
 
   HeapWord* _top_before_promoted;
+  HeapWord* _top_at_evac_start;
 
   // Seldom updated fields
   Atomic<RegionState> _state;
@@ -365,11 +366,14 @@ public:
   }
 
   // Returns true iff this region was promoted in place subsequent to the most recent start of concurrent old marking.
-  inline bool was_promoted_in_place() {
+  bool was_promoted_in_place() const {
     return _promoted_in_place;
   }
   inline void restore_top_before_promote();
   inline size_t garbage_before_padded_for_promote() const;
+
+  HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
+  void record_top_at_evac_start()         { _top_at_evac_start = _top; }
 
   // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
   // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested

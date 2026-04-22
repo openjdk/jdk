@@ -200,6 +200,7 @@ void ShenandoahArguments::initialize() {
       && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
     log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
       " supports adaptive heuristics", ShenandoahGCHeuristics);
+    FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

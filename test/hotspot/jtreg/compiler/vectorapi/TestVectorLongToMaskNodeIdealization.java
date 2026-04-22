@@ -46,7 +46,7 @@ import static compiler.lib.template_framework.Template.let;
 
 /*
  * @test
- * @bug 8277997 8378968
+ * @bug 8277997 8378968 8380290
  * @key randomness
  * @summary Testing some optimizations in VectorLongToMaskNode::Ideal
  *          For now: VectorMask.fromLong(.., mask.toLong())
@@ -93,7 +93,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
@@ -168,7 +168,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away: Cast Z->Z, see JDK-8379866
+                  IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
@@ -219,7 +219,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "= 0",
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized Z->Z, see JDK-8379866
+                  IRNode.VECTOR_MASK_CAST,                      "= 0", // Optimized away
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},

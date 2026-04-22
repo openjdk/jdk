@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +22,28 @@
  * questions.
  *
  */
+package jdk.jfr.event.gc.detailed;
 
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/stubRoutines.hpp"
+/**
+ * @test id=default
+ * @key randomness
+ * @requires vm.hasJFR
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib /test/jdk
+ * @run main/othervm -XX:+UseShenandoahGC -Xmx256m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
+ */
 
-#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
-  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+ /**
+  * @test id=generational
+  * @key randomness
+  * @requires vm.hasJFR
+  * @requires vm.gc.Shenandoah
+  * @library /test/lib /test/jdk
+  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx256m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
+  */
+public class TestStressBigAllocationGCEventsWithShenandoah {
 
-#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
-  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
-
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
-
-#undef DEFINE_ARCH_ENTRY_INIT
-#undef DEFINE_ARCH_ENTRY
-
-address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
-address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
-
-#if INCLUDE_CDS
-// nothing to do for arm
-void StubRoutines::init_AOTAddressTable() {
+    public static void main(String[] args) throws Exception {
+        new StressAllocationGCEvents().run(args);
+    }
 }
-#endif // INCLUDE_CDS

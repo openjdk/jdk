@@ -587,7 +587,8 @@ hotspot_metaspace = \
 tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
-  runtime/cds/appcds/HelloTest.java
+  runtime/cds/appcds/HelloTest.java \
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \

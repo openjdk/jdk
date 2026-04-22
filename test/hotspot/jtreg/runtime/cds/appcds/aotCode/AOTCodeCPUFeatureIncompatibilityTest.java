@@ -31,13 +31,9 @@
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeCPUFeatureIncompatibilityTest JavacBenchApp
+ * @build AOTCodeCPUFeatureIncompatibilityTest HelloWorld
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *             JavacBenchApp
- *             JavacBenchApp$ClassFile
- *             JavacBenchApp$FileManager
- *             JavacBenchApp$SourceFile
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AOTCodeCPUFeatureIncompatibilityTest
  */
 
@@ -98,9 +94,7 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
             }
             @Override
             public String[] appCommandLine(RunMode runMode) {
-                return new String[] {
-                    "JavacBenchApp", "10"
-                };
+                return new String[] { "HelloWorld" };
             }
         }.runAOTWorkflow("--two-step-training");
     }

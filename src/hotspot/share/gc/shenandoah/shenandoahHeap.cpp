@@ -1955,6 +1955,26 @@ void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const
   }
 }
 
+class ShenandoahHeapRegionIteratorTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+  ShenandoahHeapRegionClosure* _closure;
+
+public:
+  ShenandoahHeapRegionIteratorTask(ShenandoahHeapRegionClosure* closure)
+    : WorkerTask("Shenandoah Heap Region Iterator")
+    , _closure(closure) {}
+
+  void work(uint worker_id) override {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahHeapRegion* region = _regions.next();
+    while (region != nullptr) {
+      _closure->heap_region_do(region);
+      region = _regions.next();
+    }
+  }
+};
+
 class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
@@ -2009,6 +2029,11 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   } else {
     heap_region_iterate(blk);
   }
+}
+
+void ShenandoahHeap::heap_region_iterator(ShenandoahHeapRegionClosure* closure) const {
+  ShenandoahHeapRegionIteratorTask task(closure);
+  workers()->run_task(&task);
 }
 
 class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {

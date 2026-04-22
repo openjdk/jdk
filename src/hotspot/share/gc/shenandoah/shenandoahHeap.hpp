@@ -298,6 +298,7 @@ public:
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
+  void heap_region_iterator(ShenandoahHeapRegionClosure* blk) const;
 
   inline ShenandoahMmuTracker* mmu_tracker() { return &_mmu_tracker; };
 

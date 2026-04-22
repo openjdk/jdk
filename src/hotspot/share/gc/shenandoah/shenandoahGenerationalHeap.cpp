@@ -363,10 +363,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
       // Record that the evacuation succeeded
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
     }
-
-    if (TO_GENERATION == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size);
-    }
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
     // new allocation is certainly after TAMS, it will be considered live in the next cycle.

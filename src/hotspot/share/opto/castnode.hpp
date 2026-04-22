@@ -303,14 +303,18 @@ public:
 
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
-class CastPPNode: public ConstraintCastNode {
-  public:
-  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
+class CastPPNode : public ConstraintCastNode {
+public:
+  CastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastPP);
+    verify_type(n->bottom_type(), t);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
+
+private:
+  static void verify_type(const Type* in_type, const Type* out_type);
 };
 
 //------------------------------CheckCastPPNode--------------------------------
@@ -329,6 +333,7 @@ class CheckCastPPNode: public ConstraintCastNode {
 
 private:
   virtual bool depends_only_on_test_impl() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test_impl(); }
+  virtual Node* pin_node_under_control_impl() const;
 };
 
 

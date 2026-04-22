@@ -41,8 +41,12 @@ static void empty_spin_wait() { }
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  [count];
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARARAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
@@ -431,10 +435,8 @@ void StubRoutines::init_AOTAddressTable() {
   AOTCodeCache::publish_external_addresses(external_addresses);
 }
 
-
-#define ADD(addr) external_addresses.append((address)addr);
-
 void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(_kyberConsts);
   ADD(_dilithiumConsts);
   // this is added in generic code
@@ -445,7 +447,6 @@ void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& externa
   ADD(_dcos_coef);
   ADD(_two_over_pi);
   ADD(_pio2);
-}
-
 #undef ADD
+}
 #endif // INCLUDE_CDS

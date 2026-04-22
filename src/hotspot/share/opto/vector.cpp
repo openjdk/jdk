@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,14 +455,12 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
-      const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-      vec_field_ld = bs->load_at(access, type);
-    }
 
-    // For proper aliasing, attach concrete payload type.
-    ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
-    const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
+      // For proper aliasing, attach concrete payload type.
+      ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
+      const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
+      vec_field_ld = bs->load_at(access, payload_type);
+    }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();

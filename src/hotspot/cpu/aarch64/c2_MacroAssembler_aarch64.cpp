@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1883,6 +1884,27 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
 
   BLOCK_COMMENT("neon_reduce_mul_fp {");
     switch(bt) {
+      // The T_SHORT type below is for Float16 type which also uses floating-point
+      // instructions.
+      case T_SHORT:
+        fmulh(dst, fsrc, vsrc);
+        ext(vtmp, T8B, vsrc, vsrc, 2);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
+        fmulh(dst, dst, vtmp);
+        ext(vtmp, T8B, vsrc, vsrc, 6);
+        fmulh(dst, dst, vtmp);
+        if (isQ) {
+          ext(vtmp, T16B, vsrc, vsrc, 8);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 10);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
+          fmulh(dst, dst, vtmp);
+          ext(vtmp, T16B, vsrc, vsrc, 14);
+          fmulh(dst, dst, vtmp);
+        }
+        break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
         ins(vtmp, S, vsrc, 0, 1);
@@ -1905,6 +1927,33 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         ShouldNotReachHere();
     }
   BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Vector reduction add for half float type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                                             unsigned vector_length_in_bytes, FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_fp16 {");
+    faddh(dst, fsrc, vsrc);
+    ext(vtmp, T8B, vsrc, vsrc, 2);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 4);
+    faddh(dst, dst, vtmp);
+    ext(vtmp, T8B, vsrc, vsrc, 6);
+    faddh(dst, dst, vtmp);
+    if (isQ) {
+      ext(vtmp, T16B, vsrc, vsrc, 8);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 10);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 12);
+      faddh(dst, dst, vtmp);
+      ext(vtmp, T16B, vsrc, vsrc, 14);
+      faddh(dst, dst, vtmp);
+    }
+  BLOCK_COMMENT("} neon_reduce_add_fp16");
 }
 
 // Helper to select logical instruction
@@ -2414,17 +2463,17 @@ void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
       break;
     case T_LONG:
     case T_DOUBLE:
-      // Load the iota indices for Long type. The indices are ordered by
-      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
-      // the offset for L is 48.
-      lea(rscratch1,
-          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
-      ldrq(tmp, rscratch1);
-      // Check whether the input "shuffle" is the same with iota indices.
-      // Return "src" if true, otherwise swap the two elements of "src".
-      cm(EQ, dst, size2, shuffle, tmp);
-      ext(tmp, size1, src, src, 8);
-      bsl(dst, size1, src, tmp);
+      {
+        int idx = vector_iota_entry_index(T_LONG);
+        lea(rscratch1,
+            ExternalAddress(StubRoutines::aarch64::vector_iota_indices(idx)));
+        ldrq(tmp, rscratch1);
+        // Check whether the input "shuffle" is the same with iota indices.
+        // Return "src" if true, otherwise swap the two elements of "src".
+        cm(EQ, dst, size2, shuffle, tmp);
+        ext(tmp, size1, src, src, 8);
+        bsl(dst, size1, src, tmp);
+      }
       break;
     default:
       assert(false, "unsupported element type");
@@ -2895,4 +2944,25 @@ void C2_MacroAssembler::sve_cpy(FloatRegister dst, SIMD_RegVariant T,
     isMerge = true;
   }
   Assembler::sve_cpy(dst, T, pg, imm8, isMerge);
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
+  }
 }

@@ -133,3 +133,4 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
     }
   }
 }
+

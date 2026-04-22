@@ -44,8 +44,12 @@
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name) [count];
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARRAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
@@ -435,7 +439,7 @@ void StubRoutines::init_AOTAddressTable() {
 // publish addresses of external data defined in this file which may
 // be referenced from stub or code
 void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(&_mxcsr_std);
   ADD(&_mxcsr_rz);
   ADD(crc_by128_masks_addr());

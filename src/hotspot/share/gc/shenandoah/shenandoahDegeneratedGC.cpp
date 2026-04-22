@@ -277,6 +277,11 @@ void ShenandoahDegenGC::op_degenerated() {
         _abbreviated = true;
       }
 
+      // labs are retired, walk the old regions and update remembered set
+      if (ShenandoahHeap::heap()->mode()->is_generational()) {
+        ShenandoahGenerationalHeap::heap()->old_generation()->update_card_table();
+      }
+
     case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
         op_update_refs();

@@ -29,32 +29,39 @@
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 0)                                          \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, 10000)                                          \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 2000)                                      \
 
+// count needed for declaration of vector_iota_indices stub
+#define VECTOR_IOTA_COUNT 6
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 70000)                                         \
   do_stub(compiler, vector_iota_indices)                                \
-  do_arch_entry(aarch64, compiler, vector_iota_indices,                 \
-                vector_iota_indices, vector_iota_indices)               \
+  do_arch_entry_array(aarch64, compiler, vector_iota_indices,           \
+                      vector_iota_indices, vector_iota_indices,         \
+                      VECTOR_IOTA_COUNT)                                \
   do_stub(compiler, large_array_equals)                                 \
   do_arch_entry(aarch64, compiler, large_array_equals,                  \
                 large_array_equals, large_array_equals)                 \
@@ -115,7 +122,8 @@
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 20000 ZGC_ONLY(+85000))                           \
   do_stub(final, copy_byte_f)                                           \
   do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,               \

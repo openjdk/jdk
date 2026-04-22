@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 8241988
  * @summary Checks that the caching of options does not affect other impls
- * @run testng/othervm CachedImplOptions
- * @run testng/othervm -Djava.net.preferIPv4Stack=true CachedImplOptions
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import java.io.IOException;
@@ -46,8 +46,11 @@ import java.net.SocketImpl;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.util.Set;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CachedImplOptions {
 
@@ -58,16 +61,16 @@ public class CachedImplOptions {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_SNDBUF));
         }
         try (var impl = new DatagramSocket(new FooDatagramSocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(FooDatagramSocketImpl.FOO_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(FooDatagramSocketImpl.FOO_OPTION));
+            assertEquals(Set.of(FooDatagramSocketImpl.FOO_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(FooDatagramSocketImpl.FOO_OPTION), impl.supportedOptions());
         }
         try (var impl = new DatagramSocket(new BarDatagramSocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(BarDatagramSocketImpl.BAR_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(BarDatagramSocketImpl.BAR_OPTION));
+            assertEquals(Set.of(BarDatagramSocketImpl.BAR_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(BarDatagramSocketImpl.BAR_OPTION), impl.supportedOptions());
         }
         try (var impl = new DatagramSocket(new BazDatagramSocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(BazDatagramSocketImpl.BAZ_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(BazDatagramSocketImpl.BAZ_OPTION));
+            assertEquals(Set.of(BazDatagramSocketImpl.BAZ_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(BazDatagramSocketImpl.BAZ_OPTION), impl.supportedOptions());
         }
         try (var impl = new DatagramSocket()) {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_SNDBUF));
@@ -86,8 +89,8 @@ public class CachedImplOptions {
         DatagramSocket.setDatagramSocketImplFactory(() -> new FooDatagramSocketImpl());
 
         try (var impl = new MulticastSocket()) {
-            assertEquals(impl.supportedOptions(), Set.of(FooDatagramSocketImpl.FOO_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(FooDatagramSocketImpl.FOO_OPTION));
+            assertEquals(Set.of(FooDatagramSocketImpl.FOO_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(FooDatagramSocketImpl.FOO_OPTION), impl.supportedOptions());
         }
     }
 
@@ -144,16 +147,16 @@ public class CachedImplOptions {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_SNDBUF));
         }
         try (var impl = new Socket(new LarrySocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(LarrySocketImpl.LARRY_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(LarrySocketImpl.LARRY_OPTION));
+            assertEquals(Set.of(LarrySocketImpl.LARRY_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(LarrySocketImpl.LARRY_OPTION), impl.supportedOptions());
         }
         try (var impl = new Socket(new CurlySocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(CurlySocketImpl.CURLY_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(CurlySocketImpl.CURLY_OPTION));
+            assertEquals(Set.of(CurlySocketImpl.CURLY_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(CurlySocketImpl.CURLY_OPTION), impl.supportedOptions());
         }
         try (var impl = new Socket(new MoeSocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(MoeSocketImpl.MOE_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(MoeSocketImpl.MOE_OPTION));
+            assertEquals(Set.of(MoeSocketImpl.MOE_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(MoeSocketImpl.MOE_OPTION), impl.supportedOptions());
         }
         try (var impl = new Socket()) {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_SNDBUF));
@@ -168,16 +171,16 @@ public class CachedImplOptions {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_RCVBUF));
         }
         try (var impl = new ServerSocket(new LarrySocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(LarrySocketImpl.LARRY_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(LarrySocketImpl.LARRY_OPTION));
+            assertEquals(Set.of(LarrySocketImpl.LARRY_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(LarrySocketImpl.LARRY_OPTION), impl.supportedOptions());
         }
         try (var impl = new ServerSocket(new CurlySocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(CurlySocketImpl.CURLY_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(CurlySocketImpl.CURLY_OPTION));
+            assertEquals(Set.of(CurlySocketImpl.CURLY_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(CurlySocketImpl.CURLY_OPTION), impl.supportedOptions());
         }
         try (var impl = new ServerSocket(new MoeSocketImpl()) {}) {
-            assertEquals(impl.supportedOptions(), Set.of(MoeSocketImpl.MOE_OPTION));
-            assertEquals(impl.supportedOptions(), Set.of(MoeSocketImpl.MOE_OPTION));
+            assertEquals(Set.of(MoeSocketImpl.MOE_OPTION), impl.supportedOptions());
+            assertEquals(Set.of(MoeSocketImpl.MOE_OPTION), impl.supportedOptions());
         }
         try (var impl = new ServerSocket()) {
             assertTrue(impl.supportedOptions().contains(StandardSocketOptions.SO_RCVBUF));

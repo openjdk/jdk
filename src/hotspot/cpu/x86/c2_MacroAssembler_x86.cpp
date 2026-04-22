@@ -1706,12 +1706,8 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
 }
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt) {
-  // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 64.
-  int offset = exact_log2(type2aelembytes(bt)) << 6;
-  if (is_floating_point_type(bt)) {
-    offset += 128;
-  }
-  ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
+  int entry_idx = vector_iota_entry_index(bt);
+  ExternalAddress addr(StubRoutines::x86::vector_iota_indices(entry_idx));
   load_vector(T_BYTE, dst, addr, vlen_in_bytes);
 }
 
@@ -7162,5 +7158,26 @@ void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMReg
     assert(opcode == Op_MinVHF, "");
     // dst = min(src1, src2)
     evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
+  // The vector iota entries array is ordered by type B/S/I/L/F/D, and
+  // the offset between two types is 16.
+  switch(bt) {
+  case T_BYTE:
+    return 0;
+  case T_SHORT:
+    return 1;
+  case T_INT:
+    return 2;
+  case T_LONG:
+    return 3;
+  case T_FLOAT:
+    return 4;
+  case T_DOUBLE:
+    return 5;
+  default:
+    ShouldNotReachHere();
   }
 }

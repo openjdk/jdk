@@ -238,6 +238,9 @@ void ShenandoahInPlacePromoter::promote(ShenandoahHeapRegion* region) const {
     // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
 
+    // We also need to record where those allocations begin so that we can later update the remembered set.
+    region->record_top_at_evac_start();
+
     assert(region->used() + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.

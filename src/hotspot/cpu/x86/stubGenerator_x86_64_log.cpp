@@ -729,22 +729,28 @@ address StubGenerator::generate_libmLog10() {
 
 #if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
+  address log2  = (address)_log2;
+  address coeff = (address)_coeff;
+  address LOG10_E     = (address)_LOG10_E;
+  address log2_log10  = (address)_log2_log10;
+  address coeff_log10 = (address)_coeff_log10;
+
   ADD(_L_tbl);
-  ADD(_log2);
-  ADD(((address)_log2+8));
-  ADD(_coeff);
-  ADD(((address)_coeff+16));
-  ADD(((address)_coeff+32));
+  ADD(log2);
+  ADD(log2 + 8);
+  ADD(coeff);
+  ADD(coeff + 16);
+  ADD(coeff + 32);
   ADD(_HIGHSIGMASK_log10);
-  ADD(_LOG10_E);
-  ADD(((address)_LOG10_E+8));
+  ADD(LOG10_E);
+  ADD(LOG10_E + 8);
   ADD(_L_tbl_log10);
-  ADD(_log2_log10);
-  ADD(((address)_log2_log10+8));
-  ADD(_coeff_log10);
-  ADD(((address)_coeff_log10+16));
-  ADD(((address)_coeff_log10+32));
+  ADD(log2_log10);
+  ADD(log2_log10 + 8);
+  ADD(coeff_log10);
+  ADD(coeff_log10 + 16);
+  ADD(coeff_log10 + 32);
 #undef ADD
 }
 #endif // INCLUDE_CDS

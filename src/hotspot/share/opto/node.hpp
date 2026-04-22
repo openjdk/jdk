@@ -1186,6 +1186,7 @@ public:
       return nullptr;
     }
     assert(!res->depends_only_on_test(), "the result must not depends_only_on_test");
+    assert(Opcode() == res->Opcode(), "pinning must result in the same kind of node %s - %s", Name(), res->Name());
     return res;
   }
 
