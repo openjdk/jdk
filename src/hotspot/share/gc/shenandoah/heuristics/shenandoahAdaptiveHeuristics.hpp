@@ -79,8 +79,10 @@ public:
 
   void add_gc_time(double timestamp, double duration);
   double predict_gc_time(double timestamp_at_start, double margin_of_error) const;
-  Prediction predict(double timestamp_at_start, double margin_of_error);
-  double average(double margin_of_error);
+  Prediction predict(double timestamp_at_start, double margin_of_error) const;
+  double average(double margin_of_error) const;
+
+  void log_prediction_accuracy(double timestamp, double margin_of_error, double actual_cycle_time);
 };
 
 /*

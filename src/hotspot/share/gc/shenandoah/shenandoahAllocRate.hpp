@@ -47,13 +47,14 @@ class ShenandoahAllocRate {
 private:
   static constexpr size_t MINIMUM_SAMPLE_SIZE = 1024 * 1024;
 
-  volatile size_t _allocated_bytes_since_last_sample;
+  Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
   jlong _last_sample_time;
   TruncatedSeq _sampled_times;
   TruncatedSeq _sampled_bytes;
   TruncatedSeq _sampled_rates;
   size_t _minimum_sample_size;
+  size_t _last_sampled_value;
 
 public:
   explicit ShenandoahAllocRate(size_t minimum_sample_size = MINIMUM_SAMPLE_SIZE)
@@ -63,7 +64,8 @@ public:
     , _sampled_times(100)
     , _sampled_bytes(100)
     , _sampled_rates(100)
-    , _minimum_sample_size(minimum_sample_size) {
+    , _minimum_sample_size(minimum_sample_size)
+    , _last_sampled_value(0) {
   }
 
   void set_minimum_sample_size(const size_t minimum_sample_size) {
@@ -71,7 +73,7 @@ public:
   }
 
   void allocated(const size_t allocated_bytes) {
-    size_t unsampled = AtomicAccess::add(&_allocated_bytes_since_last_sample, allocated_bytes);
+    size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
     if (unsampled < _minimum_sample_size) {
       // Not enough to sample yet
       return;
@@ -82,7 +84,7 @@ public:
       return;
     }
 
-    unsampled = AtomicAccess::load(&_allocated_bytes_since_last_sample);
+    unsampled = _allocated_bytes_since_last_sample.load_relaxed();
     if (unsampled < _minimum_sample_size) {
       // Another thread has sampled and reset the allocated bytes under the lock
       _sample_lock.unlock();
@@ -102,7 +104,7 @@ public:
 
     // We are recording this sample, deduct it from the counter. It may be increased
     // concurrently by other threads outside the lock, so we still use an atomic access.
-    AtomicAccess::sub(&_allocated_bytes_since_last_sample, unsampled);
+    _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
     _sampled_times.add(elapsed);
     _sampled_bytes.add(unsampled);
@@ -113,12 +115,17 @@ public:
     const double bytes_per_second = total_bytes / elapsed_seconds;
 
     _sampled_rates.add(bytes_per_second);
+    _last_sampled_value = bytes_per_second;
 
     _sample_lock.unlock();
   }
 
   const TruncatedSeq& rate() const {
     return _sampled_rates;
+  }
+
+  double last_sampled_value() const {
+    return _last_sampled_value;
   }
 
   double average() {

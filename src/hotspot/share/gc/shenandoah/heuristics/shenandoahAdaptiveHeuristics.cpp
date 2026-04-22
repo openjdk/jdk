@@ -180,7 +180,7 @@ double ShenandoahCycleDuration::predict_gc_time(double timestamp_at_start, doubl
   return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * margin_of_error;
 }
 
-ShenandoahCycleDuration::Prediction ShenandoahCycleDuration::predict(double timestamp_at_start, double margin_of_error) {
+ShenandoahCycleDuration::Prediction ShenandoahCycleDuration::predict(double timestamp_at_start, double margin_of_error) const {
   const double linear = predict_gc_time(timestamp_at_start, margin_of_error);
   double prediction = average(margin_of_error);
   Source source = AVERAGE;
@@ -189,7 +189,7 @@ ShenandoahCycleDuration::Prediction ShenandoahCycleDuration::predict(double time
     source = LINEAR;
   }
 
-  const double next = _gc_cycle_time_history->predict_next() + (margin_of_error * _gc_cycle_time_history->dsd());
+  const double next = _gc_cycle_time_history->predict_next() + margin_of_error * _gc_cycle_time_history->dsd();
   if (next > prediction) {
     prediction = next;
     source = NEXT;
@@ -198,8 +198,42 @@ ShenandoahCycleDuration::Prediction ShenandoahCycleDuration::predict(double time
   return Prediction{prediction, source};
 }
 
-double ShenandoahCycleDuration::average(double margin_of_error) {
+double ShenandoahCycleDuration::average(double margin_of_error) const {
   return _gc_cycle_time_history->davg() + (margin_of_error * _gc_cycle_time_history->dsd());
+}
+
+void ShenandoahCycleDuration::log_prediction_accuracy(double timestamp, double margin_of_error, double actual_cycle_time) {
+  double nearest = std::numeric_limits<double>::max();
+  double nearest_diff = std::numeric_limits<double>::max();
+  const char* source = nullptr;
+
+  const double linear = predict_gc_time(timestamp, margin_of_error);
+  const double linear_diff = linear - actual_cycle_time;
+  if (ABS(linear_diff) < ABS(nearest_diff)) {
+    nearest = linear;
+    nearest_diff = linear_diff;
+    source = "Linear";
+  }
+
+  const double avg = average(margin_of_error);
+  const double avg_diff = avg - actual_cycle_time;
+  if (ABS(avg_diff) < ABS(nearest_diff)) {
+    nearest = avg;
+    nearest_diff = avg_diff;
+    source = "Average";
+  }
+
+  const double next = _gc_cycle_time_history->predict_next() + margin_of_error * _gc_cycle_time_history->dsd();
+  const double next_diff = next - actual_cycle_time;
+  if (ABS(next_diff) < ABS(nearest_diff)) {
+    nearest = next;
+    nearest_diff = next_diff;
+    source = "Next";
+  }
+
+  log_info(gc, ergo)("Prediction: Linear: %0.2f, Average: %0.2f, Next: %0.2f", linear, avg, next);
+  log_info(gc, ergo)("Prediction: Nearest: %s, %.2f, Actual: %.2f, Difference: %.2f",
+      source, nearest, actual_cycle_time, nearest_diff);
 }
 
 
@@ -338,7 +372,7 @@ void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double times
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
-  // TODO: Before we update, evaluate which formula most accurately predicted the actual cycle time.
+  _cycles.log_prediction_accuracy(_cycle_start, _margin_of_error_sd, elapsed_cycle_time());
 
   // Should we not add GC time if this was an abbreviated cycle?
   _cycles.add_gc_time(_cycle_start, elapsed_cycle_time());
@@ -506,8 +540,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     double anticipated_gc_start_time = now + MAX2(get_planned_sleep_interval(), ShenandoahAccelerationSamplePeriod / 1000.0);
     ShenandoahCycleDuration::Prediction predicted_future_accelerated_gc_time = _cycles.predict(anticipated_gc_start_time, _margin_of_error_sd);
 
-    // TODO: This could instead be last sampled rate?
-    const double instantaneous_rate_words_per_second = new_rate.rate().avg() / HeapWordSize;
+    const double instantaneous_rate_words_per_second = new_rate.last_sampled_value() / HeapWordSize;
 
     _previous_acceleration_sample_timestamp = now;
     add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
