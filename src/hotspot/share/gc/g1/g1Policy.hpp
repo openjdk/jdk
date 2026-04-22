@@ -296,7 +296,7 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 

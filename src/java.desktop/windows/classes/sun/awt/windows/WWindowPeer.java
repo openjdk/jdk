@@ -108,7 +108,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     static List<WWindowPeer> activeWindows = new LinkedList<WWindowPeer>();
     // WComponentPeer overrides
     @Override
-    @SuppressWarnings("unchecked")
     protected void disposeImpl() {
         synchronized (activeWindows) {
             activeWindows.remove(this);

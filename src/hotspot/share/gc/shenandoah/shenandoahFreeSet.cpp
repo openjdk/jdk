@@ -1569,7 +1569,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   // We must call try_recycle_under_lock() even if !r->is_trash().  The reason is that if r is being recycled at this
   // moment by a GC worker thread, it may appear to be not trash even though it has not yet been fully recycled.  If
   // we proceed without waiting for the worker to finish recycling the region, the worker thread may overwrite the
-  // region's affiliation with FREE after we set the region's affiliation to req.afiliation() below
+  // region's affiliation with FREE after we set the region's affiliation to req.affiliation() below
   r->try_recycle_under_lock();
   in_new_region = r->is_empty();
   if (in_new_region) {
@@ -1585,7 +1585,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
-      _heap->old_generation()->clear_cards_for(r);
     }
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
@@ -2679,8 +2678,11 @@ void ShenandoahFreeSet::reduce_young_reserve(size_t adjusted_young_reserve, size
  *  1. Memory currently available within old and young
  *  2. Trashed regions currently residing in young and old, which will become available momentarily
  *  3. The value of old_generation->get_region_balance() which represents the number of regions that we plan
- *     to transfer from old generation to young generation.  Prior to each invocation of compute_young_and_old_reserves(),
- *     this value should computed by ShenandoahGenerationalHeap::compute_old_generation_balance().
+ *     to transfer from old generation to young generation. At the end of each GC cycle, we reset region_balance
+ *     to zero. As we prepare to rebuild free set at the end of update-refs, we call
+ *     ShenandoahGenerationalHeap::compute_old_generation_balance() to compute a new value of region_balance.
+ *     This allows us to expand or shrink the size of the Old Collector reserves based on anticipated needs of
+ *     the next GC cycle.
  */
 void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regions, size_t old_trashed_regions,
                                                        size_t& young_reserve_result, size_t& old_reserve_result) const {
