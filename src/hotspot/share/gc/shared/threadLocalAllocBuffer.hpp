@@ -54,16 +54,15 @@ private:
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
-  size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
+  uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
-  static size_t   _max_size;                          // maximum size of any TLAB
-  static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
-  static unsigned _target_refills;                    // expected number of refills between GCs
+  static size_t   _max_size;                     // maximum size of any TLAB
+  static unsigned _target_num_refills;           // expected number of refills between GCs
 
-  unsigned  _number_of_refills;
+  unsigned  _num_refills;
   unsigned  _refill_waste;
   unsigned  _gc_waste;
-  unsigned  _slow_allocations;
+  unsigned  _num_slow_allocations;
   size_t    _allocated_size;
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
@@ -80,7 +79,7 @@ private:
 
   size_t initial_refill_waste_limit();
 
-  static int    target_refills()                 { return _target_refills; }
+  static int    target_num_refills()             { return _target_num_refills; }
   size_t initial_desired_size();
 
   size_t remaining();
@@ -99,9 +98,9 @@ private:
 
   // statistics
 
-  int number_of_refills() const { return _number_of_refills; }
-  int gc_waste() const          { return _gc_waste; }
-  int slow_allocations() const  { return _slow_allocations; }
+  int num_refills() const                        { return _num_refills; }
+  int gc_waste() const                           { return _gc_waste; }
+  int num_slow_allocations() const               { return _num_slow_allocations; }
 
 public:
   ThreadLocalAllocBuffer();
@@ -180,41 +179,41 @@ public:
 
 class ThreadLocalAllocStats : public StackObj {
 private:
-  static PerfVariable* _perf_allocating_threads;
-  static PerfVariable* _perf_total_refills;
-  static PerfVariable* _perf_max_refills;
-  static PerfVariable* _perf_total_allocations;
+  static PerfVariable* _perf_num_allocating_threads;
+  static PerfVariable* _perf_total_num_refills;
+  static PerfVariable* _perf_max_num_refills;
+  static PerfVariable* _perf_total_allocated_size;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
   static PerfVariable* _perf_total_refill_waste;
   static PerfVariable* _perf_max_refill_waste;
-  static PerfVariable* _perf_total_slow_allocations;
-  static PerfVariable* _perf_max_slow_allocations;
+  static PerfVariable* _perf_total_num_slow_allocations;
+  static PerfVariable* _perf_max_num_slow_allocations;
 
-  static AdaptiveWeightedAverage _allocating_threads_avg;
+  static AdaptiveWeightedAverage _num_allocating_threads_avg;
 
-  unsigned int _allocating_threads;
-  unsigned int _total_refills;
-  unsigned int _max_refills;
-  size_t       _total_allocations;
+  unsigned int _num_allocating_threads;
+  unsigned int _total_num_refills;
+  unsigned int _max_num_refills;
+  size_t       _total_allocated_size;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
   size_t       _total_refill_waste;
   size_t       _max_refill_waste;
-  unsigned int _total_slow_allocations;
-  unsigned int _max_slow_allocations;
+  unsigned int _total_num_slow_allocations;
+  unsigned int _max_num_slow_allocations;
 
 public:
   static void initialize();
-  static unsigned int allocating_threads_avg();
+  static unsigned int num_allocating_threads_avg();
 
   ThreadLocalAllocStats();
 
-  void update_fast_allocations(unsigned int refills,
-                               size_t allocations,
+  void update_fast_allocations(unsigned int num_refills,
+                               size_t allocated_size,
                                size_t gc_waste,
                                size_t refill_waste);
-  void update_slow_allocations(unsigned int allocations);
+  void update_num_slow_allocations(unsigned int num_slow_allocations);
   void update(const ThreadLocalAllocStats& other);
 
   void reset();

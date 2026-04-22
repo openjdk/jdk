@@ -40,7 +40,6 @@
 #include "utilities/hashTable.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
-class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
 class MetaspaceObjToOopHandleTable;
@@ -67,21 +66,12 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // For each entry field, it is a tuple of field_offset, field_value
   GrowableArray<int>* _subgraph_entry_fields;
 
-  // Does this KlassSubGraphInfo belong to the archived full module graph
-  bool _is_full_module_graph;
-
-  // Does this KlassSubGraphInfo references any classes that were loaded while
-  // JvmtiExport::is_early_phase()!=true. If so, this KlassSubGraphInfo cannot be
-  // used at runtime if JVMTI ClassFileLoadHook is enabled.
-  bool _has_non_early_klasses;
   static bool is_non_early_klass(Klass* k);
   static void check_allowed_klass(InstanceKlass* ik);
  public:
-  KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
+  KlassSubGraphInfo(Klass* k) :
     _k(k),  _subgraph_object_klasses(nullptr),
-    _subgraph_entry_fields(nullptr),
-    _is_full_module_graph(is_full_module_graph),
-    _has_non_early_klasses(false) {}
+    _subgraph_entry_fields(nullptr) {}
 
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != nullptr) {
@@ -105,8 +95,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     return _subgraph_object_klasses == nullptr ? 0 :
            _subgraph_object_klasses->length();
   }
-  bool is_full_module_graph() const { return _is_full_module_graph; }
-  bool has_non_early_klasses() const { return _has_non_early_klasses; }
 };
 
 // An archived record of object sub-graphs reachable from static
@@ -115,7 +103,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
 class ArchivedKlassSubGraphInfoRecord {
  private:
   Klass* _k;
-  bool _is_full_module_graph;
   bool _has_non_early_klasses;
 
   // contains pairs of field offset and value for each subgraph entry field
@@ -131,7 +118,6 @@ class ArchivedKlassSubGraphInfoRecord {
   Klass* klass() const { return _k; }
   Array<int>* entry_field_records() const { return _entry_field_records; }
   Array<Klass*>* subgraph_object_klasses() const { return _subgraph_object_klasses; }
-  bool is_full_module_graph() const { return _is_full_module_graph; }
   bool has_non_early_klasses() const { return _has_non_early_klasses; }
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -176,7 +162,7 @@ public:
   static void initialize_streaming() NOT_CDS_JAVA_HEAP_RETURN;
   static void enable_gc() NOT_CDS_JAVA_HEAP_RETURN;
   static void materialize_thread_object() NOT_CDS_JAVA_HEAP_RETURN;
-  static void add_to_dumped_interned_strings(oop string) NOT_CDS_JAVA_HEAP_RETURN;
+  static void archive_interned_string(oop string);
   static void finalize_initialization(FileMapInfo* static_mapinfo) NOT_CDS_JAVA_HEAP_RETURN;
 
 private:
@@ -195,13 +181,8 @@ private:
   static void print_stats();
 public:
   static void debug_trace();
-  static unsigned oop_hash(oop const& p);
-  static unsigned oop_handle_hash(OopHandle const& oh);
-  static unsigned oop_handle_hash_raw(OopHandle const& oh);
+  static unsigned oop_address_hash(oop const& p);
   static bool oop_handle_equals(const OopHandle& a, const OopHandle& b);
-  static unsigned string_oop_hash(oop const& string) {
-    return java_lang_String::hash_code(string);
-  }
 
   class CopyKlassSubGraphInfoToArchive;
 
@@ -217,27 +198,37 @@ public:
 
     // One or more fields in this object are pointing to MetaspaceObj
     bool _has_native_pointers;
+
+    // >= 0 if this oop has been append to the list of roots
+    int _root_index;
   public:
     CachedOopInfo(OopHandle orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
         _buffer_offset(0),
         _has_oop_pointers(has_oop_pointers),
-        _has_native_pointers(false) {}
+        _has_native_pointers(false),
+        _root_index(-1) {}
     oop orig_referrer() const;
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
     bool has_oop_pointers()         const { return _has_oop_pointers; }
     bool has_native_pointers()      const { return _has_native_pointers; }
     void set_has_native_pointers()        { _has_native_pointers = true; }
+    int  root_index()               const { return _root_index; }
+    void set_root_index(int i)            { _root_index = i; }
   };
 
 private:
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
+  static bool _use_identity_hash_for_archived_object_cache;
+
+  static unsigned archived_object_cache_hash(OopHandle const& oh);
+
   typedef ResizeableHashTable<OopHandle, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_handle_hash_raw,
+      HeapShared::archived_object_cache_hash,
       HeapShared::oop_handle_equals> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
@@ -266,8 +257,7 @@ private:
 
   static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
-  static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
-                                       bool is_full_module_graph);
+  static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[]);
 
   // Archive object sub-graph starting from the given static field
   // in Klass k's mirror.
@@ -281,7 +271,7 @@ private:
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
   static void check_special_subgraph_classes();
 
-  static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
+  static KlassSubGraphInfo* init_subgraph_info(Klass *k);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
@@ -297,7 +287,7 @@ private:
   typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_hash> SeenObjectsTable;
+      HeapShared::oop_address_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
@@ -336,8 +326,7 @@ private:
   static size_t _num_total_recorded_klasses;
   static size_t _num_total_verifications;
 
-  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name,
-                                       bool is_full_module_graph);
+  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name);
   static void done_recording_subgraph(InstanceKlass *k, const char* klass_name);
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
@@ -382,8 +371,10 @@ private:
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
 
- public:
   static void reset_archived_object_states(TRAPS);
+  static void ensure_determinism(TRAPS);
+ public:
+  static void prepare_for_archiving(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
@@ -392,6 +383,7 @@ private:
     delete _archived_object_cache;
     _archived_object_cache = nullptr;
   }
+  static void make_archived_object_cache_gc_safe();
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
   }
@@ -404,6 +396,7 @@ private:
                                              KlassSubGraphInfo* subgraph_info,
                                              oop orig_obj);
 
+  static bool is_interned_string(oop obj);
   static bool is_dumped_interned_string(oop o);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -435,6 +428,11 @@ private:
   // Dump-time only. Returns the index of the root, which can be used at run time to read
   // the root using get_root(index, ...).
   static int append_root(oop obj);
+
+  // AOT-compile time only.
+  // Returns -1 if obj is not in the heap root set.
+  static int get_root_index(oop obj) NOT_CDS_JAVA_HEAP_RETURN_(-1);
+
   static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
@@ -443,9 +441,7 @@ private:
 
   // Run-time only
   static void clear_root(int index);
-
   static void get_segment_indexes(int index, int& segment_index, int& internal_index);
-
   static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -455,6 +451,7 @@ private:
   static void write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
+  static void remove_scratch_resolved_references(ConstantPool* src) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

@@ -44,8 +44,6 @@ struct G1RegionMarkStats {
   Atomic<size_t> _live_words;
   Atomic<size_t> _incoming_refs;
 
-  G1RegionMarkStats() : _live_words(0), _incoming_refs(0) { }
-
   // Clear all members.
   void clear() {
     _live_words.store_relaxed(0);
@@ -97,7 +95,7 @@ private:
   // Evict a given element of the statistics cache.
   void evict(uint idx);
 
-  size_t _num_cache_entries_mask;
+  const uint _num_cache_entries_mask;
 
   uint hash(uint idx) {
     return idx & _num_cache_entries_mask;

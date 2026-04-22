@@ -117,7 +117,7 @@ JfrStackWalkerRequestQueue::JfrStackWalkerRequestQueue():
 JfrStackWalkerRequestQueue::~JfrStackWalkerRequestQueue() {
   if (_data != nullptr) {
     assert(_capacity != 0, "invariant");
-    FREE_C_HEAP_ARRAY(JfrStackWalkRequest, _data);
+    FREE_C_HEAP_ARRAY(_data);
   }
 }
 
@@ -150,7 +150,7 @@ void JfrStackWalkerRequestQueue::set_capacity(u4 capacity) {
   _head = 0;
   if (_data != nullptr) {
     assert(_capacity != 0, "invariant");
-    FREE_C_HEAP_ARRAY(JfrStackWalkRequest, _data);
+    FREE_C_HEAP_ARRAY(_data);
   }
   if (capacity != 0) {
     _data = NEW_C_HEAP_ARRAY(JfrStackWalkRequest, capacity, mtOther);
