@@ -28,7 +28,6 @@
  * @summary This tests window translucency when
  *          `swing.volatileImageBufferEnabled=false`
  * @requires os.family == "mac"
- * @library /java/awt/regtesthelpers
  * @run main/othervm -Dsun.java2d.opengl=false TranslucentDialogTest
  * @run main/othervm -Dsun.java2d.opengl=true TranslucentDialogTest
  */
