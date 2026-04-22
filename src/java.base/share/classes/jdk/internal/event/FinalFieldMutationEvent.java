@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,49 @@
  */
 package jdk.internal.event;
 
+import java.lang.reflect.Field;
+
 public class FinalFieldMutationEvent extends Event {
+    /**
+     * We throttle FinalFieldMutation JFR events by generating only one event per field
+     * during each JFR epoch. This is accomplished by encoding the JFR epoch generation (15 bits)
+     * into the most significant bits of the root Field object's slot field, using a CAS operation.
+     *
+     * An event is emitted if enabled, the epoch encoded in the slot field differs from the current epoch,
+     * and a thread successfully updates the slot field's epoch to the current epoch.
+     *
+     * Borrowing the most significant 15 bits from the slot integer field relies on the premise
+     * that the maximum number of fields encoded in the class file format is 65,535.
+     * In addition, with 17 bits available for slot encoding, there remains considerable capacity
+     * for VM-injected fields, allowing for a theoretical maximum of 131,072 slots.
+     */
+    static final long SLOT_OFFSET = JfrEpochGeneration.getFieldOffset(Field.class, "slot");
+
     public Class<?> declaringClass;
     public String fieldName;
 
     /**
      * Commit a FinalFieldMutationEvent if enabled.
      */
-    public static void offer(Class<?> declaringClass, String fieldName) {
-        if (enabled()) {
+    public static void offer(Field root, int slot) {
+        if (shouldEmit(root, slot)) {
             var event = new FinalFieldMutationEvent();
-            event.declaringClass = declaringClass;
-            event.fieldName = fieldName;
+            event.declaringClass = root.getDeclaringClass();
+            event.fieldName = root.getName();
             event.commit();
         }
+    }
+
+    private static boolean shouldEmit(Field root, int slot) {
+        if (enabled()) {
+            int currentEpoch = JfrEpochGeneration.getCurrentEpoch();
+            if (currentEpoch != (slot >> JfrEpochGeneration.EPOCH_SHIFT_INT)) {
+                int newRootFieldSlotEpoch =
+                    currentEpoch << JfrEpochGeneration.EPOCH_SHIFT_INT | (slot & JfrEpochGeneration.VALUE_MASK_INT);
+                return JfrEpochGeneration.compareAndExchange(root, SLOT_OFFSET, slot, newRootFieldSlotEpoch);
+            }
+        }
+        return false;
     }
 
     public static boolean enabled() {

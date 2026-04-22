@@ -2890,6 +2890,10 @@ JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
   return ThreadIdentifier::unsafe_offset();
 JVM_END
 
+JVM_ENTRY(jlong, JVM_GetJfrEpochGenerationOffset(JNIEnv* env, jclass clazz))
+  return JFR_ONLY(Jfr::epoch_generation_offset();) NOT_JFR_RETURN_(0);
+JVM_END
+
 JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
   ThreadsListHandle tlh(thread);
   JavaThread* receiver = nullptr;

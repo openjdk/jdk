@@ -34,6 +34,7 @@ import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.FinalFieldMutationEvent;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
@@ -1549,8 +1550,7 @@ class Field extends AccessibleObject implements Member {
             VM.initialErr().println(sb);
         }
 
-        // record JFR event
-        FinalFieldMutationEvent.offer(getDeclaringClass(), getName());
+        FinalFieldMutationEvent.offer(root, root.slot);
     }
 
     /**

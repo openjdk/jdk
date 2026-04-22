@@ -835,6 +835,8 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _signature_offset;
   static int _annotations_offset;
 
+  static int slot_mask;
+
   static void compute_offsets();
 
  public:

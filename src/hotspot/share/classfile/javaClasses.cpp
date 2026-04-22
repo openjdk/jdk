@@ -3588,6 +3588,7 @@ int java_lang_reflect_Field::_modifiers_offset;
 int java_lang_reflect_Field::_trusted_final_offset;
 int java_lang_reflect_Field::_signature_offset;
 int java_lang_reflect_Field::_annotations_offset;
+int java_lang_reflect_Field::slot_mask = (1 << 17) - 1;
 
 #define FIELD_FIELDS_DO(macro) \
   macro(_clazz_offset,     k, vmSymbols::clazz_name(),     class_signature,  false); \
@@ -3645,10 +3646,13 @@ void java_lang_reflect_Field::set_type(oop field, oop value) {
 }
 
 int java_lang_reflect_Field::slot(oop reflect) {
-  return reflect->int_field(_slot_offset);
+  // We use a mask because JFR is encoding
+  // information in the most significant bits.
+  return reflect->int_field(_slot_offset) & slot_mask;
 }
 
 void java_lang_reflect_Field::set_slot(oop reflect, int value) {
+  assert(value <= slot_mask, "slot value is too big");
   reflect->int_field_put(_slot_offset, value);
 }
 
