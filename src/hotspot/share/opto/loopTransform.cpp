@@ -52,17 +52,70 @@
 // Given an IfNode, return the loop-exiting projection or null if both
 // arms remain in the loop.
 Node *IdealLoopTree::is_loop_exit(Node *iff) const {
-  if (iff->outcnt() != 2) return nullptr;  // Ignore partially dead tests
-  PhaseIdealLoop *phase = _phase;
+  assert(iff->is_If(), "not an If: %s", iff->Name());
+  assert(is_member(_phase->get_loop(iff)), "not related");
+
+  if (iff->outcnt() != 2) {
+    return nullptr;  // Ignore partially dead tests
+  }
   // Test is an IfNode, has 2 projections.  If BOTH are in the loop
   // we need loop unswitching instead of peeling.
-  if (!is_member(phase->get_loop(iff->raw_out(0))))
+  if (!is_member(_phase->get_loop(iff->raw_out(0)))) {
     return iff->raw_out(0);
-  if (!is_member(phase->get_loop(iff->raw_out(1))))
+  }
+  if (!is_member(_phase->get_loop(iff->raw_out(1)))) {
     return iff->raw_out(1);
+  }
   return nullptr;
 }
 
+//------------------------------unique_loop_exit_or_null----------------------
+// Return the loop-exit projection if loop exit is unique.
+IfFalseNode* IdealLoopTree::unique_loop_exit_proj_or_null() {
+  if (is_loop() && head()->is_BaseCountedLoop()) {
+    IfNode* loop_end = head()->as_BaseCountedLoop()->loopexit_or_null();
+    if (loop_end == nullptr) {
+      return nullptr; // malformed loop shape
+    }
+    // Look for other loop exits.
+    assert(_phase->is_dominator(head(), tail()), "sanity");
+    for (Node* ctrl = tail(); ctrl != head(); ctrl = ctrl->in(0)) {
+      assert(is_member(_phase->get_loop(ctrl)), "sanity");
+      if (ctrl->is_If()) {
+        if (!is_loop_exit(ctrl->as_If())) {
+          continue; // local branch
+        } else if (ctrl != loop_end) {
+          return nullptr; // multiple loop exits
+        }
+      } else if (ctrl->is_Region()) {
+        return nullptr; // give up on control flow merges
+      } else if (ctrl->is_ReachabilityFence() ||
+                 ctrl->is_SafePoint() ||
+                 ctrl->is_MemBar() ||
+                 ctrl->Opcode() == Op_Blackhole) {
+        continue; // skip
+      } else if (ctrl->is_Proj()) {
+        if (ctrl->is_IfProj() ||
+            ctrl->Opcode() == Op_SCMemProj ||
+            ctrl->Opcode() == Op_Proj) {
+          continue; // skip simple control projections
+        } else if (ctrl->is_CatchProj() ||
+                   ctrl->is_JumpProj()) {
+          return nullptr; // give up on control flow splits
+        } else {
+          assert(false, "unknown control projection: %s", ctrl->Name());
+          return nullptr; // stop on unknown control node
+        }
+      } else {
+        assert(false, "unknown CFG node: %s", ctrl->Name());
+        return nullptr; // stop on unknown control node
+      }
+    }
+    assert(is_loop_exit(loop_end), "not a loop exit?");
+    return loop_end->false_proj_or_null();
+  }
+  return nullptr; // not found or multiple loop exits
+}
 
 //=============================================================================
 
@@ -3135,9 +3188,13 @@ static CountedLoopNode* locate_pre_from_main(CountedLoopNode* main_loop) {
   Node* ctrl = main_loop->skip_assertion_predicates_with_halt();
   assert(ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "");
   Node* iffm = ctrl->in(0);
-  assert(iffm->Opcode() == Op_If, "");
+  assert(iffm->Opcode() == Op_If, "%s", iffm->Name());
   Node* p_f = iffm->in(0);
-  assert(p_f->Opcode() == Op_IfFalse, "");
+  // Skip ReachabilityFences hoisted out of pre-loop.
+  while (p_f->is_ReachabilityFence()) {
+    p_f = p_f->in(0);
+  }
+  assert(p_f->Opcode() == Op_IfFalse, "%s", p_f->Name());
   CountedLoopNode* pre_loop = p_f->in(0)->as_CountedLoopEnd()->loopnode();
   assert(pre_loop->is_pre_loop(), "No pre loop found");
   return pre_loop;

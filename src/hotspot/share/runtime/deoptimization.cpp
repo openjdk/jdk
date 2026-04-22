@@ -249,9 +249,9 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
 }
 
 Deoptimization::UnrollBlock::~UnrollBlock() {
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_sizes);
-  FREE_C_HEAP_ARRAY(intptr_t, _frame_pcs);
-  FREE_C_HEAP_ARRAY(intptr_t, _register_block);
+  FREE_C_HEAP_ARRAY(_frame_sizes);
+  FREE_C_HEAP_ARRAY(_frame_pcs);
+  FREE_C_HEAP_ARRAY(_register_block);
 }
 
 int Deoptimization::UnrollBlock::size_of_frames() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -31,8 +31,8 @@
 package sun.security.krb5.internal.crypto.dk;
 
 import javax.crypto.Cipher;
-import javax.crypto.Mac;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -692,4 +692,41 @@ public abstract class DkCrypto {
         bb.get(answer, 0, len);
         return answer;
     }
+
+    static int iterationCount(byte[] params, int defaultValue)
+            throws InvalidAlgorithmParameterException {
+        if (params == null) {
+            return defaultValue;
+        }
+        if (params.length != 4) {
+            throw new InvalidAlgorithmParameterException("Invalid params");
+        }
+        if (params[0] != 0 || ((params[1] & 0xff) >= 80)) {
+            // IC should be less than 80 * 2^16. This is roughly
+            // the same as PKCS12KeyStore's 5_000_000 limit.
+            throw new InvalidAlgorithmParameterException(
+                    "Incoming iteration count is too big");
+        }
+        int iter_count = readBigEndian(params, 0, 4);
+        if (!ALLOW_WEAK_PBKDF2_ITERATION_COUNT && iter_count < defaultValue) {
+            throw new InvalidAlgorithmParameterException(
+                    "Incoming iteration count is too small");
+        }
+        return iter_count;
+    }
+
+    public static final int readBigEndian(byte[] data, int pos, int size) {
+        int retVal = 0;
+        int shifter = (size-1)*8;
+        while (size > 0) {
+            retVal += (data[pos] & 0xff) << shifter;
+            shifter -= 8;
+            pos++;
+            size--;
+        }
+        return retVal;
+    }
+
+    // Only used by test
+    public static boolean ALLOW_WEAK_PBKDF2_ITERATION_COUNT = false;
 }
