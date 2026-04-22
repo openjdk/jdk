@@ -25,8 +25,10 @@
  * @test
  * @bug 8256377 8382815
  * @summary Based on test/jdk/java/lang/ref/ReferenceRefersTo.java.
- * @run main/othervm -XX:CompileCommand=dontinline,TestReferenceRefersTo::test_* TestReferenceRefersTo
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::test_* TestReferenceRefersTo
  */
+
+package compiler.intrinsics;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;

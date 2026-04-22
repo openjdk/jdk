@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug 8382815
- * @run main/othervm -XX:CompileCommand=dontinline,TestReferenceGet::test_* TestReferenceGet
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::test_* ${test.main.class}
  */
+
+package compiler.intrinsics;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
