@@ -110,10 +110,11 @@
           range(1, max_intx)                                                \
                                                                             \
   product(uint, G1IHOP, 45,                                                 \
-          "The percent occupancy (IHOP) of the current old generation "     \
-          "capacity above which a concurrent mark cycle will be initiated " \
-          "Its value may change over time if adaptive IHOP is enabled, "    \
-          "otherwise the value remains constant. "                          \
+          "The initiating heap occupancy percentage (IHOP) of the current " \
+          "old generation capacity. This percentage defines the old "       \
+          "generation occupancy threshold above which a concurrent mark "   \
+          "cycle will be initiated. Its value may change over time if "     \
+          "adaptive IHOP is enabled, otherwise the value remains constant. "\
           "In the latter case a value of 0 will result as frequent as "     \
           "possible concurrent marking cycles. A value of 100 disables "    \
           "concurrent marking. "                                            \
