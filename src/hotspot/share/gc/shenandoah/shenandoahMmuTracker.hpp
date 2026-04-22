@@ -80,7 +80,7 @@ private:
 public:
   explicit ShenandoahMmuTracker();
   ~ShenandoahMmuTracker();
-d
+
   // This enrolls the periodic task after everything is initialized.
   void initialize();
 
