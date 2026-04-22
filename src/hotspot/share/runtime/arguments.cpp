@@ -1488,13 +1488,6 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  size_t fraction = MaxVirtMemFraction * GCConfig::arguments()->heap_virtual_to_physical_ratio();
-  size_t max_allocatable = os::commit_memory_limit();
-
-  return MIN2(limit, max_allocatable / fraction);
-}
-
 // This must be called after ergonomics.
 void Arguments::set_bytecode_flags() {
   if (!RewriteBytecodes) {

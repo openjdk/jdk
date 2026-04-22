@@ -58,6 +58,16 @@ void GCArguments::initialize() {
   }
 }
 
+size_t GCArguments::limit_heap_by_allocatable_memory(size_t limit) {
+  // Limits the given heap size by the maximum amount of virtual
+  // memory this process is currently allowed to use. It also takes
+  // the virtual-to-physical ratio of the current GC into account.
+  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio();
+  size_t max_allocatable = os::commit_memory_limit();
+
+  return MIN2(limit, max_allocatable / fraction);
+}
+
 // Use static initialization to get the default before parsing
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
@@ -97,7 +107,7 @@ void GCArguments::set_heap_size() {
       reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
     }
 
-    reasonable_max = Arguments::limit_heap_by_allocatable_memory(reasonable_max);
+    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
 
     if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
       // An initial heap size was specified on the command line,
@@ -160,12 +170,12 @@ void GCArguments::set_heap_size() {
   if (InitialHeapSize == 0 || MinHeapSize == 0) {
     size_t reasonable_minimum = clamp_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
     reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
-    reasonable_minimum = Arguments::limit_heap_by_allocatable_memory(reasonable_minimum);
+    reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
       uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
-      reasonable_initial = Arguments::limit_heap_by_allocatable_memory(reasonable_initial);
+      reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
       reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
