@@ -656,7 +656,7 @@ public:
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
 
 #ifndef PRODUCT
-  static bool is_verify_def_use() {
+  static bool is_verify_per_iteration() {
     // '-XX:VerifyIterativeGVN=1'
     return (VerifyIterativeGVN % 10) == 1;
   }
@@ -675,10 +675,6 @@ public:
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
     return ((VerifyIterativeGVN % 100000) / 10000) == 1;
-  }
-  static bool is_verify_Ideal_return() {
-    // '-XX:VerifyIterativeGVN=100000'
-    return ((VerifyIterativeGVN % 1000000) / 100000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
