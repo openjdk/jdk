@@ -568,6 +568,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_Reference_reachabilityFence: return inline_reference_reachabilityFence();
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
@@ -4310,7 +4311,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    *obj = _gvn.transform(new CheckCastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
@@ -7022,6 +7023,14 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   final_sync(ideal);
 #undef __
 
+  return true;
+}
+
+//-----------------------inline_reference_reachabilityFence-----------------
+// bool java.lang.ref.Reference.reachabilityFence();
+bool LibraryCallKit::inline_reference_reachabilityFence() {
+  Node* referent = argument(0);
+  insert_reachability_fence(referent);
   return true;
 }
 

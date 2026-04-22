@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,12 @@
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
           range(1, INT_MAX/2)                                               \
+                                                                            \
+  product(uintx, ArrayMarkingMinStride, 64, DIAGNOSTIC,                     \
+          "Minimum chunk size for split array processing during marking; "  \
+          "the effective stride is clamped between this value "             \
+          "and ObjArrayMarkingStride.")                                     \
+          constraint(ArrayMarkingMinStrideConstraintFunc,AfterErgo)         \
                                                                             \
   product(bool, AggressiveHeap, false,                                      \
           "(Deprecated) Optimize heap options for long-running memory "     \
