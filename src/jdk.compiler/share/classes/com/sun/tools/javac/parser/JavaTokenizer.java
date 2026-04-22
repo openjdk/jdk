@@ -176,7 +176,7 @@ public class JavaTokenizer extends UnicodeReader {
             lexError(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            preview.warnPreview(DiagnosticFlag.SYNTAX, pos, feature);
         }
     }
 
@@ -1040,10 +1040,10 @@ public class JavaTokenizer extends UnicodeReader {
                     // Verify that the incidental indentation is consistent.
                     Set<TextBlockSupport.WhitespaceChecks> checks = TextBlockSupport.checkWhitespace(string);
                     if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                        log.warning(pos, LintWarnings.InconsistentWhiteSpaceIndentation);
+                        log.warning(DiagnosticFlag.SYNTAX, pos, LintWarnings.InconsistentWhiteSpaceIndentation);
                     }
                     if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                        log.warning(pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
+                        log.warning(DiagnosticFlag.SYNTAX, pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                     }
                     // Remove incidental indentation.
                     try {

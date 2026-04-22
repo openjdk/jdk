@@ -73,6 +73,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                     SSLHandshake.ENCRYPTED_EXTENSIONS.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE_REQUEST.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE.id, HANDSHAKE,
+                    SSLHandshake.COMPRESSED_CERTIFICATE.id, HANDSHAKE,
                     SSLHandshake.CERTIFICATE_VERIFY.id, HANDSHAKE,
                     SSLHandshake.FINISHED.id, HANDSHAKE,
                     SSLHandshake.NEW_SESSION_TICKET.id, ONE_RTT);
