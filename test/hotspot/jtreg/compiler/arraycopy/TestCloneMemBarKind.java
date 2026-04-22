@@ -52,8 +52,9 @@ public class TestCloneMemBarKind {
     static BigObj src = new BigObj();
 
     @Test
-    @IR(phase = CompilePhase.AFTER_MACRO_EXPANSION,
-        counts = {"MemBar.*TrailingExpandedArrayCopy", ">= 1"})
+    @IR(applyIf = {"ArrayCopyLoadStoreMaxElem", "< 9"},
+            phase = CompilePhase.AFTER_MACRO_EXPANSION,
+            counts = {"MemBar.*TrailingExpandedArrayCopy", ">= 1"})
     static Object testClone() throws CloneNotSupportedException {
         return src.clone();
     }
