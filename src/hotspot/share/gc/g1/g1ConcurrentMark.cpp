@@ -527,6 +527,7 @@ void G1ConcurrentMark::fully_initialize() {
   for (uint i = 0; i < max_num_regions; i++) {
     ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>(_g1h->bottom_addr_for_region(i));
   }
+  // Contrary to TAMS, the default value of _top_at_rebuild_starts needs to be null.
   ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
