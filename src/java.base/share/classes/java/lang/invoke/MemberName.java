@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,11 +408,12 @@ final class MemberName implements Member, Cloneable {
     // let the rest (native, volatile, transient, etc.) be tested via Modifier.isFoo
 
     // unofficial modifier flags, used by HotSpot:
-    static final int BRIDGE    = 0x00000040;
-    static final int VARARGS   = 0x00000080;
-    static final int SYNTHETIC = 0x00001000;
-    static final int ANNOTATION= 0x00002000;
-    static final int ENUM      = 0x00004000;
+    static final int BRIDGE      = 0x00000040;
+    static final int VARARGS     = 0x00000080;
+    static final int SYNTHETIC   = 0x00001000;
+    static final int ANNOTATION  = 0x00002000;
+    static final int ENUM        = 0x00004000;
+
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isBridge() {
         return allFlagsSet(IS_METHOD | BRIDGE);
@@ -426,19 +427,19 @@ final class MemberName implements Member, Cloneable {
         return allFlagsSet(SYNTHETIC);
     }
 
-    static final String CONSTRUCTOR_NAME = "<init>";  // the ever-popular
+    static final String CONSTRUCTOR_NAME = "<init>";
 
     // modifiers exported by the JVM:
     static final int RECOGNIZED_MODIFIERS = 0xFFFF;
 
     // private flags, not part of RECOGNIZED_MODIFIERS:
     static final int
-            IS_METHOD        = MN_IS_METHOD,        // method (not constructor)
-            IS_CONSTRUCTOR   = MN_IS_CONSTRUCTOR,   // constructor
-            IS_FIELD         = MN_IS_FIELD,         // field
-            IS_TYPE          = MN_IS_TYPE,          // nested type
-            CALLER_SENSITIVE = MN_CALLER_SENSITIVE, // @CallerSensitive annotation detected
-            TRUSTED_FINAL    = MN_TRUSTED_FINAL;    // trusted final field
+            IS_METHOD             = MN_IS_METHOD,              // method (not constructor)
+            IS_CONSTRUCTOR        = MN_IS_CONSTRUCTOR,         // constructor
+            IS_FIELD              = MN_IS_FIELD,               // field
+            IS_TYPE               = MN_IS_TYPE,                // nested type
+            CALLER_SENSITIVE      = MN_CALLER_SENSITIVE,       // @CallerSensitive annotation detected
+            TRUSTED_FINAL         = MN_TRUSTED_FINAL;          // trusted final field
 
     static final int ALL_ACCESS = Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED;
     static final int ALL_KINDS = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE;
@@ -711,7 +712,7 @@ final class MemberName implements Member, Cloneable {
     }
 
     @Override
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("deprecation")
     public int hashCode() {
         // Avoid autoboxing getReferenceKind(), since this is used early and will force
         // early initialization of Byte$ByteCache
@@ -800,7 +801,7 @@ final class MemberName implements Member, Cloneable {
         assert(isResolved() == isResolved);
     }
 
-    void checkForTypeAlias(Class<?> refc) {
+    void ensureTypeVisible(Class<?> refc) {
         if (isInvocable()) {
             MethodType type;
             if (this.type instanceof MethodType mt)
@@ -808,7 +809,7 @@ final class MemberName implements Member, Cloneable {
             else
                 this.type = type = getMethodType();
             if (type.erase() == type)  return;
-            if (VerifyAccess.isTypeVisible(type, refc))  return;
+            if (VerifyAccess.ensureTypeVisible(type, refc))  return;
             throw new LinkageError("bad method type alias: "+type+" not visible from "+refc);
         } else {
             Class<?> type;
@@ -816,7 +817,7 @@ final class MemberName implements Member, Cloneable {
                 type = cl;
             else
                 this.type = type = getFieldType();
-            if (VerifyAccess.isTypeVisible(type, refc))  return;
+            if (VerifyAccess.ensureTypeVisible(type, refc))  return;
             throw new LinkageError("bad field type alias: "+type+" not visible from "+refc);
         }
     }
@@ -958,7 +959,7 @@ final class MemberName implements Member, Cloneable {
                 if (m == null && speculativeResolve) {
                     return null;
                 }
-                m.checkForTypeAlias(m.getDeclaringClass());
+                m.ensureTypeVisible(m.getDeclaringClass());
                 m.resolution = null;
             } catch (ClassNotFoundException | LinkageError ex) {
                 // JVM reports that the "bytecode behavior" would get an error

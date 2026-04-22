@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
@@ -93,26 +91,15 @@ public class DefaultProxySelector extends ProxySelector {
 
     static {
         final String key = "java.net.useSystemProxies";
-        @SuppressWarnings("removal")
-        Boolean b = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return NetProperties.getBoolean(key);
-                }});
+        Boolean b = NetProperties.getBoolean(key);
         if (b != null && b.booleanValue()) {
             jdk.internal.loader.BootLoader.loadLibrary("net");
             hasSystemProxies = init();
         }
     }
 
-    @SuppressWarnings("removal")
     public static int socksProxyVersion() {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Integer>() {
-                    @Override public Integer run() {
-                        return NetProperties.getInteger(SOCKS_PROXY_VERSION, 5);
-                    }
-                });
+        return NetProperties.getInteger(SOCKS_PROXY_VERSION, 5);
     }
 
     /**
@@ -187,146 +174,131 @@ public class DefaultProxySelector extends ProxySelector {
             throw new IllegalArgumentException("protocol = "+protocol+" host = "+host);
         }
 
-        NonProxyInfo pinfo = null;
+        NonProxyInfo nonProxyInfo = null;
 
         if ("http".equalsIgnoreCase(protocol)) {
-            pinfo = NonProxyInfo.httpNonProxyInfo;
+            nonProxyInfo = NonProxyInfo.httpNonProxyInfo;
         } else if ("https".equalsIgnoreCase(protocol)) {
             // HTTPS uses the same property as HTTP, for backward
             // compatibility
-            pinfo = NonProxyInfo.httpNonProxyInfo;
+            nonProxyInfo = NonProxyInfo.httpNonProxyInfo;
         } else if ("ftp".equalsIgnoreCase(protocol)) {
-            pinfo = NonProxyInfo.ftpNonProxyInfo;
+            nonProxyInfo = NonProxyInfo.ftpNonProxyInfo;
         } else if ("socket".equalsIgnoreCase(protocol)) {
-            pinfo = NonProxyInfo.socksNonProxyInfo;
+            nonProxyInfo = NonProxyInfo.socksNonProxyInfo;
         }
-
-        /**
-         * Let's check the System properties for that protocol
-         */
-        final String proto = protocol;
-        final NonProxyInfo nprop = pinfo;
         final String urlhost = host.toLowerCase(Locale.ROOT);
-
-        /**
-         * This is one big doPrivileged call, but we're trying to optimize
-         * the code as much as possible. Since we're checking quite a few
-         * System properties it does help having only 1 call to doPrivileged.
-         * Be mindful what you do in here though!
-         */
-        @SuppressWarnings("removal")
-        Proxy[] proxyArray = AccessController.doPrivileged(
-            new PrivilegedAction<Proxy[]>() {
-                public Proxy[] run() {
-                    int i, j;
-                    String phost =  null;
-                    int pport = 0;
-                    String nphosts =  null;
-                    InetSocketAddress saddr = null;
-
-                    // Then let's walk the list of protocols in our array
-                    for (i=0; i<props.length; i++) {
-                        if (props[i][0].equalsIgnoreCase(proto)) {
-                            for (j = 1; j < props[i].length; j++) {
-                                /* System.getProp() will give us an empty
-                                 * String, "" for a defined but "empty"
-                                 * property.
-                                 */
-                                phost =  NetProperties.get(props[i][j]+"Host");
-                                if (phost != null && phost.length() != 0)
-                                    break;
-                            }
-                            if (phost == null || phost.isEmpty()) {
-                                /**
-                                 * No system property defined for that
-                                 * protocol. Let's check System Proxy
-                                 * settings (Gnome, MacOsX & Windows) if
-                                 * we were instructed to.
-                                 */
-                                if (hasSystemProxies) {
-                                    String sproto;
-                                    if (proto.equalsIgnoreCase("socket"))
-                                        sproto = "socks";
-                                    else
-                                        sproto = proto;
-                                    return getSystemProxies(sproto, urlhost);
-                                }
-                                return null;
-                            }
-                            // If a Proxy Host is defined for that protocol
-                            // Let's get the NonProxyHosts property
-                            if (nprop != null) {
-                                nphosts = NetProperties.get(nprop.property);
-                                synchronized (nprop) {
-                                    if (nphosts == null) {
-                                        if (nprop.defaultVal != null) {
-                                            nphosts = nprop.defaultVal;
-                                        } else {
-                                            nprop.hostsSource = null;
-                                            nprop.pattern = null;
-                                        }
-                                    } else if (!nphosts.isEmpty()) {
-                                        // add the required default patterns
-                                        // but only if property no set. If it
-                                        // is empty, leave empty.
-                                        nphosts += "|" + NonProxyInfo
-                                                         .defStringVal;
-                                    }
-                                    if (nphosts != null) {
-                                        if (!nphosts.equals(nprop.hostsSource)) {
-                                            nprop.pattern = toPattern(nphosts);
-                                            nprop.hostsSource = nphosts;
-                                        }
-                                    }
-                                    if (shouldNotUseProxyFor(nprop.pattern, urlhost)) {
-                                        return null;
-                                    }
-                                }
-                            }
-                            // We got a host, let's check for port
-
-                            pport = NetProperties.getInteger(props[i][j]+"Port", 0).intValue();
-                            if (pport == 0 && j < (props[i].length - 1)) {
-                                // Can't find a port with same prefix as Host
-                                // AND it's not a SOCKS proxy
-                                // Let's try the other prefixes for that proto
-                                for (int k = 1; k < (props[i].length - 1); k++) {
-                                    if ((k != j) && (pport == 0))
-                                        pport = NetProperties.getInteger(props[i][k]+"Port", 0).intValue();
-                                }
-                            }
-
-                            // Still couldn't find a port, let's use default
-                            if (pport == 0) {
-                                if (j == (props[i].length - 1)) // SOCKS
-                                    pport = defaultPort("socket");
-                                else
-                                    pport = defaultPort(proto);
-                            }
-                            // We did find a proxy definition.
-                            // Let's create the address, but don't resolve it
-                            // as this will be done at connection time
-                            saddr = InetSocketAddress.createUnresolved(phost, pport);
-                            // Socks is *always* the last on the list.
-                            if (j == (props[i].length - 1)) {
-                                return new Proxy[] {SocksProxy.create(saddr, socksProxyVersion())};
-                            }
-                            return new Proxy[] {new Proxy(Proxy.Type.HTTP, saddr)};
-                        }
-                    }
-                    return null;
-                }});
-
-
+        // determine the proxies
+        final Proxy[] proxyArray = determineProxies(urlhost, protocol, nonProxyInfo);
         if (proxyArray != null) {
             // Remove duplicate entries, while preserving order.
             return Stream.of(proxyArray).distinct().collect(
                     collectingAndThen(toList(), Collections::unmodifiableList));
         }
-
         // If no specific proxy was found, return a standard list containing
         // only one NO_PROXY entry.
         return NO_PROXY_LIST;
+    }
+
+    private Proxy[] determineProxies(final String urlhost, final String protocol,
+                                     final NonProxyInfo nonProxyInfo) {
+        int i, j;
+        String phost = null;
+        int pport = 0;
+        String nphosts = null;
+        InetSocketAddress saddr = null;
+
+        // Then let's walk the list of protocols in our array
+        for (i = 0; i < props.length; i++) {
+            if (props[i][0].equalsIgnoreCase(protocol)) {
+                for (j = 1; j < props[i].length; j++) {
+                    /* System.getProp() will give us an empty
+                     * String, "" for a defined but "empty"
+                     * property.
+                     */
+                    phost = NetProperties.get(props[i][j] + "Host");
+                    if (phost != null && phost.length() != 0)
+                        break;
+                }
+                if (phost == null || phost.isEmpty()) {
+                    /**
+                     * No system property defined for that
+                     * protocol. Let's check System Proxy
+                     * settings (Gnome, MacOsX & Windows) if
+                     * we were instructed to.
+                     */
+                    if (hasSystemProxies) {
+                        String sproto;
+                        if (protocol.equalsIgnoreCase("socket"))
+                            sproto = "socks";
+                        else
+                            sproto = protocol;
+                        return getSystemProxies(sproto, urlhost);
+                    }
+                    return null;
+                }
+                // If a Proxy Host is defined for that protocol
+                // Let's get the NonProxyHosts property
+                if (nonProxyInfo != null) {
+                    nphosts = NetProperties.get(nonProxyInfo.property);
+                    synchronized (nonProxyInfo) {
+                        if (nphosts == null) {
+                            if (nonProxyInfo.defaultVal != null) {
+                                nphosts = nonProxyInfo.defaultVal;
+                            } else {
+                                nonProxyInfo.hostsSource = null;
+                                nonProxyInfo.pattern = null;
+                            }
+                        } else if (!nphosts.isEmpty()) {
+                            // add the required default patterns
+                            // but only if property no set. If it
+                            // is empty, leave empty.
+                            nphosts += "|" + NonProxyInfo
+                                    .defStringVal;
+                        }
+                        if (nphosts != null) {
+                            if (!nphosts.equals(nonProxyInfo.hostsSource)) {
+                                nonProxyInfo.pattern = toPattern(nphosts);
+                                nonProxyInfo.hostsSource = nphosts;
+                            }
+                        }
+                        if (shouldNotUseProxyFor(nonProxyInfo.pattern, urlhost)) {
+                            return null;
+                        }
+                    }
+                }
+                // We got a host, let's check for port
+
+                pport = NetProperties.getInteger(props[i][j] + "Port", 0).intValue();
+                if (pport == 0 && j < (props[i].length - 1)) {
+                    // Can't find a port with same prefix as Host
+                    // AND it's not a SOCKS proxy
+                    // Let's try the other prefixes for that proto
+                    for (int k = 1; k < (props[i].length - 1); k++) {
+                        if ((k != j) && (pport == 0))
+                            pport = NetProperties.getInteger(props[i][k] + "Port", 0).intValue();
+                    }
+                }
+
+                // Still couldn't find a port, let's use default
+                if (pport == 0) {
+                    if (j == (props[i].length - 1)) // SOCKS
+                        pport = defaultPort("socket");
+                    else
+                        pport = defaultPort(protocol);
+                }
+                // We did find a proxy definition.
+                // Let's create the address, but don't resolve it
+                // as this will be done at connection time
+                saddr = InetSocketAddress.createUnresolved(phost, pport);
+                // Socks is *always* the last on the list.
+                if (j == (props[i].length - 1)) {
+                    return new Proxy[]{SocksProxy.create(saddr, socksProxyVersion())};
+                }
+                return new Proxy[]{new Proxy(Proxy.Type.HTTP, saddr)};
+            }
+        }
+        return null;
     }
 
     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {

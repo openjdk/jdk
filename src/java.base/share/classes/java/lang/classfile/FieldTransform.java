@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,30 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link FieldElement}.
+ * <p>
+ * Refer to {@link ClassFileTransform} for general guidance and caution around
+ * the use of transforms for structures in the {@code class} file format.
+ * <p>
+ * A field transform can be lifted to a class transform via {@link
+ * ClassTransform#transformingFields(FieldTransform)}, transforming only
+ * the {@link FieldModel} among the class members and passing all other elements
+ * to the builders.
  *
- * @see ClassFileTransform
- *
- * @since 22
+ * @see FieldModel
+ * @see ClassBuilder#transformField
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface FieldTransform
         extends ClassFileTransform<FieldTransform, FieldElement, FieldBuilder> {
 
     /**
-     * A field transform that sends all elements to the builder.
+     * A field transform that passes all elements to the builder.
      */
     FieldTransform ACCEPT_ALL = new FieldTransform() {
         @Override
@@ -54,7 +62,7 @@ public non-sealed interface FieldTransform
     };
 
     /**
-     * Create a stateful field transform from a {@link Supplier}.  The supplier
+     * Creates a stateful field transform from a {@link Supplier}.  The supplier
      * will be invoked for each transformation.
      *
      * @param supplier a {@link Supplier} that produces a fresh transform object
@@ -62,17 +70,18 @@ public non-sealed interface FieldTransform
      * @return the stateful field transform
      */
     static FieldTransform ofStateful(Supplier<FieldTransform> supplier) {
-        return new TransformImpl.SupplierFieldTransform(supplier);
+        return new TransformImpl.SupplierFieldTransform(requireNonNull(supplier));
     }
 
     /**
-     * Create a field transform that passes each element through to the builder,
+     * Creates a field transform that passes each element through to the builder,
      * and calls the specified function when transformation is complete.
      *
      * @param finisher the function to call when transformation is complete
      * @return the field transform
      */
     static FieldTransform endHandler(Consumer<FieldBuilder> finisher) {
+        requireNonNull(finisher);
         return new FieldTransform() {
             @Override
             public void accept(FieldBuilder builder, FieldElement element) {
@@ -87,13 +96,14 @@ public non-sealed interface FieldTransform
     }
 
     /**
-     * Create a field transform that passes each element through to the builder,
+     * Creates a field transform that passes each element through to the builder,
      * except for those that the supplied {@link Predicate} is true for.
      *
      * @param filter the predicate that determines which elements to drop
      * @return the field transform
      */
     static FieldTransform dropping(Predicate<FieldElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -109,17 +119,6 @@ public non-sealed interface FieldTransform
      */
     @Override
     default FieldTransform andThen(FieldTransform t) {
-        return new TransformImpl.ChainedFieldTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given field builder.
-     */
-    @Override
-    default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
+        return new TransformImpl.ChainedFieldTransform(this, requireNonNull(t));
     }
 }

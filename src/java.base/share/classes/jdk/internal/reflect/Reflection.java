@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,12 @@ public class Reflection {
         fieldFilterMap = Map.of(
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
-            Class.class, Set.of("classLoader", "classData"),
+            Class.class, Set.of("classLoader", "classData", "modifiers", "protectionDomain", "primitive"),
             ClassLoader.class, ALL_MEMBERS,
             Constructor.class, ALL_MEMBERS,
             Field.class, ALL_MEMBERS,
             Method.class, ALL_MEMBERS,
-            Module.class, ALL_MEMBERS,
-            System.class, Set.of("security")
+            Module.class, ALL_MEMBERS
         );
         methodFilterMap = Map.of();
     }
@@ -82,8 +81,9 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    @IntrinsicCandidate
-    public static native int getClassAccessFlags(Class<?> c);
+    public static int getClassAccessFlags(Class<?> c) {
+        return SharedSecrets.getJavaLangAccess().getClassFileAccessFlags(c);
+    }
 
 
     /**
@@ -111,7 +111,7 @@ public class Reflection {
     }
 
     @ForceInline
-    public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
+    public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName, boolean jni) {
         // if there is no caller class, act as if the call came from unnamed module of system class loader
         Module module = currentClass != null ?
                 currentClass.getModule() :
@@ -119,7 +119,10 @@ public class Reflection {
         class Holder {
             static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
         }
-        Holder.JLA.ensureNativeAccess(module, owner, methodName, currentClass);
+        if (module != null) {
+            // not in init phase
+            Holder.JLA.ensureNativeAccess(module, owner, methodName, currentClass, jni);
+        }
     }
 
     /**

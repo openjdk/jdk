@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
@@ -39,11 +38,13 @@
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   address pc = (address) inst;
   if (inst->is_call()) {
-    return pc_offset + NativeCall::instruction_size;
+    return pc_offset + NativeCall::byte_size();
   } else if (inst->is_jump()) {
     return pc_offset + NativeJump::instruction_size;
-  } else if (inst->is_movptr()) {
-    return pc_offset + NativeMovConstReg::movptr_instruction_size;
+  } else if (inst->is_movptr1()) {
+    return pc_offset + NativeMovConstReg::movptr1_instruction_size;
+  } else if (inst->is_movptr2()) {
+    return pc_offset + NativeMovConstReg::movptr2_instruction_size;
   } else {
     JVMCI_ERROR_0("unsupported type of instruction for call site");
   }
@@ -103,8 +104,9 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
+bool CodeInstaller::pd_relocate(address pc, jint mark) {
   Unimplemented();
+  return false;
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers

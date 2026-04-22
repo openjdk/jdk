@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc.
+ * Copyright (c) 2022, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ public class CgroupV1SubsystemControllerTest {
         assertEquals(expectedPath, ctrl.path());
     }
 
+    /*
+     * Less common cases: Containers
+     */
     @Test
     public void testCgPathSubstring() {
         String root = "/foo/bar/baz";
@@ -71,8 +74,18 @@ public class CgroupV1SubsystemControllerTest {
         CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/foo/bar/baz/some";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + "/some";
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
     }
 
+    @Test
+    public void testCgPathToMovedPath() {
+        String root = "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c";
+        String mountPoint = "/sys/fs/cgroup/cpu,cpuacct";
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
+        String cgroupPath = "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c";
+        ctrl.setPath(cgroupPath);
+        String expectedPath = mountPoint;
+        assertEquals(expectedPath, ctrl.path());
+    }
 }

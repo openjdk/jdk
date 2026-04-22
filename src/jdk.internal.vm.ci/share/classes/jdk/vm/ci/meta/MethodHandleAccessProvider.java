@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ public interface MethodHandleAccessProvider {
         /** The method {@code MethodHandle.linkToVirtual}. */
         LINK_TO_VIRTUAL,
         /** The method {@code MethodHandle.linkToInterface}. */
-        LINK_TO_INTERFACE
+        LINK_TO_INTERFACE,
+        /** The method {@code MethodHandle.linkToNative}. */
+        LINK_TO_NATIVE
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,19 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
- * The {@code Long} class wraps a value of the primitive type {@code
- * long} in an object. An object of type {@code Long} contains a
+ * The {@code Long} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code long}. An object of type {@code Long} contains a
  * single field whose type is {@code long}.
  *
  * <p> In addition, this class provides several methods for converting
@@ -62,13 +63,10 @@ import static java.lang.String.UTF16;
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(long) highestOneBit} and
  * {@link #numberOfTrailingZeros(long) numberOfTrailingZeros}) are
- * based on material from Henry S. Warren, Jr.'s <i>Hacker's
- * Delight</i>, (Addison Wesley, 2002).
+ * based on material from Henry S. Warren, Jr.'s <cite>Hacker's
+ * Delight</cite>, (Addison Wesley, 2002) and <cite>Hacker's
+ * Delight, Second Edition</cite>, (Pearson Education, 2013).
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Josh Bloch
- * @author  Joseph D. Darcy
  * @since   1.0
  */
 @jdk.internal.ValueBased
@@ -92,8 +90,7 @@ public final class Long extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
+    public static final Class<Long> TYPE = Class.getPrimitiveClass("long");
 
     /**
      * Returns a string representation of the first argument in the
@@ -155,10 +152,10 @@ public final class Long extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)Integer.digits[(int)(-(i % radix))];
+                buf[charPos--] = Integer.digits[(int)(-(i % radix))];
                 i = i / radix;
             }
-            buf[charPos] = (byte)Integer.digits[(int)(-i)];
+            buf[charPos] = Integer.digits[(int)(-i)];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -393,15 +390,9 @@ public final class Long extends Number
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[chars];
-            formatUnsignedLong0(val, shift, buf, 0, chars);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[chars * 2];
-            formatUnsignedLong0UTF16(val, shift, buf, 0, chars);
-            return new String(buf, UTF16);
-        }
+        byte[] buf = new byte[chars];
+        formatUnsignedLong0(val, shift, buf, 0, chars);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
@@ -420,28 +411,7 @@ public final class Long extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[((int) val) & mask];
-            val >>>= shift;
-        } while (charPos > offset);
-    }
-
-    /**
-     * Format a long (treated as unsigned) into a byte buffer (UTF16 version). If
-     * {@code len} exceeds the formatted ASCII representation of {@code val},
-     * {@code buf} will be padded with leading zeroes.
-     *
-     * @param val the unsigned long to format
-     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the byte buffer to write to
-     * @param offset the offset in the destination buffer to start at
-     * @param len the number of characters to write
-     */
-    private static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
-        int charPos = offset + len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
+            buf[--charPos] = Integer.digits[((int) val) & mask];
             val >>>= shift;
         } while (charPos > offset);
     }
@@ -457,16 +427,10 @@ public final class Long extends Number
      * @return  a string representation of the argument in base&nbsp;10.
      */
     public static String toString(long i) {
-        int size = stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
-            StringLatin1.getChars(i, size, buf);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[size * 2];
-            StringUTF16.getChars(i, size, buf);
-            return new String(buf, UTF16);
-        }
+        int size = DecimalDigits.stringSize(i);
+        byte[] buf = new byte[size];
+        DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
@@ -485,32 +449,6 @@ public final class Long extends Number
      */
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
-    }
-
-    /**
-     * Returns the string representation size for a given long value.
-     *
-     * @param x long value
-     * @return string size
-     *
-     * @implNote There are other ways to compute this: e.g. binary search,
-     * but values are biased heavily towards zero, and therefore linear search
-     * wins. The iteration results are also routinely inlined in the generated
-     * code after loop unrolling.
-     */
-    static int stringSize(long x) {
-        int d = 1;
-        if (x >= 0) {
-            d = 0;
-            x = -x;
-        }
-        long p = -10;
-        for (int i = 1; i < 19; i++) {
-            if (x > p)
-                return i + d;
-            p = 10 * p;
-        }
-        return 19 + d;
     }
 
     /**
@@ -974,6 +912,7 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}
 
@@ -986,7 +925,7 @@ public final class Long extends Number
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(LongCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
+            if (archivedCache == null) {
                 Long[] c = new Long[size];
                 long value = -128;
                 for(int i = 0; i < size; i++) {
@@ -995,6 +934,7 @@ public final class Long extends Number
                 archivedCache = c;
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 
@@ -1132,7 +1072,7 @@ public final class Long extends Number
      * {@link #valueOf(long)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Long(long value) {
         this.value = value;
     }
@@ -1155,7 +1095,7 @@ public final class Long extends Number
      * {@code long} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Long} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Long(String s) throws NumberFormatException {
         this.value = parseLong(s, 10);
     }
@@ -1268,8 +1208,8 @@ public final class Long extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Long) {
-            return value == ((Long)obj).longValue();
+        if (obj instanceof Long ell) {
+            return value == ell.longValue();
         }
         return false;
     }
@@ -1299,8 +1239,6 @@ public final class Long extends Number
      *
      * @param   nm   property name.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1344,8 +1282,6 @@ public final class Long extends Number
      * @param   nm    property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -1393,17 +1329,11 @@ public final class Long extends Number
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     System#getProperty(java.lang.String)
      * @see     System#getProperty(java.lang.String, java.lang.String)
      */
     public static Long getLong(String nm, Long val) {
-        String v = null;
-        try {
-            v = System.getProperty(nm);
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
+        String v = nm != null && !nm.isEmpty() ? System.getProperty(nm) : null;
         if (v != null) {
             try {
                 return Long.decode(v);
@@ -1481,6 +1411,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1504,6 +1435,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */
@@ -1774,7 +1706,7 @@ public final class Long extends Number
      * compress(expand(x, m), m) == x & compress(m, m)
      * }
      * <p>
-     * The Sheep And Goats (SAG) operation (see Hacker's Delight, section 7.7)
+     * The Sheep And Goats (SAG) operation (see Hacker's Delight, Second Edition, section 7.7)
      * can be implemented as follows:
      * {@snippet lang="java" :
      * long compressLeft(long i, long mask) {

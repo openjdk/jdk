@@ -30,7 +30,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
- * @enablePreview
  * @run main SyntheticClassTest
  */
 

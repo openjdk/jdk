@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,153 +22,311 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Slot;
 
 /**
  * WiX tool.
  */
 public enum WixTool {
-    Candle, Light;
+    Candle3("candle", DottedVersion.lazy("3.0")),
+    Light3("light", DottedVersion.lazy("3.0")),
+    Wix4("wix", DottedVersion.lazy("4.0.4"));
 
-    static final class ToolInfo {
-        ToolInfo(Path path, String version) {
-            this.path = path;
-            this.version = new DottedVersion(version);
-        }
-
-        final Path path;
-        final DottedVersion version;
+    WixTool(String commandName, DottedVersion minimalVersion) {
+        this.toolFileName = PathUtils.addSuffix(Path.of(commandName), ".exe");
+        this.minimalVersion = minimalVersion;
     }
 
-    static Map<WixTool, ToolInfo> toolset() throws ConfigException {
-        Map<WixTool, ToolInfo> toolset = new HashMap<>();
-        for (var tool : values()) {
-            toolset.put(tool, tool.find());
+    Path fileName() {
+        return toolFileName;
+    }
+
+    sealed interface ToolInfo {
+        Path path();
+        DottedVersion version();
+    }
+
+    sealed interface CandleInfo extends ToolInfo {
+        boolean fips();
+    }
+
+    record DefaultToolInfo(Path path, DottedVersion version) implements ToolInfo {
+        DefaultToolInfo {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(version);
         }
+
+        DefaultToolInfo(Path path, String version) {
+            this(path, DottedVersion.lazy(version));
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s|ver=%s", path, version);
+        }
+    }
+
+    record DefaultCandleInfo(Path path, DottedVersion version, boolean fips) implements CandleInfo {
+        DefaultCandleInfo {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(version);
+        }
+
+        DefaultCandleInfo(ToolInfo info, boolean fips) {
+            this(info.path(), info.version(), fips);
+        }
+
+        @Override
+        public String toString() {
+            var sb = new StringBuffer();
+            sb.append(path);
+            if (fips) {
+                sb.append("|fips");
+            }
+            sb.append("|ver=").append(version);
+            return sb.toString();
+        }
+    }
+
+    static WixToolset createToolset() {
+        return createToolset(WixTool::findWixInstallDirs, true);
+    }
+
+    static WixToolset createToolset(Supplier<List<Path>> wixInstallDirs, boolean searchInPath) {
+
+        Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
+            return lookupResults.stream().filter(ToolLookupResult::isValid).collect(groupingBy(lookupResult -> {
+                return lookupResult.info().version().toString();
+            })).values().stream().filter(sameVersionLookupResults -> {
+                var sameVersionTools = sameVersionLookupResults.stream()
+                        .map(ToolLookupResult::tool)
+                        .collect(toSet());
+                if (sameVersionTools.equals(Set.of(Candle3)) || sameVersionTools.equals(Set.of(Light3))) {
+                    // There is only one tool from WiX v3 toolset of some version available. Discard it.
+                    return false;
+                } else {
+                    return true;
+                }
+            }).flatMap(List::stream).collect(toMap(
+                    ToolLookupResult::tool,
+                    ToolLookupResult::info,
+                    (ToolInfo x, ToolInfo y) -> {
+                        return Stream.of(x, y).sorted(Comparator.comparing((ToolInfo toolInfo) -> {
+                            return toolInfo.version().toComponentsString();
+                        }).reversed()).findFirst().get();
+                    }));
+        };
+
+        Function<List<ToolLookupResult>, Optional<WixToolset>> createToolset = lookupResults -> {
+            var tools = conv.apply(lookupResults);
+            // Try to build a toolset found in the PATH and in known locations.
+            return Stream.of(WixToolsetType.values()).flatMap(toolsetType -> {
+                return WixToolset.create(toolsetType, tools).stream();
+            }).findFirst();
+        };
+
+        final List<ToolLookupResult> toolsInPath;
+        if (searchInPath) {
+            toolsInPath = Stream.of(values()).flatMap(tool -> {
+                return ToolLookupResult.lookup(tool, Optional.empty()).stream();
+            }).toList();
+        } else {
+            toolsInPath = List.of();
+        }
+
+        // Try to build a toolset from tools in the PATH first.
+        var toolset = createToolset.apply(toolsInPath).orElseGet(() -> {
+            // Look up for WiX tools in known locations.
+            var toolsInKnownWiXDirs = wixInstallDirs.get().stream().flatMap(dir -> {
+                return Stream.of(values()).flatMap(tool -> {
+                    return ToolLookupResult.lookup(tool, Optional.of(dir)).stream();
+                });
+            }).toList();
+
+            // Build a toolset found in the PATH and in known locations.
+            var allValidFoundTools = Stream.of(toolsInPath, toolsInKnownWiXDirs)
+                    .flatMap(List::stream)
+                    .filter(ToolLookupResult::isValid)
+                    .toList();
+
+            return createToolset.apply(allValidFoundTools).orElseThrow(() -> {
+                return new ConfigException(
+                        I18N.getString("error.no-wix-tools"),
+                        I18N.getString("error.no-wix-tools.advice"));
+            });
+        });
+
         return toolset;
     }
 
-    ToolInfo find() throws ConfigException {
-        final Path toolFileName = IOUtils.addSuffix(
-                Path.of(name().toLowerCase()), ".exe");
+    static List<Path> findWixInstallDirs() {
+        return Stream.of(
+                findWixCurrentInstallDirs(),
+                findWix3InstallDirs()
+        ).flatMap(List::stream).toList();
+    }
 
-        String[] version = new String[1];
-        ConfigException reason = createToolValidator(toolFileName, version).get();
-        if (version[0] != null) {
-            if (reason == null) {
-                // Found in PATH.
-                return new ToolInfo(toolFileName, version[0]);
-            }
+    private record ToolLookupResult(WixTool tool, ToolInfo info) {
 
-            // Found in PATH, but something went wrong.
-            throw reason;
+        ToolLookupResult {
+            Objects.requireNonNull(tool);
+            Objects.requireNonNull(info);
         }
 
-        for (var dir : findWixInstallDirs()) {
-            Path path = dir.resolve(toolFileName);
-            if (Files.exists(path)) {
-                reason = createToolValidator(path, version).get();
-                if (reason != null) {
-                    throw reason;
+        static Optional<ToolLookupResult> lookup(WixTool tool, Optional<Path> lookupDir) {
+            Objects.requireNonNull(tool);
+            Objects.requireNonNull(lookupDir);
+
+            final Path toolPath = lookupDir.map(p -> {
+                return p.resolve(tool.toolFileName);
+            }).orElse(tool.toolFileName);
+
+            final var validator = new ToolValidator(toolPath).setMinimalVersion(tool.minimalVersion);
+
+            final var printVersionArg = switch (tool) {
+                case Candle3 -> {
+                    // Add '-fips' to make "candle.exe" print help message and return
+                    // 0 exit code instead of returning error exit code and printing
+                    // "error CNDL0308 : The Federal Information Processing Standard (FIPS) appears to be enabled on the machine..."
+                    // error message if FIPS is enabled.
+                    // If FIPS is disabled, passing '-fips' parameter still makes
+                    // "candle.exe" print help message and return 0 exit code.
+                    yield "-fips";
                 }
-                return new ToolInfo(path, version[0]);
-            }
-        }
+                case Light3 -> {
+                    yield "-?";
+                }
+                default -> {
+                    yield "--version";
+                }
+            };
+            validator.setCommandLine(printVersionArg);
 
-        throw reason;
-    }
+            final Function<Stream<String>, Optional<String>> versionParser = switch (tool) {
+                case Candle3, Light3 -> {
+                    yield output -> {
+                        return output.findFirst().map(firstLineOfOutput -> {
+                            int separatorIdx = firstLineOfOutput.lastIndexOf(' ');
+                            if (separatorIdx == -1) {
+                                return null;
+                            }
+                            return firstLineOfOutput.substring(separatorIdx + 1);
+                        });
+                    };
+                }
+                default -> {
+                    yield output -> {
+                        return output.findFirst();
+                    };
+                }
+            };
 
-    private static Supplier<ConfigException> createToolValidator(Path toolPath,
-            String[] versionCtnr) {
-        return new ToolValidator(toolPath)
-                .setCommandLine("/?")
-                .setMinimalVersion(MINIMAL_VERSION)
-                .setToolNotFoundErrorHandler(
-                        (name, ex) -> new ConfigException(
-                                I18N.getString("error.no-wix-tools"),
-                                I18N.getString("error.no-wix-tools.advice")))
-                .setToolOldVersionErrorHandler(
-                        (name, version) -> new ConfigException(
-                                MessageFormat.format(I18N.getString(
-                                        "message.wrong-tool-version"), name,
-                                        version, MINIMAL_VERSION),
-                                I18N.getString("error.no-wix-tools.advice")))
-                .setVersionParser(output -> {
-                    versionCtnr[0] = "";
-                    String firstLineOfOutput = output.findFirst().orElse("");
-                    int separatorIdx = firstLineOfOutput.lastIndexOf(' ');
-                    if (separatorIdx == -1) {
-                        return null;
+            final var parsedVersion = Slot.<String>createEmpty();
+            validator.setVersionParser(output -> {
+                versionParser.apply(output).ifPresent(parsedVersion::set);
+                return parsedVersion.find().orElse(null);
+            });
+
+            if (validator.validate() == null) {
+                // Tool found
+                ToolInfo info = new DefaultToolInfo(toolPath, parsedVersion.get());
+                if (tool == Candle3) {
+                    // Detect FIPS mode
+                    var fips = false;
+                    try {
+                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var exitCode = result.getExitCode();
+                        if (exitCode != 0 /* 308 */) {
+                            final var output = result.getOutput();
+                            if (!output.isEmpty() && output.get(0).contains("error CNDL0308")) {
+                                fips = true;
+                            }
+                        }
+                    } catch (IOException ex) {
                     }
-                    versionCtnr[0] = firstLineOfOutput.substring(separatorIdx + 1);
-                    return versionCtnr[0];
-                })::validate;
-    }
+                    info = new DefaultCandleInfo(info, fips);
+                }
 
-    private static final DottedVersion MINIMAL_VERSION = DottedVersion.lazy("3.0");
-
-    static Path getSystemDir(String envVar, String knownDir) {
-        return Optional
-                .ofNullable(getEnvVariableAsPath(envVar))
-                .orElseGet(() -> Optional
-                        .ofNullable(getEnvVariableAsPath("SystemDrive"))
-                        .orElseGet(() -> Path.of("C:")).resolve(knownDir));
-    }
-
-    private static Path getEnvVariableAsPath(String envVar) {
-        String path = System.getenv(envVar);
-        if (path != null) {
-            try {
-                return Path.of(path);
-            } catch (InvalidPathException ex) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.invalid-envvar"), envVar));
+                return Optional.of(new ToolLookupResult(tool, info));
+            } else {
+                return Optional.empty();
             }
         }
-        return null;
+
+        boolean versionTooOld() {
+            return DottedVersion.compareComponents(info.version(), tool.minimalVersion) < 0;
+        }
+
+        boolean isValid() {
+            return !versionTooOld();
+        }
     }
 
-    private static List<Path> findWixInstallDirs() {
-        PathMatcher wixInstallDirMatcher = FileSystems.getDefault().getPathMatcher(
-                "glob:WiX Toolset v*");
+    private static Path getSystemDir(String envVar, Path knownDir) {
+        return getEnvVariableAsPath(envVar).orElseGet(() -> {
+            return getEnvVariableAsPath("SystemDrive").orElseGet(() -> {
+                return Path.of("C:");
+            }).resolve(knownDir);
+        });
+    }
 
-        Path programFiles = getSystemDir("ProgramFiles", "\\Program Files");
-        Path programFilesX86 = getSystemDir("ProgramFiles(x86)",
-                "\\Program Files (x86)");
+    private static Optional<Path> getEnvVariableAsPath(String envVar) {
+        Objects.requireNonNull(envVar);
+        return Optional.ofNullable(Globals.instance().system().getenv(envVar)).flatMap(PathUtils::asPath);
+    }
+
+    private static List<Path> findWixCurrentInstallDirs() {
+        return Stream.of(
+                getEnvVariableAsPath("USERPROFILE"),
+                Optional.ofNullable(Globals.instance().system().getProperty("user.home")).flatMap(PathUtils::asPath)
+        ).flatMap(Optional::stream).map(path -> {
+            return path.resolve(".dotnet/tools");
+        }).filter(Files::isDirectory).distinct().toList();
+    }
+
+    private static List<Path> findWix3InstallDirs() {
+        var wixInstallDirMatcher = FileSystems.getDefault().getPathMatcher("glob:WiX Toolset v*");
+
+        var programFiles = getSystemDir("ProgramFiles", Path.of("Program Files"));
+        var programFilesX86 = getSystemDir("ProgramFiles(x86)", Path.of("Program Files (x86)"));
 
         // Returns list of WiX install directories ordered by WiX version number.
         // Newer versions go first.
         return Stream.of(programFiles, programFilesX86).map(path -> {
-            List<Path> result;
             try (var paths = Files.walk(path, 1)) {
-                result = paths.toList();
+                return paths.toList();
             } catch (IOException ex) {
-                Log.verbose(ex);
-                result = Collections.emptyList();
+                return List.<Path>of();
             }
-            return result;
         }).flatMap(List::stream)
-        .filter(path -> wixInstallDirMatcher.matches(path.getFileName()))
-        .sorted(Comparator.comparing(Path::getFileName).reversed())
-        .map(path -> path.resolve("bin"))
-        .toList();
+                .filter(path -> wixInstallDirMatcher.matches(path.getFileName()))
+                .sorted(Comparator.comparing(Path::getFileName).reversed())
+                .map(path -> path.resolve("bin"))
+                .toList();
     }
+
+    private final Path toolFileName;
+    private final DottedVersion minimalVersion;
 }

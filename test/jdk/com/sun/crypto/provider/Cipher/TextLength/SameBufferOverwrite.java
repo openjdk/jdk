@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,11 @@ public class SameBufferOverwrite {
     SameBufferOverwrite(String algo, String transformation)
         throws Exception {
 
-        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(algo,
+                            System.getProperty("test.provider.name", "SunJCE"));
         skey = kg.generateKey();
-        c = Cipher.getInstance(transformation, "SunJCE");
+        c = Cipher.getInstance(transformation,
+                            System.getProperty("test.provider.name", "SunJCE"));
     }
 
     /*

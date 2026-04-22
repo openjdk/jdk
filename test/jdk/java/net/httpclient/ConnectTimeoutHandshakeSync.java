@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,25 @@
 
 import java.net.http.HttpClient.Version;
 import java.time.Duration;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @summary Tests connection timeouts during SSL handshake
  * @bug 8208391
- * @run testng/othervm ConnectTimeoutHandshakeSync
+ * @library /test/lib
+ * @build AbstractConnectTimeoutHandshake
+ * @run junit/othervm ${test.main.class}
  */
 
 public class ConnectTimeoutHandshakeSync
     extends AbstractConnectTimeoutHandshake
 {
-    @Test(dataProvider = "variants")
     @Override
+    @ParameterizedTest
+    @MethodSource("variants")
     public void timeoutSync(Version requestVersion,
                             String method,
                             Duration connectTimeout,

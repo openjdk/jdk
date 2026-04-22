@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.ArrayList;
  * It also implements driver-defined trays.
  **/
 @SuppressWarnings("serial") // JDK implementation class
-public class Win32MediaTray extends MediaTray {
+public final class Win32MediaTray extends MediaTray {
 
     static final Win32MediaTray ENVELOPE_MANUAL = new Win32MediaTray(0,
                                                       6); //DMBIN_ENVMANUAL
@@ -96,6 +96,7 @@ public class Win32MediaTray extends MediaTray {
       return (myStringTable.length+winStringTable.size());
     }
 
+    @Override
     protected String[] getStringTable() {
       ArrayList<String> completeList = new ArrayList<>();
       for (int i=0; i < myStringTable.length; i++) {
@@ -106,6 +107,7 @@ public class Win32MediaTray extends MediaTray {
       return completeList.toArray(nameTable);
     }
 
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
       ArrayList<MediaTray> completeList = new ArrayList<>();
       for (int i=0; i < myEnumValueTable.length; i++) {

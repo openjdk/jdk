@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -66,7 +65,8 @@
 // The actual size of each block heavily depends on the CPU capabilities and,
 // of course, on the logic implemented in each block.
 #ifdef ASSERT
-  #define BTB_MINSIZE 256
+// With introduced assert in get_monitor() & set_monitor(), required block size is now 322.
+  #define BTB_MINSIZE 512
 #else
   #define BTB_MINSIZE  64
 #endif
@@ -92,7 +92,8 @@
     if (len > alignment) {                                                     \
       tty->print_cr("%4d of %4d @ " INTPTR_FORMAT ": Block len for %s",        \
                     len, alignment, e_addr-len, name);                         \
-      guarantee(len <= alignment, "block too large");                          \
+      guarantee(len <= alignment, "block too large, len = %d, alignment = %d", \
+                      len, alignment);                                         \
     }                                                                          \
     guarantee(len == e_addr-b_addr, "block len mismatch");                     \
   }
@@ -113,7 +114,8 @@
     if (len > alignment) {                                                     \
       tty->print_cr("%4d of %4d @ " INTPTR_FORMAT ": Block len for %s",        \
                     len, alignment, e_addr-len, name);                         \
-      guarantee(len <= alignment, "block too large");                          \
+      guarantee(len <= alignment, "block too large, len = %d, alignment = %d", \
+                      len, alignment);                                         \
     }                                                                          \
     guarantee(len == e_addr-b_addr, "block len mismatch");                     \
   }
@@ -541,7 +543,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg  = Z_ARG2;
   __ load_const_optimized(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -2321,7 +2323,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ z_lg(Rthis, aaddress(0));
     __ load_klass(Rklass, Rthis);
-    __ testbit(Address(Rklass, Klass::access_flags_offset()), exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ z_tm(Address(Rklass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
     __ bind(skip_register_finalizer);
@@ -2358,7 +2360,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label resolved, clinit_barrier_slow;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2373,27 +2375,31 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
 
   __ load_method_entry(Rcache, index);
   __ z_cli(Address(Rcache, bc_offset), code);
-  __ z_bre(resolved);
+
+  // Class initialization barrier for static methods
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    const Register method = Z_R1_scratch;
+    const Register klass  = Z_R1_scratch;
+    __ z_brne(L_clinit_barrier_slow);
+    __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
+    __ load_method_holder(klass, method);
+    __ clinit_barrier(klass, Z_thread, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ z_bre(L_done);
+  }
 
   // Resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
   __ call_VM(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, index);
-  __ bind(resolved);
 
-  // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
-    const Register method = Z_R1_scratch;
-    const Register klass  = Z_R1_scratch;
-    __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
-    __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, Z_thread, nullptr /*L_fast_path*/, &clinit_barrier_slow);
-  }
+  __ bind(L_done);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_method");
 }
@@ -2406,7 +2412,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   assert_different_registers(cache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  NearLabel resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2420,9 +2426,22 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
                                                  in_bytes(ResolvedFieldEntry::put_code_offset()) ;
 
   __ z_cli(Address(cache, code_offset), code);
-  __ z_bre(resolved);
+
+  // Class initialization barrier for static fields
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    const Register field_holder = index;
+
+    __ z_brne(L_clinit_barrier_slow);
+    __ load_sized_value(field_holder, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
+    __ clinit_barrier(field_holder, Z_thread, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ z_bre(L_done);
+  }
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
   __ call_VM(noreg, entry, Z_ARG2);
@@ -2430,7 +2449,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Update registers with resolved info.
   __ load_field_entry(cache, index);
 
-  __ bind(resolved);
+  __ bind(L_done);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_field");
 }
@@ -3952,7 +3971,12 @@ void TemplateTable::_new() {
     if (!ZeroTLAB) {
       // The object is initialized before the header. If the object size is
       // zero, go directly to the header initialization.
-      __ z_aghi(Rsize, (int)-sizeof(oopDesc)); // Subtract header size, set CC.
+      if (UseCompactObjectHeaders) {
+        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+        __ z_aghi(Rsize, (int)-oopDesc::base_offset_in_bytes());
+      } else {
+        __ z_aghi(Rsize, (int)-sizeof(oopDesc)); // Subtract header size, set CC.
+      }
       __ z_bre(initialize_header);             // Jump if size of fields is zero.
 
       // Initialize object fields.
@@ -3964,20 +3988,27 @@ void TemplateTable::_new() {
 
       // Set Rzero to 0 and use it as src length, then mvcle will copy nothing
       // and fill the object with the padding value 0.
-      __ add2reg(RobjectFields, sizeof(oopDesc), RallocatedObject);
+      if (UseCompactObjectHeaders) {
+        __ add2reg(RobjectFields, oopDesc::base_offset_in_bytes(), RallocatedObject);
+      } else {
+        __ add2reg(RobjectFields, sizeof(oopDesc), RallocatedObject);
+      }
       __ move_long_ext(RobjectFields, as_Register(Rzero->encoding() - 1), 0);
     }
 
     // Initialize object header only.
     __ bind(initialize_header);
-    __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
-                   (long)markWord::prototype().value());
+    if (UseCompactObjectHeaders) {
+      __ z_lg(tmp, Address(iklass, in_bytes(Klass::prototype_header_offset())));
+      __ z_stg(tmp, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
+                     (long) markWord::prototype().value());
+      __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
+      __ store_klass(iklass, RallocatedObject);     // Store klass last.
+    }
 
-    __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
-    __ store_klass(iklass, RallocatedObject);     // Store klass last.
-
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false, Z_ARG5 /*scratch*/);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath.
       __ push(atos); // Save the return value.
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), RallocatedObject);
@@ -4052,7 +4083,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos); // Save receiver for result, and for GC.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(Z_tos);
+  __ get_vm_result_metadata(Z_tos);
 
   Register   receiver = Z_ARG4;
   Register   klass = Z_tos;
@@ -4124,7 +4155,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // Save receiver for result, and for GC.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(Z_tos);
+  __ get_vm_result_metadata(Z_tos);
 
   Register receiver = Z_tmp_2;
   Register klass = Z_tos;

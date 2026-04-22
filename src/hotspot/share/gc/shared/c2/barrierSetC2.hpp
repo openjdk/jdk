@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ class C2AccessValuePtr: public C2AccessValue {
 
 public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
-    C2AccessValue(node, reinterpret_cast<const Type*>(type)) {}
+    C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
+  const TypePtr* type() const { return _type->is_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -102,10 +102,10 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
@@ -114,10 +114,10 @@ public:
   C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 
@@ -254,6 +254,8 @@ public:
   Label* entry();
   // Return point from the stub (typically end of barrier).
   Label* continuation();
+  // High-level, GC-specific barrier flags.
+  uint8_t barrier_data() const;
 
   // Preserve the value in reg across runtime calls in this barrier.
   void preserve(Register reg);
@@ -268,6 +270,9 @@ public:
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
 // barriers into the accesses.
 class BarrierSetC2: public CHeapObj<mtGC> {
+private:
+  static const TypeFunc* _clone_type_Type;
+
 protected:
   virtual void resolve_address(C2Access& access) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -280,6 +285,8 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   void pin_atomic_op(C2AtomicParseAccess& access) const;
+  void clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                        address call_addr, const char* call_name) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.
@@ -338,6 +345,8 @@ public:
   // Estimated size of the node barrier in number of C2 Ideal nodes.
   // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
   virtual uint estimated_barrier_size(const Node* node) const { return 0; }
+  // Whether the given store can be used to initialize a newly allocated object.
+  virtual bool can_initialize_object(const StoreNode* store) const { return true; }
 
   enum CompilePhase {
     BeforeOptimize,
@@ -358,12 +367,23 @@ public:
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
+  // Whether the given phi node joins OOPs from fast and slow allocation paths.
+  static bool is_allocation(const Node* node);
+  // Elide GC barriers from a Mach node according to elide_dominated_barriers().
+  virtual void elide_dominated_barrier(MachNode* mach) const { }
+  // Elide GC barriers from instructions in 'accesses' if they are dominated by
+  // instructions in 'access_dominators' (according to elide_mach_barrier()) and
+  // there is no safepoint poll in between.
+  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
+
+  static void make_clone_type();
+  static const TypeFunc* clone_type();
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,13 +137,13 @@ public final class DESedeWrapCipher extends CipherSpi {
      */
     protected int engineGetOutputSize(int inputLen) {
         // can only return an upper-limit if not initialized yet.
-        int result = 0;
+        int result;
         if (decrypting) {
             result = inputLen - 16; // CHECKSUM_LEN + IV_LEN;
         } else {
             result = Math.addExact(inputLen, 16);
         }
-        return (result < 0? 0:result);
+        return (Math.max(result, 0));
     }
 
     /**
@@ -210,7 +210,7 @@ public final class DESedeWrapCipher extends CipherSpi {
                               AlgorithmParameterSpec params,
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
-        byte[] currIv = null;
+        byte[] currIv;
         if (opmode == Cipher.WRAP_MODE) {
             decrypting = false;
             if (params == null) {
@@ -380,7 +380,7 @@ public final class DESedeWrapCipher extends CipherSpi {
     /**
      * Returns the parameters used with this cipher.
      * Note that null maybe returned if this cipher does not use any
-     * parameters or when it has not be set, e.g. initialized with
+     * parameters or when it has not been set, e.g. initialized with
      * UNWRAP_MODE but wrapped key data has not been given.
      *
      * @return the parameters used with this cipher; can be null.
@@ -556,9 +556,8 @@ public final class DESedeWrapCipher extends CipherSpi {
                     buffer2, 0);
             int keyValLen = buffer2.length - CHECKSUM_LEN;
             byte[] cks = getChecksum(buffer2, 0, keyValLen);
-            int offset = keyValLen;
             for (int i = 0; i < CHECKSUM_LEN; i++) {
-                if (buffer2[offset + i] != cks[i]) {
+                if (buffer2[keyValLen + i] != cks[i]) {
                     throw new InvalidKeyException("Checksum comparison failed");
                 }
             }
@@ -588,7 +587,7 @@ public final class DESedeWrapCipher extends CipherSpi {
         return getChecksum(in, 0, in.length);
     }
     private static final byte[] getChecksum(byte[] in, int offset, int len) {
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException nsae) {

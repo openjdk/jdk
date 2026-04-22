@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,22 +33,23 @@ import nsk.share.jdi.AbstractJDIDebuggee;
  */
 public class VMOutOfMemoryException001t extends AbstractJDIDebuggee {
 
+    public static int[] reserverdMemory = new int[1024 * 1024];
     public static void main(String args[]) {
         new VMOutOfMemoryException001t().doTest(args);
     }
 
     // Just call normal doTest() function, but hide any OutOfMemoryErrors.
+    @Override
     public void doTest() {
         boolean isOutOfMemory = false;
 
         try {
             super.doTest();
         } catch (OutOfMemoryError e) {
-            // Don't log anything. We are out of memory.
-            // A println is likely to genereate a new OutOfMemoryError
             isOutOfMemory = true;
+            reserverdMemory = null;
+            log.display("Got expected OOME.");
         }
-
         // Normally the super class handles the return value.
         // If we got here after an OutOfMemoryError, we consider the test passed.
         if (isOutOfMemory && callExit) {

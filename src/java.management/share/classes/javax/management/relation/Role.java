@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,12 @@
 package javax.management.relation;
 
 import static com.sun.jmx.mbeanserver.Util.cast;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
-
-import java.security.AccessController;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -51,62 +48,18 @@ import javax.management.ObjectName;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class Role implements Serializable {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -1959486389343113026L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -279985518429862552L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("myName", String.class),
-      new ObjectStreamField("myObjNameList", ArrayList.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("name", String.class),
-      new ObjectStreamField("objectNameList", List.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -279985518429862552L;
     /**
      * @serialField name String Role name
      * @serialField objectNameList List {@link List} of {@link ObjectName}s of referenced MBeans
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK : Too bad, no compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+      new ObjectStreamField("name", String.class),
+      new ObjectStreamField("objectNameList", List.class)
+    };
 
     //
     // Private members
@@ -290,28 +243,7 @@ public class Role implements Serializable {
      */
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-      if (compat)
-      {
-        // Read an object serialized in the old serial form
-        //
-        ObjectInputStream.GetField fields = in.readFields();
-        name = (String) fields.get("myName", null);
-        if (fields.defaulted("myName"))
-        {
-          throw new NullPointerException("myName");
-        }
-        objectNameList = cast(fields.get("myObjNameList", null));
-        if (fields.defaulted("myObjNameList"))
-        {
-          throw new NullPointerException("myObjNameList");
-        }
-      }
-      else
-      {
-        // Read an object serialized in the new serial form
-        //
-        in.defaultReadObject();
-      }
+      in.defaultReadObject();
     }
 
 
@@ -320,20 +252,6 @@ public class Role implements Serializable {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("myName", name);
-        fields.put("myObjNameList", objectNameList);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 }

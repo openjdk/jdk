@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
@@ -74,7 +73,6 @@ public final class SourceLauncher {
     public static void main(String... args) throws Throwable {
         try {
             new SourceLauncher(System.err)
-                    .checkSecurityManager()
                     .run(VM.getRuntimeArguments(), args);
         } catch (Fault f) {
             System.err.println(f.getMessage());
@@ -106,19 +104,6 @@ public final class SourceLauncher {
      */
     public SourceLauncher(PrintWriter out) {
         this.out = out;
-    }
-
-    /**
-     * Checks if a security manager is present and throws an exception if so.
-     * @return this object
-     * @throws Fault if a security manager is present
-     */
-    @SuppressWarnings("removal")
-    private SourceLauncher checkSecurityManager() throws Fault {
-        if (System.getSecurityManager() != null) {
-            throw new Fault(Errors.SecurityManager);
-        }
-        return this;
     }
 
     /**
@@ -196,16 +181,17 @@ public final class SourceLauncher {
         ProgramDescriptor program = context.getProgramDescriptor();
 
         // 1. Find a main method in the first class and if there is one - invoke it
-        Class<?> firstClass;
+        Class<?> mainClass;
         String firstClassName = program.qualifiedTypeNames().getFirst();
+        ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
+        Thread.currentThread().setContextClassLoader(loader);
         try {
-            ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
-            firstClass = Class.forName(firstClassName, false, loader);
+            mainClass = Class.forName(firstClassName, false, loader);
         } catch (ClassNotFoundException e) {
             throw new Fault(Errors.CantFindClass(firstClassName));
         }
 
-        Method mainMethod = MethodFinder.findMainMethod(firstClass);
+        Method mainMethod = MethodFinder.findMainMethod(mainClass);
         if (mainMethod == null) {
             // 2. If the first class doesn't have a main method, look for a class with a matching name
             var compilationUnitName = program.fileObject().getFile().getFileName().toString();
@@ -220,32 +206,38 @@ public final class SourceLauncher {
                     .findFirst()
                     .orElseThrow(() -> new Fault(Errors.CantFindClass(expectedName)));
 
-            Class<?> actualClass;
             try {
-                actualClass = Class.forName(actualName, false, firstClass.getClassLoader());
+                mainClass = Class.forName(actualName, false, mainClass.getClassLoader());
             } catch (ClassNotFoundException ignore) {
                 throw new Fault(Errors.CantFindClass(actualName));
             }
-            mainMethod = MethodFinder.findMainMethod(actualClass);
+            mainMethod = MethodFinder.findMainMethod(mainClass);
             if (mainMethod == null) {
                 throw new Fault(Errors.CantFindMainMethod(actualName));
             }
         }
 
-        // selected main method instance points back to its declaring class
-        Class<?> mainClass = mainMethod.getDeclaringClass();
         String mainClassName = mainClass.getName();
-
         var isStatic = Modifier.isStatic(mainMethod.getModifiers());
 
         Object instance = null;
 
+        // Similar to sun.launcher.LauncherHelper#checkAndLoadMain, including
+        // checks performed in LauncherHelper#validateMainMethod
         if (!isStatic) {
+            if (Modifier.isAbstract(mainClass.getModifiers())) {
+                throw new Fault(Errors.CantInstantiate(mainClassName));
+            }
+
             Constructor<?> constructor;
             try {
                 constructor = mainClass.getDeclaredConstructor();
             } catch (NoSuchMethodException e) {
                 throw new Fault(Errors.CantFindConstructor(mainClassName));
+            }
+
+            if (Modifier.isPrivate(constructor.getModifiers())) {
+                throw new Fault(Errors.CantUsePrivateConstructor(mainClassName));
             }
 
             try {
@@ -269,13 +261,19 @@ public final class SourceLauncher {
             }
         } catch (IllegalAccessException e) {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
-        } catch (InvocationTargetException e) {
+        } catch (InvocationTargetException exception) {
             // remove stack frames for source launcher
-            int invocationFrames = e.getStackTrace().length;
-            Throwable target = e.getCause();
-            StackTraceElement[] targetTrace = target.getStackTrace();
-            target.setStackTrace(Arrays.copyOfRange(targetTrace, 0, targetTrace.length - invocationFrames));
-            throw e;
+            StackTraceElement[] invocationElements = exception.getStackTrace();
+            if (invocationElements == null) throw exception;
+            Throwable cause = exception.getCause();
+            if (cause == null) throw exception;
+            StackTraceElement[] causeElements = cause.getStackTrace();
+            if (causeElements == null) throw exception;
+            int range = causeElements.length - invocationElements.length;
+            if (range >= 0) {
+                cause.setStackTrace(Arrays.copyOfRange(causeElements, 0, range));
+            }
+            throw exception;
         }
 
         return mainClass;

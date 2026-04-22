@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/jdk.internal.shellsupport.doc
+ *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng JavadocHelperTest
+ * @run junit JavadocHelperTest
  * @key randomness
  */
 
@@ -69,13 +69,13 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
 import jdk.internal.shellsupport.doc.JavadocHelper;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class JavadocHelperTest {
 
+    @Test
     public void testJavadoc() throws Exception {
         doTestJavadoc("",
                       t -> t.getElements().getTypeElement("test.Super"),
@@ -93,12 +93,7 @@ public class JavadocHelperTest {
                       " @return value\n");
     }
 
-    private Element getFirstMethod(JavacTask task, String typeName) {
-        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
-    }
-
-    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
-
+    @Test
     public void testInheritNoJavadoc() throws Exception {
         doTestJavadoc("",
                       getSubTest,
@@ -113,6 +108,7 @@ public class JavadocHelperTest {
                       " @return value\n");
     }
 
+    @Test
     public void testInheritFull() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * Prefix {@inheritDoc} suffix.\n" +
@@ -137,6 +133,7 @@ public class JavadocHelperTest {
                       " @return prefix value suffix\n");
     }
 
+    @Test
     public void testInheritMissingParam() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * Prefix {@inheritDoc} suffix.\n" +
@@ -160,6 +157,7 @@ public class JavadocHelperTest {
                       " @return prefix value suffix\n");
     }
 
+    @Test
     public void testInheritMissingFirstParam() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * Prefix {@inheritDoc} suffix.\n" +
@@ -183,6 +181,7 @@ public class JavadocHelperTest {
                       " @return prefix value suffix\n");
     }
 
+    @Test
     public void testInheritMissingThrows() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * Prefix {@inheritDoc} suffix.\n" +
@@ -206,6 +205,7 @@ public class JavadocHelperTest {
                       " @return prefix value suffix\n");
     }
 
+    @Test
     public void testInheritMissingReturn() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * Prefix {@inheritDoc} suffix.\n" +
@@ -229,6 +229,7 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    @Test
     public void testInheritAllButOne() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     * @throws IllegalArgumentException {@inheritDoc}\n" +
@@ -244,6 +245,7 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    @Test
     public void testInheritEmpty() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     */\n",
@@ -266,6 +268,7 @@ public class JavadocHelperTest {
                       "@return \n");
     }
 
+    @Test
     public void testEmptyValue() throws Exception {
         doTestJavadoc("    /**\n" +
                       "     */\n",
@@ -288,6 +291,7 @@ public class JavadocHelperTest {
                       "@return \n");
     }
 
+    @Test
     public void testShortComment() throws Exception {
         doTestJavadoc("    /**Test.*/\n",
                       getSubTest,
@@ -299,6 +303,156 @@ public class JavadocHelperTest {
                       "@throws java.lang.IllegalArgumentException exc2\n" +
                       "@throws java.lang.IllegalAccessException exc3\n" +
                       "@return value\n");
+    }
+
+    @Test
+    public void testMarkdown() throws Exception {
+        doTestJavadoc("""
+                      /// Prefix {@inheritDoc} suffix.
+                      ///
+                      /// *Another* __paragraph__.
+                      ///
+                      /// Paragraph \ufffc with \ufffc replacement \ufffc character.
+                      ///
+                      /// @param p1 prefix {@inheritDoc} suffix
+                      /// @param p2 prefix {@inheritDoc} suffix
+                      /// @param p3 prefix {@inheritDoc} suffix
+                      /// @throws IllegalStateException prefix {@inheritDoc} suffix
+                      /// @throws IllegalArgumentException prefix {@inheritDoc} suffix
+                      /// @throws IllegalAccessException prefix {@inheritDoc} suffix
+                      /// @return prefix {@inheritDoc} suffix
+                      """,
+                      getSubTest,
+                      """
+                      Prefix javadoc1 suffix.
+
+                      <p><em>Another</em> <strong>paragraph</strong>.
+
+                      <p>Paragraph \ufffc with \ufffc replacement \ufffc character.
+
+                      @param p1 prefix param1 suffix
+                      @param p2 prefix param2 suffix
+                      @param p3 prefix param3 suffix
+                      @throws IllegalStateException prefix exc1 suffix
+                      @throws IllegalArgumentException prefix exc2 suffix
+                      @throws IllegalAccessException prefix exc3 suffix
+                      @return prefix value suffix""");
+    }
+
+    @Test
+    public void testMarkdown2() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@link java.lang.Object}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
+    }
+
+    @Test
+    public void testMarkdown3() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__.
+                      """,
+                      getSubTest,
+                      //the formatting could be improved:
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>.@param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      """);
+    }
+
+    @Test
+    public void testMarkdown4() throws Exception {
+        doTestJavadoc("""
+                      /// {@inheritDoc}
+                      ///
+                      /// *Another* __paragraph__. [test][java.lang.Object]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      javadoc1
+
+                      <p><em>Another</em> <strong>paragraph</strong>. {@linkplain java.lang.Object test}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                      @since snc""");
+    }
+
+    @Test
+    public void testMarkdown5() throws Exception {
+        doTestJavadoc("""
+                      ///[define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
+    }
+
+    @Test
+    public void testMarkdown6() throws Exception {
+        doTestJavadoc("""
+                      ///Text1 [define classes][java.lang.invoke.MethodHandles.Lookup#defineClass(byte\\[\\])]
+                      ///text2
+                      ///
+                      /// @since snc
+                      """,
+                      getSubTest,
+                      """
+                      Text1 {@linkplain java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+                      text2
+
+                      @param p1 param1
+                      @param p2 param2
+                      @param p3 param3
+                      @throws java.lang.IllegalStateException exc1
+                      @throws java.lang.IllegalArgumentException exc2
+                      @throws java.lang.IllegalAccessException exc3
+                      @return value
+                       @since snc""");
     }
 
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
@@ -365,10 +519,16 @@ public class JavadocHelperTest {
             try (JavadocHelper helper = JavadocHelper.create(task, Arrays.asList(srcZip))) {
                 String javadoc = helper.getResolvedDocComment(el);
 
-                assertEquals(javadoc, expectedJavadoc);
+                assertEquals(expectedJavadoc, javadoc);
             }
         }
     }
+
+    private Element getFirstMethod(JavacTask task, String typeName) {
+        return ElementFilter.methodsIn(task.getElements().getTypeElement(typeName).getEnclosedElements()).get(0);
+    }
+
+    private Function<JavacTask, Element> getSubTest = t -> getFirstMethod(t, "test.Sub");
 
     private static final class JFOImpl extends SimpleJavaFileObject {
 
@@ -403,6 +563,7 @@ public class JavadocHelperTest {
      * Set the system property `seed` to a random seed to reproduce
      * a specific run of this test.
      */
+    @Test
     public void testRandomDocs() throws IOException {
         Random random = new Random(getSeed());
         // Run test on 2% of classes, which corresponds to ~ 140 classes

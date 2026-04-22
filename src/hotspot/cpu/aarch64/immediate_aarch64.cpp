@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-
-#include "precompiled.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "immediate_aarch64.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <stdint.h>
 
 // there are at most 2^13 possible logical immediate encodings
 // however, some combinations of immr and imms are invalid
@@ -295,7 +294,7 @@ static int expandLogicalImmediate(uint32_t immN, uint32_t immr,
     uint64_t and_bits_sub = replicate(and_bit, 1, nbits);
     uint64_t or_bits_sub = replicate(or_bit, 1, nbits);
     uint64_t and_bits_top = (and_bits_sub << nbits) | ones(nbits);
-    uint64_t or_bits_top = (0 << nbits) | or_bits_sub;
+    uint64_t or_bits_top = (UCONST64(0) << nbits) | or_bits_sub;
 
     tmask = ((tmask
               & (replicate(and_bits_top, 2 * nbits, 32 / nbits)))

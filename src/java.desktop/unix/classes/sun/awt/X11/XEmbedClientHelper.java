@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import sun.awt.X11GraphicsDevice;
  * Window which wants to participate in a protocol should create an instance,
  * call install and forward all XClientMessageEvents to it.
  */
-public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher {
+public final class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedClientHelper");
 
     private XEmbeddedFramePeer embedded; // XEmbed client
@@ -164,6 +164,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
         }
     }
 
+    @Override
     public void dispatchEvent(XEvent xev) {
         switch(xev.get_type()) {
           case XConstants.ClientMessage:

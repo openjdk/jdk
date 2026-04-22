@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,9 +188,6 @@ public interface Path
      *          The file system, identified by the URI, does not exist and
      *          cannot be created automatically, or the provider identified by
      *          the URI's scheme component is not installed
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission to access the file system
      *
      * @since 11
      */
@@ -747,17 +744,14 @@ public interface Path
      *          file system is constructed to access the contents of a file as
      *          a file system, and the URI of the enclosing file system cannot be
      *          obtained
-     *
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, the {@link #toAbsolutePath toAbsolutePath} method
-     *          throws a security exception.
      */
     URI toUri();
 
     /**
      * Returns a {@code Path} object representing the absolute path of this
-     * path.
+     * path. Where this {@code Path} is associated with the default provider,
+     * then the returned absolute path will have a non-{@code null}
+     * {@linkplain #getRoot root component}.
      *
      * <p> If this path is already {@link Path#isAbsolute absolute} then this
      * method simply returns this path. Otherwise, this method resolves the path
@@ -769,12 +763,6 @@ public interface Path
      *
      * @throws  java.io.IOError
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager
-     *          is installed, and this path is not absolute, then the security
-     *          manager's {@link SecurityManager#checkPropertyAccess(String)
-     *          checkPropertyAccess} method is invoked to check access to the
-     *          system property {@code user.dir}
      */
     Path toAbsolutePath();
 
@@ -803,8 +791,8 @@ public interface Path
      * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then
      * an implementation will typically cause both names to be removed. When
      * not resolving symbolic links and the preceding name is a symbolic link
-     * then the names are only removed if it guaranteed that the resulting path
-     * will locate the same file as this path.
+     * then the names are only removed if it is guaranteed that the resulting
+     * path will locate the same file as this path.
      *
      * @param   options
      *          options indicating how symbolic links are handled
@@ -814,13 +802,6 @@ public interface Path
      *
      * @throws  IOException
      *          if the file does not exist or an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file, and where
-     *          this path is not absolute, its {@link SecurityManager#checkPropertyAccess(String)
-     *          checkPropertyAccess} method is invoked to check access to the
-     *          system property {@code user.dir}
      */
     Path toRealPath(LinkOption... options) throws IOException;
 
@@ -913,10 +894,6 @@ public interface Path
      *          and the file is not a directory  <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     @Override
     WatchKey register(WatchService watcher,
@@ -969,10 +946,6 @@ public interface Path
      *          and the file is not a directory  <i>(optional specific exception)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
      */
     @Override
     default WatchKey register(WatchService watcher,

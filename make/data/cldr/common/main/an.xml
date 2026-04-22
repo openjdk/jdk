@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -879,8 +879,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
 							<greatestDifference id="d" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d/M/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d/M/Y – E, d/M/Y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="unconfirmed">LLL–LLL y</greatestDifference>
@@ -1066,9 +1066,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>

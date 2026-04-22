@@ -102,8 +102,8 @@ TEST="tier1"`, but the latter is more tab-completion friendly. For more complex
 test runs, the `test TEST="x"` solution needs to be used.
 
 The test specifications given in `TEST` is parsed into fully qualified test
-descriptors, which clearly and unambigously show which tests will be run. As an
-example, `:tier1` will expand to include all subcomponent test directories
+descriptors, which clearly and unambiguously show which tests will be run. As
+an example, `:tier1` will expand to include all subcomponent test directories
 that define `tier1`, for example: `jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1
 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 ...`. You
 can always submit a list of fully qualified test descriptors in the `TEST`
@@ -151,7 +151,7 @@ A brief description of the tiered test groups:
 - `tier2`: This test group covers even more ground. These contain, among other
   things, tests that either run for too long to be at `tier1`, or may require
   special configuration, or tests that are less stable, or cover the broader
-  range of non-core JVM and JDK features/components(for example, XML).
+  range of non-core JVM and JDK features/components (for example, XML).
 
 - `tier3`: This test group includes more stressful tests, the tests for corner
   cases not covered by previous tiers, plus the tests that require GUIs. As
@@ -198,8 +198,8 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 
 **Note:** To be able to run the Gtest suite, you need to configure your build
 to be able to find a proper version of the gtest source. For details, see the
-section ["Running Tests" in the build
-documentation](building.html#running-tests).
+section **"Running Tests" in the build
+documentation** ([html](building.html#running-tests), [markdown](building.md#running-tests)).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor
@@ -294,7 +294,7 @@ would just pass unnoticed.
 
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
 normally eats `;`, the recommended usage is to write the assignment inside
-qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
+quotes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
 as in `JTREG="JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
 (Other ways are possible, e.g. using backslash:
@@ -324,7 +324,7 @@ Currently only applies to JTReg.
 
 #### TIMEOUT_FACTOR
 
-Currently only applies to JTReg.
+Currently only applies to [JTReg -timeoutFactor](#timeout_factor-1).
 
 #### JAVA_OPTIONS
 
@@ -334,13 +334,9 @@ Applies to JTReg, GTest and Micro.
 
 Applies to JTReg, GTest and Micro.
 
-#### AOT_MODULES
-
-Applies to JTReg and GTest.
-
 #### JCOV
 
-This keywords applies globally to the test runner system. If set to `true`, it
+This keyword applies globally to the test runner system. If set to `true`, it
 enables JCov coverage reporting for all tests run. To be useful, the JDK under
 test must be run with a JDK built with JCov instrumentation (`configure
 --with-jcov=<path to directory containing lib/jcov.jar>`, `make jcov-image`).
@@ -348,6 +344,14 @@ test must be run with a JDK built with JCov instrumentation (`configure
 The simplest way to run tests with JCov coverage report is to use the special
 target `jcov-test` instead of `test`, e.g. `make jcov-test TEST=jdk_lang`. This
 will make sure the JCov image is built, and that JCov reporting is enabled.
+
+To include JCov coverage for just a subset of all modules, you can use the
+`--with-jcov-modules` arguments to `configure`, e.g.
+`--with-jcov-modules=jdk.compiler,java.desktop`.
+
+For more fine-grained control, you can pass arbitrary filters to JCov using
+`--with-jcov-filters`, and you can specify a specific JDK to instrument
+using `--with-jcov-input-jdk`.
 
 The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
@@ -363,6 +367,10 @@ between the specified revision and the repository tip.
 The report is stored in
 `build/$BUILD/test-results/jcov-output/diff_coverage_report` file.
 
+#### AOT_JDK
+
+See [Testing Ahead-of-time optimizations](#testing-ahead-of-time-optimizations).
+
 ### JTReg keywords
 
 #### JOBS
@@ -375,16 +383,18 @@ never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 
-The timeout factor (`-timeoutFactor`).
-
-Defaults to 4.
+The `TIMEOUT_FACTOR` is forwarded to JTReg framework itself
+(`-timeoutFactor`). Also, some test cases that programmatically wait a
+certain amount of time will apply this factor. If we run in forced
+compilation mode (`-Xcomp`), the build system will automatically
+adjust this factor to compensate for less performance. Defaults to 4.
 
 #### FAILURE_HANDLER_TIMEOUT
 
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
-#### JTREG_TEST_THREAD_FACTORY
+#### TEST_THREAD_FACTORY
 
 Sets the `-testThreadFactory` for JTReg. It should be the fully qualified
 classname of a class which implements `java.util.concurrent.ThreadFactory`. One
@@ -392,6 +402,13 @@ such implementation class, named Virtual, is currently part of the JDK build in
 the `test/jtreg_test_thread_factory/` directory. This class gets compiled
 during the test image build. The implementation of the Virtual class creates a
 new virtual thread for executing each test class.
+
+#### JVMTI_STRESS_AGENT
+
+Executes JTReg tests with JVM TI stress agent. The stress agent is the part of
+test library and located in `test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp`.
+The value of this argument is set as JVM TI agent options.
+This mode uses ProblemList-jvmti-stress-agent.txt as an additional exclude list.
 
 #### TEST_MODE
 
@@ -480,12 +497,6 @@ your test classes, use `JAVA_OPTIONS`.
 Additional Java options that are sent to the java launcher that starts the
 JTReg harness.
 
-#### AOT_MODULES
-
-Generate AOT modules before testing for the specified module, or set of
-modules. If multiple modules are specified, they should be separated by space
-(or, to help avoid quoting issues, the special value `%20`).
-
 #### RETRY_COUNT
 
 Retry failed tests up to a set number of times, until they pass. This allows to
@@ -500,6 +511,10 @@ helps to reproduce intermittent test failures. Defaults to 0.
 
 Use this report style when reporting test results (sent to JTReg as `-report`).
 Defaults to `files`.
+
+#### MANUAL
+
+Set to `true` to execute manual tests only.
 
 ### Gtest keywords
 
@@ -516,12 +531,6 @@ problem.
 Additional options to the Gtest test framework.
 
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
-
-#### AOT_MODULES
-
-Generate AOT modules before testing for the specified module, or set of
-modules. If multiple modules are specified, they should be separated by space
-(or, to help avoid quoting issues, the special value `%20`).
 
 ### Microbenchmark keywords
 
@@ -552,6 +561,18 @@ Amount of time to spend in each warmup iteration. Same as specifying `-w
 
 Specify to have the test run save a log of the values. Accepts the same values
 as `-rff`, i.e., `text`, `csv`, `scsv`, `json`, or `latex`.
+
+#### TEST_JDK
+
+The path to the JDK that will be used to run the benchmarks.
+
+Defaults to `build/<CONF-NAME>/jdk`.
+
+#### BENCHMARKS_JAR
+
+The path to the JAR containing the benchmarks.
+
+Defaults to `test/micro/benchmarks.jar`.
 
 #### VM_OPTIONS
 
@@ -587,7 +608,7 @@ $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" \
 
 If your locale is non-US, some tests are likely to fail. To work around this
 you can set the locale to US. On Unix platforms simply setting `LANG="en_US"`
-in the environment before running tests should work. On Windows or MacOS,
+in the environment before running tests should work. On Windows or macOS,
 setting `JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for
 most, but not all test cases.
 
@@ -619,6 +640,78 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
 
+
+### SCTP Tests
+
+The SCTP tests require the SCTP runtime library, which is often not installed
+by default in popular Linux distributions. Without this library, the SCTP tests
+will be skipped. If you want to enable the SCTP tests, you should install the
+SCTP library before running the tests.
+
+For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:
+
+```
+sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
+For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:
+
+```
+sudo dnf install -y lksctp-tools
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
+### Testing Ahead-of-time Optimizations
+
+One way to improve test coverage of ahead-of-time (AOT) optimizations in
+the JDK is to run existing jtreg test cases in a special "AOT_JDK" mode.
+Example:
+
+```
+$ make test JTREG="AOT_JDK=onestep" \
+    TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+```
+
+In this testing mode, we first perform an AOT training run
+(see https://openjdk.org/jeps/483) of a special test program
+([test/setup_aot/TestSetupAOT.java](../test/setup_aot/TestSetupAOT.java))
+that accesses about 5,0000 classes in the JDK core libraries.
+Optimization artifacts for these classes (such as pre-linked
+lambda expressions, execution profiles, and pre-generated native code)
+are stored into an AOT cache file, which will be used by all the JVMs
+launched by the selected jtreg test cases.
+
+When the jtreg tests call into the core libraries classes that are in
+the AOT cache, we will be able to test the AOT optimizations that were
+used on those classes.
+
+Please note that not all existing jtreg test cases can be executed with
+the AOT_JDK mode. See
+[test/hotspot/jtreg/ProblemList-AotJdk.txt](../test/hotspot/jtreg/ProblemList-AotJdk.txt)
+and [test/jdk/ProblemList-AotJdk.txt](../test/jdk/ProblemList-AotJdk.txt).
+
+Also, test cases that were written specifically to test AOT, such as the tests
+under [test/hotspot/jtreg/runtime/cds](../test/hotspot/jtreg/runtime/cds/),
+cannot be executed with the AOT_JDK mode.
+
+Valid values for `AOT_JDK` are `onestep` and `twostep`. These control how
+the AOT cache is generated. See https://openjdk.org/jeps/514 for details.
+All other values are ignored.
+
+### Testing with alternative security providers
+
+Some security tests use a hardcoded provider for `KeyFactory`, `Cipher`,
+`KeyPairGenerator`, `KeyGenerator`, `AlgorithmParameterGenerator`,
+`KeyAgreement`, `Mac`, `MessageDigest`, `SecureRandom`, `Signature`,
+`AlgorithmParameters`, `Configuration`, `Policy`, or `SecretKeyFactory` objects.
+Specify the `-Dtest.provider.name=NAME` property to use a different provider for
+the service(s).
+
 ### Client UI Tests
 
 #### System key shortcuts
@@ -635,7 +728,7 @@ select or deselect desired shortcut.
 
 For example,
 test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java
-fails on MacOS because it uses `CTRL + F1` key sequence to show or hide tooltip
+fails on macOS because it uses `CTRL + F1` key sequence to show or hide tooltip
 message but the key combination is reserved by the operating system. To run the
 test correctly the default global key shortcut should be disabled using the
 steps described above, and then deselect "Turn keyboard access on or off"

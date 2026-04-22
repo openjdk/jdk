@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,9 @@ public class T6358166 extends AbstractProcessor {
 
         JavacTool tool = JavacTool.create();
         JavacTaskImpl task = (JavacTaskImpl) tool.getTask(null, fm, null, allArgs, null, List.of(f), context);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         JavaCompiler c = JavaCompiler.instance(context);
         if (c.errorCount() != 0)

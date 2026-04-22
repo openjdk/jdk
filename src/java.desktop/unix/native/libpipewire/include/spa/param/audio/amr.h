@@ -11,6 +11,11 @@ extern "C" {
 
 #include <spa/param/audio/raw.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 enum spa_audio_amr_band_mode {
     SPA_AUDIO_AMR_BAND_MODE_UNKNOWN,
     SPA_AUDIO_AMR_BAND_MODE_NB,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,25 +44,26 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import static java.lang.String.format;
+
+import jdk.test.lib.net.URIBuilder;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.time.Duration.*;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.testng.Assert.fail;
 
-public abstract class AbstractConnectTimeoutHandshake {
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+
+abstract class AbstractConnectTimeoutHandshake {
 
     // The number of iterations each testXXXClient performs.
     static final int TIMES = 2;
 
-    Server server;
-    URI httpsURI;
+    private static Server server;
+    private static URI httpsURI;
 
     static final Duration NO_DURATION = null;
 
@@ -78,8 +79,7 @@ public abstract class AbstractConnectTimeoutHandshake {
     static final List<String> METHODS = List.of("GET" , "POST");
     static final List<Version> VERSIONS = List.of(HTTP_2, HTTP_1_1);
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         List<Object[]> l = new ArrayList<>();
         for (List<Duration> timeouts : TIMEOUTS) {
            Duration connectTimeout = timeouts.get(0);
@@ -197,20 +197,20 @@ public abstract class AbstractConnectTimeoutHandshake {
 
     // -- Infrastructure
 
-    static String serverAuthority(Server server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getPort();
-    }
-
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         server = new Server();
-        httpsURI = URI.create("https://" + serverAuthority(server) + "/foo");
+        httpsURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(server.getPort())
+                .path("/foo")
+                .build();
         out.println("HTTPS URI: " + httpsURI);
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         server.close();
         out.printf("%n--- teardown ---%n");
 

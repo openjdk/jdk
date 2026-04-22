@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -979,9 +979,6 @@ public class ErrorMessages_es extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "Error interno de XSLTC: un m\u00E9todo en el translet excede la limitaci\u00F3n de Java Virtual Machine de longitud de un m\u00E9todo de 64 kilobytes. Normalmente, esto lo causan plantillas en una hoja de estilos demasiado grandes. Pruebe a reestructurar la hoja de estilos para utilizar plantillas m\u00E1s peque\u00F1as."
         },
-
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Cuando la seguridad de Java est\u00E1 activada, el soporte para anular la serializaci\u00F3n de TemplatesImpl est\u00E1 desactivado. Esto se puede sustituir definiendo la propiedad del sistema jdk.xml.enableTemplatesImplDeserialization en true."}
-
     };
 
     }

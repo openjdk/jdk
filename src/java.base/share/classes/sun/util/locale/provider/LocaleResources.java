@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
-import sun.util.resources.ParallelListResourceBundle;
 import sun.util.resources.TimeZoneNamesBundle;
 
 /**
@@ -106,6 +104,9 @@ public class LocaleResources {
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
+
+    // TimeZoneNamesBundle explicit metazone dst offset prefix
+    private static final String TZNB_METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
 
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
@@ -323,7 +324,8 @@ public class LocaleResources {
 
         if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
-            if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (key.startsWith(TZNB_EXCITY_PREFIX) ||
+                key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 if (tznb.containsKey(key)) {
                     val = tznb.getString(key);
                     assert val instanceof String;
@@ -380,7 +382,8 @@ public class LocaleResources {
         Set<String[]> value = new LinkedHashSet<>();
         Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
-            if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (!key.startsWith(TZNB_EXCITY_PREFIX) &&
+                !key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 value.add(rb.getStringArray(key));
                 tzIds.remove(key);
             }
@@ -569,11 +572,7 @@ public class LocaleResources {
      * resources required by JSR 310.
      */
     public ResourceBundle getJavaTimeFormatData() {
-        ResourceBundle rb = localeData.getDateFormatData(locale);
-        if (rb instanceof ParallelListResourceBundle) {
-            localeData.setSupplementary((ParallelListResourceBundle) rb);
-        }
-        return rb;
+        return localeData.getDateFormatData(locale);
     }
 
     /**
@@ -888,7 +887,7 @@ public class LocaleResources {
     }
 
     private static final boolean TRACE_ON = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
+        System.getProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {
         if (TRACE_ON) {

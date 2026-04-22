@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,30 +46,30 @@ public class AllocationMergesTests {
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
-                                             "-XX:+UseCompressedClassPointers",
                                              "-XX:CompileCommand=inline,*::charAt*",
                                              "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        Scenario scenario1 = new Scenario(1, "-XX:+UnlockDiagnosticVMOptions",
-                                             "-XX:+ReduceAllocationMerges",
-                                             "-XX:+TraceReduceAllocationMerges",
-                                             "-XX:+DeoptimizeALot",
-                                             "-XX:+UseCompressedOops",
-                                             "-XX:-UseCompressedClassPointers",
-                                             "-XX:CompileCommand=inline,*::charAt*",
-                                             "-XX:CompileCommand=inline,*PicturePositions::*",
-                                             "-XX:CompileCommand=inline,*Point::*",
-                                             "-XX:CompileCommand=inline,*Nested::*",
-                                             "-XX:CompileCommand=exclude,*::dummy*");
-
-        Scenario scenario2 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario1 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:-UseCompressedOops",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*PicturePositions::*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        Scenario scenario2 = new Scenario(3, "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+ReduceAllocationMerges",
+                                             "-XX:+TraceReduceAllocationMerges",
+                                             "-XX:+DeoptimizeALot",
+                                             "-XX:+UseCompressedOops",
+                                             "-XX:-OptimizePtrCompare",
+                                             "-XX:+VerifyReduceAllocationMerges",
                                              "-XX:CompileCommand=inline,*::charAt*",
                                              "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
@@ -1355,9 +1355,12 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "1" })
-    // The last allocation won't be reduced because it would cause the creation
-    // of a nested SafePointScalarMergeNode.
+    // Using G1, all allocations are reduced.
+    @IR(applyIf = {"UseG1GC", "true"}, failOn = { IRNode.ALLOC })
+    // Otherwise, the last allocation won't be reduced because it would cause
+    // the creation of a nested SafePointScalarMergeNode. This is caused by the
+    // store barrier corresponding to 'C.other = B'.
+    @IR(applyIf = {"UseG1GC", "false"}, counts = { IRNode.ALLOC, "1" })
     int testReReduce_C2(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
 
     @DontCompile

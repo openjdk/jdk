@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
@@ -40,15 +40,15 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-// for strstr
 #include <string.h>
 
 static bool _enqueue_klasses = false;
@@ -66,6 +66,7 @@ static inline traceid load_traceid(const Method* method) {
 JfrDeprecatedEdge::JfrDeprecatedEdge(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) :
   _invocation_time(JfrTicks::now()),
   _stacktrace(),
+  _type_set(),
   _next(nullptr),
   _deprecated_ik(method->method_holder()),
   _deprecated_methodid(load_traceid(method)),
@@ -94,11 +95,25 @@ const JfrBlobHandle& JfrDeprecatedEdge::stacktrace() const {
   return _stacktrace;
 }
 
+bool JfrDeprecatedEdge::has_type_set() const {
+  return _type_set.valid();
+}
+
+const JfrBlobHandle& JfrDeprecatedEdge::type_set() const {
+  assert(has_type_set(), "invariant");
+  return _type_set;
+}
+
+void JfrDeprecatedEdge::install_type_set(const JfrBlobHandle& type_set) {
+  assert(!has_type_set(), "invariant");
+  _type_set = type_set;
+}
+
 typedef JfrLinkedList<JfrDeprecatedEdge> DeprecatedEdgeList;
 
 static DeprecatedEdgeList _list; // Newly constructed edges are concurrently added to this list.
 static DeprecatedEdgeList _pending_list; // During epoch rotation (safepoint) entries in _list are moved onto _pending_list
-static DeprecatedEdgeList _resolved_list; // Fully resolved edges (event and stacktrace blobs).
+static DeprecatedEdgeList _resolved_list; // Fully resolved edges (event, stacktrace and typeset blobs).
 
 static JfrDeprecatedEdge* allocate_edge(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
@@ -136,11 +151,11 @@ static bool max_limit_not_reached() {
   static size_t num_edges = 0;
   size_t compare_value;
   do {
-    compare_value = Atomic::load(&num_edges);
+    compare_value = AtomicAccess::load(&num_edges);
     if (compare_value == max_num_edges) {
       return false;
     }
-  } while (compare_value != Atomic::cmpxchg(&num_edges, compare_value, compare_value + 1));
+  } while (compare_value != AtomicAccess::cmpxchg(&num_edges, compare_value, compare_value + 1));
   if (compare_value + 1 == max_num_edges) {
     log_max_num_edges_reached();
   }
@@ -179,9 +194,11 @@ static inline bool is_not_jdk_module(const ModuleEntry* module, JavaThread* jt) 
   return !is_jdk_module(module, jt);
 }
 
+#ifdef ASSERT
 static inline bool jfr_is_started_on_command_line() {
   return JfrRecorder::is_started_on_commandline();
 }
+#endif // ASSERT
 
 static bool should_record(const Method* method, const Method* sender, JavaThread* jt) {
   assert(method != nullptr, "invariant");
@@ -200,6 +217,25 @@ static bool should_record(const Method* method, const Method* sender, JavaThread
   return is_not_jdk_module(sender_module, jt) && max_limit_not_reached();
 }
 
+static inline bool is_invoke_bytecode(const Method* sender, int bci) {
+  assert(sender != nullptr, "invariant");
+  assert(sender->validate_bci(bci) >= 0, "invariant");
+  const Bytecodes::Code bc = (Bytecodes::Code)*sender->bcp_from(bci);
+  switch (bc) {
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokedynamic: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+  return false;
+}
+
 // This is the entry point for newly discovered edges in JfrResolution.cpp.
 void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   assert(method != nullptr, "invariant");
@@ -208,10 +244,13 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(!sender->is_native(), "invariant");
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
-  if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
-    if (should_record(method, sender, jt)) {
-      create_edge(method, sender, bci, frame_type, jt);
+  if (should_record(method, sender, jt)) {
+    if (is_invoke_bytecode(sender, bci)) {
+      if (!JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
+        return;
+      }
     }
+    create_edge(method, sender, bci, frame_type, jt);
   }
 }
 
@@ -223,10 +262,6 @@ static void transfer_list() {
   if (head != nullptr) {
     _pending_list.add_list(head);
   }
-}
-
-void JfrDeprecationManager::on_level_setting_update(int64_t new_level) {
-  JfrDeprecatedEventWriterState::on_level_setting_update(new_level);
 }
 
 void JfrDeprecationManager::on_safepoint_clear() {
@@ -270,6 +305,23 @@ static void add_to_leakp_set(const JfrDeprecatedEdge* edge) {
 static DeprecatedEdgeList::NodePtr _pending_head = nullptr;
 static DeprecatedEdgeList::NodePtr _pending_tail = nullptr;
 
+inline DeprecatedEdgeList::NodePtr pending_head() {
+  return AtomicAccess::load(&_pending_head);
+}
+
+// The test for a pending head can be read concurrently from a thread doing class unloading.
+inline static bool has_pending_head() {
+  return pending_head() != nullptr;
+}
+
+inline static bool no_pending_head() {
+  return !has_pending_head();
+}
+
+inline static void set_pending_head(DeprecatedEdgeList::NodePtr head) {
+  AtomicAccess::store(&_pending_head, head);
+}
+
 class PendingListProcessor {
  private:
   JfrCheckpointWriter& _writer;
@@ -281,66 +333,56 @@ class PendingListProcessor {
     JfrDeprecatedStackTraceWriter::install_stacktrace_blob(edge, _writer, _jt);
     assert(edge->has_stacktrace(), "invariant");
     add_to_leakp_set(edge);
-    if (_pending_head == nullptr) {
-      _pending_head = edge;
+    if (no_pending_head()) {
+      set_pending_head(edge);
     }
     _pending_tail = edge;
     return true;
   }
 };
 
-void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
-  _pending_head = nullptr;
+// Resets the pending head and tail.
+// Resets blob write states for nodes on the resolved list, dirtied in the previous epoch.
+static void reset_type_set_blobs() {
+  set_pending_head(nullptr);
   _pending_tail = nullptr;
+  if (_resolved_list.is_nonempty()) {
+    JfrDeprecatedEventClear clear;
+    _resolved_list.iterate(clear);
+  }
+}
+
+void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
+  reset_type_set_blobs();
   if (_pending_list.is_nonempty()) {
-    JfrKlassUnloading::sort(true);
     JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);
-    assert(_pending_head != nullptr, "invariant");
+    assert(has_pending_head(), "invariant");
     assert(_pending_tail != nullptr, "invariant");
     assert(_pending_tail->next() == nullptr, "invariant");
     // Excise already resolved edges to link them.
     _pending_tail->set_next(_resolved_list.cut());
     // Re-insertion.
-    _resolved_list.add_list(_pending_head);
+    _resolved_list.add_list(pending_head());
     _pending_list.clear();
   }
   assert(_pending_list.is_empty(), "invariant");
 }
 
-// A linked-list of blob handles.
-static JfrBlobHandle type_set_blobs;
-
-static inline void write_type_set_blobs(JfrCheckpointWriter& writer) {
-  type_set_blobs->write(writer);
-}
-
-static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
-  assert(writer.has_data(), "invariant");
-  const JfrBlobHandle blob = copy ? writer.copy() : writer.move();
-  if (type_set_blobs.valid()) {
-    type_set_blobs->set_next(blob);
-  } else {
-    type_set_blobs = blob;
-  }
-}
-
-void JfrDeprecationManager::on_type_set_unload(JfrCheckpointWriter& writer) {
-  if (writer.has_data()) {
-    save_type_set_blob(writer, true);
-  }
+bool JfrDeprecationManager::has_unresolved_entry() {
+  return _list.is_nonempty() || has_pending_head() || _pending_list.is_nonempty();
 }
 
 static inline bool has_stacktrace() {
   return JfrEventSetting::has_stacktrace(JfrDeprecatedInvocationEvent);
 }
 
-static inline bool write_events(JfrChunkWriter& cw) {
+static inline void write_events(JfrChunkWriter& cw, Thread* thread, bool on_error) {
   assert(_resolved_list.is_nonempty(), "invariant");
-  JfrDeprecatedEventWriter ebw(cw, has_stacktrace());
+  JfrCheckpointWriter type_set_writer(!on_error, thread, false);
+  JfrDeprecatedEventWriter ebw(cw, type_set_writer, has_stacktrace());
   _resolved_list.iterate(ebw);
-  return ebw.did_write();
 }
 
 static inline void write_stacktraces(JfrChunkWriter& cw) {
@@ -349,34 +391,31 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
   _resolved_list.iterate(scw);
 }
 
-static inline void write_type_sets(Thread* thread, bool on_error) {
-  JfrCheckpointWriter writer(!on_error, thread, false);
-  write_type_set_blobs(writer);
-}
-
-// First, we consolidate all stacktrace blobs into a single TYPE_STACKTRACE checkpoint and serialize it to the chunk.
-// Secondly, we serialize all events to the chunk.
-// Thirdly, the type set blobs are written into the JfrCheckpoint system, to be serialized to the chunk
-// just after we return from here.
+// First, all events are serialized, and unique type set blobs are written into the
+// JfrCheckpoint system to be serialized to the chunk upon return.
+// Then, we consolidate all stack trace blobs into a single TYPE_STACKTRACE checkpoint
+// and serialize it directly to the chunk.
 void JfrDeprecationManager::write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error /* false */) {
   if (_resolved_list.is_nonempty() && JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent)) {
+    write_events(cw, thread, on_error);
     if (has_stacktrace()) {
       write_stacktraces(cw);
-    }
-    if (write_events(cw)) {
-      write_type_sets(thread, on_error);
     }
   }
 }
 
-void JfrDeprecationManager::on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread) {
+void JfrDeprecationManager::on_type_set(JfrChunkWriter* cw, Thread* thread) {
   assert(_pending_list.is_empty(), "invariant");
-  if (_pending_head != nullptr) {
-    save_type_set_blob(writer);
-  } else {
-    writer.cancel();
+  if (has_pending_head()) {
+    assert(_pending_tail != nullptr, "invariant");
+    // Install type set blobs for the pending, i.e. unresolved nodes.
+    JfrReferenceCountedStorage::install(pending_head(), _pending_tail->next());
   }
   if (cw != nullptr) {
     write_edges(*cw, thread);
   }
+}
+
+void JfrDeprecationManager::on_level_setting_update(int64_t new_level) {
+  JfrDeprecatedEventWriterState::on_level_setting_update(new_level);
 }

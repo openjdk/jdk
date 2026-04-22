@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ final class WLabelPeer extends WComponentPeer implements LabelPeer {
 
     // ComponentPeer overrides
 
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics(((Label)target).getFont());
         String label = ((Label)target).getText();
@@ -40,6 +41,7 @@ final class WLabelPeer extends WComponentPeer implements LabelPeer {
     }
 
     native void lazyPaint();
+    @Override
     synchronized void start() {
         super.start();
         // if need then paint label
@@ -47,11 +49,14 @@ final class WLabelPeer extends WComponentPeer implements LabelPeer {
     }
     // LabelPeer implementation
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }
 
+    @Override
     public native void setText(String label);
+    @Override
     public native void setAlignment(int alignment);
 
     // Toolkit & peer internals
@@ -60,8 +65,10 @@ final class WLabelPeer extends WComponentPeer implements LabelPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     void initialize() {
         Label   l = (Label)target;
 

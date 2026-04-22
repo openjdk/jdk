@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 
+import java.security.PEM;
 import java.security.cert.*;
 import java.util.*;
 
@@ -36,6 +37,7 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
+import sun.security.util.Pem;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
 
@@ -64,6 +66,7 @@ public class X509Factory extends CertificateFactorySpi {
     public static final String END_CERT = "-----END CERTIFICATE-----";
 
     private static final int ENC_MAX_LENGTH = 4096 * 1024; // 4 MB MAX
+    public static final int BER_ITERATION_COUNT = 128; // Limit nested depth
 
     private static final Cache<Object, X509CertImpl> certCache
         = Cache.newSoftMemoryCache(750);
@@ -110,9 +113,10 @@ public class X509Factory extends CertificateFactorySpi {
         if (cert != null) {
             return cert;
         }
-        cert = new X509CertImpl(encoding);
-        addToCache(certCache, cert.getEncodedInternal(), cert);
-        return cert;
+        // Build outside lock
+        X509CertImpl newCert = new X509CertImpl(encoding);
+        byte[] enc = newCert.getEncodedInternal();
+        return addIfNotPresent(certCache, enc, newCert);
     }
 
     /**
@@ -154,7 +158,7 @@ public class X509Factory extends CertificateFactorySpi {
      * @throws CertificateException if failures occur while obtaining the DER
      *      encoding for certificate data.
      */
-    public static synchronized X509CertImpl intern(X509Certificate c)
+    public static X509CertImpl intern(X509Certificate c)
             throws CertificateException {
         if (c == null) {
             return null;
@@ -166,18 +170,23 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CertImpl newC = getFromCache(certCache, encoding);
-        if (newC != null) {
-            return newC;
+        // First check under per-cache lock
+        X509CertImpl cached = getFromCache(certCache, encoding);
+        if (cached != null) {
+            return cached;
         }
+
+        // Build outside lock
+        X509CertImpl newC;
+        byte[] enc;
         if (isImpl) {
-            newC = (X509CertImpl)c;
+            newC = (X509CertImpl) c;
+            enc = encoding;
         } else {
             newC = new X509CertImpl(encoding);
-            encoding = newC.getEncodedInternal();
+            enc = newC.getEncodedInternal();
         }
-        addToCache(certCache, encoding, newC);
-        return newC;
+        return addIfNotPresent(certCache, enc, newC);
     }
 
     /**
@@ -190,7 +199,7 @@ public class X509Factory extends CertificateFactorySpi {
      * @throws CRLException if failures occur while obtaining the DER
      *      encoding for CRL data.
      */
-    public static synchronized X509CRLImpl intern(X509CRL c)
+    public static X509CRLImpl intern(X509CRL c)
             throws CRLException {
         if (c == null) {
             return null;
@@ -202,39 +211,47 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CRLImpl newC = getFromCache(crlCache, encoding);
-        if (newC != null) {
-            return newC;
+        X509CRLImpl cached = getFromCache(crlCache, encoding);
+        if (cached != null) {
+            return cached;
         }
+
+        X509CRLImpl newC;
+        byte[] enc;
         if (isImpl) {
-            newC = (X509CRLImpl)c;
+            newC = (X509CRLImpl) c;
+            enc = encoding;
         } else {
             newC = new X509CRLImpl(encoding);
-            encoding = newC.getEncodedInternal();
+            enc = newC.getEncodedInternal();
         }
-        addToCache(crlCache, encoding, newC);
-        return newC;
+        return addIfNotPresent(crlCache, enc, newC);
     }
 
     /**
      * Get the X509CertImpl or X509CRLImpl from the cache.
      */
-    private static synchronized <K,V> V getFromCache(Cache<K,V> cache,
-            byte[] encoding) {
-        Object key = new Cache.EqualByteArray(encoding);
-        return cache.get(key);
+    private static <V> V getFromCache(Cache<Object, V> cache, byte[] encoding) {
+        return cache.get(new Cache.EqualByteArray(encoding));
     }
 
     /**
      * Add the X509CertImpl or X509CRLImpl to the cache.
      */
-    private static synchronized <V> void addToCache(Cache<Object, V> cache,
-            byte[] encoding, V value) {
+    private static <V> V addIfNotPresent(Cache<Object, V> cache, byte[] encoding, V value) {
         if (encoding.length > ENC_MAX_LENGTH) {
-            return;
+            return value;
         }
         Object key = new Cache.EqualByteArray(encoding);
-        cache.put(key, value);
+        // Synchronize only to make the "check + insert" decision atomic.
+        synchronized (cache) {
+            V existing = cache.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            cache.put(key, value);
+            return value;
+        }
     }
 
     /**
@@ -387,13 +404,14 @@ public class X509Factory extends CertificateFactorySpi {
         try {
             byte[] encoding = readOneBlock(is);
             if (encoding != null) {
-                X509CRLImpl crl = getFromCache(crlCache, encoding);
-                if (crl != null) {
-                    return crl;
+                X509CRLImpl cached = getFromCache(crlCache, encoding);
+                if (cached != null) {
+                    return cached;
                 }
-                crl = new X509CRLImpl(encoding);
-                addToCache(crlCache, crl.getEncodedInternal(), crl);
-                return crl;
+                // Build outside lock
+                X509CRLImpl crl = new X509CRLImpl(encoding);
+                byte[] enc = crl.getEncodedInternal();
+                return addIfNotPresent(crlCache, enc, crl);
             } else {
                 throw new IOException("Empty input");
             }
@@ -553,118 +571,20 @@ public class X509Factory extends CertificateFactorySpi {
         if (c == DerValue.tag_Sequence) {
             ByteArrayOutputStream bout = new ByteArrayOutputStream(2048);
             bout.write(c);
-            readBERInternal(is, bout, c);
+            readBERInternal(is, bout, c, BER_ITERATION_COUNT);
             return bout.toByteArray();
         } else {
-            // Read BASE64 encoded data, might skip info at the beginning
-            ByteArrayOutputStream data = new ByteArrayOutputStream();
-
-            // Step 1: Read until header is found
-            int hyphen = (c=='-') ? 1: 0;   // count of consequent hyphens
-            int last = (c=='-') ? -1: c;    // the char before hyphen
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    // We accept useless data after the last block,
-                    // say, empty lines.
+            try {
+                PEM rec;
+                try {
+                    rec = Pem.readPEM(is, (c == '-' ? true : false));
+                } catch (EOFException e) {
                     return null;
                 }
-                if (next == '-') {
-                    hyphen++;
-                } else {
-                    hyphen = 0;
-                    last = next;
-                }
-                if (hyphen == 5 && (last == -1 || last == '\r' || last == '\n')) {
-                    break;
-                }
-            }
-
-            // Step 2: Read the rest of header, determine the line end
-            int end;
-            StringBuilder header = new StringBuilder("-----");
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    throw new IOException("Incomplete data");
-                }
-                if (next == '\n') {
-                    end = '\n';
-                    break;
-                }
-                if (next == '\r') {
-                    next = is.read();
-                    if (next == -1) {
-                        throw new IOException("Incomplete data");
-                    }
-                    if (next == '\n') {
-                        end = '\n';
-                    } else {
-                        end = '\r';
-                        // Skip all white space chars
-                        if (next != 9 && next != 10 && next != 13 && next != 32) {
-                            data.write(next);
-                        }
-                    }
-                    break;
-                }
-                header.append((char)next);
-            }
-
-            // Step 3: Read the data
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    throw new IOException("Incomplete data");
-                }
-                if (next != '-') {
-                    // Skip all white space chars
-                    if (next != 9 && next != 10 && next != 13 && next != 32) {
-                        data.write(next);
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            // Step 4: Consume the footer
-            StringBuilder footer = new StringBuilder("-");
-            while (true) {
-                int next = is.read();
-                // Add next == '\n' for maximum safety, in case endline
-                // is not consistent.
-                if (next == -1 || next == end || next == '\n') {
-                    break;
-                }
-                if (next != '\r') footer.append((char)next);
-            }
-
-            checkHeaderFooter(header.toString().stripTrailing(),
-                    footer.toString().stripTrailing());
-
-            try {
-                return Base64.getDecoder().decode(data.toByteArray());
+                return Base64.getDecoder().decode(rec.content());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }
-        }
-    }
-
-    private static void checkHeaderFooter(String header,
-            String footer) throws IOException {
-        if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
-                !header.endsWith("-----")) {
-            throw new IOException("Illegal header: " + header);
-        }
-        if (footer.length() < 14 || !footer.startsWith("-----END ") ||
-                !footer.endsWith("-----")) {
-            throw new IOException("Illegal footer: " + footer);
-        }
-        String headerType = header.substring(11, header.length()-5);
-        String footerType = footer.substring(9, footer.length()-5);
-        if (!headerType.equals(footerType)) {
-            throw new IOException("Header and footer do not match: " +
-                    header + " " + footer);
         }
     }
 
@@ -675,12 +595,16 @@ public class X509Factory extends CertificateFactorySpi {
      * @param is    Read from this InputStream
      * @param bout  Write into this OutputStream
      * @param tag   Tag already read (-1 mean not read)
+     * @param depth nesting depth limit
      * @return     The current tag, used to check EOC in indefinite-length BER
      * @throws IOException Any parsing error
      */
     private static int readBERInternal(InputStream is,
-            ByteArrayOutputStream bout, int tag) throws IOException {
+        ByteArrayOutputStream bout, int tag, int depth) throws IOException {
 
+        if (depth-- == 0) {
+            throw new IOException("Nesting sequence depth limit reached.");
+        }
         if (tag == -1) {        // Not read before the call, read now
             tag = is.read();
             if (tag == -1) {
@@ -706,7 +630,7 @@ public class X509Factory extends CertificateFactorySpi {
                         "Non constructed encoding must have definite length");
             }
             while (true) {
-                int subTag = readBERInternal(is, bout, -1);
+                int subTag = readBERInternal(is, bout, -1, depth);
                 if (subTag == 0) {   // EOC, end of indefinite-length section
                     break;
                 }

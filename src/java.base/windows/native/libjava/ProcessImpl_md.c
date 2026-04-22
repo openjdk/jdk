@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,9 +467,8 @@ Java_java_lang_ProcessImpl_terminateProcess(JNIEnv *env, jclass ignored, jlong h
 JNIEXPORT jboolean JNICALL
 Java_java_lang_ProcessImpl_isProcessAlive(JNIEnv *env, jclass ignored, jlong handle)
 {
-    DWORD dwExitStatus;
-    GetExitCodeProcess((HANDLE) handle, &dwExitStatus);
-    return dwExitStatus == STILL_ACTIVE;
+    return WaitForSingleObject((HANDLE) handle, 0) /* don't wait */
+                       == WAIT_TIMEOUT;
 }
 
 JNIEXPORT jboolean JNICALL

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4297026
+ * @library /test/lib
  * @summary Make sure that RSA Keypair generation using
  * java.security.spec.RSAKeyGenParameterSpec passes
  */
@@ -31,14 +32,18 @@
 import java.security.KeyPairGenerator;
 import java.security.KeyPair;
 import java.security.spec.RSAKeyGenParameterSpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class GenerateRSAKeyPair {
 
     public static void main(String[] args) throws Exception {
 
+        String kpgAlgorithm = "RSA";
         RSAKeyGenParameterSpec rsaSpec =
-        new RSAKeyGenParameterSpec (1024, RSAKeyGenParameterSpec.F4);
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "SunRsaSign");
+        new RSAKeyGenParameterSpec (SecurityUtils.getTestKeySize(kpgAlgorithm),
+                RSAKeyGenParameterSpec.F4);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm,
+                System.getProperty("test.provider.name", "SunRsaSign"));
         kpg.initialize(rsaSpec);
 
         // test generateKeyPair

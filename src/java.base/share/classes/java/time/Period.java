@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,15 +155,15 @@ public final class Period
     private static final List<TemporalUnit> SUPPORTED_UNITS = List.of(YEARS, MONTHS, DAYS);
 
     /**
-     * The number of years.
+     * @serial The number of years.
      */
     private final int years;
     /**
-     * The number of months.
+     * @serial The number of months.
      */
     private final int months;
     /**
-     * The number of days.
+     * @serial The number of days.
      */
     private final int days;
 
@@ -765,7 +765,7 @@ public final class Period
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param daysToSubtract  the months to subtract, positive or negative
+     * @param daysToSubtract  the days to subtract, positive or negative
      * @return a {@code Period} based on this period with the specified days subtracted, not null
      * @throws ArithmeticException if numeric overflow occurs
      */

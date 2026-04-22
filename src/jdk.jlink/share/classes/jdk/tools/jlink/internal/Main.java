@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,7 @@ public class Main {
      * @param args command line arguments
      * @return an exit code. 0 means success, non-zero means an error occurred.
      */
-    @SuppressWarnings("removal")
     public static int run(PrintWriter out, PrintWriter err, String... args) {
-        if (System.getSecurityManager() != null) {
-            System.getSecurityManager().
-                    checkPermission(new JlinkPermission("jlink"));
-        }
-
         JlinkTask t = new JlinkTask();
         t.setLog(out, err);
         return t.run(args);

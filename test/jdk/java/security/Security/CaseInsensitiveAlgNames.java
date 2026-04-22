@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,14 @@ public class CaseInsensitiveAlgNames {
             md = MessageDigest.getInstance("shA1");
 
             // MessageDigest with provider
-            md = MessageDigest.getInstance("SHA", "SUN");
-            md = MessageDigest.getInstance("sha", "SUN");
-            md = MessageDigest.getInstance("Sha-1", "SUN");
-            md = MessageDigest.getInstance("shA1", "SUN");
+            md = MessageDigest.getInstance("SHA",
+                    System.getProperty("test.provider.name", "SUN"));
+            md = MessageDigest.getInstance("sha",
+                    System.getProperty("test.provider.name", "SUN"));
+            md = MessageDigest.getInstance("Sha-1",
+                    System.getProperty("test.provider.name", "SUN"));
+            md = MessageDigest.getInstance("shA1",
+                    System.getProperty("test.provider.name", "SUN"));
 
             // KeyPairGenerator without provider
             KeyPairGenerator kGen = KeyPairGenerator.getInstance("DSA");
@@ -54,11 +58,15 @@ public class CaseInsensitiveAlgNames {
             kGen = KeyPairGenerator.getInstance("1.2.840.10040.4.1");
 
             // KeyPairGenerator with provider
-            kGen = KeyPairGenerator.getInstance("DSA", "SUN");
-            kGen = KeyPairGenerator.getInstance("dsa", "SUN");
-            kGen = KeyPairGenerator.getInstance("dSA", "SUN");
+            kGen = KeyPairGenerator.getInstance("DSA",
+                    System.getProperty("test.provider.name", "SUN"));
+            kGen = KeyPairGenerator.getInstance("dsa",
+                    System.getProperty("test.provider.name", "SUN"));
+            kGen = KeyPairGenerator.getInstance("dSA",
+                    System.getProperty("test.provider.name", "SUN"));
             kGen = KeyPairGenerator.getInstance("OId.1.2.840.10040.4.1",
-                                                "SUN");
-            kGen = KeyPairGenerator.getInstance("1.2.840.10040.4.1", "SUN");
+                    System.getProperty("test.provider.name", "SUN"));
+            kGen = KeyPairGenerator.getInstance("1.2.840.10040.4.1",
+                    System.getProperty("test.provider.name", "SUN"));
     }
 }

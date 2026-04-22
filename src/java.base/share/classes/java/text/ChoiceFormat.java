@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,7 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double)number, toAppendTo, status);
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf toAppendTo,
+                     FieldPosition status) {
+        return format((double) number, toAppendTo, status);
     }
 
     /**
@@ -531,6 +537,12 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf toAppendTo,
+                         FieldPosition status) {
         // find the number
         int i;
         for (i = 0; i < choiceLimits.length; ++i) {
@@ -546,7 +558,20 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Parses a Number from the input text.
+     * Parses the input text starting at the index given by the {@code ParsePosition}
+     * as a {@code Double}. The value returned is the {@code limit} corresponding
+     * to the {@code format} that is the longest substring of the input text.
+     * Matching is done in ascending order, when multiple {@code format}s match
+     * the text equivalently in strength, the first matching {@code limit} is
+     * returned. If there is no match, {@code Double.NaN} is returned.
+     * <p>
+     * For example,
+     * {@snippet lang=java :
+     * var fmt = new ChoiceFormat("0#foo|1#bar|2#baz");
+     * fmt.parse("baz", new ParsePosition(0)); // returns 2.0
+     * fmt.parse("quux", new ParsePosition(0)); // returns NaN
+     * }
+     *
      * @param text the source text.
      * @param status an input-output parameter.  On input, the
      * status.index field indicates the first character of the
@@ -555,7 +580,8 @@ public class ChoiceFormat extends NumberFormat {
      * in the source text.  On exit, if an error did occur,
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.
-     * @return A Number representing the value of the number parsed.
+     * @return A Number which represents the {@code limit} corresponding to the
+     * {@code format} parsed, or {@code Double.NaN} if the parse fails.
      * @throws    NullPointerException if {@code status} is {@code null}
      *            or if {@code text} is {@code null} and the list of
      *            choice strings is not empty.
@@ -586,12 +612,18 @@ public class ChoiceFormat extends NumberFormat {
         return Double.valueOf(bestNumber);
     }
 
+    /**
+     * @since 23
+     */
     @Override
     public boolean isStrict() {
         throw new UnsupportedOperationException(
                 "ChoiceFormat does not utilize leniency when parsing");
     }
 
+    /**
+     * @since 23
+     */
     @Override
     public void setStrict(boolean strict) {
         throw new UnsupportedOperationException(

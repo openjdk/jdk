@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,6 @@ import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -2039,17 +2037,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
     private static Boolean isLinkedProfileAllowed = null;
 
-    @SuppressWarnings("removal")
     private static boolean isLinkedProfileAllowed() {
         if (isLinkedProfileAllowed == null) {
-            PrivilegedAction<Boolean> a = new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    return Boolean.
-                        getBoolean("sun.imageio.bmp.enableLinkedProfiles");
-                }
-            };
-            isLinkedProfileAllowed = AccessController.doPrivileged(a);
+            isLinkedProfileAllowed = Boolean.getBoolean("sun.imageio.bmp.enableLinkedProfiles");
         }
         return isLinkedProfileAllowed;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,23 @@
  */
 
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.event.WindowListener;
 
-import static jdk.test.lib.Asserts.*;
-
+import static jdk.test.lib.Asserts.assertEQ;
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 
 public class TestDialog extends Dialog implements ActionListener,
@@ -44,6 +56,9 @@ public class TestDialog extends Dialog implements ActionListener,
 
     public static int delay = 500;
     public static int keyDelay = 100;
+
+    private static final boolean IS_ON_WAYLAND =
+            System.getenv("WAYLAND_DISPLAY") != null;
 
     public TestDialog(Frame frame) {
         super(frame);
@@ -287,6 +302,9 @@ public class TestDialog extends Dialog implements ActionListener,
                                       String message,
                                       Button b) throws Exception {
         focusGained.reset();
+        if (IS_ON_WAYLAND) {
+            toFront();
+        }
         clickInside(robot);
         focusGained.waitForFlagTriggered();
         assertTrue(focusGained.flag(),
@@ -303,6 +321,9 @@ public class TestDialog extends Dialog implements ActionListener,
                                              String message,
                                              Button b) throws Exception {
         focusGained.reset();
+        if (IS_ON_WAYLAND) {
+            toFront();
+        }
         clickInside(robot);
         robot.waitForIdle(delay);
 

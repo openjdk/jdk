@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
@@ -80,25 +81,28 @@ public class Basic {
         // compile the classes directory
         Path source = testsrc.resolve("src").resolve("classes");
         Path destination = Paths.get("classes");
-        javac(source, destination);
+        javac(source, destination, 8);
 
         // compile the mr9 directory including module-info.java
         source = testsrc.resolve("src").resolve("mr9");
         destination = Paths.get("mr9");
-        javac(source, destination);
+        javac(source, destination, 9);
 
         // move module-info.class for later use
         Files.move(destination.resolve("module-info.class"),
                 Paths.get("module-info.class"));
     }
 
-    private void javac(Path source, Path destination) throws IOException {
-        String[] args = Stream.concat(
-                Stream.of("-d", destination.toString()),
-                Files.walk(source)
-                        .map(Path::toString)
-                        .filter(s -> s.endsWith(".java"))
-        ).toArray(String[]::new);
+    private void javac(Path source, Path destination, int release) throws IOException {
+        ArrayList<Object> arguments = new ArrayList();
+        arguments.add("-d");
+        arguments.add(destination);
+        arguments.add("--release");
+        arguments.add(release);
+        try (var stream = Files.walk(source)) {
+            stream.map(Path::toString).filter(s -> s.endsWith(".java")).forEach(arguments::add);
+        }
+        String[] args = arguments.stream().map(Object::toString).toArray(String[]::new);
         JAVAC_TOOL.run(System.out, System.err, args);
     }
 
@@ -110,8 +114,8 @@ public class Basic {
 
     @AfterClass
     public void cleanup() throws IOException {
-        Files.walk(userdir, 1)
-                .filter(p -> !p.equals(userdir))
+        try (var stream = Files.walk(userdir, 1)) {
+            stream.filter(p -> !p.equals(userdir))
                 .forEach(p -> {
                     try {
                         if (Files.isDirectory(p)) {
@@ -123,6 +127,7 @@ public class Basic {
                         throw new UncheckedIOException(x);
                     }
                 });
+        }
     }
 
     // updates a valid multi-release jar with a new public class in
@@ -229,7 +234,7 @@ public class Basic {
         // compile the mr10 directory
         Path source = testsrc.resolve("src").resolve("mr10");
         Path destination = Paths.get("mr10");
-        javac(source, destination);
+        javac(source, destination, 10);
 
         // create a directory for this tests special files
         Files.createDirectory(Paths.get("test5"));
@@ -240,7 +245,7 @@ public class Basic {
         Files.write(modinfo, hi.getBytes());
 
         // and compile it
-        javac(modinfo, Paths.get("test5"));
+        javac(modinfo, Paths.get("test5"), 9);
 
         int rc = jar("--create --file mr.jar -C classes .");
         Assert.assertEquals(rc, 0);
@@ -335,7 +340,7 @@ public class Basic {
         // compile the classes directory
         Path src = testsrc.resolve("src").resolve("classes");
         Path dst = Paths.get("test6");
-        javac(src, dst);
+        javac(src, dst, 8);
 
         byte[] mdBytes = Files.readAllBytes(Paths.get("module-info.class"));
 
@@ -397,7 +402,7 @@ public class Basic {
         // compile the classes directory
         Path src = testsrc.resolve("src").resolve("classes");
         Path dst = Paths.get("test7");
-        javac(src, dst);
+        javac(src, dst, 8);
 
         // move module-info.class to v9 later use
         Files.copy(Paths.get("module-info.class"),

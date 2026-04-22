@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import java.nio.file.Files;
 
 import java.util.*;
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 /**
  * The testsets contained in this class are executed by ./VerifierTest_*.java, so that
@@ -48,7 +48,7 @@ public class VerifierTest implements Opcodes {
     static final String PASS_RESULT = "Hi, how are you?";
     static final String VFY_INFO_MESSAGE =
         "All non-system classes will be verified (-Xverify:remote) during CDS dump time.";
-    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
+    static final String CDS_LOGGING = "-Xlog:cds,aot+hashtables";
 
     enum Testset1Part {
         A, B
@@ -221,6 +221,8 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xms256m",
+                           "-Xmx256m",
                            "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "VerifierTest0")
@@ -302,6 +304,8 @@ public class VerifierTest implements Opcodes {
                 runtime_arg1 = runtime_arg2 = runtime_arg3 = runtime_setting;
             }
             TestCommon.run("-cp", jar,
+                           "-Xms256m",
+                           "-Xmx256m",
                            "-Xlog:cds",
                            runtime_arg1, runtime_arg2, runtime_arg3,
                            "Hi")
@@ -330,7 +334,7 @@ public class VerifierTest implements Opcodes {
         }
     }
 
-    // This was obtained using JDK8: java jdk.internal.org.objectweb.asm.util.ASMifier tmpclasses/UnverifiableBase.class
+    // This was obtained using JDK8: java org.objectweb.asm.util.ASMifier tmpclasses/UnverifiableBase.class
     static byte[] makeUnverifiableBase() throws Exception {
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;
@@ -368,7 +372,7 @@ public class VerifierTest implements Opcodes {
         return cw.toByteArray();
     }
 
-    // This was obtained using JDK8: java jdk.internal.org.objectweb.asm.util.ASMifier tmpclasses/UnverifiableIntf.class
+    // This was obtained using JDK8: java org.objectweb.asm.util.ASMifier tmpclasses/UnverifiableIntf.class
     static byte[] makeUnverifiableIntf() throws Exception {
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,35 +64,35 @@ public final class StackTraceElement implements java.io.Serializable {
 
     // Normally initialized by VM
     /**
-     * The name of the class loader.
+     * @serial The name of the class loader.
      */
     private String classLoaderName;
     /**
-     * The module name.
+     * @serial The module name.
      */
     private String moduleName;
     /**
-     * The module version.
+     * @serial The module version.
      */
     private String moduleVersion;
     /**
-     * The declaring class.
+     * @serial The declaring class.
      */
     private String declaringClass;
     /**
-     * The method name.
+     * @serial The method name.
      */
     private String methodName;
     /**
-     * The source file name.
+     * @serial The source file name.
      */
     private String fileName;
     /**
-     * The source line number.
+     * @serial The source line number.
      */
     private int    lineNumber;
     /**
-     * Control to show full or partial module, package, and class names.
+     * @serial Control to show full or partial module, package, and class names.
      */
     private byte   format = 0; // Default to show all
 
@@ -561,7 +561,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         // VM to fill in StackTraceElement
         initStackTraceElements(stackTrace, x, depth);
-        return of(stackTrace);
+        return finishInit(stackTrace);
     }
 
     /*
@@ -575,7 +575,7 @@ public final class StackTraceElement implements java.io.Serializable {
         return ste;
     }
 
-    static StackTraceElement[] of(StackTraceElement[] stackTrace) {
+    static StackTraceElement[] finishInit(StackTraceElement[] stackTrace) {
         // ensure the proper StackTraceElement initialization
         for (StackTraceElement ste : stackTrace) {
             ste.computeFormat();

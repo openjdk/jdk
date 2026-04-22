@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
-#include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -40,7 +39,7 @@ void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(oop_or_narrowoop)) {
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
-    HeapRegion* hr = _g1h->heap_region_containing(o);
+    G1HeapRegion* hr = _g1h->heap_region_containing(o);
     assert(!_g1h->is_in_cset(o) || hr->rem_set()->code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
     hr->add_code_root(_nm);
   }
@@ -85,9 +84,7 @@ void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
     nm->mark_as_maybe_on_stack();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      bs_nm->disarm(nm);
-    }
+    bs_nm->disarm(nm);
   }
 
   nm->fix_oop_relocations();
@@ -101,9 +98,7 @@ void G1NMethodClosure::do_marking(nmethod* nm) {
   nm->mark_as_maybe_on_stack();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->disarm(nm);
-  }
+  bs_nm->disarm(nm);
 
   // The oops were only marked, no need to update oop relocations.
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class TestProperty extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
-                    ctProperty</a>&lt;java.util.List&lt;<a href="MyClassT.html" title="type paramete\
+                    ctProperty</a>&lt;java.util.List&lt;<a href="#type-param-T" title="type paramete\
                     r in MyClassT">T</a>&gt;&gt;</span>&nbsp;<span class="element-name">listProperty</span><\
                     /div>
                     <div class="block">This is an Object property where the Object is a single <code>List&lt;T&gt;</code>.</div>

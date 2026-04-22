@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6437265
  * @summary Tests encoding of container with BorderLayout
- * @run main/othervm -Djava.security.manager=allow Test6437265
+ * @run main/othervm Test6437265
  * @author Sergey Malenkov
  */
 
@@ -47,7 +47,7 @@ public final class Test6437265 extends AbstractTest<JPanel> {
             BorderLayout.PAGE_START};
 
     public static void main(String[] args) {
-        new Test6437265().test(true);
+        new Test6437265().test();
     }
 
     protected JPanel getObject() {

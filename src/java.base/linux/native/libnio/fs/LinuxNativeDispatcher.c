@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ Java_sun_nio_fs_LinuxNativeDispatcher_directCopy0
                     case EINVAL:
                     case ENOSYS:
                     case EXDEV:
+                    case EOPNOTSUPP:
                         // ignore and try sendfile()
                         break;
                     default:
@@ -211,7 +212,7 @@ Java_sun_nio_fs_LinuxNativeDispatcher_directCopy0
     }
 
     do {
-        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        RESTARTABLE(sendfile(dst, src, NULL, count), bytes_sent);
         if (bytes_sent < 0) {
             if (errno == EAGAIN)
                 return IOS_UNAVAILABLE;

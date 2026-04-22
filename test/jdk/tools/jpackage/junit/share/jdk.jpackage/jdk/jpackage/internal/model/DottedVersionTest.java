@@ -1,0 +1,370 @@
+/*
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.jpackage.internal.model;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+
+public class DottedVersionTest {
+
+    public record TestConfig(String input,
+            Function<String, DottedVersion> createVersion, String expectedSuffix,
+            int expectedComponentCount, String expectedToComponent) {
+
+        TestConfig(String input, Type type, int expectedComponentCount, String expectedToComponent) {
+            this(input, type.createVersion, "", expectedComponentCount, expectedToComponent);
+        }
+
+        TestConfig(String input, Type type, int expectedComponentCount) {
+            this(input, type.createVersion, "", expectedComponentCount, input);
+        }
+
+        static TestConfig lazy(String input, String expectedSuffix, int expectedComponentCount, String expectedToComponent) {
+            return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testValid(TestConfig cfg) {
+        var dv = cfg.createVersion.apply(cfg.input());
+        assertEquals(cfg.expectedSuffix(), dv.getUnprocessedSuffix());
+        assertEquals(cfg.expectedComponentCount(), dv.getComponents().length);
+        assertEquals(cfg.expectedComponentCount(), dv.getComponentsCount());
+        assertEquals(cfg.expectedToComponent(), dv.toComponentsString());
+        assertEquals(dv.toString(), cfg.input());
+    }
+
+    private static List<TestConfig> testValid() {
+        List<TestConfig> data = new ArrayList<>();
+        for (var type : Type.values()) {
+            data.addAll(List.of(
+                    new TestConfig("1.0", type, 2),
+                    new TestConfig("1", type, 1),
+                    new TestConfig("2.20034.045", type, 3, "2.20034.45"),
+                    new TestConfig("2.234.0", type, 3),
+                    new TestConfig("0", type, 1),
+                    new TestConfig("0.1", type, 2),
+                    new TestConfig("9".repeat(1000), type, 1),
+                    new TestConfig("00.0.0", type, 3, "0.0.0")
+            ));
+        }
+
+        data.addAll(List.of(
+                TestConfig.lazy("1.-1", ".-1", 1, "1"),
+                TestConfig.lazy("5.", ".", 1, "5"),
+                TestConfig.lazy("4.2.", ".", 2, "4.2"),
+                TestConfig.lazy("3..2", "..2", 1, "3"),
+                TestConfig.lazy("3......2", "......2", 1, "3"),
+                TestConfig.lazy("2.a", ".a", 1, "2"),
+                TestConfig.lazy("a", "a", 0, ""),
+                TestConfig.lazy("2..a", "..a", 1, "2"),
+                TestConfig.lazy("0a", "a", 1, "0"),
+                TestConfig.lazy("120a", "a", 1, "120"),
+                TestConfig.lazy("120abc", "abc", 1, "120"),
+                TestConfig.lazy(".", ".", 0, ""),
+                TestConfig.lazy("....", "....", 0, ""),
+                TestConfig.lazy(" ", " ", 0, ""),
+                TestConfig.lazy(" 1", " 1", 0, ""),
+                TestConfig.lazy("678. 2", ". 2", 1, "678"),
+                TestConfig.lazy("+1", "+1", 0, ""),
+                TestConfig.lazy("-1", "-1", 0, ""),
+                TestConfig.lazy("-0", "-0", 0, ""),
+                TestConfig.lazy("+0", "+0", 0, ""),
+                TestConfig.lazy("+0", "+0", 0, ""),
+                TestConfig.lazy("1.2.3+ea", "+ea", 3, "1.2.3"),
+                TestConfig.lazy(".7", ".7", 0, ""),
+                TestConfig.lazy(".+7", ".+7", 0, "")
+        ));
+
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void test_trim(DottedVersion ver, String expectedStr, int limit) {
+        var expected = DottedVersion.lazy(expectedStr);
+        var actual = ver.trim(limit);
+        assertEquals(expected, actual);
+        if (limit >= ver.getComponents().length) {
+            assertSame(ver, actual);
+        } else {
+            assertNotSame(ver, actual);
+        }
+        assertEquals(expectedStr, actual.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("test_trim_pad_negative")
+    public void test_trim_negative(DottedVersion ver, int limit) {
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            ver.trim(limit);
+        });
+    }
+
+    private static Stream<Arguments> test_trim() {
+
+        var testCases = new ArrayList<Arguments>();
+
+        for (var suffix : List.of("", ".foo", "-ea", "+345")) {
+            testCases.addAll(List.of(
+                    Arguments.of("1.02.3" + suffix, "" + suffix, 0),
+                    Arguments.of("1.02.3" + suffix, "1" + suffix, 1),
+                    Arguments.of("1.02.3" + suffix, "1.02" + suffix, 2),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 3),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 4)
+            ));
+        }
+
+        return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void test_pad(DottedVersion ver, String expectedStr, int limit) {
+        var expected = DottedVersion.lazy(expectedStr);
+        var actual = ver.pad(limit);
+        assertEquals(expected, actual);
+        if (limit <= ver.getComponents().length) {
+            assertSame(ver, actual);
+        } else {
+            assertNotSame(ver, actual);
+        }
+        assertEquals(expectedStr, actual.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("test_trim_pad_negative")
+    public void test_pad_negative(DottedVersion ver, int limit) {
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            ver.pad(limit);
+        });
+    }
+
+    private static Stream<Arguments> test_pad() {
+
+        var testCases = new ArrayList<Arguments>();
+
+        for (var suffix : List.of("", ".foo", "-ea", "+345")) {
+            testCases.addAll(List.of(
+                    Arguments.of("" + suffix, "" + suffix, 0),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 0),
+                    Arguments.of("" + suffix, "0" + suffix, 1),
+                    Arguments.of("1" + suffix, "1" + suffix, 1),
+                    Arguments.of("1" + suffix, "1.0" + suffix, 2),
+                    Arguments.of("1.02.3" + suffix, "1.02.3.0.0" + suffix, 5)
+            ));
+        }
+
+        return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Stream<Arguments> test_trim_pad_negative() {
+        return Stream.of(
+                Arguments.of("10.5.foo", -1)
+        ).map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Arguments mapFirstStringToDottedVersion(Arguments v) {
+        var objs = v.get();
+        objs[0] = DottedVersion.lazy((String)objs[0]);
+        return Arguments.of(objs);
+    }
+
+    record InvalidVersionTestSpec(String version, String invalidComponent) {
+        public InvalidVersionTestSpec {
+            Objects.requireNonNull(version);
+            Objects.requireNonNull(invalidComponent);
+        }
+
+        InvalidVersionTestSpec(String version) {
+            this(version, "");
+        }
+
+        void run() {
+            final String expectedErrorMsg;
+            if (invalidComponent.isEmpty()) {
+                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-zero-length-component"), version);
+            } else {
+                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-invalid-component"), version, invalidComponent);
+            }
+
+            final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(version));
+
+            assertEquals(expectedErrorMsg, ex.getMessage());
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testInvalid(InvalidVersionTestSpec testSpec) {
+        testSpec.run();
+    }
+
+    private static Stream<InvalidVersionTestSpec> testInvalid() {
+        return Stream.of(
+                new InvalidVersionTestSpec("1.-1", "-1"),
+                new InvalidVersionTestSpec("5."),
+                new InvalidVersionTestSpec("4.2."),
+                new InvalidVersionTestSpec("3..2", ".2"),
+                new InvalidVersionTestSpec("3...2", "..2"),
+                new InvalidVersionTestSpec("2.a", "a"),
+                new InvalidVersionTestSpec("0a", "a"),
+                new InvalidVersionTestSpec("1.0a", "0a"),
+                new InvalidVersionTestSpec(".", "."),
+                new InvalidVersionTestSpec("..", ".."),
+                new InvalidVersionTestSpec(".a.b", ".a.b"),
+                new InvalidVersionTestSpec(".1.2", ".1.2"),
+                new InvalidVersionTestSpec(" ", " "),
+                new InvalidVersionTestSpec(" 1", " 1"),
+                new InvalidVersionTestSpec("1. 2", " 2"),
+                new InvalidVersionTestSpec("+1", "+1"),
+                new InvalidVersionTestSpec("-1", "-1"),
+                new InvalidVersionTestSpec("-0", "-0"),
+                new InvalidVersionTestSpec("+0", "+0")
+        );
+    }
+
+    @ParameterizedTest
+    @EnumSource(Type.class)
+    public void testNull(Type type) {
+        assertThrowsExactly(NullPointerException.class, () -> type.createVersion.apply(null));
+    }
+
+    @Test
+    public void testEmptyGreedy() {
+        final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""));
+        assertEquals(I18N.getString("error.version-string-empty"), ex.getMessage());
+    }
+
+    @Test
+    public void testEmptyLazy() {
+        assertEquals(0, DottedVersion.lazy("").getComponents().length);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Type.class)
+    public void testEquals(Type type) {
+        DottedVersion dv = type.createVersion.apply("1.0");
+        assertFalse(dv.equals(null));
+        assertFalse(dv.equals(1));
+        assertFalse(dv.equals(dv.toString()));
+
+        for (var ver : List.of("3", "3.4", "3.0.0")) {
+            DottedVersion a = type.createVersion.apply(ver);
+            DottedVersion b = type.createVersion.apply(ver);
+            assertTrue(a.equals(b));
+            assertTrue(b.equals(a));
+        }
+    }
+
+    @Test
+    public void testEqualsLazy() {
+        assertTrue(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+67")));
+        assertFalse(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+067")));
+    }
+
+    private static List<Object[]> testCompare() {
+        List<Object[]> data = new ArrayList<>();
+        for (var type : Type.values()) {
+            data.addAll(List.of(new Object[][] {
+                { type, "00.0.0", "0", 0 },
+                { type, "00.0.0", "0.000", 0 },
+                { type, "0.035", "0.0035", 0 },
+                { type, "0.035", "0.0035.0", 0 },
+                { type, "1", "1", 0 },
+                { type, "2", "2.0", 0 },
+                { type, "2.00", "2.0", 0 },
+                { type, "1.2.3.4", "1.2.3.4.5", -1 },
+                { type, "1.2.3.4", "1.2.3.4.0.1", -1 },
+                { type, "34", "33", 1 },
+                { type, "34.0.78", "34.1.78", -1 }
+            }));
+        }
+
+        data.addAll(List.of(new Object[][] {
+            { Type.LAZY, "", "1", -1 },
+            { Type.LAZY, "", "0", 0 },
+            { Type.LAZY, "0", "", 0 },
+            { Type.LAZY, "1.2.4-R4", "1.2.4-R5", 0 },
+            { Type.LAZY, "1.2.4.-R4", "1.2.4.R5", 0 },
+            { Type.LAZY, "7+1", "7+4", 0 },
+            { Type.LAZY, "2+14", "2-14", 0 },
+            { Type.LAZY, "23.4.RC4", "23.3.RC10", 1 },
+            { Type.LAZY, "77."  + "9".repeat(1000), "77." + "9".repeat(1000 -1) + "8", 1 },
+        }));
+
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testCompare(Type type, String version1, String version2, int expectedResult) {
+        final int actualResult = compare(type, version1, version2);
+        assertEquals(expectedResult, actualResult);
+
+        final int actualNegateResult = compare(type, version2, version1);
+        assertEquals(actualResult, -1 * actualNegateResult);
+    }
+
+    private int compare(Type type, String x, String y) {
+        int result = DottedVersion.compareComponents(type.createVersion.apply(x), type.createVersion.apply(y));
+
+        if (result < 0) {
+            return -1;
+        }
+
+        if (result > 0) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    public enum Type {
+        GREEDY(DottedVersion::greedy),
+        LAZY(DottedVersion::lazy);
+
+        Type(Function<String, DottedVersion> createVersion) {
+            this.createVersion = createVersion;
+        }
+
+        private final Function<String, DottedVersion> createVersion;
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,16 +132,19 @@ public class SignatureKAT {
         System.out.println("Testing " + td.sigName + " with " + td.cd.name);
 
         AlgorithmParameters params =
-            AlgorithmParameters.getInstance("EC", "SunEC");
+            AlgorithmParameters.getInstance("EC",
+                    System.getProperty("test.provider.name", "SunEC"));
         params.init(new ECGenParameterSpec(td.cd.name));
         ECParameterSpec ecParams =
             params.getParameterSpec(ECParameterSpec.class);
 
-        KeyFactory kf = KeyFactory.getInstance("EC", "SunEC");
+        KeyFactory kf = KeyFactory.getInstance("EC",
+                System.getProperty("test.provider.name", "SunEC"));
         PrivateKey privKey = kf.generatePrivate
                 (new ECPrivateKeySpec(td.cd.priv, ecParams));
 
-        Signature sig = Signature.getInstance(td.sigName, "SunEC");
+        Signature sig = Signature.getInstance(td.sigName,
+                System.getProperty("test.provider.name", "SunEC"));
         sig.initSign(privKey);
         sig.update(td.cd.msgBytes);
         // NOTE: there is no way to set the nonce value into current SunEC

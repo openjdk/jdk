@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public final class RecordedMethod extends RecordedObject {
     }
 
     /**
-     * Returns the class this method belongs to, if it belong to a Java frame.
+     * Returns the class this method belongs to, if it belongs to a Java frame.
      * <p>
      * To ensure this is a Java frame, use the {@link RecordedFrame#isJavaFrame()}
      * method.
@@ -94,12 +94,12 @@ public final class RecordedMethod extends RecordedObject {
      * @see RecordedFrame#isJavaFrame
      */
     public int getModifiers() {
-        return getTyped("modifiers", Integer.class, Integer.valueOf(0));
+        return getTyped("modifiers", Integer.class, INTEGER_ZERO);
     }
 
     /**
      * Returns whether this method is hidden (for example, wrapper code in a lambda
-     * expressions).
+     * expression).
      *
      * @return {@code true} if method is hidden, {@code false} otherwise
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,28 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.javac.PreviewFeature;
+import java.lang.classfile.attribute.UnknownAttribute;
 
 /**
- * A marker interface for elements that can appear when traversing
- * a {@link CodeModel} or be presented to a {@link CodeBuilder}. Code elements
- * are either an {@link Instruction}, which models an instruction in the body
- * of a method, or a {@link PseudoInstruction}, which models metadata from
- * the code attribute, such as line number metadata, local variable metadata,
- * exception metadata, label target metadata, etc.
+ * Marker interface for a member element of a {@link CodeModel}.  Such an
+ * element can appear when traversing a {@link CodeModel} unless otherwise
+ * specified, be supplied to a {@link CodeBuilder}, and be processed by a
+ * {@link CodeTransform}.
+ * <p>
+ * Code elements can be categorized into {@link Instruction}, {@link
+ * PseudoInstruction}, and {@link Attribute}.  Unlike in other {@link
+ * CompoundElement}, the order of elements for all {@link Instruction}s and some
+ * {@link PseudoInstruction}s is significant.
  *
+ * @see ClassFileElement##membership Membership Elements
+ * @see ClassElement
+ * @see MethodElement
+ * @see FieldElement
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeElement extends ClassFileElement
         permits Instruction, PseudoInstruction,
                 CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,
-                StackMapTableAttribute {
+                StackMapTableAttribute, UnknownAttribute {
 }

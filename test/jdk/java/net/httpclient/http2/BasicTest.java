@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 /*
  * @test
  * @bug 8087112
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
- *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors ${test.main.class}
  */
 
 import java.io.IOException;
@@ -44,43 +47,48 @@ import java.util.concurrent.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.httpclient.test.lib.common.TestUtil;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
-import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
-import static java.net.http.HttpClient.Version.HTTP_2;
 
-@Test
-public class BasicTest {
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.test.lib.net.SimpleSSLContext;
+import org.junit.jupiter.api.Test;
+
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFile;
+import static jdk.test.lib.Utils.createTempFileOfSize;
+
+public class BasicTest implements HttpServerAdapters {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpClient.class.getPackageName() + '-' + BasicTest.class.getSimpleName() + '-';
+
     static int httpPort, httpsPort;
-    static Http2TestServer httpServer, httpsServer;
+    static HttpTestServer httpServer, httpsServer;
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static String pingURIString, httpURIString, httpsURIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
-            httpServer = new Http2TestServer(false, 0, serverExec, sslContext);
-            httpServer.addHandler(new Http2EchoHandler(), "/");
+            httpServer = HttpTestServer.of(
+                    new Http2TestServer(false, 0, serverExec, sslContext));
+            httpServer.addHandler(new HttpTestFileEchoHandler(), "/");
             httpServer.addHandler(new EchoWithPingHandler(), "/ping");
             httpPort = httpServer.getAddress().getPort();
 
-            httpsServer = new Http2TestServer(true, 0, serverExec, sslContext);
-            httpsServer.addHandler(new Http2EchoHandler(), "/");
+            httpsServer = HttpTestServer.of(
+                    new Http2TestServer(true, 0, serverExec, sslContext));
+            httpsServer.addHandler(new HttpTestFileEchoHandler(), "/");
 
             httpsPort = httpsServer.getAddress().getPort();
-            httpURIString = "http://localhost:" + httpPort + "/foo/";
-            pingURIString = "http://localhost:" + httpPort + "/ping/";
-            httpsURIString = "https://localhost:" + httpsPort + "/bar/";
+            httpURIString = "http://" + httpServer.serverAuthority() + "/foo/";
+            pingURIString = "http://" + httpServer.serverAuthority() + "/ping/";
+            httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
 
             httpServer.start();
             httpsServer.start();
@@ -96,11 +104,11 @@ public class BasicTest {
 
     static CompletableFuture<Long> currentCF;
 
-    static class EchoWithPingHandler extends Http2EchoHandler {
+    static class EchoWithPingHandler extends HttpTestFileEchoHandler {
         private final Object lock = new Object();
 
         @Override
-        public void handle(Http2TestExchange exchange) throws IOException {
+        public void handle(HttpTestExchange exchange) throws IOException {
             // for now only one ping active at a time. don't want to saturate
             synchronized(lock) {
                 CompletableFuture<Long> cf = currentCF;
@@ -116,7 +124,7 @@ public class BasicTest {
     }
 
     @Test
-    public static void test() throws Exception {
+    void test() throws Exception {
         try {
             initialize();
             warmup(false);
@@ -184,14 +192,6 @@ public class BasicTest {
         }
     }
 
-    static Void compareFiles(Path path1, Path path2) {
-        return TestUtil.compareFiles(path1, path2);
-    }
-
-    static Path tempFile() {
-        return TestUtil.tempFile();
-    }
-
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 
     static final int LOOPS = 13;
@@ -202,7 +202,7 @@ public class BasicTest {
         System.err.printf("streamTest %b to %s\n" , secure, uri);
 
         HttpClient client = getClient();
-        Path src = TestUtil.getAFile(FILESIZE * 4);
+        Path src = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofFile(src))
                                      .build();
@@ -216,22 +216,22 @@ public class BasicTest {
                     return resp.body();
                 });
         response.join();
-        compareFiles(src, dest);
+        assertFileContentsEqual(src, dest);
         System.err.println("streamTest: DONE");
     }
 
     static void paramsTest() throws Exception {
-        httpsServer.addHandler((t -> {
+        httpsServer.addHandler(((HttpTestExchange t) -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
             if (prot.equals("TLSv1.2") || prot.equals("TLSv1.3")) {
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_EMPTY);
             } else {
                 System.err.printf("Protocols =%s\n", prot);
-                t.sendResponseHeaders(500, -1);
+                t.sendResponseHeaders(500, HttpTestExchange.RSPBODY_EMPTY);
             }
         }), "/");
-        URI u = new URI("https://localhost:"+httpsPort+"/foo");
+        URI u = new URI("https://" + httpsServer.serverAuthority() + "/foo");
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(u).build();
         HttpResponse<String> resp = client.send(req, BodyHandlers.ofString());
@@ -269,17 +269,19 @@ public class BasicTest {
         // Do loops asynchronously
 
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
-        final Path source = TestUtil.getAFile(FILESIZE);
+        final Path source = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
-            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(tempFile()))
+            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(createTempFile(TEMP_FILE_PREFIX, null)))
                 //.thenApply(resp -> compareFiles(resp.body(), source));
                 .thenApply(resp -> {
+                    Path body = resp.body();
                     System.out.printf("Resp status %d body size %d\n",
-                                      resp.statusCode(), resp.body().toFile().length());
-                    return compareFiles(resp.body(), source);
+                                      resp.statusCode(), body.toFile().length());
+                    assertFileContentsEqual(body, source);
+                    return null;
                 });
             Thread.sleep(100);
         }

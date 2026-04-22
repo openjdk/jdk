@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
 
 package jdk.test.lib.jittester;
 
+import java.util.List;
+
 import jdk.test.lib.jittester.utils.OptionResolver;
 import jdk.test.lib.jittester.utils.OptionResolver.Option;
+import jdk.test.lib.jittester.utils.PseudoRandom;
 
 public class ProductionParams {
 
+    public static Option<List<String>> mainClassNames = null;
     public static Option<Integer> productionLimit = null;
     public static Option<Integer> productionLimitSeconds = null;
     public static Option<Integer> dataMemberLimit = null;
@@ -72,6 +76,7 @@ public class ProductionParams {
     // workaraound: to reduce chance throwing ArrayIndexOutOfBoundsException
     public static Option<Integer> chanceExpressionIndex = null;
     public static Option<String> testbaseDir = null;
+    public static Option<String> tempDir = null;
     public static Option<Integer> numberOfTests = null;
     public static Option<String> seed = null;
     public static Option<Long> specificSeed = null;
@@ -81,6 +86,7 @@ public class ProductionParams {
     public static Option<String> generatorsFactories = null;
 
     public static void register(OptionResolver optionResolver) {
+        mainClassNames = optionResolver.addRepeatingOption('k', "main-class", "", "Main class name");
         productionLimit = optionResolver.addIntegerOption('l', "production-limit", 100, "Limit on steps in the production of an expression");
         productionLimitSeconds = optionResolver.addIntegerOption("production-limit-seconds", 600, "Limit the time a test generation may take");
         dataMemberLimit = optionResolver.addIntegerOption('v', "data-member-limit", 10, "Upper limit on data members");
@@ -115,7 +121,7 @@ public class ProductionParams {
         disableExternalSymbols = optionResolver.addBooleanOption("disable-external-symbols", "Don\'t use external symbols");
         addExternalSymbols = optionResolver.addStringOption("add-external-symbols", "all", "Add symbols for listed classes (comma-separated list)");
         disableInheritance = optionResolver.addBooleanOption("disable-inheritance", "Disable inheritance");
-        disableDowncasts = optionResolver.addBooleanOption("disable-downcasts", "Disable downcasting of objects");
+        disableDowncasts = optionResolver.addBooleanOption(null, "disable-downcasts", true, "Disable downcasting of objects");
         disableStatic = optionResolver.addBooleanOption("disable-static", "Disable generation of static objects and functions");
         disableInterfaces = optionResolver.addBooleanOption("disable-interfaces", "Disable generation of interfaces");
         disableClasses = optionResolver.addBooleanOption("disable-classes", "Disable generation of classes");
@@ -124,6 +130,7 @@ public class ProductionParams {
         enableFinalizers = optionResolver.addBooleanOption("enable-finalizers", "Enable finalizers (for stress testing)");
         chanceExpressionIndex = optionResolver.addIntegerOption("chance-expression-index", 0, "A non negative decimal integer used to restrict chane of generating expression in array index while creating or accessing by index");
         testbaseDir = optionResolver.addStringOption("testbase-dir", ".", "Testbase dir");
+        tempDir = optionResolver.addStringOption("temp-dir", ".", "Temp dir path");
         numberOfTests = optionResolver.addIntegerOption('n', "number-of-tests", 0, "Number of test classes to generate");
         seed = optionResolver.addStringOption("seed", "", "Random seed");
         specificSeed = optionResolver.addLongOption('z', "specificSeed", 0L, "A seed to be set for specific test generation(regular seed still needed for initialization)");
@@ -131,5 +138,19 @@ public class ProductionParams {
         excludeMethodsFile = optionResolver.addStringOption('r', "exclude-methods-file", "conf/exclude.methods.lst", "File to read excluded methods from");
         generators = optionResolver.addStringOption("generators", "", "Comma-separated list of generator names");
         generatorsFactories = optionResolver.addStringOption("generatorsFactories", "", "Comma-separated list of generators factories class names");
+    }
+
+    /**
+     * Initializes from the given command-line args
+     *
+     * @param args command-line arguments to use for initialization
+     */
+    public static void initializeFromCmdline(String[] args) {
+        OptionResolver parser = new OptionResolver();
+        Option<String> propertyFileOpt = parser.addStringOption('p', "property-file",
+                "conf/default.properties", "File to read properties from");
+        ProductionParams.register(parser);
+        parser.parse(args, propertyFileOpt);
+        PseudoRandom.reset(ProductionParams.seed.value());
     }
 }

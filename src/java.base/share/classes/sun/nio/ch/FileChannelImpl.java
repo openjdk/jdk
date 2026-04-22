@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,11 @@ import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
-import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
-
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.event.FileWriteEvent;
 import jdk.internal.access.foreign.UnmapperProxy;
+import sun.nio.Cleaner;
 
 public class FileChannelImpl
     extends FileChannel
@@ -72,6 +73,10 @@ public class FileChannelImpl
 
     // Used to make native read and write calls
     private static final FileDispatcher nd = new FileDispatcherImpl();
+
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // file reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
 
     // File descriptor
     private final FileDescriptor fd;
@@ -173,7 +178,11 @@ public class FileChannelImpl
     }
 
     private void endBlocking(boolean completed) throws AsynchronousCloseException {
-        if (!uninterruptible) end(completed);
+        if (!uninterruptible) {
+            end(completed);
+        } else if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
+        }
     }
 
     // -- Standard channel operations --
@@ -220,6 +229,13 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dst);
+        }
+        return implRead(dst);
+    }
+
+    private int implRead(ByteBuffer dst) throws IOException {
         ensureOpen();
         if (!readable)
             throw new NonReadableChannelException();
@@ -250,8 +266,26 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplRead(ByteBuffer dst) throws IOException {
+        int bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        try {
+            bytesRead = implRead(dst);
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead);
+        }
+        return bytesRead;
+    }
+
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dsts, offset, length);
+        }
+        return implRead(dsts, offset, length);
+    }
+
+    private long implRead(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, dsts.length);
@@ -286,8 +320,26 @@ public class FileChannelImpl
         }
     }
 
+    private long traceImplRead(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        long bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        try {
+            bytesRead = implRead(dsts, offset, length);
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead);
+        }
+        return bytesRead;
+    }
+
     @Override
     public int write(ByteBuffer src) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            return traceImplWrite(src);
+        }
+        return implWrite(src);
+    }
+
+    private int implWrite(ByteBuffer src) throws IOException {
         ensureOpen();
         if (!writable)
             throw new NonWritableChannelException();
@@ -319,10 +371,26 @@ public class FileChannelImpl
         }
     }
 
+    private int traceImplWrite(ByteBuffer src) throws IOException {
+        int bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
+        try {
+            bytesWritten = implWrite(src);
+        } finally {
+            FileWriteEvent.offer(start, path, bytesWritten);
+        }
+        return bytesWritten;
+    }
+
     @Override
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            return traceImplWrite(srcs, offset, length);
+        }
+        return implWrite(srcs, offset, length);
+    }
+
+    private long implWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
         Objects.checkFromIndexSize(offset, length, srcs.length);
         ensureOpen();
         if (!writable)
@@ -352,6 +420,17 @@ public class FileChannelImpl
                 assert IOStatus.check(n);
             }
         }
+    }
+
+    private long traceImplWrite(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        long bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
+        try {
+            bytesWritten = implWrite(srcs, offset, length);
+        } finally {
+            FileWriteEvent.offer(start, path, bytesWritten);
+        }
+        return bytesWritten;
     }
 
     // -- Other operations --
@@ -426,6 +505,49 @@ public class FileChannelImpl
                 endBlocking(s > -1);
                 assert IOStatus.check(s);
             }
+        }
+    }
+
+    /**
+     * Returns an estimate of the number of remaining bytes that can be read
+     * from this channel without blocking.
+     */
+    int available() throws IOException {
+        ensureOpen();
+        synchronized (positionLock) {
+            int a = -1;
+            int ti = -1;
+            try {
+                beginBlocking();
+                ti = threads.add();
+                if (!isOpen())
+                    return -1;
+                a = nd.available(fd);
+            } finally {
+                threads.remove(ti);
+                endBlocking(a > -1);
+            }
+            return a;
+        }
+    }
+
+    /**
+     * Tells whether the channel represents something other than a regular
+     * file, directory, or symbolic link.
+     */
+    boolean isOther() throws IOException {
+        ensureOpen();
+        int ti = -1;
+        Boolean isOther = null;
+        try {
+            beginBlocking();
+            ti = threads.add();
+            if (!isOpen())
+                return false;
+            return isOther = nd.isOther(fd);
+        } finally {
+            threads.remove(ti);
+            endBlocking(isOther != null);
         }
     }
 
@@ -1028,6 +1150,13 @@ public class FileChannelImpl
 
     @Override
     public int read(ByteBuffer dst, long position) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplRead(dst, position);
+        }
+        return implRead(dst, position);
+    }
+
+    private int implRead(ByteBuffer dst, long position) throws IOException {
         if (dst == null)
             throw new NullPointerException();
         if (position < 0)
@@ -1044,6 +1173,17 @@ public class FileChannelImpl
         } else {
             return readInternal(dst, position);
         }
+    }
+
+    private int traceImplRead(ByteBuffer dst, long position) throws IOException {
+        int bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        try {
+            bytesRead = implRead(dst, position);
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead);
+        }
+        return bytesRead;
     }
 
     private int readInternal(ByteBuffer dst, long position) throws IOException {
@@ -1074,6 +1214,13 @@ public class FileChannelImpl
 
     @Override
     public int write(ByteBuffer src, long position) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceImplWrite(src, position);
+        }
+        return implWrite(src, position);
+    }
+
+    private int implWrite(ByteBuffer src, long position) throws IOException {
         if (src == null)
             throw new NullPointerException();
         if (position < 0)
@@ -1090,6 +1237,17 @@ public class FileChannelImpl
         } else {
             return writeInternal(src, position);
         }
+    }
+
+    private int traceImplWrite(ByteBuffer src, long position) throws IOException {
+        int bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
+        try {
+            bytesWritten = implWrite(src, position);
+        } finally {
+            FileWriteEvent.offer(start, path, bytesWritten);
+        }
+        return bytesWritten;
     }
 
     private int writeInternal(ByteBuffer src, long position) throws IOException {

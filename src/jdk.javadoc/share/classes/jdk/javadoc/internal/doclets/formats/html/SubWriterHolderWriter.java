@@ -25,20 +25,23 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * This abstract class exists to provide functionality needed in the
@@ -117,8 +120,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
-            var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
-            div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+            var deprLabel = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(member));
+            div = HtmlTree.DIV(HtmlStyles.block, deprLabel);
             if (!deprs.isEmpty()) {
                 addSummaryDeprecatedComment(member, deprs.get(0), div);
             }
@@ -127,8 +130,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
-                div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+                var deprLabel = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(te));
+                div = HtmlTree.DIV(HtmlStyles.block, deprLabel);
                 tdSummaryContent.add(div);
             }
         }
@@ -200,7 +203,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of summaries for members of a given kind
      */
     public Content getSummariesList() {
-        return HtmlTree.UL(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyles.summaryList);
     }
 
     /**
@@ -219,7 +222,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of details for members of a given kind
      */
     public Content getDetailsList() {
-        return HtmlTree.UL(HtmlStyle.detailsList);
+        return HtmlTree.UL(HtmlStyles.detailsList);
     }
 
     /**
@@ -236,7 +239,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * {@return a list to add member items to}
      */
     public Content getMemberList() {
-        return HtmlTree.UL(HtmlStyle.memberList);
+        return HtmlTree.UL(HtmlStyles.memberList);
     }
 
     /**
@@ -249,7 +252,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     public Content getMemberInherited() {
-        return HtmlTree.DIV(HtmlStyle.inheritedList);
+        return HtmlTree.DIV(HtmlStyles.inheritedList);
     }
 
     /**
@@ -281,7 +284,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param memberContent the content used to generate the member summary
      */
     public Content getMemberSummary(Content memberContent) {
-        return HtmlTree.SECTION(HtmlStyle.summary, memberContent);
+        return HtmlTree.SECTION(HtmlStyles.summary, memberContent);
     }
 
     /**

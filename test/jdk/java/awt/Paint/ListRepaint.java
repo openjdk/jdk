@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,26 +30,28 @@ import java.awt.List;
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class ListRepaint extends List {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            final Frame frame = new Frame();
-            frame.setSize(300, 300);
-            frame.setLocationRelativeTo(null);
-            ListRepaint list = new ListRepaint();
-            list.add("1");
-            list.add("2");
-            list.add("3");
-            list.add("4");
-            list.select(0);
-            frame.add(list);
-            frame.setVisible(true);
-            sleep();
-            list.test();
-            frame.dispose();
+            Frame frame = new Frame();
+            try {
+                frame.setSize(300, 300);
+                frame.setLocationRelativeTo(null);
+                ListRepaint list = new ListRepaint();
+                list.add("1");
+                list.add("2");
+                list.add("3");
+                list.add("4");
+                list.select(0);
+                frame.add(list);
+                frame.setVisible(true);
+                sleep();
+                list.test();
+            } finally {
+                frame.dispose();
+            }
         }
     }
 

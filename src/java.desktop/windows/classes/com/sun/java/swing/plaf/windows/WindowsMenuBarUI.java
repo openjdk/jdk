@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ import javax.swing.plaf.basic.BasicMenuBarUI;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
+
+import sun.swing.MnemonicHandler;
 
 /**
  * Windows rendition of the component.
@@ -123,6 +125,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
         super.installListeners();
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         ActionMap map = SwingUtilities.getUIActionMap(menuBar);
@@ -138,7 +141,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
      * Unlike BasicMenuBarUI.TakeFocus, this Action will not show menu popup.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class TakeFocus extends AbstractAction {
+    private static final class TakeFocus extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
             JMenuBar menuBar = (JMenuBar)e.getSource();
@@ -149,11 +152,11 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                 MenuElement[] selectedPath = msm.getSelectedPath();
                 if (selectedPath.length > 0 && (selectedPath[0] instanceof JMenuBar)) {
                     msm.clearSelectedPath();
-                    WindowsLookAndFeel.setMnemonicHidden(true);
+                    MnemonicHandler.setMnemonicHidden(true);
                 } else {
                     MenuElement[] path = {menuBar, menu};
                     msm.setSelectedPath(path);
-                    WindowsLookAndFeel.setMnemonicHidden(false);
+                    MnemonicHandler.setMnemonicHidden(false);
                 }
                 WindowsLookAndFeel.repaintRootPane(menuBar);
             }

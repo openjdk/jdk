@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
    @bug 6176819
    @summary Check if COMPUND_TEXT charset works as expected
+   @requires (os.family != "windows")
    @run main/timeout=1200 TestCOMP
  */
 
@@ -35,9 +36,6 @@ import java.nio.*;
 
 public class TestCOMP {
     public static void main(String[] argv) throws CharacterCodingException {
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows"))
-            return;
         try {
             String src =
                 "JIS0208\u4eb0" +

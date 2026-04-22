@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,6 @@ public class MemOptionsTest {
         // positive("Initial young generation size within 32-bit range", "-Xmx3G", "-XX:NewSize=2G");
         // positive("Initial young generation size at 32-bit range", "-Xmx5G", "-XX:NewSize=4G");
         // positive("Initial young generation size outside 32-bit range", "-Xmx5G", "-XX:NewSize=4G");
-
-        // positive("Initial old generation size within 32-bit range", "-Xmx3G", "-XX:OldSize=2G");
-        // positive("Initial old generation size at 32-bit range", "-Xmx5G", "-XX:OldSize=4G");
-        // positive("Initial old generation size outside 32-bit range", "-Xmx5G", "-XX:OldSize=4G");
 
         if (!failed.isEmpty()) {
             throw new AssertionError(String.format("%d cases failed : %s", failed.size(), failed));

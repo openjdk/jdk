@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -27,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ann">Ōporo</language>
 			<language type="anp">Anahika</language>
 			<language type="ar">Ārapi</language>
-			<language type="ar_001">Ārapi Moroko</language>
+			<language type="ar_001">Ārapi Moroki</language>
 			<language type="arn">Mapūte</language>
 			<language type="arp">Arapaho</language>
 			<language type="ars">Arapika Nahāri</language>
@@ -118,7 +118,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_US" alt="short">Ingarihi US</language>
 			<language type="eo">Eheperāto</language>
 			<language type="es">Pāniora</language>
-			<language type="es_419">Pāniora Amerikana ki te Tonga</language>
+			<language type="es_419">Pāniora o Amerika Rātini</language>
 			<language type="es_ES">Pāniora Ūropi</language>
 			<language type="es_MX">Pāniora Mehikana</language>
 			<language type="et">Etōniana</language>
@@ -158,6 +158,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hax">Haira ki te Tonga</language>
 			<language type="he">Hīperu</language>
 			<language type="hi">Hīni</language>
+			<language type="hi_Latn" alt="variant">Hīngarihi</language>
 			<language type="hil">Hirikaina</language>
 			<language type="hmn">Mōnga</language>
 			<language type="hr">Koroātiana</language>
@@ -521,7 +522,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="015">Āwherika ki te Raki</territory>
 			<territory type="017">Te Pokapū o Āwherika</territory>
 			<territory type="018">Āwherika Whakatetonga</territory>
-			<territory type="019">Amerika</territory>
+			<territory type="019">Ngā Amerika</territory>
 			<territory type="021">Te Raki o Amerika</territory>
 			<territory type="029">Karapīana</territory>
 			<territory type="030">Āhia ki te Rāwhiti</territory>
@@ -558,7 +559,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AW">Arūpa</territory>
 			<territory type="AX">Motu Ōrana</territory>
 			<territory type="AZ">Atepaihānia</territory>
-			<territory type="BA">Pōngia-Herekōwini</territory>
+			<territory type="BA">Pōngia &amp; Herekōwini</territory>
 			<territory type="BB">Papatohe</territory>
 			<territory type="BD">Pākaratēhi</territory>
 			<territory type="BE">Peretiama</territory>
@@ -594,6 +595,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">Haina</territory>
 			<territory type="CO">Koromōpia</territory>
 			<territory type="CP">Te Moutere Kiripetone</territory>
+			<territory type="CQ">Hāka</territory>
 			<territory type="CR">Koto Rīka</territory>
 			<territory type="CU">Kiupa</territory>
 			<territory type="CV">Te Kūrae Matomato</territory>
@@ -832,11 +834,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">Maramataka Etiopia</type>
 			<type key="calendar" type="ethiopic-amete-alem">Maramataka Etiopia Amete Arema</type>
 			<type key="calendar" type="gregorian">Maramataka Pākehā</type>
+			<type key="calendar" type="gregorian" scope="core">Pākehā</type>
 			<type key="calendar" type="hebrew">Maramataka Hīperu</type>
 			<type key="calendar" type="islamic">Maramataka Hitiuri</type>
 			<type key="calendar" type="islamic-civil">Maramataka Hitiuri (tūtohi, wā o naiānei)</type>
 			<type key="calendar" type="islamic-umalqura">Maramataka Hitiuri (Uma ara Kura)</type>
-			<type key="calendar" type="iso8601">Maramataka ISO-8601</type>
+			<type key="calendar" type="iso8601">Maramataka Pākehā (Tau Tuatahi)</type>
 			<type key="calendar" type="japanese">Maramataka Hapanihi</type>
 			<type key="calendar" type="persian">Maramataka Pāhia</type>
 			<type key="calendar" type="roc">Maramataka Minguo</type>
@@ -845,6 +848,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="ducet">Raupapa Kōmaka Unicode Taunoa</type>
 			<type key="collation" type="search">Rapunga Arowhānui</type>
 			<type key="collation" type="standard">Raupapa Kōmaka Arowhānui</type>
+			<type key="collation" type="standard" scope="core">Arowhānui</type>
 			<type key="hc" type="h11">Pūnaha Haora 12 (0–11)</type>
 			<type key="hc" type="h12">Pūnaha Haora 12 (1–12)</type>
 			<type key="hc" type="h23">Pūnaha Haora 24 (0–23)</type>
@@ -940,42 +944,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'i' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'i' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<intervalFormats>
 						<intervalFormatFallback>{0} ki te {1}</intervalFormatFallback>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">GGGGG y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">GGGGG y-MM-dd – y-MM-dd</greatestDifference>
@@ -986,21 +986,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
 							<greatestDifference id="M">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
 							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1179,20 +1164,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'i' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'i' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'i' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1203,7 +1203,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1295,9 +1294,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} Hwh</relativeTimePattern>
 				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>marama</displayName>
@@ -1350,7 +1346,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>w</displayName>
@@ -2115,9 +2110,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Wā o Āwherika ki te uru</generic>
-					<standard>Wā Arowhānui o Āwerika ki te uru</standard>
-					<daylight>Wā Raumati o Āwherika ki te uru</daylight>
+					<standard>Wā o Āwherika ki te uru</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2308,13 +2301,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Haina Awatea</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Wā Choibalsan</generic>
-					<standard>Wā Choibalsan Arowhānui</standard>
-					<daylight>Wā Choibalsan Raumati</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Wā o Te Moutere Kirihimete</standard>
@@ -2474,6 +2460,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Wā Kaiana</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Wā Arowhānui Hawaii-Aleutian</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Wā Hawaii-Aleutian</generic>
@@ -2551,6 +2542,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Wā Hapani</generic>
 					<standard>Wā Hapani Arowhānui</standard>
 					<daylight>Wā Hapani Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Wā Katatānga</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2970,9 +2966,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName>Dirham UAE</displayName>
@@ -3530,7 +3523,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TWD">
 				<displayName>Tāra Taiwana Hou</displayName>
-				<displayName count="other">tāra Taiwana hou</displayName>
+				<displayName count="other">tāra Taiwana Hou</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName>Hereni Tānahia</displayName>
@@ -3579,6 +3572,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Tāra Karapīana Rāwhiti</displayName>
 				<displayName count="other">tāra Karapīana Rāwhiti</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>Guilder Karapīana</displayName>
+				<displayName count="other">Guilder Karapīana</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Franc CFA Āwherika ki te Uru</displayName>
 				<displayName count="other">franc CFA Āwherika ki te Uru</displayName>
@@ -3603,12 +3600,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Kwacha Tāmipia</displayName>
 				<displayName count="other">kwacha Tāmipia</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>Kōura Timuwawe</displayName>
+				<displayName count="other">Kino Tāone o Timuwawe</displayName>
+			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">⩾{0}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} rā</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} rā</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Kōwhiria te tua{0} ki te matau.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -4048,7 +4049,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<listPatterns>
 		<listPattern type="or">
 			<listPatternPart type="end">{0}, {1} rānei</listPatternPart>
-			<listPatternPart type="2">{0} {1} rānei</listPatternPart>
+			<listPatternPart type="2">{0}, {1} rānei</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
 			<listPatternPart type="end">{0}, {1}</listPatternPart>

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
-#include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -66,13 +66,14 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
@@ -141,7 +142,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   // A non-strong hidden class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the non-strong hidden class.
   // The null-class-loader should always be kept alive.
-  _keep_alive((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
+  _keep_alive_ref_count((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
   _claim(0),
   _handles(),
   _klasses(nullptr), _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr), _dictionary(nullptr),
@@ -192,19 +193,19 @@ ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
 OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
   if (_head == nullptr || _head->_size == Chunk::CAPACITY) {
     Chunk* next = new Chunk(_head);
-    Atomic::release_store(&_head, next);
+    AtomicAccess::release_store(&_head, next);
   }
   oop* handle = &_head->_data[_head->_size];
   NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, o);
-  Atomic::release_store(&_head->_size, _head->_size + 1);
+  AtomicAccess::release_store(&_head->_size, _head->_size + 1);
   return OopHandle(handle);
 }
 
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
-  Chunk* chunk = _head;
+  Chunk* chunk = AtomicAccess::load_acquire(&_head);
   while (chunk != nullptr) {
-    count += chunk->_size;
+    count += AtomicAccess::load(&chunk->_size);
     chunk = chunk->_next;
   }
   return count;
@@ -217,10 +218,10 @@ inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chu
 }
 
 void ClassLoaderData::ChunkedHandleList::oops_do(OopClosure* f) {
-  Chunk* head = Atomic::load_acquire(&_head);
+  Chunk* head = AtomicAccess::load_acquire(&_head);
   if (head != nullptr) {
     // Must be careful when reading size of head
-    oops_do_chunk(f, head, Atomic::load_acquire(&head->_size));
+    oops_do_chunk(f, head, AtomicAccess::load_acquire(&head->_size));
     for (Chunk* c = head->_next; c != nullptr; c = c->_next) {
       oops_do_chunk(f, c, c->_size);
     }
@@ -258,9 +259,9 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 
 #ifndef PRODUCT
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
-  Chunk* chunk = _head;
+  Chunk* chunk = AtomicAccess::load_acquire(&_head);
   while (chunk != nullptr) {
-    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
+    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[AtomicAccess::load(&chunk->_size)])) {
       return true;
     }
     chunk = chunk->_next;
@@ -271,12 +272,12 @@ bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
 
 void ClassLoaderData::clear_claim(int claim) {
   for (;;) {
-    int old_claim = Atomic::load(&_claim);
+    int old_claim = AtomicAccess::load(&_claim);
     if ((old_claim & claim) == 0) {
       return;
     }
     int new_claim = old_claim & ~claim;
-    if (Atomic::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
+    if (AtomicAccess::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
       return;
     }
   }
@@ -290,12 +291,12 @@ void ClassLoaderData::verify_not_claimed(int claim) {
 
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
-    int old_claim = Atomic::load(&_claim);
+    int old_claim = AtomicAccess::load(&_claim);
     if ((old_claim & claim) == claim) {
       return false;
     }
     int new_claim = old_claim | claim;
-    if (Atomic::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
+    if (AtomicAccess::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
       return true;
     }
   }
@@ -345,26 +346,26 @@ void ClassLoaderData::demote_strong_roots() {
 // while the class is being parsed, and if the class appears on the module fixup list.
 // Due to the uniqueness that no other class shares the hidden class' name or
 // ClassLoaderData, no other non-GC thread has knowledge of the hidden class while
-// it is being defined, therefore _keep_alive is not volatile or atomic.
-void ClassLoaderData::inc_keep_alive() {
+// it is being defined, therefore _keep_alive_ref_count is not volatile or atomic.
+void ClassLoaderData::inc_keep_alive_ref_count() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive increment count");
-    _keep_alive++;
+    assert(_keep_alive_ref_count > 0, "Invalid keep alive increment count");
+    _keep_alive_ref_count++;
   }
 }
 
-void ClassLoaderData::dec_keep_alive() {
+void ClassLoaderData::dec_keep_alive_ref_count() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive decrement count");
-    if (_keep_alive == 1) {
-      // When the keep_alive counter is 1, the oop handle area is a strong root,
+    assert(_keep_alive_ref_count > 0, "Invalid keep alive decrement count");
+    if (_keep_alive_ref_count == 1) {
+      // When the keep_alive_ref_count counter is 1, the oop handle area is a strong root,
       // acting as input to the GC tracing. Such strong roots are part of the
       // snapshot-at-the-beginning, and can not just be pulled out from the
       // system when concurrent GCs are running at the same time, without
       // invoking the right barriers.
       demote_strong_roots();
     }
-    _keep_alive--;
+    _keep_alive_ref_count--;
   }
 }
 
@@ -383,7 +384,7 @@ void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oop
 
 void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     klass_closure->do_klass(k);
     assert(k != k->next_link(), "no loops!");
   }
@@ -391,7 +392,7 @@ void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderData::classes_do(void f(Klass * const)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     f(k);
     assert(k != k->next_link(), "no loops!");
   }
@@ -399,7 +400,7 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
 
 void ClassLoaderData::methods_do(void f(Method*)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
@@ -408,14 +409,14 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the
     // loaded state.
     if (k->is_instance_klass()) {
       if (!InstanceKlass::cast(k)->is_loaded()) {
         continue;
       }
-    } else if (k->is_shared() && k->is_objArray_klass()) {
+    } else if (k->in_aot_cache() && k->is_objArray_klass()) {
       Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
       if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
         // This could happen if <bottom> is a shared class that has been restored
@@ -436,7 +437,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k->is_instance_klass()) {
       f(InstanceKlass::cast(k));
     }
@@ -498,7 +499,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
 
   // It's a dependency we won't find through GC, add it.
   if (!_handles.contains(to)) {
-    NOT_PRODUCT(Atomic::inc(&_dependency_count));
+    NOT_PRODUCT(AtomicAccess::inc(&_dependency_count));
     LogTarget(Trace, class, loader, data) lt;
     if (lt.is_enabled()) {
       ResourceMark rm;
@@ -523,7 +524,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
     k->set_next_link(old_value);
     // Link the new item into the list, making sure the linked class is stable
     // since the list can be walked without a lock
-    Atomic::release_store(&_klasses, k);
+    AtomicAccess::release_store(&_klasses, k);
     if (k->is_array_klass()) {
       ClassLoaderDataGraph::inc_array_classes(1);
     } else {
@@ -579,6 +580,33 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   ShouldNotReachHere();   // should have found this class!!
 }
 
+void ClassLoaderData::add_jmethod_id(jmethodID mid) {
+  MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+  if (_jmethod_ids == nullptr) {
+    _jmethod_ids = new (mtClass) GrowableArray<jmethodID>(32, mtClass);
+  }
+  _jmethod_ids->push(mid);
+}
+
+// Method::remove_jmethod_ids removes jmethodID entries from the table which
+// releases memory.
+// Because native code (e.g., JVMTI agent) holding jmethod_ids may access them
+// after the associated classes and class loader are unloaded, subsequent lookups
+// for these ids will return null since they are no longer found in the table.
+// The Java Native Interface Specification says "method ID
+// does not prevent the VM from unloading the class from which the ID has
+// been derived. After the class is unloaded, the method or field ID becomes
+// invalid".
+void ClassLoaderData::remove_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  for (int i = 0; i < _jmethod_ids->length(); i++) {
+    jmethodID mid = _jmethod_ids->at(i);
+    JmethodIDTable::remove(mid);
+  }
+  delete _jmethod_ids;
+  _jmethod_ids = nullptr;
+}
+
 void ClassLoaderData::unload() {
   _unloading = true;
 
@@ -600,26 +628,15 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
-  // Method::clear_jmethod_ids only sets the jmethod_ids to null without
-  // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
-  // This is done intentionally because native code (e.g. JVMTI agent) holding
-  // jmethod_ids may access them after the associated classes and class loader
-  // are unloaded. The Java Native Interface Specification says "method ID
-  // does not prevent the VM from unloading the class from which the ID has
-  // been derived. After the class is unloaded, the method or field ID becomes
-  // invalid". In real world usages, the native code may rely on jmethod_ids
-  // being null after class unloading. Hence, it is unsafe to free the memory
-  // from the VM side without knowing when native code is going to stop using
-  // them.
   if (_jmethod_ids != nullptr) {
-    Method::clear_jmethod_ids(this);
+    remove_jmethod_ids();
   }
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
   // Lazily create the module entry table at first request.
   // Lock-free access requires load_acquire.
-  ModuleEntryTable* modules = Atomic::load_acquire(&_modules);
+  ModuleEntryTable* modules = AtomicAccess::load_acquire(&_modules);
   if (modules == nullptr) {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
@@ -629,7 +646,7 @@ ModuleEntryTable* ClassLoaderData::modules() {
       {
         MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
         // Ensure _modules is stable, since it is examined without a lock
-        Atomic::release_store(&_modules, modules);
+        AtomicAccess::release_store(&_modules, modules);
       }
     }
   }
@@ -644,8 +661,6 @@ Dictionary* ClassLoaderData::create_dictionary() {
   int size;
   if (_the_null_class_loader_data == nullptr) {
     size = _boot_loader_dictionary_size;
-  } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
-    size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
   } else {
@@ -680,8 +695,8 @@ oop ClassLoaderData::holder_no_keepalive() const {
 
 // Unloading support
 bool ClassLoaderData::is_alive() const {
-  bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class.
-      || (_holder.peek() != nullptr);  // and not cleaned by the GC weak handle processing.
+  bool alive = (_keep_alive_ref_count > 0) // null class loader and incomplete non-strong hidden class.
+      || (_holder.peek() != nullptr);      // and not cleaned by the GC weak handle processing.
 
   return alive;
 }
@@ -805,7 +820,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
   // The reason for the delayed allocation is because some class loaders are
   // simply for delegating with no metadata of their own.
   // Lock-free access requires load_acquire.
-  ClassLoaderMetaspace* metaspace = Atomic::load_acquire(&_metaspace);
+  ClassLoaderMetaspace* metaspace = AtomicAccess::load_acquire(&_metaspace);
   if (metaspace == nullptr) {
     MutexLocker ml(_metaspace_lock,  Mutex::_no_safepoint_check_flag);
     // Check if _metaspace got allocated while we were waiting for this lock.
@@ -815,13 +830,11 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (has_class_mirror_holder()) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
-      } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
-        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
       }
       // Ensure _metaspace is stable, since it is examined without a lock
-      Atomic::release_store(&_metaspace, metaspace);
+      AtomicAccess::release_store(&_metaspace, metaspace);
     }
   }
   return metaspace;
@@ -856,7 +869,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
 // a safepoint which checks if handles point to this metadata field.
 void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   // Metadata in shared region isn't deleted.
-  if (!m->is_shared()) {
+  if (!m->in_aot_cache()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == nullptr) {
       _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
@@ -887,6 +900,7 @@ void ClassLoaderData::free_deallocate_list() {
       if (m->is_method()) {
         MetadataFactory::free_metadata(this, (Method*)m);
       } else if (m->is_constantPool()) {
+        HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
         MetadataFactory::free_metadata(this, (InstanceKlass*)m);
@@ -1009,7 +1023,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
   out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
-  out->print_cr(" - keep alive          %d", _keep_alive);
+  out->print_cr(" - _keep_alive_ref_count %d", _keep_alive_ref_count);
   out->print   (" - claim               ");
   switch(_claim) {
     case _claim_none:                       out->print_cr("none"); break;
@@ -1042,9 +1056,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
     out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
   }
   if (_jmethod_ids != nullptr) {
-    out->print   (" - jmethod count       ");
-    Method::print_jmethod_ids_count(this, out);
-    out->print_cr("");
+    out->print_cr(" - jmethod count       %d", _jmethod_ids->length());
   }
   out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
   out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
@@ -1110,7 +1122,7 @@ void ClassLoaderData::verify() {
 
 bool ClassLoaderData::contains_klass(Klass* klass) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k == klass) return true;
   }
   return false;

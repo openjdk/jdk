@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.EventNames;
 
 /**
  * @test Check for JFR events not covered by tests
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main jdk.jfr.event.metadata.TestLookForUntestedEvents
@@ -81,6 +81,10 @@ public class TestLookForUntestedEvents {
     private static final Set<String> coveredVirtualThreadEvents = Set.of(
         "VirtualThreadPinned", "VirtualThreadSubmitFailed");
 
+    // This event is tested in test/jdk/java/lang/reflect/Field/mutateFinals/FinalFieldMutationEventTest.java
+    private static final Set<String> coveredFinalFieldMutationEvents = Set.of(
+        "FinalFieldMutationEvent");
+
     // This is a "known failure list" for this test.
     // NOTE: if the event is not covered, a bug should be open, and bug number
     // noted in the comments for this set.
@@ -89,7 +93,10 @@ public class TestLookForUntestedEvents {
 
     // Experimental events
     private static final Set<String> experimentalEvents = Set.of(
-        "Flush", "SyncOnValueBasedClass");
+        "Flush", "SyncOnValueBasedClass", "CPUTimeSample", "CPUTimeSamplesLost");
+
+    // Subset of the experimental events that should have tests
+    private static final Set<String> experimentalButTestedEvents = Set.of("CPUTimeSample");
 
     public static void main(String[] args) throws Exception {
         for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {
@@ -110,7 +117,9 @@ public class TestLookForUntestedEvents {
             .collect(Collectors.toList());
 
         Set<String> eventsNotCoveredByTest = new HashSet<>(jfrEventTypes);
-        for (String event : jfrEventTypes) {
+        Set<String> checkedEvents = new HashSet<>(jfrEventTypes);
+        checkedEvents.addAll(experimentalButTestedEvents);
+        for (String event : checkedEvents) {
             for (Path p : paths) {
                 if (findStringInFile(p, event)) {
                     eventsNotCoveredByTest.remove(event);
@@ -123,6 +132,7 @@ public class TestLookForUntestedEvents {
         eventsNotCoveredByTest.removeAll(hardToTestEvents);
         eventsNotCoveredByTest.removeAll(coveredGcEvents);
         eventsNotCoveredByTest.removeAll(coveredVirtualThreadEvents);
+        eventsNotCoveredByTest.removeAll(coveredFinalFieldMutationEvents);
         eventsNotCoveredByTest.removeAll(coveredContainerEvents);
         eventsNotCoveredByTest.removeAll(knownNotCoveredEvents);
 

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -305,6 +305,11 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromMem(cmsContext ContextID, void *Buff
     case 'w':
         fm = (FILEMEM*) _cmsMallocZero(ContextID, sizeof(FILEMEM));
         if (fm == NULL) goto Error;
+
+        if (Buffer == NULL) {
+            cmsSignalError(ContextID, cmsERROR_WRITE, "Couldn't write profile to NULL pointer");
+            goto Error;
+        }
 
         fm ->Block = (cmsUInt8Number*) Buffer;
         fm ->FreeBlockOnClose = FALSE;
@@ -680,6 +685,7 @@ void _cmsDeleteTagByPos(_cmsICCPROFILE* Icc, int i)
         // Free previous version
         if (Icc ->TagSaveAsRaw[i]) {
             _cmsFree(Icc ->ContextID, Icc ->TagPtrs[i]);
+            Icc->TagSaveAsRaw[i] = FALSE;
         }
         else {
             cmsTagTypeHandler* TypeHandler = Icc ->TagTypeHandlers[i];
@@ -1600,6 +1606,8 @@ void freeOneTag(_cmsICCPROFILE* Icc, cmsUInt32Number i)
         else
             _cmsFree(Icc->ContextID, Icc->TagPtrs[i]);
     }
+
+    Icc->TagPtrs[i] = NULL;
 }
 
 // Closes a profile freeing any involved resources
@@ -1842,8 +1850,11 @@ cmsBool CMSEXPORT cmsWriteTag(cmsHPROFILE hProfile, cmsTagSignature sig, const v
 
     if (!_cmsNewTag(Icc, sig, &i)) goto Error;
 
-    // This is not raw
-    Icc ->TagSaveAsRaw[i] = FALSE;
+    // This cannot be RAW
+    if (Icc->TagSaveAsRaw[i]) {
+        cmsSignalError(Icc->ContextID, cmsERROR_ALREADY_DEFINED, "Tag  '%x' was already saved as RAW", sig);
+        goto Error;
+    }
 
     // This is not a link
     Icc ->TagLinked[i] = (cmsTagSignature) 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -58,7 +58,6 @@ import jdk.internal.net.http.common.Utils;
 final class SocketTube implements FlowTube {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
-    static final AtomicLong IDS = new AtomicLong();
 
     private final HttpClientImpl client;
     private final SocketChannel channel;
@@ -67,14 +66,15 @@ final class SocketTube implements FlowTube {
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final InternalReadPublisher readPublisher;
     private final InternalWriteSubscriber writeSubscriber;
-    private final long id = IDS.incrementAndGet();
+    private final String connectionLabel;
 
     public SocketTube(HttpClientImpl client, SocketChannel channel,
-                      Supplier<ByteBuffer> buffersFactory) {
+                      Supplier<ByteBuffer> buffersFactory,
+                      String connectionLabel) {
         this.client = client;
         this.channel = channel;
         this.sliceBuffersSource = new SliceBufferSource(buffersFactory);
-
+        this.connectionLabel = connectionLabel;
         this.readPublisher = new InternalReadPublisher();
         this.writeSubscriber = new InternalWriteSubscriber();
     }
@@ -432,7 +432,7 @@ final class SocketTube implements FlowTube {
         }
 
         void signalError(Throwable error) {
-            debug.log(() -> "write error: " + error);
+            if (debug.on()) debug.log(() -> "write error: " + error);
             if (Log.channel()) {
                 Log.logChannel("Failed to write to channel ({0}: {1})",
                         channelDescr(), error);
@@ -557,32 +557,15 @@ final class SocketTube implements FlowTube {
             implements Flow.Publisher<List<ByteBuffer>> {
         private final InternalReadSubscription subscriptionImpl
                 = new InternalReadSubscription();
-        AtomicReference<ReadSubscription> pendingSubscription = new AtomicReference<>();
+        private final AtomicReference<ReadSubscription> pendingSubscriptions
+                = new AtomicReference<>();
         private volatile ReadSubscription subscription;
 
         @Override
         public void subscribe(Flow.Subscriber<? super List<ByteBuffer>> s) {
             Objects.requireNonNull(s);
-
-            TubeSubscriber sub = FlowTube.asTubeSubscriber(s);
-            ReadSubscription target = new ReadSubscription(subscriptionImpl, sub);
-            ReadSubscription previous = pendingSubscription.getAndSet(target);
-
-            if (previous != null && previous != target) {
-                if (debug.on())
-                    debug.log("read publisher: dropping pending subscriber: "
-                              + previous.subscriber);
-                previous.errorRef.compareAndSet(null, errorRef.get());
-                previous.signalOnSubscribe();
-                if (subscriptionImpl.completed) {
-                    previous.signalCompletion();
-                } else {
-                    previous.subscriber.dropSubscription();
-                }
-            }
-
-            if (debug.on()) debug.log("read publisher got subscriber");
-            subscriptionImpl.signalSubscribe();
+            if (debug.on()) debug.log("Offering new subscriber: %s", s);
+            subscriptionImpl.offer(FlowTube.asTubeSubscriber(s));
             debugState("leaving read.subscribe: ");
         }
 
@@ -606,6 +589,7 @@ final class SocketTube implements FlowTube {
             volatile boolean subscribed;
             volatile boolean cancelled;
             volatile boolean completed;
+            private volatile boolean stopped;
 
             public ReadSubscription(InternalReadSubscription impl,
                                     TubeSubscriber subscriber) {
@@ -623,11 +607,12 @@ final class SocketTube implements FlowTube {
 
             @Override
             public void request(long n) {
-                if (!cancelled) {
+                if (!cancelled && !stopped) {
+                    // should be safe to not synchronize here.
                     impl.request(n);
                 } else {
                     if (debug.on())
-                        debug.log("subscription cancelled, ignoring request %d", n);
+                        debug.log("subscription stopped or cancelled, ignoring request %d", n);
                 }
             }
 
@@ -660,6 +645,31 @@ final class SocketTube implements FlowTube {
                 if (errorRef.get() != null) {
                     signalCompletion();
                 }
+            }
+
+            /**
+             * Called when switching subscriber on the {@link InternalReadSubscription}.
+             * This subscriber is the old subscriber. Demand on the internal
+             * subscription will be reset and reading will be paused until the
+             * new subscriber is subscribed.
+             * This should ensure that no data is routed to this subscriber
+             * until the new subscriber is subscribed.
+             */
+            synchronized void stopReading() {
+                stopped = true;
+            }
+
+            synchronized boolean tryDecrementDemand() {
+                if (stopped) return false;
+                return impl.demand.tryDecrement();
+            }
+
+            synchronized boolean isStopped() {
+                return stopped;
+            }
+
+            synchronized void increaseDemand(long n) {
+                if (!stopped) impl.demand.increase(n);
             }
         }
 
@@ -703,14 +713,7 @@ final class SocketTube implements FlowTube {
                 assert client.isSelectorThread();
                 debug.log("subscribe event raised");
                 if (Log.channel()) Log.logChannel("Start reading from {0}", channelDescr());
-                readScheduler.runOrSchedule();
-                if (readScheduler.isStopped() || completed) {
-                    // if already completed or stopped we can handle any
-                    // pending connection directly from here.
-                    if (debug.on())
-                        debug.log("handling pending subscription when completed");
-                    handlePending();
-                }
+                handlePending();
             }
 
 
@@ -835,7 +838,7 @@ final class SocketTube implements FlowTube {
 
                         // If we reach here then we must be in the selector thread.
                         assert client.isSelectorThread();
-                        if (demand.tryDecrement()) {
+                        if (current.tryDecrementDemand()) {
                             // we have demand.
                             try {
                                 List<ByteBuffer> bytes = readAvailable(current.bufferSource);
@@ -881,8 +884,10 @@ final class SocketTube implements FlowTube {
                                     // event. This ensures that this loop is
                                     // executed again when the socket becomes
                                     // readable again.
-                                    demand.increase(1);
-                                    resumeReadEvent();
+                                    if (!current.isStopped()) {
+                                        current.increaseDemand(1);
+                                        resumeReadEvent();
+                                    }
                                     if (errorRef.get() != null) continue;
                                     debugState("leaving read() loop with no bytes");
                                     return;
@@ -921,31 +926,60 @@ final class SocketTube implements FlowTube {
                 }
             }
 
-            boolean handlePending() {
-                ReadSubscription pending = pendingSubscription.getAndSet(null);
-                if (pending == null) return false;
-                if (debug.on())
-                    debug.log("handling pending subscription for %s",
-                            pending.subscriber);
+            synchronized void offer(TubeSubscriber sub) {
+                ReadSubscription target = new ReadSubscription(this, sub);
+                ReadSubscription previous = pendingSubscriptions.getAndSet(target);
+                if (previous != null) {
+                    if (debug.on())
+                        debug.log("read publisher: dropping pending subscriber: "
+                                + previous.subscriber);
+                    previous.errorRef.compareAndSet(null, errorRef.get());
+                    // make sure no data will be routed to the old subscriber.
+                    previous.stopReading();
+                    previous.signalOnSubscribe();
+                    if (completed) {
+                        previous.signalCompletion();
+                    } else {
+                        previous.subscriber.dropSubscription();
+                    }
+                }
+                if (debug.on()) {
+                    debug.log("read publisher got new subscriber: " + sub);
+                }
+                signalSubscribe();
+            }
+
+            synchronized boolean handlePending() {
+                boolean subscribed = false;
                 ReadSubscription current = subscription;
-                if (current != null && current != pending && !completed) {
-                    current.subscriber.dropSubscription();
-                }
-                if (debug.on()) debug.log("read demand reset to 0");
-                subscriptionImpl.demand.reset(); // subscriber will increase demand if it needs to.
-                pending.errorRef.compareAndSet(null, errorRef.get());
-                if (!readScheduler.isStopped()) {
-                    subscription = pending;
-                } else {
-                    if (debug.on()) debug.log("socket tube is already stopped");
-                }
-                if (debug.on()) debug.log("calling onSubscribe");
-                pending.signalOnSubscribe();
-                if (completed) {
+                ReadSubscription pending = pendingSubscriptions.getAndSet(null);
+                if (pending != null) {
+                    subscribed = true;
+                    if (debug.on())
+                        debug.log("handling pending subscription for %s",
+                            pending.subscriber);
+                    if (current != null && !completed) {
+                        debug.log("dropping subscription for current %s",
+                                current.subscriber);
+                        current.stopReading();
+                        current.subscriber.dropSubscription();
+                    }
+                    if (debug.on()) debug.log("read demand reset to 0");
+                    demand.reset(); // subscriber will increase demand if it needs to.
                     pending.errorRef.compareAndSet(null, errorRef.get());
-                    pending.signalCompletion();
+                    if (!readScheduler.isStopped()) {
+                        subscription = pending;
+                    } else {
+                        if (debug.on()) debug.log("socket tube is already stopped");
+                    }
+                    if (debug.on()) debug.log("calling onSubscribe on " + pending.subscriber);
+                    pending.signalOnSubscribe();
+                    if (completed) {
+                        pending.errorRef.compareAndSet(null, errorRef.get());
+                        pending.signalCompletion();
+                    }
                 }
-                return true;
+                return subscribed;
             }
         }
 
@@ -1298,14 +1332,13 @@ final class SocketTube implements FlowTube {
         writePublisher.subscribe(this);
     }
 
-
     @Override
     public String toString() {
         return dbgString();
     }
 
     final String dbgString() {
-        return "SocketTube("+id+")";
+        return "SocketTube("+ connectionLabel +")";
     }
 
     final String channelDescr() {

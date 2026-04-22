@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -114,9 +114,6 @@
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
-
   // Are floats converted to double when stored to stack during
   // deoptimization?
   static constexpr bool float_in_double() { return false; }
@@ -138,13 +135,13 @@
   }
 
   // Does the CPU supports vector variable rotate instructions?
-  static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+  static bool supports_vector_variable_rotates(void) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+  static bool supports_vector_constant_rotates(int shift) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?

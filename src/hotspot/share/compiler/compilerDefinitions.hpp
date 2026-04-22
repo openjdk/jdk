@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ enum CompLevel : s1 {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4          // C2 or JVMCI
+  CompLevel_full_optimization = 4,         // C2 or JVMCI
+  CompLevel_count             = 5
 };
 
 class CompilationModeFlag : AllStatic {
@@ -97,23 +98,6 @@ inline bool is_c2_compile(int comp_level) {
 inline bool is_compile(int comp_level) {
   return is_c1_compile(comp_level) || is_c2_compile(comp_level);
 }
-
-
-// States of Restricted Transactional Memory usage.
-enum RTMState: u1 {
-  NoRTM      = 0x2, // Don't use RTM
-  UseRTM     = 0x1, // Use RTM
-  ProfileRTM = 0x0  // Use RTM with abort ratio calculation
-};
-
-#ifndef INCLUDE_RTM_OPT
-#define INCLUDE_RTM_OPT 0
-#endif
-#if INCLUDE_RTM_OPT
-#define RTM_OPT_ONLY(code) code
-#else
-#define RTM_OPT_ONLY(code)
-#endif
 
 class CompilerConfig : public AllStatic {
 public:
@@ -165,12 +149,12 @@ public:
   inline static bool is_c2_or_jvmci_compiler_only();
   inline static bool is_c2_or_jvmci_compiler_enabled();
 
+  inline static CompilerType compiler_type();
+
 private:
-  static bool is_compilation_mode_selected();
   static void set_compilation_policy_flags();
   static void set_jvmci_specific_flags();
   static void set_legacy_emulation_flags();
-  static void set_client_emulation_mode_flags();
 };
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -794,8 +794,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // Create the pipeline class description
 
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
 
   fprintf(fp_cpp, "const Pipeline_Use_Element Pipeline_Use::elaborated_elements[%d] = {\n", _pipeline->_rescount);
   for (int i1 = 0; i1 < _pipeline->_rescount; i1++) {
@@ -895,12 +895,11 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "(uint)stage_%s", _pipeline->_stages.name(maxWriteStage));
     else
       fprintf(fp_cpp, "((uint)stage_%s)+%d", _pipeline->_stages.name(maxWriteStage), maxMoreInstrs);
-    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s, %s,\n",
+    fprintf(fp_cpp, ", %d, %s, %d, %d, %s, %s, %s,\n",
       paramcount,
       pipeclass->hasFixedLatency() ? "true" : "false",
       pipeclass->fixedLatency(),
       pipeclass->InstructionCount(),
-      pipeclass->hasBranchDelay() ? "true" : "false",
       pipeclass->hasMultipleBundles() ? "true" : "false",
       pipeclass->forceSerialization() ? "true" : "false",
       pipeclass->mayHaveNoCode() ? "true" : "false" );
@@ -977,34 +976,12 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   }
   fprintf(fp_cpp, "}\n\n");
 
-  // Output the list of nop nodes
-  fprintf(fp_cpp, "// Descriptions for emitting different functional unit nops\n");
-  const char *nop;
-  int nopcnt = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; nopcnt++ );
-
-  fprintf(fp_cpp, "void Bundle::initialize_nops(MachNode * nop_list[%d]) {\n", nopcnt);
-  int i = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; i++ ) {
-    fprintf(fp_cpp, "  nop_list[%d] = (MachNode *) new %sNode();\n", i, nop);
-  }
-  fprintf(fp_cpp, "};\n\n");
   fprintf(fp_cpp, "#ifndef PRODUCT\n");
   fprintf(fp_cpp, "void Bundle::dump(outputStream *st) const {\n");
-  fprintf(fp_cpp, "  static const char * bundle_flags[] = {\n");
-  fprintf(fp_cpp, "    \"\",\n");
-  fprintf(fp_cpp, "    \"use nop delay\",\n");
-  fprintf(fp_cpp, "    \"use unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"use conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in conditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in unconditional delay\",\n");
-  fprintf(fp_cpp, "    \"used in all conditional delays\",\n");
-  fprintf(fp_cpp, "  };\n\n");
-
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
   // Don't add compound resources to the list of resource names
   const char* resource;
-  i = 0;
+  int i = 0;
   for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != nullptr;) {
     if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
@@ -1015,12 +992,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // See if the same string is in the table
   fprintf(fp_cpp, "  bool needs_comma = false;\n\n");
-  fprintf(fp_cpp, "  if (_flags) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s\", bundle_flags[_flags]);\n");
-  fprintf(fp_cpp, "    needs_comma = true;\n");
-  fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  if (instr_count()) {\n");
-  fprintf(fp_cpp, "    st->print(\"%%s%%d instr%%s\", needs_comma ? \", \" : \"\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
+  fprintf(fp_cpp, "    st->print(\"%%d instr%%s\", instr_count(), instr_count() != 1 ? \"s\" : \"\");\n");
   fprintf(fp_cpp, "    needs_comma = true;\n");
   fprintf(fp_cpp, "  };\n");
   fprintf(fp_cpp, "  uint r = resources_used();\n");
@@ -1612,11 +1585,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       if (node->is_ideal_if() && new_inst->is_ideal_if()) {
         fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n", cnt);
         fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
-      }
-
-      if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
       }
 
       // Fill in the bottom_type where requested
@@ -2355,13 +2323,16 @@ private:
     if (strcmp(rep_var,"$Register") == 0)      return "as_Register";
     if (strcmp(rep_var,"$KRegister") == 0)     return "as_KRegister";
     if (strcmp(rep_var,"$FloatRegister") == 0) return "as_FloatRegister";
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
     if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
 #if defined(PPC64)
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
+#endif
+#if defined(S390)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
 #endif
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
@@ -2423,6 +2394,8 @@ private:
       if( _constant_status == LITERAL_NOT_SEEN ) {
         if ( _constant_type == Form::idealD ) {
           fprintf(_fp,"->constantD()");
+        } else if ( _constant_type == Form::idealH ) {
+          fprintf(_fp,"->constantH()");
         } else if ( _constant_type == Form::idealF ) {
           fprintf(_fp,"->constantF()");
         } else if ( _constant_type == Form::idealL ) {
@@ -2864,7 +2837,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       if (strcmp(first_reg_class, "stack_slots") == 0) {
         fprintf(fp,"  return &(Compile::current()->FIRST_STACK_mask());\n");
       } else if (strcmp(first_reg_class, "dynamic") == 0) {
-        fprintf(fp,"  return &RegMask::Empty;\n");
+        fprintf(fp, "  return &RegMask::EMPTY;\n");
       } else {
         const char* first_reg_class_to_upper = toUpper(first_reg_class);
         fprintf(fp,"  return &%s_mask();\n", first_reg_class_to_upper);
@@ -3791,6 +3764,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+    } else if ( (strcmp(optype,"ConH") == 0) ) {
+      fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {
@@ -4007,10 +3982,6 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
   if (inst->is_ideal_jump()) {
     fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
-  }
-  if( inst->is_ideal_fastlock() ) {
-    fprintf(fp_cpp, "%s node->_rtm_counters = _leaf->as_FastLock()->rtm_counters();\n", indent);
-    fprintf(fp_cpp, "%s node->_stack_rtm_counters = _leaf->as_FastLock()->stack_rtm_counters();\n", indent);
   }
 
 }
@@ -4240,14 +4211,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
           _frame->_inline_cache_reg);
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
-
-  // Interpreter's Frame Pointer Register
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
-  if (_frame->_interpreter_frame_pointer_reg == nullptr)
-    fprintf(fp_cpp," return OptoReg::Bad; }\n\n");
-  else
-    fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-            _frame->_interpreter_frame_pointer_reg);
 
   // Frame Pointer definition
   /* CNC - I can not contemplate having a different frame pointer between

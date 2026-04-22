@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
 
 bool G1FullCollector::is_compacting(oop obj) const {
   return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));
@@ -62,12 +61,12 @@ void G1FullCollector::update_from_skip_compacting_to_compacting(uint region_idx)
   _region_attr_table.set_compacting(region_idx);
 }
 
-void G1FullCollector::set_compaction_top(HeapRegion* r, HeapWord* value) {
-  Atomic::store(&_compaction_tops[r->hrm_index()], value);
+void G1FullCollector::set_compaction_top(G1HeapRegion* r, HeapWord* value) {
+  _compaction_tops[r->hrm_index()].store_relaxed(value);
 }
 
-HeapWord* G1FullCollector::compaction_top(HeapRegion* r) const {
-  return Atomic::load(&_compaction_tops[r->hrm_index()]);
+HeapWord* G1FullCollector::compaction_top(G1HeapRegion* r) const {
+  return _compaction_tops[r->hrm_index()].load_relaxed();
 }
 
 void G1FullCollector::set_has_compaction_targets() {
@@ -90,11 +89,11 @@ bool G1FullCollector::has_humongous() {
   return _has_humongous;
 }
 
-void G1FullCollector::add_humongous_region(HeapRegion* hr) {
+void G1FullCollector::add_humongous_region(G1HeapRegion* hr) {
   _humongous_compaction_regions.append(hr);
 }
 
-GrowableArrayCHeap<HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
+GrowableArrayCHeap<G1HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
   return _humongous_compaction_regions;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.invoke.MhUtil;
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A confined session, which features an owner thread. The liveness check features an additional
@@ -40,15 +41,7 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
-    static final VarHandle ASYNC_RELEASE_COUNT;
-
-    static {
-        try {
-            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(ConfinedSession.class, "asyncReleaseCount", int.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
     public ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());
@@ -58,17 +51,17 @@ final class ConfinedSession extends MemorySessionImpl {
     @ForceInline
     public void acquire0() {
         checkValidState();
-        if (state == MAX_FORKS) {
+        if (acquireCount == MAX_FORKS) {
             throw tooManyAcquires();
         }
-        state++;
+        acquireCount++;
     }
 
     @Override
     @ForceInline
     public void release0() {
         if (Thread.currentThread() == owner) {
-            state--;
+            acquireCount--;
         } else {
             // It is possible to end up here in two cases: this session was kept alive by some other confined session
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
@@ -81,11 +74,11 @@ final class ConfinedSession extends MemorySessionImpl {
     void justClose() {
         checkValidState();
         int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
-        if ((state == 0 && asyncCount == 0)
-                || ((state - asyncCount) == 0)) {
+        int acquire = acquireCount - asyncCount;
+        if (acquire == 0) {
             state = CLOSED;
         } else {
-            throw alreadyAcquired(state - asyncCount);
+            throw alreadyAcquired(acquire);
         }
     }
 
@@ -93,11 +86,20 @@ final class ConfinedSession extends MemorySessionImpl {
      * A confined resource list; no races are possible here.
      */
     static final class ConfinedResourceList extends ResourceList {
+        // The first element of the list is pulled into a separate field
+        // which helps escape analysis keep track of the instance, allowing
+        // it to be scalar replaced.
+        ResourceCleanup cache;
+
         @Override
         void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
-                cleanup.next = fst;
-                fst = cleanup;
+                if (cache == null) {
+                    cache = cleanup;
+                } else {
+                    cleanup.next = fst;
+                    fst = cleanup;
+                }
             } else {
                 throw alreadyClosed();
             }
@@ -108,7 +110,11 @@ final class ConfinedSession extends MemorySessionImpl {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 ResourceCleanup prev = fst;
                 fst = ResourceCleanup.CLOSED_LIST;
-                cleanup(prev);
+                RuntimeException pendingException = null;
+                if (cache != null) {
+                    pendingException = cleanupSingle(cache, pendingException);
+                }
+                cleanup(prev, pendingException);
             } else {
                 throw alreadyClosed();
             }

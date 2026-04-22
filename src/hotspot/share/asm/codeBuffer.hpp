@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,13 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename T>
 static inline void put_native(address p, T x) {
@@ -56,7 +57,6 @@ public:
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
-                 DeoptMH,        // Offset where MethodHandle deopt handler lives
                  UnwindHandler,  // Offset to default unwind handler
                  max_Entries };
 
@@ -76,7 +76,6 @@ public:
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
     _values[Deopt         ] = -1;
-    _values[DeoptMH       ] = -1;
     _values[UnwindHandler ] = -1;
   }
 
@@ -89,6 +88,7 @@ public:
 // They are filled concurrently, and concatenated at the end.
 class CodeSection {
   friend class CodeBuffer;
+  friend class AOTCodeReader;
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
 
@@ -121,8 +121,8 @@ class CodeSection {
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
-    debug_only(_index = -1);
-    debug_only(_outer = (CodeBuffer*)badAddress);
+    DEBUG_ONLY(_index = -1);
+    DEBUG_ONLY(_outer = (CodeBuffer*)badAddress);
   }
 
   void initialize_outer(CodeBuffer* outer, int8_t index) {
@@ -283,15 +283,136 @@ class CodeSection {
 
 #ifndef PRODUCT
   void decode();
-  void print(const char* name);
+  void print_on(outputStream* st, const char* name);
 #endif //PRODUCT
 };
 
 
 #ifndef PRODUCT
 
-class AsmRemarkCollection;
-class DbgStringCollection;
+// ----- CHeapString -----------------------------------------------------------
+
+class CHeapString : public CHeapObj<mtCode> {
+ public:
+  CHeapString(const char* str) : _string(os::strdup(str)) {}
+  ~CHeapString();
+  const char* string() const { return _string; }
+
+ private:
+  const char* _string;
+};
+
+// ----- AsmRemarkCollection ---------------------------------------------------
+
+class AsmRemarkCollection : public CHeapObj<mtCode> {
+ public:
+  AsmRemarkCollection() : _ref_cnt(1), _remarks(nullptr), _next(nullptr) {}
+ ~AsmRemarkCollection() {
+    assert(is_empty(), "Must 'clear()' before deleting!");
+    assert(_ref_cnt == 0, "No uses must remain when deleting!");
+  }
+  AsmRemarkCollection* reuse() {
+    precond(_ref_cnt > 0);
+    return _ref_cnt++, this;
+  }
+
+  const char* insert(uint offset, const char* remark);
+  const char* lookup(uint offset) const;
+  const char* next(uint offset) const;
+
+  bool is_empty() const { return _remarks == nullptr; }
+  uint clear();
+
+  template<typename Function>
+  bool iterate(Function function) const { // lambda enabled API
+    if (_remarks != nullptr) {
+      Cell* tmp = _remarks;
+      do {
+        if(!function(tmp->offset, tmp->string())) {
+          return false;
+        }
+        tmp = tmp->next;
+      } while (tmp != _remarks);
+    }
+    return true;
+  }
+
+ private:
+  struct Cell : CHeapString {
+    Cell(const char* remark, uint offset) :
+        CHeapString(remark), offset(offset), prev(nullptr), next(nullptr) {}
+    void push_back(Cell* cell) {
+      Cell* head = this;
+      Cell* tail = prev;
+      tail->next = cell;
+      cell->next = head;
+      cell->prev = tail;
+      prev = cell;
+    }
+    uint offset;
+    Cell* prev;
+    Cell* next;
+  };
+  uint  _ref_cnt;
+  Cell* _remarks;
+  // Using a 'mutable' iteration pointer to allow 'const' on lookup/next (that
+  // does not change the state of the list per se), supportig a simplistic
+  // iteration scheme.
+  mutable Cell* _next;
+};
+
+// ----- DbgStringCollection ---------------------------------------------------
+
+class DbgStringCollection : public CHeapObj<mtCode> {
+ public:
+  DbgStringCollection() : _ref_cnt(1), _strings(nullptr) {}
+ ~DbgStringCollection() {
+    assert(is_empty(), "Must 'clear()' before deleting!");
+    assert(_ref_cnt == 0, "No uses must remain when deleting!");
+  }
+  DbgStringCollection* reuse() {
+    precond(_ref_cnt > 0);
+    return _ref_cnt++, this;
+  }
+
+  const char* insert(const char* str);
+  const char* lookup(const char* str) const;
+
+  bool is_empty() const { return _strings == nullptr; }
+  uint clear();
+
+  template<typename Function>
+  bool iterate(Function function) const { // lambda enabled API
+    if (_strings != nullptr) {
+      Cell* tmp = _strings;
+      do {
+        if (!function(tmp->string())) {
+          return false;
+        }
+        tmp = tmp->next;
+      } while (tmp != _strings);
+    }
+    return true;
+  }
+
+ private:
+  struct Cell : CHeapString {
+    Cell(const char* dbgstr) :
+        CHeapString(dbgstr), prev(nullptr), next(nullptr) {}
+    void push_back(Cell* cell) {
+      Cell* head = this;
+      Cell* tail = prev;
+      tail->next = cell;
+      cell->next = head;
+      cell->prev = tail;
+      prev = cell;
+    }
+    Cell* prev;
+    Cell* next;
+  };
+  uint  _ref_cnt;
+  Cell* _strings;
+};
 
 // The assumption made here is that most code remarks (or comments) added to
 // the generated assembly code are unique, i.e. there is very little gain in
@@ -303,6 +424,8 @@ class AsmRemarks {
   AsmRemarks();
  ~AsmRemarks();
 
+  void init();
+
   const char* insert(uint offset, const char* remstr);
 
   bool is_empty() const;
@@ -313,6 +436,9 @@ class AsmRemarks {
 
   // For testing purposes only.
   const AsmRemarkCollection* ref() const { return _remarks; }
+
+  template<typename Function>
+  inline bool iterate(Function function) const { return _remarks->iterate(function); }
 
 private:
   AsmRemarkCollection* _remarks;
@@ -326,6 +452,8 @@ class DbgStrings {
   DbgStrings();
  ~DbgStrings();
 
+  void init();
+
   const char* insert(const char* dbgstr);
 
   bool is_empty() const;
@@ -335,6 +463,9 @@ class DbgStrings {
 
   // For testing purposes only.
   const DbgStringCollection* ref() const { return _strings; }
+
+  template<typename Function>
+  bool iterate(Function function) const { return _strings->iterate(function); }
 
 private:
   DbgStringCollection* _strings;
@@ -386,6 +517,7 @@ typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
 class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   friend class CodeSection;
   friend class StubCodeGenerator;
+  friend class AOTCodeReader;
 
  private:
   // CodeBuffers must be allocated on the stack except for a single
@@ -407,7 +539,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
+  typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
   enum {
@@ -427,15 +559,13 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _total_start;    // first address of combined memory buffer
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
-  // Size of code without stubs generated at the end of instructions section
-  csize_t      _main_code_size;
-
   OopRecorder* _oop_recorder;
 
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
+  address      _last_label;     // record last bind label address, it's also the start of current bb.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
@@ -457,10 +587,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _name            = name;
     _before_expand   = nullptr;
     _blob            = nullptr;
+    _total_start     = nullptr;
+    _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
     _last_insn       = nullptr;
-    _main_code_size  = 0;
+    _last_label      = nullptr;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
@@ -507,12 +639,16 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // copies combined relocations to the blob, returns bytes copied
   // (if target is null, it is a dry run only, just for sizing)
   csize_t copy_relocations_to(CodeBlob* blob) const;
+  csize_t copy_relocations_to(address buf, csize_t buf_limit) const;
 
   // copies combined code to the blob (assumes relocs are already in there)
   void copy_code_to(CodeBlob* blob);
 
   // moves code sections to new buffer (assumes relocs are already in there)
   void relocate_code_to(CodeBuffer* cb) const;
+
+  // adjust some internal address during expand
+  void adjust_internal_address(address from, address to);
 
   // set up a model of the final layout of my contents
   void compute_final_layout(CodeBuffer* dest) const;
@@ -532,11 +668,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     assert(code_start != nullptr, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    debug_only(verify_section_allocation();)
+    DEBUG_ONLY(verify_section_allocation();)
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
-  CodeBuffer(CodeBlob* blob);
+  CodeBuffer(const CodeBlob* blob);
 
   // (3) code buffer allocating codeBlob memory for code & relocation
   // info but with lazy initialization.  The name must be something
@@ -606,7 +742,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Properties
   const char* name() const                  { return _name; }
-  void set_name(const char* name)           { _name = name; }
   CodeBuffer* before_expand() const         { return _before_expand; }
   BufferBlob* blob() const                  { return _blob; }
   void    set_blob(BufferBlob* blob);
@@ -634,9 +769,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // number of bytes remaining in the insts section
   csize_t insts_remaining() const        { return _insts.remaining(); }
 
-  // size of code without stubs in instruction section
-  csize_t main_code_size() const         { return _main_code_size; }
-
   // is a given address in the insts section?  (2nd version is end-inclusive)
   bool insts_contains(address pc) const  { return _insts.contains(pc); }
   bool insts_contains2(address pc) const { return _insts.contains2(pc); }
@@ -657,8 +789,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   csize_t total_relocation_size() const;
 
   int total_skipped_instructions_size() const;
-
-  csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
 
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {
@@ -685,6 +815,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
   void clear_last_insn() { set_last_insn(nullptr); }
+
+  address last_label() const { return _last_label; }
+  void set_last_label(address a) { _last_label = a; }
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
@@ -740,7 +873,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Printing / Decoding
   // decodes from decode_begin() to code_end() and sets decode_begin to end
   void    decode();
-  void    print();
+  void    print_on(outputStream* st);
 #endif
   // Directly disassemble code buffer.
   void    decode(address start, address end);

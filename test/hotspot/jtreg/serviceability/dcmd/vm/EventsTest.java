@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.Test;
+import org.testng.Assert;
 
 /*
  * @test
@@ -38,6 +39,9 @@ import org.testng.annotations.Test;
  */
 public class EventsTest {
 
+    // MAX should be less than number of actually recorded events
+    private static int MAX = 9;
+
     static String buildHeaderPattern(String logname) {
         return "^" + logname + ".*\\(\\d+ events\\):";
     }
@@ -48,7 +52,8 @@ public class EventsTest {
         // Those are always printed even if the corresponding event log is empty.
         output.stdoutShouldMatch(buildHeaderPattern("Events"));
         output.stdoutShouldMatch(buildHeaderPattern("Compilation"));
-        output.stdoutShouldMatch(buildHeaderPattern("GC Heap History"));
+        output.stdoutShouldMatch(buildHeaderPattern("GC Heap Usage History"));
+        output.stdoutShouldMatch(buildHeaderPattern("Metaspace Usage History"));
         output.stdoutShouldMatch(buildHeaderPattern("Deoptimization"));
         output.stdoutShouldMatch(buildHeaderPattern("Classes unloaded"));
     }
@@ -60,13 +65,32 @@ public class EventsTest {
 
         output.stdoutShouldNotMatch(buildHeaderPattern("Events"));
         output.stdoutShouldNotMatch(buildHeaderPattern("Compilation"));
-        output.stdoutShouldNotMatch(buildHeaderPattern("GC Heap History"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("GC Heap Usage History"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("Metaspace Usage History"));
         output.stdoutShouldNotMatch(buildHeaderPattern("Classes unloaded"));
     }
+
+    public void run_max(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.events max=" + MAX);
+        long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
+        Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
+    }
+
+    public void run_max_selected(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.events log=load max=" + MAX);
+        output.stdoutShouldMatch(buildHeaderPattern("Classes loaded"));
+        long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
+        Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
+        output.stdoutShouldNotMatch(buildHeaderPattern("Events"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("Compilation"));
+    }
+
 
     @Test
     public void jmx() {
         run_all(new JMXExecutor());
         run_selected(new JMXExecutor());
+        run_max(new JMXExecutor());
+        run_max_selected(new JMXExecutor());
     }
 }

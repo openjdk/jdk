@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,12 +159,7 @@ public class JMXConnectionNotification extends Notification {
                                      long sequenceNumber,
                                      String message,
                                      Object userData) {
-        /* We don't know whether the parent class (Notification) will
-           throw an exception if the type or source is null, because
-           JMX 1.2 doesn't specify that.  So we make sure it is not
-           null, in case it would throw the wrong exception
-           (e.g. IllegalArgumentException instead of
-           NullPointerException).  Likewise for the sequence number.  */
+        // Do not pass null source to super, as EventObject will throw IllegalArgumentException.
         super((String) nonNull(type),
               nonNull(source),
               Math.max(0, sequenceNumber),

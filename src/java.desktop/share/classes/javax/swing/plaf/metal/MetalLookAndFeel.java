@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,49 @@
 
 package javax.swing.plaf.metal;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Frame;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import javax.swing.plaf.*;
-import javax.swing.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.text.DefaultEditorKit;
-
-import java.awt.Color;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
-import java.security.AccessController;
+import javax.swing.ButtonModel;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.LayoutStyle;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicLookAndFeel;
+import javax.swing.text.DefaultEditorKit;
 
-import sun.awt.*;
-import sun.security.action.GetPropertyAction;
+import sun.awt.OSInfo;
+import sun.awt.SunToolkit;
 import sun.swing.DefaultLayoutStyle;
-import static javax.swing.UIDefaults.LazyValue;
-
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
+
+import static javax.swing.UIDefaults.LazyValue;
 
 /**
  * The Java Look and Feel, otherwise known as Metal.
@@ -120,9 +142,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         if (!checkedWindows) {
             if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
-                @SuppressWarnings("removal")
-                String systemFonts = AccessController.doPrivileged(
-                    new GetPropertyAction("swing.useSystemFontSettings"));
+                String systemFonts = System.getProperty("swing.useSystemFontSettings");
                 useSystemFonts = Boolean.parseBoolean(systemFonts);
             }
             checkedWindows = true;
@@ -686,6 +706,11 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         // DEFAULTS TABLE
         //
 
+        Object commonInputMap = new UIDefaults.LazyInputMap(new Object[] {
+                "SPACE", "pressed",
+                "released SPACE", "released"
+        });
+
         Object[] defaults = {
             // *** Auditory Feedback
             "AuditoryCues.defaultCueList", defaultCueList,
@@ -771,6 +796,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               }),
 
 
+
+
             // Buttons
             "Button.defaultButtonFollowsFocus", Boolean.FALSE,
             "Button.disabledText", inactiveControlTextColor,
@@ -778,21 +805,18 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Button.border", buttonBorder,
             "Button.font", controlTextValue,
             "Button.focus", focusColor,
-            "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "Button.focusInputMap", commonInputMap,
+
+            // Button default margin is (2, 14, 2, 14), defined in
+            // BasicLookAndFeel via "Button.margin" UI property.
 
             "CheckBox.disabledText", inactiveControlTextColor,
             "Checkbox.select", controlShadow,
             "CheckBox.font", controlTextValue,
             "CheckBox.focus", focusColor,
             "CheckBox.icon",(LazyValue) t -> MetalIconFactory.getCheckBoxIcon(),
-            "CheckBox.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                 }),
+            "CheckBox.focusInputMap", commonInputMap,
+
             // margin is 2 all the way around, BasicBorders.RadioButtonBorder
             // (checkbox uses RadioButtonBorder) is 2 all the way around too.
             "CheckBox.totalInsets", new Insets(4, 4, 4, 4),
@@ -802,11 +826,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "RadioButton.icon",(LazyValue) t -> MetalIconFactory.getRadioButtonIcon(),
             "RadioButton.font", controlTextValue,
             "RadioButton.focus", focusColor,
-            "RadioButton.focusInputMap",
-               new UIDefaults.LazyInputMap(new Object[] {
-                          "SPACE", "pressed",
-                 "released SPACE", "released"
-              }),
+            "RadioButton.focusInputMap", commonInputMap,
             // margin is 2 all the way around, BasicBorders.RadioButtonBorder
             // is 2 all the way around too.
             "RadioButton.totalInsets", new Insets(4, 4, 4, 4),
@@ -816,11 +836,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "ToggleButton.focus", focusColor,
             "ToggleButton.border", toggleButtonBorder,
             "ToggleButton.font", controlTextValue,
-            "ToggleButton.focusInputMap",
-              new UIDefaults.LazyInputMap(new Object[] {
-                            "SPACE", "pressed",
-                   "released SPACE", "released"
-                }),
+            "ToggleButton.focusInputMap", commonInputMap,
 
 
             // File View
@@ -1577,6 +1593,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         super.provideErrorFeedback(component);
     }
 
+    private static MetalTheme currentMetalTheme;
+
     /**
      * Set the theme used by <code>MetalLookAndFeel</code>.
      * <p>
@@ -1606,7 +1624,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         if (theme == null) {
             throw new NullPointerException("Can't have null theme");
         }
-        AppContext.getAppContext().put( "currentMetalTheme", theme );
+        currentMetalTheme = theme;
     }
 
     /**
@@ -1618,15 +1636,10 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * @since 1.5
      */
     public static MetalTheme getCurrentTheme() {
-        MetalTheme currentTheme;
-        AppContext context = AppContext.getAppContext();
-        currentTheme = (MetalTheme) context.get( "currentMetalTheme" );
+        MetalTheme currentTheme = currentMetalTheme;
         if (currentTheme == null) {
-            // This will happen in two cases:
-            // . When MetalLookAndFeel is first being initialized.
-            // . When a new AppContext has been created that hasn't
-            //   triggered UIManager to load a LAF. Rather than invoke
-            //   a method on the UIManager, which would trigger the loading
+            //   This will happen when MetalLookAndFeel is first being initialized.
+            //   Rather than invoke a method on the UIManager, which would trigger the loading
             //   of a potentially different LAF, we directly set the
             //   Theme here.
             if (useHighContrastTheme()) {
@@ -1635,9 +1648,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             else {
                 // Create the default theme. We prefer Ocean, but will
                 // use DefaultMetalTheme if told to.
-                @SuppressWarnings("removal")
-                String theme = AccessController.doPrivileged(
-                               new GetPropertyAction("swing.metalTheme"));
+                String theme = System.getProperty("swing.metalTheme");
                 if ("steel".equals(theme)) {
                     currentTheme = new DefaultMetalTheme();
                 }
@@ -2270,8 +2281,11 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                 setUpdatePending(true);
                 Runnable uiUpdater = new Runnable() {
                         public void run() {
-                            updateAllUIs();
-                            setUpdatePending(false);
+                            try {
+                                updateAllUIs();
+                            } finally {
+                                setUpdatePending(false);
+                            }
                         }
                     };
                 SwingUtilities.invokeLater(uiUpdater);

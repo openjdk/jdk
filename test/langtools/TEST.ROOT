@@ -15,13 +15,8 @@ keys=intermittent randomness needs-src needs-src-jdk_javadoc
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=8.2.1+1
 
-# Use new module options
-useNewOptions=true
-
-# Use --patch-module instead of -Xmodule:
-useNewPatchModule=true
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
@@ -37,9 +32,16 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.extraPropDefns.vmOpts = \
-    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
-    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
+    -XX:+PrintFlagsFinal \
+    -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
-    vm.continuations
+    vm.continuations \
+    vm.debug

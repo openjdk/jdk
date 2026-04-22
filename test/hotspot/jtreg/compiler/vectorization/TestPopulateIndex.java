@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
 * @summary Test vectorization of loop induction variable usage in the loop
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*")
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
+*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopulateIndex
 */
@@ -78,17 +79,17 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
+    // Does not vectorize, possibly because the OrI is pushed through the Phi, see also JDK-8348096.
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
-            dst[i] = src[i] * (i & 7);
+            dst[i] = src[i] * (i | 7);
         }
         checkResultExprWithIndex1();
     }
 
     public void checkResultExprWithIndex1() {
         for (int i = 0; i < count; i++) {
-            int expected = src[i] * (i & 7);
+            int expected = src[i] * (i | 7);
             if (dst[i] != expected) {
                 throw new RuntimeException("Invalid result: dst[" + i + "] = " + dst[i] + " != " + expected);
             }
@@ -109,6 +110,28 @@ public class TestPopulateIndex {
             float expected = i * i  + 100;
             if (f[i] != expected) {
                 throw new RuntimeException("Invalid result: f[" + i + "] = " + f[i] + " != " + expected);
+            }
+        }
+    }
+
+    @Test
+    // Does not vectorize: due to sum-under-mask optimization.
+    // (i+0) & 7, (i+1) & 7 ... (i+8) & 7 ....  -> PopulateIndex
+    // becomes
+    // (i+0) & 7, (i+1) & 7 ... (i+0) & 7 .... -> pattern broken
+    // See JDK-8349128.
+    public void exprWithIndex3() {
+        for (int i = 0; i < count; i++) {
+            dst[i] = src[i] * (i & 7);
+        }
+        checkResultExprWithIndex3();
+    }
+
+    public void checkResultExprWithIndex3() {
+        for (int i = 0; i < count; i++) {
+            int expected = src[i] * (i & 7);
+            if (dst[i] != expected) {
+                throw new RuntimeException("Invalid result: dst[" + i + "] = " + dst[i] + " != " + expected);
             }
         }
     }

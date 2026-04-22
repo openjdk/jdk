@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ public class ThreadPriorities {
         ArrayList<String> failed = new ArrayList<>();
         ProcessBuilder pb = new ProcessBuilder(
                 JDKToolFinder.getJDKTool("jstack"),
+                // jstack output may be lengthy, disable streaming output to avoid deadlocks
+                "-J-Djdk.attach.allowStreamingOutput=false",
                 String.valueOf(ProcessTools.getProcessId()));
 
         String[] output = new OutputAnalyzer(pb.start()).getOutput().split("\\R");

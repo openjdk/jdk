@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,26 @@
  * @test
  * @summary Shutdown tests
  * @build KullaTesting TestingInputStream
- * @run testng ShutdownTest
+ * @run junit ShutdownTest
  */
 
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Consumer;
 
 import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
 public class ShutdownTest extends KullaTesting {
 
     int shutdownCount;
@@ -45,29 +53,33 @@ public class ShutdownTest extends KullaTesting {
         ++shutdownCount;
     }
 
-    @Test(enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testExit() {
         shutdownCount = 0;
         getState().onShutdown(this::shutdownCounter);
         assertEval("System.exit(1);");
-        assertEquals(shutdownCount, 1);
+        assertEquals(1, shutdownCount);
     }
 
+    @Test
     public void testCloseCallback() {
         shutdownCount = 0;
         getState().onShutdown(this::shutdownCounter);
         getState().close();
-        assertEquals(shutdownCount, 1);
+        assertEquals(1, shutdownCount);
     }
 
+    @Test
     public void testCloseUnsubscribe() {
         shutdownCount = 0;
         Subscription token = getState().onShutdown(this::shutdownCounter);
         getState().unsubscribe(token);
         getState().close();
-        assertEquals(shutdownCount, 0);
+        assertEquals(0, shutdownCount);
     }
 
+    @Test
     public void testTwoShutdownListeners() {
         ShutdownListener listener1 = new ShutdownListener();
         ShutdownListener listener2 = new ShutdownListener();
@@ -76,46 +88,101 @@ public class ShutdownTest extends KullaTesting {
         getState().unsubscribe(subscription1);
         getState().close();
 
-        assertEquals(listener1.getEvents(), 0, "Checking got events");
-        assertEquals(listener2.getEvents(), 1, "Checking got events");
+        assertEquals(0, listener1.getEvents(), "Checking got events");
+        assertEquals(1, listener2.getEvents(), "Checking got events");
 
         getState().close();
 
-        assertEquals(listener1.getEvents(), 0, "Checking got events");
-        assertEquals(listener2.getEvents(), 1, "Checking got events");
+        assertEquals(0, listener1.getEvents(), "Checking got events");
+        assertEquals(1, listener2.getEvents(), "Checking got events");
 
         getState().unsubscribe(subscription2);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testCloseException() {
-        getState().close();
-        getState().eval("45");
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            getState().close();
+            getState().eval("45");
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-          enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testShutdownException() {
-        assertEval("System.exit(0);");
-        getState().eval("45");
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            assertEval("System.exit(0);");
+            getState().eval("45");
+        });
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNullCallback() {
-        getState().onShutdown(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            getState().onShutdown(null);
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testSubscriptionAfterClose() {
-        getState().close();
-        getState().onShutdown(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            getState().close();
+            getState().onShutdown(e -> {});
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-          enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testSubscriptionAfterShutdown() {
-        assertEval("System.exit(0);");
-        getState().onShutdown(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            assertEval("System.exit(0);");
+            getState().onShutdown(e -> {});
+        });
+    }
+
+    @Test
+    public void testRunShutdownHooks() throws IOException {
+        Path temporary = Paths.get("temp");
+        Files.newOutputStream(temporary).close();
+        assertEval("import java.io.*;");
+        assertEval("import java.nio.file.*;");
+        assertEval("""
+                        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                            try {
+                                Files.delete(Paths.get("$TEMPORARY"));
+                            } catch (IOException ex) {
+                                //ignored
+                            }
+                        }))
+                        """.replace("$TEMPORARY", temporary.toAbsolutePath()
+                                                           .toString()
+                                                           .replace("\\", "\\\\")));
+        getState().close();
+        assertFalse(Files.exists(temporary));
+    }
+
+    private Method currentTestMethod;
+
+    @BeforeEach
+    public void setUp(TestInfo testInfo) {
+        currentTestMethod = testInfo.getTestMethod().orElseThrow();
+        super.setUp();
+    }
+
+    @BeforeEach
+    public void setUp() {
+    }
+
+    @Override
+    public void setUp(Consumer<JShell.Builder> bc) {
+        Consumer<JShell.Builder> augmentedBuilder = switch (currentTestMethod.getName()) {
+            case "testRunShutdownHooks" -> builder -> {
+                builder.executionEngine(Presets.TEST_STANDARD_EXECUTION);
+                bc.accept(builder);
+            };
+            default -> bc;
+        };
+        super.setUp(augmentedBuilder);
     }
 
     private static class ShutdownListener implements Consumer<JShell> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.swing.plaf.metal;
 
 import sun.swing.SwingUtilities2;
-import sun.awt.AppContext;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -53,10 +52,9 @@ import javax.swing.text.View;
  * @author Michael C. Albers (Metal modifications)
  * @author Jeff Dinkins (original BasicRadioButtonCode)
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalRadioButtonUI extends BasicRadioButtonUI {
 
-    private static final Object METAL_RADIO_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new MetalRadioButtonUI();
 
     /**
      * The color of the focused radio button.
@@ -91,14 +89,7 @@ public class MetalRadioButtonUI extends BasicRadioButtonUI {
      * @return an instance of {@code MetalRadioButtonUI}
      */
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MetalRadioButtonUI metalRadioButtonUI =
-                (MetalRadioButtonUI) appContext.get(METAL_RADIO_BUTTON_UI_KEY);
-        if (metalRadioButtonUI == null) {
-            metalRadioButtonUI = new MetalRadioButtonUI();
-            appContext.put(METAL_RADIO_BUTTON_UI_KEY, metalRadioButtonUI);
-        }
-        return metalRadioButtonUI;
+        return UI;
     }
 
     // ********************************

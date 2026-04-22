@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -104,11 +103,10 @@ void Parse::print_statistics() {
 // on stack replacement.
 Node *Parse::fetch_interpreter_state(int index,
                                      BasicType bt,
-                                     Node *local_addrs,
-                                     Node *local_addrs_base) {
-  Node *mem = memory(Compile::AliasIdxRaw);
-  Node *adr = basic_plus_adr( local_addrs_base, local_addrs, -index*wordSize );
-  Node *ctl = control();
+                                     Node* local_addrs) {
+  Node* mem = memory(Compile::AliasIdxRaw);
+  Node* adr = off_heap_plus_addr(local_addrs, -index*wordSize);
+  Node* ctl = control();
 
   // Very similar to LoadNode::make, except we handle un-aligned longs and
   // doubles on Sparc.  Intel can handle them just fine directly.
@@ -122,7 +120,7 @@ Node *Parse::fetch_interpreter_state(int index,
   case T_DOUBLE: {
     // Since arguments are in reverse order, the argument address 'adr'
     // refers to the back half of the long/double.  Recompute adr.
-    adr = basic_plus_adr(local_addrs_base, local_addrs, -(index+1)*wordSize);
+    adr = off_heap_plus_addr(local_addrs, -(index+1)*wordSize);
     if (Matcher::misaligned_doubles_ok) {
       l = (bt == T_DOUBLE)
         ? (Node*)new LoadDNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::DOUBLE, MemNode::unordered)
@@ -221,7 +219,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Commute monitors from interpreter frame to compiler frame.
   assert(jvms()->monitor_depth() == 0, "should be no active locks at beginning of osr");
   int mcnt = osr_block->flow()->monitor_count();
-  Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt*2-1)*wordSize);
+  Node* monitors_addr = off_heap_plus_addr(osr_buf, (max_locals+mcnt*2-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
     BoxLockNode* osr_box = new BoxLockNode(next_monitor());
@@ -242,16 +240,16 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // Displaced headers and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
     // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
-    Node *lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr, osr_buf);
+    Node *lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr);
     // Try and copy the displaced header to the BoxNode
-    Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr, osr_buf);
+    Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr);
 
 
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, MemNode::unordered);
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new FastLockNode( 0, lock_object, box ))->as_FastLock();
+    const FastLockNode *flock = _gvn.transform(new FastLockNode( nullptr, lock_object, box ))->as_FastLock();
     map()->push_monitor(flock);
 
     // If the lock is our method synchronization lock, tuck it away in
@@ -272,7 +270,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   }
 
   // Extract the needed locals from the interpreter frame.
-  Node *locals_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals-1)*wordSize);
+  Node* locals_addr = off_heap_plus_addr(osr_buf, (max_locals-1)*wordSize);
 
   // find all the locals that the interpreter thinks contain live oops
   const ResourceBitMap live_oops = method()->live_local_oops_at_bci(osr_bci());
@@ -319,7 +317,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // really for T_OBJECT types so correct it.
       bt = T_OBJECT;
     }
-    Node *value = fetch_interpreter_state(index, bt, locals_addr, osr_buf);
+    Node *value = fetch_interpreter_state(index, bt, locals_addr);
     set_local(index, value);
   }
 
@@ -371,6 +369,15 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       continue;
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oop locals alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
+      Node* loc = local(index);
+      if (loc->bottom_type() != TypePtr::NULL_PTR) {
+        assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
   for (index = 0; index < sp(); index++) {
@@ -379,6 +386,15 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     if (l->is_top())  continue;  // nothing here
     const Type *type = osr_block->stack_type_at(index);
     set_stack(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oops on stack alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
+      Node* stk = stack(index);
+      if (stk->bottom_type() != TypePtr::NULL_PTR) {
+        assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
+        _stress_rf_hook->add_req(stk);
+      }
+    }
   }
 
   if (bad_type_exit->control()->req() > 1) {
@@ -412,7 +428,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_volatile = false;
   _wrote_stable = false;
   _wrote_fields = false;
-  _alloc_with_final = nullptr;
+  _alloc_with_final_or_stable = nullptr;
+  _stress_rf_hook = (StressReachabilityFences ? new Node(1) : nullptr);
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -435,6 +452,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
+  }
+
+  if (parse_method->is_scoped()) {
+    C->set_has_scoped_access(true);
   }
 
   _iter.reset_to_method(method());
@@ -597,12 +618,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       // Add check to deoptimize the nmethod once the holder class is fully initialized
       clinit_deopt();
     }
-
-    // Add check to deoptimize the nmethod if RTM state was changed
-    rtm_deopt();
   }
 
-  // Check for bailouts during method entry or RTM state check setup.
+  // Check for bailouts during method entry.
   if (failing()) {
     if (log)  log->done("parse");
     C->set_default_node_notes(caller_nn);
@@ -641,8 +659,13 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // for exiting control flow still refers to the inlined method.
   C->set_default_node_notes(caller_nn);
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
+
+  if (StressReachabilityFences) {
+    _stress_rf_hook->destruct(&_gvn);
+    _stress_rf_hook = nullptr;
+  }
 }
 
 //---------------------------do_all_blocks-------------------------------------
@@ -987,8 +1010,8 @@ void Parse::do_exits() {
   // Figure out if we need to emit the trailing barrier. The barrier is only
   // needed in the constructors, and only in three cases:
   //
-  // 1. The constructor wrote a final. The effects of all initializations
-  //    must be committed to memory before any code after the constructor
+  // 1. The constructor wrote a final or a @Stable field. All these
+  //    initializations must be ordered before any code after the constructor
   //    publishes the reference to the newly constructed object. Rather
   //    than wait for the publication, we simply block the writes here.
   //    Rather than put a barrier on only those writes which are required
@@ -1012,35 +1035,24 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_initializer() &&
-       (wrote_final() ||
+  if (method()->is_object_initializer() &&
+       (wrote_final() || wrote_stable() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    Node* recorded_alloc = alloc_with_final_or_stable();
     _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
-                          alloc_with_final());
+                          recorded_alloc);
 
     // If Memory barrier is created for final fields write
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
-    if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
+    if (DoEscapeAnalysis && (recorded_alloc != nullptr)) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(recorded_alloc);
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
-      tty->print_cr(" writes finals and needs a memory barrier");
-    }
-  }
-
-  // Any method can write a @Stable field; insert memory barriers
-  // after those also. Can't bind predecessor allocation node (if any)
-  // with barrier because allocation doesn't always dominate
-  // MemBarRelease.
-  if (wrote_stable()) {
-    _exits.insert_mem_bar(Op_MemBarRelease);
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name();
-      tty->print_cr(" writes @Stable and needs a memory barrier");
+      tty->print_cr(" writes finals/@Stable and needs a memory barrier");
     }
   }
 
@@ -1060,16 +1072,6 @@ void Parse::do_exits() {
       // loading.  It could also be due to an error, so mark this method as not compilable because
       // otherwise this could lead to an infinite compile loop.
       // In any case, this code path is rarely (and never in my testing) reached.
-#ifdef ASSERT
-      tty->print_cr("# Can't determine return type.");
-      tty->print_cr("# exit control");
-      _exits.control()->dump(2);
-      tty->print_cr("# ret phi type");
-      _gvn.type(ret_phi)->dump();
-      tty->print_cr("# ret phi");
-      ret_phi->dump(2);
-#endif // ASSERT
-      assert(false, "Can't determine return type.");
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
@@ -1086,7 +1088,7 @@ void Parse::do_exits() {
   // This is done late so that we can common up equivalent exceptions
   // (e.g., null checks) arising from multiple points within this method.
   // See GraphKit::add_exception_state, which performs the commoning.
-  bool do_synch = method()->is_synchronized() && GenerateSynchronizationCode;
+  bool do_synch = method()->is_synchronized();
 
   // record exit from a method if compiled while Dtrace is turned on.
   if (do_synch || C->env()->dtrace_method_probes() || _replaced_nodes_for_exceptions) {
@@ -1170,6 +1172,13 @@ SafePointNode* Parse::create_entry_map() {
   // Create an initial safepoint to hold JVM state during parsing
   JVMState* jvms = new (C) JVMState(method(), _caller->has_method() ? _caller : nullptr);
   set_map(new SafePointNode(len, jvms));
+
+  // Capture receiver info for compiled lambda forms.
+  if (method()->is_compiled_lambda_form()) {
+    ciInstance* recv_info = _caller->compute_receiver_info(method());
+    jvms->set_receiver_info(recv_info);
+  }
+
   jvms->set_map(map());
   record_for_igvn(map());
   assert(jvms->endoff() == len, "correct jvms sizing");
@@ -1209,6 +1218,14 @@ SafePointNode* Parse::create_entry_map() {
   return entry_map;
 }
 
+//-----------------------is_auto_boxed_primitive------------------------------
+// Helper method to detect auto-boxed primitives (result of valueOf() call).
+static bool is_auto_boxed_primitive(Node* n) {
+  return (n->is_Proj() && n->as_Proj()->_con == TypeFunc::Parms &&
+          n->in(0)->is_CallJava() &&
+          n->in(0)->as_CallJava()->method()->is_boxing_method());
+}
+
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
@@ -1220,6 +1237,19 @@ void Parse::do_method_entry() {
 
   if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_entry(method());
+  }
+
+  if (StressReachabilityFences) {
+    // Keep all oop arguments alive until the method returns as if there are
+    // reachability fences for them at the end of the method.
+    int max_locals = jvms()->loc_size();
+    for (int idx = 0; idx < max_locals; idx++) {
+      Node* loc = local(idx);
+      if (loc->bottom_type()->isa_oopptr() != nullptr &&
+          !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
 #ifdef ASSERT
@@ -1243,8 +1273,7 @@ void Parse::do_method_entry() {
       Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
       assert(!stopped(), "not a subtype");
 
-      Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
-      C->root()->add_req(halt);
+      halt(not_subtype_ctrl, frameptr(), "failed receiver subtype check");
     }
   }
 #endif // ASSERT
@@ -1667,11 +1696,16 @@ void Parse::merge_new_path(int target_bci) {
 }
 
 //-------------------------merge_exception-------------------------------------
-// Merge the current mapping into the basic block starting at bci
-// The ex_oop must be pushed on the stack, unlike throw_to_exit.
-void Parse::merge_exception(int target_bci) {
+// Push the given ex_oop onto the stack, then merge the current mapping into
+// the basic block starting at target_bci.
+void Parse::push_and_merge_exception(int target_bci, Node* ex_oop) {
+  // Add the safepoint before trimming the stack and pushing the exception oop.
+  // We could add the safepoint after, but then the bci would also need to be
+  // advanced to target_bci first, so the stack state matches.
+  maybe_add_safepoint(target_bci);
+  push_ex_oop(ex_oop);      // Push exception oop for handler
 #ifdef ASSERT
-  if (target_bci < bci()) {
+  if (target_bci <= bci()) {
     C->set_exception_backedge();
   }
 #endif
@@ -1856,10 +1890,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Now _gvn will join that with the meet of current inputs.
           // BOTTOM is never permissible here, 'cause pessimistically
           // Phis of pointers cannot lose the basic pointer type.
-          debug_only(const Type* bt1 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
           map()->set_req(j, _gvn.transform(phi));
-          debug_only(const Type* bt2 = phi->bottom_type());
+          DEBUG_ONLY(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
         }
@@ -1957,7 +1991,7 @@ void Parse::ensure_phis_everywhere() {
   // Ensure a phi on all currently known memories.
   for (MergeMemStream mms(merged_memory()); mms.next_non_empty(); ) {
     ensure_memory_phi(mms.alias_idx());
-    debug_only(mms.set_memory());  // keep the iterator happy
+    DEBUG_ONLY(mms.set_memory());  // keep the iterator happy
   }
 
   // Note:  This is our only chance to create phis for memory slices.
@@ -2141,12 +2175,12 @@ void Parse::call_register_finalizer() {
   // finalization.  In general this will fold up since the concrete
   // class is often visible so the access flags are constant.
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
-  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
+  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
 
-  Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
-  Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
+  Node* access_flags_addr = off_heap_plus_addr(klass, in_bytes(Klass::misc_flags_offset()));
+  Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
 
-  Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
+  Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(KlassFlags::_misc_has_finalizer)));
   Node* check = _gvn.transform(new CmpINode(mask, intcon(0)));
   Node* test  = _gvn.transform(new BoolNode(check, BoolTest::ne));
 
@@ -2201,42 +2235,6 @@ void Parse::clinit_deopt() {
   guard_klass_being_initialized(holder);
 }
 
-// Add check to deoptimize if RTM state is not ProfileRTM
-void Parse::rtm_deopt() {
-#if INCLUDE_RTM_OPT
-  if (C->profile_rtm()) {
-    assert(C->has_method(), "only for normal compilations");
-    assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
-    assert(depth() == 1, "generate check only for main compiled method");
-
-    // Set starting bci for uncommon trap.
-    set_parse_bci(is_osr_parse() ? osr_bci() : 0);
-
-    // Load the rtm_state from the MethodData.
-    const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
-    Node* mdo = makecon(adr_type);
-    int offset = in_bytes(MethodData::rtm_state_offset());
-    Node* adr_node = basic_plus_adr(mdo, mdo, offset);
-    Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-
-    // Separate Load from Cmp by Opaque.
-    // In expand_macro_nodes() it will be replaced either
-    // with this load when there are locks in the code
-    // or with ProfileRTM (cmp->in(2)) otherwise so that
-    // the check will fold.
-    Node* profile_state = makecon(TypeInt::make(ProfileRTM));
-    Node* opq   = _gvn.transform( new Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
-    Node* chk   = _gvn.transform( new CmpINode(opq, profile_state) );
-    Node* tst   = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
-    // Branch to failure if state was changed
-    { BuildCutout unless(this, tst, PROB_ALWAYS);
-      uncommon_trap(Deoptimization::Reason_rtm_state_change,
-                    Deoptimization::Action_make_not_entrant);
-    }
-  }
-#endif
-}
-
 //------------------------------return_current---------------------------------
 // Append current _map to _exit_return
 void Parse::return_current(Node* value) {
@@ -2244,9 +2242,18 @@ void Parse::return_current(Node* value) {
     call_register_finalizer();
   }
 
+  if (StressReachabilityFences) {
+    // Insert reachability fences for all oop arguments at the end of the method.
+    for (uint i = 1; i < _stress_rf_hook->req(); i++) {
+      Node* referent = _stress_rf_hook->in(i);
+      assert(referent->bottom_type()->isa_oopptr(), "%s", Type::str(referent->bottom_type()));
+      insert_reachability_fence(referent);
+    }
+  }
+
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
-  if (method()->is_synchronized() && GenerateSynchronizationCode) {
+  if (method()->is_synchronized()) {
     shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
   }
   if (C->env()->dtrace_method_probes()) {
@@ -2325,10 +2332,10 @@ void Parse::add_safepoint() {
   sfpnt->init_req(TypeFunc::FramePtr , top() );
 
   // Create a node for the polling address
-  Node *polladr;
-  Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
-  polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+  Node* polladr;
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* polling_page_load_addr = _gvn.transform(off_heap_plus_addr(thread, in_bytes(JavaThread::polling_page_offset())));
+  polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
   // Fix up the JVM State edges

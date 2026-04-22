@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,18 @@ import java.nio.ByteOrder;
 
 /*
  * @test
- * @bug 8326139
+ * @bug 8326139 8348659
+ * @key randomness
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.loopopts.superword.TestSplitPacks
+ * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_nAV_ySAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_yAV_ySAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_nAV_ySAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_yAV_ySAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_nAV_nSAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_yAV_nSAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_nAV_nSAC
+ * @run driver compiler.loopopts.superword.TestSplitPacks yCOH_yAV_nSAC
  */
 
 public class TestSplitPacks {
@@ -71,7 +78,20 @@ public class TestSplitPacks {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=1000");
+        TestFramework framework = new TestFramework(TestSplitPacks.class);
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
+        switch (args[0]) {
+            case "nCOH_nAV_ySAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "nCOH_yAV_ySAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "yCOH_nAV_ySAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "yCOH_yAV_ySAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "nCOH_nAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "nCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "yCOH_nAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            case "yCOH_yAV_nSAC" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:-UseAutoVectorizationSpeculativeAliasingChecks"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+        framework.start();
     }
 
     public TestSplitPacks() {
@@ -103,6 +123,13 @@ public class TestSplitPacks {
         tests.put("test4e",      () -> { return test4e(aS.clone(), bS.clone()); });
         tests.put("test4f",      () -> { return test4f(aS.clone(), bS.clone()); });
         tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
+        tests.put("test4a_alias",() -> { short[] x = aS.clone(); return test4a_alias(x, x); });
+        tests.put("test4b_alias",() -> { short[] x = aS.clone(); return test4b_alias(x, x); });
+        tests.put("test4c_alias",() -> { short[] x = aS.clone(); return test4c_alias(x, x); });
+        tests.put("test4d_alias",() -> { short[] x = aS.clone(); return test4d_alias(x, x); });
+        tests.put("test4e_alias",() -> { short[] x = aS.clone(); return test4e_alias(x, x); });
+        tests.put("test4f_alias",() -> { short[] x = aS.clone(); return test4f_alias(x, x); });
+        tests.put("test4g_alias",() -> { short[] x = aS.clone(); return test4g_alias(x, x); });
         tests.put("test5a",      () -> { return test5a(aS.clone(), bS.clone(), mS); });
         tests.put("test6a",      () -> { return test6a(aI.clone(), bI.clone()); });
         tests.put("test7a",      () -> { return test7a(aI.clone(), bI.clone()); });
@@ -134,6 +161,13 @@ public class TestSplitPacks {
                  "test4e",
                  "test4f",
                  "test4g",
+                 "test4a_alias",
+                 "test4b_alias",
+                 "test4c_alias",
+                 "test4d_alias",
+                 "test4e_alias",
+                 "test4f_alias",
+                 "test4g_alias",
                  "test5a",
                  "test6a",
                  "test7a"})
@@ -267,9 +301,17 @@ public class TestSplitPacks {
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Load and store are already split
     //
     //  0 1 - - 4 5 6 7
@@ -292,6 +334,10 @@ public class TestSplitPacks {
             b[i+5] = b5;
             b[i+6] = b6;
             b[i+7] = b7;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
@@ -302,9 +348,17 @@ public class TestSplitPacks {
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1a(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -315,6 +369,10 @@ public class TestSplitPacks {
 
             b[i+4] = a[i+4] * mask; // Mul
             b[i+5] = a[i+5] * mask;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
@@ -325,9 +383,17 @@ public class TestSplitPacks {
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1b(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -338,6 +404,10 @@ public class TestSplitPacks {
 
             b[i+4] = a[i+4] + mask; // Add
             b[i+5] = a[i+5] + mask;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
@@ -348,9 +418,17 @@ public class TestSplitPacks {
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1c(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -361,6 +439,10 @@ public class TestSplitPacks {
             b[i+3] = a[i+3] * mask;
             b[i+4] = a[i+4] * mask;
             b[i+5] = a[i+5] * mask;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
@@ -371,9 +453,17 @@ public class TestSplitPacks {
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1d(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -384,19 +474,31 @@ public class TestSplitPacks {
             b[i+3] = a[i+3] + mask;
             b[i+4] = a[i+4] + mask;
             b[i+5] = a[i+5] + mask;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Split the load
     //
     //  0 1 2 3 4 5 - -
@@ -405,8 +507,6 @@ public class TestSplitPacks {
     //  | |    \ \ \ \
     //  0 1 - - 4 5 6 7
     //
-    // The 4-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2a(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -423,19 +523,31 @@ public class TestSplitPacks {
             b[i+5] = b3;
             b[i+6] = b4;
             b[i+7] = b5;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Split the load
     //
     //  0 1 2 3 4 5 - -
@@ -444,8 +556,6 @@ public class TestSplitPacks {
     //  | | | |    \ \
     //  0 1 2 3 -- 6 7
     //
-    // The 2-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2b(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -462,19 +572,31 @@ public class TestSplitPacks {
 
             b[i+6] = b4;
             b[i+7] = b5;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Split the load
     //
     //  0 1 - - 4 5 6 7
@@ -483,8 +605,6 @@ public class TestSplitPacks {
     //  | |  / / / /
     //  0 1 2 3 4 5 - -
     //
-    // The 4-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2c(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -501,19 +621,31 @@ public class TestSplitPacks {
             b[i+3] = b5;
             b[i+4] = b6;
             b[i+5] = b7;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Split the load
     //
     //  0 1 2 3 - - 6 7
@@ -522,8 +654,6 @@ public class TestSplitPacks {
     //  | | | |  / /
     //  0 1 2 3 4 5 - -
     //
-    // The 2-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2d(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -540,6 +670,10 @@ public class TestSplitPacks {
             b[i+3] = b3;
             b[i+4] = b6;
             b[i+5] = b7;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b };
     }
@@ -547,9 +681,14 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // 0 1 2 3 4 5 6 7 -
     // | | | | | | | |
     // | + + + | | | |
@@ -560,40 +699,56 @@ public class TestSplitPacks {
     static Object[] test3a(short[] a, short[] b, short val) {
         int sum = 0;
         for (int i = 0; i < RANGE; i+=16) {
-          short a0 = a[i+0]; // required for alignment / offsets, technical limitation.
+            short a0 = a[i+0]; // required for alignment / offsets, technical limitation.
 
-          short a1 = a[i+1]; // adjacent to 4-pack, but need to be split off
-          short a2 = a[i+2];
-          short a3 = a[i+3];
+            short a1 = a[i+1]; // adjacent to 4-pack, but need to be split off
+            short a2 = a[i+2];
+            short a3 = a[i+3];
 
-          short a4 = a[i+4]; // 4-pack
-          short a5 = a[i+5];
-          short a6 = a[i+6];
-          short a7 = a[i+7];
+            short a4 = a[i+4]; // 4-pack
+            short a5 = a[i+5];
+            short a6 = a[i+6];
+            short a7 = a[i+7];
 
 
-          b[i+0] = a0; // required for alignment / offsets, technical limitation.
+            b[i+0] = a0; // required for alignment / offsets, technical limitation.
 
-          sum += a1 + a2 + a3; // not packed
+            sum += a1 + a2 + a3; // not packed
 
-          b[i+3] = val; // adjacent to 4-pack but needs to be split off
+            b[i+3] = val; // adjacent to 4-pack but needs to be split off
 
-          b[i+4] = a4; // 4-pack
-          b[i+5] = a5;
-          b[i+6] = a6;
-          b[i+7] = a7;
+            b[i+4] = a4; // 4-pack
+            b[i+5] = a5;
+            b[i+6] = a6;
+            b[i+7] = a7;
 
-          b[i+8] = val; // adjacent to 4-pack but needs to be split off
+            b[i+8] = val; // adjacent to 4-pack but needs to be split off
+
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8 + 32*i  ->  always        adr = base + 12 + 8 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b, new int[]{ sum } };
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true"})
     // Cyclic dependency with distance 2 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4a(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+2] = a[i+0];
@@ -603,11 +758,21 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"AlignVector", "false"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true"})
     // Cyclic dependency with distance 3 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4b(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+3] = a[i+0];
@@ -617,11 +782,21 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=8"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Cyclic dependency with distance 4 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4c(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+4] = a[i+0];
@@ -631,11 +806,21 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Cyclic dependency with distance 5 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4d(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+5] = a[i+0];
@@ -645,11 +830,21 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Cyclic dependency with distance 6 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4e(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+6] = a[i+0];
@@ -659,11 +854,21 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Cyclic dependency with distance 7 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4f(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+7] = a[i+0];
@@ -673,12 +878,197 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Cyclic dependency with distance 8 -> split into 8-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check -> full vectorization.
     static Object[] test4g(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+8] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Cyclic dependency with distance 2 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4a_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+2] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Cyclic dependency with distance 3 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4b_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+3] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 4 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4c_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+4] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 5 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4d_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+5] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 6 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4e_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+6] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 7 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4f_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+7] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 8 -> split into 8-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4g_alias(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+8] = a[i+0];
         }
@@ -695,7 +1085,17 @@ public class TestSplitPacks {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // aarch64 limits minimum vector size to 8B, thus a vector size of
+    // length 2 for type "short" will not be generated
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeature = {"sve", "true"})
     // Split pack into power-of-2 sizes
     static Object[] test5a(short[] a, short[] b, short val) {
         for (int i = 0; i < RANGE; i+=16) {
@@ -727,9 +1127,17 @@ public class TestSplitPacks {
                   IRNode.AND_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.ADD_VI,          IRNode.VECTOR_SIZE_4, "> 0", // reduction moved out of loop
                   IRNode.ADD_REDUCTION_V,                       "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,          IRNode.VECTOR_SIZE_4, "> 0", // reduction moved out of loop
+                  IRNode.ADD_REDUCTION_V,                       "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Split packs including reductions
     static Object[] test6a(int[] a, int[] b) {
         int s = 0;
@@ -743,6 +1151,10 @@ public class TestSplitPacks {
             s += a[i+5] & b[i+5];
             s += a[i+6] & b[i+6];
             s += a[i+7] & b[i+7];
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 32*i  ->  always            adr = base + 12 + 32*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return new Object[]{ a, b, new int[]{ s } };
     }
@@ -752,7 +1164,7 @@ public class TestSplitPacks {
                   IRNode.MUL_VI,         "> 0",
                   IRNode.POPULATE_INDEX, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"})
     // Index Populate:
     // There can be an issue when all the (iv + 1), (iv + 2), ...
     // get packed, but not (iv). Then we have a pack that is one element

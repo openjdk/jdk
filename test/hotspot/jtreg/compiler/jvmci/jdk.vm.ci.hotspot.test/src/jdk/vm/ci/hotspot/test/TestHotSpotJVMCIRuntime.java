@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public class TestHotSpotJVMCIRuntime {
                         VirtualObjectLayoutTest.class,
                         TestHotSpotJVMCIRuntime.class));
         try {
-            classes.add(Class.forName("com.sun.crypto.provider.AESCrypt"));
+            classes.add(Class.forName("com.sun.crypto.provider.AES_Crypt"));
             classes.add(Class.forName("com.sun.crypto.provider.CipherBlockChaining"));
         } catch (ClassNotFoundException e) {
             // Extension classes not available

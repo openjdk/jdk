@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,21 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
+import java.util.function.IntUnaryOperator;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
-
-import java.lang.foreign.ValueLayout;
-import java.lang.reflect.Array;
-import java.nio.ByteOrder;
-import java.util.Objects;
-import java.util.function.IntUnaryOperator;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
-abstract class AbstractVector<E> extends Vector<E> {
+abstract sealed class AbstractVector<E> extends Vector<E>
+        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
-     * This is the also the behavior of the
+     * This is also the behavior of the
      * VectorSupport load/store instructions.
      * If these instructions gain the capability to do
      * byte swapping on the fly, add a bit to those
@@ -83,6 +78,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     /*package-private*/
     abstract AbstractSpecies<E> vspecies();
+
+    /*package-private*/
+    abstract int laneTypeOrdinal();
 
     @Override
     @ForceInline
@@ -182,7 +180,44 @@ abstract class AbstractVector<E> extends Vector<E> {
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType));
+        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
+    }
+
+    @ForceInline
+    protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+        final int lanes = targetSpecies.laneCount();
+
+        if ((lanes % subLanesPerSrc) != 0) {
+            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        }
+
+        // Each group corresponds to one source lane.
+        // For each group, reverse the lanes inside that group.
+        final int groups = lanes / subLanesPerSrc;
+        int[] map = new int[lanes];
+        for (int g = 0; g < groups; ++g) {
+            int base = g * subLanesPerSrc;
+            for (int j = 0; j < subLanesPerSrc; ++j) {
+                 map[base + j] = base + (subLanesPerSrc - 1 - j);
+            }
+        }
+        return VectorShuffle.fromArray(targetSpecies, map, 0);
+    }
+
+    @ForceInline
+    protected final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
+        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
+            return -1;
+        }
+        int sBytes = srcSpecies.elementSize();
+        int tBytes = vspecies().elementSize();
+
+        // No lane reordering needed for same size or widening reinterprets
+        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
+            return -1;
+        }
+        int subLanesPerSrc = sBytes / tBytes;
+        return subLanesPerSrc;
     }
 
     /*package-private*/
@@ -194,12 +229,43 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractMask<E> maskFromArray(boolean[] bits);
 
+    abstract <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp);
+
+    /*package-private*/
+    @ForceInline
+    final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
+        int etype = vspecies().laneTypeOrdinal();
+        Class<?> dvtype = dsp.shuffleType();
+        int dtype = dsp.asIntegral().laneTypeOrdinal();
+        int dlength = dsp.dummyVector().length();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), etype, length(),
+                                     dvtype, dtype, dlength,
+                                     this, dsp,
+                                     AbstractVector::bitsToShuffle0);
+    }
+
+    abstract <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp);
+
+    abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap);
+
     abstract AbstractShuffle<E> iotaShuffle();
 
     abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
 
-    /*do not alias this byte array*/
-    abstract AbstractShuffle<E> shuffleFromBytes(byte[] reorder);
+    @ForceInline
+    final VectorShuffle<E> iotaShuffleTemplate(int start, int step, boolean wrap) {
+        if ((length() & (length() - 1)) != 0) {
+            // Uncommon path, the length is not a power of 2
+            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
+                        : shuffleFromOp(i -> i * step + start);
+        }
+
+        AbstractVector<?> iota = vspecies().asIntegral().iota();
+        iota = (AbstractVector<?>) iota.lanewise(VectorOperators.MUL, step)
+                .lanewise(VectorOperators.ADD, start);
+        return iota.toShuffle(vspecies(), wrap);
+    }
 
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);
 
@@ -210,6 +276,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
+
+    /*package-private*/
+    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline
@@ -271,8 +340,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     Vector<F> convert(Conversion<E,F> conv, int part) {
         // Shape invariance is simple to implement.
         // It's part of the API because shape invariance
-        // is the default mode of operation, and shape
-        // shifting operations must advertise themselves.
+        // is the default mode of operation, and
+        // shape-shifting operations must advertise
+        // themselves.
         ConversionImpl<E,F> c = (ConversionImpl<E,F>) conv;
         @SuppressWarnings("unchecked")
         VectorSpecies<F> rsp = (VectorSpecies<F>)
@@ -690,10 +760,10 @@ abstract class AbstractVector<E> extends Vector<E> {
     AbstractVector<F> convert0(char kind, AbstractSpecies<F> rsp) {
         // Derive some JIT-time constants:
         Class<?> vtype;
-        Class<?> etype;   // fill in after switch (constant)
+        int etype;        // fill in after switch (constant)
         int vlength;      // fill in after switch (mark type profile?)
         Class<?> rvtype;  // fill in after switch (mark type profile)
-        Class<?> rtype;
+        int rtype;
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
@@ -701,9 +771,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             AbstractSpecies<?> vsp = this.vspecies();
             AbstractSpecies<?> vspi = vsp.asIntegral();
             AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
-            rtype = rspi.elementType();
+            rtype = rspi.laneTypeOrdinal();
             rlength = rspi.laneCount();
-            etype = vspi.elementType();
+            etype = vspi.laneTypeOrdinal();
             vlength = vspi.laneCount();
             rvtype = rspi.dummyVector().getClass();
             vtype = vspi.dummyVector().getClass();
@@ -715,9 +785,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
-            rtype = rsp.elementType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();
@@ -727,9 +797,9 @@ abstract class AbstractVector<E> extends Vector<E> {
                     this, rsp,
                     AbstractVector::defaultCast);
         case 'X':  // reinterpret cast, not lane-wise if lane sizes differ
-            rtype = rsp.elementType();
+            rtype = rsp.laneTypeOrdinal();
             rlength = rsp.laneCount();
-            etype = this.elementType(); // (profile)
+            etype = this.vspecies().laneTypeOrdinal(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
             vtype = this.getClass();

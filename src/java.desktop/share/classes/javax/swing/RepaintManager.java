@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,13 @@ package javax.swing;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.VolatileImage;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.applet.*;
 
-import jdk.internal.access.JavaSecurityAccess;
-import jdk.internal.access.SharedSecrets;
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.security.action.GetPropertyAction;
 
 import com.sun.java.swing.SwingUtilities3;
 import java.awt.geom.AffineTransform;
@@ -58,8 +50,8 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * requests into a single repaint for members of a component tree.
  * <p>
  * As of 1.6 <code>RepaintManager</code> handles repaint requests
- * for Swing's top level components (<code>JApplet</code>,
- * <code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
+ * for Swing's top level components
+ * (<code>JWindow</code>, <code>JFrame</code> and <code>JDialog</code>).
  * Any calls to <code>repaint</code> on one of these will call into the
  * appropriate <code>addDirtyRegion</code> method.
  *
@@ -126,8 +118,6 @@ public class RepaintManager
      */
     private PaintManager paintManager;
 
-    private static final Object repaintManagerKey = RepaintManager.class;
-
     // Whether or not a VolatileImage should be used for double-buffered painting
     static boolean volatileImageBufferEnabled = true;
     /**
@@ -188,9 +178,6 @@ public class RepaintManager
      */
     private final ProcessingRunnable processingRunnable;
 
-    private static final JavaSecurityAccess javaSecurityAccess =
-            SharedSecrets.getJavaSecurityAccess();
-
     /**
      * Listener installed to detect display changes. When display changes,
      * schedules a callback to notify all RepaintManagers of the display
@@ -211,22 +198,13 @@ public class RepaintManager
             }
         });
 
-        @SuppressWarnings("removal")
-        var t1 = "true".equals(AccessController.
-                doPrivileged(new GetPropertyAction(
-                "swing.volatileImageBufferEnabled", "true")));
-        volatileImageBufferEnabled = t1;
+        volatileImageBufferEnabled = "true".equals(System.getProperty("swing.volatileImageBufferEnabled", "true"));
         boolean headless = GraphicsEnvironment.isHeadless();
         if (volatileImageBufferEnabled && headless) {
             volatileImageBufferEnabled = false;
         }
-        @SuppressWarnings("removal")
-        var t2 = "true".equals(AccessController.doPrivileged(
-                    new GetPropertyAction("awt.nativeDoubleBuffering")));
-        nativeDoubleBuffering = t2;
-        @SuppressWarnings("removal")
-        String bs = AccessController.doPrivileged(
-                          new GetPropertyAction("swing.bufferPerWindow"));
+        nativeDoubleBuffering = "true".equals(System.getProperty("awt.nativeDoubleBuffering"));
+        String bs = System.getProperty("swing.bufferPerWindow");
         if (headless) {
             BUFFER_STRATEGY_TYPE = BUFFER_STRATEGY_SPECIFIED_OFF;
         }
@@ -239,10 +217,7 @@ public class RepaintManager
         else {
             BUFFER_STRATEGY_TYPE = BUFFER_STRATEGY_SPECIFIED_OFF;
         }
-        @SuppressWarnings("removal")
-        var t3 = "true".equals(AccessController.doPrivileged(
-               new GetPropertyAction("swing.handleTopLevelPaint", "true")));
-        HANDLE_TOP_LEVEL_PAINT = t3;
+        HANDLE_TOP_LEVEL_PAINT = "true".equals(System.getProperty("swing.handleTopLevelPaint", "true"));
         GraphicsEnvironment ge = GraphicsEnvironment.
                 getLocalGraphicsEnvironment();
         if (ge instanceof SunGraphicsEnvironment) {
@@ -258,8 +233,10 @@ public class RepaintManager
         }
     }
 
+    private static RepaintManager repaintManager;
+
     /**
-     * Return the RepaintManager for the calling thread given a Component.
+     * Return the RepaintManager given a Component.
      *
      * @param c a Component -- unused in the default implementation, but could
      *          be used by an overridden version to return a different RepaintManager
@@ -271,21 +248,15 @@ public class RepaintManager
         // component is ever used to determine the current
         // RepaintManager, DisplayChangedRunnable will need to be modified
         // accordingly.
-        return currentManager(AppContext.getAppContext());
-    }
 
-    /**
-     * Returns the RepaintManager for the specified AppContext.  If
-     * a RepaintManager has not been created for the specified
-     * AppContext this will return null.
-     */
-    static RepaintManager currentManager(AppContext appContext) {
-        RepaintManager rm = (RepaintManager)appContext.get(repaintManagerKey);
-        if (rm == null) {
-            rm = new RepaintManager(BUFFER_STRATEGY_TYPE);
-            appContext.put(repaintManagerKey, rm);
+        synchronized (RepaintManager.class) {
+            RepaintManager rm = repaintManager;
+            if (rm == null) {
+                rm = new RepaintManager(BUFFER_STRATEGY_TYPE);
+                repaintManager = rm;
+            }
+            return rm;
         }
-        return rm;
     }
 
     /**
@@ -304,16 +275,12 @@ public class RepaintManager
 
 
     /**
-     * Set the RepaintManager that should be used for the calling
-     * thread. <b>aRepaintManager</b> will become the current RepaintManager
-     * for the calling thread's thread group.
+     * Set the RepaintManager.
      * @param aRepaintManager  the RepaintManager object to use
      */
     public static void setCurrentManager(RepaintManager aRepaintManager) {
-        if (aRepaintManager != null) {
-            SwingUtilities.appContextPut(repaintManagerKey, aRepaintManager);
-        } else {
-            SwingUtilities.appContextRemove(repaintManagerKey);
+        synchronized (RepaintManager.class) {
+            repaintManager = aRepaintManager;
         }
     }
 
@@ -395,7 +362,7 @@ public class RepaintManager
 
         // Queue a Runnable to invoke paintDirtyRegions and
         // validateInvalidComponents.
-        scheduleProcessingRunnable(SunToolkit.targetToAppContext(invalidComponent));
+        scheduleProcessingRunnable();
     }
 
 
@@ -411,10 +378,13 @@ public class RepaintManager
             delegate.removeInvalidComponent(component);
             return;
         }
-        if(invalidComponents != null) {
-            int index = invalidComponents.indexOf(component);
-            if(index != -1) {
-                invalidComponents.remove(index);
+        if (invalidComponents != null) {
+            int n = invalidComponents.size();
+            for (int i = 0; i < n; i++) {
+                if (component == invalidComponents.get(i)) {
+                    invalidComponents.remove(i);
+                    break;
+                }
             }
         }
     }
@@ -427,7 +397,6 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("removal")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -445,7 +414,7 @@ public class RepaintManager
             return;
         }
 
-        /* Make sure that c and all it ancestors (up to an Applet or
+        /* Make sure that c and all it ancestors (up to a
          * Window) are visible.  This loop has the same effect as
          * checking c.isShowing() (and note that it's still possible
          * that c is completely obscured by an opaque ancestor in
@@ -461,7 +430,7 @@ public class RepaintManager
             if (!p.isVisible() || !p.isDisplayable()) {
                 return;
             }
-            if ((p instanceof Window) || (p instanceof Applet)) {
+            if (p instanceof Window) {
                 // Iconified frames are still visible!
                 if (p instanceof Frame &&
                         (((Frame)p).getExtendedState() & Frame.ICONIFIED) ==
@@ -486,7 +455,7 @@ public class RepaintManager
 
         // Queue a Runnable to invoke paintDirtyRegions and
         // validateInvalidComponents.
-        scheduleProcessingRunnable(SunToolkit.targetToAppContext(c));
+        scheduleProcessingRunnable();
     }
 
     /**
@@ -529,29 +498,6 @@ public class RepaintManager
         addDirtyRegion0(window, x, y, w, h);
     }
 
-    /**
-     * Adds <code>applet</code> to the list of <code>Component</code>s that
-     * need to be repainted.
-     *
-     * @param applet Applet to repaint, null results in nothing happening.
-     * @param x X coordinate of the region to repaint
-     * @param y Y coordinate of the region to repaint
-     * @param w Width of the region to repaint
-     * @param h Height of the region to repaint
-     * @see JApplet#repaint
-     * @since 1.6
-     *
-     * @deprecated The Applet API is deprecated. See the
-     * <a href="../../java/applet/package-summary.html"> java.applet package
-     * documentation</a> for further information.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
-        addDirtyRegion0(applet, x, y, w, h);
-    }
-
-    @SuppressWarnings("removal")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 
@@ -568,10 +514,6 @@ public class RepaintManager
                 addDirtyRegion((Window)hw, dirty.x, dirty.y,
                                dirty.width, dirty.height);
             }
-            else if (hw instanceof Applet) {
-                addDirtyRegion((Applet)hw, dirty.x, dirty.y,
-                               dirty.width, dirty.height);
-            }
             else { // SwingHeavyWeight
                 addDirtyRegion0(hw, dirty.x, dirty.y,
                                 dirty.width, dirty.height);
@@ -583,8 +525,7 @@ public class RepaintManager
     // This is called from the toolkit thread when a native expose is
     // received.
     //
-    void nativeAddDirtyRegion(AppContext appContext, Container c,
-                              int x, int y, int w, int h) {
+    void nativeAddDirtyRegion(Container c, int x, int y, int w, int h) {
         if (w > 0 && h > 0) {
             synchronized(this) {
                 Rectangle dirty = hwDirtyComponents.get(c);
@@ -596,7 +537,7 @@ public class RepaintManager
                                               x, y, w, h, dirty));
                 }
             }
-            scheduleProcessingRunnable(appContext);
+            scheduleProcessingRunnable();
         }
     }
 
@@ -604,30 +545,15 @@ public class RepaintManager
     // This is called from the toolkit thread when awt needs to run a
     // Runnable before we paint.
     //
-    void nativeQueueSurfaceDataRunnable(AppContext appContext,
-                                        final Component c, final Runnable r)
+    void nativeQueueSurfaceDataRunnable(final Component c, final Runnable r)
     {
         synchronized(this) {
             if (runnableList == null) {
                 runnableList = new LinkedList<Runnable>();
             }
-            runnableList.add(new Runnable() {
-                public void run() {
-                    @SuppressWarnings("removal")
-                    AccessControlContext stack = AccessController.getContext();
-                    @SuppressWarnings("removal")
-                    AccessControlContext acc =
-                        AWTAccessor.getComponentAccessor().getAccessControlContext(c);
-                    javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            r.run();
-                            return null;
-                        }
-                    }, stack, acc);
-                }
-            });
+            runnableList.add(r);
         }
-        scheduleProcessingRunnable(appContext);
+        scheduleProcessingRunnable();
     }
 
     /**
@@ -746,18 +672,7 @@ public class RepaintManager
         int n = ic.size();
         for(int i = 0; i < n; i++) {
             final Component c = ic.get(i);
-            @SuppressWarnings("removal")
-            AccessControlContext stack = AccessController.getContext();
-            @SuppressWarnings("removal")
-            AccessControlContext acc =
-                AWTAccessor.getComponentAccessor().getAccessControlContext(c);
-            javaSecurityAccess.doIntersectionPrivilege(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        c.validate();
-                        return null;
-                    }
-                }, stack, acc);
+            c.validate();
         }
     }
 
@@ -853,61 +768,50 @@ public class RepaintManager
             for (int j=0 ; j < count.get(); j++) {
                 final int i = j;
                 final Component dirtyComponent = roots.get(j);
-                @SuppressWarnings("removal")
-                AccessControlContext stack = AccessController.getContext();
-                @SuppressWarnings("removal")
-                AccessControlContext acc =
-                    AWTAccessor.getComponentAccessor().getAccessControlContext(dirtyComponent);
-                javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        Rectangle rect = tmpDirtyComponents.get(dirtyComponent);
-                        // Sometimes when RepaintManager is changed during the painting
-                        // we may get null here, see #6995769 for details
-                        if (rect == null) {
-                            return null;
-                        }
+                Rectangle rect = tmpDirtyComponents.get(dirtyComponent);
+                // Sometimes when RepaintManager is changed during the painting
+                // we may get null here, see #6995769 for details
+                if (rect == null) {
+                    continue;
+                }
 
-                        int localBoundsH = dirtyComponent.getHeight();
-                        int localBoundsW = dirtyComponent.getWidth();
-                        SwingUtilities.computeIntersection(0,
-                                                           0,
-                                                           localBoundsW,
-                                                           localBoundsH,
-                                                           rect);
-                        if (dirtyComponent instanceof JComponent) {
-                            ((JComponent)dirtyComponent).paintImmediately(
-                                rect.x,rect.y,rect.width, rect.height);
+                int localBoundsH = dirtyComponent.getHeight();
+                int localBoundsW = dirtyComponent.getWidth();
+                SwingUtilities.computeIntersection(0,
+                                                   0,
+                                                   localBoundsW,
+                                                   localBoundsH,
+                                                   rect);
+                if (dirtyComponent instanceof JComponent) {
+                    ((JComponent)dirtyComponent).paintImmediately(
+                        rect.x,rect.y,rect.width, rect.height);
+                }
+                else if (dirtyComponent.isShowing()) {
+                    Graphics g = JComponent.safelyGetGraphics(
+                            dirtyComponent, dirtyComponent);
+                    // If the Graphics goes away, it means someone disposed of
+                    // the window, don't do anything.
+                    if (g != null) {
+                        g.setClip(rect.x, rect.y, rect.width, rect.height);
+                        try {
+                            dirtyComponent.paint(g);
+                        } finally {
+                            g.dispose();
                         }
-                        else if (dirtyComponent.isShowing()) {
-                            Graphics g = JComponent.safelyGetGraphics(
-                                    dirtyComponent, dirtyComponent);
-                            // If the Graphics goes away, it means someone disposed of
-                            // the window, don't do anything.
-                            if (g != null) {
-                                g.setClip(rect.x, rect.y, rect.width, rect.height);
-                                try {
-                                    dirtyComponent.paint(g);
-                                } finally {
-                                    g.dispose();
-                                }
-                            }
-                        }
-                        // If the repaintRoot has been set, service it now and
-                        // remove any components that are children of repaintRoot.
-                        if (repaintRoot != null) {
-                            adjustRoots(repaintRoot, roots, i + 1);
-                            count.set(roots.size());
-                            paintManager.isRepaintingRoot = true;
-                            repaintRoot.paintImmediately(0, 0, repaintRoot.getWidth(),
-                                                         repaintRoot.getHeight());
-                            paintManager.isRepaintingRoot = false;
-                            // Only service repaintRoot once.
-                            repaintRoot = null;
-                        }
-
-                        return null;
                     }
-                }, stack, acc);
+                }
+                // If the repaintRoot has been set, service it now and
+                // remove any components that are children of repaintRoot.
+                if (repaintRoot != null) {
+                    adjustRoots(repaintRoot, roots, i + 1);
+                    count.set(roots.size());
+                    paintManager.isRepaintingRoot = true;
+                    repaintRoot.paintImmediately(0, 0, repaintRoot.getWidth(),
+                                                 repaintRoot.getHeight());
+                    paintManager.isRepaintingRoot = false;
+                    // Only service repaintRoot once.
+                    repaintRoot = null;
+                }
             }
         } finally {
             painting = false;
@@ -1122,7 +1026,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1500,11 +1404,11 @@ public class RepaintManager
         return paintManager;
     }
 
-    private void scheduleProcessingRunnable(AppContext context) {
+    private void scheduleProcessingRunnable() {
         if (processingRunnable.markPending()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if (tk instanceof SunToolkit) {
-                SunToolkit.getSystemEventQueueImplPP(context).
+                SunToolkit.getSystemEventQueueImplPP().
                   postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
                                                 processingRunnable));
             } else {
@@ -1822,8 +1726,7 @@ public class RepaintManager
     /**
      * Listener installed to detect display changes. When display changes,
      * schedules a callback to notify all RepaintManagers of the display
-     * changes. Only one DisplayChangedHandler is ever installed. The
-     * singleton instance will schedule notification for all AppContexts.
+     * changes. Only one DisplayChangedHandler is ever installed.
      */
     private static final class DisplayChangedHandler implements
                                              DisplayChangedListener {
@@ -1835,21 +1738,14 @@ public class RepaintManager
         }
 
         private static void scheduleDisplayChanges() {
-            // To avoid threading problems, we notify each RepaintManager
+            // To avoid threading problems, we notify the RepaintManager
             // on the thread it was created on.
-            for (AppContext context : AppContext.getAppContexts()) {
-                synchronized(context) {
-                    if (!context.isDisposed()) {
-                        EventQueue eventQueue = (EventQueue)context.get(
-                            AppContext.EVENT_QUEUE_KEY);
-                        if (eventQueue != null) {
-                            eventQueue.postEvent(new InvocationEvent(
-                                Toolkit.getDefaultToolkit(),
-                                new DisplayChangedRunnable()));
-                        }
-                    }
-                }
-            }
+            EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+            eventQueue.postEvent(
+                new InvocationEvent(
+                    Toolkit.getDefaultToolkit(),
+                    new DisplayChangedRunnable())
+            );
         }
     }
 

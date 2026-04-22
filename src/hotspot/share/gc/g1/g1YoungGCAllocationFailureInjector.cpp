@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 
 #if ALLOCATION_FAILURE_INJECTOR
 
-class SelectAllocationFailureRegionClosure : public HeapRegionClosure {
+class SelectAllocationFailureRegionClosure : public G1HeapRegionClosure {
   CHeapBitMap& _allocation_failure_regions;
   size_t _allocation_failure_regions_num;
 
@@ -39,7 +38,7 @@ public:
     _allocation_failure_regions(allocation_failure_regions),
     _allocation_failure_regions_num(cset_length * G1GCAllocationFailureALotCSetPercent / 100) { }
 
-  bool do_heap_region(HeapRegion* r) override {
+  bool do_heap_region(G1HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
     if (_allocation_failure_regions_num > 0) {
       _allocation_failure_regions.set_bit(r->hrm_index());
@@ -56,16 +55,16 @@ G1YoungGCAllocationFailureInjector::G1YoungGCAllocationFailureInjector()
 
 void G1YoungGCAllocationFailureInjector::select_allocation_failure_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  _allocation_failure_regions.reinitialize(g1h->max_reserved_regions());
+  _allocation_failure_regions.reinitialize(g1h->max_num_regions());
   SelectAllocationFailureRegionClosure closure(_allocation_failure_regions, g1h->collection_set()->cur_length());
   g1h->collection_set_iterate_all(&closure);
 }
 
 bool G1YoungGCAllocationFailureInjector::arm_if_needed_for_gc_type(bool for_young_only_phase,
                                                                    bool during_concurrent_start,
-                                                                   bool mark_or_rebuild_in_progress) {
+                                                                   bool in_concurrent_cycle) {
   bool res = false;
-  if (mark_or_rebuild_in_progress) {
+  if (in_concurrent_cycle) {
     res |= G1GCAllocationFailureALotDuringConcMark;
   }
   if (during_concurrent_start) {
@@ -91,14 +90,14 @@ void G1YoungGCAllocationFailureInjector::arm_if_needed() {
 
     // Now check if evacuation failure injection should be enabled for the current GC.
     G1CollectorState* collector_state = g1h->collector_state();
-    const bool in_young_only_phase = collector_state->in_young_only_phase();
-    const bool in_concurrent_start_gc = collector_state->in_concurrent_start_gc();
-    const bool mark_or_rebuild_in_progress = collector_state->mark_or_rebuild_in_progress();
+    const bool in_young_only_phase = collector_state->is_in_young_only_phase();
+    const bool in_concurrent_start_gc = collector_state->is_in_concurrent_start_gc();
+    const bool in_concurrent_cycle = collector_state->is_in_concurrent_cycle();
 
     _inject_allocation_failure_for_current_gc &=
       arm_if_needed_for_gc_type(in_young_only_phase,
                                 in_concurrent_start_gc,
-                                mark_or_rebuild_in_progress);
+                                in_concurrent_cycle);
 
     if (_inject_allocation_failure_for_current_gc) {
       select_allocation_failure_regions();

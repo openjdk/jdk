@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     private static final HotSpotResolvedJavaField[] NO_FIELDS = new HotSpotResolvedJavaField[0];
     private static final int METHOD_CACHE_ARRAY_CAPACITY = 8;
-    private static final SortByOffset fieldSortingMethod = new SortByOffset();
 
     /**
      * The {@code Klass*} of this type.
@@ -166,8 +165,17 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     public int getAccessFlags() {
+        if (isArray()) {
+            return 0; // Array Metadata doesn't set access_flags
+        } else {
+            HotSpotVMConfig config = config();
+            return UNSAFE.getInt(getKlassPointer() + config.instanceKlassAccessFlagsOffset);
+        }
+    }
+
+    public int getMiscFlags() {
         HotSpotVMConfig config = config();
-        return UNSAFE.getInt(getKlassPointer() + config.klassAccessFlagsOffset);
+        return UNSAFE.getInt(getKlassPointer() + config.klassMiscFlagsOffset);
     }
 
     @Override
@@ -373,7 +381,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean hasFinalizer() {
-        return (getAccessFlags() & config().jvmAccHasFinalizer) != 0;
+        return (getMiscFlags() & config().jvmAccHasFinalizer) != 0;
     }
 
     @Override
@@ -668,12 +676,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    JavaConstant getJavaMirror() {
+    public JavaConstant getJavaMirror() {
         return mirror;
     }
 
     @Override
-    HotSpotResolvedObjectTypeImpl getArrayType() {
+    protected HotSpotResolvedObjectTypeImpl getArrayType() {
         return runtime().compilerToVm.getArrayType((char) 0, this);
     }
 
@@ -777,12 +785,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
     }
 
-    static class SortByOffset implements Comparator<ResolvedJavaField> {
-        public int compare(ResolvedJavaField a, ResolvedJavaField b) {
-            return a.getOffset() - b.getOffset();
-        }
-    }
-
     @Override
     public ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses) {
         if (instanceFields == null) {
@@ -812,7 +814,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                         result[i++] = f;
                     }
                 }
-                Arrays.sort(result, fieldSortingMethod);
                 return result;
             } else {
                 // The super classes of this class do not have any instance fields.
@@ -871,7 +872,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 result[resultIndex++] = resolvedJavaField;
             }
         }
-        Arrays.sort(result, fieldSortingMethod);
         return result;
     }
 
@@ -1072,6 +1072,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public List<ResolvedJavaMethod> getAllMethods(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
+        return List.of(runtime().compilerToVm.getAllMethods(this));
+    }
+
+    @Override
     public ResolvedJavaMethod getClassInitializer() {
         if (!isArray()) {
             return compilerToVM().getClassInitializer(this);
@@ -1110,21 +1118,25 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean isCloneableWithAllocation() {
-        return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
+        return (getMiscFlags() & config().jvmAccIsCloneableFast) != 0;
     }
 
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
         if (!mayHaveAnnotations(true)) {
+            checkIsAnnotation(annotationType);
             return null;
         }
-        return getAnnotationData0(annotationType).get(0);
+        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
         if (!mayHaveAnnotations(true)) {
-            return Collections.emptyList();
+            checkIsAnnotation(type1);
+            checkIsAnnotation(type2);
+            checkAreAnnotations(types);
+            return List.of();
         }
         return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
     }

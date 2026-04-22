@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
-class SuspendThreadHandshake;
-class ThreadSelfSuspensionHandshake;
-class UnsafeAccessErrorHandshake;
+class UnsafeAccessErrorHandshakeClosure;
 class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
@@ -71,6 +69,7 @@ class Handshake : public AllStatic {
   // This version of execute() relies on a ThreadListHandle somewhere in
   // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  static void execute(HandshakeClosure*       hs_cl, oop vthread);
   // This version of execute() is used when you have a ThreadListHandle in
   // hand and are using it to protect target. If tlh == nullptr, then we
   // sanity check for a ThreadListHandle somewhere in the caller's context
@@ -88,9 +87,7 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend ThreadSelfSuspensionHandshake;
-  friend SuspendThreadHandshake;
-  friend UnsafeAccessErrorHandshake;
+  friend UnsafeAccessErrorHandshakeClosure;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
@@ -98,7 +95,7 @@ class HandshakeState {
   // The queue containing handshake operations to be performed on _handshakee.
   FilterQueue<HandshakeOperation*> _queue;
   // Provides mutual exclusion to this state and queue. Also used for
-  // JavaThread suspend/resume operations.
+  // JavaThread suspend/resume operations performed by SuspendResumeManager.
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* volatile _active_handshaker;
@@ -112,7 +109,7 @@ class HandshakeState {
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
-  void set_active_handshaker(Thread* thread) { Atomic::store(&_active_handshaker, thread); }
+  void set_active_handshaker(Thread* thread) { AtomicAccess::store(&_active_handshaker, thread); }
 
   class MatchOp {
     HandshakeOperation* _op;
@@ -151,7 +148,7 @@ class HandshakeState {
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
+  Thread* active_handshaker() const { return AtomicAccess::load(&_active_handshaker); }
 
   // Support for asynchronous exceptions
  private:
@@ -160,31 +157,5 @@ class HandshakeState {
   bool async_exceptions_blocked() { return _async_exceptions_blocked; }
   void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
   void handle_unsafe_access_error();
-
-  // Suspend/resume support
- private:
-  // This flag is true when the thread owning this
-  // HandshakeState (the _handshakee) is suspended.
-  volatile bool _suspended;
-  // This flag is true while there is async handshake (trap)
-  // on queue. Since we do only need one, we can reuse it if
-  // thread gets suspended again (after a resume)
-  // and we have not yet processed it.
-  bool _async_suspend_handshake;
-
-  // Called from the suspend handshake.
-  bool suspend_with_handshake();
-  // Called from the async handshake (the trap)
-  // to stop a thread from continuing execution when suspended.
-  void do_self_suspend();
-
-  bool is_suspended()                       { return Atomic::load(&_suspended); }
-  void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
-  bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
-  void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
-
-  bool suspend();
-  bool resume();
 };
-
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

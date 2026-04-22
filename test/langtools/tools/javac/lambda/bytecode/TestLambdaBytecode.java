@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@
  * @summary Lambda back-end should generate invokevirtual for method handles referring to
  *          private instance methods as lambda proxy is a nestmate of the target clsas
  * @library /tools/javac/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
@@ -218,7 +216,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
@@ -243,7 +241,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
                 return;
             }
 
-            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");

@@ -27,7 +27,7 @@
  * @summary Regression test for passing float args to a synchronized jni function.
  *
  *
- * @run main/othervm/native compiler.floatingpoint.TestFloatSyncJNIArgs
+ * @run main/othervm/native/timeout=480 compiler.floatingpoint.TestFloatSyncJNIArgs
  */
 
 package compiler.floatingpoint;

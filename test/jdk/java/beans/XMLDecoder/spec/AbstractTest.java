@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,8 @@ abstract class AbstractTest implements ExceptionListener {
 
     /**
      * This is entry point to start testing.
-     *
-     * @param security  use {@code true} to start
-     *                  second pass in secure context
      */
-    final void test(boolean security) {
+    final void test() {
         byte[] array = getFieldValue("XML").getBytes(); // NON-NLS: the field name
         ByteArrayInputStream input = new ByteArrayInputStream(array);
         XMLDecoder decoder = new XMLDecoder(input);
@@ -58,10 +55,6 @@ abstract class AbstractTest implements ExceptionListener {
             // expected exception
         }
         decoder.close();
-        if (security) {
-            System.setSecurityManager(new SecurityManager());
-            test(false);
-        }
     }
 
     private String getFieldValue(String field) {

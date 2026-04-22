@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,30 @@
 #include "utilities/stringUtils.hpp"
 
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
-  flags(POINTER_ANALYSIS,     "Trace VPointer (verbose)") \
-  flags(PRECONDITIONS,        "Trace VLoop::check_preconditions") \
-  flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::setup_submodules") \
-  flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \
-  flags(BODY,                 "Trace VLoopBody") \
-  flags(TYPES,                "Trace VLoopTypes") \
-  flags(POINTERS,             "Trace VLoopPointers") \
-  flags(DEPENDENCY_GRAPH,     "Trace VLoopDependencyGraph") \
-  flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
-  flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
-  flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
-  flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
-  flags(SW_INFO,              "Trace SuperWord info (equivalent to TraceSuperWord)") \
-  flags(SW_VERBOSE,           "Trace SuperWord verbose (all SW tags enabled)") \
-  flags(ALIGN_VECTOR,         "Trace AlignVector") \
-  flags(ALL,                  "Trace everything (very verbose)")
+  flags(POINTER_PARSING,            "Trace VPointer/MemPointer parsing") \
+  flags(POINTER_ALIASING,           "Trace VPointer/MemPointer aliasing") \
+  flags(POINTER_ADJACENCY,          "Trace VPointer/MemPointer adjacency") \
+  flags(POINTER_OVERLAP,            "Trace VPointer/MemPointer overlap") \
+  flags(PRECONDITIONS,              "Trace VLoop::check_preconditions") \
+  flags(LOOP_ANALYZER,              "Trace VLoopAnalyzer::setup_submodules") \
+  flags(MEMORY_SLICES,              "Trace VLoopMemorySlices") \
+  flags(BODY,                       "Trace VLoopBody") \
+  flags(TYPES,                      "Trace VLoopTypes") \
+  flags(POINTERS,                   "Trace VLoopVPointers") \
+  flags(DEPENDENCY_GRAPH,           "Trace VLoopDependencyGraph") \
+  flags(SW_ADJACENT_MEMOPS,         "Trace SuperWord::find_adjacent_memop_pairs") \
+  flags(SW_REJECTIONS,              "Trace SuperWord rejections (non vectorizations)") \
+  flags(SW_PACKSET,                 "Trace SuperWord packset at different stages") \
+  flags(SW_INFO,                    "Trace SuperWord info (equivalent to TraceSuperWord)") \
+  flags(SW_VERBOSE,                 "Trace SuperWord verbose (all SW tags enabled)") \
+  flags(VTRANSFORM,                 "Trace VTransform Graph") \
+  flags(OPTIMIZATION,               "Trace VTransform::optimize") \
+  flags(COST,                       "Trace cost of VLoop (scalar) and VTransform (vector)") \
+  flags(COST_VERBOSE,               "Trace like COST, but more verbose") \
+  flags(ALIGN_VECTOR,               "Trace AlignVector") \
+  flags(SPECULATIVE_ALIASING_ANALYSIS, "Trace Speculative Aliasing Analysis") \
+  flags(SPECULATIVE_RUNTIME_CHECKS, "Trace VTransform::apply_speculative_runtime_checks") \
+  flags(ALL,                        "Trace everything (very verbose)")
 
 #define table_entry(name, description) name,
 enum TraceAutoVectorizationTag {
@@ -115,7 +123,6 @@ class TraceAutoVectorizationTagValidator {
       } else if (ALL == tag) {
         _tags.set_range(0, TRACE_AUTO_VECTORIZATION_TAG_NUM);
       } else if (SW_VERBOSE == tag) {
-        _tags.at_put(SW_ALIGNMENT, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
         _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
@@ -135,7 +142,7 @@ class TraceAutoVectorizationTagValidator {
 
   ~TraceAutoVectorizationTagValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/stubs.hpp"
@@ -177,14 +176,14 @@ void StubQueue::commit(int committed_code_size) {
   _queue_end += committed_size;
   _number_of_stubs++;
   if (_mutex != nullptr) _mutex->unlock();
-  debug_only(stub_verify(s);)
+  DEBUG_ONLY(stub_verify(s);)
 }
 
 
 void StubQueue::remove_first() {
   if (number_of_stubs() == 0) return;
   Stub* s = first();
-  debug_only(stub_verify(s);)
+  DEBUG_ONLY(stub_verify(s);)
   stub_finalize(s);
   _queue_begin += stub_size(s);
   assert(_queue_begin <= _buffer_limit, "sanity check");
@@ -211,7 +210,7 @@ void StubQueue::remove_first(int n) {
 
 
 void StubQueue::remove_all(){
-  debug_only(verify();)
+  DEBUG_ONLY(verify();)
   remove_first(number_of_stubs());
   assert(number_of_stubs() == 0, "sanity check");
 }

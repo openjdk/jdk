@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+
+#include "cds/aotCompressedPointers.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -32,12 +34,14 @@
 class ClassFileStream;
 template <class T>
 class Array;
+class SerializeClosure;
 
 class LambdaFormInvokers : public AllStatic {
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
  private:
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   // For storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<Array<char>*>* _static_archive_invokers;
+  static Array<narrowPtr>* _static_archive_invokers;
   static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
  public:
   static void append(char* line);
@@ -46,5 +50,6 @@ class LambdaFormInvokers : public AllStatic {
   static void regenerate_holder_classes(TRAPS);
   static void serialize(SerializeClosure* soc);
   static void cleanup_regenerated_classes();
+  inline static bool may_be_regenerated_class(Symbol* name);
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

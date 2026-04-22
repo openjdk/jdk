@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
  *
  * @run clean StartStopTest
  * @run build StartStopTest
+ *
  * @run main/othervm/timeout=300 StartStopTest 1
  * @run main/othervm/timeout=300 StartStopTest 2
  * @run main/othervm/timeout=300 StartStopTest 3
+ *
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 1
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 2
  * @run main/othervm/timeout=300 -Djmx.x.monitor.maximum.pool.size=5 StartStopTest 3
@@ -60,6 +62,8 @@ import jdk.test.lib.Utils;
 public class StartStopTest {
     static int maxPoolSize;
     static final AtomicInteger counter = new AtomicInteger();
+
+    public static final int TIMEOUT = 2500;
 
     // MBean class
     public class ObservedObject implements ObservedObjectMBean {
@@ -146,7 +150,7 @@ public class StartStopTest {
                 for (int i = 0; i < nTasks; i++)
                     monitor[i].start();
                 echo(">>> MONITORS started");
-                doSleep(500);
+                doSleep(TIMEOUT);
                 echo(">>> Check FLAGS true");
                 for (int i = 0; i < nTasks; i++)
                     if (!monitored[i].called) {
@@ -158,7 +162,7 @@ public class StartStopTest {
                 for (int i = 0; i < nTasks; i++)
                     monitor[i].stop();
                 echo(">>> MONITORS stopped");
-                doSleep(500);
+                doSleep(TIMEOUT);
                 echo(">>> Set FLAGS to false");
                 for (int i = 0; i < nTasks; i++)
                     monitored[i].called = false;

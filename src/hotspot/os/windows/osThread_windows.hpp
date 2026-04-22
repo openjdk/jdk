@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,29 @@
 #ifndef OS_WINDOWS_OSTHREAD_WINDOWS_HPP
 #define OS_WINDOWS_OSTHREAD_WINDOWS_HPP
 
-  typedef void* HANDLE;
- public:
-  typedef unsigned long thread_id_t;
+#include "runtime/osThreadBase.hpp"
+#include "utilities/globalDefinitions.hpp"
 
- private:
+class OSThread : public OSThreadBase {
+  friend class VMStructs;
+
+  typedef unsigned long thread_id_t;
+  typedef void* HANDLE;
+
+  thread_id_t _thread_id;
+
   // Win32-specific thread information
   HANDLE _thread_handle;        // Win32 thread handle
   HANDLE _interrupt_event;      // Event signalled on thread interrupt for use by
                                 // Process.waitFor().
 
  public:
+  OSThread();
+  ~OSThread();
+
+  thread_id_t thread_id() const                    { return _thread_id; }
+  void set_thread_id(thread_id_t id)               { _thread_id = id; }
+
   // The following will only apply in the Win32 implementation, and should only
   // be visible in the concrete class, not this which should be an abstract base class
   HANDLE thread_handle() const                     { return _thread_handle; }
@@ -45,13 +57,9 @@
   // This is specialized on Windows to interact with the _interrupt_event.
   void set_interrupted(bool z);
 
-#ifndef PRODUCT
-  // Used for debugging, return a unique integer for each thread.
-  int thread_identifier() const                    { return _thread_id; }
-#endif
-
- private:
-  void pd_initialize();
-  void pd_destroy();
+  uintx thread_id_for_printing() const override {
+    return (uintx)_thread_id;
+  }
+};
 
 #endif // OS_WINDOWS_OSTHREAD_WINDOWS_HPP

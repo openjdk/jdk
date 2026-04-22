@@ -23,14 +23,18 @@
 
 /*
  * @test
- * @bug 4018937 8008577 8174269
+ * @bug 4018937 8008577 8174269 8333755
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
  * @run junit/othervm BigDecimalParse
  */
 
 import java.math.BigDecimal;
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.Format;
+import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
@@ -543,23 +547,23 @@ public class BigDecimalParse {
     static final int[][] parsePosition2 = {     // {errorIndex, index}
         /*
          * Should keep in mind that the expected result is different from
-         * DecimalFormat.parse() for some cases.
+         * DecimalFormat.parse() for some cases. This is because parsing integer
+         * only will return a successful parse for the subformat, but since the index
+         * returned is not equal to the length, at the MessageFormat level, this
+         * will be interpreted as a failed parse, and so the DecimalFormat index
+         * should be reflected as the MessageFormat errorIndex.
          */
         {28, 0},        // parsing stopped at '.'
         {29, 0},        // parsing stopped at '.'
         {29, 0},        // parsing stopped at '.'
-        {2, 0},         // parsing stopped at '(' because cannot find ')'
-        {2, 0},         // parsing stopped at the first numeric
-                        // because cannot find '%'
-        {2, 0},         // parsing stopped at the first numeric
-                        // because cannot find '%'
+        {30, 0},        // parsing stopped at '.'
+        {31, 0},        // parsing stopped at '.'
+        {32, 0},        // parsing stopped at '.'
         {28, 0},        // parsing stopped at '.'
         {29, 0},        // parsing stopped at '.'
-
         {-1, 57}, {-1, 58}, {-1, 59}, {-1, 61},
         {56, 0},        // parsing stopped at '.'
-                        // because cannot find '%'
-        {2, 0},         // parsing stopped at '(' because cannot find ')'
+        {57, 0},        // parsing stopped at '.'
         {-1, 60}, {-1, 61},
         {28, 0},        // parsing stopped at '.'
         {-1, 88},

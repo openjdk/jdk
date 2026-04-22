@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,8 @@ public final class Spliterators {
      */
     @SuppressWarnings("unchecked")
     public static <T> Spliterator<T> emptySpliterator() {
-        return (Spliterator<T>) EMPTY_SPLITERATOR;
+        return (Spliterator<T>) EmptySpliterator.OfRef.EMPTY_SPLITERATOR;
     }
-
-    private static final Spliterator<Object> EMPTY_SPLITERATOR =
-            new EmptySpliterator.OfRef<>();
 
     /**
      * Creates an empty {@code Spliterator.OfInt}
@@ -73,11 +70,8 @@ public final class Spliterators {
      * @return An empty spliterator
      */
     public static Spliterator.OfInt emptyIntSpliterator() {
-        return EMPTY_INT_SPLITERATOR;
+        return EmptySpliterator.OfInt.EMPTY_INT_SPLITERATOR;
     }
-
-    private static final Spliterator.OfInt EMPTY_INT_SPLITERATOR =
-            new EmptySpliterator.OfInt();
 
     /**
      * Creates an empty {@code Spliterator.OfLong}
@@ -89,11 +83,8 @@ public final class Spliterators {
      * @return An empty spliterator
      */
     public static Spliterator.OfLong emptyLongSpliterator() {
-        return EMPTY_LONG_SPLITERATOR;
+        return EmptySpliterator.OfLong.EMPTY_LONG_SPLITERATOR;
     }
-
-    private static final Spliterator.OfLong EMPTY_LONG_SPLITERATOR =
-            new EmptySpliterator.OfLong();
 
     /**
      * Creates an empty {@code Spliterator.OfDouble}
@@ -105,11 +96,8 @@ public final class Spliterators {
      * @return An empty spliterator
      */
     public static Spliterator.OfDouble emptyDoubleSpliterator() {
-        return EMPTY_DOUBLE_SPLITERATOR;
+        return EmptySpliterator.OfDouble.EMPTY_DOUBLE_SPLITERATOR;
     }
-
-    private static final Spliterator.OfDouble EMPTY_DOUBLE_SPLITERATOR =
-            new EmptySpliterator.OfDouble();
 
     // Array-based spliterators
 
@@ -905,28 +893,40 @@ public final class Spliterators {
         private static final class OfRef<T>
                 extends EmptySpliterator<T, Spliterator<T>, Consumer<? super T>>
                 implements Spliterator<T> {
-            OfRef() { }
+            static final Spliterator<Object> EMPTY_SPLITERATOR =
+                    new EmptySpliterator.OfRef<>();
+
+            private OfRef() { }
         }
 
         @SuppressWarnings("overloads")
         private static final class OfInt
                 extends EmptySpliterator<Integer, Spliterator.OfInt, IntConsumer>
                 implements Spliterator.OfInt {
-            OfInt() { }
+            static final Spliterator.OfInt EMPTY_INT_SPLITERATOR =
+                    new EmptySpliterator.OfInt();
+
+            private OfInt() { }
         }
 
         @SuppressWarnings("overloads")
         private static final class OfLong
                 extends EmptySpliterator<Long, Spliterator.OfLong, LongConsumer>
                 implements Spliterator.OfLong {
-            OfLong() { }
+            static final Spliterator.OfLong EMPTY_LONG_SPLITERATOR =
+                    new EmptySpliterator.OfLong();
+
+            private OfLong() { }
         }
 
         @SuppressWarnings("overloads")
         private static final class OfDouble
                 extends EmptySpliterator<Double, Spliterator.OfDouble, DoubleConsumer>
                 implements Spliterator.OfDouble {
-            OfDouble() { }
+            static final Spliterator.OfDouble EMPTY_DOUBLE_SPLITERATOR =
+                    new EmptySpliterator.OfDouble();
+
+            private OfDouble() { }
         }
     }
 

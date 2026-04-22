@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -165,10 +165,6 @@ header extends java/lang/Object implements java/io/Serializable,java/lang/Compar
 innerclass innerClass java/lang/Character$UnicodeScript outerClass java/lang/Character innerClassName UnicodeScript flags 4019
 innerclass innerClass java/lang/Character$UnicodeBlock outerClass java/lang/Character innerClassName UnicodeBlock flags 19
 innerclass innerClass java/lang/Character$Subset outerClass java/lang/Character innerClassName Subset flags 9
-field name DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE descriptor B constantValue 19 flags 19
-field name DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE descriptor B constantValue 20 flags 19
-field name DIRECTIONALITY_FIRST_STRONG_ISOLATE descriptor B constantValue 21 flags 19
-field name DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE descriptor B constantValue 22 flags 19
 -method name <init> descriptor (C)V
 -method name valueOf descriptor (C)Ljava/lang/Character;
 -method name charValue descriptor ()C
@@ -176,6 +172,10 @@ field name DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE descriptor B constantValue 22 
 -method name isJavaLetterOrDigit descriptor (C)Z
 -method name isSpace descriptor (C)Z
 -method name reverseBytes descriptor (C)C
+field name DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE descriptor B constantValue 19 flags 19
+field name DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE descriptor B constantValue 20 flags 19
+field name DIRECTIONALITY_FIRST_STRONG_ISOLATE descriptor B constantValue 21 flags 19
+field name DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE descriptor B constantValue 22 flags 19
 method name <init> descriptor (C)V flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 method name valueOf descriptor (C)Ljava/lang/Character; flags 9 runtimeAnnotations @Ljdk/internal/HotSpotIntrinsicCandidate;
 method name charValue descriptor ()C flags 1 runtimeAnnotations @Ljdk/internal/HotSpotIntrinsicCandidate;
@@ -229,7 +229,6 @@ field name EARLY_DYNASTIC_CUNEIFORM descriptor Ljava/lang/Character$UnicodeBlock
 field name ANATOLIAN_HIEROGLYPHS descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 field name SUTTON_SIGNWRITING descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 field name SUPPLEMENTAL_SYMBOLS_AND_PICTOGRAPHS descriptor Ljava/lang/Character$UnicodeBlock; flags 19
-field name CJK_UNIFIED_IDEOGRAPHS_EXTENSION_E descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 
 class name java/lang/Character$UnicodeScript
 field name CAUCASIAN_ALBANIAN descriptor Ljava/lang/Character$UnicodeScript; flags 4019
@@ -711,7 +710,6 @@ innerclass innerClass java/lang/module/ModuleDescriptor$Opens outerClass java/la
 innerclass innerClass java/lang/module/ModuleDescriptor$Exports outerClass java/lang/module/ModuleDescriptor innerClassName Exports flags 19
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -field name inCheck descriptor Z
-field name inCheck descriptor Z flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 -method name getInCheck descriptor ()Z
 -method name getClassContext descriptor ()[Ljava/lang/Class;
 -method name currentClassLoader descriptor ()Ljava/lang/ClassLoader;
@@ -725,6 +723,7 @@ field name inCheck descriptor Z flags 4 deprecated true runtimeAnnotations @Ljav
 -method name checkSystemClipboardAccess descriptor ()V
 -method name checkAwtEventQueueAccess descriptor ()V
 -method name checkMemberAccess descriptor (Ljava/lang/Class;I)V
+field name inCheck descriptor Z flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 method name getInCheck descriptor ()Z flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 method name getClassContext descriptor ()[Ljava/lang/Class; flags 104 signature ()[Ljava/lang/Class<*>;
 method name currentClassLoader descriptor ()Ljava/lang/ClassLoader; flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
@@ -1404,6 +1403,7 @@ method name clean descriptor ()V flags 401
 
 class name java/lang/ref/Reference
 -method name get descriptor ()Ljava/lang/Object;
+-method name clone descriptor ()Ljava/lang/Object;
 method name get descriptor ()Ljava/lang/Object; flags 1 signature ()TT; runtimeAnnotations @Ljdk/internal/HotSpotIntrinsicCandidate;
 method name reachabilityFence descriptor (Ljava/lang/Object;)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/DontInline;
 
@@ -1515,6 +1515,9 @@ class name java/math/BigDecimal
 -field name ROUND_HALF_DOWN descriptor I
 -field name ROUND_HALF_EVEN descriptor I
 -field name ROUND_UNNECESSARY descriptor I
+-method name divide descriptor (Ljava/math/BigDecimal;II)Ljava/math/BigDecimal;
+-method name divide descriptor (Ljava/math/BigDecimal;I)Ljava/math/BigDecimal;
+-method name setScale descriptor (II)Ljava/math/BigDecimal;
 field name ROUND_UP descriptor I constantValue 0 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name ROUND_DOWN descriptor I constantValue 1 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name ROUND_CEILING descriptor I constantValue 2 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
@@ -1523,9 +1526,6 @@ field name ROUND_HALF_UP descriptor I constantValue 4 flags 19 deprecated true r
 field name ROUND_HALF_DOWN descriptor I constantValue 5 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name ROUND_HALF_EVEN descriptor I constantValue 6 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name ROUND_UNNECESSARY descriptor I constantValue 7 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
--method name divide descriptor (Ljava/math/BigDecimal;II)Ljava/math/BigDecimal;
--method name divide descriptor (Ljava/math/BigDecimal;I)Ljava/math/BigDecimal;
--method name setScale descriptor (II)Ljava/math/BigDecimal;
 method name divide descriptor (Ljava/math/BigDecimal;II)Ljava/math/BigDecimal; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 method name divide descriptor (Ljava/math/BigDecimal;I)Ljava/math/BigDecimal; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 method name sqrt descriptor (Ljava/math/MathContext;)Ljava/math/BigDecimal; flags 1
@@ -2189,8 +2189,8 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/time/LocalDate
 header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/time/chrono/ChronoLocalDate,java/io/Serializable flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-field name EPOCH descriptor Ljava/time/LocalDate; flags 19
 -method name getEra descriptor ()Ljava/time/chrono/Era;
+field name EPOCH descriptor Ljava/time/LocalDate; flags 19
 method name ofInstant descriptor (Ljava/time/Instant;Ljava/time/ZoneId;)Ljava/time/LocalDate; flags 9
 method name getEra descriptor ()Ljava/time/chrono/IsoEra; flags 1
 method name datesUntil descriptor (Ljava/time/LocalDate;)Ljava/util/stream/Stream; flags 1 signature (Ljava/time/LocalDate;)Ljava/util/stream/Stream<Ljava/time/LocalDate;>;

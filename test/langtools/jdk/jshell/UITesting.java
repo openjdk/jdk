@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -51,6 +52,11 @@ public class UITesting {
     protected static final String REDRAW_PROMPT = "\n\r?" + PROMPT;
     protected static final String UP = "\033[A";
     protected static final String DOWN = "\033[B";
+    protected static final String CTRL_D = "\u0004";
+    protected static final String ESC_DEL = "\u001B\u007F"; // ESC + DEL (common Alt+Backspace)
+    protected static final String ESC_B = "\u001Bb"; // ESC + b (common Alt+b)
+    protected static final String ESC_F = "\u001Bf"; // ESC + f (common Alt+f)
+    protected static final String ESC_D = "\u001Bd"; // ESC + d (common Alt+d)
     private final boolean laxLineEndings;
 
     public UITesting() {
@@ -61,7 +67,11 @@ public class UITesting {
         this.laxLineEndings = laxLineEndings;
     }
 
-    protected void doRunTest(Test test) throws Exception {
+    protected void doRunTest(UITest test) throws Exception {
+        doRunTest(test, true);
+    }
+
+    protected void doRunTest(UITest test, boolean setUserInput) throws Exception {
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
 
@@ -87,7 +97,7 @@ public class UITesting {
         Thread runner = new Thread(() -> {
             try {
                 JavaShellToolBuilder.builder()
-                        .in(input, input)
+                        .in(input, setUserInput ? input : null)
                         .out(outS)
                         .err(outS)
                         .promptCapture(true)
@@ -101,10 +111,18 @@ public class UITesting {
         });
 
         Writer inputSink = new OutputStreamWriter(input.createOutput(), StandardCharsets.UTF_8) {
+            boolean closed = false;
             @Override
             public void write(String str) throws IOException {
+                if (closed) return; // prevents exception thrown due to closed writer
                 super.write(str);
                 flush();
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                closed = true;
             }
         };
 
@@ -127,22 +145,11 @@ public class UITesting {
         }
     }
 
-    protected interface Test {
+    protected interface UITest {
         public void test(Writer inputSink, StringBuilder out) throws Exception;
     }
 
-    private static final long TIMEOUT;
-
-    static {
-        long factor;
-
-        try {
-            factor = (long) Double.parseDouble(System.getProperty("test.timeout.factor", "1"));
-        } catch (NumberFormatException ex) {
-            factor = 1;
-        }
-        TIMEOUT = 60_000 * factor;
-    }
+    private static final long TIMEOUT = (long) (60_000 * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0")));
 
     protected void waitOutput(StringBuilder out, String expected) {
         waitOutput(out, expected, null);

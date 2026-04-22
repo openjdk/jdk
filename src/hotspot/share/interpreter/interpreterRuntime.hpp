@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,15 +91,28 @@ class InterpreterRuntime: AllStatic {
   static void    throw_pending_exception(JavaThread* current);
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);
- private:
+
+  // Used by AOTConstantPoolResolver
+  static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
+                              methodHandle& m, constantPoolHandle& pool, ClassInitMode init_mode, TRAPS);
+  static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
+                                 constantPoolHandle& pool, TRAPS);
+  static void cds_resolve_invokehandle(int raw_index,
+                                       constantPoolHandle& pool, TRAPS);
+  static void cds_resolve_invokedynamic(int raw_index,
+                                        constantPoolHandle& pool, TRAPS);
+private:
   // Statics & fields
-  static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);
+  static void resolve_get_put(Bytecodes::Code bytecode, TRAPS);
 
   // Calls
-  static void resolve_invoke(JavaThread* current, Bytecodes::Code bytecode);
-  static void resolve_invokehandle (JavaThread* current);
-  static void resolve_invokedynamic(JavaThread* current);
+  static void resolve_invoke(Bytecodes::Code bytecode, TRAPS);
+  static void resolve_invokehandle (TRAPS);
+  static void resolve_invokedynamic(TRAPS);
 
+  static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                           methodHandle& resolved_method,
+                                           constantPoolHandle& pool, int method_index);
  public:
   // Synchronization
   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);
@@ -133,8 +146,8 @@ class InterpreterRuntime: AllStatic {
                                         Method* method,
                                         intptr_t* from, intptr_t* to);
 
-#if defined(IA32) || defined(AMD64) || defined(ARM)
-  // Popframe support (only needed on x86, AMD64 and ARM)
+#if defined(AMD64) || defined(ARM)
+  // Popframe support (only needed on AMD64 and ARM)
   static void popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address);
 #endif
 
@@ -157,6 +170,11 @@ class InterpreterRuntime: AllStatic {
   static void    verify_mdp(Method* method, address bcp, address mdp);
 #endif // ASSERT
   static MethodCounters* build_method_counters(JavaThread* current, Method* m);
+
+  // Virtual Thread Preemption
+  DEBUG_ONLY(static bool is_preemptable_call(address entry_point);)
+
+  DEBUG_ONLY(static void generate_oop_map_alot();)
 };
 
 
@@ -179,7 +197,6 @@ class SignatureHandlerLibrary: public AllStatic {
 
  public:
   static void add(const methodHandle& method);
-  static void add(uint64_t fingerprint, address handler);
 };
 
 #endif // SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP

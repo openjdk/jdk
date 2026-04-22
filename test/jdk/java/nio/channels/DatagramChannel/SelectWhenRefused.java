@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class SelectWhenRefused {
-    static final int MAX_TRIES = 3;
-    static final String GREETINGS_MESSAGE = "Greetings from SelectWhenRefused!";
+    static final int MAX_TRIES = 10;
+    static final String GREETINGS_MESSAGE = System.nanoTime() + ": Greetings from SelectWhenRefused!";
 
     @Test
     public void test() throws IOException {
@@ -49,9 +49,39 @@ public class SelectWhenRefused {
 
         // datagram sent to this address should be refused
         SocketAddress refuser = new InetSocketAddress(InetAddress.getLocalHost(), port);
+        System.err.println("Refuser is: " + refuser);
 
-        DatagramChannel dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+        DatagramChannel dc = null;
+        for (int i=0; i < MAX_TRIES; i++) {
+            dc = DatagramChannel.open();
+            try {
+                dc.bind(new InetSocketAddress(0));
+            } catch (Throwable t) {
+                dc.close();
+                throw t;
+            }
+
+            // check the port assigned to dc
+            if (((InetSocketAddress)dc.getLocalAddress()).getPort() != port) {
+                // We got a good port. Do not retry
+                break;
+            }
+
+            // We bound to the same port that the refuser is using, This will not
+            // work. Retry binding if possible.
+            if (i < MAX_TRIES - 1) {
+                // we will retry...
+                System.err.format("Refuser port has been reused by dc: %s, retrying...%n",
+                        dc.getLocalAddress());
+            } else {
+                // that was the last attempt... Skip the test
+                System.err.format("Skipping test: refuser port has been reused by dc: %s%n",
+                        dc.getLocalAddress());
+                return;
+            }
+        }
         dc1.close();
+        assert dc != null;
 
         Selector sel = Selector.open();
         try {
@@ -88,7 +118,7 @@ public class SelectWhenRefused {
             }
         } catch (BindException e) {
             // Do nothing, some other test has used this port
-            System.out.println("Skipping test: refuser port has been reused: " + e);
+            System.err.println("Skipping test: refuser port has been reused: " + e);
         } finally {
             sel.close();
             dc.close();
@@ -119,7 +149,9 @@ public class SelectWhenRefused {
 
             // BindException will be thrown if another service is using
             // our expected refuser port, cannot run just exit.
-            DatagramChannel.open().bind(refuser).close();
+            try (DatagramChannel dc2 = DatagramChannel.open()) {
+                dc2.bind(refuser);
+            }
             throw new RuntimeException("Unexpected wakeup");
         }
         return true; // test passed
@@ -151,7 +183,7 @@ public class SelectWhenRefused {
                     byte[] bytes = new byte[buf.remaining()];
                     buf.get(bytes);
                     String message = new String(bytes);
-                    System.out.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
+                    System.err.format("received %s at %s from %s%n", message, dc.getLocalAddress(), sa);
 
                     // If any received data contains the message from sendDatagram then throw exception
                     if (message.contains(GREETINGS_MESSAGE)) {
@@ -166,10 +198,12 @@ public class SelectWhenRefused {
 
                 // BindException will be thrown if another service is using
                 // our expected refuser port, cannot run just exit.
-                DatagramChannel.open().bind(refuser).close();
+                try (DatagramChannel dc2 = DatagramChannel.open()) {
+                    dc2.bind(refuser);
+                }
                 throw new RuntimeException("PortUnreachableException not raised");
             } catch (PortUnreachableException pue) {
-                System.out.println("Got expected PortUnreachableException " + pue);
+                System.err.println("Got expected PortUnreachableException " + pue);
             }
         }
         return true; // test passed
@@ -215,16 +249,16 @@ public class SelectWhenRefused {
      *
      */
     static boolean checkUnexpectedWakeup(Set<SelectionKey> selectedKeys) {
-        System.out.format("Received %d keys%n", selectedKeys.size());
+        System.err.format("Received %d keys%n", selectedKeys.size());
 
         for (SelectionKey key : selectedKeys) {
             if (!key.isValid() || !key.isReadable()) {
-                System.out.println("Invalid or unreadable key: " + key);
+                System.err.println("Invalid or unreadable key: " + key);
                 continue;
             }
 
             try {
-                System.out.println("Attempting to read datagram from key: " + key);
+                System.err.println("Attempting to read datagram from key: " + key);
                 DatagramChannel datagramChannel = (DatagramChannel) key.channel();
                 ByteBuffer buf = ByteBuffer.allocate(100);
                 SocketAddress sa = datagramChannel.receive(buf);
@@ -234,7 +268,7 @@ public class SelectWhenRefused {
                     byte[] bytes = new byte[buf.remaining()];
                     buf.get(bytes);
                     String message = new String(bytes);
-                    System.out.format("received %s at %s from %s%n", message, datagramChannel.getLocalAddress(), sa);
+                    System.err.format("received %s at %s from %s%n", message, datagramChannel.getLocalAddress(), sa);
 
                     // If any received data contains the message from sendDatagram then return false
                     if (message.contains(GREETINGS_MESSAGE)) {
@@ -243,7 +277,7 @@ public class SelectWhenRefused {
                 }
 
             } catch (IOException io) {
-                System.out.println("Unable to read from datagram " + io);
+                System.err.println("Unable to read from datagram " + io);
             }
         }
         return true;

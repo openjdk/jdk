@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.lang.annotation.Native;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -34,26 +33,26 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
+import sun.nio.cs.UTF_8;
 
 /**
  * Methods to access the character-based console device, if any, associated
  * with the current Java virtual machine.
  *
- * <p> Whether a virtual machine has a console is dependent upon the
+ * <p> Whether a virtual machine's console exists is dependent upon the
  * underlying platform and also upon the manner in which the virtual
  * machine is invoked.  If the virtual machine is started from an
  * interactive command line without redirecting the standard input and
- * output streams then its console will exist and will typically be
+ * output streams, then its console will generally exist and will be
  * connected to the keyboard and display from which the virtual machine
- * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it may not
- * have a console.
+ * was launched. If the standard input or standard output have been
+ * redirected (for example, to a file or to a pipe), or if the virtual
+ * machine was started from a background job scheduler, the console
+ * will not exist.
  * <p>
- * If this virtual machine has a console then it is represented by a
- * unique instance of this class which can be obtained by invoking the
- * {@link java.lang.System#console()} method.  If no console device is
- * available then an invocation of that method will return {@code null}.
+ * If the console exists, then it is represented by a unique instance of this
+ * class which can be obtained by invoking the {@link System#console()} method.
+ * If the console does not exist, that method will return {@code null}.
  * <p>
  * Read and write operations are synchronized to guarantee the atomic
  * completion of critical operations; therefore invoking methods
@@ -61,6 +60,13 @@ import sun.security.action.GetPropertyAction;
  * {@link #printf printf()} as well as the read, format and write operations
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
+ * <p>
+ * Read and write operations use the {@code Charset}s specified by
+ * {@link System##stdin.encoding stdin.encoding} and {@link
+ * System##stdout.encoding stdout.encoding}, respectively. The
+ * {@code Charset} used for write operations can also be retrieved using
+ * the {@link #charset()} method. Since {@code Console} is intended for
+ * interactive use on a terminal, these charsets are typically the same.
  * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
@@ -512,16 +518,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used for
-     * the {@code Console}.
+     * {@return the {@link java.nio.charset.Charset Charset} object used for
+     * the write operations on this {@code Console}}
      * <p>
-     * The returned charset corresponds to the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user.
-     * It may not necessarily be the same as the default charset returned from
+     * The returned charset is used for encoding the data that is sent to
+     * the output (e.g., display), specified by the host environment or user.
+     * It defaults to the one based on {@link System##stdout.encoding stdout.encoding},
+     * and may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used for the
-     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
@@ -531,18 +536,14 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * {@return {@code true} if the {@code Console} instance is a terminal}
      * <p>
-     * This method returns {@code true} if the console device, associated with the current
-     * Java virtual machine, is a terminal, typically an interactive command line
-     * connected to a keyboard and display.
-     *
-     * @implNote The default implementation returns the value equivalent to calling
-     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
-     * descriptors are character devices or not on Windows.
+     * This method always returns {@code true}, since {@link System#console()}
+     * provides a {@code Console} instance only when both standard input and
+     * output are unredirected, that is, when running in an interactive terminal.
      *
      * @since 22
      */
     public boolean isTerminal() {
-        return istty;
+        return true;
     }
 
     private static UnsupportedOperationException newUnsupportedOperationException() {
@@ -550,76 +551,73 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    private static native String encoding();
-    private static final boolean istty = istty();
-    static final Charset CHARSET;
+    @Native static final int TTY_STDIN_MASK = 0x00000001;
+    @Native static final int TTY_STDOUT_MASK = 0x00000002;
+    @Native static final int TTY_STDERR_MASK = 0x00000004;
+    // ttyStatus() returns bit patterns above, a bit is set if the corresponding file
+    // descriptor is a character device
+    private static final int ttyStatus = ttyStatus();
+    private static final Charset STDIN_CHARSET =
+        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
+    private static final Charset STDOUT_CHARSET =
+        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE);
+    private static final Console cons = instantiateConsole();
     static {
-        Charset cs = null;
-
-        if (istty) {
-            String csname = encoding();
-            if (csname == null) {
-                csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
-            }
-            if (csname != null) {
-                cs = Charset.forName(csname, null);
-            }
-        }
-        if (cs == null) {
-            cs = Charset.forName(StaticProperty.nativeEncoding(),
-                    Charset.defaultCharset());
-        }
-
-        CHARSET = cs;
-
-        cons = instantiateConsole(istty);
-
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
                 return cons;
             }
+            public boolean isStdinTty() {
+                return Console.isStdinTty();
+            }
         });
     }
 
-    @SuppressWarnings("removal")
-    private static Console instantiateConsole(boolean istty) {
-        Console c;
+    private static Console instantiateConsole() {
+        Console c = null;
 
         try {
             /*
              * The JdkConsole provider used for Console instantiation can be specified
              * with the system property "jdk.console", whose value designates the module
              * name of the implementation, and which defaults to the value of
-             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If no
-             * providers are available, or instantiation failed, java.base built-in
+             * {@code JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME}. If multiple
+             * provider implementations exist in that module, the first one found is used.
+             * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            PrivilegedAction<Console> pa = () -> {
-                var consModName = System.getProperty("jdk.console",
-                        JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
-                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                        .map(jcp -> jcp.console(istty, CHARSET))
-                        .filter(Objects::nonNull)
-                        .findAny()
-                        .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(null);
-            };
-            c = AccessController.doPrivileged(pa);
-        } catch (ServiceConfigurationError ignore) {
-            c = null;
+            var consModName = System.getProperty("jdk.console",
+                    JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+
+            for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                if (consModName.equals(jcp.getClass().getModule().getName())) {
+                    var jc = jcp.console(isStdinTty() && isStdoutTty(), STDIN_CHARSET, STDOUT_CHARSET);
+                    if (jc != null) {
+                        c = new ProxyingConsole(jc);
+                    }
+                    break;
+                }
+            }
+        } catch (ServiceConfigurationError _) {
         }
 
         // If not found, default to built-in Console
-        if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+        if (isStdinTty() && isStdoutTty() && c == null) {
+            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;
     }
 
-    private static final Console cons;
-    private static native boolean istty();
+    private static boolean isStdinTty() {
+        return (ttyStatus & TTY_STDIN_MASK) != 0;
+    }
+    private static boolean isStdoutTty() {
+        return (ttyStatus & TTY_STDOUT_MASK) != 0;
+    }
+    private static boolean isStderrTty() {
+        return (ttyStatus & TTY_STDERR_MASK) != 0;
+    }
+    private static native int ttyStatus();
 }

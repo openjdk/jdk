@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
 #include "utilities/macros.hpp"
 
 // Helper class to define a range [start, end) of regions.
-class HeapRegionRange : public StackObj {
+class G1HeapRegionRange : public StackObj {
   // Inclusive start of the range.
   uint _start;
   // Exclusive end of the range.
   uint _end;
  public:
-  HeapRegionRange(uint start, uint end);
+  G1HeapRegionRange(uint start, uint end);
 
   uint start() const { return _start; }
   uint end() const { return _end; }
@@ -101,13 +101,13 @@ public:
   void uncommit(uint start, uint end);
 
   // Finds the next range of active regions starting at offset.
-  HeapRegionRange next_active_range(uint offset) const;
+  G1HeapRegionRange next_active_range(uint offset) const;
   // Finds the next range of inactive regions starting at offset.
-  HeapRegionRange next_inactive_range(uint offset) const;
+  G1HeapRegionRange next_inactive_range(uint offset) const;
   // Finds the next range of committable regions starting at offset.
   // This function must only be called when no inactive regions are
   // present and can be used to activate more regions.
-  HeapRegionRange next_committable_range(uint offset) const;
+  G1HeapRegionRange next_committable_range(uint offset) const;
 
 protected:
   virtual void guarantee_mt_safety_active() const;

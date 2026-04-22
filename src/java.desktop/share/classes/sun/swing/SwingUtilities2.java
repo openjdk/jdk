@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -61,8 +62,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -94,8 +93,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.font.FontDesignMetrics;
 import sun.font.FontUtilities;
@@ -123,15 +120,6 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  *
  */
 public class SwingUtilities2 {
-    /**
-     * The {@code AppContext} key for our one {@code LAFState}
-     * instance.
-     */
-    public static final Object LAF_STATE_KEY =
-            new StringBuffer("LookAndFeel State");
-
-    public static final Object MENU_SELECTION_MANAGER_LISTENER_KEY =
-            new StringBuffer("MenuSelectionManager listener key");
 
     // Maintain a cache of CACHE_SIZE fonts and the left side bearing
      // of the characters falling into the range MIN_CHAR_INDEX to
@@ -190,10 +178,6 @@ public class SwingUtilities2 {
     /** Client Property key for the text maximal offsets for BasicMenuItemUI */
     public static final StringUIClientPropertyKey BASICMENUITEMUI_MAX_TEXT_OFFSET =
         new StringUIClientPropertyKey ("maxTextOffset");
-
-    // security stuff
-    private static final String UntrustedClipboardAccess =
-        "UNTRUSTED_CLIPBOARD_ACCESS_KEY";
 
     //all access to  charsBuffer is to be synchronized on charsBufferLock
     private static final int CHAR_BUFFER_SIZE = 100;
@@ -812,7 +796,7 @@ public class SwingUtilities2 {
      */
     public static void adjustFocus(JComponent c) {
         if (!c.hasFocus() && c.isRequestFocusEnabled()) {
-            c.requestFocus();
+            c.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
         }
     }
 
@@ -1257,21 +1241,12 @@ public class SwingUtilities2 {
         return null;
     }
 
-    private static final Object APP_CONTEXT_FRC_CACHE_KEY = new Object();
+    private static final Map<Object, FontRenderContext> cache = new HashMap<>();
 
     private static FontRenderContext getFRCFromCache(AffineTransform tx,
                                                      Object aaHint) {
         if (tx == null && aaHint == null) {
             return null;
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<Object, FontRenderContext> cache = (Map<Object, FontRenderContext>)
-                AppContext.getAppContext().get(APP_CONTEXT_FRC_CACHE_KEY);
-
-        if (cache == null) {
-            cache = new HashMap<>();
-            AppContext.getAppContext().put(APP_CONTEXT_FRC_CACHE_KEY, cache);
         }
 
         Object key = (tx == null)
@@ -1460,163 +1435,6 @@ public class SwingUtilities2 {
         }
     }
 
-    /*
-     * here goes the fix for 4856343 [Problem with applet interaction
-     * with system selection clipboard]
-     *
-     * NOTE. In case isTrustedContext() no checking
-     * are to be performed
-     */
-
-    /**
-    * checks the security permissions for accessing system clipboard
-    *
-    * for untrusted context (see isTrustedContext) checks the
-    * permissions for the current event being handled
-    *
-    */
-   public static boolean canAccessSystemClipboard() {
-       boolean canAccess = false;
-       if (!GraphicsEnvironment.isHeadless()) {
-           @SuppressWarnings("removal")
-           SecurityManager sm = System.getSecurityManager();
-           if (sm == null) {
-               canAccess = true;
-           } else {
-               try {
-                   sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-                   canAccess = true;
-               } catch (SecurityException e) {
-               }
-               if (canAccess && ! isTrustedContext()) {
-                   canAccess = canCurrentEventAccessSystemClipboard(true);
-               }
-           }
-       }
-       return canAccess;
-   }
-    /**
-    * Returns true if EventQueue.getCurrentEvent() has the permissions to
-     * access the system clipboard
-     */
-    public static boolean canCurrentEventAccessSystemClipboard() {
-        return  isTrustedContext()
-            || canCurrentEventAccessSystemClipboard(false);
-    }
-
-    /**
-     * Returns true if the given event has permissions to access the
-     * system clipboard
-     *
-     * @param e AWTEvent to check
-     */
-    public static boolean canEventAccessSystemClipboard(AWTEvent e) {
-        return isTrustedContext()
-            || canEventAccessSystemClipboard(e, false);
-    }
-
-    /**
-     * Returns true if the given event is current gesture for
-     * accessing clipboard
-     *
-     * @param ie InputEvent to check
-     */
-    @SuppressWarnings("deprecation")
-    private static boolean isAccessClipboardGesture(InputEvent ie) {
-        boolean allowedGesture = false;
-        if (ie instanceof KeyEvent) { //we can validate only keyboard gestures
-            KeyEvent ke = (KeyEvent)ie;
-            int keyCode = ke.getKeyCode();
-            int keyModifiers = ke.getModifiers();
-            switch(keyCode) {
-            case KeyEvent.VK_C:
-            case KeyEvent.VK_V:
-            case KeyEvent.VK_X:
-                allowedGesture = (keyModifiers == InputEvent.CTRL_MASK);
-                break;
-            case KeyEvent.VK_INSERT:
-                allowedGesture = (keyModifiers == InputEvent.CTRL_MASK ||
-                                  keyModifiers == InputEvent.SHIFT_MASK);
-                break;
-            case KeyEvent.VK_COPY:
-            case KeyEvent.VK_PASTE:
-            case KeyEvent.VK_CUT:
-                allowedGesture = true;
-                break;
-            case KeyEvent.VK_DELETE:
-                allowedGesture = ( keyModifiers == InputEvent.SHIFT_MASK);
-                break;
-            }
-        }
-        return allowedGesture;
-    }
-
-    /**
-     * Returns true if e has the permissions to
-     * access the system clipboard and if it is allowed gesture (if
-     * checkGesture is true)
-     *
-     * @param e AWTEvent to check
-     * @param checkGesture boolean
-     */
-    private static boolean canEventAccessSystemClipboard(AWTEvent e,
-                                                        boolean checkGesture) {
-        if (EventQueue.isDispatchThread()) {
-            /*
-             * Checking event permissions makes sense only for event
-             * dispatching thread
-             */
-            if (e instanceof InputEvent
-                && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
-                return AWTAccessor.getInputEventAccessor().
-                        canAccessSystemClipboard((InputEvent) e);
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
-
-    /**
-     * Utility method that throws SecurityException if SecurityManager is set
-     * and modifiers are not public
-     *
-     * @param modifiers a set of modifiers
-     */
-    @SuppressWarnings("removal")
-    public static void checkAccess(int modifiers) {
-        if (System.getSecurityManager() != null
-                && !Modifier.isPublic(modifiers)) {
-            throw new SecurityException("Resource is not accessible");
-        }
-    }
-
-    /**
-     * Returns true if EventQueue.getCurrentEvent() has the permissions to
-     * access the system clipboard and if it is allowed gesture (if
-     * checkGesture true)
-     *
-     * @param checkGesture boolean
-     */
-    private static boolean canCurrentEventAccessSystemClipboard(boolean
-                                                               checkGesture) {
-        AWTEvent event = EventQueue.getCurrentEvent();
-        return canEventAccessSystemClipboard(event, checkGesture);
-    }
-
-    /**
-     * see RFE 5012841 [Per AppContect security permissions] for the
-     * details
-     *
-     */
-    @SuppressWarnings("removal")
-    private static boolean isTrustedContext() {
-        return (System.getSecurityManager() == null)
-            || (AppContext.getAppContext().
-                get(UntrustedClipboardAccess) == null);
-    }
-
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
         if (font != null) {
@@ -1673,44 +1491,8 @@ public class SwingUtilities2 {
     public static Object makeIcon(final Class<?> baseClass,
                                   final Class<?> rootClass,
                                   final String imageFile) {
-        return makeIcon(baseClass, rootClass, imageFile, true);
-    }
-
-    /**
-     * Utility method that creates a {@code UIDefaults.LazyValue} that
-     * creates an {@code ImageIcon} {@code UIResource} for the
-     * specified image file name. The image is loaded using
-     * {@code getResourceAsStream}, starting with a call to that method
-     * on the base class parameter. If it cannot be found, searching will
-     * continue through the base class' inheritance hierarchy, up to and
-     * including {@code rootClass}.
-     *
-     * Finds an image with a given name without privileges enabled.
-     *
-     * @param baseClass the first class to use in searching for the resource
-     * @param rootClass an ancestor of {@code baseClass} to finish the
-     *                  search at
-     * @param imageFile the name of the file to be found
-     * @return a lazy value that creates the {@code ImageIcon}
-     *         {@code UIResource} for the image,
-     *         or null if it cannot be found
-     */
-    public static Object makeIcon_Unprivileged(final Class<?> baseClass,
-                                  final Class<?> rootClass,
-                                  final String imageFile) {
-        return makeIcon(baseClass, rootClass, imageFile, false);
-    }
-
-    private static Object makeIcon(final Class<?> baseClass,
-                                  final Class<?> rootClass,
-                                  final String imageFile,
-                                  final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
-            @SuppressWarnings("removal")
-            byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
-                    (PrivilegedAction<byte[]>) ()
-                    -> getIconBytes(baseClass, rootClass, imageFile))
-                    : getIconBytes(baseClass, rootClass, imageFile);
+            byte[] buffer = getIconBytes(baseClass, rootClass, imageFile);
 
             if (buffer == null) {
                 return null;
@@ -1855,24 +1637,24 @@ public class SwingUtilities2 {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);
-                if (comp!=null) {
-                    comp.requestFocus();
+                if (comp != null) {
+                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
-            if (rootAncestor!=null) {
+            if (rootAncestor != null) {
                 FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
                 Component comp = policy.getComponentAfter(rootAncestor, container);
 
-                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
-                    comp.requestFocus();
+                if (comp != null && SwingUtilities.isDescendingFrom(comp, container)) {
+                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
         }
         if (component.isFocusable()) {
-            component.requestFocus();
+            component.requestFocus(FocusEvent.Cause.TRAVERSAL);
             return component;
         }
         return null;

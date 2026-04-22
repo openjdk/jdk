@@ -136,7 +136,7 @@ JvmtiEnv::</xsl:text>
 <xsl:template match="jmethodID" mode="advice">
   <xsl:param name="name"/>
   <xsl:text>
-// method - pre-checked for validity, but may be nullptr meaning obsolete method</xsl:text>
+// method - pre-checked for validity, but may be null meaning obsolete method</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfieldID" mode="advice">
@@ -166,13 +166,13 @@ JvmtiEnv::</xsl:text>
       <xsl:text>
 // </xsl:text>
       <xsl:value-of select="$name"/>
-      <xsl:text> - pre-checked for nullptr</xsl:text>
+      <xsl:text> - pre-checked for null</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:text>
 // </xsl:text>
       <xsl:value-of select="$name"/>
-      <xsl:text> - nullptr is a valid value, must be checked</xsl:text>
+      <xsl:text> - null is a valid value, must be checked</xsl:text>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>

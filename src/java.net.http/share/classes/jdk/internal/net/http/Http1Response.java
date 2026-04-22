@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.System.Logger.Level;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.http.HttpResponse.BodySubscriber;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -46,6 +47,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpResponse.BodySubscribers.discarding;
+import static jdk.internal.net.http.common.Utils.readContentLength;
 import static jdk.internal.net.http.common.Utils.wrapWithExtraDetail;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
 
@@ -224,6 +226,7 @@ class Http1Response<T> {
 
                 if (Log.headers()) {
                     StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                    sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                     Log.dumpHeaders(sb, "    ", headers);
                     Log.logHeaders(sb.toString());
                 }
@@ -271,21 +274,36 @@ class Http1Response<T> {
     }
 
     /**
-     * Read up to MAX_IGNORE bytes discarding
+     * Reads the body, if it is present and less than {@value MAX_IGNORE} bytes.
+     * Otherwise, just the connection is closed.
      */
     public CompletableFuture<Void> ignoreBody(Executor executor) {
-        int clen = (int)headers.firstValueAsLong("Content-Length").orElse(-1);
-        if (clen == -1 || clen > MAX_IGNORE) {
+
+        // Read the `Content-Length` header
+        long clen;
+        try {
+            clen = readContentLength(headers, "", -1);
+        } catch (ProtocolException pe) {
+            return MinimalFuture.failedFuture(pe);
+        }
+
+        // Read the body, if it is present and less than `MAX_IGNORE` bytes.
+        //
+        // We proceed with reading the body even when `Content-Length: 0` to
+        // ensure that the happy path is taken, and upon success, the connection
+        // is returned back to the pool.
+        if (clen != -1 && clen <= MAX_IGNORE) {
+            return readBody(discarding(), !request.isWebSocket(), executor);
+        } else {
             connection.close();
             return MinimalFuture.completedFuture(null); // not treating as error
-        } else {
-            return readBody(discarding(), !request.isWebSocket(), executor);
         }
+
     }
 
     // Used for those response codes that have no body associated
     public void nullBody(HttpResponse<T> resp, Throwable t) {
-        if (t != null) connection.close();
+        if (t != null) connection.close(t);
         else {
             return2Cache = !request.isWebSocket();
             onFinished();
@@ -307,11 +325,28 @@ class Http1Response<T> {
         this.return2Cache = return2Cache;
         final BodySubscriber<U> subscriber = p;
 
-
         final CompletableFuture<U> cf = new MinimalFuture<>();
 
-        long clen0 = headers.firstValueAsLong("Content-Length").orElse(-1L);
-        final long clen = fixupContentLen(clen0);
+        Consumer<Throwable> errorNotifier = error -> {
+            try {
+                subscriber.onError(error);
+                cf.completeExceptionally(error);
+            } finally {
+                asyncReceiver.setRetryOnError(false);
+                asyncReceiver.onReadError(error);
+            }
+        };
+
+        // Read the content length
+        long clen;
+        try {
+            long clen0 = readContentLength(headers, "", -1);
+            clen = fixupContentLen(clen0);
+        } catch (ProtocolException pe) {
+            errorNotifier.accept(pe);
+            connection.close(pe);
+            return cf;
+        }
 
         // expect-continue reads headers and body twice.
         // if we reach here, we must reset the headersReader state.
@@ -331,7 +366,7 @@ class Http1Response<T> {
                 );
                 if (cf.isCompletedExceptionally()) {
                     // if an error occurs during subscription
-                    connection.close();
+                    connection.close(Utils.exceptionNow(cf));
                     return;
                 }
                 // increment the reference count on the HttpClientImpl
@@ -352,7 +387,7 @@ class Http1Response<T> {
                         } finally {
                             bodyReader.onComplete(t);
                             if (t != null) {
-                                connection.close();
+                                connection.close(t);
                             }
                         }
                     });
@@ -397,12 +432,7 @@ class Http1Response<T> {
             }
         });
 
-        ResponseSubscribers.getBodyAsync(executor, p, cf, (t) -> {
-            subscriber.onError(t);
-            cf.completeExceptionally(t);
-            asyncReceiver.setRetryOnError(false);
-            asyncReceiver.onReadError(t);
-        });
+        ResponseSubscribers.getBodyAsync(executor, p, cf, errorNotifier);
 
         return cf.whenComplete((s,t) -> {
             if (t != null) {
@@ -471,7 +501,7 @@ class Http1Response<T> {
             debug.log(Level.DEBUG, "onReadError", t);
         }
         debug.log(Level.DEBUG, () -> "closing connection: cause is " + t);
-        connection.close();
+        connection.close(t);
     }
 
     // ========================================================================

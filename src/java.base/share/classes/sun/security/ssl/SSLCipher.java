@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -380,14 +378,7 @@ enum SSLCipher {
 
     static  {
         final long max = 4611686018427387904L; // 2^62
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                return Security.getProperty("jdk.tls.keyLimits");
-            }
-        });
+        String prop = Security.getProperty("jdk.tls.keyLimits");
 
         if (prop != null) {
             String[] propvalue = prop.split(",");
@@ -401,7 +392,8 @@ enum SSLCipher {
                 if (values[1].contains(tag[0])) {
                     index = 0;
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.fine("jdk.tls.keyLimits:  Unknown action:  " +
                                 entry);
                     }
@@ -422,13 +414,14 @@ enum SSLCipher {
                             "Length exceeded limits");
                     }
                 } catch (NumberFormatException e) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.fine("jdk.tls.keyLimits:  " + e.getMessage() +
                                 ":  " +  entry);
                     }
                     continue;
                 }
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("jdk.tls.keyLimits:  entry = " + entry +
                             ". " + values[0] + ":" + tag[index] + " = " + size);
                 }
@@ -477,7 +470,7 @@ enum SSLCipher {
             Cipher.getInstance(transformation);
             return true;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.fine("Transformation " + transformation + " is" +
                         " not available.");
             }
@@ -869,7 +862,8 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
                 pt.position(pos);
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
                 }
@@ -939,7 +933,8 @@ enum SSLCipher {
                     authenticator.increaseSequenceNumber();
                 }
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.finest(
                         "Padded plaintext before ENCRYPTION", bb.duplicate());
                 }
@@ -1059,7 +1054,8 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext after DECRYPTION",
                             pt.duplicate().position(pos));
@@ -1191,7 +1187,7 @@ enum SSLCipher {
                 int len = addPadding(bb, blockSize);
                 bb.position(pos);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -1335,7 +1331,8 @@ enum SSLCipher {
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine("Padded plaintext after DECRYPTION",
                         pt.duplicate().position(pos));
                 }
@@ -1487,7 +1484,8 @@ enum SSLCipher {
                 int len = addPadding(bb, blockSize);
                 bb.position(pos);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Padded plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -1659,7 +1657,8 @@ enum SSLCipher {
                 pt.position(pos);
                 pt.limit(pos + len);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
                 }
@@ -1746,7 +1745,8 @@ enum SSLCipher {
 
                 // DON'T encrypt the nonce for AEAD mode.
                 int len, pos = bb.position();
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -1832,7 +1832,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("KeyLimit read side: algorithm = " +
                             algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
@@ -1859,10 +1859,20 @@ enum SSLCipher {
                 }
 
                 if (bb.remaining() <= tagSize) {
-                    throw new BadPaddingException(
-                        "Insufficient buffer remaining for AEAD cipher " +
-                        "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                    // Check for unexpected plaintext alert.
+                    if (contentType == ContentType.ALERT.id
+                            && bb.remaining() == 2) {
+                        throw new GeneralSecurityException(String.format(
+                            "Unexpected plaintext alert received: " +
+                            "Level: %s; Alert: %s",
+                            Alert.Level.nameOf(bb.get(bb.position())),
+                            Alert.nameOf(bb.get(bb.position() + 1))));
+                    } else {
+                        throw new BadPaddingException(
+                            "Insufficient buffer remaining for AEAD cipher " +
+                            "fragment (" + bb.remaining() + "). Needs to be " +
+                            "more than tag size (" + tagSize + ")");
+                    }
                 }
 
                 byte[] sn = sequence;
@@ -1922,16 +1932,17 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--);
+                for (; i >= pos && pt.get(i) == 0; i--);
 
-                if (i < (pos + 1)) {
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
                 contentType = pt.get(i);
                 pt.limit(i);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
                 }
@@ -1983,7 +1994,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("KeyLimit write side: algorithm = "
                             + algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
@@ -2025,7 +2036,8 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 int len, pos = bb.position();
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -2181,7 +2193,8 @@ enum SSLCipher {
                 pt.position(pos);
                 pt.limit(pos + len);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
                 }
@@ -2230,7 +2243,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
@@ -2272,7 +2285,8 @@ enum SSLCipher {
 
                 // DON'T encrypt the nonce for AEAD mode.
                 int pos = bb.position();
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
                             bb.duplicate());
@@ -2440,17 +2454,17 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--) {
-                    // blank
-                }
-                if (i < (pos + 1)) {
+                for (; i >= pos && pt.get(i) == 0; i--);
+
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
                 contentType = pt.get(i);
                 pt.limit(i);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext after DECRYPTION", pt.duplicate());
                 }
@@ -2499,7 +2513,7 @@ enum SSLCipher {
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
                     algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
@@ -2541,7 +2555,8 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 int pos = bb.position();
-                if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RECORD_PLAINTEXT)) {
                     SSLLogger.fine(
                             "Plaintext before ENCRYPTION",
                             bb.duplicate());

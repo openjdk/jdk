@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
@@ -93,7 +96,6 @@ public class DefaultTableCellRenderer extends JLabel
     * <code>getTableCellRendererComponent</code> method and set the border
     * of the returned component directly.
     */
-    private static final Border SAFE_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
     private static final Border DEFAULT_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
     /**
      * A border without focus.
@@ -117,13 +119,9 @@ public class DefaultTableCellRenderer extends JLabel
         setName("Table.cellRenderer");
     }
 
-    @SuppressWarnings("removal")
     private Border getNoFocusBorder() {
         Border border = DefaultLookup.getBorder(this, ui, "Table.cellNoFocusBorder");
-        if (System.getSecurityManager() != null) {
-            if (border != null) return border;
-            return SAFE_NO_FOCUS_BORDER;
-        } else if (border != null) {
+        if (border != null) {
             if (noFocusBorder == null || noFocusBorder == DEFAULT_NO_FOCUS_BORDER) {
                 return border;
             }
@@ -376,6 +374,17 @@ public class DefaultTableCellRenderer extends JLabel
      */
     protected void setValue(Object value) {
         setText((value == null) ? "" : value.toString());
+    }
+
+    /**
+     * See readObject() and writeObject() in JComponent for more
+     * information about serialization in Swing.
+     */
+    @Serial
+    private void writeObject(ObjectOutputStream s) throws IOException {
+        s.defaultWriteObject();
+        setForeground(null);
+        setBackground(null);
     }
 
 

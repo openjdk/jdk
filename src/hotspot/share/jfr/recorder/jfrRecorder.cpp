@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
@@ -30,26 +29,29 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/checkpoint/types/jfrThreadGroupManager.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
-#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrSymbolTable.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.inline.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/growableArray.hpp"
 #ifdef ASSERT
 #include "prims/jvmtiEnvBase.hpp"
@@ -98,6 +100,9 @@ bool JfrRecorder::on_create_vm_1() {
 
   if (is_started_on_commandline()) {
     if (!create_checkpoint_manager()) {
+      return false;
+    }
+    if (!JfrSymbolTable::create()) {
       return false;
     }
   }
@@ -210,7 +215,7 @@ bool JfrRecorder::on_create_vm_2() {
     return true;
   }
   JavaThread* const thread = JavaThread::current();
-  JfrThreadLocal::assign_thread_id(thread, thread->jfr_thread_local());
+  assert(JfrThreadLocal::jvm_thread_id(thread) != 0, "invariant");
 
   if (!JfrOptionSet::initialize(thread)) {
     return false;
@@ -238,7 +243,7 @@ bool JfrRecorder::on_create_vm_2() {
 }
 
 bool JfrRecorder::on_create_vm_3() {
-  assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
+  JVMTI_ONLY( assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence, phase is %d", (int)JvmtiEnvBase::get_phase()); )
   return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
@@ -302,13 +307,19 @@ bool JfrRecorder::create_components() {
   if (!create_stringpool()) {
     return false;
   }
-  if (!create_thread_sampling()) {
+  if (!create_thread_sampler()) {
+    return false;
+  }
+  if (!create_cpu_time_thread_sampling()) {
     return false;
   }
   if (!create_event_throttler()) {
     return false;
   }
-  return true;
+  if (!create_thread_group_manager()) {
+    return false;
+  }
+  return create_symbol_table();
 }
 
 // subsystems
@@ -318,7 +329,8 @@ static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
-static JfrThreadSampling* _thread_sampling = nullptr;
+static JfrThreadSampler* _thread_sampler = nullptr;
+static JfrCPUTimeThreadSampling* _cpu_time_thread_sampling = nullptr;
 static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
 bool JfrRecorder::create_java_event_writer() {
@@ -385,14 +397,34 @@ bool JfrRecorder::create_stringpool() {
   return _stringpool != nullptr && _stringpool->initialize();
 }
 
-bool JfrRecorder::create_thread_sampling() {
-  assert(_thread_sampling == nullptr, "invariant");
-  _thread_sampling = JfrThreadSampling::create();
-  return _thread_sampling != nullptr;
+bool JfrRecorder::create_thread_sampler() {
+  assert(_thread_sampler == nullptr, "invariant");
+  _thread_sampler = JfrThreadSampler::create();
+  return _thread_sampler != nullptr;
+}
+
+bool JfrRecorder::create_cpu_time_thread_sampling() {
+  assert(_cpu_time_thread_sampling == nullptr, "invariant");
+  _cpu_time_thread_sampling = JfrCPUTimeThreadSampling::create();
+  return _cpu_time_thread_sampling != nullptr;
 }
 
 bool JfrRecorder::create_event_throttler() {
   return JfrEventThrottler::create();
+}
+
+bool JfrRecorder::create_thread_group_manager() {
+  return JfrThreadGroupManager::create();
+}
+
+bool JfrRecorder::create_symbol_table() {
+  return !is_started_on_commandline() ? JfrSymbolTable::create() : true;
+}
+
+void JfrRecorder::destroy_symbol_table() {
+  if (!is_started_on_commandline()) {
+    JfrSymbolTable::destroy();
+  }
 }
 
 void JfrRecorder::destroy_components() {
@@ -425,15 +457,21 @@ void JfrRecorder::destroy_components() {
     JfrOSInterface::destroy();
     _os_interface = nullptr;
   }
-  if (_thread_sampling != nullptr) {
-    JfrThreadSampling::destroy();
-    _thread_sampling = nullptr;
+  if (_thread_sampler != nullptr) {
+    JfrThreadSampler::destroy();
+    _thread_sampler = nullptr;
+  }
+  if (_cpu_time_thread_sampling != nullptr) {
+    JfrCPUTimeThreadSampling::destroy();
+    _cpu_time_thread_sampling = nullptr;
   }
   JfrEventThrottler::destroy();
+  JfrThreadGroupManager::destroy();
+  destroy_symbol_table();
 }
 
 bool JfrRecorder::create_recorder_thread() {
-  return JfrRecorderThread::start(_checkpoint_manager, _post_box, JavaThread::current());
+  return JfrRecorderThreadEntry::start(_checkpoint_manager, _post_box, JavaThread::current());
 }
 
 void JfrRecorder::destroy() {

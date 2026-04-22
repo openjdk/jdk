@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.security;
 
 
 /**
- * A computation to be performed with privileges enabled.  The computation is
- * performed by invoking {@code AccessController.doPrivileged} on the
+ * A computation to be performed by invoking
+ * {@code AccessController.doPrivileged} on the
  * {@code PrivilegedAction} object.  This interface is used only for
  * computations that do not throw checked exceptions; computations that
  * throw checked exceptions must use {@code PrivilegedExceptionAction}
@@ -44,7 +44,7 @@ package java.security;
 public interface PrivilegedAction<T> {
     /**
      * Performs the computation.  This method will be called by
-     * {@code AccessController.doPrivileged} after enabling privileges.
+     * {@code AccessController.doPrivileged}.
      *
      * @return a class-dependent value that may represent the results of the
      *         computation. Each class that implements

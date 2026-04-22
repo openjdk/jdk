@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 
 #ifndef SHARE_ADLC_FORMS_HPP
 #define SHARE_ADLC_FORMS_HPP
+
+#include "dict2.hpp"
+#include "opto/adlcVMDeps.hpp"
 
 // FORMS.HPP - ADL Parser Generic and Utility Forms Classes
 
@@ -183,7 +186,8 @@ public:
     idealS      =  8,  // String  type
     idealN      =  9,  // Narrow oop types
     idealNKlass = 10,  // Narrow klass types
-    idealV      = 11   // Vector  type
+    idealV      = 11,  // Vector  type
+    idealH      = 12   // HalfFloat  type
   };
   // Convert ideal name to a DataType, return DataType::none if not a 'ConX'
   Form::DataType  ideal_to_const_type(const char *ideal_type_name) const;

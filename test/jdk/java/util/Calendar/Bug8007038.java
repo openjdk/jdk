@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules java.base/sun.util.locale.provider
  * @modules jdk.localedata
  * @compile -XDignore.symbol.file Bug8007038.java
- * @run main/othervm -Djava.locale.providers=CLDR Bug8007038 CLDR
+ * @run main Bug8007038 CLDR
  */
 
 import java.util.*;

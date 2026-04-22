@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -39,6 +38,7 @@
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {
@@ -49,7 +49,6 @@ static const char* describe_spacetype(Metaspace::MetaspaceType st) {
     case Metaspace::StandardMetaspaceType: s = "Standard"; break;
     case Metaspace::BootMetaspaceType: s = "Boot"; break;
     case Metaspace::ClassMirrorHolderMetaspaceType: s = "ClassMirrorHolder"; break;
-    case Metaspace::ReflectionMetaspaceType: s = "Reflection"; break;
     default: ShouldNotReachHere();
   }
   return s;
@@ -60,39 +59,39 @@ static void print_vs(outputStream* out, size_t scale) {
   const size_t committed_nc = RunningCounters::committed_words_nonclass();
   const int num_nodes_nc = VirtualSpaceList::vslist_nonclass()->num_nodes();
 
-  if (Metaspace::using_class_space()) {
-    const size_t reserved_c = RunningCounters::reserved_words_class();
-    const size_t committed_c = RunningCounters::committed_words_class();
-    const int num_nodes_c = VirtualSpaceList::vslist_class()->num_nodes();
+#if INCLUDE_CLASS_SPACE
+  const size_t reserved_c = RunningCounters::reserved_words_class();
+  const size_t committed_c = RunningCounters::committed_words_class();
+  const int num_nodes_c = VirtualSpaceList::vslist_class()->num_nodes();
 
-    out->print("  Non-class space:  ");
-    print_scaled_words(out, reserved_nc, scale, 7);
-    out->print(" reserved, ");
-    print_scaled_words_and_percentage(out, committed_nc, reserved_nc, scale, 7);
-    out->print(" committed, ");
-    out->print(" %d nodes.", num_nodes_nc);
-    out->cr();
-    out->print("      Class space:  ");
-    print_scaled_words(out, reserved_c, scale, 7);
-    out->print(" reserved, ");
-    print_scaled_words_and_percentage(out, committed_c, reserved_c, scale, 7);
-    out->print(" committed, ");
-    out->print(" %d nodes.", num_nodes_c);
-    out->cr();
-    out->print("             Both:  ");
-    print_scaled_words(out, reserved_c + reserved_nc, scale, 7);
-    out->print(" reserved, ");
-    print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);
-    out->print(" committed. ");
-    out->cr();
-  } else {
-    print_scaled_words(out, reserved_nc, scale, 7);
-    out->print(" reserved, ");
-    print_scaled_words_and_percentage(out, committed_nc, reserved_nc, scale, 7);
-    out->print(" committed, ");
-    out->print(" %d nodes.", num_nodes_nc);
-    out->cr();
-  }
+  out->print("  Non-class space:  ");
+  print_scaled_words(out, reserved_nc, scale, 7);
+  out->print(" reserved, ");
+  print_scaled_words_and_percentage(out, committed_nc, reserved_nc, scale, 7);
+  out->print(" committed, ");
+  out->print(" %d nodes.", num_nodes_nc);
+  out->cr();
+  out->print("      Class space:  ");
+  print_scaled_words(out, reserved_c, scale, 7);
+  out->print(" reserved, ");
+  print_scaled_words_and_percentage(out, committed_c, reserved_c, scale, 7);
+  out->print(" committed, ");
+  out->print(" %d nodes.", num_nodes_c);
+  out->cr();
+  out->print("             Both:  ");
+  print_scaled_words(out, reserved_c + reserved_nc, scale, 7);
+  out->print(" reserved, ");
+  print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);
+  out->print(" committed. ");
+  out->cr();
+#else
+  print_scaled_words(out, reserved_nc, scale, 7);
+  out->print(" reserved, ");
+  print_scaled_words_and_percentage(out, committed_nc, reserved_nc, scale, 7);
+  out->print(" committed, ");
+  out->print(" %d nodes.", num_nodes_nc);
+  out->cr();
+#endif // INCLUDE_CLASS_SPACE
 }
 
 static void print_settings(outputStream* out, size_t scale) {
@@ -103,12 +102,12 @@ static void print_settings(outputStream* out, size_t scale) {
     print_human_readable_size(out, MaxMetaspaceSize, scale);
   }
   out->cr();
-  if (Metaspace::using_class_space()) {
-    out->print("CompressedClassSpaceSize: ");
-    print_human_readable_size(out, CompressedClassSpaceSize, scale);
-  } else {
-    out->print("No class space");
-  }
+#if INCLUDE_CLASS_SPACE
+  out->print("CompressedClassSpaceSize: ");
+  print_human_readable_size(out, CompressedClassSpaceSize, scale);
+#else
+  out->print("No class space");
+#endif // INCLUDE_CLASS_SPACE
   out->cr();
   out->print("Initial GC threshold: ");
   print_human_readable_size(out, MetaspaceSize, scale);
@@ -116,8 +115,9 @@ static void print_settings(outputStream* out, size_t scale) {
   out->print("Current GC threshold: ");
   print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
   out->cr();
-  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
+  out->print_cr("CDS: %s", (CDSConfig::is_using_archive() ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
   Settings::print_on(out);
+  CompressedKlassPointers::print_mode(out);
 }
 
 // This will print out a basic metaspace usage report but
@@ -129,9 +129,7 @@ void MetaspaceReporter::print_basic_report(outputStream* out, size_t scale) {
   }
   out->cr();
   out->print_cr("Usage:");
-  if (Metaspace::using_class_space()) {
-    out->print("  Non-class:  ");
-  }
+  CLASS_SPACE_ONLY(out->print("  Non-class:  ");)
 
   // Note: since we want to purely rely on counters, without any locking or walking the CLDG,
   // for Usage stats (statistics over in-use chunks) all we can print is the
@@ -142,37 +140,35 @@ void MetaspaceReporter::print_basic_report(outputStream* out, size_t scale) {
   print_scaled_words(out, used_nc, scale, 5);
   out->print(" used.");
   out->cr();
-  if (Metaspace::using_class_space()) {
-    const size_t used_c = MetaspaceUtils::used_words(Metaspace::ClassType);
-    out->print("      Class:  ");
-    print_scaled_words(out, used_c, scale, 5);
-    out->print(" used.");
-    out->cr();
-    out->print("       Both:  ");
-    const size_t used = used_nc + used_c;
-    print_scaled_words(out, used, scale, 5);
-    out->print(" used.");
-    out->cr();
-  }
+#if INCLUDE_CLASS_SPACE
+  const size_t used_c = MetaspaceUtils::used_words(Metaspace::ClassType);
+  out->print("      Class:  ");
+  print_scaled_words(out, used_c, scale, 5);
+  out->print(" used.");
+  out->cr();
+  out->print("       Both:  ");
+  const size_t used = used_nc + used_c;
+  print_scaled_words(out, used, scale, 5);
+  out->print(" used.");
+  out->cr();
+#endif // INCLUDE_CLASS_SPACE
   out->cr();
   out->print_cr("Virtual space:");
   print_vs(out, scale);
   out->cr();
   out->print_cr("Chunk freelists:");
-  if (Metaspace::using_class_space()) {
-    out->print("   Non-Class:  ");
-  }
+  CLASS_SPACE_ONLY(out->print("   Non-Class:  ");)
   print_scaled_words(out, ChunkManager::chunkmanager_nonclass()->total_word_size(), scale);
   out->cr();
-  if (Metaspace::using_class_space()) {
-    out->print("       Class:  ");
-    print_scaled_words(out, ChunkManager::chunkmanager_class()->total_word_size(), scale);
-    out->cr();
-    out->print("        Both:  ");
-    print_scaled_words(out, ChunkManager::chunkmanager_nonclass()->total_word_size() +
-                            ChunkManager::chunkmanager_class()->total_word_size(), scale);
-    out->cr();
-  }
+#if INCLUDE_CLASS_SPACE
+  out->print("       Class:  ");
+  print_scaled_words(out, ChunkManager::chunkmanager_class()->total_word_size(), scale);
+  out->cr();
+  out->print("        Both:  ");
+  print_scaled_words(out, ChunkManager::chunkmanager_nonclass()->total_word_size() +
+                          ChunkManager::chunkmanager_class()->total_word_size(), scale);
+  out->cr();
+#endif // INCLUDE_CLASS_SPACE
   out->cr();
 
   // Print basic settings
@@ -215,7 +211,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     {
       uintx num_loaders = cl._num_loaders_by_spacetype[space_type];
       uintx num_classes = cl._num_classes_by_spacetype[space_type];
-      out->print("%s - " UINTX_FORMAT " %s",
+      out->print("%s - %zu %s",
         describe_spacetype((Metaspace::MetaspaceType)space_type),
         num_loaders, loaders_plural(num_loaders));
       if (num_classes > 0) {
@@ -236,7 +232,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   out->cr();
   {
     uintx num_loaders = cl._num_loaders;
-    out->print("Total Usage - " UINTX_FORMAT " %s, ",
+    out->print("Total Usage - %zu %s, ",
       num_loaders, loaders_plural(num_loaders));
     print_number_of_classes(out, cl._num_classes, cl._num_classes_shared);
     out->print(":");
@@ -254,69 +250,69 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   // -- Print VirtualSpaceList details.
   if ((flags & (int)Option::ShowVSList) > 0) {
     out->cr();
-    out->print_cr("Virtual space list%s:", Metaspace::using_class_space() ? "s" : "");
-
-    if (Metaspace::using_class_space()) {
-      out->print_cr("   Non-Class:");
-    }
+#if INCLUDE_CLASS_SPACE
+    out->print_cr("Virtual space lists:");
+    out->print_cr("   Non-Class:");
     VirtualSpaceList::vslist_nonclass()->print_on(out);
     out->cr();
-    if (Metaspace::using_class_space()) {
-      out->print_cr("       Class:");
-      VirtualSpaceList::vslist_class()->print_on(out);
-      out->cr();
-    }
+    out->print_cr("       Class:");
+    VirtualSpaceList::vslist_class()->print_on(out);
+    out->cr();
+#else
+    out->print_cr("Virtual space list:");
+    VirtualSpaceList::vslist_nonclass()->print_on(out);
+    out->cr();
+#endif // INCLUDE_CLASS_SPACE
   }
   out->cr();
 
   //////////// Freelists (ChunkManager) section ///////////////////////////
-
-  out->cr();
-  out->print_cr("Chunk freelist%s:", Metaspace::using_class_space() ? "s" : "");
 
   ChunkManagerStats non_class_cm_stat;
   ChunkManagerStats class_cm_stat;
   ChunkManagerStats total_cm_stat;
 
   ChunkManager::chunkmanager_nonclass()->add_to_statistics(&non_class_cm_stat);
-  if (Metaspace::using_class_space()) {
-    ChunkManager::chunkmanager_nonclass()->add_to_statistics(&non_class_cm_stat);
-    ChunkManager::chunkmanager_class()->add_to_statistics(&class_cm_stat);
-    total_cm_stat.add(non_class_cm_stat);
-    total_cm_stat.add(class_cm_stat);
+#if INCLUDE_CLASS_SPACE
+  ChunkManager::chunkmanager_class()->add_to_statistics(&class_cm_stat);
+  total_cm_stat.add(non_class_cm_stat);
+  total_cm_stat.add(class_cm_stat);
 
-    out->print_cr("   Non-Class:");
-    non_class_cm_stat.print_on(out, scale);
-    out->cr();
-    out->print_cr("       Class:");
-    class_cm_stat.print_on(out, scale);
-    out->cr();
-    out->print_cr("        Both:");
-    total_cm_stat.print_on(out, scale);
-    out->cr();
-  } else {
-    ChunkManager::chunkmanager_nonclass()->add_to_statistics(&non_class_cm_stat);
-    non_class_cm_stat.print_on(out, scale);
-    out->cr();
-  }
+  out->print_cr("Chunk freelists:");
+  out->cr();
+  out->print_cr("   Non-Class:");
+  non_class_cm_stat.print_on(out, scale);
+  out->cr();
+  out->print_cr("       Class:");
+  class_cm_stat.print_on(out, scale);
+  out->cr();
+  out->print_cr("        Both:");
+  total_cm_stat.print_on(out, scale);
+  out->cr();
+#else
+  out->print_cr("Chunk freelist:");
+  ChunkManager::chunkmanager_nonclass()->add_to_statistics(&non_class_cm_stat);
+  non_class_cm_stat.print_on(out, scale);
+  out->cr();
+#endif // INCLUDE_CLASS_SPACE
 
   // -- Print Chunkmanager details.
   if ((flags & (int)Option::ShowChunkFreeList) > 0) {
     out->cr();
     out->print_cr("Chunk freelist details:");
-    if (Metaspace::using_class_space()) {
-      out->print_cr("   Non-Class:");
-    }
+#if INCLUDE_CLASS_SPACE
+    out->print_cr("   Non-Class:");
     ChunkManager::chunkmanager_nonclass()->print_on(out);
     out->cr();
-    if (Metaspace::using_class_space()) {
-      out->print_cr("       Class:");
-      ChunkManager::chunkmanager_class()->print_on(out);
-      out->cr();
-    }
+    out->print_cr("       Class:");
+    ChunkManager::chunkmanager_class()->print_on(out);
+    out->cr();
+#else
+    ChunkManager::chunkmanager_nonclass()->print_on(out);
+    out->cr();
+#endif // INCLUDE_CLASS_SPACE
   }
   out->cr();
-
 
   //////////// Waste section ///////////////////////////
   // As a convenience, print a summary of common waste.
@@ -325,7 +321,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   // For all wastages, print percentages from total. As total use the total size of memory committed for metaspace.
   const size_t committed_words = RunningCounters::committed_words();
 
-  out->print("(percentages refer to total committed size ");
+  out->print(" (percentages refer to total committed size ");
   print_scaled_words(out, committed_words, scale);
   out->print_cr("):");
 
@@ -357,7 +353,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
       cl._stats_total._arena_stats_class._free_blocks_word_size;
   out->print("Deallocated from chunks in use: ");
   print_scaled_words_and_percentage(out, free_blocks_cap_words, committed_words, scale, 6);
-  out->print(" (" UINTX_FORMAT " blocks)", free_blocks_num);
+  out->print(" (%zu blocks)", free_blocks_num);
   out->cr();
 
   // Print total waste.

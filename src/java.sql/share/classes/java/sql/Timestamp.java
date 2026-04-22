@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,7 @@ import java.time.LocalDateTime;
  * because the nanos component of a date is unknown.
  * As a result, the {@code Timestamp.equals(Object)}
  * method is not symmetric with respect to the
- * {@code java.util.Date.equals(Object)}
- * method.  Also, the {@code hashCode} method uses the underlying
- * {@code java.util.Date}
- * implementation and therefore does not include nanos in its computation.
+ * {@code java.util.Date.equals(Object)} method.
  * <P>
  * Due to the differences between the {@code Timestamp} class
  * and the {@code java.util.Date}
@@ -465,10 +462,15 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a hash code value for this Timestamp. The result is the
+     * exclusive OR of the two halves of the primitive {@code long}
+     * value returned by the {@link #getTime} method. That is,
+     * the hash code is the value of the expression:
+     * {@snippet :
+     *   (int)(this.getTime()^(this.getTime() >>> 32))
+     * }
      *
-     * The {@code hashCode} method uses the underlying {@code java.util.Date}
-     * implementation and therefore does not include nanos in its computation.
+     * @return a hash code value for this Timestamp.
      *
      */
     @Override
@@ -493,7 +495,6 @@ public class Timestamp extends java.util.Date {
      * @throws NullPointerException if {@code dateTime} is null.
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Timestamp valueOf(LocalDateTime dateTime) {
         return new Timestamp(dateTime.getYear() - 1900,
                              dateTime.getMonthValue() - 1,

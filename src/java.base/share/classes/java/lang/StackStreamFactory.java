@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
-import sun.security.action.GetPropertyAction;
 
 import static java.lang.StackStreamFactory.WalkerState.*;
 
@@ -82,13 +81,8 @@ final class StackStreamFactory {
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
 
-    /*
-     * For Throwable to use StackWalker, set useNewThrowable to true.
-     * Performance work and extensive testing is needed to replace the
-     * VM built-in backtrace filled in Throwable with the StackWalker.
-     */
     static final boolean isDebug =
-            "true".equals(GetPropertyAction.privilegedGetProperty("stackwalk.debug"));
+            "true".equals(System.getProperty("stackwalk.debug"));
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)

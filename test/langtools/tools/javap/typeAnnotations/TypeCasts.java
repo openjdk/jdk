@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.*;
  * @bug 6843077
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @enablePreview
  */
 
 public class TypeCasts {
@@ -55,8 +54,8 @@ public class TypeCasts {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
 
@@ -66,7 +65,7 @@ public class TypeCasts {
         Attribute<T> attr;
         CodeAttribute cAttr;
 
-        cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+        cAttr = mm.findAttribute(Attributes.code()).orElse(null);
         if (cAttr != null) {
             attr = cAttr.findAttribute(attr_name).orElse(null);
             if (attr != null) {

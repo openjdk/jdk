@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8266766
  * @summary An array property of a type that is no longer of a type that is a legal member of an
  *          annotation should throw an AnnotationTypeMismatchException.
- * @enablePreview
  * @run main ArrayTypeMismatchTest
  */
 

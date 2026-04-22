@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -43,7 +41,7 @@ TableRateStatistics::~TableRateStatistics() { };
 void TableRateStatistics::add() {
 #if INCLUDE_JFR
   if (Jfr::is_recording()) {
-    Atomic::inc(&_added_items);
+    _added_items.add_then_fetch(1u);
   }
 #endif
 }
@@ -51,7 +49,7 @@ void TableRateStatistics::add() {
 void TableRateStatistics::remove() {
 #if INCLUDE_JFR
   if (Jfr::is_recording()) {
-    Atomic::inc(&_removed_items);
+    _removed_items.add_then_fetch(1u);
   }
 #endif
 }
@@ -62,8 +60,8 @@ void TableRateStatistics::stamp() {
   _added_items_stamp_prev = _added_items_stamp;
   _removed_items_stamp_prev = _removed_items_stamp;
 
-  _added_items_stamp = _added_items;
-  _removed_items_stamp = _removed_items;
+  _added_items_stamp = _added_items.load_relaxed();
+  _removed_items_stamp = _removed_items.load_relaxed();
 
   if (_time_stamp == 0) {
     _time_stamp = now - 1000000000;
@@ -134,10 +132,10 @@ TableStatistics::~TableStatistics() { }
 void TableStatistics::print(outputStream* st, const char *table_name) {
   st->print_cr("%s statistics:", table_name);
   st->print_cr("Number of buckets       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
+               " bytes, each %zu",
               _number_of_buckets, _bucket_bytes, _bucket_size);
   st->print_cr("Number of entries       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
+               " bytes, each %zu",
                _number_of_entries, _entry_bytes, _entry_size);
   if (_literal_bytes != 0) {
     float literal_avg = (_number_of_entries <= 0) ? 0.0f : (float)(_literal_bytes / _number_of_entries);

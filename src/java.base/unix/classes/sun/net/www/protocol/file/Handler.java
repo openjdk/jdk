@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,7 @@ public class Handler extends URLStreamHandler {
     public URLConnection openConnection(URL u, Proxy p)
            throws IOException {
         String host = u.getHost();
-        if (host == null || host.isEmpty() || host.equals("~") ||
-            host.equalsIgnoreCase("localhost")) {
+        if (ParseUtil.isLocalFileURL(u)) {
             File file = new File(ParseUtil.decode(u.getPath()));
             return createFileURLConnection(u, file);
         }
@@ -73,6 +72,7 @@ public class Handler extends URLStreamHandler {
         /* If you reach here, it implies that you have a hostname
            so attempt an ftp connection.
          */
+        FileURLConnection.requireFtpFallbackEnabled();
         URLConnection uc;
         URL ru;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ import jdk.jfr.Configuration;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.jvm.TestWaste
+ * @run main/othervm -Xlog:jfr+system+parser=debug -XX:TLABSize=2k jdk.jfr.jvm.TestWaste
  */
 public class TestWaste {
     static List<Object> list = new LinkedList<>();
@@ -61,7 +61,7 @@ public class TestWaste {
         try (Recording r = new Recording(c)) {
             // Old objects that are cleared out should not create waste
             r.enable("jdk.OldObjectSample")
-             .with("cutoff", "infinity")
+             .with("cutoff", "2 s")
              .withStackTrace();
             // No stack trace waste from allocation sample
             r.enable("jdk.ObjectAllocationSample")

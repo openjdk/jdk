@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import jaxp.library.JAXPTestUtilities;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -46,11 +45,9 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6582545
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6582545Test
  * @run testng/othervm dom.Bug6582545Test
  * @summary Test the value is correct when iterating attributes.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6582545Test {
     private DocumentBuilder xmlParser = null;
     private Document document = null;

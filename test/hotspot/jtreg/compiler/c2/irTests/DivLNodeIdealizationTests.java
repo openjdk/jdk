@@ -125,7 +125,6 @@ public class DivLNodeIdealizationTests {
                   IRNode.DIV_L, "1",
                   IRNode.DIV_BY_ZERO_TRAP, "1"
                  })
-    // Hotspot should keep the division because it may cause a division by zero trap
     public long retainDenominator(long x, long y) {
         return (x * y) / y;
     }

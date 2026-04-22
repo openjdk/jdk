@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,9 @@ public class VMDeprecatedOptions {
         // optionally added.
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
+            // { <flag name> , <expected default value> }
             // deprecated non-alias flags:
-            {"DontYieldALot", "false"},
-            {"UseNotificationThread", "true"},
-            {"PreserveAllAnnotations", "true"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"UseEmptySlotsInSupers", "true"},
-            {"ZGenerational", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
@@ -70,9 +66,6 @@ public class VMDeprecatedOptions {
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {
-              {"UseRTMLocking",         "false"},
-              {"UseRTMDeopt",           "false"},
-              {"RTMRetryCount",         "5"}
             })
           );
         }
@@ -96,6 +89,7 @@ public class VMDeprecatedOptions {
         }
 
         OutputAnalyzer output = CommandLineOptionTest.startVMWithOptions(optionNames, expectedValues);
+        output.reportDiagnosticSummary();
 
         // check for option deprecation messages:
         output.shouldHaveExitValue(0);

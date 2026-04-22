@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8295232
- * @summary Ensures java.locale.useOldISOCodes is statically initialized
+ * @bug 8295232 8353118 8355522
+ * @summary Tests for the "java.locale.useOldISOCodes" system property
  * @library /test/lib
  * @run junit UseOldISOCodesTest
  */
@@ -34,17 +34,17 @@ import jdk.test.lib.process.ProcessTools;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class UseOldISOCodesTest {
 
-    // Ensure java.locale.useOldISOCodes is only interpreted at runtime startup
     @Test
-    public void staticInitializationTest() throws Exception {
-        ProcessTools.executeTestJava("-Djava.locale.useOldISOCodes=true", "UseOldISOCodesTest$Runner")
+    public void testUseOldISOCodes() throws Exception {
+        var oa = ProcessTools.executeTestJava("-Djava.locale.useOldISOCodes=true", "UseOldISOCodesTest$Runner")
                 .outputTo(System.out)
-                .errorTo(System.err)
-                .shouldHaveExitValue(0);
+                .errorTo(System.err);
+        oa.shouldHaveExitValue(0);
+        oa.stderrShouldMatch("WARNING: The system property \"java.locale.useOldISOCodes\" is no longer supported. Any specified value will be ignored.");
     }
 
     static class Runner {
@@ -52,11 +52,9 @@ public class UseOldISOCodesTest {
         private static final String newCode = "he";
 
         public static void main(String[] args) {
-            // Should have no effect
-            System.setProperty("java.locale.useOldISOCodes", "false");
-            Locale locale = Locale.of(newCode);
-            assertEquals(obsoleteCode, locale.getLanguage(),
-                    "newCode 'he' was not mapped to 'iw' with useOldISOCodes=true");
+            // Ensure java.locale.useOldISOCodes should have no effect
+            assertNotEquals(obsoleteCode, Locale.of(newCode).getLanguage(),
+                    "newCode 'he' was mapped to 'iw' with useOldISOCodes=true");
         }
     }
 }

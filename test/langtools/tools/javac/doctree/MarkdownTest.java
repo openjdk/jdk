@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298405
+ * @bug 8298405 8356411
  * @summary Markdown support in the standard doclet
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -40,6 +40,7 @@
  * In the tests for code spans and code blocks, "@dummy" is used as a dummy inline
  * or block tag to verify that it is skipped as part of the code span or code block.
  * In other words, "@dummy" should appear as a literal part of the Markdown content.
+ * ("@Override" is also treated the same way, as a commonly found annotation.)
  * Conversely, standard tags are used to verify that a fragment of text is not being
  * skipped as a code span or code block. In other words, they should be recognized as tags
  * and not skipped as part of any Markdown content.
@@ -411,6 +412,32 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
+    ///     Indented Code Block
+    /// Lorum ipsum.
+    void indentedCodeBlock_leading() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: empty
+  body: 1
+    RawText[MARKDOWN, pos:0, ____Indented_Code_Block|Lorum_ipsum.]
+  block tags: empty
+]
+*/
+
+    /// Lorum ipsum.
+    ///
+    ///     Indented Code Block
+    void indentedCodeBlock_trailing() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Lorum_ipsum.]
+  body: 1
+    RawText[MARKDOWN, pos:18, Indented_Code_Block]
+  block tags: empty
+]
+*/
+
     ///123.
     ///
     ///```
@@ -613,5 +640,48 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
+// The following test case is derived from the test case in JDK-8338525.
+
+    ///     @Override
+    ///     void m() { }
+    ///
+    /// Plain text
+    ///
+    ///     @Override
+    ///     void m() { }
+    void leadingTrailingCodeBlocksWithAnnos() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: empty
+  body: 1
+    RawText[MARKDOWN, pos:0, ____@Override|____void_m()_{_}||...||____@Override|____void_m()_{_}]
+  block tags: empty
+]
+*/
+
+    /// @see Ref label
+    /// @see <a href="..">link<a>
+    /// @see "Text"
+    void seeTags() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: empty
+  body: empty
+  block tags: 3
+    See[SEE, pos:0
+      reference: 2
+        Reference[REFERENCE, pos:5, Ref]
+        RawText[MARKDOWN, pos:9, label]
+    ]
+    See[SEE, pos:15
+      reference: 1
+        RawText[MARKDOWN, pos:20, <a_href="..">link<a>]
+    ]
+    See[SEE, pos:41
+      reference: 1
+        Text[TEXT, pos:46, "Text"]
+    ]
+]
+*/
 
 }

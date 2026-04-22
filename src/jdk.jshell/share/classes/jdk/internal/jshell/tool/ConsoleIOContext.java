@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -121,7 +123,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive) throws Exception {
+                     boolean interactive, Size size) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -143,7 +145,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
                 enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
             } else {
-                Size size = null;
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {
@@ -155,10 +156,20 @@ class ConsoleIOContext extends IOContext {
             setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
-            terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).build();
+            //on platforms which are known to be fully supported by
+            //the FFMTerminalProvider, do not permit the ExecTerminalProvider:
+            boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
+                                        !OSUtils.IS_LINUX &&
+                                        !OSUtils.IS_OSX;
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -171,6 +182,7 @@ class ConsoleIOContext extends IOContext {
 
         setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
+        reader.setVariable(LineReader.WORDCHARS, "_$");
 
         reader.setParser((line, cursor, context) -> {
             if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
@@ -191,6 +203,7 @@ class ConsoleIOContext extends IOContext {
               .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
               .sorted()
               .map(key -> repl.prefs.get(key))
+              .filter(Objects::nonNull)
               .forEach(loadHistory::add);
 
         for (ListIterator<String> it = loadHistory.listIterator(); it.hasNext(); ) {
@@ -335,18 +348,21 @@ class ConsoleIOContext extends IOContext {
                 ConsoleIOContextTestSupport.willComputeCompletion();
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
-                List<String> doc;
+                List<AttributedString> doc;
                 boolean command = prefix.isEmpty() && text.startsWith("/");
                 if (command) {
                     suggestions = repl.commandCompletionSuggestions(text, cursor, anchor);
-                    doc = repl.commandDocumentation(text, cursor, true);
+                    doc = repl.commandDocumentation(text, cursor, true)
+                              .stream()
+                              .map(AttributedString::new)
+                              .toList();
                 } else {
                     int prefixLength = prefix.length();
                     suggestions = repl.analysis.completionSuggestions(prefix + text, cursor + prefixLength, anchor);
                     anchor[0] -= prefixLength;
                     doc = repl.analysis.documentation(prefix + text, cursor + prefix.length(), false)
                                        .stream()
-                                       .map(Documentation::signature)
+                                       .map(this::renderSignature)
                                        .toList();
                 }
                 long smartCount = suggestions.stream().filter(Suggestion::matchesType).count();
@@ -384,9 +400,9 @@ class ConsoleIOContext extends IOContext {
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefix =
-                            prefixOpt.orElse("").substring(cursor - anchor[0]);
+                            prefixOpt.orElse("");
 
-                    if (!prefix.isEmpty() && !command) {
+                    if (prefix.length() > cursor - anchor[0] && !command) {
                         //the completion will fill in the prefix, which will invalidate
                         //the documentation, avoid adding documentation tasks into the
                         //todo list:
@@ -395,6 +411,7 @@ class ConsoleIOContext extends IOContext {
 
                     ordinaryCompletion =
                             new OrdinaryCompletionTask(ordinaryCompletionToShow,
+                                                       anchor[0],
                                                        prefix,
                                                        !command && !doc.isEmpty(),
                                                        hasBoth);
@@ -489,6 +506,41 @@ class ConsoleIOContext extends IOContext {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private AttributedString renderSignature(Documentation doc) {
+        int activeParamIndex = doc.activeParameterIndex();
+        String signature = doc.signature();
+
+        if (activeParamIndex == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        int lparen = signature.indexOf('(');
+        int rparen = signature.indexOf(')', lparen);
+
+        if (lparen == (-1) || rparen == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        AttributedStringBuilder result = new AttributedStringBuilder();
+
+        result.append(signature.substring(0, lparen + 1), AttributedStyle.DEFAULT);
+
+        String[] params = signature.substring(lparen + 1, rparen).split(", *");
+        String sep = "";
+
+        for (int i = 0; i < params.length; i++) {
+            result.append(sep);
+            result.append(params[i], i == activeParamIndex ? AttributedStyle.BOLD
+                                                           : AttributedStyle.DEFAULT);
+
+            sep = ", ";
+        }
+
+        result.append(signature.substring(rparen), AttributedStyle.DEFAULT);
+
+        return result.toAttributedString();
     }
 
     private CompletionTask.Result doPrintFullDocumentation(List<CompletionTask> todo, List<String> doc, boolean command) {
@@ -599,15 +651,18 @@ class ConsoleIOContext extends IOContext {
 
     private final class OrdinaryCompletionTask implements CompletionTask {
         private final List<? extends CharSequence> toShow;
+        private final int anchor;
         private final String prefix;
         private final boolean cont;
         private final boolean showSmart;
 
         public OrdinaryCompletionTask(List<? extends CharSequence> toShow,
+                                      int anchor,
                                       String prefix,
                                       boolean cont,
                                       boolean showSmart) {
             this.toShow = toShow;
+            this.anchor = anchor;
             this.prefix = prefix;
             this.cont = cont;
             this.showSmart = showSmart;
@@ -620,7 +675,14 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Result perform(String text, int cursor) throws IOException {
-            in.putString(prefix);
+            String existingPrefix = in.getBuffer().substring(anchor, cursor);
+
+            if (prefix.startsWith(existingPrefix)) {
+                in.putString(prefix.substring(existingPrefix.length()));
+            } else {
+                in.getBuffer().backspace(existingPrefix.length());
+                in.putString(prefix);
+            }
 
             boolean showItems = toShow.size() > 1 || showSmart;
 
@@ -629,7 +691,7 @@ class ConsoleIOContext extends IOContext {
                 printColumns(toShow);
             }
 
-            if (!prefix.isEmpty())
+            if (prefix.length() > existingPrefix.length())
                 return showItems ? Result.FINISH : Result.SKIP_NOREPAINT;
 
             return cont ? Result.CONTINUE : Result.FINISH;
@@ -701,9 +763,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class CommandSynopsisTask implements CompletionTask {
 
-        private final List<String> synopsis;
+        private final List<AttributedString> synopsis;
 
-        public CommandSynopsisTask(List<String> synposis) {
+        public CommandSynopsisTask(List<AttributedString> synposis) {
             this.synopsis = synposis;
         }
 
@@ -717,6 +779,7 @@ class ConsoleIOContext extends IOContext {
 //            try {
                 in.getTerminal().writer().println();
                 in.getTerminal().writer().println(synopsis.stream()
+                                   .map(doc -> doc.toAnsi(in.getTerminal()))
                                    .map(l -> l.replaceAll("\n", LINE_SEPARATOR))
                                    .collect(Collectors.joining(LINE_SEPARATORS2)));
 //            } catch (IOException ex) {
@@ -750,9 +813,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class ExpressionSignaturesTask implements CompletionTask {
 
-        private final List<String> doc;
+        private final List<AttributedString> doc;
 
-        public ExpressionSignaturesTask(List<String> doc) {
+        public ExpressionSignaturesTask(List<AttributedString> doc) {
             this.doc = doc;
         }
 
@@ -765,7 +828,9 @@ class ConsoleIOContext extends IOContext {
         public Result perform(String text, int cursor) throws IOException {
             in.getTerminal().writer().println();
             in.getTerminal().writer().println(repl.getResourceString("jshell.console.completion.current.signatures"));
-            in.getTerminal().writer().println(doc.stream().collect(Collectors.joining(LINE_SEPARATOR)));
+            in.getTerminal().writer().println(doc.stream()
+                                                 .map(doc -> doc.toAnsi(in.getTerminal()))
+                                                 .collect(Collectors.joining(LINE_SEPARATOR)));
             return Result.FINISH;
         }
 
@@ -833,7 +898,7 @@ class ConsoleIOContext extends IOContext {
     public void beforeUserCode() {
         synchronized (this) {
             pendingBytes = null;
-            pendingLine = null;
+            pendingLineCharacters = null;
         }
         input.setState(State.BUFFER);
     }
@@ -964,37 +1029,77 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
-    private String pendingLine;
-    private int pendingLinePointer;
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
+    private char[] pendingLineCharacters;
+    private int pendingLineCharactersPointer;
     private byte[] pendingBytes;
     private int pendingBytesPointer;
 
     @Override
     public synchronized int readUserInput() throws IOException {
         if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
-            char userChar = readUserInputChar();
-            pendingBytes = String.valueOf(userChar).getBytes();
+            int userCharInput = readUserInputChar();
+            if (userCharInput == (-1)) {
+                return -1;
+            }
+            char userChar = (char) userCharInput;
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                int lowSurrogateInput = readUserInputChar();
+                if (lowSurrogateInput == (-1)) {
+                    //end of input, ignore at this stage
+                } else if (Character.isLowSurrogate((char) lowSurrogateInput)) {
+                    dataToConvert.append((char) lowSurrogateInput);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLineCharactersPointer--;
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];
     }
 
     @Override
-    public synchronized char readUserInputChar() throws IOException {
-        while (pendingLine == null || pendingLine.length() <= pendingLinePointer) {
-            pendingLine = doReadUserLine("", null) + System.getProperty("line.separator");
-            pendingLinePointer = 0;
+    public synchronized int readUserInputChar() throws IOException {
+        if (pendingLineCharacters != null && pendingLineCharacters.length == 0) {
+            return -1;
         }
-        return pendingLine.charAt(pendingLinePointer++);
+        while (pendingLineCharacters == null || pendingLineCharacters.length <= pendingLineCharactersPointer) {
+            String readLine = doReadUserLine("", null);
+            if (readLine == null) {
+                pendingLineCharacters = new char[0];
+                return -1;
+            } else {
+                pendingLineCharacters = (readLine + System.getProperty("line.separator")).toCharArray();
+            }
+            pendingLineCharactersPointer = 0;
+        }
+        return pendingLineCharacters[pendingLineCharactersPointer++];
     }
 
     @Override
     public synchronized String readUserLine(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
-        if (pendingLine != null && pendingLine.length() > pendingLinePointer) {
-            return pendingLine.substring(pendingLinePointer);
+        if (pendingLineCharacters != null && pendingLineCharacters.length > pendingLineCharactersPointer) {
+            String result = new String(pendingLineCharacters,
+                                       pendingLineCharactersPointer,
+                                       pendingLineCharacters.length - pendingLineCharactersPointer);
+            pendingLineCharacters = null;
+            return result;
         }
         return doReadUserLine(prompt, null);
+    }
+
+    @Override
+    public String readUserLine() throws IOException {
+        return readUserLine("");
     }
 
     private synchronized String doReadUserLine(String prompt, Character mask) throws IOException {
@@ -1010,6 +1115,8 @@ class ConsoleIOContext extends IOContext {
             return in.readLine(prompt.replace("%", "%%"), mask);
         } catch (UserInterruptException ex) {
             throw new InterruptedIOException();
+        } catch (EndOfFileException ex) {
+            return null; // Signal that Ctrl+D or similar happened
         } finally {
             in.setParser(prevParser);
             in.setHistory(prevHistory);
@@ -1020,7 +1127,11 @@ class ConsoleIOContext extends IOContext {
 
     public char[] readPassword(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
-        return doReadUserLine(prompt, '\0').toCharArray();
+        String line = doReadUserLine(prompt, '\0');
+        if (line == null) {
+            return null;
+        }
+        return line.toCharArray();
     }
 
     @Override
@@ -1312,6 +1423,7 @@ class ConsoleIOContext extends IOContext {
 
     private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
+        protected static final int DEFAULT_WIDTH = 80;
         protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
@@ -1320,9 +1432,9 @@ class ConsoleIOContext extends IOContext {
         public ProgrammaticInTerminal(InputStream input, OutputStream output,
                                        boolean interactive, Size size) throws Exception {
             this(input, output, interactive ? "ansi" : "dumb",
-                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size : new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT),
                  size != null ? size
-                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                              : interactive ? new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
                                             : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
@@ -1366,7 +1478,7 @@ class ConsoleIOContext extends IOContext {
             } catch (Throwable ex) {
                 // ignore
             }
-            return new Size(80, h);
+            return new Size(DEFAULT_WIDTH, h);
         }
         public TestTerminal(InputStream input, OutputStream output) throws Exception {
             this(input, output, computeSize());
@@ -1374,6 +1486,14 @@ class ConsoleIOContext extends IOContext {
         private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
             super(input, output, "ansi", size, size);
         }
+
+        @Override
+        public Attributes enterRawMode() {
+            Attributes res = super.enterRawMode();
+            res.setControlChar(ControlChar.VEOF, 4);
+            return res;
+        }
+
     }
 
     private static final class CompletionState {

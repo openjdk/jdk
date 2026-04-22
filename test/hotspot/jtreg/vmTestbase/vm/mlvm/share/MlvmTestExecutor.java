@@ -23,12 +23,16 @@
 
 package vm.mlvm.share;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+
 import nsk.share.Consts;
 import nsk.share.ArgumentParser;
-import vm.share.ProcessUtils;
 import vm.share.options.IgnoreUnknownArgumentsHandler;
 import vm.share.options.OptionSupport;
 
@@ -261,10 +265,23 @@ public class MlvmTestExecutor {
         }
     }
 
+    private static void dumpHeapWithHotspotDiagnosticMXBean(String fileName) throws IOException {
+        System.err.println("Dumping heap to " + fileName);
+
+        File f = new File(fileName);
+        if (f.exists())
+            f.delete();
+
+        HotSpotDiagnosticMXBean b = ManagementFactory.getPlatformMXBeans(
+                com.sun.management.HotSpotDiagnosticMXBean.class).get(0);
+        b.dumpHeap(fileName, false);
+    }
+
+
     private static void optionallyDumpHeap() {
         try {
             if (MlvmTest.getHeapDumpAfter()) {
-                ProcessUtils.dumpHeapWithHotspotDiagnosticMXBean(HEAP_DUMP_FILENAME);
+                dumpHeapWithHotspotDiagnosticMXBean(HEAP_DUMP_FILENAME);
             }
         } catch (Exception e) {
             Env.traceNormal(e, "Error dumping heap: ");

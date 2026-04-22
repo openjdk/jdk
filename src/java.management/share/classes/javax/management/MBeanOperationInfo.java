@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * fields contributed by any annotations on the {@code Method}
      * object that contain the {@link DescriptorKey} meta-annotation.
      *
+     * @param description A human readable description of the operation.
      * @param method The {@code java.lang.reflect.Method} object
      * describing the MBean operation.
-     * @param description A human readable description of the operation.
      */
     public MBeanOperationInfo(String description, Method method) {
         this(method.getName(),

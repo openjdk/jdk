@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "jvm.h"
@@ -44,18 +43,11 @@
 extern "C" void jio_print(const char* s, size_t len);
 extern "C" int jio_printf(const char *fmt, ...);
 
-outputStream::outputStream() {
-  _position    = 0;
-  _precount    = 0;
-  _indentation = 0;
-  _scratch     = nullptr;
-  _scratch_len = 0;
-}
-
 outputStream::outputStream(bool has_time_stamps) {
   _position    = 0;
   _precount    = 0;
   _indentation = 0;
+  _autoindent  = false;
   _scratch     = nullptr;
   _scratch_len = 0;
   if (has_time_stamps)  _stamp.update();
@@ -81,45 +73,67 @@ bool outputStream::update_position(const char* s, size_t len) {
 }
 
 // Execute a vsprintf, using the given buffer if necessary.
-// Return a pointer to the formatted string.
+// Return a pointer to the formatted string. Optimise for
+// strings without format specifiers, or only "%s". See
+// comments in the header file for more details.
 const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
                                        const char* format, va_list ap,
                                        bool add_cr,
                                        size_t& result_len) {
   assert(buflen >= 2, "buffer too small");
 
-  const char* result;
-  if (add_cr)  buflen--;
+  const char* result;  // The string to return. May not be the buffer.
+  size_t required_len = 0; // The length of buffer needed to avoid truncation
+                           // (excluding space for the nul terminator).
+
+  if (add_cr) { // Ensure space for CR even if truncation occurs.
+    buflen--;
+  }
+
   if (!strchr(format, '%')) {
     // constant format string
     result = format;
     result_len = strlen(result);
-    if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
-  } else if (format[0] == '%' && format[1] == 's' && format[2] == '\0') {
+    if (add_cr && result_len >= buflen) { // truncate
+      required_len = result_len + 1;
+      result_len = buflen - 1;
+    }
+  } else if (strncmp(format, "%s", 3) == 0) { //(format[0] == '%' && format[1] == 's' && format[2] == '\0') {
     // trivial copy-through format string
     result = va_arg(ap, const char*);
     result_len = strlen(result);
-    if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
+    if (add_cr && result_len >= buflen) { // truncate
+      required_len = result_len + 1;
+      result_len = buflen - 1;
+    }
   } else {
-    int required_len = os::vsnprintf(buffer, buflen, format, ap);
-    assert(required_len >= 0, "vsnprintf encoding error");
+    int required_buffer_len = os::vsnprintf(buffer, buflen, format, ap);
+    assert(required_buffer_len >= 0, "vsnprintf encoding error");
     result = buffer;
-    if ((size_t)required_len < buflen) {
+    required_len = required_buffer_len;
+    if (required_len < buflen) {
       result_len = required_len;
-    } else {
-      DEBUG_ONLY(warning("outputStream::do_vsnprintf output truncated -- buffer length is %d bytes but %d bytes are needed.",
-                         add_cr ? (int)buflen + 1 : (int)buflen, add_cr ? required_len + 2 : required_len + 1);)
+    } else { // truncation
       result_len = buflen - 1;
     }
   }
   if (add_cr) {
-    if (result != buffer) {
+    if (result != buffer) { // Need to copy to add CR
       memcpy(buffer, result, result_len);
       result = buffer;
+    } else {
+      required_len++;
     }
     buffer[result_len++] = '\n';
     buffer[result_len] = 0;
   }
+#ifdef ASSERT
+  if (required_len > result_len) {
+    warning("outputStream::do_vsnprintf output truncated -- buffer length is %zu"
+            " bytes but %zu bytes are needed.",
+            add_cr ? buflen + 1 : buflen, required_len + 1);
+  }
+#endif
   return result;
 }
 
@@ -137,11 +151,20 @@ void outputStream::do_vsnprintf_and_write_with_scratch_buffer(const char* format
 }
 
 void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) {
+  if (_autoindent && _position == 0) {
+    indent();
+  }
   if (_scratch) {
     do_vsnprintf_and_write_with_scratch_buffer(format, ap, add_cr);
   } else {
     do_vsnprintf_and_write_with_automatic_buffer(format, ap, add_cr);
   }
+}
+
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
 }
 
 void outputStream::print(const char* format, ...) {
@@ -166,9 +189,17 @@ void outputStream::vprint_cr(const char* format, va_list argptr) {
   do_vsnprintf_and_write(format, argptr, true);
 }
 
-void outputStream::fill_to(int col) {
-  int need_fill = col - position();
+void outputStream::print_raw(const char* str, size_t len) {
+  if (_autoindent && _position == 0) {
+    indent();
+  }
+  write(str, len);
+}
+
+int outputStream::fill_to(int col) {
+  const int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
+  return need_fill;
 }
 
 void outputStream::move_to(int col, int slop, int min_space) {
@@ -198,10 +229,6 @@ void outputStream::sp(int count) {
 
 void outputStream::cr() {
   this->write("\n", 1);
-}
-
-void outputStream::cr_indent() {
-  cr(); indent();
 }
 
 void outputStream::stamp() {
@@ -269,16 +296,16 @@ void outputStream::print_julong(julong value) {
  * 0000020: 0000 0000 0000 0040 0000 0000 0000 015d  .......@.......]
  * ...
  *
- * indent is applied to each line.  Ends with a CR.
+ * Ends with a CR.
  */
 void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
       if (rel_addr) {
-        indent().print("%07" PRIxPTR ":", i);
+        print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
+        print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
@@ -342,7 +369,7 @@ void stringStream::grow(size_t new_capacity) {
     }
     zero_terminate();
   } else {
-    _buffer = REALLOC_C_HEAP_ARRAY(char, _buffer, new_capacity, mtInternal);
+    _buffer = REALLOC_C_HEAP_ARRAY(_buffer, new_capacity, mtInternal);
     _capacity = new_capacity;
   }
 }
@@ -355,7 +382,7 @@ void stringStream::write(const char* s, size_t len) {
   }
   const size_t reasonable_max_len = 1 * G;
   if (len >= reasonable_max_len) {
-    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    assert(false, "bad length? (%zu)", len);
     return;
   }
   size_t write_len = 0;
@@ -398,17 +425,19 @@ char* stringStream::as_string(bool c_heap) const {
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
   copy[_written] = '\0';  // terminating null
-  if (c_heap) {
-    // Need to ensure our content is written to memory before we return
-    // the pointer to it.
-    OrderAccess::storestore();
-  }
+  return copy;
+}
+
+char* stringStream::as_string(Arena* arena) const {
+  char* copy = NEW_ARENA_ARRAY(arena, char, _written + 1);
+  ::memcpy(copy, _buffer, _written);
+  copy[_written] = '\0';  // terminating null
   return copy;
 }
 
 stringStream::~stringStream() {
   if (!_is_fixed && _buffer != _small_buffer) {
-    FREE_C_HEAP_ARRAY(char, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
   }
 }
 
@@ -577,15 +606,15 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
-long fileStream::fileSize() {
-  long size = -1;
+int64_t fileStream::fileSize() {
+  int64_t size = -1;
   if (_file != nullptr) {
-    long pos = ::ftell(_file);
+    int64_t pos = os::ftell(_file);
     if (pos < 0) return pos;
-    if (::fseek(_file, 0, SEEK_END) == 0) {
-      size = ::ftell(_file);
+    if (os::fseek(_file, 0, SEEK_END) == 0) {
+      size = os::ftell(_file);
     }
-    ::fseek(_file, pos, SEEK_SET);
+    os::fseek(_file, pos, SEEK_SET);
   }
   return size;
 }
@@ -647,7 +676,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   }
 
   fileStream* file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -665,7 +694,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
   file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -843,7 +872,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
+      _log_file->print_cr("<writer thread='%zu'/>", writer_id);
     }
     _last_writer = writer_id;
   }
@@ -954,13 +983,17 @@ void ostream_exit() {
   ClassListWriter::delete_classlist();
   // Make sure tty works after VM exit by assigning an always-on functioning fdStream.
   outputStream* tmp = tty;
-  tty = DisplayVMOutputToStderr ? fdStream::stdout_stream() : fdStream::stderr_stream();
+  tty = DisplayVMOutputToStderr ? fdStream::stderr_stream() : fdStream::stdout_stream();
   if (tmp != &tty_preinit_stream && tmp != defaultStream::instance) {
     delete tmp;
   }
-  delete defaultStream::instance;
-  xtty = nullptr;
+  // Keep xtty usable as long as possible by ensuring we null it out before
+  // deleting anything.
+  defaultStream* ds = defaultStream::instance;
   defaultStream::instance = nullptr;
+  xtty = nullptr;
+  OrderAccess::fence(); // force visibility to concurrently executing threads
+  delete ds;
 }
 
 // ostream_abort() is called by os::abort() when VM is about to die.
@@ -1006,7 +1039,7 @@ void bufferedStream::write(const char* s, size_t len) {
     const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
     if (end > reasonable_cap) {
       // In debug VM, assert right away.
-      assert(false, "Exceeded max buffer size for this string.");
+      assert(false, "Exceeded max buffer size for this string (\"%.200s...\").", buffer);
       // Release VM: silently truncate. We do this since these kind of errors
       // are both difficult to predict with testing (depending on logging content)
       // and usually not serious enough to kill a production VM for it.
@@ -1018,7 +1051,7 @@ void bufferedStream::write(const char* s, size_t len) {
       }
     }
     if (buffer_length < end) {
-      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
+      buffer = REALLOC_C_HEAP_ARRAY(buffer, end, mtInternal);
       buffer_length = end;
     }
   }
@@ -1037,17 +1070,17 @@ char* bufferedStream::as_string() {
 }
 
 bufferedStream::~bufferedStream() {
-  FREE_C_HEAP_ARRAY(char, buffer);
+  FREE_C_HEAP_ARRAY(buffer);
 }
 
 #ifndef PRODUCT
 
 #if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #elif defined(_WINDOWS)
 #include <Ws2tcpip.h>
 #endif

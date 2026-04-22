@@ -36,7 +36,7 @@ extern "C" {
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return
 
 static jint      errCode       = PASSED;
 static jvmtiEnv *jvmti         = nullptr;
@@ -63,7 +63,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getCP(
     /* Print Constant Pool attrs*/
     printf("getCP: id = %d, cnt = %03d, bytes_cnt = %04d\n",
             id, cp_cnt, cp_bytes_cnt);
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -83,7 +83,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 #ifdef STATIC_BUILD

@@ -25,8 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 
-#include <cstddef>
-
+#include "cppstdlib/cstddef.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
@@ -42,22 +41,23 @@
 // represent index, even though index is "inherently" unsigned.  There are two reasons for this choice:
 //  1. We use -1 as a sentinel value to represent empty partitions.  This same value may be used to represent
 //     failure to find a previous set bit or previous range of set bits.
-//  2. Certain loops are written most naturally if the iterator, which may hold the sentinel -1 value, can be
+//  2. Certain loops are written most naturally if the induction variable, which may hold the sentinel -1 value, can be
 //     declared as signed and the terminating condition can be < 0.
-
-typedef ssize_t idx_t;
 
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_first_consecutive_set_bits() and
 // find_last_consecutive_set_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
-// might be violatee through future software maintenance.
+// might be violated through future software maintenance.
 class ShenandoahSimpleBitMap {
+public:
+  typedef ssize_t idx_t;
+private:
   const idx_t _num_bits;
   const size_t _num_words;
   uintx* const _bitmap;
 
 public:
-  ShenandoahSimpleBitMap(size_t num_bits);
+  ShenandoahSimpleBitMap(idx_t num_bits);
 
   ~ShenandoahSimpleBitMap();
 
@@ -80,11 +80,13 @@ private:
   bool is_forward_consecutive_ones(idx_t start_idx, idx_t count) const;
   bool is_backward_consecutive_ones(idx_t last_idx, idx_t count) const;
 
+  static inline uintx tail_mask(uintx bit_number);
+
 public:
 
   inline idx_t aligned_index(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    idx_t array_idx = idx & ~right_n_bits(LogBitsPerWord);
+    idx_t array_idx = idx & ~(BitsPerWord - 1);
     return array_idx;
   }
 
@@ -107,27 +109,25 @@ public:
   inline void set_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] |= the_bit;
   }
 
   inline void clear_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] &= ~the_bit;
   }
 
   inline bool is_set(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
-    return (_bitmap[array_idx] & the_bit)? true: false;
+    return (_bitmap[array_idx] & the_bit) != 0;
   }
 
   // Return the index of the first set bit in the range [beg, size()), or size() if none found.

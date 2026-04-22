@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,9 @@ static jboolean relaunch = JNI_FALSE;
  * Prototypes for internal functions.
  */
 static jboolean expand(JLI_List args, const char *str, const char *var_name);
+#ifdef _WIN32
+static char * winGetEnv(const char * var_name);
+#endif
 
 JNIEXPORT void JNICALL
 JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
@@ -144,6 +147,19 @@ static void checkArg(const char *arg) {
     if (firstAppArgIndex == NOT_FOUND && idx != 0) {
         firstAppArgIndex = (int) idx;
     }
+}
+
+static char *computeToken(JLI_List *parts, const char *anchor, const char *nextc) {
+    char *token;
+    if ((*parts)->size == 0) {
+        token = clone_substring(anchor, nextc - anchor);
+    } else {
+        JLI_List_addSubstring(*parts, anchor, nextc - anchor);
+        token = JLI_List_combine(*parts);
+        JLI_List_free(*parts);
+        *parts = JLI_List_new(4);
+    }
+    return token;
 }
 
 /*
@@ -243,14 +259,7 @@ static char* nextToken(__ctx_args *pctx) {
                 // fall through
             case '\n':
             case '\r':
-                if (pctx->parts->size == 0) {
-                    token = clone_substring(anchor, nextc - anchor);
-                } else {
-                    JLI_List_addSubstring(pctx->parts, anchor, nextc - anchor);
-                    token = JLI_List_combine(pctx->parts);
-                    JLI_List_free(pctx->parts);
-                    pctx->parts = JLI_List_new(4);
-                }
+                token = computeToken(&pctx->parts, anchor, nextc);
                 pctx->cptr = nextc + 1;
                 pctx->state = FIND_NEXT;
                 return token;
@@ -259,6 +268,13 @@ static char* nextToken(__ctx_args *pctx) {
                     continue;
                 }
                 pctx->state = IN_COMMENT;
+                // return non-zero length token, terminated by the number sign
+                if (nextc - anchor > 0) {
+                    token = computeToken(&pctx->parts, anchor, nextc);
+                    pctx->cptr = nextc + 1;
+                    return token;
+                }
+                // anchor after number sign
                 anchor = nextc + 1;
                 break;
             case '\\':
@@ -465,8 +481,6 @@ int isTerminalOpt(char *arg) {
 
 JNIEXPORT jboolean JNICALL
 JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
-    char *env = getenv(var_name);
-
     if (firstAppArgIndex == 0) {
         // Not 'java', return
         return JNI_FALSE;
@@ -476,12 +490,25 @@ JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
         return JNI_FALSE;
     }
 
-    if (NULL == env) {
-        return JNI_FALSE;
+#ifdef _WIN32
+    char *env = winGetEnv(var_name);
+#else
+    char *env = getenv(var_name);
+#endif
+
+    jboolean ret = JNI_FALSE;
+
+    if (NULL != env) {
+        JLI_ReportMessage(ARG_INFO_ENVVAR, var_name, env);
+        ret = expand(args, env, var_name);
     }
 
-    JLI_ReportMessage(ARG_INFO_ENVVAR, var_name, env);
-    return expand(args, env, var_name);
+#ifdef _WIN32
+    if (NULL != env) {
+        JLI_MemFree(env);
+    }
+#endif
+    return ret;
 }
 
 /*
@@ -501,7 +528,7 @@ static jboolean expand(JLI_List args, const char *str, const char *var_name) {
     // This is retained until the process terminates as it is saved as the args
     p = JLI_MemAlloc(JLI_StrLen(str) + 1);
     while (*str != '\0') {
-        while (*str != '\0' && isspace(*str)) {
+        while (*str != '\0' && isspace((unsigned char) *str)) {
             str++;
         }
 
@@ -511,7 +538,7 @@ static jboolean expand(JLI_List args, const char *str, const char *var_name) {
         }
 
         arg = p;
-        while (*str != '\0' && !isspace(*str)) {
+        while (*str != '\0' && !isspace((unsigned char) *str)) {
             if (inEnvVar && (*str == '"' || *str == '\'')) {
                 quote = *str++;
                 while (*str != quote && *str != '\0') {
@@ -577,11 +604,44 @@ static jboolean expand(JLI_List args, const char *str, const char *var_name) {
             exit(1);
         }
 
-        assert (*str == '\0' || isspace(*str));
+        assert (*str == '\0' || isspace((unsigned char) *str));
     }
 
     return JNI_TRUE;
 }
+
+#ifdef _WIN32
+/*
+ * getenv() without best-fit mapping. The return value is constructed by converting
+ * _wgetenv()'s return encoded in wide char to ANSI code page without best-fit map.
+ */
+static char * winGetEnv(const char * var_name) {
+    char * mbEnvVar = NULL;
+
+    int wcCount = MultiByteToWideChar(CP_ACP, 0, var_name, -1, NULL, 0);
+    if (wcCount > 0) {
+        LPWSTR wcVarName = JLI_MemAlloc(wcCount * sizeof(wchar_t));
+        if (MultiByteToWideChar(CP_ACP, 0, var_name, -1, wcVarName, wcCount) != 0) {
+            LPWSTR wcEnvVar = _wgetenv(wcVarName);
+            if (wcEnvVar != NULL) {
+                int mbSize = WideCharToMultiByte(CP_ACP,
+                    WC_NO_BEST_FIT_CHARS | WC_COMPOSITECHECK | WC_DEFAULTCHAR,
+                    wcEnvVar, -1, NULL, 0, NULL, NULL);
+                if (mbSize > 0) {
+                    mbEnvVar = JLI_MemAlloc(mbSize);
+                    if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS | WC_COMPOSITECHECK | WC_DEFAULTCHAR,
+                        wcEnvVar, -1, mbEnvVar, mbSize, NULL, NULL) == 0) {
+                        JLI_MemFree(mbEnvVar);
+                        mbEnvVar = NULL;
+                    }
+                }
+            }
+        }
+        JLI_MemFree(wcVarName);
+    }
+    return mbEnvVar;
+}
+#endif
 
 #ifdef DEBUG_ARGFILE
 /*

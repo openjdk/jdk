@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.net.smtp;
 import java.io.*;
 import java.net.*;
 import sun.net.TransferProtocolClient;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class implements the SMTP client.
@@ -167,7 +166,7 @@ public class SmtpClient extends TransferProtocolClient {
         }
         try {
             String s;
-            mailhost = GetPropertyAction.privilegedGetProperty("mail.host");
+            mailhost = System.getProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;
@@ -193,7 +192,7 @@ public class SmtpClient extends TransferProtocolClient {
         setConnectTimeout(to);
         try {
             String s;
-            mailhost = GetPropertyAction.privilegedGetProperty("mail.host");
+            mailhost = System.getProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;

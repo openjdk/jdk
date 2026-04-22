@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2022 2019"
+VALID_VS_VERSIONS="2022 2019 2026"
 
 VS_DESCRIPTION_2019="Microsoft Visual Studio 2019"
 VS_VERSION_INTERNAL_2019=142
@@ -57,6 +57,21 @@ VS_SDK_PLATFORM_NAME_2022=
 VS_SUPPORTED_2022=true
 VS_TOOLSET_SUPPORTED_2022=true
 
+VS_DESCRIPTION_2026="Microsoft Visual Studio 2026"
+VS_VERSION_INTERNAL_2026=145
+VS_MSVCR_2026=vcruntime140.dll
+VS_VCRUNTIME_1_2026=vcruntime140_1.dll
+VS_MSVCP_2026=msvcp140.dll
+VS_ENVVAR_2026="VS180COMNTOOLS"
+VS_USE_UCRT_2026="true"
+VS_VS_INSTALLDIR_2026="Microsoft Visual Studio/18"
+VS_EDITIONS_2026="BuildTools Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2026=
+VS_VS_PLATFORM_NAME_2026="v145"
+VS_SDK_PLATFORM_NAME_2026=
+VS_SUPPORTED_2026=true
+VS_TOOLSET_SUPPORTED_2026=true
+
 ################################################################################
 
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
@@ -82,14 +97,12 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       fi
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-      if test "x$TARGET_CPU" = xx86; then
-        VCVARSFILES="vcvars32.bat vcvarsamd64_x86.bat"
-      elif test "x$TARGET_CPU" = xx86_64; then
+      if test "x$TARGET_CPU" = xx86_64; then
         VCVARSFILES="vcvars64.bat vcvarsx86_amd64.bat"
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         # aarch64 requires Visual Studio 16.8 or higher
-        VCVARSFILES="vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
+        VCVARSFILES="vcvarsarm64.bat vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
@@ -132,9 +145,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
       elif test -f "$WIN_SDK_BASE/bin/setenv.cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/bin/setenv.cmd"
-        if test "x$TARGET_CPU" = xx86; then
-          VS_ENV_ARGS="/x86"
-        elif test "x$TARGET_CPU" = xx86_64; then
+        if test "x$TARGET_CPU" = xx86_64; then
           VS_ENV_ARGS="/x64"
         elif test "x$TARGET_CPU" = xaarch64; then
           VS_ENV_ARGS="/arm64"
@@ -161,7 +172,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   # version, pass -vcvars_ver=<toolset_version> argument to vcvarsall.bat.
   AC_ARG_WITH(msvc-toolset-version, [AS_HELP_STRING([--with-msvc-toolset-version],
       [specific MSVC toolset version to use, passed as -vcvars_ver argument to
-       pass to vcvarsall.bat (Windows only)])])
+      pass to vcvarsall.bat (Windows only)])])
 
   TARGET_CPU="$1"
   VS_VERSION="$2"
@@ -206,10 +217,12 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
   fi
+  # Derive system drive root from CMD (which is at <drive>/windows/system32/cmd.exe)
+  WINSYSDRIVE_ROOT="$(dirname "$(dirname "$(dirname "$CMD")")")"
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files/$VS_INSTALL_DIR], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files (x86)/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files (x86)/$VS_INSTALL_DIR], [well-known name])
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
       TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
@@ -224,9 +237,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
           [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
     fi
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files/$SDK_INSTALL_DIR], [well-known name])
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
   VCVARS_VER=auto
@@ -327,7 +340,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   OLDPATH="$PATH"
   # Make sure we only capture additions to PATH needed by VS.
   # Clear out path, but need system dir present for vsvars cmd file to be able to run
-  export PATH=$WINENV_PREFIX/c/windows/system32
+  export PATH="$(dirname "$CMD")"
   # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
   # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
   # in bat file arguments. :-(
@@ -438,9 +451,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found $DLL_NAME architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-      CORRECT_MSVCR_ARCH=386
-    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
       CORRECT_MSVCR_ARCH=x86-64
     elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
       # The cygwin 'file' command only returns "PE32+ executable (DLL) (console), for MS Windows",
@@ -466,9 +477,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   DLL_HELP="$2"
   MSVC_DLL=
 
-  if test "x$OPENJDK_TARGET_CPU" = xx86; then
-    vs_target_cpu=x86
-  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
     vs_target_cpu=x64
   elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     vs_target_cpu=arm64
@@ -522,18 +531,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
     if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU" = xx86; then
-        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $GREP -v arm64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVC_DLL" = x; then
-          # We're grasping at straws now...
-          POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-          | $HEAD --lines 1`
-        fi
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x64 | $HEAD --lines 1`
-      fi
+      POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
+      | $GREP x64 | $HEAD --lines 1`
 
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
           [search of VCINSTALLDIR])

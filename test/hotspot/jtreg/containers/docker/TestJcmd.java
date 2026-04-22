@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
  * @test
  * @summary Test JCMD across container boundary. The JCMD runs on a host system,
  *          while sending commands to a JVM that runs inside a container.
- * @requires docker.support
+ * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @library /test/lib
@@ -37,6 +38,8 @@
  */
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import jdk.test.lib.Container;
 import jdk.test.lib.JDKToolFinder;
@@ -55,12 +58,12 @@ public class TestJcmd {
     private static final String IMAGE_NAME = Common.imageName("jcmd");
     private static final int TIME_TO_RUN_CONTAINER_PROCESS = (int) (10 * Utils.TIMEOUT_FACTOR); // seconds
     private static final String CONTAINER_NAME = "test-container";
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final boolean IS_PODMAN = DockerTestUtils.isPodman();
     private static final String ROOT_UID = "0";
 
 
     public static void main(String[] args) throws Exception {
-        DockerTestUtils.canTestDocker();
+        DockerTestUtils.checkCanTestDocker();
 
         // podman versions below 3.3.1 hava a bug where cross-container testing with correct
         // permissions fails. See JDK-8273216
@@ -140,6 +143,7 @@ public class TestJcmd {
         sb.append(String.format("FROM %s:%s\n", DockerfileConfig.getBaseImageName(),
                                 DockerfileConfig.getBaseImageVersion()));
         sb.append("COPY /jdk /jdk\n");
+        sb.append("ENV LANG=C.UTF-8\n");
         sb.append("ENV JAVA_HOME=/jdk\n");
 
         if (!IS_PODMAN) { // only needed for docker
@@ -166,13 +170,9 @@ public class TestJcmd {
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/")
             .addDockerOpts("--cap-add=SYS_PTRACE")
+            .addDockerOpts("--pull=never")
             .addDockerOpts("--name", CONTAINER_NAME)
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
-
-        if (IS_PODMAN && !ROOT_UID.equals(getId("-u"))) {
-            // map the current userid to the one in the target namespace
-            opts.addDockerOpts("--userns=keep-id");
-        }
 
         // avoid large Xmx
         opts.appendTestJavaOptions = false;
@@ -182,7 +182,7 @@ public class TestJcmd {
         return ProcessTools.startProcess("main-container-process",
                                       pb,
                                       line -> line.contains(EventGeneratorLoop.MAIN_METHOD_STARTED),
-                                      5, TimeUnit.SECONDS);
+                                      15, TimeUnit.SECONDS);
     }
 
 
@@ -264,14 +264,16 @@ public class TestJcmd {
         }
 
         private static PodmanVersion fromVersionString(String version) {
-            try {
-                // Example 'podman version 3.2.1'
-                String versNums = version.split("\\s+", 3)[2];
-                String[] numbers = versNums.split("\\.", 3);
-                return new PodmanVersion(Integer.parseInt(numbers[0]),
-                                         Integer.parseInt(numbers[1]),
-                                         Integer.parseInt(numbers[2]));
-            } catch (Exception e) {
+            // Examples: 'podman version 3.2.1', 'podman version 4.9.4-rhel'
+            final Pattern pattern = Pattern.compile("podman version (\\d+)\\.(\\d+)\\.(\\d+).*");
+            final Matcher matcher = pattern.matcher(version);
+
+            if (matcher.matches()) {
+                return new PodmanVersion(
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2)),
+                        Integer.parseInt(matcher.group(3)));
+            } else {
                 System.out.println("Failed to parse podman version: " + version);
                 return DEFAULT;
             }

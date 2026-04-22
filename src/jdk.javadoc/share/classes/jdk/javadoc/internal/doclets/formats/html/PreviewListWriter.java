@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate File to list all the preview elements with the
@@ -81,16 +85,43 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
         if (!jeps.isEmpty()) {
             int index = 1;
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
-            Content list = HtmlTree.UL(HtmlStyle.previewFeatureList).addStyle(HtmlStyle.checkboxes);
+            Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
-                String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
-                Content label = new ContentBuilder(Text.of(jep.number() + ": "))
-                        .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                Content label;
+                if (jep.number() != 0) {
+                    String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
+                    label = new ContentBuilder(Text.of(jep.number() + ": "))
+                            .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                } else {
+                    // Pseudo-JEP created from javadoc tag - use description as label
+                    label = Text.of(jep.title());
+                }
                 list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
             }
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
             list.add(HtmlTree.LI(getCheckbox(label, ID_ALL, "feature-")));
             target.add(list);
+        }
+    }
+
+    @Override
+    protected List<Content> getIndexLinks() {
+        var list = super.getIndexLinks();
+        var notes = builder.getElementNotes();
+        if (!notes.isEmpty()) {
+            list.add(getIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes"));
+        }
+        return list;
+    }
+
+    @Override
+    protected void addSummaries(Content content) {
+        var notes = builder.getElementNotes();
+        super.addSummaries(content);
+        // Add permanent APIs with preview notes below preview API tables
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes", "doclet.Element", content);
         }
     }
 
@@ -106,11 +137,11 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected void addTableTabs(Table<Element> table, String headingKey) {
-        table.setGridStyle(HtmlStyle.threeColumnSummary)
+        table.setGridStyle(HtmlStyles.threeColumnSummary)
                 .setDefaultTab(getTableCaption(headingKey))
                 .setRenderTabs(false);
         for (PreviewAPIListBuilder.JEP jep : builder.getJEPs()) {
-            table.addTab(Text.EMPTY, element -> jep == builder.getJEP(element));
+            table.addTab(Text.EMPTY, element -> jep.equals(builder.getJEP(element)));
         }
     }
 
@@ -131,6 +162,6 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 }

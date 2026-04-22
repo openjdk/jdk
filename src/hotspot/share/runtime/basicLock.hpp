@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,32 +26,37 @@
 #define SHARE_RUNTIME_BASICLOCK_HPP
 
 #include "oops/markWord.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
 class BasicLock {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-  // This is either the actual displaced header from a locked object, or
-  // a sentinel zero value indicating a recursive stack-lock.
-  volatile markWord _displaced_header;
- public:
-  markWord displaced_header() const {
-    return Atomic::load(&_displaced_header);
-  }
+  // Used as a cache of the ObjectMonitor* used when locking. Must either
+  // be nullptr or the ObjectMonitor* used when locking.
+  ObjectMonitor* volatile _monitor;
 
-  void set_displaced_header(markWord header) {
-    Atomic::store(&_displaced_header, header);
-  }
+  ObjectMonitor* get_monitor() const { return AtomicAccess::load(&_monitor); }
+  void set_monitor(ObjectMonitor* mon) { AtomicAccess::store(&_monitor, mon); }
+  static int monitor_offset_in_bytes() { return (int)offset_of(BasicLock, _monitor); }
+
+ public:
+  BasicLock() : _monitor(nullptr) {}
+
+  void set_bad_monitor_deopt() { set_monitor(reinterpret_cast<ObjectMonitor*>(badDispHeaderDeopt)); }
+
+  inline ObjectMonitor* object_monitor_cache() const;
+  inline void clear_object_monitor_cache();
+  inline void set_object_monitor_cache(ObjectMonitor* mon);
+  static int object_monitor_cache_offset_in_bytes() { return monitor_offset_in_bytes(); }
 
   void print_on(outputStream* st, oop owner) const;
 
   // move a basic lock (used during deoptimization)
   void move_to(oop obj, BasicLock* dest);
-
-  static int displaced_header_offset_in_bytes() { return (int)offset_of(BasicLock, _displaced_header); }
 };
 
 // A BasicObjectLock associates a specific Java object with a BasicLock.
@@ -72,6 +77,7 @@ class BasicObjectLock {
  public:
   // Manipulation
   oop      obj() const                                { return _obj;  }
+  oop*     obj_adr()                                  { return &_obj; }
   void set_obj(oop obj)                               { _obj = obj; }
   BasicLock* lock()                                   { return &_lock; }
 

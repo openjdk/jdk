@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
@@ -96,7 +95,7 @@ public abstract class Snippet {
          * <P>
          * A type declaration is {@linkplain Kind#isPersistent() persistent}.
          *
-         * @jls 7.6 Top Level Type Declarations
+         * @jls 7.6 Top Level Class and Interface Declarations
          */
         TYPE_DECL(true),
 
@@ -219,9 +218,8 @@ public abstract class Snippet {
          * Import Module Declaration.
          * An import declaration of a module.
          * @jls 7.5.5 Import Module Declarations
-         * @since 23
+         * @since 25
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.MODULE_IMPORTS, reflective=true)
         MODULE_IMPORT_SUBKIND(Kind.IMPORT),
 
         /**
@@ -241,23 +239,23 @@ public abstract class Snippet {
         /**
          * An enum declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
-         * @jls 8.9 Enum Types
+         * @jls 8.9 Enum Classes
          */
         ENUM_SUBKIND(Kind.TYPE_DECL),
 
         /**
          * A record declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
-         * @jls 8.10 Record Types
-         * @since 14
+         * @jls 8.10 Record Classes
          *
+         * @since 17
          */
         RECORD_SUBKIND(Kind.TYPE_DECL),
 
         /**
          * An annotation interface declaration. A {@code SubKind} of
          * {@link Kind#TYPE_DECL}.
-         * @jls 9.6 Annotation Types
+         * @jls 9.6 Annotation Interfaces
          */
         ANNOTATION_TYPE_SUBKIND(Kind.TYPE_DECL),
 
@@ -526,7 +524,7 @@ public abstract class Snippet {
 
         /**
          * The snippet is inactive because it does not yet exist.
-         * Used only in {@link SnippetEvent#previousStatus} for new
+         * Used only in {@link SnippetEvent#previousStatus()} for new
          * snippets.
          * {@link jdk.jshell.JShell#status(jdk.jshell.Snippet) JShell.status(Snippet)}
          * will never return this {@code Status}.

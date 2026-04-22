@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +27,69 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahRegulatorThread.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
+/**
+ * ShenandoahAllocationRate maintains a truncated history of recently sampled allocation rates for the purpose of providing
+ * informed estimates of current and future allocation rates based on weighted averages and standard deviations of the
+ * truncated history.  More recently sampled allocations are weighted more heavily than older samples when computing
+ * averages and standard deviations.
+ */
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  public:
   explicit ShenandoahAllocationRate();
+
+  // Reset the _last_sample_value to zero, _last_sample_time to current time.
   void allocation_counter_reset();
 
+  // Force an allocation rate sample to be taken, even if the time since last sample is not greater than
+  // 1s/ShenandoahAdaptiveSampleFrequencyHz, except when current_time - _last_sample_time < MinSampleTime (2 ms).
+  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
+  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
+  // In the case that a new sample is not taken, overwrite unaccounted_bytes_allocated with bytes allocated since
+  // the previous sample was taken (allocated - _last_sample_value).  Otherwise, overwrite unaccounted_bytes_allocated
+  // with 0.
+  double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
+
+  // Add an allocation rate sample if the time since last sample is greater than 1s/ShenandoahAdaptiveSampleFrequencyHz.
+  // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
+  // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
   double sample(size_t allocated);
 
+  // Return an estimate of the upper bound on allocation rate, with the upper bound computed as the weighted average
+  // of recently sampled instantaneous allocation rates added to sds times the standard deviation computed for the
+  // sequence of recently sampled average allocation rates.
   double upper_bound(double sds) const;
+
+  // Test whether rate significantly diverges from the computed average allocation rate.  If so, return true.
+  // Otherwise, return false.  Significant divergence is recognized if (rate - _rate.avg()) / _rate.sd() > threshold.
   bool is_spiking(double rate, double threshold) const;
 
  private:
 
+  // Return the instantaneous rate calculated from (allocated - _last_sample_value) / (time - _last_sample_time).
+  // Return Sentinel value 0.0 if (time - _last_sample_time) == 0 or if (allocated <= _last_sample_value).
   double instantaneous_rate(double time, size_t allocated) const;
 
+  // Time at which previous allocation rate sample was collected.
   double _last_sample_time;
+
+  // Bytes allocated as of the time at which previous allocation rate sample was collected.
   size_t _last_sample_value;
+
+  // The desired interval of time between consecutive samples of the allocation rate.
   double _interval_sec;
+
+  // Holds a sequence of the most recently sampled instantaneous allocation rates
   TruncatedSeq _rate;
+
+  // Holds a sequence of the most recently computed weighted average of allocation rates, with each weighted average
+  // computed immediately after an instantaneous rate was sampled
   TruncatedSeq _rate_avg;
 };
 
@@ -68,20 +110,40 @@ public:
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                     RegionData* data, size_t size,
-                                                     size_t actual_free);
+  virtual void initialize() override;
 
-  void record_cycle_start();
-  void record_success_concurrent();
-  void record_success_degenerated();
-  void record_success_full();
+  virtual void post_initialize() override;
 
-  virtual bool should_start_gc();
+  virtual void adjust_penalty(intx step) override;
 
-  virtual const char* name()     { return "Adaptive"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
+  // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
+  // before we need to start the next GC.
+  void start_idle_span() override;
+
+  // Having observed a new allocation rate sample, add this to the acceleration history so that we can determine if allocation
+  // rate is accelerating.
+  void add_rate_to_acceleration_history(double timestamp, double rate);
+
+  // Compute and return the current allocation rate, the current rate of acceleration, and the amount of memory that we expect
+  // to consume if we start GC right now and gc takes predicted_cycle_time to complete.
+  size_t accelerated_consumption(double& acceleration, double& current_rate,
+                                 double avg_rate_words_per_sec, double predicted_cycle_time) const;
+
+
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                       RegionData* data, size_t size,
+                                                       size_t actual_free) override;
+
+  void record_cycle_start() override;
+  void record_success_concurrent() override;
+  void record_degenerated() override;
+  void record_success_full() override;
+
+  bool should_start_gc() override;
+
+  const char* name() override     { return "Adaptive"; }
+  bool is_diagnostic() override   { return false; }
+  bool is_experimental() override { return false; }
 
  private:
   // These are used to adjust the margin of error and the spike threshold
@@ -95,6 +157,8 @@ public:
 
   const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
   const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
+
+  const static size_t GC_TIME_SAMPLE_SIZE;
 
   friend class ShenandoahAllocationRate;
 
@@ -110,8 +174,18 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
+  // Returns number of words that can be allocated before we need to trigger next GC, given available in bytes.
+  inline size_t allocatable(size_t available) const {
+    return (available > _headroom_adjustment)? (available - _headroom_adjustment) / HeapWordSize: 0;
+  }
+
 protected:
   ShenandoahAllocationRate _allocation_rate;
+
+  // Invocations of should_start_gc() happen approximately once per ms.  Queries of allocation rate only happen if a
+  // a certain amount of time has passed since the previous query.
+  size_t _allocated_at_previous_query;
+  double _time_of_previous_allocation_query;
 
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
@@ -138,6 +212,68 @@ protected:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
+
+  ShenandoahFreeSet* _free_set;
+
+  // This represents the time at which the allocation rate was most recently sampled for the purpose of detecting acceleration.
+  double _previous_acceleration_sample_timestamp;
+  size_t _total_allocations_at_start_of_idle;
+
+  // bytes of headroom at which we should trigger GC
+  size_t _headroom_adjustment;
+
+  // Keep track of GC_TIME_SAMPLE_SIZE most recent concurrent GC cycle times
+  uint _gc_time_first_sample_index;
+  uint _gc_time_num_samples;
+  double* const _gc_time_timestamps;
+  double* const _gc_time_samples;
+  double* const _gc_time_xy;    // timestamp * sample
+  double* const _gc_time_xx;    // timestamp squared
+  double _gc_time_sum_of_timestamps;
+  double _gc_time_sum_of_samples;
+  double _gc_time_sum_of_xy;
+  double _gc_time_sum_of_xx;
+
+  double _gc_time_m;            // slope
+  double _gc_time_b;            // y-intercept
+  double _gc_time_sd;           // sd on deviance from prediction
+
+  // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
+  // detect when GC needs to trigger.
+  void compute_headroom_adjustment() override;
+
+  void add_gc_time(double timestamp_at_start, double duration);
+  void add_degenerated_gc_time(double timestamp_at_start, double duration);
+  double predict_gc_time(double timestamp_at_start);
+
+  // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
+  // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
+  // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
+  uint _spike_acceleration_buffer_size;
+  uint _spike_acceleration_first_sample_index;
+  uint _spike_acceleration_num_samples;
+  double* const _spike_acceleration_rate_samples; // holds rates in words/second
+  double* const _spike_acceleration_rate_timestamps;
+
+  // A conservative minimum threshold of free space that we'll try to maintain when possible.
+  // For example, we might trigger a concurrent gc if we are likely to drop below
+  // this threshold, or we might consider this when dynamically resizing generations
+  // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
+  size_t min_free_threshold();
+
+  void accept_trigger_with_type(Trigger trigger_type) {
+    _last_trigger = trigger_type;
+    ShenandoahHeuristics::accept_trigger();
+  }
+
+public:
+  // Sample the allocation rate at GC trigger time if possible.  Return the number of allocated bytes that were
+  // not accounted for in the sample.  This must be called before resetting bytes allocated since gc start.
+  size_t force_alloc_rate_sample(size_t bytes_allocated) override {
+    size_t unaccounted_bytes;
+    _allocation_rate.force_sample(bytes_allocated, unaccounted_bytes);
+    return unaccounted_bytes;
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

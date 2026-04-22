@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6863864
+ * @bug 4313887 6838333 6863864 8340329
  * @summary Unit test for java.nio.file.Files createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
@@ -45,7 +45,7 @@ public class Links {
     }
 
     /**
-     * Exercise createSymbolicLink and readLink methods
+     * Exercise createSymbolicLink and readSymbolicLink methods
      */
     static void testSymLinks(Path dir) throws IOException {
         final Path link = dir.resolve("link");
@@ -130,6 +130,27 @@ public class Links {
             Files.deleteIfExists(myfile);
             Files.deleteIfExists(mydir);
             Files.deleteIfExists(link);
+        }
+
+        // Check message of NotLinkException
+        try {
+            Files.createDirectory(mydir);
+
+            try {
+                Path mytarget = Files.readSymbolicLink(mydir);
+            } catch (NotLinkException expected) {
+                String filename = mydir.getFileName().toString();
+                String message = expected.getMessage();
+                boolean okay = message.contains(filename);
+                if (!okay) {
+                    System.err.println("Message \"" + message + "\"" +
+                        " does not contain the filename \"" +
+                        filename + "\"");
+                    assertTrue(okay);
+                }
+            }
+        } finally {
+            Files.deleteIfExists(mydir);
         }
     }
 

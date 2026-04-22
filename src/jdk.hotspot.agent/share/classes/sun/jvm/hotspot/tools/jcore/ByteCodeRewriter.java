@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 
 package sun.jvm.hotspot.tools.jcore;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import sun.jvm.hotspot.interpreter.Bytecodes;
 import sun.jvm.hotspot.oops.ConstantPool;
 import sun.jvm.hotspot.oops.ConstantPoolCache;
@@ -44,19 +41,7 @@ public class ByteCodeRewriter
     private Bytes  bytes;
 
     private static final int jintSize = 4;
-    public static final boolean DEBUG;
-
-    static {
-        @SuppressWarnings("removal")
-        String debug = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    return System.getProperty("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
-                }
-            }
-        );
-        DEBUG = (debug != null ? debug.equalsIgnoreCase("true") : false);
-    }
+    public static final boolean DEBUG = Boolean.getBoolean("sun.jvm.hotspot.tools.jcore.ByteCodeRewriter.DEBUG");
 
 
     protected void debugMessage(String message) {

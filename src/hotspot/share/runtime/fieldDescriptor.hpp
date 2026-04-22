@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class fieldDescriptor {
  public:
   fieldDescriptor() {}
   fieldDescriptor(InstanceKlass* ik, int index) {
-    reinitialize(ik, index);
+    reinitialize(ik, ik->field(index));
   }
   inline Symbol* name() const;
   inline Symbol* signature() const;
@@ -84,6 +84,7 @@ class fieldDescriptor {
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return field_flags().is_stable(); }
+  bool is_injected()              const    { return field_flags().is_injected(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 
@@ -97,12 +98,14 @@ class fieldDescriptor {
 
   bool is_trusted_final()         const;
 
+  bool is_mutable_static_final()  const;
+
   inline void set_is_field_access_watched(const bool value);
   inline void set_is_field_modification_watched(const bool value);
   inline void set_has_initialized_final_update(const bool value);
 
   // Initialization
-  void reinitialize(InstanceKlass* ik, int index);
+  void reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo);
 
   // Print
   void print() const;

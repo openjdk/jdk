@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
  */
 
 /**
- * This package contains the JDK's extension to
- * the standard implementation of the
- * {@link java.lang.management} API and also defines the management
+ * This package contains JDK extensions to the standard implementation of
+ * the {@link java.lang.management} API and also defines the management
  * interface for some other components of the platform.
  *
  * <p>

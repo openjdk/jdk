@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
  * when we get a punctuation char what was the real hardware key was that
  * was pressed?  Although '&' often comes from Shift-7 the keyboard can be
  * remapped!  I don't think there really is a good answer, and hopefully
- * all good applets are only interested in logical key typed events not
+ * all good applications are only interested in logical key typed events not
  * press/release.  Meanwhile, we are hard-coding the shifted punctuation
  * to trigger the virtual keys that are the expected ones under a standard
  * keymapping. Looking at Windows & Mac, they don't actually do this, the

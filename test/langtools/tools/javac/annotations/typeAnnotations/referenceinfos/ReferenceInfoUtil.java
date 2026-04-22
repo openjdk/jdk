@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ public class ReferenceInfoUtil {
 
     /////////////////// Extract type annotations //////////////////
     private static void findAnnotations(ClassModel cm, List<TAD> annos) {
-        findAnnotations(cm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cm, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(cm, Attributes.runtimeInvisibleTypeAnnotations(), annos);
 
         for (FieldModel f : cm.fields()) {
             findAnnotations(f, annos);
@@ -49,8 +49,8 @@ public class ReferenceInfoUtil {
     }
 
     private static void findAnnotations(AttributedElement ae, List<TAD> annos) {
-        findAnnotations(ae, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(ae, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(ae, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(ae, Attributes.runtimeInvisibleTypeAnnotations(), annos);
     }
 
     // test the result of Attributes.getIndex according to expectations
@@ -78,7 +78,7 @@ public class ReferenceInfoUtil {
             } else throw new AssertionError();
         }
         if (m instanceof MethodModel mm) {
-            CodeAttribute cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cAttr = mm.findAttribute(Attributes.code()).orElse(null);
             if (cAttr != null) {
                 Attribute<T> attr2 = cAttr.findAttribute(attrName).orElse(null);;
                 if (attr2 != null) {
@@ -97,7 +97,7 @@ public class ReferenceInfoUtil {
         List<TAD> result = new ArrayList<>();
         for (TypeAnnotation anno: annos) {
             TAD tad = new TAD();
-            tad.annotation = anno.className().stringValue();
+            tad.annotation = anno.annotation().className().stringValue();
             tad.type = anno.targetInfo().targetType();
             switch (anno.targetInfo().targetType()) {
                 case CAST, CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, METHOD_INVOCATION_TYPE_ARGUMENT -> {

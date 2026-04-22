@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 # questions.
 #
 
-#
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 # Generate java files for javax.swing.plaf package
-#
+################################################################################
+
 NIMBUS_PACKAGE = javax.swing.plaf
 NIMBUS_GENSRC_DIR = $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/javax/swing/plaf/nimbus
 NIMBUS_SKIN_FILE = $(MODULE_SRC)/share/classes/javax/swing/plaf/nimbus/skin.laf
@@ -41,3 +45,8 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus: $(NIMBUS_SKIN_FI
 GENSRC_SWING_NIMBUS := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus
 
 TARGETS += $(GENSRC_SWING_NIMBUS)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

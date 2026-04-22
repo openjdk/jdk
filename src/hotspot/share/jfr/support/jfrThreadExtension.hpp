@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP
 
-#include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 
@@ -65,6 +64,10 @@
 #define THREAD_LOCAL_WRITER_OFFSET_JFR \
   JfrThreadLocal::java_event_writer_offset() + THREAD_LOCAL_OFFSET_JFR
 
-#define SUSPEND_THREAD_CONDITIONAL(thread) if ((thread)->is_trace_suspend()) JfrThreadSampling::on_javathread_suspend(thread)
+#define SAMPLE_STATE_OFFSET_JFR \
+  JfrThreadLocal::sample_state_offset() + THREAD_LOCAL_OFFSET_JFR
+
+#define SAMPLING_CRITICAL_SECTION_OFFSET_JFR \
+  JfrThreadLocal::sampling_critical_section_offset() + THREAD_LOCAL_OFFSET_JFR
 
 #endif // SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP

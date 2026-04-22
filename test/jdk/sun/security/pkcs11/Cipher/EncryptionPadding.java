@@ -93,9 +93,10 @@ public class EncryptionPadding extends PKCS11Test {
             sunPKCS11cipher.doFinal(ByteBuffer.allocate(0), cipherText);
         }
 
-        Cipher sunJCECipher = Cipher.getInstance(transformation, "SunJCE");
-        sunJCECipher.init(Cipher.DECRYPT_MODE, key);
-        byte[] sunJCEPlain = sunJCECipher.doFinal(cipherText.array());
+        Cipher providerCipher = Cipher.getInstance(transformation,
+                System.getProperty("test.provider.name", "SunJCE"));
+        providerCipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] sunJCEPlain = providerCipher.doFinal(cipherText.array());
 
         if (!Arrays.equals(plainText, sunJCEPlain)) {
             throw new Exception("Cross-provider cipher test failed.");

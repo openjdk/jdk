@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ Java_MyPackage_AddModuleUsesAndProvidesTest_checkUses(JNIEnv *env,
         throw_exc(env, "Check #UC3: service can not be used unexpectedly");
         return FAILED;
     }
-    fflush(0);
+    fflush(NULL);
     return PASSED;
 }
 
@@ -275,7 +275,7 @@ Java_MyPackage_AddModuleUsesAndProvidesTest_checkProvides(JNIEnv *env,
         throw_exc(env, "Check #PC2: error in add provides to baseModule with correct service and serviceImpl");
         return FAILED;
     }
-    fflush(0);
+    fflush(NULL);
     return PASSED;
 }
 

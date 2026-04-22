@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestCloning
- * @run main/othervm -Djava.security.manager=allow TestCloning sm
  */
 
 import java.security.MessageDigest;

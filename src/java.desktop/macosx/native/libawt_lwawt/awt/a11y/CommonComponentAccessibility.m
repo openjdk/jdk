@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,16 +126,17 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:52];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"desktopicon"];
     [rolesMap setObject:@"SpinboxAccessibility" forKey:@"spinbox"];
-    [rolesMap setObject:@"StaticTextAccessibility" forKey:@"hyperlink"];
+    [rolesMap setObject:@"LinkAccessibility" forKey:@"hyperlink"];
     [rolesMap setObject:@"StaticTextAccessibility" forKey:@"label"];
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
+    [rolesMap setObject:@"CheckboxAccessibility" forKey:@"togglebutton"];
     [rolesMap setObject:@"SliderAccessibility" forKey:@"slider"];
     [rolesMap setObject:@"ScrollAreaAccessibility" forKey:@"scrollpane"];
     [rolesMap setObject:@"ScrollBarAccessibility" forKey:@"scrollbar"];
@@ -153,6 +154,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"dateeditor"];
     [rolesMap setObject:@"ComboBoxAccessibility" forKey:@"combobox"];
     [rolesMap setObject:@"TabGroupAccessibility" forKey:@"pagetablist"];
+    [rolesMap setObject:@"TabButtonAccessibility" forKey:@"pagetab"];
     [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
     [rolesMap setObject:@"OutlineAccessibility" forKey:@"tree"];
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];

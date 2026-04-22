@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,19 +212,4 @@ class DefNewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
   DefNewTracer() : YoungGCTracer(DefNew) {}
 };
 
-class GCLockerTracer : public AllStatic {
-#if INCLUDE_JFR
-private:
-  static Ticks _needs_gc_start_timestamp;
-  static volatile jint _jni_lock_count;
-  static volatile jint _stall_count;
-#endif
-
-  static bool is_started() NOT_JFR_RETURN_(false);
-
-public:
-  static void start_gc_locker(jint jni_lock_count) NOT_JFR_RETURN();
-  static void inc_stall_count() NOT_JFR_RETURN();
-  static void report_gc_locker() NOT_JFR_RETURN();
-};
 #endif // SHARE_GC_SHARED_GCTRACE_HPP

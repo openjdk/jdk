@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifdef LINUX
 
@@ -36,6 +35,7 @@
 #include "unittest.hpp"
 
 #include <sys/mman.h>
+#include <sys/prctl.h>
 
 static bool using_explicit_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
 
@@ -59,7 +59,7 @@ namespace {
     HugeTlbfsMemory(char* const ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~HugeTlbfsMemory() {
       if (_ptr != nullptr) {
-        os::release_memory_special(_ptr, _size);
+        os::release_memory(_ptr, _size);
       }
     }
   };
@@ -227,7 +227,7 @@ class TestReserveMemorySpecial : AllStatic {
     char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, false);
     if (addr != nullptr) {
       small_page_write(addr, size);
-      os::release_memory_special(addr, size);
+      os::release_memory(addr, size);
     }
   }
 
@@ -285,7 +285,7 @@ class TestReserveMemorySpecial : AllStatic {
         if (p != nullptr) {
           EXPECT_TRUE(is_aligned(p, alignment));
           small_page_write(p, size);
-          os::release_memory_special(p, size);
+          os::release_memory(p, size);
         }
       }
     }
@@ -300,7 +300,7 @@ class TestReserveMemorySpecial : AllStatic {
         if (p != nullptr) {
           EXPECT_EQ(p, req_addr);
           small_page_write(p, size);
-          os::release_memory_special(p, size);
+          os::release_memory(p, size);
         }
       }
     }
@@ -355,15 +355,15 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   const size_t size = 1 * G;
   const bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
-  char* const heap = os::reserve_memory(size, false, mtInternal);
+  char* const heap = os::reserve_memory(size, mtTest);
   EXPECT_NE(heap, nullptr);
   EXPECT_TRUE(os::commit_memory(heap, size, false));
 
   {
-    auto pretouch = [heap, size](Thread*, int) {
+    auto pretouch = [&](Thread*, int) {
       os::pretouch_memory(heap, heap + size, os::vm_page_size());
     };
-    auto useMemory = [heap, size](Thread*, int) {
+    auto useMemory = [&](Thread*, int) {
       int* iptr = reinterpret_cast<int*>(heap);
       for (int i = 0; i < 1000; i++) *iptr++ = i;
     };
@@ -379,8 +379,8 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   for (int i = 0; i < 1000; i++)
     EXPECT_EQ(*iptr++, i);
 
-  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
-  EXPECT_TRUE(os::release_memory(heap, size));
+  os::uncommit_memory(heap, size, false);
+  os::release_memory(heap, size);
   UseTransparentHugePages = useThp;
 }
 
@@ -445,26 +445,51 @@ TEST_VM(os_linux, decoder_get_source_info_valid_overflow_minimal) {
 #endif // clang
 
 #ifdef __GLIBC__
+#ifndef ADDRESS_SANITIZER
 TEST_VM(os_linux, glibc_mallinfo_wrapper) {
   // Very basic test. Call it. That proves that resolution and invocation works.
   os::Linux::glibc_mallinfo mi;
   bool did_wrap = false;
 
-  os::Linux::get_mallinfo(&mi, &did_wrap);
-
   void* p = os::malloc(2 * K, mtTest);
   ASSERT_NOT_NULL(p);
+
+  os::Linux::get_mallinfo(&mi, &did_wrap);
 
   // We should see total allocation values > 0
   ASSERT_GE((mi.uordblks + mi.hblkhd), 2 * K);
 
-  // These values also should exceed some reasonable size.
+  // These values also should less than some reasonable size.
   ASSERT_LT(mi.fordblks, 2 * G);
   ASSERT_LT(mi.uordblks, 2 * G);
   ASSERT_LT(mi.hblkhd, 2 * G);
 
   os::free(p);
 }
+#endif // ADDRESS_SANITIZER
 #endif // __GLIBC__
+
+static void test_set_thread_name(const char* name, const char* expected) {
+  os::set_native_thread_name(name);
+  char buf[16];
+  int rc = prctl(PR_GET_NAME, buf);
+  ASSERT_EQ(0, rc);
+  ASSERT_STREQ(buf, expected);
+}
+
+TEST_VM(os_linux, set_thread_name) {
+  char buf[16];
+  // retrieve current name
+  int rc = prctl(PR_GET_NAME, buf);
+  ASSERT_EQ(0, rc);
+
+  test_set_thread_name("shortname", "shortname");
+  test_set_thread_name("012345678901234",  "012345678901234");
+  test_set_thread_name("0123456789012345", "0123456..012345");
+  test_set_thread_name("MyAllocationWorkerThread22", "MyAlloc..read22");
+
+  // restore current name
+  test_set_thread_name(buf, buf);
+}
 
 #endif // LINUX

@@ -44,7 +44,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * useful in programs involving a fixed sized party of threads that
  * must occasionally wait for each other. The barrier is called
  * <em>cyclic</em> because it can be re-used after the waiting threads
- * are released.
+ * are released. If you need support for variable numbers of parties
+ * per cycle, alternate actions on exceptions, termination control,
+ * contention control, or status monitoring, use the more flexible
+ * {@link Phaser} class.
  *
  * <p>A {@code CyclicBarrier} supports an optional {@link Runnable} command
  * that is run once per barrier point, after the last thread in the party

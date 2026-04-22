@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.SystemTrayPeer;
 import sun.awt.SunToolkit;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.UNIXToolkit;
 import sun.util.logging.PlatformLogger;
 
-public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
+public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XSystemTrayPeer");
 
     SystemTray target;
@@ -70,6 +69,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         }
     }
 
+    @Override
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
         if (shouldDisableSystemTray) {
             return;
@@ -87,6 +87,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         createTrayPeers();
     }
 
+    @Override
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
         if (shouldDisableSystemTray) {
             return;
@@ -102,9 +103,11 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         }
     }
 
+    @Override
     public void selectionChanged(int screen, XMSelection sel, long owner, XPropertyEvent event) {
     }
 
+    @Override
     public Dimension getTrayIconSize() {
         return new Dimension(XTrayIconPeer.TRAY_ICON_HEIGHT, XTrayIconPeer.TRAY_ICON_WIDTH);
     }
@@ -179,7 +182,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
                         .firePropertyChange(target, propertyName, oldValue, newValue);
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
 
     private void createTrayPeers() {
@@ -194,7 +197,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
                     }
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
 
     private void removeTrayPeers() {
@@ -206,13 +209,6 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
                     }
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
-
-    private void invokeOnEachAppContext(Runnable runnable) {
-        for (AppContext appContext : AppContext.getAppContexts()) {
-            SunToolkit.invokeLaterOnAppContext(appContext, runnable);
-        }
-    }
-
 }

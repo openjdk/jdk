@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808 8248863 8305710 8318082
+ *      8266808 8248863 8305710 8318082 8347058 8350638 8345555 8378228
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -57,7 +57,7 @@ public class TestSearch extends JavadocTester {
                 testSrc("UnnamedPkgClass.java"));
         checkExit(Exit.OK);
         checkSearchOutput("UnnamedPkgClass.html", true);
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -81,7 +81,7 @@ public class TestSearch extends JavadocTester {
         checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
         checkSearchTagIndex();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkAllPkgsAllClasses();
         checkFiles(true,
@@ -106,7 +106,7 @@ public class TestSearch extends JavadocTester {
         checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
         checkSearchTagIndex();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -126,7 +126,7 @@ public class TestSearch extends JavadocTester {
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
-        checkJqueryAndImageFiles(false);
+        checkImageFiles(false);
         checkFiles(false,
                 "member-search-index.js",
                 "package-search-index.js",
@@ -151,7 +151,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -172,7 +172,7 @@ public class TestSearch extends JavadocTester {
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
-        checkJqueryAndImageFiles(false);
+        checkImageFiles(false);
         checkFiles(false,
                 "member-search-index.js",
                 "package-search-index.js",
@@ -194,7 +194,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkIndexNoComment();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -216,7 +216,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkIndexNoDeprecated();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -239,7 +239,7 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput(true);
         checkSplitIndex();
         checkSplitIndexSearchTagDuplication();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -261,7 +261,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkJavaFXOutput();
-        checkJqueryAndImageFiles(true);
+        checkImageFiles(true);
         checkSearchJS();
         checkFiles(true,
                 "member-search-index.js",
@@ -392,20 +392,20 @@ public class TestSearch extends JavadocTester {
     void checkSearchIndex() {
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method(byte[],int,java.lang.String)"}""");
         checkOutput("member-search-index.js", false,
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(RegClass)","u":"method-pkg1.RegClass-"}""",
+               """
+                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--"}""",
-                """
-                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--"}""",
+                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method-byte:A-int-java.lang.String-"}""");
     }
@@ -418,25 +418,21 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
-                    """,
-                """
-                    <script type="text/javascript" src="script-files/jquery-3.7.1.min.js"></script>
-                    """,
-                """
-                    <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
-                """
                     const pathtoroot = "./";
-                    loadScripts(document, 'script');""",
+                    loadScripts();
+                    initTheme();""",
                 "<div class=\"nav-list-search\">",
                 """
                     <li><a href="search.html">Search</a></li>""",
                 """
-                    <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off">
-                    <input type="reset" id="reset-search" disabled value="Reset">
-                    </div>""");
+                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
+                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
+                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
+                     value="Reset"></div>""");
+        checkOutput(fileName, false,
+                "jquery-ui.min.css",
+                "jquery-3.7.1.min.js",
+                "jquery-ui.min.js");
     }
 
     void checkSingleIndex() {
@@ -669,14 +665,15 @@ public class TestSearch extends JavadocTester {
                 "AnotherClass.java:68: warning: invalid usage of tag {@index");
     }
 
-    void checkJqueryAndImageFiles(boolean expectedOutput) {
+    void checkImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "script-files/search.js",
+                "resource-files/x.svg",
+                "resource-files/glass.svg");
+        checkFiles(false,
                 "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
-                "resource-files/jquery-ui.min.css",
-                "resource-files/x.png",
-                "resource-files/glass.png");
+                "resource-files/jquery-ui.min.css");
     }
 
     void checkSearchJS() {
@@ -689,9 +686,7 @@ public class TestSearch extends JavadocTester {
                 "function getURLPrefix(item, category) {",
                 "url += item.l;");
 
-        checkOutput("script-files/search-page.js", true,
-                "function renderResults(result) {",
-                "function selectTab(category) {");
+        checkFiles(false, "script-files/search-page.js");
 
         checkCssClasses("script-files/search.js", "resource-files/stylesheet.css");
     }
@@ -701,8 +696,8 @@ public class TestSearch extends JavadocTester {
         // are also defined as class selectors somewhere in the stylesheet file.
         String js = readOutputFile(jsFile);
         Set<String> cssClasses = new TreeSet<>();
-        addMatches(js, Pattern.compile("class=\\\\*\"([^\\\\\"]+)\\\\*\""), cssClasses);
-        addMatches(js, Pattern.compile("attr\\(\"class\", \"([^\"]+)\"\\)"), cssClasses);
+        addMatches(js, Pattern.compile("class=[\"']([-\\w]+)[\"']"), cssClasses);
+        addMatches(js, Pattern.compile("classList.add\\([\"']([-\\w]+)[\"']\\)"), cssClasses);
         // verify that the regex did find use of CSS class names
         checking("Checking CSS classes found");
         if (cssClasses.isEmpty()) {
@@ -797,10 +792,10 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
@@ -835,7 +830,7 @@ public class TestSearch extends JavadocTester {
                 """
                     {"l":"SearchWordWithDescription","h":"pkg1.RegClass.CONSTANT_FIELD_1","d":"search word with desc","u":"pkg1/RegClass.html#SearchWordWithDescription"}""",
                 """
-                    {"l":"Serialized Form","h":"","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
+                    {"l":"Serialized Form","h":"","k":"18","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
                 """
                     {"l":"trailing","h":"pkg.AnotherClass.method(byte[], int, String)","d":"backslash\\\\","u":"pkg/AnotherClass.html#trailing"}]""");
     }

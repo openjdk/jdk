@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,11 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   }
 }
 
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
+  assert(f.interpreter_frame_last_sp() == nullptr, "should be null for top frame");
+  f.interpreter_frame_set_last_sp(f.unextended_sp());
+}
+
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   assert(hf.fp() == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0)
@@ -147,10 +152,16 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // extended_sp is already relativized by TemplateInterpreterGenerator::generate_normal_entry or
   // AbstractInterpreter::layout_activation
 
+  // The interpreter native wrapper code adds space in the stack equal to size_of_parameters()
+  // after the fixed part of the frame. For wait0 this is equal to 3 words (this + long parameter).
+  // We adjust by this size since otherwise the saved last sp will be less than the extended_sp.
+  DEBUG_ONLY(Method* m = hf.interpreter_frame_method();)
+  DEBUG_ONLY(int extra_space = m->is_object_wait0() ? m->size_of_parameters() : 0;)
+
   assert((hf.fp() - hf.unextended_sp()) == (f.fp() - f.unextended_sp()), "");
   assert(hf.unextended_sp() == (intptr_t*)hf.at(frame::interpreter_frame_last_sp_offset), "");
   assert(hf.unextended_sp() <= (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
-  assert(hf.unextended_sp() >  (intptr_t*)hf.at(frame::interpreter_frame_extended_sp_offset), "");
+  assert(hf.unextended_sp() + extra_space >  (intptr_t*)hf.at(frame::interpreter_frame_extended_sp_offset), "");
   assert(hf.fp()            >  (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
 #ifdef ASSERT
   if (f.interpreter_frame_method()->max_locals() > 0) {
@@ -183,6 +194,9 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
   }
 }
 
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
+}
+
 //////// Thaw
 
 // Fast path
@@ -191,6 +205,41 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   size <<= LogBytesPerWord;
   Prefetch::read(start, size);
   Prefetch::read(start, size - 64);
+}
+
+inline intptr_t* AnchorMark::anchor_mark_set_pd() {
+  intptr_t* sp = _top_frame.sp();
+  if (_top_frame.is_interpreted_frame()) {
+    // In case the top frame is interpreted we need to set up the anchor using
+    // the last_sp saved in the frame (remove possible alignment added while
+    // thawing, see ThawBase::finish_thaw()). We also clear last_sp to match
+    // the behavior when calling the VM from the interpreter (we check for this
+    // in FreezeBase::prepare_freeze_interpreted_top_frame, which can be reached
+    // if preempting again at redo_vmcall()).
+    _last_sp_from_frame = _top_frame.interpreter_frame_last_sp();
+    assert(_last_sp_from_frame != nullptr, "");
+    _top_frame.interpreter_frame_set_last_sp(nullptr);
+    if (sp != _last_sp_from_frame) {
+      // We need to move up return pc and fp. They will be read next in
+      // set_anchor() and set as _last_Java_pc and _last_Java_fp respectively.
+      _last_sp_from_frame[-1] = (intptr_t)_top_frame.pc();
+      _last_sp_from_frame[-2] = (intptr_t)_top_frame.fp();
+    }
+    _is_interpreted = true;
+    sp = _last_sp_from_frame;
+  }
+  return sp;
+}
+
+inline void AnchorMark::anchor_mark_clear_pd() {
+  if (_is_interpreted) {
+    // Restore last_sp_from_frame and possibly overwritten pc.
+    _top_frame.interpreter_frame_set_last_sp(_last_sp_from_frame);
+    intptr_t* sp = _top_frame.sp();
+    if (sp != _last_sp_from_frame) {
+      sp[-1] = (intptr_t)_top_frame.pc();
+    }
+  }
 }
 
 template <typename ConfigT>
@@ -203,7 +252,8 @@ inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
 
 inline frame ThawBase::new_entry_frame() {
   intptr_t* sp = _cont.entrySP();
-  return frame(sp, sp, _cont.entryFP(), _cont.entryPC()); // TODO PERF: This finds code blob and computes deopt state
+  // TODO PERF: This finds code blob and computes deopt state
+  return frame(sp, sp, _cont.entryFP(), _cont.entryPC());
 }
 
 template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
@@ -215,7 +265,6 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     // If caller is interpreted it already made room for the callee arguments
     int overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
     const int fsize = (int)(ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap);
-    const int locals = hf.interpreter_frame_method()->max_locals();
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     intptr_t* fp = frame_sp + (hf.fp() - heap_sp);
     if ((intptr_t)fp % frame::frame_alignment != 0) {
@@ -237,7 +286,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     int fsize = FKind::size(hf);
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     if (bottom || caller.is_interpreted_frame()) {
-      int argsize = hf.compiled_frame_stack_argsize();
+      int argsize = FKind::stack_argsize(hf);
 
       fsize += argsize;
       frame_sp -= argsize;
@@ -252,13 +301,16 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     intptr_t* fp;
     if (PreserveFramePointer) {
       // we need to recreate a "real" frame pointer, pointing into the stack
-      fp = frame_sp + FKind::size(hf) - 2;
+      fp = frame_sp + FKind::size(hf) - frame::sender_sp_offset;
     } else {
-      fp = FKind::stub
-        ? frame_sp + fsize - 2 // On RISCV, this value is used for the safepoint stub
-        : *(intptr_t**)(hf.sp() - 2); // we need to re-read fp because it may be an oop and we might have fixed the frame.
+      fp = FKind::stub || FKind::native
+        // fp always points to the address above the pushed return pc. We need correct address.
+        ? frame_sp + fsize - frame::sender_sp_offset
+        // we need to re-read fp because it may be an oop and we might have fixed the frame.
+        : *(intptr_t**)(hf.sp() - 2);
     }
-    return frame(frame_sp, frame_sp, fp, hf.pc(), hf.cb(), hf.oop_map(), false); // TODO PERF : this computes deopt state; is it necessary?
+    // TODO PERF : this computes deopt state; is it necessary?
+    return frame(frame_sp, frame_sp, fp, hf.pc(), hf.cb(), hf.oop_map(), false);
   }
 }
 
@@ -279,6 +331,29 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   patch_callee_link(caller, caller.fp());
 }
 
+inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
+  intptr_t* fp = caller_sp - frame::sender_sp_offset;
+  patch_callee_link(f, fp);
+}
+
+inline intptr_t* ThawBase::push_cleanup_continuation() {
+  frame enterSpecial = new_entry_frame();
+  intptr_t* sp = enterSpecial.sp();
+
+  // We only need to set the return pc. fp will be restored back in gen_continuation_enter().
+  sp[-1] = (intptr_t)ContinuationEntry::cleanup_pc();
+  return sp;
+}
+
+inline intptr_t* ThawBase::push_preempt_adapter() {
+  frame enterSpecial = new_entry_frame();
+  intptr_t* sp = enterSpecial.sp();
+
+  // We only need to set the return pc. fp will be restored back in generate_cont_preempt_stub().
+  sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
+  return sp;
+}
+
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
   // Make sure that last_sp is kept relativized.
   assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
@@ -286,8 +361,11 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   // Make sure that monitor_block_top is still relativized.
   assert(f.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
 
+  DEBUG_ONLY(Method* m = hf.interpreter_frame_method();)
+  DEBUG_ONLY(int extra_space = m->is_object_wait0() ? m->size_of_parameters() : 0;) // see comment in relativize_interpreted_frame_metadata()
+
   // Make sure that extended_sp is kept relativized.
-  assert((intptr_t*)f.at_relative(frame::interpreter_frame_extended_sp_offset) < f.unextended_sp(), "");
+  assert((intptr_t*)f.at_relative(frame::interpreter_frame_extended_sp_offset) < f.unextended_sp() + extra_space, "");
 }
 
 #endif // CPU_RISCV_CONTINUATIONFREEZETHAW_RISCV_INLINE_HPP

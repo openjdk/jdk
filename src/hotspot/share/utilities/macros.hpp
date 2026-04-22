@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,7 @@
 #define NOT_PRODUCT_ARG(arg)
 #define PRODUCT_RETURN  {}
 #define PRODUCT_RETURN0 { return 0; }
+#define PRODUCT_RETURN_NULL { return nullptr; }
 #define PRODUCT_RETURN_(code) { code }
 #else // PRODUCT
 #define PRODUCT_ONLY(code)
@@ -345,6 +346,7 @@
 #define NOT_PRODUCT_ARG(arg) arg,
 #define PRODUCT_RETURN  /*next token must be ;*/
 #define PRODUCT_RETURN0 /*next token must be ;*/
+#define PRODUCT_RETURN_NULL /* next token must be ;*/
 #define PRODUCT_RETURN_(code)  /*next token must be ;*/
 #endif // PRODUCT
 
@@ -356,17 +358,29 @@
 #define NOT_CHECK_UNHANDLED_OOPS(code)  code
 #endif // CHECK_UNHANDLED_OOPS
 
+// Enable collection of TaskQueue statistics.
+// Enabled by default in debug builds.  Otherwise, disabled by default.
+#ifndef TASKQUEUE_STATS
+#ifdef ASSERT
+#define TASKQUEUE_STATS 1
+#else
+#define TASKQUEUE_STATS 0
+#endif // ASSERT
+#endif // TASKQUEUE_STATS
+#if TASKQUEUE_STATS
+#define TASKQUEUE_STATS_ONLY(code) code
+#else
+#define TASKQUEUE_STATS_ONLY(code)
+#endif // TASKQUEUE_STATS
+
 #ifdef ASSERT
 #define DEBUG_ONLY(code) code
 #define NOT_DEBUG(code)
 #define NOT_DEBUG_RETURN  /*next token must be ;*/
-// Historical.
-#define debug_only(code) code
 #else // ASSERT
 #define DEBUG_ONLY(code)
 #define NOT_DEBUG(code) code
 #define NOT_DEBUG_RETURN {}
-#define debug_only(code)
 #endif // ASSERT
 
 #ifdef  _LP64
@@ -438,7 +452,7 @@
 #define NOT_ZERO_RETURN
 #endif
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
 #define X86
 #define X86_ONLY(code) code
 #define NOT_X86(code)
@@ -446,26 +460,6 @@
 #undef X86
 #define X86_ONLY(code)
 #define NOT_X86(code) code
-#endif
-
-#ifdef IA32
-#define IA32_ONLY(code) code
-#define NOT_IA32(code)
-#else
-#define IA32_ONLY(code)
-#define NOT_IA32(code) code
-#endif
-
-// This is a REALLY BIG HACK, but on AIX <sys/systemcfg.h> unconditionally defines IA64.
-// At least on AIX 7.1 this is a real problem because 'systemcfg.h' is indirectly included
-// by 'pthread.h' and other common system headers.
-
-#if defined(IA64) && !defined(AIX)
-#define IA64_ONLY(code) code
-#define NOT_IA64(code)
-#else
-#define IA64_ONLY(code)
-#define NOT_IA64(code) code
 #endif
 
 #ifdef AMD64
@@ -554,6 +548,9 @@
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+#if defined(__APPLE__) && defined(AARCH64)
+#define MACOS_AARCH64 1
+#endif
 
 #if defined(RISCV32) || defined(RISCV64)
 #define RISCV
@@ -589,6 +586,18 @@
 #define BIG_ENDIAN_ONLY(code) code
 #endif
 
+#ifdef _LP64
+#define INCLUDE_CLASS_SPACE 1
+#define CLASS_SPACE_ONLY(x) x
+#define NOT_CLASS_SPACE(x)
+#else
+// On 32-bit we use fake "narrow class pointers" which are really just 32-bit pointers,
+// but we don't use a class space (would cause too much address space fragmentation)
+#define INCLUDE_CLASS_SPACE 0
+#define CLASS_SPACE_ONLY(x)
+#define NOT_CLASS_SPACE(x) x
+#endif
+
 #define define_pd_global(type, name, value) const type pd_##name = value;
 
 // Helper macros for constructing file names for includes.
@@ -621,7 +630,7 @@
 #define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
 #define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
-#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64) && !defined(_WINDOWS)
+#if INCLUDE_CDS && defined(_LP64)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
 #define NOT_CDS_JAVA_HEAP(x)

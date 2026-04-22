@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.reflect.annotation;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -181,7 +179,6 @@ public final class AnnotationSupport {
     /* Reflectively invoke the values-method of the given annotation
      * (container), cast it to an array of annotations and return the result.
      */
-    @SuppressWarnings("removal")
     private static <A extends Annotation> A[] getValueArray(Annotation container) {
         try {
             // According to JLS the container must have an array-valued value
@@ -225,19 +222,8 @@ public final class AnnotationSupport {
                 // Interface might not be public though
                 final Method toInvoke;
                 if (!Modifier.isPublic(iface.getModifiers())) {
-                    if (System.getSecurityManager() != null) {
-                        toInvoke = AccessController.doPrivileged(new PrivilegedAction<Method>() {
-                            @Override
-                            public Method run() {
-                                Method res = ReflectionFactory.getReflectionFactory().leafCopyMethod(m);
-                                res.setAccessible(true);
-                                return res;
-                            }
-                        });
-                    } else {
-                        toInvoke = ReflectionFactory.getReflectionFactory().leafCopyMethod(m);
-                        toInvoke.setAccessible(true);
-                    }
+                    toInvoke = ReflectionFactory.getReflectionFactory().leafCopyMethod(m);
+                    toInvoke.setAccessible(true);
                 } else {
                     toInvoke = m;
                 }

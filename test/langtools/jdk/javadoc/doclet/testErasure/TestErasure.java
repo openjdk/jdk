@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,15 +82,19 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
-                <div class="table-header col-first">Constructor</div>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier</div>
+                <div class="table-header col-second">Constructor</div>
                 <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>&nbsp;</code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>&nbsp;&lt;T extends X&gt;<br></code></div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-first even-row-color"><code>&nbsp;&lt;T extends Y&gt;<br></code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(Y)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
@@ -115,9 +119,9 @@ public class TestErasure extends JavadocTester {
                  - Constructor for class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>""");
         checkOutput("member-search-index.js", true, """
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(T)"},\
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(X)"},\
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(Y)"}""");
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(T)","k":"3"},\
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(X)","k":"3"},\
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(Y)","k":"3"}""");
         // methods
         checkOutput("Foo.html", true, """
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
@@ -188,13 +192,16 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
-                <div class="table-header col-first">Constructor</div>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier</div>
+                <div class="table-header col-second">Constructor</div>
                 <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>&nbsp;</code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a>\
-                <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
+                <wbr>(<a href="#type-param-T" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>&nbsp;&lt;T extends X&gt;<br></code></div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color">&nbsp;</div>
@@ -215,15 +222,15 @@ public class TestErasure extends JavadocTester {
                  - Constructor for class <a href="Foo.html" title="class in Unnamed Package">Foo</a></dt>
                 <dd>&nbsp;</dd>""");
         checkOutput("member-search-index.js", true, """
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(T)"},\
-                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(X)"}""");
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(T)","k":"3"},\
+                {"p":"<Unnamed>","c":"Foo","l":"Foo(T)","u":"%3Cinit%3E(X)","k":"3"}""");
         // methods
         checkOutput("Foo.html", true, """
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3"><code>abstract <a href="Foo.html" title="type parameter in Foo">T</a></code></div>
+                method-summary-table-tab3"><code>abstract <a href="#type-param-T" title="type parameter in Foo">T</a></code></div>
                 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(T)" class="member-name-link">m</a>\
-                <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
+                <wbr>(<a href="#type-param-T" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3">&nbsp;</div>
                 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 \
@@ -357,23 +364,23 @@ public class TestErasure extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color method method-tab1">\
-                <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-m(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color method method-tab1">Test Feature</div>
                 <div class="col-last even-row-color method method-tab1"></div>
                 <div class="col-summary-item-name odd-row-color method method-tab1">\
-                <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-m(p.Y)">PREVIEW</a></sup></div>
                 <div class="col-second odd-row-color method method-tab1">Test Feature</div>
                 <div class="col-last odd-row-color method method-tab1"></div>""");
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
-                <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color constructor constructor-tab1">Test Feature</div>
                 <div class="col-last even-row-color constructor constructor-tab1"></div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
-                <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.Y)">PREVIEW</a></sup></div>
                 <div class="col-second odd-row-color constructor constructor-tab1">Test Feature</div>
                 <div class="col-last odd-row-color constructor constructor-tab1"></div>""");

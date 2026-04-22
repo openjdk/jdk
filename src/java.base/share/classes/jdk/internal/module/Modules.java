@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +140,45 @@ public class Modules {
     }
 
     /**
+     * Enable code in all unnamed modules to mutate final instance fields.
+     */
+    public static void addEnableFinalMutationToAllUnnamed() {
+        JLA.addEnableFinalMutationToAllUnnamed();
+    }
+
+    /**
+     * Enable code in a given module to mutate final instance fields.
+     */
+    public static boolean tryEnableFinalMutation(Module m) {
+        return JLA.tryEnableFinalMutation(m);
+    }
+
+    /**
+     * Return true if code in a given module is allowed to mutate final instance fields.
+     */
+    public static boolean isFinalMutationEnabled(Module m) {
+        return JLA.isFinalMutationEnabled(m);
+    }
+
+    /**
+     * Return true if a given module has statically exported the given package to a given
+     * other module. "statically exported" means the module declaration, --add-exports on
+     * the command line, or Add-Exports in the main manifest of an executable JAR.
+     */
+    public static boolean isStaticallyExported(Module m, String pn, Module other) {
+        return JLA.isStaticallyExported(m, pn, other);
+    }
+
+    /**
+     * Return true if a given module has statically opened the given package to a given
+     * other module. "statically open" means the module declaration, --add-opens on the
+     * command line, or Add-Opens in the main manifest of an executable JAR.
+     */
+    public static boolean isStaticallyOpened(Module m, String pn, Module other) {
+        return JLA.isStaticallyOpened(m, pn, other);
+    }
+
+    /**
      * Updates module m to use a service.
      * Same as m2.addUses(service) but without a caller check.
      */
@@ -155,10 +192,7 @@ public class Modules {
     public static void addProvides(Module m, Class<?> service, Class<?> impl) {
         ModuleLayer layer = m.getLayer();
 
-        PrivilegedAction<ClassLoader> pa = m::getClassLoader;
-        @SuppressWarnings("removal")
-        ClassLoader loader = AccessController.doPrivileged(pa);
-
+        ClassLoader loader = m.getClassLoader();
         ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();
         if (layer == null || loader == null || loader == platformClassLoader) {
             // update ClassLoader catalog
@@ -258,9 +292,6 @@ public class Modules {
             assert parents.size() <= 1;
             layer = parents.isEmpty() ? null : parents.get(0);
         }
-
-        // update security manager before making types visible
-        JLA.addNonExportedPackages(newLayer);
 
         // update the built-in class loaders to make the types visible
         for (ResolvedModule resolvedModule : cf.modules()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 package jdk.test.lib.artifacts;
 
+import java.io.Serial;
+
 /**
  * Thrown by the ArtifactResolver when failing to resolve an Artifact.
  */
 public class ArtifactResolverException extends Exception {
+    @Serial
+    private static final long serialVersionUID = 8341884506180926911L;
 
     public ArtifactResolverException(String message) {
         super(message);

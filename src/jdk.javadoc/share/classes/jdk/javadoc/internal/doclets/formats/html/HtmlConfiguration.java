@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,11 +105,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public DocPath topFile = DocPath.empty;
 
     /**
-     * The TypeElement for the class file getting generated.
-     */
-    public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
-
-    /**
      * The collections of items for the main index.
      * This field is only initialized if {@code options.createIndex()}
      * is {@code true}.
@@ -177,7 +172,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // which performs a somewhat similar role
     public enum ConditionalPage {
         CONSTANT_VALUES, DEPRECATED, EXTERNAL_SPECS, PREVIEW, RESTRICTED,
-        SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
+        SEARCH_TAGS, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**

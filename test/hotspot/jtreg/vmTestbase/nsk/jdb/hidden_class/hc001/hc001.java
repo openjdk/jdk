@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.jdwp.agent
  * @build nsk.jdb.hidden_class.hc001.hc001a
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.hidden_class.hc001.hc001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -60,13 +60,9 @@ public class hc001 extends JdbTest {
     static final int    MAX_SLEEP_CNT     = 3;
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass = DEBUGGEE_CLASS; // needed for JdbTest.runTest
         firstBreak = MAIN_METHOD_NAME;  // needed for JdbTest.runTest
-        return new hc001().runTest(argv, out);
+        new hc001().runTest(argv);
     }
 
     static boolean checkPattern(String[] arr, String pattern) {

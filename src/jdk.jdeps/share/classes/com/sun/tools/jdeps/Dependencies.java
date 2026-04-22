@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public class Dependencies {
     /**
      * Thrown when a class file cannot be found.
      */
-    @SuppressWarnings("this-escape")
     public static class ClassFileNotFoundException extends Exception {
         private static final long serialVersionUID = 3632265927794475048L;
 
@@ -76,12 +75,11 @@ public class Dependencies {
     /**
      * Thrown when an exception is found processing a class file.
      */
-    @SuppressWarnings("this-escape")
     public static class ClassFileError extends Error {
         private static final long serialVersionUID = 4111110813961313203L;
 
         public ClassFileError(Throwable cause) {
-            initCause(cause);
+            super(cause.getMessage(), cause);
         }
     }
 
@@ -597,7 +595,7 @@ public class Dependencies {
 
             void scanAttributes(AttributedElement attrs) {
                 try {
-                    var sa = attrs.findAttribute(Attributes.SIGNATURE).orElse(null);
+                    var sa = attrs.findAttribute(Attributes.signature()).orElse(null);
                     if (sa != null) {
                         switch (attrs) {
                             case ClassModel _ -> scan(sa.asClassSignature());
@@ -606,14 +604,14 @@ public class Dependencies {
                         }
                     }
 
-                    var rvaa = attrs.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElse(null);
+                    var rvaa = attrs.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
                     if (rvaa != null) {
                         for (var anno : rvaa.annotations()) {
                             scan(anno.classSymbol());
                         }
                     }
 
-                    var rvpaa = attrs.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
+                    var rvpaa = attrs.findAttribute(Attributes.runtimeVisibleParameterAnnotations()).orElse(null);
                     if (rvpaa != null) {
                         for (var parameter : rvpaa.parameterAnnotations()) {
                             for (var anno : parameter) {
@@ -622,7 +620,7 @@ public class Dependencies {
                         }
                     }
 
-                    var exceptions = attrs.findAttribute(Attributes.EXCEPTIONS).orElse(null);
+                    var exceptions = attrs.findAttribute(Attributes.exceptions()).orElse(null);
                     if (exceptions != null) {
                         for (var e : exceptions.exceptions()) {
                             addClass(e);

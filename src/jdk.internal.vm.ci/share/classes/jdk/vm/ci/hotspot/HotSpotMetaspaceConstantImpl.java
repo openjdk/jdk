@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,15 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
     }
 
     @Override
+    public boolean isCompressible() {
+        return !compressed;
+    }
+
+    @Override
     public Constant compress() {
-        assert !isCompressed();
+        if (compressed) {
+            throw new IllegalArgumentException("already compressed: " + this);
+        }
         HotSpotMetaspaceConstantImpl res = HotSpotMetaspaceConstantImpl.forMetaspaceObject(metaspaceObject, true);
         assert res.isCompressed();
         return res;
@@ -93,7 +100,9 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
 
     @Override
     public Constant uncompress() {
-        assert isCompressed();
+        if (!compressed) {
+            throw new IllegalArgumentException("not compressed: " + this);
+        }
         HotSpotMetaspaceConstantImpl res = HotSpotMetaspaceConstantImpl.forMetaspaceObject(metaspaceObject, false);
         assert !res.isCompressed();
         return res;

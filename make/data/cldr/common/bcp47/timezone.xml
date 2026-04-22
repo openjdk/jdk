@@ -17,14 +17,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="aiaxa" description="Anguilla" alias="America/Anguilla"/>
             <type name="altia" description="Tirane, Albania" alias="Europe/Tirane"/>
             <type name="amevn" description="Yerevan, Armenia" alias="Asia/Yerevan"/>
-            <type name="ancur" description="Curaçao" alias="America/Curacao"/>
+            <type name="ancur" description="Curaçao" alias="America/Curacao" region="CW"/>
             <type name="aolad" description="Luanda, Angola" alias="Africa/Luanda"/>
-            <type name="aqams" description="Amundsen-Scott Station, South Pole" deprecated="true" preferred="nzakl"/>
+            <type name="aqams" description="Amundsen-Scott Station, South Pole" deprecated="true" preferred="aqmcm"/>
             <type name="aqcas" description="Casey Station, Bailey Peninsula" alias="Antarctica/Casey"/>
             <type name="aqdav" description="Davis Station, Vestfold Hills" alias="Antarctica/Davis"/>
             <type name="aqddu" description="Dumont d'Urville Station, Terre Adélie" alias="Antarctica/DumontDUrville"/>
             <type name="aqmaw" description="Mawson Station, Holme Bay" alias="Antarctica/Mawson"/>
-            <type name="aqmcm" description="McMurdo Station, Ross Island" alias="Antarctica/McMurdo"/>
+            <type name="aqmcm" description="McMurdo Station, Ross Island" alias="Antarctica/McMurdo Antarctica/South_Pole"/>
             <type name="aqplm" description="Palmer Station, Anvers Island" alias="Antarctica/Palmer"/>
             <type name="aqrot" description="Rothera Station, Adelaide Island" alias="Antarctica/Rothera"/>
             <type name="aqsyw" description="Syowa Station, East Ongul Island" alias="Antarctica/Syowa"/>
@@ -62,7 +62,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="basjj" description="Sarajevo, Bosnia and Herzegovina" alias="Europe/Sarajevo"/>
             <type name="bbbgi" description="Barbados" alias="America/Barbados"/>
             <type name="bddac" description="Dhaka, Bangladesh" alias="Asia/Dhaka Asia/Dacca"/>
-            <type name="bebru" description="Brussels, Belgium" alias="Europe/Brussels"/>
+            <type name="bebru" description="Brussels, Belgium" alias="Europe/Brussels CET MET"/>
             <type name="bfoua" description="Ouagadougou, Burkina Faso" alias="Africa/Ouagadougou"/>
             <type name="bgsof" description="Sofia, Bulgaria" alias="Europe/Sofia"/>
             <type name="bhbah" description="Bahrain" alias="Asia/Bahrain"/>
@@ -130,6 +130,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="chzrh" description="Zurich, Switzerland" alias="Europe/Zurich"/>
             <type name="ciabj" description="Abidjan, Côte d'Ivoire" alias="Africa/Abidjan"/>
             <type name="ckrar" description="Rarotonga, Cook Islands" alias="Pacific/Rarotonga"/>
+            <type name="clcxq" description="Aysén Region, Chile" alias="America/Coyhaique" since="48"/>
             <type name="clipc" description="Easter Island, Chile" alias="Pacific/Easter Chile/EasterIsland"/>
             <type name="clpuq" description="Punta Arenas, Chile" alias="America/Punta_Arenas" since="31"/>
             <type name="clscl" description="Santiago, Chile" alias="America/Santiago Chile/Continental"/>
@@ -141,7 +142,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="cnurc" description="Ürümqi, China" alias="Asia/Urumqi Asia/Kashgar"/>
             <type name="cobog" description="Bogotá, Colombia" alias="America/Bogota"/>
             <type name="crsjo" description="Costa Rica" alias="America/Costa_Rica"/>
-            <type name="cst6cdt" description="POSIX style time zone for US Central Time" alias="CST6CDT" since="1.8"/>
+            <type name="cst6cdt" description="POSIX style time zone for US Central Time" deprecated="true" preferred="uschi"/>
             <type name="cuhav" description="Havana, Cuba" alias="America/Havana Cuba"/>
             <type name="cvrai" description="Cape Verde" alias="Atlantic/Cape_Verde"/>
             <type name="cxxch" description="Christmas Island" alias="Indian/Christmas"/>
@@ -164,10 +165,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="esceu" description="Ceuta, Spain" alias="Africa/Ceuta"/>
             <type name="eslpa" description="Canary Islands, Spain" alias="Atlantic/Canary"/>
             <type name="esmad" description="Madrid, Spain" alias="Europe/Madrid"/>
-            <type name="est5edt" description="POSIX style time zone for US Eastern Time" alias="EST5EDT" since="1.8"/>
+            <type name="est5edt" description="POSIX style time zone for US Eastern Time" deprecated="true" preferred="usnyc"/>
             <type name="etadd" description="Addis Ababa, Ethiopia" alias="Africa/Addis_Ababa"/>
             <type name="fihel" description="Helsinki, Finland" alias="Europe/Helsinki"/>
-            <type name="fimhq" description="Mariehamn, Åland, Finland" alias="Europe/Mariehamn"/>
+            <type name="fimhq" description="Mariehamn, Åland, Finland" alias="Europe/Mariehamn" region="AX"/>
             <type name="fjsuv" description="Fiji" alias="Pacific/Fiji"/>
             <type name="fkpsy" description="Stanley, Falkland Islands" alias="Atlantic/Stanley"/>
             <type name="fmksa" description="Kosrae, Micronesia" alias="Pacific/Kosrae"/>
@@ -177,7 +178,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="frpar" description="Paris, France" alias="Europe/Paris"/>
             <type name="galbv" description="Libreville, Gabon" alias="Africa/Libreville"/>
             <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" preferred="gazastrp"/>
-            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza" since="40"/>
+            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza" since="40" region="PS"/>
             <type name="gblon" description="London, United Kingdom" alias="Europe/London Europe/Belfast GB GB-Eire"/>
             <type name="gdgnd" description="Grenada" alias="America/Grenada"/>
             <type name="getbs" description="Tbilisi, Georgia" alias="Asia/Tbilisi"/>
@@ -193,16 +194,16 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="gmt" description="Greenwich Mean Time" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich" since="31"/>
             <type name="gncky" description="Conakry, Guinea" alias="Africa/Conakry"/>
             <type name="gpbbr" description="Guadeloupe" alias="America/Guadeloupe"/>
-            <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot"/>
-            <type name="gpsbh" description="Saint Barthélemy" alias="America/St_Barthelemy"/>
+            <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot" region="MF"/>
+            <type name="gpsbh" description="Saint Barthélemy" alias="America/St_Barthelemy" region="BL"/>
             <type name="gqssg" description="Malabo, Equatorial Guinea" alias="Africa/Malabo"/>
-            <type name="grath" description="Athens, Greece" alias="Europe/Athens"/>
+            <type name="grath" description="Athens, Greece" alias="Europe/Athens EET"/>
             <type name="gsgrv" description="South Georgia and the South Sandwich Islands" alias="Atlantic/South_Georgia"/>
             <type name="gtgua" description="Guatemala" alias="America/Guatemala"/>
             <type name="gugum" description="Guam" alias="Pacific/Guam"/>
             <type name="gwoxb" description="Bissau, Guinea-Bissau" alias="Africa/Bissau"/>
             <type name="gygeo" description="Guyana" alias="America/Guyana"/>
-            <type name="hebron" description="West Bank, Palestinian Territories" alias="Asia/Hebron" since="21"/>
+            <type name="hebron" description="West Bank, Palestinian Territories" alias="Asia/Hebron" since="21" region="PS"/>
             <type name="hkhkg" description="Hong Kong SAR China" alias="Asia/Hong_Kong Hongkong"/>
             <type name="hntgu" description="Tegucigalpa, Honduras" alias="America/Tegucigalpa"/>
             <type name="hrzag" description="Zagreb, Croatia" alias="Europe/Zagreb"/>
@@ -220,7 +221,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="irthr" description="Tehran, Iran" alias="Asia/Tehran Iran"/>
             <type name="isrey" description="Reykjavik, Iceland" alias="Atlantic/Reykjavik Iceland"/>
             <type name="itrom" description="Rome, Italy" alias="Europe/Rome"/>
-            <type name="jeruslm" description="Jerusalem" alias="Asia/Jerusalem Asia/Tel_Aviv Israel"/>
+            <type name="jeruslm" description="Jerusalem" alias="Asia/Jerusalem Asia/Tel_Aviv Israel" region="IL"/>
             <type name="jesth" description="Jersey" alias="Europe/Jersey"/>
             <type name="jmkin" description="Jamaica" alias="America/Jamaica Jamaica"/>
             <type name="joamm" description="Amman, Jordan" alias="Asia/Amman"/>
@@ -265,15 +266,15 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mkskp" description="Skopje, Macedonia" alias="Europe/Skopje"/>
             <type name="mlbko" description="Bamako, Mali" alias="Africa/Bamako Africa/Timbuktu"/>
             <type name="mmrgn" description="Yangon (Rangoon), Burma" alias="Asia/Rangoon Asia/Yangon" iana="Asia/Yangon"/>
-            <type name="mncoq" description="Choibalsan, Mongolia" alias="Asia/Choibalsan"/>
+            <type name="mncoq" description="Choibalsan, Mongolia" deprecated="true" preferred="mnuln"/>
             <type name="mnhvd" description="Khovd (Hovd), Mongolia" alias="Asia/Hovd"/>
-            <type name="mnuln" description="Ulaanbaatar (Ulan Bator), Mongolia" alias="Asia/Ulaanbaatar Asia/Ulan_Bator"/>
+            <type name="mnuln" description="Ulaanbaatar (Ulan Bator), Mongolia" alias="Asia/Ulaanbaatar Asia/Ulan_Bator Asia/Choibalsan"/>
             <type name="momfm" description="Macau SAR China" alias="Asia/Macau Asia/Macao"/>
             <type name="mpspn" description="Saipan, Northern Mariana Islands" alias="Pacific/Saipan"/>
             <type name="mqfdf" description="Martinique" alias="America/Martinique"/>
             <type name="mrnkc" description="Nouakchott, Mauritania" alias="Africa/Nouakchott"/>
             <type name="msmni" description="Montserrat" alias="America/Montserrat"/>
-            <type name="mst7mdt" description="POSIX style time zone for US Mountain Time" alias="MST7MDT" since="1.8"/>
+            <type name="mst7mdt" description="POSIX style time zone for US Mountain Time" deprecated="true" preferred="usden"/>
             <type name="mtmla" description="Malta" alias="Europe/Malta"/>
             <type name="muplu" description="Mauritius" alias="Indian/Mauritius"/>
             <type name="mvmle" description="Maldives" alias="Indian/Maldives"/>
@@ -305,10 +306,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="npktm" description="Kathmandu, Nepal" alias="Asia/Katmandu Asia/Kathmandu" iana="Asia/Kathmandu"/>
             <type name="nrinu" description="Nauru" alias="Pacific/Nauru"/>
             <type name="nuiue" description="Niue" alias="Pacific/Niue"/>
-            <type name="nzakl" description="Auckland, New Zealand" alias="Pacific/Auckland Antarctica/South_Pole NZ"/>
+            <type name="nzakl" description="Auckland, New Zealand" alias="Pacific/Auckland NZ"/>
             <type name="nzcht" description="Chatham Islands, New Zealand" alias="Pacific/Chatham NZ-CHAT"/>
             <type name="ommct" description="Muscat, Oman" alias="Asia/Muscat"/>
-            <type name="papty" description="Panama" alias="America/Panama"/>
+            <type name="papty" description="Panama" alias="America/Panama EST"/>
             <type name="pelim" description="Lima, Peru" alias="America/Lima"/>
             <type name="pfgmr" description="Gambiera Islands, French Polynesia" alias="Pacific/Gambier"/>
             <type name="pfnhv" description="Marquesas Islands, French Polynesia" alias="Pacific/Marquesas"/>
@@ -321,9 +322,9 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="pmmqc" description="Saint Pierre and Miquelon" alias="America/Miquelon"/>
             <type name="pnpcn" description="Pitcairn Islands" alias="Pacific/Pitcairn"/>
             <type name="prsju" description="Puerto Rico" alias="America/Puerto_Rico"/>
-            <type name="pst8pdt" description="POSIX style time zone for US Pacific Time" alias="PST8PDT" since="1.8"/>
+            <type name="pst8pdt" description="POSIX style time zone for US Pacific Time" deprecated="true" preferred="uslax"/>
             <type name="ptfnc" description="Madeira, Portugal" alias="Atlantic/Madeira"/>
-            <type name="ptlis" description="Lisbon, Portugal" alias="Europe/Lisbon Portugal"/>
+            <type name="ptlis" description="Lisbon, Portugal" alias="Europe/Lisbon Portugal WET"/>
             <type name="ptpdl" description="Azores, Portugal" alias="Atlantic/Azores"/>
             <type name="pwror" description="Palau" alias="Pacific/Palau"/>
             <type name="pyasu" description="Asunción, Paraguay" alias="America/Asuncion"/>
@@ -403,20 +404,20 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="umawk" description="Wake Island, U.S. Minor Outlying Islands" alias="Pacific/Wake"/>
             <type name="umjon" description="Johnston Atoll, U.S. Minor Outlying Islands" deprecated="true" preferred="ushnl"/>
             <type name="ummdy" description="Midway Islands, U.S. Minor Outlying Islands" alias="Pacific/Midway"/>
-            <type name="unk" description="Unknown time zone" alias="Etc/Unknown"/>
+            <type name="unk" description="Unknown time zone" alias="Etc/Unknown Factory"/>
             <type name="usadk" description="Adak (Alaska), United States" alias="America/Adak America/Atka US/Aleutian"/>
             <type name="usaeg" description="Marengo (Indiana), United States" alias="America/Indiana/Marengo"/>
             <type name="usanc" description="Anchorage, United States" alias="America/Anchorage US/Alaska"/>
             <type name="usboi" description="Boise (Idaho), United States" alias="America/Boise"/>
-            <type name="uschi" description="Chicago, United States" alias="America/Chicago US/Central"/>
-            <type name="usden" description="Denver, United States" alias="America/Denver America/Shiprock Navajo US/Mountain"/>
+            <type name="uschi" description="Chicago, United States" alias="America/Chicago US/Central CST6CDT"/>
+            <type name="usden" description="Denver, United States" alias="America/Denver America/Shiprock Navajo US/Mountain MST7MDT"/>
             <type name="usdet" description="Detroit, United States" alias="America/Detroit US/Michigan"/>
-            <type name="ushnl" description="Honolulu, United States" alias="Pacific/Honolulu US/Hawaii Pacific/Johnston"/>
+            <type name="ushnl" description="Honolulu, United States" alias="Pacific/Honolulu US/Hawaii Pacific/Johnston HST"/>
             <type name="usind" description="Indianapolis, United States" alias="America/Indianapolis America/Fort_Wayne America/Indiana/Indianapolis US/East-Indiana" iana="America/Indiana/Indianapolis"/>
             <type name="usinvev" description="Vevay (Indiana), United States" alias="America/Indiana/Vevay"/>
             <type name="usjnu" description="Juneau (Alaska), United States" alias="America/Juneau"/>
             <type name="usknx" description="Knox (Indiana), United States" alias="America/Indiana/Knox America/Knox_IN US/Indiana-Starke"/>
-            <type name="uslax" description="Los Angeles, United States" alias="America/Los_Angeles US/Pacific US/Pacific-New"/>
+            <type name="uslax" description="Los Angeles, United States" alias="America/Los_Angeles US/Pacific US/Pacific-New PST8PDT"/>
             <type name="uslui" description="Louisville (Kentucky), United States" alias="America/Louisville America/Kentucky/Louisville" iana="America/Kentucky/Louisville"/>
             <type name="usmnm" description="Menominee (Michigan), United States" alias="America/Menominee"/>
             <type name="usmtm" description="Metlakatla (Alaska), United States" alias="America/Metlakatla" since="1.9.1"/>
@@ -424,10 +425,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="usnavajo" description="Shiprock (Navajo), United States" deprecated="true" preferred="usden"/>
             <type name="usndcnt" description="Center (North Dakota), United States" alias="America/North_Dakota/Center"/>
             <type name="usndnsl" description="New Salem (North Dakota), United States" alias="America/North_Dakota/New_Salem"/>
-            <type name="usnyc" description="New York, United States" alias="America/New_York US/Eastern"/>
+            <type name="usnyc" description="New York, United States" alias="America/New_York US/Eastern EST5EDT"/>
             <type name="usoea" description="Vincennes (Indiana), United States" alias="America/Indiana/Vincennes"/>
             <type name="usome" description="Nome (Alaska), United States" alias="America/Nome"/>
-            <type name="usphx" description="Phoenix, United States" alias="America/Phoenix US/Arizona"/>
+            <type name="usphx" description="Phoenix, United States" alias="America/Phoenix US/Arizona MST"/>
             <type name="ussit" description="Sitka (Alaska), United States" alias="America/Sitka" since="1.9.1"/>
             <type name="ustel" description="Tell City (Indiana), United States" alias="America/Indiana/Tell_City"/>
             <type name="uswlz" description="Winamac (Indiana), United States" alias="America/Indiana/Winamac"/>
@@ -453,12 +454,12 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="utcw02" description="2 hours behind UTC" alias="Etc/GMT+2"/>
             <type name="utcw03" description="3 hours behind UTC" alias="Etc/GMT+3"/>
             <type name="utcw04" description="4 hours behind UTC" alias="Etc/GMT+4"/>
-            <type name="utcw05" description="5 hours behind UTC" alias="Etc/GMT+5 EST"/>
+            <type name="utcw05" description="5 hours behind UTC" alias="Etc/GMT+5"/>
             <type name="utcw06" description="6 hours behind UTC" alias="Etc/GMT+6"/>
-            <type name="utcw07" description="7 hours behind UTC" alias="Etc/GMT+7 MST"/>
+            <type name="utcw07" description="7 hours behind UTC" alias="Etc/GMT+7"/>
             <type name="utcw08" description="8 hours behind UTC" alias="Etc/GMT+8"/>
             <type name="utcw09" description="9 hours behind UTC" alias="Etc/GMT+9"/>
-            <type name="utcw10" description="10 hours behind UTC" alias="Etc/GMT+10 HST"/>
+            <type name="utcw10" description="10 hours behind UTC" alias="Etc/GMT+10"/>
             <type name="utcw11" description="11 hours behind UTC" alias="Etc/GMT+11"/>
             <type name="utcw12" description="12 hours behind UTC" alias="Etc/GMT+12"/>
             <type name="uymvd" description="Montevideo, Uruguay" alias="America/Montevideo"/>

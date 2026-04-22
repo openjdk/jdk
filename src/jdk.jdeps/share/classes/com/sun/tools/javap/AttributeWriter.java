@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,26 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.Annotation;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.Signature;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
-import java.lang.classfile.*;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.attribute.*;
-import static java.lang.classfile.ClassFile.*;
+
+import static java.lang.classfile.ClassFile.ACC_MANDATED;
+import static java.lang.classfile.ClassFile.ACC_SYNTHETIC;
 import static java.lang.classfile.attribute.StackMapFrameInfo.*;
+import static java.lang.classfile.instruction.CharacterRange.*;
 
 /*
  *  A writer for writing Attributes as text.
@@ -62,28 +72,28 @@ public class AttributeWriter extends BasicWriter {
         options = Options.instance(context);
     }
 
-    public void write(List<Attribute<?>> attrs) {
-        write(attrs, null);
+    public void write(List<Attribute<?>> attrs, ClassFileFormatVersion cffv) {
+        write(attrs, null, cffv);
     }
 
-    public void write(List<Attribute<?>> attrs, CodeAttribute lr) {
+    public void write(List<Attribute<?>> attrs, CodeAttribute lr, ClassFileFormatVersion cffv) {
         if (attrs != null) {
             for (var attr : attrs) try {
-                write(attr, lr);
+                write(attr, lr, cffv);
             } catch (IllegalArgumentException e) {
                 report(e);
             }
         }
     }
 
-    public void write(Attribute<?> a, CodeAttribute lr) {
+    public void write(Attribute<?> a, CodeAttribute lr, ClassFileFormatVersion cffv) {
         switch (a) {
             case UnknownAttribute attr -> {
                 byte[] data = attr.contents();
                 int i = 0;
                 int j = 0;
                 print("  ");
-                print(attr.attributeName());
+                print(attr.attributeName().stringValue());
                 print(": ");
                 print("length = 0x" + toHex(data.length));
                 print(" (unknown attribute)");
@@ -144,23 +154,23 @@ public class AttributeWriter extends BasicWriter {
                             (e.characterRangeStart() & 0x3ff),
                             (e.characterRangeEnd() >> 10),
                             (e.characterRangeEnd() & 0x3ff)));
-                    if ((e.flags() & CRT_STATEMENT) != 0)
+                    if ((e.flags() & FLAG_STATEMENT) != 0)
                         print(", statement");
-                    if ((e.flags() & CRT_BLOCK) != 0)
+                    if ((e.flags() & FLAG_BLOCK) != 0)
                         print(", block");
-                    if ((e.flags() & CRT_ASSIGNMENT) != 0)
+                    if ((e.flags() & FLAG_ASSIGNMENT) != 0)
                         print(", assignment");
-                    if ((e.flags() & CRT_FLOW_CONTROLLER) != 0)
+                    if ((e.flags() & FLAG_FLOW_CONTROLLER) != 0)
                         print(", flow-controller");
-                    if ((e.flags() & CRT_FLOW_TARGET) != 0)
+                    if ((e.flags() & FLAG_FLOW_TARGET) != 0)
                         print(", flow-target");
-                    if ((e.flags() & CRT_INVOKE) != 0)
+                    if ((e.flags() & FLAG_INVOKE) != 0)
                         print(", invoke");
-                    if ((e.flags() & CRT_CREATE) != 0)
+                    if ((e.flags() & FLAG_CREATE) != 0)
                         print(", create");
-                    if ((e.flags() & CRT_BRANCH_TRUE) != 0)
+                    if ((e.flags() & FLAG_BRANCH_TRUE) != 0)
                         print(", branch-true");
-                    if ((e.flags() & CRT_BRANCH_FALSE) != 0)
+                    if ((e.flags() & FLAG_BRANCH_FALSE) != 0)
                         print(", branch-false");
                     println();
                 }
@@ -208,7 +218,7 @@ public class AttributeWriter extends BasicWriter {
                             indent(+1);
                             first = false;
                         }
-                        for (var flag : info.flags()) {
+                        for (var flag : maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS, cffv)) {
                             if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT
                                     || !info.has(AccessFlag.INTERFACE))) {
                                 print(Modifier.toString(flag.mask()) + " ");
@@ -478,7 +488,7 @@ public class AttributeWriter extends BasicWriter {
                 println("Record:");
                 indent(+1);
                 for (var componentInfo : attr.components()) {
-                    var sigAttr = componentInfo.findAttribute(Attributes.SIGNATURE);
+                    var sigAttr = componentInfo.findAttribute(Attributes.signature());
                     print(getJavaName(
                             new ClassWriter.SignaturePrinter(options.verbose).print(
                                     sigAttr.map(SignatureAttribute::asTypeSignature)
@@ -493,7 +503,7 @@ public class AttributeWriter extends BasicWriter {
                         println("descriptor: " + componentInfo.descriptor().stringValue());
                     }
                     if (options.showAllAttrs) {
-                        write(componentInfo.attributes());
+                        write(componentInfo.attributes(), cffv);
                         println();
                     }
                     indent(-1);
@@ -705,13 +715,13 @@ public class AttributeWriter extends BasicWriter {
 
     String mapTypeName(SimpleVerificationTypeInfo type) {
         return switch (type) {
-            case ITEM_TOP -> "top";
-            case ITEM_INTEGER -> "int";
-            case ITEM_FLOAT -> "float";
-            case ITEM_LONG -> "long";
-            case ITEM_DOUBLE -> "double";
-            case ITEM_NULL -> "null";
-            case ITEM_UNINITIALIZED_THIS -> "this";
+            case TOP -> "top";
+            case INTEGER -> "int";
+            case FLOAT -> "float";
+            case LONG -> "long";
+            case DOUBLE -> "double";
+            case NULL -> "null";
+            case UNINITIALIZED_THIS -> "this";
         };
     }
 

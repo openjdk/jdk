@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
@@ -76,7 +78,7 @@ class fixed_strings {
 
   public:
 
-  fixed_strings() : first(0) {}
+  fixed_strings() : first(nullptr) {}
   ~fixed_strings() {
     node* n = first;
     while (n) {
@@ -111,7 +113,7 @@ bool AixSymbols::get_function_name (
                                      //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
-  struct tbtable* tb = 0;
+  struct tbtable* tb = nullptr;
   unsigned int searchcount = 0;
 
   // initialize output parameters
@@ -250,7 +252,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
+          permit_forbidden_function::free(demangled_name);
         }
       }
     } else {
@@ -422,6 +424,10 @@ int dladdr(void* addr, Dl_info* info) {
 
   return rc; // error: return 0 [sic]
 
+}
+
+int JVM_dladdr(void* addr, Dl_info* info) {
+  return dladdr(addr, info);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -651,10 +657,10 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // To print the first frame, use the current value of iar:
   // current entry indicated by iar (the current pc)
-  codeptr_t cur_iar = 0;
-  stackptr_t cur_sp = 0;
-  codeptr_t cur_rtoc = 0;
-  codeptr_t cur_lr = 0;
+  codeptr_t cur_iar = nullptr;
+  stackptr_t cur_sp = nullptr;
+  codeptr_t cur_rtoc = nullptr;
+  codeptr_t cur_lr = nullptr;
 
   const ucontext_t* uc = (const ucontext_t*) context;
 
@@ -924,7 +930,7 @@ static struct handletableentry* p_handletable = nullptr;
 static const char* rtv_linkedin_libpath() {
   constexpr int bufsize = 4096;
   static char buffer[bufsize];
-  static const char* libpath = 0;
+  static const char* libpath = nullptr;
 
   // we only try to retrieve the libpath once. After that try we
   // let libpath point to buffer, which then contains a valid libpath
@@ -935,7 +941,7 @@ static const char* rtv_linkedin_libpath() {
 
   // retrieve the path to the currently running executable binary
   // to open it
-  snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
+  os::snprintf_checked(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
   FILE* f = nullptr;
   struct xcoffhdr the_xcoff;
   struct scnhdr the_scn;
@@ -1035,7 +1041,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
 // This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
-void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
+void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_report) {
   assert(error_report != nullptr, "error_report is nullptr");
   void* result;
   struct stat64x libstat;
@@ -1047,6 +1053,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
   #endif
     *error_report = "Could not load module .\nSystem error: No such file or directory";
+    *eno = ENOENT;
     return nullptr;
   }
   else {
@@ -1080,7 +1087,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       if (g_handletable_used == max_handletable) {
         // No place in array anymore; increase array.
         unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
-        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        struct handletableentry* new_tab = (struct handletableentry*) permit_forbidden_function::realloc(p_handletable, new_max * sizeof(struct handletableentry));
         assert(new_tab != nullptr, "no more memory for handletable");
         if (new_tab == nullptr) {
           *error_report = "dlopen: no more memory for handletable";
@@ -1090,6 +1097,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
         p_handletable = new_tab;
       }
       // Library not yet loaded; load it, then store its handle in handle table
+      errno = 0;
       result = ::dlopen(filename, Flags);
       if (result != nullptr) {
         g_handletable_used++;
@@ -1101,6 +1109,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       }
       else {
         // error analysis when dlopen fails
+        *eno = errno;
         *error_report = ::dlerror();
         if (*error_report == nullptr) {
           *error_report = "dlerror returned no error description";
@@ -1150,7 +1159,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         error_report = "dlerror returned no error description";
       }
       if (ebuf != nullptr && ebuflen > 0) {
-        snprintf(ebuf, ebuflen - 1, "%s", error_report);
+        os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
       }
       assert(false, "os::pd_dll_unload() ::dlclose() failed");
     }
@@ -1185,4 +1194,3 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
-

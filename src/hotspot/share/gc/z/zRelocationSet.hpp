@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ class ZWorkers;
 
 class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
+  friend class ZRelocationSetInstallTask;
 
 private:
   ZGeneration*         _generation;
@@ -45,6 +46,7 @@ private:
   size_t               _nforwardings;
   ZLock                _promotion_lock;
   ZArray<ZPage*>       _flip_promoted_pages;
+  ZArray<ZPage*>       _relocate_promoted_pages;
   ZArray<ZPage*>       _in_place_relocate_promoted_pages;
 
   ZWorkers* workers() const;
@@ -52,18 +54,23 @@ private:
 public:
   ZRelocationSet(ZGeneration* generation);
 
+  size_t nforwardings() const;
+
   void install(const ZRelocationSetSelector* selector);
   void reset(ZPageAllocator* page_allocator);
   ZGeneration* generation() const;
   ZArray<ZPage*>* flip_promoted_pages();
+  ZArray<ZPage*>* relocate_promoted_pages();
 
   void register_flip_promoted(const ZArray<ZPage*>& pages);
+  void register_relocate_promoted(const ZArray<ZPage*>& pages);
   void register_in_place_relocate_promoted(ZPage* page);
 };
 
 template <bool Parallel>
 class ZRelocationSetIteratorImpl : public ZArrayIteratorImpl<ZForwarding*, Parallel> {
 public:
+  ZRelocationSetIteratorImpl();
   ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set);
 };
 

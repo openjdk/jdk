@@ -318,8 +318,9 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="zrn" description="Zairean New Zaire (1993-1998)"/>
             <type name="zrz" description="Zairean Zaire (1971-1993)"/>
             <type name="zwd" description="Zimbabwean Dollar (1980-2008)"/>
-            <type name="zwl" description="Zimbabwean Dollar (2009)" since="1.9"/>
+            <type name="zwl" description="Zimbabwean Dollar (2009-2024)" since="1.9"/>
             <type name="zwr" description="Zimbabwean Dollar (2008)" since="1.9"/>
+            <type name="zwg" description="Zimbabwean Gold" since="46"/>
         </key>
     </keyword>
 </ldmlBCP47>

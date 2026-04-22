@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,8 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -57,7 +55,10 @@ address StubGenerator::ghash_byte_swap_mask_addr() {
 
 // Polynomial x^128+x^127+x^126+x^121+1
 ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL[] = {
-    0x0000000000000001UL, 0xC200000000000000UL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL
 };
 address StubGenerator::ghash_polynomial_addr() {
   return (address)GHASH_POLYNOMIAL;
@@ -79,10 +80,17 @@ void StubGenerator::generate_ghash_stubs() {
 
 // Single and multi-block ghash operations.
 address StubGenerator::generate_ghash_processBlocks() {
-  __ align(CodeEntryAlignment);
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   Label L_ghash_loop, L_exit;
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
-  address start = __ pc();
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
 
   const Register state        = c_rarg0;
   const Register subkeyH      = c_rarg1;
@@ -103,7 +111,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 
   __ enter();
 
-  __ push(rbx); // scratch
+  __ push_ppx(rbx); // scratch
 
   __ movdqu(xmm_temp10, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
 
@@ -204,10 +212,13 @@ address StubGenerator::generate_ghash_processBlocks() {
   __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
   __ movdqu(Address(state, 0), xmm_temp6);   // store the result
 
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }
@@ -215,10 +226,16 @@ address StubGenerator::generate_ghash_processBlocks() {
 
 // Ghash single and multi block operations using AVX instructions
 address StubGenerator::generate_avx_ghash_processBlocks() {
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   __ align(CodeEntryAlignment);
-
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
-  address start = __ pc();
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
 
   // arguments
   const Register state = c_rarg0;
@@ -226,13 +243,16 @@ address StubGenerator::generate_avx_ghash_processBlocks() {
   const Register data = c_rarg2;
   const Register blocks = c_rarg3;
   __ enter();
-  __ push(rbx);
+  __ push_ppx(rbx);
 
   avx_ghash(state, htbl, data, blocks);
 
-  __ pop(rbx);
+  __ pop_ppx(rbx);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }
@@ -535,3 +555,14 @@ void StubGenerator::generateHtbl_eight_blocks(Register htbl) {
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_ghash(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  ADD(GHASH_SHUFFLE_MASK);
+  ADD(GHASH_LONG_SWAP_MASK);
+  ADD(GHASH_BYTE_SWAP_MASK);
+  ADD(GHASH_POLYNOMIAL);
+#undef ADD
+}
+#endif // INCLUDE_CDS

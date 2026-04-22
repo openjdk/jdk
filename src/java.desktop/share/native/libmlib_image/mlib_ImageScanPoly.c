@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,11 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
     return MLIB_FAILURE;
   }
 
+  int intSize = sizeof(mlib_s32);
+  if (!SAFE_TO_MULT(dstHeight, intSize) ||
+      !SAFE_TO_ADD(dstHeight * intSize, 7)) {
+    return MLIB_FAILURE;
+  }
   bsize0 = (dstHeight * sizeof(mlib_s32) + 7) & ~7;
 
   if (lineAddr == NULL) {
@@ -108,6 +113,10 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
   }
 
   param->buff_malloc = NULL;
+
+  if (!SAFE_TO_MULT(4, bsize0) || !SAFE_TO_ADD(4 * bsize0, bsize1)) {
+    return MLIB_FAILURE;
+  }
 
   if ((4 * bsize0 + bsize1) > buff_size) {
     buff = param->buff_malloc = mlib_malloc(4 * bsize0 + bsize1);
@@ -289,12 +298,14 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
     mlib_d64 dX1 = coords[(topIdx - i) & 0x3][0];
     mlib_d64 dY2 = coords[(topIdx - i - 1) & 0x3][1];
     mlib_d64 dX2 = coords[(topIdx - i - 1) & 0x3][0];
-    mlib_d64 x = dX1, slope = (dX2 - dX1) / (dY2 - dY1);
+    mlib_d64 x = dX1, slope;
     mlib_s32 y1;
     mlib_s32 y2;
 
     if (dY1 == dY2)
       continue;
+
+    slope = (dX2 - dX1) / (dY2 - dY1);
 
     if (!(IS_FINITE(slope))) {
       continue;
@@ -330,12 +341,14 @@ mlib_status mlib_AffineEdges(mlib_affine_param *param,
     mlib_d64 dX1 = coords[(topIdx + i) & 0x3][0];
     mlib_d64 dY2 = coords[(topIdx + i + 1) & 0x3][1];
     mlib_d64 dX2 = coords[(topIdx + i + 1) & 0x3][0];
-    mlib_d64 x = dX1, slope = (dX2 - dX1) / (dY2 - dY1);
+    mlib_d64 x = dX1, slope;
     mlib_s32 y1;
     mlib_s32 y2;
 
     if (dY1 == dY2)
       continue;
+
+    slope = (dX2 - dX1) / (dY2 - dY1);
 
     if (!(IS_FINITE(slope))) {
       continue;

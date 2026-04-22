@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,13 @@ import java.util.Objects;
  * Calling {@link SecureRandom#generateSeed(int)} will directly read
  * from this system default entropy source.
  *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf
+ *      Recommendation for Random Number Generation Using Deterministic Random Bit Generators
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
+ *
  * @since 9
  */
-public class DrbgParameters {
+public final class DrbgParameters {
 
     private DrbgParameters() {
         // This class should not be instantiated

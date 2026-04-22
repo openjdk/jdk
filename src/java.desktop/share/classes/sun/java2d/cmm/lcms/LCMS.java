@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,30 +136,23 @@ final class LCMS implements PCMM {
     static native void colorConvert(long trans, int width, int height,
                                     int srcOffset, int srcNextRowOffset,
                                     int dstOffset, int dstNextRowOffset,
-                                    Object srcData, Object dstData,
-                                    int srcType, int dstType);
+                                    Object srcData, Object dstData);
 
     private LCMS() {}
 
     private static LCMS theLcms = null;
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     static synchronized PCMM getModule() {
         if (theLcms != null) {
             return theLcms;
         }
 
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                    public Object run() {
-                        /* We need to load awt here because of usage trace and
-                         * disposer frameworks
-                         */
-                        System.loadLibrary("awt");
-                        System.loadLibrary("lcms");
-                        return null;
-                    }
-                });
+        /* We need to load awt here because of usage trace and
+         * disposer frameworks
+         */
+        System.loadLibrary("awt");
+        System.loadLibrary("lcms");
 
         theLcms = new LCMS();
 

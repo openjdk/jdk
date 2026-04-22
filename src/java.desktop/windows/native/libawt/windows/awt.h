@@ -155,15 +155,6 @@ typedef AwtObject* PDATA;
 /*  /NEW JNI */
 
 /*
- * IS_WIN64 returns TRUE on 64-bit Itanium
- */
-#if defined (_WIN64)
-    #define IS_WIN64 TRUE
-#else
-    #define IS_WIN64 FALSE
-#endif
-
-/*
  * IS_WIN2000 returns TRUE on 2000, XP and Vista
  * IS_WINXP returns TRUE on XP and Vista
  * IS_WINVISTA returns TRUE on Vista
@@ -194,35 +185,6 @@ extern JavaVM *jvm;
 #define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<const jchar*>(x), static_cast<jsize>(_tcslen(x)))
 #define JNU_GetStringPlatformChars(env, x, y) reinterpret_cast<LPCWSTR>(env->GetStringChars(x, y))
 #define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
-
-/*
- * Itanium symbols needed for 64-bit compilation.
- * These are defined in winuser.h in the August 2001 MSDN update.
- */
-#ifndef GCLP_HBRBACKGROUND
-    #ifdef _WIN64
-        #error Macros for GetClassLongPtr, etc. are for 32-bit windows only
-    #endif /* !_WIN64 */
-    #define GetClassLongPtr GetClassLong
-    #define SetClassLongPtr SetClassLong
-    #define GCLP_HBRBACKGROUND GCL_HBRBACKGROUND
-    #define GCLP_HCURSOR GCL_HCURSOR
-    #define GCLP_HICON GCL_HICON
-    #define GCLP_HICONSM GCL_HICONSM
-    #define GCLP_HMODULE GCL_HMODULE
-    #define GCLP_MENUNAME GCL_MENUNAME
-    #define GCLP_WNDPROC GCL_WNDPROC
-    #define GetWindowLongPtr GetWindowLong
-    #define SetWindowLongPtr SetWindowLong
-    #define GWLP_WNDPROC GWL_WNDPROC
-    #define GWLP_HINSTANCE GWL_HINSTANCE
-    #define GWLP_HWNDPARENT GWL_HWNDPARENT
-    #define GWLP_ID GWL_ID
-    #define GWLP_USERDATA GWL_USERDATA
-    #define DWLP_DLGPROC DWL_DLGPROC
-    #define DWLP_MSGRESULT DWL_MSGRESULT
-    #define DWLP_USER DWL_USER
-#endif /* !GCLP_HBRBACKGROUND */
 
 /*
  * macros for saving and restoring FPU control word

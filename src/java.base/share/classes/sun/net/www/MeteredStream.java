@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ public class MeteredStream extends FilterInputStream {
         assert isLockHeldByCurrentThread();
 
         if (n == -1) {
+            if (expected > count) {
+                throw new IOException("Premature EOF");
+            }
 
             /*
              * don't close automatically when mark is set and is valid;

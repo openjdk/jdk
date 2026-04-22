@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
@@ -34,6 +33,7 @@
 
 class CardTableRS;
 class ContiguousSpace;
+class HSpaceCounters;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -68,7 +68,7 @@ class TenuredGeneration: public Generation {
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
-  CSpaceCounters*     _space_counters;
+  HSpaceCounters*     _space_counters;
 
   // Avg amount promoted; used for avoiding promotion undo
   // This class does not update deviations if the sample is zero.
@@ -102,15 +102,9 @@ public:
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC.
-  bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
+  void scan_old_to_young_refs();
 
   bool is_in(const void* p) const;
 
@@ -121,10 +115,7 @@ public:
                     CardTableRS* remset);
 
   // Printing
-  const char* name() const { return "tenured generation"; }
-  const char* short_name() const { return "Tenured"; }
-
-  size_t contiguous_available() const;
+  const char* name() const { return "Tenured"; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
@@ -132,29 +123,24 @@ public:
   void complete_loaded_archive_space(MemRegion archive_space);
   inline void update_for_block(HeapWord* start, HeapWord* end);
 
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate and returns a block of the requested size, or returns "null".
+  // Assumes the caller has done any necessary locking.
+  inline HeapWord* allocate(size_t word_size);
+  // Multi-threaded version.
+  inline HeapWord* par_allocate(size_t word_size);
 
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
+  // Expand the old-gen then invoke allocate above.
+  HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();
-
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab || supports_tlab_allocation()) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
-  }
 
   // Performance Counter support
   void update_counters();
 
   // Statistics
 
-  void update_gc_stats(Generation* current_generation, bool full);
+  void update_promote_stats();
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.
@@ -163,12 +149,11 @@ public:
   bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   // "obj" is the address of an object in young-gen.  Allocate space for "obj"
-  // in the old-gen, and copy "obj" into the newly allocated space, if
-  // possible, returning the result (or null if the allocation failed).
+  // in the old-gen, returning the result (or null if the allocation failed).
   //
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
-  oop promote(oop obj, size_t obj_size);
+  oop allocate_for_promotion(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

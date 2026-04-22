@@ -33,7 +33,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return errCode
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return errCode
 
 static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
@@ -59,7 +59,7 @@ MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
 
     if (method == midActiveMethod) {
         printf("#### MethodExit event occurred ####\n");
-        fflush(0);
+        fflush(nullptr);
         meth_exit_gen_events++;
     }
 }
@@ -70,7 +70,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
 
     if (method == midActiveMethod) {
         printf("#### FramePop event occurred ####\n");
-        fflush(0);
+        fflush(nullptr);
         pop_frame_gen_events++;
     }
 }
@@ -120,7 +120,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_resThread(JNIEnv *env,
         return JNI_ERR;
     }
     printf("<<<<<<<< ResumeThread() is successfully done\n");
-    fflush(0);
+    fflush(nullptr);
     return PASSED;
 }
 
@@ -176,7 +176,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
         RETURN_FAILED;
     }
     printf("Check #1 PASSED: ForceEarlyReturn() is successfully done\n");
-    fflush(0);
+    fflush(nullptr);
 
     return(errCode);
 }
@@ -268,7 +268,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_check(JNIEnv *env, jclass cls)
                "events generated correctly\n");
         errCode = PASSED;
     }
-    fflush(0);
+    fflush(nullptr);
     return errCode;
 }
 

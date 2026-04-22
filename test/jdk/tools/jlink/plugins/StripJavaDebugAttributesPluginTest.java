@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @author Jean-Francois Denise
  * @library ../../lib
  * @build tests.*
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
@@ -137,16 +136,16 @@ public class StripJavaDebugAttributesPluginTest {
         ClassModel classFile = ClassFile.of().parse(strippedClassFile);
         for (MethodModel method : classFile.methods()) {
             String methodName = method.methodName().stringValue();
-            CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-            if (code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null) != null) {
+            CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+            if (code.findAttribute(Attributes.lineNumberTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LINE_NUMBER_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }
-            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null) != null) {
+            if (code.findAttribute(Attributes.localVariableTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }
-            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null) != null) {
+            if (code.findAttribute(Attributes.localVariableTypeTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TYPE_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }

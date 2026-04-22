@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,9 @@
  * questions.
  */
 
-// key: compiler.err.modifier.not.allowed.here
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.java.base.transitive
+// options: --release 24
 
 module m {
      requires transitive java.base;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
    @bug 4035924 4095767
    @summary General exhaustive test of solaris pathname handling
+   @requires (os.family != "windows")
    @author Mark Reinhold
 
    @build General GeneralSolaris
@@ -65,10 +66,6 @@ public class GeneralSolaris extends General {
     }
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar != '/') {
-            /* This test is only valid on Unix systems */
-            return;
-        }
         if (args.length > 0) debug = true;
 
         initTestData(3);

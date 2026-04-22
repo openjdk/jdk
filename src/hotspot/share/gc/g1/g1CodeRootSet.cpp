@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
@@ -62,7 +60,7 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
   HashTable _table;
   HashTableScanTask _table_scanner;
 
-  size_t volatile _num_entries;
+  Atomic<size_t> _num_entries;
 
   bool is_empty() const { return number_of_entries() == 0; }
 
@@ -122,7 +120,7 @@ public:
     bool grow_hint = false;
     bool inserted = _table.insert(Thread::current(), lookup, method, &grow_hint);
     if (inserted) {
-      Atomic::inc(&_num_entries);
+      _num_entries.add_then_fetch(1u);
     }
     if (grow_hint) {
       _table.grow(Thread::current());
@@ -133,7 +131,7 @@ public:
     HashTableLookUp lookup(method);
     bool removed = _table.remove(Thread::current(), lookup);
     if (removed) {
-      Atomic::dec(&_num_entries);
+      _num_entries.sub_then_fetch(1u);
     }
     return removed;
   }
@@ -184,7 +182,7 @@ public:
     guarantee(succeeded, "unable to clean table");
 
     if (num_deleted != 0) {
-      size_t current_size = Atomic::sub(&_num_entries, num_deleted);
+      size_t current_size = _num_entries.sub_then_fetch(num_deleted);
       shrink_to_match(current_size);
     }
   }
@@ -228,7 +226,7 @@ public:
 
   size_t mem_size() { return sizeof(*this) + _table.get_mem_size(Thread::current()); }
 
-  size_t number_of_entries() const { return Atomic::load(&_num_entries); }
+  size_t number_of_entries() const { return _num_entries.load_relaxed(); }
 };
 
 uintx G1CodeRootSetHashTable::HashTableLookUp::get_hash() const {
@@ -298,7 +296,7 @@ class CleanCallback : public StackObj {
   NONCOPYABLE(CleanCallback); // can not copy, _blobs will point to old copy
 
   class PointsIntoHRDetectionClosure : public OopClosure {
-    HeapRegion* _hr;
+    G1HeapRegion* _hr;
 
     template <typename T>
     void do_oop_work(T* p) {
@@ -309,7 +307,7 @@ class CleanCallback : public StackObj {
 
    public:
     bool _points_into;
-    PointsIntoHRDetectionClosure(HeapRegion* hr) : _hr(hr), _points_into(false) {}
+    PointsIntoHRDetectionClosure(G1HeapRegion* hr) : _hr(hr), _points_into(false) {}
 
     void do_oop(narrowOop* o) { do_oop_work(o); }
 
@@ -320,7 +318,7 @@ class CleanCallback : public StackObj {
   NMethodToOopClosure _nmethod_cl;
 
  public:
-  CleanCallback(HeapRegion* hr) : _detector(hr), _nmethod_cl(&_detector, !NMethodToOopClosure::FixRelocations) {}
+  CleanCallback(G1HeapRegion* hr) : _detector(hr), _nmethod_cl(&_detector, !NMethodToOopClosure::FixRelocations) {}
 
   bool operator()(nmethod** value) {
     _detector._points_into = false;
@@ -329,7 +327,7 @@ class CleanCallback : public StackObj {
   }
 };
 
-void G1CodeRootSet::clean(HeapRegion* owner) {
+void G1CodeRootSet::clean(G1HeapRegion* owner) {
   assert(!_is_iterating, "should not mutate while iterating the table");
 
   CleanCallback eval(owner);

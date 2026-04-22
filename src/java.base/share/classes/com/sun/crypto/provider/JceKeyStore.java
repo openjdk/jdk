@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,15 @@ import sun.security.util.Debug;
 import sun.security.util.IOUtils;
 
 import java.io.*;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.security.AccessController;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
@@ -72,14 +72,14 @@ public final class JceKeyStore extends KeyStoreSpi {
 
     // Private key and supporting certificate chain
     private static final class PrivateKeyEntry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation date of this entry
         byte[] protectedKey;
         Certificate[] chain;
-    };
+    }
 
     // Secret key
     private static final class SecretKeyEntry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation date of this entry
         SealedObject sealedKey;
 
         // Maximum possible length of sealedKey. Used to detect malicious
@@ -91,9 +91,9 @@ public final class JceKeyStore extends KeyStoreSpi {
 
     // Trusted certificate
     private static final class TrustedCertEntry {
-        Date date; // the creation date of this entry
+        Instant date; // the creation date of this entry
         Certificate cert;
-    };
+    }
 
     /**
      * Private keys and certificates are stored in a hashtable.
@@ -119,7 +119,7 @@ public final class JceKeyStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        Key key = null;
+        Key key;
 
         Object entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
 
@@ -215,23 +215,38 @@ public final class JceKeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        Date date = null;
+        final Instant instant = this.engineGetCreationInstant(alias);
+        if (instant == null) {
+            return null;
+        }
+        return Date.from(instant);
+    }
 
-        Object entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+    /**
+     * Returns the instant that the entry identified by the given alias was
+     * created.
+     *
+     * @param alias the alias name
+     *
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
+     *
+     * @since 27
+     */
+    public Instant engineGetCreationInstant(String alias) {
+        final Object entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
 
         if (entry != null) {
-            // We have to create a new instance of java.util.Date because
-            // dates are not immutable
             if (entry instanceof TrustedCertEntry) {
-                date = new Date(((TrustedCertEntry)entry).date.getTime());
+                return ((TrustedCertEntry)entry).date;
             } else if (entry instanceof PrivateKeyEntry) {
-                date = new Date(((PrivateKeyEntry)entry).date.getTime());
+                return ((PrivateKeyEntry)entry).date;
             } else {
-                date = new Date(((SecretKeyEntry)entry).date.getTime());
+                return ((SecretKeyEntry)entry).date;
             }
+        } else {
+            return null;
         }
-
-        return date;
     }
 
     /**
@@ -266,7 +281,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 if (key instanceof PrivateKey) {
                     PrivateKeyEntry entry = new PrivateKeyEntry();
-                    entry.date = new Date();
+                    entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                     // protect the private key
                     entry.protectedKey = keyProtector.protect((PrivateKey)key);
@@ -284,7 +299,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 } else {
                     SecretKeyEntry entry = new SecretKeyEntry();
-                    entry.date = new Date();
+                    entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
                     // seal and store the key
                     entry.sealedKey = keyProtector.seal(key);
@@ -327,7 +342,7 @@ public final class JceKeyStore extends KeyStoreSpi {
             // We assume it's a private key, because there is no standard
             // (ASN.1) encoding format for wrapped secret keys
             PrivateKeyEntry entry = new PrivateKeyEntry();
-            entry.date = new Date();
+            entry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
             entry.protectedKey = key.clone();
             if ((chain != null) &&
@@ -372,7 +387,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             TrustedCertEntry trustedCertEntry = new TrustedCertEntry();
             trustedCertEntry.cert = cert;
-            trustedCertEntry.date = new Date();
+            trustedCertEntry.date = Instant.now().truncatedTo(ChronoUnit.MILLIS);
             entries.put(alias.toLowerCase(Locale.ENGLISH), trustedCertEntry);
         }
     }
@@ -590,7 +605,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         dos.writeUTF(alias);
 
                         // write the (entry creation) date
-                        dos.writeLong(pentry.date.getTime());
+                        dos.writeLong(pentry.date.toEpochMilli());
 
                         // write the protected private key
                         dos.writeInt(pentry.protectedKey.length);
@@ -620,7 +635,9 @@ public final class JceKeyStore extends KeyStoreSpi {
                         dos.writeUTF(alias);
 
                         // write the (entry creation) date
-                        dos.writeLong(((TrustedCertEntry)entry).date.getTime());
+                        dos.writeLong(
+                                ((TrustedCertEntry)entry).date.toEpochMilli()
+                        );
 
                         // write the trusted certificate
                         encoded = ((TrustedCertEntry)entry).cert.getEncoded();
@@ -637,7 +654,9 @@ public final class JceKeyStore extends KeyStoreSpi {
                         dos.writeUTF(alias);
 
                         // write the (entry creation) date
-                        dos.writeLong(((SecretKeyEntry)entry).date.getTime());
+                        dos.writeLong(
+                                ((SecretKeyEntry)entry).date.toEpochMilli()
+                        );
 
                         // write the sealed key
                         oos = new ObjectOutputStream(dos);
@@ -652,7 +671,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                  * the keystore (such as deleting or modifying key or
                  * certificate entries).
                  */
-                byte digest[] = md.digest();
+                byte[] digest = md.digest();
 
                 dos.write(digest);
                 dos.flush();
@@ -662,6 +681,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                 } else {
                     dos.close();
                 }
+            }
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
             }
         }
     }
@@ -691,8 +714,8 @@ public final class JceKeyStore extends KeyStoreSpi {
             MessageDigest md = null;
             CertificateFactory cf = null;
             Hashtable<String, CertificateFactory> cfs = null;
-            ByteArrayInputStream bais = null;
-            byte[] encoded = null;
+            ByteArrayInputStream bais;
+            byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0, secretKeyCount = 0;
 
             if (stream == null)
@@ -751,7 +774,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         alias = dis.readUTF();
 
                         // read the (entry creation) date
-                        entry.date = new Date(dis.readLong());
+                        entry.date = Instant.ofEpochMilli(dis.readLong());
 
                         // read the private key
                         entry.protectedKey = IOUtils.readExactlyNBytes(dis, dis.readInt());
@@ -796,7 +819,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         alias = dis.readUTF();
 
                         // read the (entry creation) date
-                        entry.date = new Date(dis.readLong());
+                        entry.date = Instant.ofEpochMilli(dis.readLong());
 
                         // read the trusted certificate
                         if (xVersion == 2) {
@@ -822,7 +845,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // Add the entry to the list
                         entries.put(alias, entry);
 
-                    } else if (tag == 3) { // secret-key entry
+                    } else if (tag == 3) { // secret key entry
                         secretKeyCount++;
                         SecretKeyEntry entry = new SecretKeyEntry();
 
@@ -830,20 +853,14 @@ public final class JceKeyStore extends KeyStoreSpi {
                         alias = dis.readUTF();
 
                         // read the (entry creation) date
-                        entry.date = new Date(dis.readLong());
+                        entry.date = Instant.ofEpochMilli(dis.readLong());
 
                         // read the sealed key
                         try {
                             ois = new ObjectInputStream(dis);
-                            final ObjectInputStream ois2 = ois;
                             // Set a deserialization checker
-                            @SuppressWarnings("removal")
-                            var dummy = AccessController.doPrivileged(
-                                (PrivilegedAction<Void>)() -> {
-                                    ois2.setObjectInputFilter(
-                                        new DeserializationChecker(fullLength));
-                                    return null;
-                            });
+                            ois.setObjectInputFilter(
+                                new DeserializationChecker(fullLength));
                             entry.sealedKey = (SealedObject)ois.readObject();
                             entry.maxLength = fullLength;
                             // NOTE: don't close ois here since we are still
@@ -868,6 +885,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                         privateKeyCount + ". trusted key count: " +
                         trustedKeyCount + ". secret key count: " +
                         secretKeyCount);
+                }
+
+                if (debug != null) {
+                    emitWeakKeyStoreWarning();
                 }
 
                 /*
@@ -985,5 +1006,13 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             return Status.UNDECIDED;
         }
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        debug.println("WARNING: JCEKS uses outdated cryptographic "
+                + "algorithms and will be removed in a future "
+                + "release. Migrate to PKCS12 using:");
+        debug.println("keytool -importkeystore -srckeystore <keystore> "
+                + "-destkeystore <keystore> -deststoretype pkcs12");
     }
 }

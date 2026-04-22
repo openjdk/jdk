@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -936,6 +936,21 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitPrimitiveType(PrimitiveTypeTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 27
+     */
+    @Override
+    public R visitVarType(VarTypeTree node, P p) {
         return null;
     }
 

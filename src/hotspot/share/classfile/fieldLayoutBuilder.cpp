@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
@@ -38,7 +37,7 @@
 LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
   _next_block(nullptr),
   _prev_block(nullptr),
-  _kind(kind),
+  _block_kind(kind),
   _offset(-1),
   _alignment(1),
   _size(size),
@@ -53,7 +52,7 @@ LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
 LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment, bool is_reference) :
  _next_block(nullptr),
  _prev_block(nullptr),
- _kind(kind),
+ _block_kind(kind),
  _offset(-1),
  _alignment(alignment),
  _size(size),
@@ -127,17 +126,19 @@ void FieldLayout::initialize_static_layout() {
   }
 }
 
-void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass) {
+void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, bool& super_ends_with_oop) {
   if (super_klass == nullptr) {
+    super_ends_with_oop = false;
     _blocks = new LayoutRawBlock(LayoutRawBlock::EMPTY, INT_MAX);
     _blocks->set_offset(0);
     _last = _blocks;
     _start = _blocks;
     insert(first_empty_block(), new LayoutRawBlock(LayoutRawBlock::RESERVED, instanceOopDesc::base_offset_in_bytes()));
   } else {
-    bool has_fields = reconstruct_layout(super_klass);
+    bool super_has_instance_fields = false;
+    reconstruct_layout(super_klass, super_has_instance_fields, super_ends_with_oop);
     fill_holes(super_klass);
-    if ((UseEmptySlotsInSupers && !super_klass->has_contended_annotations()) || !has_fields) {
+    if (!super_klass->has_contended_annotations() || !super_has_instance_fields) {
       _start = _blocks;  // start allocating fields from the first empty block
     } else {
       _start = _last;    // append fields at the end of the reconstructed layout
@@ -147,8 +148,8 @@ void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass) {
 
 LayoutRawBlock* FieldLayout::first_field_block() {
   LayoutRawBlock* block = _start;
-  while (block->kind() != LayoutRawBlock::INHERITED && block->kind() != LayoutRawBlock::REGULAR
-      && block->kind() != LayoutRawBlock::FLATTENED && block->kind() != LayoutRawBlock::PADDING) {
+  while (block->block_kind() != LayoutRawBlock::INHERITED && block->block_kind() != LayoutRawBlock::REGULAR
+      && block->block_kind() != LayoutRawBlock::FLATTENED && block->block_kind() != LayoutRawBlock::PADDING) {
     block = block->next_block();
   }
   return block;
@@ -189,7 +190,7 @@ void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* star
       assert(cursor != nullptr, "Sanity check");
       last_search_success = true;
       while (cursor != start) {
-        if (cursor->kind() == LayoutRawBlock::EMPTY && cursor->fit(b->size(), b->alignment())) {
+        if (cursor->block_kind() == LayoutRawBlock::EMPTY && cursor->fit(b->size(), b->alignment())) {
           if (candidate == nullptr || cursor->size() < candidate->size()) {
             candidate = cursor;
           }
@@ -201,7 +202,7 @@ void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* star
         last_search_success = false;
       }
       assert(candidate != nullptr, "Candidate must not be null");
-      assert(candidate->kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
+      assert(candidate->block_kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
       assert(candidate->fit(b->size(), b->alignment()), "Candidate must be able to store the block");
     }
 
@@ -220,7 +221,7 @@ void FieldLayout::add_field_at_offset(LayoutRawBlock* block, int offset, LayoutR
   while (slot != nullptr) {
     if ((slot->offset() <= block->offset() && (slot->offset() + slot->size()) > block->offset()) ||
         slot == _last){
-      assert(slot->kind() == LayoutRawBlock::EMPTY, "Matching slot must be an empty slot");
+      assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Matching slot must be an empty slot");
       assert(slot->size() >= block->offset() + block->size() ,"Matching slot must be big enough");
       if (slot->offset() < block->offset()) {
         int adjustment = block->offset() - slot->offset();
@@ -260,7 +261,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
   } else {
     LayoutRawBlock* first = list->at(0);
     candidate = last_block()->prev_block();
-    while (candidate->kind() != LayoutRawBlock::EMPTY || !candidate->fit(size, first->alignment())) {
+    while (candidate->block_kind() != LayoutRawBlock::EMPTY || !candidate->fit(size, first->alignment())) {
       if (candidate == start) {
         candidate = last_block();
         break;
@@ -268,7 +269,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
       candidate = candidate->prev_block();
     }
     assert(candidate != nullptr, "Candidate must not be null");
-    assert(candidate->kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
+    assert(candidate->block_kind() == LayoutRawBlock::EMPTY, "Candidate must be an empty block");
     assert(candidate->fit(size, first->alignment()), "Candidate must be able to store the whole contiguous block");
   }
 
@@ -280,7 +281,7 @@ void FieldLayout::add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutR
 }
 
 LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block) {
-  assert(slot->kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
+  assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
   if (slot->offset() % block->alignment() != 0) {
     int adjustment = block->alignment() - (slot->offset() % block->alignment());
     LayoutRawBlock* adj = new LayoutRawBlock(LayoutRawBlock::EMPTY, adjustment);
@@ -294,22 +295,33 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   return block;
 }
 
-bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
-  bool has_instance_fields = false;
+void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_instance_fields, bool& ends_with_oop) {
+  has_instance_fields = ends_with_oop = false;
   GrowableArray<LayoutRawBlock*>* all_fields = new GrowableArray<LayoutRawBlock*>(32);
+  BasicType last_type;
+  int last_offset = -1;
   while (ik != nullptr) {
-    for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
+    for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
       BasicType type = Signature::basic_type(fs.signature());
       // distinction between static and non-static fields is missing
       if (fs.access_flags().is_static()) continue;
       has_instance_fields = true;
+      if (fs.offset() > last_offset) {
+        last_offset = fs.offset();
+        last_type = type;
+      }
       int size = type2aelembytes(type);
       // INHERITED blocks are marked as non-reference because oop_maps are handled by their holder class
       LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::INHERITED, size, size, false);
       block->set_offset(fs.offset());
       all_fields->append(block);
     }
-    ik = ik->super() == nullptr ? nullptr : InstanceKlass::cast(ik->super());
+    ik = ik->super() == nullptr ? nullptr : ik->super();
+  }
+  assert(last_offset == -1 || last_offset > 0, "Sanity");
+  if (last_offset > 0 &&
+      (last_type == BasicType::T_ARRAY || last_type == BasicType::T_OBJECT)) {
+    ends_with_oop = true;
   }
 
   all_fields->sort(LayoutRawBlock::compare_offset);
@@ -324,7 +336,6 @@ bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
     _last = b;
   }
   _start = _blocks;
-  return has_instance_fields;
 }
 
 // Called during the reconstruction of a layout, after fields from super
@@ -351,7 +362,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
     b = b->next_block();
   }
   assert(b->next_block() == nullptr, "Invariant at this point");
-  assert(b->kind() != LayoutRawBlock::EMPTY, "Sanity check");
+  assert(b->block_kind() != LayoutRawBlock::EMPTY, "Sanity check");
 
   // If the super class has @Contended annotation, a padding block is
   // inserted at the end to ensure that fields from the subclasses won't share
@@ -364,20 +375,6 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
     b = p;
   }
 
-  if (!UseEmptySlotsInSupers) {
-    // Add an empty slots to align fields of the subclass on a heapOopSize boundary
-    // in order to emulate the behavior of the previous algorithm
-    int align = (b->offset() + b->size()) % heapOopSize;
-    if (align != 0) {
-      int sz = heapOopSize - align;
-      LayoutRawBlock* p = new LayoutRawBlock(LayoutRawBlock::EMPTY, sz);
-      p->set_offset(b->offset() + b->size());
-      b->set_next_block(p);
-      p->set_prev_block(b);
-      b = p;
-    }
-  }
-
   LayoutRawBlock* last = new LayoutRawBlock(LayoutRawBlock::EMPTY, INT_MAX);
   last->set_offset(b->offset() + b->size());
   assert(last->offset() > 0, "Sanity check");
@@ -387,7 +384,7 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
 }
 
 LayoutRawBlock* FieldLayout::insert(LayoutRawBlock* slot, LayoutRawBlock* block) {
-  assert(slot->kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
+  assert(slot->block_kind() == LayoutRawBlock::EMPTY, "Blocks can only be inserted in empty blocks");
   assert(slot->offset() % block->alignment() == 0, "Incompatible alignment");
   block->set_offset(slot->offset());
   slot->set_offset(slot->offset() + block->size());
@@ -428,7 +425,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
   ResourceMark rm;
   LayoutRawBlock* b = _blocks;
   while(b != _last) {
-    switch(b->kind()) {
+    switch(b->block_kind()) {
       case LayoutRawBlock::REGULAR: {
         FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",
@@ -464,7 +461,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
         bool found = false;
         const InstanceKlass* ik = super;
         while (!found && ik != nullptr) {
-          for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
+          for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
             if (fs.offset() == b->offset()) {
               output->print_cr(" @%d \"%s\" %s %d/%d %s",
                   b->offset(),
@@ -477,7 +474,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
               break;
             }
           }
-          ik = ik->java_super();
+          ik = ik->super();
         }
         break;
       }
@@ -531,7 +528,7 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 void FieldLayoutBuilder::prologue() {
   _layout = new FieldLayout(_field_info, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
-  _layout->initialize_instance_layout(super_klass);
+  _layout->initialize_instance_layout(super_klass, _super_ends_with_oop);
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
   }
@@ -599,38 +596,62 @@ void FieldLayoutBuilder::regular_field_sorting() {
   }
 }
 
-void FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slot) {
+LayoutRawBlock* FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slot) {
+  LayoutRawBlock* padding = nullptr;
   if (ContendedPaddingWidth > 0) {
-    LayoutRawBlock* padding = new LayoutRawBlock(LayoutRawBlock::PADDING, ContendedPaddingWidth);
+    padding = new LayoutRawBlock(LayoutRawBlock::PADDING, ContendedPaddingWidth);
     _layout->insert(slot, padding);
   }
+  return padding;
 }
 
 // Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
 //   - primitive fields are allocated first (from the biggest to the smallest)
-//   - then oop fields are allocated, either in existing gaps or at the end of
-//     the layout
+//   - oop fields are allocated, either in existing gaps or at the end of
+//     the layout. We allocate oops in a single block to have a single oop map entry.
+//   - if the super class ended with an oop, we lead with oops. That will cause the
+//     trailing oop map entry of the super class and the oop map entry of this class
+//     to be folded into a single entry later. Correspondingly, if the super class
+//     ends with a primitive field, we gain nothing by leading with oops; therefore
+//     we let oop fields trail, thus giving future derived classes the chance to apply
+//     the same trick.
 void FieldLayoutBuilder::compute_regular_layout() {
   bool need_tail_padding = false;
   prologue();
   regular_field_sorting();
 
   if (_is_contended) {
-    _layout->set_start(_layout->last_block());
     // insertion is currently easy because the current strategy doesn't try to fill holes
     // in super classes layouts => the _start block is by consequence the _last_block
-    insert_contended_padding(_layout->start());
+    _layout->set_start(_layout->last_block());
+    LayoutRawBlock* padding = insert_contended_padding(_layout->start());
+    if (padding != nullptr) {
+      // Setting the padding block as start ensures we do not insert past it.
+      _layout->set_start(padding);
+    }
     need_tail_padding = true;
   }
-  _layout->add(_root_group->primitive_fields());
-  _layout->add(_root_group->oop_fields());
+
+  if (_super_ends_with_oop) {
+    _layout->add(_root_group->oop_fields());
+    _layout->add(_root_group->primitive_fields());
+  } else {
+    _layout->add(_root_group->primitive_fields());
+    _layout->add(_root_group->oop_fields());
+  }
 
   if (!_contended_groups.is_empty()) {
     for (int i = 0; i < _contended_groups.length(); i++) {
       FieldGroup* cg = _contended_groups.at(i);
       LayoutRawBlock* start = _layout->last_block();
-      insert_contended_padding(start);
+      LayoutRawBlock* padding = insert_contended_padding(start);
+
+      // Do not insert fields past the padding block.
+      if (padding != nullptr) {
+        start = padding;
+      }
+
       _layout->add(cg->primitive_fields(), start);
       _layout->add(cg->oop_fields(), start);
       need_tail_padding = true;

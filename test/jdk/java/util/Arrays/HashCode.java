@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
- * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
+ * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED
+ *     --add-opens java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
 import java.lang.reflect.Method;

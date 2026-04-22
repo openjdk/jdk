@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,15 +198,8 @@ public final class Track {
         // Or: document that the ticks() length will not be reduced
         // by deleting events (unless the EOT event is removed)
         synchronized(eventsList) {
-            if (set.remove(event)) {
-                int i = eventsList.indexOf(event);
-                if (i >= 0) {
-                    eventsList.remove(i);
-                    return true;
-                }
-            }
+            return set.remove(event) && eventsList.remove(event);
         }
-        return false;
     }
 
     /**

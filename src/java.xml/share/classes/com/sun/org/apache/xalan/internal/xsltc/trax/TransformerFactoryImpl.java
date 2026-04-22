@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +20,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.utils.FeaturePropertyBase;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityPropertyManager.Property;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.SourceLoader;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
@@ -69,15 +66,18 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stax.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
-import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
+import jdk.xml.internal.XMLSecurityPropertyManager.Property;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLFilter;
@@ -88,7 +88,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2023
+ * @LastModified: May 2025
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -216,7 +216,7 @@ public class TransformerFactoryImpl
     /**
      * <p>State of secure processing feature.</p>
      */
-    private boolean _isNotSecureProcessing = true;
+    private boolean _isNotSecureProcessing = false;
     /**
      * <p>State of secure mode.</p>
      */
@@ -265,25 +265,19 @@ public class TransformerFactoryImpl
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
-    @SuppressWarnings("removal")
     public TransformerFactoryImpl() {
-
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            _isNotSecureProcessing = false;
-        }
-
-        _xmlFeatures = new JdkXmlFeatures(!_isNotSecureProcessing);
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        // security (property) managers updated with current system properties
+        _xmlSecurityManager = config.getXMLSecurityManager(true);
+        _xmlSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+        _xmlFeatures = config.getXMLFeatures(true);
         _overrideDefaultParser = _xmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
-        _xmlSecurityPropertyMgr = new XMLSecurityPropertyManager();
         _accessExternalDTD = _xmlSecurityPropertyMgr.getValue(
                 Property.ACCESS_EXTERNAL_DTD);
         _accessExternalStylesheet = _xmlSecurityPropertyMgr.getValue(
                 Property.ACCESS_EXTERNAL_STYLESHEET);
 
-        //Parser's security manager
-        _xmlSecurityManager = new XMLSecurityManager(true);
         //Unmodifiable hash map with loaded external extension functions
         _xsltcExtensionFunctions = null;
         _extensionClassLoader = new JdkProperty<>(ImplPropMap.EXTCLSLOADER,
@@ -379,17 +373,10 @@ public class TransformerFactoryImpl
             return _cdataChunkSize;
         }
 
-        /** Check to see if the property is managed by the security manager **/
-        String propertyValue = (_xmlSecurityManager != null) ?
-                _xmlSecurityManager.getLimitAsString(name) : null;
-        if (propertyValue != null) {
-            return propertyValue;
-        } else {
-            propertyValue = (_xmlSecurityPropertyMgr != null) ?
-                _xmlSecurityPropertyMgr.getValue(name) : null;
-            if (propertyValue != null) {
-                return propertyValue;
-            }
+        //check if the property is managed by security manager
+        String value;
+        if ((value = JdkXmlUtils.getProperty(_xmlSecurityManager, _xmlSecurityPropertyMgr, name)) != null) {
+            return value;
         }
 
         // Throw an exception for all other attributes
@@ -528,7 +515,7 @@ public class TransformerFactoryImpl
         }
 
         if (_xmlSecurityPropertyMgr != null &&
-            _xmlSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {
+            _xmlSecurityPropertyMgr.setValue(name, FeaturePropertyBase.State.APIPROPERTY, value)) {
             _accessExternalDTD = _xmlSecurityPropertyMgr.getValue(
                     Property.ACCESS_EXTERNAL_DTD);
             _accessExternalStylesheet = _xmlSecurityPropertyMgr.getValue(
@@ -1007,9 +994,6 @@ public class TransformerFactoryImpl
         // Set the attributes for translet generation
         int outputType = XSLTC.BYTEARRAY_OUTPUT;
         if (_generateTranslet || _autoTranslet) {
-            // Set the translet name
-            xsltc.setClassName(getTransletBaseName(source));
-
             if (_destinationDirectory != null)
                 xsltc.setDestDirectory(_destinationDirectory);
             else {
@@ -1023,8 +1007,11 @@ public class TransformerFactoryImpl
                 }
             }
 
+            // set package name
             if (_packageName != null)
                 xsltc.setPackageName(_packageName);
+            // Set the translet name
+            xsltc.setClassName(getTransletBaseName(source));
 
             if (_jarFileName != null) {
                 xsltc.setJarFileName(_jarFileName);
@@ -1392,7 +1379,7 @@ public class TransformerFactoryImpl
         // Find the parent directory of the translet.
         String transletParentDir = transletFile.getParent();
         if (transletParentDir == null)
-            transletParentDir = SecuritySupport.getSystemProperty("user.dir");
+            transletParentDir = System.getProperty("user.dir");
 
         File transletParentFile = new File(transletParentDir);
 

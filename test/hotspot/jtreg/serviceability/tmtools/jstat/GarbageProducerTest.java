@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.lang.management.ManagementFactory;
 import utils.GarbageProducer;
 import common.TmTool;
 import utils.JstatResults;
+import utils.JstatGcCauseTool;
 
 /**
  * Base class for jstat testing which uses GarbageProducer to allocate garbage.
@@ -36,19 +37,19 @@ public class GarbageProducerTest {
     private final static float TARGET_MEMORY_USAGE = 0.7f;
     private final static float MEASUREMENT_TOLERANCE = 0.05f;
     private final GarbageProducer garbageProducer;
-    private final TmTool<? extends JstatResults> jstatTool;
+    private final JstatGcCauseTool jstatTool;
 
-    public GarbageProducerTest(TmTool<? extends JstatResults> tool) {
+    public GarbageProducerTest(JstatGcCauseTool tool) {
         garbageProducer = new GarbageProducer(TARGET_MEMORY_USAGE);
         // We will be running jstat tool
         jstatTool = tool;
     }
 
     public void run() throws Exception {
-        // Run once and get the  results asserting that they are reasonable
-        JstatResults measurement1 = jstatTool.measure();
-        measurement1.assertConsistency();
-        // Eat metaspace and heap then run the tool again and get the results  asserting that they are reasonable
+        // Run once and get the results asserting that they are reasonable
+        JstatResults measurement1 = jstatTool.measureAndAssertConsistency();
+
+        // Eat metaspace and heap then run the tool again and get the results, asserting that they are reasonable
         System.gc();
         garbageProducer.allocateMetaspaceAndHeap();
         // Collect garbage. Also update VM statistics

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,6 @@ public abstract class XBaseMenuWindow extends XWindow {
     protected Point grabInputPoint = null;
     protected boolean hasPointerMoved = false;
 
-    private AppContext disposeAppContext;
-
     /************************************************
      *
      * Mapping data
@@ -153,6 +151,7 @@ public abstract class XBaseMenuWindow extends XWindow {
             this.items = new XMenuItemPeer[0];
         }
 
+        @Override
         public Object clone() {
             try {
                 return super.clone();
@@ -174,8 +173,6 @@ public abstract class XBaseMenuWindow extends XWindow {
     XBaseMenuWindow() {
         super(new XCreateWindowParams(new Object[] {
             DELAYED, Boolean.TRUE}));
-
-        disposeAppContext = AppContext.getAppContext();
     }
 
     /************************************************
@@ -227,6 +224,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Overrides XBaseWindow.instantPreInit
      */
+    @Override
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
         items = new ArrayList<>();
@@ -894,6 +892,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Filters X events
      */
+     @Override
      protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
           case XConstants.Expose :
@@ -913,10 +912,11 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Invokes disposal procedure on eventHandlerThread
      */
+    @Override
     public void dispose() {
         setDisposed(true);
 
-        SunToolkit.invokeLaterOnAppContext(disposeAppContext, new Runnable()  {
+        SunToolkit.invokeLater(new Runnable()  {
             public void run() {
                 doDispose();
             }
@@ -943,6 +943,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * XBaseMenuWindow has no corresponding component
      * so events cannot be processed using standard means
      */
+    @Override
     void postEvent(final AWTEvent event) {
         InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {
             public void run() {
@@ -969,6 +970,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * Save location of pointer for further use
      * then invoke superclass
      */
+    @Override
     public boolean grabInput() {
         int rootX;
         int rootY;

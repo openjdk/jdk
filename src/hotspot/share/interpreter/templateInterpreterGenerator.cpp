@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
@@ -175,7 +174,9 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
   }
 
-
+  { CodeletMark cm(_masm, "preemption resume adapter");
+    Interpreter::_cont_resume_interpreter_adapter = generate_cont_resume_interpreter_adapter();
+  }
 
 #define method_entry(kind)                                                                          \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")");                                 \
@@ -192,6 +193,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
+  method_entry(java_lang_math_sinh )
+  method_entry(java_lang_math_tanh )
+  method_entry(java_lang_math_cbrt )
   method_entry(java_lang_math_abs  )
   method_entry(java_lang_math_sqrt )
   method_entry(java_lang_math_sqrt_strict)
@@ -201,7 +205,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_pow  )
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
-  method_entry(java_lang_ref_reference_get)
+  method_entry(java_lang_ref_reference_get0)
   AbstractInterpreter::initialize_method_handle_entries();
 
   method_entry(java_util_zip_CRC32C_updateBytes)
@@ -225,15 +229,11 @@ void TemplateInterpreterGenerator::generate_all() {
   // entries for `native` methods to use the same address in case
   // intrinsic is disabled.
   native_method_entry(java_lang_Thread_currentThread)
+  native_method_entry(java_lang_ref_reference_get0)
 
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
-
-  native_method_entry(java_lang_Float_intBitsToFloat)
-  native_method_entry(java_lang_Float_floatToRawIntBits)
-  native_method_entry(java_lang_Double_longBitsToDouble)
-  native_method_entry(java_lang_Double_doubleToRawLongBits)
 
 #undef native_method_entry
 
@@ -241,7 +241,6 @@ void TemplateInterpreterGenerator::generate_all() {
   set_entry_points_for_all_bytes();
 
   // installation of code in other places in the runtime
-  // (ExcutableCodeManager calls not needed to copy the entries)
   set_safepoints_for_all_bytes();
 
   { CodeletMark cm(_masm, "deoptimization entry points");
@@ -375,7 +374,6 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
-  __ verify_FPU(1, t->tos_in());
 #endif // !PRODUCT
   int step = 0;
   if (!t->does_dispatch()) {
@@ -457,6 +455,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_sinh    : // fall thru
+  case Interpreter::java_lang_math_tanh    : // fall thru
+  case Interpreter::java_lang_math_cbrt    : // fall thru
   case Interpreter::java_lang_math_abs     : // fall thru
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru
@@ -467,7 +468,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_math_sqrt_strict
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
-  case Interpreter::java_lang_ref_reference_get
+  case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
@@ -485,21 +486,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_Float_float16ToFloat_entry(); break;
   case Interpreter::java_lang_Float_floatToFloat16
                                            : entry_point = generate_Float_floatToFloat16_entry(); break;
-
-  // On x86_32 platforms, a special entry is generated for the following four methods.
-  // On other platforms the native entry is used to enter these methods.
-  case Interpreter::java_lang_Float_intBitsToFloat
-                                           : entry_point = generate_Float_intBitsToFloat_entry(); break;
-  case Interpreter::java_lang_Float_floatToRawIntBits
-                                           : entry_point = generate_Float_floatToRawIntBits_entry(); break;
-  case Interpreter::java_lang_Double_longBitsToDouble
-                                           : entry_point = generate_Double_longBitsToDouble_entry(); break;
-  case Interpreter::java_lang_Double_doubleToRawLongBits
-                                           : entry_point = generate_Double_doubleToRawLongBits_entry(); break;
   default:
     fatal("unexpected intrinsic method kind: %d", kind);
     break;
   }
   return entry_point;
 }
-

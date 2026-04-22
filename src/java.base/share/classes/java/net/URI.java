@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,12 @@ import java.nio.file.Path;
 import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.Exceptions;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import sun.nio.cs.UTF_8;
+
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Represents a Uniform Resource Identifier (URI) reference.
@@ -512,6 +517,7 @@ import sun.nio.cs.UTF_8;
  * @see <a href="URISyntaxException.html">URISyntaxException</a>
  */
 
+@AOTSafeClassInitializer
 public final class URI
     implements Comparable<URI>, Serializable
 {
@@ -2032,7 +2038,8 @@ public final class URI
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throw new URISyntaxException(s, "Relative path in absolute URI");
+                throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(s)),
+                                             "Relative path in absolute URI");
         }
     }
 
@@ -2988,11 +2995,14 @@ public final class URI
         // -- Methods for throwing URISyntaxException in various ways --
 
         private void fail(String reason) throws URISyntaxException {
-            throw new URISyntaxException(input, reason);
+            throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(input)), reason);
         }
 
         private void fail(String reason, int p) throws URISyntaxException {
-            throw new URISyntaxException(input, reason, p);
+            if (!Exceptions.enhancedNonSocketExceptions()) {
+                p = -1;
+            }
+            throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(input)), reason, p);
         }
 
         private void failExpecting(String expected, int p)
@@ -3426,6 +3436,19 @@ public final class URI
             int p = start;
             int q = scan(p, n, L_DIGIT, H_DIGIT);
             if (q <= p) return q;
+
+            // Handle leading zeros
+            int i = p, j;
+            while ((j = scan(i, q, '0')) > i) i = j;
+
+            // Calculate the number of significant digits (after leading zeros)
+            int significantDigitsNum = q - i;
+
+            if (significantDigitsNum < 3)  return q; // definitely < 255
+
+            // If more than 3 significant digits, it's definitely > 255
+            if (significantDigitsNum > 3) return p;
+
             if (Integer.parseInt(input, p, q, 10) > 255) return p;
             return q;
         }
@@ -3466,7 +3489,7 @@ public final class URI
                 if (q < m) break;
                 return q;
             }
-            fail("Malformed IPv4 address", q);
+            if (strict) fail("Malformed IPv4 address", q);
             return -1;
         }
 
@@ -3495,12 +3518,16 @@ public final class URI
                 return -1;
             }
 
+            if (p == -1) {
+                return p;
+            }
+
             if (p > start && p < n) {
                 // IPv4 address is followed by something - check that
                 // it's a ":" as this is the only valid character to
                 // follow an address.
                 if (input.charAt(p) != ':') {
-                    p = -1;
+                    return -1;
                 }
             }
 
@@ -3701,6 +3728,7 @@ public final class URI
         }
 
     }
+
     static {
         SharedSecrets.setJavaNetUriAccess(
             new JavaNetUriAccess() {

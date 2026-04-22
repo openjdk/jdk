@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
@@ -46,7 +44,8 @@ public class TestNewCastArray {
     // 'b' tests fail with only even numbers of annotations (8005681).
     String[] testclasses = {"Test1",
         "Test2a", "Test3a", "Test4a", "Test5a",
-        "Test2b", "Test3b", "Test4b", "Test5b"
+        "Test2b", "Test3b", "Test4b", "Test5b",
+        "Test6a"
     };
 
     public static void main(String[] args) throws Exception {
@@ -88,7 +87,7 @@ public class TestNewCastArray {
                 memberName = mm.methodName().stringValue();
                 if(codeattr) {
                     //fetch index of and code attribute and annotations from code attribute.
-                    cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+                    cAttr = mm.findAttribute(Attributes.code()).orElse(null);
                     if(cAttr != null) {
                         attr = cAttr.findAttribute(name).orElse(null);
                     }
@@ -99,7 +98,7 @@ public class TestNewCastArray {
             case FieldModel fm -> {
                 memberName = fm.fieldName().stringValue();
                 if(codeattr) {
-                    cAttr = fm.findAttribute(Attributes.CODE).orElse(null);
+                    cAttr = fm.findAttribute(Attributes.code()).orElse(null);
                     if(cAttr != null) {
                         attr = cAttr.findAttribute(name).orElse(null);
                     }
@@ -184,6 +183,11 @@ public class TestNewCastArray {
             case "ci2":  expected = 0; break;
             case "ci22": expected = 0; break;
 
+            case "Test6a<init>": cexpected=4; break;
+            case "test6aPrimitiveArray":  expected = 0; break;
+            case "test6aRefArray": expected = 0; break;
+            case "test6aMethod": cexpected = 4; break;
+
             default: expected = 0; break;
         }
         if(codeattr)
@@ -207,14 +211,14 @@ public class TestNewCastArray {
             assert cm != null;
             if(clazz.startsWith("Test1")) {
                 for (FieldModel fm: cm.fields())
-                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
+                    test(clazz, fm, Attributes.runtimeVisibleTypeAnnotations(), false);
                 for (MethodModel mm: cm.methods())
-                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
+                    test(clazz, mm, Attributes.runtimeVisibleTypeAnnotations(), false);
             } else {
                 for (FieldModel fm: cm.fields())
-                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
+                    test(clazz, fm, Attributes.runtimeVisibleTypeAnnotations(), true);
                 for (MethodModel mm: cm.methods())
-                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
+                    test(clazz, mm, Attributes.runtimeVisibleTypeAnnotations(), true);
             }
         }
         report();
@@ -353,6 +357,18 @@ public class TestNewCastArray {
         // expect 1+2=3
         Integer ci2 =  (@A @A Integer)o;       // FAIL expect 2, got 1
         Integer ci22 = (@A @A @B @B Integer)o; // FAIL expect 3, got 1
+    }
+
+    static class Test6a {
+        Test6a(){}
+        long l = 0;
+        // Cast expressions inside new array dimensions:
+        int[] test6aPrimitiveArray = new int[(@A @A @B @B int) l];
+        Integer[] test6aRefArray   = new Integer[(@A @A @B @B int) l];
+        private void test6aMethod() {
+            int[] primitiveArray = new int[(@A @A @B @B int) l];
+            Integer[] refArray   = new Integer[(@A @A @B @B int) l];
+        }
     }
 
 @Retention(RUNTIME) @Target({TYPE_USE}) @Repeatable( AC.class ) @interface A { }

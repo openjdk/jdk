@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import sun.java2d.pipe.BufferedMaskBlit;
 import static sun.java2d.loops.CompositeType.*;
 import static sun.java2d.loops.SurfaceType.*;
 
-class D3DMaskBlit extends BufferedMaskBlit {
+final class D3DMaskBlit extends BufferedMaskBlit {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

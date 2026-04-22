@@ -21,6 +21,7 @@
 # questions.
 #
 
+#include "defs.S.inc"
 
         # NOTE WELL!  The _Copy functions are called directly
         # from server-compiler-generated code via CallLeafNoFP,
@@ -28,55 +29,24 @@
         # point or use it in the same manner as does the server
         # compiler.
 
-        .globl  SpinPause
-        .hidden  SpinPause
-        .type SpinPause, %function
-        .globl _Copy_arrayof_conjoint_bytes
-        .hidden _Copy_arrayof_conjoint_bytes
-        .type _Copy_arrayof_conjoint_bytes, %function
-        .globl _Copy_disjoint_words
-        .hidden _Copy_disjoint_words
-        .type _Copy_disjoint_words, %function
-        .globl _Copy_conjoint_words
-        .hidden _Copy_conjoint_words
-        .type _Copy_conjoint_words, %function
-        .globl _Copy_conjoint_jshorts_atomic
-        .hidden _Copy_conjoint_jshorts_atomic
-        .type _Copy_conjoint_jshorts_atomic, %function
-        .globl _Copy_arrayof_conjoint_jshorts
-        .hidden _Copy_arrayof_conjoint_jshorts
-        .type _Copy_arrayof_conjoint_jshorts, %function
-        .globl _Copy_conjoint_jints_atomic
-        .hidden _Copy_conjoint_jints_atomic
-        .type _Copy_conjoint_jints_atomic, %function
-        .globl _Copy_arrayof_conjoint_jints
-        .hidden _Copy_arrayof_conjoint_jints
-        .type _Copy_arrayof_conjoint_jints, %function
-        .globl _Copy_conjoint_jlongs_atomic
-        .hidden _Copy_conjoint_jlongs_atomic
-        .type _Copy_conjoint_jlongs_atomic, %function
-        .globl _Copy_arrayof_conjoint_jlongs
-        .hidden _Copy_arrayof_conjoint_jlongs
-        .type _Copy_arrayof_conjoint_jlongs, %function
-
 from	.req	r0
 to	.req	r1
 
         .text
-SpinPause:
+DECLARE_FUNC(SpinPause):
         bx      LR
 
         # Support for void Copy::arrayof_conjoint_bytes(void* from,
         #                                               void* to,
         #                                               size_t count)
-_Copy_arrayof_conjoint_bytes:
+DECLARE_FUNC(_Copy_arrayof_conjoint_bytes):
         swi     0x9f0001
 
 
         # Support for void Copy::disjoint_words(void* from,
         #                                       void* to,
         #                                       size_t count)
-_Copy_disjoint_words:
+DECLARE_FUNC(_Copy_disjoint_words):
         stmdb    sp!, {r3 - r9, ip}
 
         cmp     r2, #0
@@ -121,7 +91,7 @@ disjoint_words_finish:
         # Support for void Copy::conjoint_words(void* from,
         #                                       void* to,
         #                                       size_t count)
-_Copy_conjoint_words:
+DECLARE_FUNC(_Copy_conjoint_words):
         stmdb    sp!, {r3 - r9, ip}
 
         cmp	r2, #0
@@ -201,7 +171,7 @@ conjoint_words_finish:
         # Support for void Copy::conjoint_jshorts_atomic(void* from,
         #                                                void* to,
         #                                                size_t count)
-_Copy_conjoint_jshorts_atomic:
+DECLARE_FUNC(_Copy_conjoint_jshorts_atomic):
         stmdb   sp!, {r3 - r9, ip}
 
         cmp	r2, #0
@@ -425,21 +395,21 @@ conjoint_shorts_finish:
         # Support for void Copy::arrayof_conjoint_jshorts(void* from,
         #                                                 void* to,
         #                                                 size_t count)
-_Copy_arrayof_conjoint_jshorts:
+DECLARE_FUNC(_Copy_arrayof_conjoint_jshorts):
         swi     0x9f0001
 
         # Support for void Copy::conjoint_jints_atomic(void* from,
         #                                              void* to,
         #                                              size_t count)
-_Copy_conjoint_jints_atomic:
-_Copy_arrayof_conjoint_jints:
+DECLARE_FUNC(_Copy_conjoint_jints_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jints):
         swi     0x9f0001
 
         # Support for void Copy::conjoint_jlongs_atomic(jlong* from,
         #                                               jlong* to,
         #                                               size_t count)
-_Copy_conjoint_jlongs_atomic:
-_Copy_arrayof_conjoint_jlongs:
+DECLARE_FUNC(_Copy_conjoint_jlongs_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jlongs):
         stmdb    sp!, {r3 - r9, ip}
 
         cmp	r2, #0

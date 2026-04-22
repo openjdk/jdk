@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -161,11 +160,6 @@ public class Gen extends JCTree.Visitor {
     /** The number of code-gen errors in this class.
      */
     private int nerrs = 0;
-
-    /** An object containing mappings of syntax trees to their
-     *  ending source positions.
-     */
-    EndPosTable endPosTable;
 
     boolean inCondSwitchExpression;
     Chain switchExpressionTrueChain;
@@ -455,7 +449,7 @@ public class Gen extends JCTree.Visitor {
                         JCStatement init = make.at(vdef.pos()).
                             Assignment(sym, vdef.init);
                         initCode.append(init);
-                        endPosTable.replaceTree(vdef, init);
+                        init.endpos = vdef.endpos;
                         initTAs.addAll(getAndRemoveNonFieldTAs(sym));
                     } else if (sym.getConstValue() == null) {
                         // Initialize class (static) variables only if
@@ -463,7 +457,7 @@ public class Gen extends JCTree.Visitor {
                         JCStatement init = make.at(vdef.pos).
                             Assignment(sym, vdef.init);
                         clinitCode.append(init);
-                        endPosTable.replaceTree(vdef, init);
+                        init.endpos = vdef.endpos;
                         clinitTAs.addAll(getAndRemoveNonFieldTAs(sym));
                     } else {
                         checkStringConstant(vdef.init.pos(), sym.getConstValue());
@@ -500,7 +494,7 @@ public class Gen extends JCTree.Visitor {
             c.members().enter(clinit);
             List<JCStatement> clinitStats = clinitCode.toList();
             JCBlock block = make.at(clinitStats.head.pos()).Block(0, clinitStats);
-            block.endpos = TreeInfo.endPos(clinitStats.last());
+            block.bracePos = TreeInfo.endPos(clinitStats.last());
             methodDefs.append(make.MethodDef(clinit, block));
 
             if (!clinitTAs.isEmpty())
@@ -553,8 +547,8 @@ public class Gen extends JCTree.Visitor {
             // Find the super() invocation and append the given initializer code.
             TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));
 
-            if (md.body.endpos == Position.NOPOS)
-                md.body.endpos = TreeInfo.endPos(md.body.stats.last());
+            if (md.body.bracePos == Position.NOPOS)
+                md.body.bracePos = TreeInfo.endPos(md.body.stats.last());
 
             md.sym.appendUniqueTypeAttributes(initTAs);
         }
@@ -756,6 +750,11 @@ public class Gen extends JCTree.Visitor {
             }
             CondItem result = genCond(tree.expr, markBranches);
             code.endScopes(limit);
+            //make sure variables defined in the let expression are not included
+            //in the defined variables for jumps that go outside of this let
+            //expression:
+            undefineVariablesInChain(result.falseJumps, limit);
+            undefineVariablesInChain(result.trueJumps, limit);
             return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
@@ -763,6 +762,13 @@ public class Gen extends JCTree.Visitor {
             return result;
         }
     }
+        //where:
+        private void undefineVariablesInChain(Chain toClear, int limit) {
+            while (toClear != null) {
+                toClear.state.defined.excludeFrom(limit);
+                toClear = toClear.next;
+            }
+        }
 
     public Code getCode() {
         return code;
@@ -1015,8 +1021,7 @@ public class Gen extends JCTree.Visitor {
                                         varDebugInfo,
                                         stackMap,
                                         debugCode,
-                                        genCrt ? new CRTable(tree, env.toplevel.endPositions)
-                                               : null,
+                                        genCrt ? new CRTable(tree) : null,
                                         syms,
                                         types,
                                         poolWriter);
@@ -1121,7 +1126,7 @@ public class Gen extends JCTree.Visitor {
         genStats(tree.stats, localEnv);
         // End the scope of all block-local variables in variable info.
         if (!env.tree.hasTag(METHODDEF)) {
-            code.statBegin(tree.endpos);
+            code.statBegin(tree.bracePos);
             code.endScopes(limit);
             code.pendingStatPos = Position.NOPOS;
         }
@@ -1192,11 +1197,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(c.falseJumps);
                 }
             }
-            Chain exit = loopEnv.info.exit;
-            if (exit != null) {
-                code.resolve(exit);
-                exit.state.defined.excludeFrom(code.nextreg);
-            }
+            code.resolve(loopEnv.info.exit);
         }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -1206,11 +1207,7 @@ public class Gen extends JCTree.Visitor {
     public void visitLabelled(JCLabeledStatement tree) {
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStat(tree.body, localEnv, CRT_STATEMENT);
-        Chain exit = localEnv.info.exit;
-        if (exit != null) {
-            code.resolve(exit);
-            exit.state.defined.excludeFrom(code.nextreg);
-        }
+        code.resolve(localEnv.info.exit);
     }
 
     public void visitSwitch(JCSwitch tree) {
@@ -1413,11 +1410,7 @@ public class Gen extends JCTree.Visitor {
             }
 
             // Resolve all breaks.
-            Chain exit = switchEnv.info.exit;
-            if  (exit != null) {
-                code.resolve(exit);
-                exit.state.defined.excludeFrom(limit);
-            }
+            code.resolve(switchEnv.info.exit);
 
             // If we have not set the default offset, we do so now.
             if (code.get4(tableBase) == -1) {
@@ -1853,7 +1846,6 @@ public class Gen extends JCTree.Visitor {
                 if (switchResult != null)
                     switchResult.load();
 
-                code.state.forceStackTop(tree.target.type);
                 targetEnv.info.addExit(code.branch(goto_));
                 code.markDead();
             }
@@ -1969,7 +1961,6 @@ public class Gen extends JCTree.Visitor {
             int startpc = genCrt ? code.curCP() : 0;
             code.statBegin(tree.truepart.pos);
             genExpr(tree.truepart, pt).load();
-            code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.truepart, CRT_FLOW_TARGET,
                                      startpc, code.curCP());
             thenExit = code.branch(goto_);
@@ -1979,7 +1970,6 @@ public class Gen extends JCTree.Visitor {
             int startpc = genCrt ? code.curCP() : 0;
             code.statBegin(tree.falsepart.pos);
             genExpr(tree.falsepart, pt).load();
-            code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.falsepart, CRT_FLOW_TARGET,
                                      startpc, code.curCP());
         }
@@ -2481,7 +2471,6 @@ public class Gen extends JCTree.Visitor {
             attrEnv = env;
             ClassSymbol c = cdef.sym;
             this.toplevel = env.toplevel;
-            this.endPosTable = toplevel.endPositions;
             /* method normalizeDefs() can add references to external classes into the constant pool
              */
             cdef.defs = normalizeDefs(cdef.defs, c);
@@ -2511,7 +2500,6 @@ public class Gen extends JCTree.Visitor {
             attrEnv = null;
             this.env = null;
             toplevel = null;
-            endPosTable = null;
             nerrs = 0;
             qualifiedSymbolCache.clear();
         }
@@ -2540,7 +2528,14 @@ public class Gen extends JCTree.Visitor {
     /** code generation contexts,
      *  to be used as type parameter for environments.
      */
-    static class GenContext {
+    final class GenContext {
+
+        /**
+         * The top defined local variables for exit or continue branches to merge into.
+         * It may contain uninitialized variables to be initialized by branched code,
+         * so we cannot use Code.State.defined bits.
+         */
+        final int limit;
 
         /** A chain for all unresolved jumps that exit the current environment.
          */
@@ -2566,15 +2561,26 @@ public class Gen extends JCTree.Visitor {
          */
         ListBuffer<Integer> gaps = null;
 
+        GenContext() {
+            var code = Gen.this.code;
+            this.limit = code == null ? 0 : code.nextreg;
+        }
+
         /** Add given chain to exit chain.
          */
         void addExit(Chain c)  {
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             exit = Code.mergeChains(c, exit);
         }
 
         /** Add given chain to cont chain.
          */
         void addCont(Chain c) {
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             cont = Code.mergeChains(c, cont);
         }
     }

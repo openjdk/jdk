@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,16 @@ public final class FormattedFPDecimal {
     public static final char PLAIN      = 'f';
     public static final char GENERAL    = 'g';
 
-    private long f;
+    /* Whether the decimal exactly represents the double */
+    private boolean exact;
+    /*
+     * When not exact, whether the magnitude of the decimal is larger than
+     * the magnitude of the double. Aka "away from zero".
+     */
+    private boolean away;
     private int e;  // normalized to 0 when f = 0
     private int n;
+    private long f;
     private char[] digits;  // ... and often the decimal separator as well
     private char[] exp;  // [+-][e]ee, that is, sign and minimum 2 digits
 
@@ -57,8 +64,7 @@ public final class FormattedFPDecimal {
     }
 
     public static FormattedFPDecimal valueOf(double v, int prec, char form) {
-        FormattedFPDecimal fd = new FormattedFPDecimal();
-        DoubleToDecimal.split(v, fd);
+        FormattedFPDecimal fd = split(v);
         return switch (form) {
             case SCIENTIFIC -> fd.scientific(prec);
             case PLAIN      -> fd.plain(prec);
@@ -69,11 +75,89 @@ public final class FormattedFPDecimal {
         };
     }
 
-    public void set(long f, int e, int n) {
+    static FormattedFPDecimal split(double v) {
+        FormattedFPDecimal fd = new FormattedFPDecimal();
+        DoubleToDecimal.split(v, fd);
+        return fd;
+    }
+
+    /**
+     * Returns a FormattedFPDecimal with the appropriate precision for
+     * {@link Double#toString(double)}.
+     *
+     * @see java.math.BigDecimal#valueOf(double)
+     */
+    public static FormattedFPDecimal valueForDoubleToString(double v) {
+        final FormattedFPDecimal fd = split(v);
+        final int expR = fd.getExponentRounded();
+
+        // Adjust precision, following rules for Double.toString. There is
+        // always at least one digit and some cases require an extra one to
+        // force a digit after the decimal. No additional rounding is performed;
+        // no significant trailing digits are removed.
+
+        final int targetPrec =
+                // No extra trailing digit needed
+                (-3 <= expR && expR < 0) ? 1
+
+                // Keep digits to left of decimal, plus leave a trailing zero
+                : (0 <= expR && expR < 7) ? expR + 2 :
+
+                // Otherwise, require at least 2 digits, to include trailing
+                // digit when there is a single digit
+                2;
+
+
+        long s = fd.f;
+        int prec = fd.n;
+
+        if (prec < targetPrec) {
+            // Add zeros needed to reach target precision
+            final int addZeros = targetPrec - prec;
+            s *= MathUtils.pow10(addZeros); // addZeros will be at most 8
+            prec = targetPrec;
+        } else {
+            // Remove trailing zeros to try to reach target precision
+            while (prec > targetPrec && s % 10 == 0) {
+                s = s / 10;
+                prec--;
+            }
+        }
+
+        // Calculate new e based on updated precision
+        final int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
+        fd.set(s, eNew, prec, fd.exact, fd.away);
+
+        return fd;
+    }
+
+    public long getSignificand() {
+        return f;
+    }
+
+    public int getPrecision() {
+        return n;
+    }
+
+    public boolean getAway() {
+        return away;
+    }
+
+    public boolean getExact() {
+        return exact;
+    }
+
+    public int getExp() {
+        return e;
+    }
+
+    public void set(long f, int e, int n, boolean exact, boolean away) {
         /* Initially, n = 0 if f = 0, and 10^{n-1} <= f < 10^n if f != 0 */
         this.f = f;
         this.e = e;
         this.n = n;
+        this.exact = exact;
+        this.away = away;
     }
 
     public char[] getExponent() {

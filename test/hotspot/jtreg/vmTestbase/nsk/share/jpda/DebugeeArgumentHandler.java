@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,6 @@ import java.net.ServerSocket;
  *   (this works only with <code>-connector=listening</code> and <code>-transport=socket</code>)
  * <li> <code>-debugee.suspend=[yes|no|default]</code> -
  *   should debugee start in suspend mode or not
- * <li> <code>-debugee.launch=[local|remote|manual]</code> -
- *   launch and bind to debugee VM locally, remotely (via BindSever) or manually
  * <li> <code>-debugee.vmhome=</code>&lt;<i>path</i>&gt; -
  *   path to JDK used for launching debugee VM
  * <li> <code>-debugee.vmkind=</code>&lt;<i>name</i>&gt; -
@@ -69,8 +67,6 @@ import java.net.ServerSocket;
  *   using JVMDI strict mode
  * <li> <code>-pipe.port=</code>&lt;<i>port</i>&gt; -
  *   port number for internal IOPipe connection
- * <li> <code>-bind.port=</code>&lt;<i>port</i>&gt; -
- *   port number for BindServer connection
  * </ul>
  * <p>
  * See also list of basic options recognized by
@@ -85,9 +81,9 @@ import java.net.ServerSocket;
  */
 public class DebugeeArgumentHandler extends ArgumentParser {
 
-    public static final String DEFAULT_PIPE_PORT                                = "7123";
-    public static final String DEFAULT_TRANSPORT_PORT                   = "8123";
-    public static final String DEFAULT_BIND_PORT                                = "9123";
+    public static final String DEFAULT_PIPE_PORT      = "7123";
+    public static final String DEFAULT_TRANSPORT_PORT = "8123";
+    public static final String DEFAULT_BIND_PORT      = "9123";
 
 
     /**
@@ -103,6 +99,16 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      */
     public DebugeeArgumentHandler(String args[]) {
         super(args);
+    }
+
+    /**
+     * Return <i>true</i> if <code>-includevirtualthreads</code> command line option
+     * is specified.
+     *
+     * @see #setRawArguments(String[])
+     */
+    public boolean isIncludeVirtualThreads() {
+        return options.getProperty("includevirtualthreads") != null;
     }
 
     /**
@@ -275,11 +281,8 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      * @see #isDefaultDebugeeSuspendMode()
      */
     public boolean willDebugeeSuspended() {
-        if (isLaunchedLocally()) {
-            String mode = getDebugeeSuspendMode();
-            return mode.equals("no");
-        }
-        return true;
+        String mode = getDebugeeSuspendMode();
+        return mode.equals("no");
     }
 
     private boolean pipePortInited = false;
@@ -337,54 +340,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         setOption("-", "pipe.port", value);
     }
 
-    /**
-     * Return debugee VM launching mode, specified by
-     * <code>-launch.mode</code> command line option, or
-     * "<i>local</i>" string by default.
-     *
-     * Possible values for this option are:
-     * <ul>
-     * <li> "<code>local</code>"
-     * <li> "<code>remote</code>"
-     * <li> "<code>manual</code>"
-     * </ul>
-     *
-     * @see #isLaunchedLocally()
-     * @see #isLaunchedRemotely()
-     * @see #isLaunchedManually()
-     * @see #setRawArguments(String[])
-     */
-    public String getLaunchMode() {
-        return options.getProperty("debugee.launch", "local");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched locally.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedLocally() {
-        return getLaunchMode().equals("local");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched remotely via
-     * BindServer.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedRemotely() {
-        return getLaunchMode().equals("remote");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched manually by user.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedManually() {
-        return getLaunchMode().equals("manual");
-    }
 
     /**
      * Return additional options for launching debugee VM, specified by
@@ -464,47 +419,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         return (java_home == null);
     }
 
-    private boolean bindPortInited = false;
-    /**
-     * Return string representation of the port number for BindServer connection,
-     * specified by <code>-bind.port</code> command line option, or
-     * "<i>DEFAULT_BIND_PORT</i>" string by default.
-     *
-     * @see #getBindPortNumber()
-     * @see #setRawArguments(String[])
-     */
-    public String getBindPort() {
-        String port = options.getProperty("bind.port");
-        if (port == null) {
-            if (!bindPortInited) {
-                port = findFreePort();
-                if (port == null) {
-                    port = DEFAULT_BIND_PORT;
-                }
-                options.setProperty("bind.port", port);
-                bindPortInited = true;
-            }
-        }
-        return port;
-    }
-
-    /**
-     * Return port number for BindServer connection,
-     * specified by <code>-bind.port</code> command line option, or
-     * "<i>DEFAULT_BIND_PORT</i>" port number by default.
-     *
-     * @see #getBindPort()
-     * @see #setRawArguments(String[])
-     */
-    public int getBindPortNumber() {
-        String value = getBindPort();
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            throw new TestBug("Not integer value of \"bind.port\" argument: " + value);
-        }
-    }
-
     /**
      * Return JVMDI strict mode for launching debugee VM, specified by.
      * <code>-jvmdi.strict</code> command line option, or
@@ -524,7 +438,7 @@ public class DebugeeArgumentHandler extends ArgumentParser {
     }
 
     /**
-     * Return <i>true</i> if JVMDI strict mode for launching debugeeVM is used^
+     * Return <i>true</i> if JVMDI strict mode for launching debugeeVM is used
      * either by specifying in command line or by default.
      *
      * @see #getJVMDIStrictMode()
@@ -701,8 +615,13 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      */
     protected boolean checkOption(String option, String value) {
 
-        if(option.equals("traceAll"))
-            return true;
+        if (option.equals("traceAll")
+            || option.equals("includevirtualthreads")) {
+            if (!(value == null || value.length() == 0)) {
+                throw new BadOption(option + ": no value must be specified");
+            }
+           return true;
+        }
 
         // option with any string value
         if (option.equals("debugee.vmkeys")) {
@@ -710,9 +629,7 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         }
 
         // option with any nonempty string value
-        if (option.equals("test.host")
-            || option.equals("debugee.host")
-            || option.equals("debugee.vmkind")
+        if (option.equals("debugee.vmkind")
             || option.equals("debugee.vmhome")
             || option.equals("transport.shname")) {
             if (value.length() <= 0) {
@@ -723,7 +640,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
 
         // option with positive integer port value
         if (option.equals("transport.port")
-            || option.equals("bind.port")
             || option.equals("pipe.port")) {
             try {
                 int number = Integer.parseInt(value);
@@ -748,14 +664,10 @@ public class DebugeeArgumentHandler extends ArgumentParser {
             return true;
         }
 
-        if (option.equals("debugee.launch")) {
-            if ((!value.equals("local"))
-                && (!value.equals("remote"))
-                && (!value.equals("manual"))) {
-                throw new BadOption(option + ": must be one of: "
-                                           + "local, remote, manual " + value);
-            }
-            return true;
+        if (option.equals("debugee.launch")
+                || option.equals("debugee.host")
+                || option.equals("test.host")) {
+            throw new RuntimeException("option " + option + " is not supported.");
         }
 
         if (option.equals("jvmdi.strict")) {

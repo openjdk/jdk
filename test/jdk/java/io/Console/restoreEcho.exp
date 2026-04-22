@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+set initialEcho [lindex $argv 0]
+set java [lrange $argv 1 end]
+set rlprompt "prompt: "
+set rpprompt "password prompt: "
+set rlinput "InPuT"
+set rpinput "PaSsWoRd"
+set rlexpected "input is $rlinput"
+set rpexpected "password is $rpinput"
+set stty_init $initialEcho
+set timeout 10
+
+proc test {prompt input echoStat expected} {
+    expect "$prompt"
+    send -- "$input\n"
+    if {$echoStat == "echo"} {
+        expect "$input"
+    }
+    expect "$expected"
+
+    if {$expect_out(0,string) != $expected} {
+        send_error "Expected: $expected\n"
+        send_error "Received: $expect_out(0,string)"
+        exit 1
+    }
+}
+
+spawn sh -c "[list {*}$java] && stty -a"
+
+# readLine() - input is displayed depending on initialEcho value
+test "$rlprompt" "$rlinput" "$initialEcho" "$rlexpected"
+# readPassword() - input is not displayed
+test "$rpprompt" "$rpinput" "-echo" "$rpexpected"
+# See if the initialEcho is restored with `stty -a`
+expect -- " $initialEcho "
+expect eof

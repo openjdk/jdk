@@ -55,12 +55,7 @@ class SerialBlockOffsetTable: public CHeapObj<mtGC> {
 
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
-  static size_t compute_size(size_t mem_region_words) {
-    assert(mem_region_words % CardTable::card_size_in_words() == 0, "precondition");
-
-    size_t number_of_slots = mem_region_words / CardTable::card_size_in_words();
-    return ReservedSpace::allocation_align_size_up(number_of_slots);
-  }
+  static size_t compute_size(size_t mem_region_words);
 
   // Mapping from address to object start array entry.
   uint8_t* entry_for_addr(const void* const p) const;

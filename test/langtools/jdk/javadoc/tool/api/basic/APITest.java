@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,11 +205,16 @@ class APITest {
             "pkg/package-summary.html",
             "pkg/package-tree.html",
             "resource-files/copy.svg",
-            "resource-files/glass.png",
-            "resource-files/jquery-ui.min.css",
+            "resource-files/down.svg",
+            "resource-files/glass.svg",
+            "resource-files/left.svg",
             "resource-files/link.svg",
+            "resource-files/moon.svg",
+            "resource-files/right.svg",
             "resource-files/stylesheet.css",
-            "resource-files/x.png",
+            "resource-files/sun.svg",
+            "resource-files/x.svg",
+            "resource-files/sort-a-z.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
@@ -235,11 +240,8 @@ class APITest {
             "resource-files/fonts/DejaVuLGCSerif-Italic.woff2",
             "resource-files/fonts/DejaVuLGCSerif.woff",
             "resource-files/fonts/DejaVuLGCSerif.woff2",
-            "script-files/jquery-3.7.1.min.js",
-            "script-files/jquery-ui.min.js",
             "script-files/script.js",
             "script-files/search.js",
-            "script-files/search-page.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
@@ -248,16 +250,12 @@ class APITest {
             .filter(s ->
                             !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
-                         && !s.equals("resource-files/glass.png")
-                         && !s.equals("resource-files/jquery-ui.min.css")
-                         && !s.equals("resource-files/x.png")
-                         && !s.startsWith("script-files/jquery-")
+                         && !s.equals("resource-files/glass.svg")
+                         && !s.equals("resource-files/x.svg")
                          && !s.equals("script-files/search.js")
-                         && !s.equals("script-files/search-page.js")
                          && !s.equals("search.html")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")
                          && !s.equals("system-properties.html"))
             .collect(Collectors.toSet());
 }
-

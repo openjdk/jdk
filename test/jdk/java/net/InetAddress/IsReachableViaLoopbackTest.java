@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,24 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 
 /**
  * @test
  * @bug 8135305
  * @key intermittent
+ * @library /test/lib
  * @summary ensure we can't ping external hosts via loopback if
+ * @run main IsReachableViaLoopbackTest
  */
 
 public class IsReachableViaLoopbackTest {
     public static void main(String[] args) {
         try {
-            InetAddress addr = InetAddress.getByName("localhost");
-            InetAddress remoteAddr = InetAddress.getByName("bugs.openjdk.org");
+            InetAddress addr = InetAddress.getLoopbackAddress();
+            InetAddress remoteAddr = InetAddress.getByName("23.197.138.208");  // use literal address to avoid DNS checks
             if (!addr.isReachable(10000))
                 throw new RuntimeException("Localhost should always be reachable");
             NetworkInterface inf = NetworkInterface.getByInetAddress(addr);
@@ -54,7 +56,6 @@ public class IsReachableViaLoopbackTest {
             } else {
                 System.out.println("inf == null");
             }
-
         } catch (IOException e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }

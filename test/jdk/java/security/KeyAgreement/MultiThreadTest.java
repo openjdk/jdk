@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 8184359
+ * @library /test/lib
  * @summary KeyPairGenerator Test with multiple threads.
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm> <Curve*>
  * @run main MultiThreadTest DiffieHellman SunJCE DiffieHellman
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.crypto.KeyAgreement;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * This test targets KeyPairGenerator API related issue in a multi threaded
@@ -52,7 +54,7 @@ public class MultiThreadTest {
     public static void main(String[] args) throws Exception {
 
         String kaAlgo = args[0];
-        String provider = args[1];
+        String provider = System.getProperty("test.provider.name", args[1]);
         String kpgAlgo = args[2];
         KeyPairGenerator kpg = genKeyGenerator(provider, kpgAlgo,
                 (args.length > 3) ? args[3] : kpgAlgo);
@@ -68,7 +70,7 @@ public class MultiThreadTest {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgo, provider);
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(512);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

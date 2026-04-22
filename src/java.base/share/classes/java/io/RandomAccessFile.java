@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
 import jdk.internal.util.ByteArray;
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.event.FileWriteEvent;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -68,6 +70,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_DSYNC =  8;
     private static final int O_TEMPORARY =  16;
 
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file reads and writes should be traced by JFR.
+     */
+    private static boolean jfrTracing;
+
     private final FileDescriptor fd;
 
     private final boolean rw;
@@ -93,23 +101,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally
-     * to write to, a file with the specified pathname. A new
-     * {@link FileDescriptor} object is created to represent the
+     * to write to, a file with the specified pathname. If the file exists
+     * it is opened; if it does not exist and write mode is specified, a
+     * new file is created.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
      * <p> The {@code mode} argument specifies the access mode with which the
      * file is to be opened.  The permitted values and their meanings are as
      * specified for the <a
      * href="#mode">{@code RandomAccessFile(File,String)}</a> constructor.
-     *
-     * <p>
-     * If there is a security manager, its {@code checkRead} method
-     * is called with the {@code pathname} argument
-     * as its argument to see if read access to the file is allowed.
-     * If the mode allows writing, the security manager's
-     * {@code checkWrite} method
-     * is also called with the {@code pathname} argument
-     * as its argument to see if write access to the file is allowed.
      *
      * @param      pathname   the system-dependent pathname string
      * @param      mode       the access <a href="#mode">mode</a>
@@ -123,13 +126,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             existing, writable regular file and a new regular file of
      *             that pathname cannot be created, or if some other error
      *             occurs while opening or creating the file
-     * @throws     SecurityException   if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file
-     *             or the mode is {@code "rw"} and the security manager's
-     *             {@code checkWrite} method denies write access to the file
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
-     * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      */
     public RandomAccessFile(String pathname, String mode)
         throws FileNotFoundException
@@ -138,9 +134,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Creates a random access file stream to read from, and optionally to
-     * write to, the file specified by the {@link File} argument.  A new {@link
-     * FileDescriptor} object is created to represent this file connection.
+     * Creates a random access file stream to read from, and optionally
+     * to write to, the file specified by the {@link File} argument. If
+     * the file exists it is opened; if it does not exist and write mode
+     * is specified, a new file is created.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@link FileDescriptor} object is created to represent the
+     * connection to the file.
      *
      * <p>The <a id="mode">{@code mode}</a> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their
@@ -188,13 +189,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * updates to both the file's content and its metadata to be written, which
      * generally requires at least one more low-level I/O operation.
      *
-     * <p>If there is a security manager, its {@code checkRead} method is
-     * called with the pathname of the {@code file} argument as its
-     * argument to see if read access to the file is allowed.  If the mode
-     * allows writing, the security manager's {@code checkWrite} method is
-     * also called with the pathname of the {@code file} argument to see if
-     * write access to the file is allowed.
-     *
      * @param      file   the file object
      * @param      mode   the access mode, as described
      *                    <a href="#mode">above</a>
@@ -208,12 +202,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             an existing, writable regular file and a new regular file of
      *             that pathname cannot be created, or if some other error
      *             occurs while opening or creating the file
-     * @throws      SecurityException  if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file
-     *             or the mode is {@code "rw"} and the security manager's
-     *             {@code checkWrite} method denies write access to the file
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
-     * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
      */
     @SuppressWarnings("this-escape")
@@ -257,14 +245,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                                                + "\" must be one of "
                                                + "\"r\", \"rw\", \"rws\","
                                                + " or \"rwd\"");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-            if (rw) {
-                security.checkWrite(name);
-            }
-        }
         if (name == null) {
             throw new NullPointerException();
         }
@@ -376,10 +356,30 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceRead0();
+        }
         return read0();
     }
 
     private native int read0() throws IOException;
+
+    private int traceRead0() throws IOException {
+        int result = 0;
+        long bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        try {
+            result = read0();
+            if (result < 0) {
+                bytesRead = -1;
+            } else {
+                bytesRead = 1;
+            }
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead);
+        }
+        return result;
+    }
 
     /**
      * Reads a sub array as a sequence of bytes.
@@ -389,10 +389,24 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            return traceReadBytes0(b, off, len);
+        }
         return readBytes0(b, off, len);
     }
 
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
+
+    private int traceReadBytes0(byte b[], int off, int len) throws IOException {
+        int bytesRead = 0;
+        long start = FileReadEvent.timestamp();
+        try {
+            bytesRead = readBytes0(b, off, len);
+        } finally {
+            FileReadEvent.offer(start, path, bytesRead);
+        }
+        return bytesRead;
+    }
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -537,11 +551,30 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceImplWrite(b);
+            return;
+        }
+        implWrite(b);
+    }
+
+    private void implWrite(int b) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             write0(b);
         } finally {
             Blocker.end(attempted);
+        }
+    }
+
+    private void traceImplWrite(int b) throws IOException {
+        long bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
+        try {
+            implWrite(b);
+            bytesWritten = 1;
+        } finally {
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -556,11 +589,30 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceImplWriteBytes(b, off, len);
+            return;
+        }
+        implWriteBytes(b, off, len);
+    }
+
+    private void implWriteBytes(byte[] b, int off, int len) throws IOException {
         boolean attempted = Blocker.begin(sync);
         try {
             writeBytes0(b, off, len);
         } finally {
             Blocker.end(attempted);
+        }
+    }
+
+    private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
+        long bytesWritten = 0;
+        long start = FileWriteEvent.timestamp();
+        try {
+            implWriteBytes(b, off, len);
+            bytesWritten = len;
+        } finally {
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -978,17 +1030,32 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
 
     public final String readLine() throws IOException {
+        if (jfrTracing && FileReadEvent.enabled()) {
+            long bytesRead = 0;
+            long start = FileReadEvent.timestamp();
+            try {
+                String result = implReadLine();
+                bytesRead = result == null ? 0 : result.length();
+                return result;
+            } finally {
+                FileReadEvent.offer(start, path, bytesRead);
+            }
+        }
+        return implReadLine();
+    }
+
+    private final String implReadLine() throws IOException {
         StringBuilder input = new StringBuilder();
         int c = -1;
         boolean eol = false;
 
         while (!eol) {
-            switch (c = read()) {
+            switch (c = read0()) {
                 case -1, '\n' -> eol = true;
                 case '\r'     -> {
                     eol = true;
                     long cur = getFilePointer();
-                    if ((read()) != '\n') {
+                    if ((read0()) != '\n') {
                         seek(cur);
                     }
                 }

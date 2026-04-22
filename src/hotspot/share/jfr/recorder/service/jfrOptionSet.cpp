@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
@@ -208,7 +207,7 @@ static DCmdArgument<MemorySizeArgument> _dcmd_globalbuffersize(
 static DCmdArgument<jlong> _dcmd_numglobalbuffers(
   "numglobalbuffers",
   "Number of global buffers",
-  "JULONG",
+  "INT",
   false,
   default_num_global_buffers);
 
@@ -222,7 +221,7 @@ static DCmdArgument<MemorySizeArgument> _dcmd_maxchunksize(
 static DCmdArgument<jlong> _dcmd_old_object_queue_size (
   "old-object-queue-size",
   "Maximum number of old objects to track",
-  "JINT",
+  "INT",
   false,
   default_old_object_queue_size);
 
@@ -245,7 +244,7 @@ static DCmdArgument<bool> _dcmd_sample_protection(
 static DCmdArgument<jlong> _dcmd_stackdepth(
   "stackdepth",
   "Stack depth for stacktraces (minimum 1, maximum 2048)",
-  "JULONG",
+  "INT",
   false,
   default_stack_depth);
 
@@ -800,7 +799,7 @@ void JfrOptionSet::release_start_flight_recording_options() {
   if (start_flight_recording_options_array != nullptr) {
     const int length = start_flight_recording_options_array->length();
     for (int i = 0; i < length; ++i) {
-      FREE_C_HEAP_ARRAY(char, start_flight_recording_options_array->at(i));
+      FREE_C_HEAP_ARRAY(start_flight_recording_options_array->at(i));
     }
     delete start_flight_recording_options_array;
     start_flight_recording_options_array = nullptr;

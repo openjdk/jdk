@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,8 @@ import java.net.PasswordAuthentication;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Objects;
 import sun.net.www.HeaderParser;
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.UTF_8;
@@ -49,10 +46,7 @@ import sun.nio.cs.UTF_8;
  */
 
 
-class BasicAuthentication extends AuthenticationInfo {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 100L;
+final class BasicAuthentication extends AuthenticationInfo {
 
     /** The authentication string for this host, port, and realm.  This is
         a simple BASE64 encoding of "login:password".    */
@@ -131,15 +125,13 @@ class BasicAuthentication extends AuthenticationInfo {
      * @param conn The connection to apply the header(s) to
      * @param p A source of header values for this connection, if needed.
      * @param raw The raw header values for this connection, if needed.
-     * @return true if all goes well, false if no headers were set.
      */
     @Override
-    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    public void setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
         // no need to synchronize here:
         //   already locked by s.n.w.p.h.HttpURLConnection
         assert conn.isLockHeldByCurrentThread();
         conn.setAuthenticationProperty(getHeaderName(), getHeaderValue(null,null));
-        return true;
     }
 
     /**

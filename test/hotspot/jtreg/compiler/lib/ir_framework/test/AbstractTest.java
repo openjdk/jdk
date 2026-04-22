@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRun;
 import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Constructor;
@@ -109,7 +110,21 @@ abstract class AbstractTest {
 
     abstract protected void compileTest();
 
+    private class MethodNotCompilableException extends Exception {}
+
     protected void compileMethod(DeclaredTest test) {
+        try {
+            tryCompileMethod(test);
+        } catch (MethodNotCompilableException e) {
+            final Method testMethod = test.getTestMethod();
+            TestVmSocket.send("Method not compilable: " + testMethod);
+            TestRun.check(test.isAllowNotCompilable(),
+                          "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel() +
+                          ". Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.");
+        }
+    }
+
+    private void tryCompileMethod(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
         if (TestFramework.VERBOSE) {
             System.out.println("Compile method " + testMethod + " after warm-up...");
@@ -151,10 +166,11 @@ abstract class AbstractTest {
         checkCompilationLevel(test);
     }
 
-    private void enqueueMethodForCompilation(DeclaredTest test) {
+    private void enqueueMethodForCompilation(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
-                      "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
+        if (!WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false)) {
+            throw new MethodNotCompilableException();
+        }
         TestVM.enqueueForCompilation(testMethod, test.getCompLevel());
     }
 

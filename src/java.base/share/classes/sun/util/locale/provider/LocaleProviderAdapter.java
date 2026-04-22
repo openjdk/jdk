@@ -48,7 +48,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.security.action.GetPropertyAction;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
@@ -115,7 +114,7 @@ public abstract class LocaleProviderAdapter {
         adapterCache = new ConcurrentHashMap<>();
 
     static {
-        String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
+        String order = System.getProperty("java.locale.providers");
         ArrayList<Type> typeList = new ArrayList<>();
         String invalidTypeMessage = null;
         String compatWarningMessage = null;

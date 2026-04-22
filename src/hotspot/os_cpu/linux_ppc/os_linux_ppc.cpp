@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  *
  */
 
-// no precompiled headers
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -63,7 +63,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -155,6 +154,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, epc, frame::kind::unknown);
 }
 
@@ -163,6 +168,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   intptr_t* sp = os::Linux::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
   return frame(sp, lr, frame::kind::unknown);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->uc_mcontext.regs->gpr[14]); // R14_bcp
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -246,15 +258,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
       CodeBlob *cb = nullptr;
       int stop_type = -1;
-      // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-      }
-
-      else if ((sig == (USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV)) &&
+      if ((sig == (USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV)) &&
                // A linux-ppc64 kernel before 2.6.6 doesn't set si_addr on some segfaults
                // in 64bit mode (cf. http://www.kernel.org/pub/linux/kernel/v2.6/ChangeLog-2.6.6),
                // especially when we try to read from the safepoint polling page. So the check
@@ -280,6 +284,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
         }
         stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+      }
+
+      // SIGTRAP-based nmethod entry barriers.
+      else if (sig == SIGTRAP && TrapBasedNMethodEntryBarriers &&
+               nativeInstruction_at(pc)->is_sigtrap_nmethod_entry_barrier() &&
+               CodeCache::contains((void*) pc)) {
+        if (TraceTraps) {
+          tty->print_cr("trap: nmethod entry barrier at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
+        }
+        stub = StubRoutines::method_entry_barrier();
+        uc->uc_mcontext.regs->link = (uintptr_t)(pc + BytesPerInstWord); // emulate call by setting LR
       }
 
       // SIGTRAP-based ic miss check in compiled code.
@@ -461,25 +476,8 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 32 /* r0-r32 */ + 3 /* pc, lr, ctr */;
+  const int register_count = 32 /* r0-r31 */ + 3 /* pc, lr, ctr */;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {

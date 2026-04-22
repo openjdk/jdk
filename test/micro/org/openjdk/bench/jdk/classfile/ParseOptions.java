@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
         var cc = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
-            bh.consume(cc.transform(cm, threeLevelNoop));
+            bh.consume(cc.transformClass(cm, threeLevelNoop));
         }
     }
 
@@ -52,7 +52,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
         var cc = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
-            bh.consume(cc.transform(cm, threeLevelNoop));
+            bh.consume(cc.transformClass(cm, threeLevelNoop));
         }
     }
 
@@ -62,7 +62,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
         var cc = ClassFile.of(ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
-            bh.consume(cc.transform(cm, threeLevelNoop));
+            bh.consume(cc.transformClass(cm, threeLevelNoop));
         }
     }
 }

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema 
+    targetNamespace="http://www.w3.org/2001/xml-events" 
+    xmlns="http://www.w3.org/2001/xml-events" 
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://www.w3.org/2001/XMLSchema 
+                        http://www.w3.org/2001/XMLSchema.xsd" 
+    elementFormDefault="unqualified" 
+    blockDefault="#all" 
+    finalDefault="#all" 
+    attributeFormDefault="unqualified">
+
+  <xs:annotation>
+    <xs:documentation>
+      This is the XML Schema for XML Events
+
+      URI: http://www.w3.org/MarkUp/SCHEMA/xml-events-1.xsd
+      $Id: xml-events-1.xsd,v 1.8 2004/11/22 17:09:15 ahby Exp $
+    </xs:documentation>
+    <xs:documentation source="xml-events-copyright-1.xsd"/>
+  </xs:annotation>
+
+  <xs:annotation>
+    <xs:documentation>
+      XML Events element listener
+		
+        This module defines the listener element for XML Events.
+        This element can be used to define event listeners. This
+        module relies upon the XmlEvents.attlist attribute group
+        defined in xml-events-attribs-1.xsd.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:attributeGroup name="listener.attlist">
+    <xs:attribute name="event" use="required" type="xs:NMTOKEN"/>
+    <xs:attribute name="observer" type="xs:IDREF"/>
+    <xs:attribute name="target" type="xs:IDREF"/>
+    <xs:attribute name="handler" type="xs:anyURI"/>
+    <xs:attribute name="phase" default="default">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="capture"/>
+          <xs:enumeration value="default"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="propagate" default="continue">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="stop"/>
+          <xs:enumeration value="continue"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="defaultAction" default="perform">
+      <xs:simpleType>
+        <xs:restriction base="xs:NMTOKEN">
+          <xs:enumeration value="cancel"/>
+          <xs:enumeration value="perform"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="id" type="xs:ID"/>
+  </xs:attributeGroup>
+
+  <xs:complexType name="listener.type">
+    <xs:attributeGroup ref="listener.attlist"/>
+  </xs:complexType>
+
+  <xs:element name="listener" type="listener.type"/>
+
+</xs:schema>

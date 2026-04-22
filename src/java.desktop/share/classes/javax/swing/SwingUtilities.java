@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,8 @@
  */
 package javax.swing;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
-
-import java.applet.*;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -40,10 +37,7 @@ import javax.accessibility.*;
 import javax.swing.event.MenuDragMouseEvent;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
 
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 
@@ -54,10 +48,6 @@ import sun.awt.AWTAccessor.MouseEventAccessor;
  */
 public class SwingUtilities implements SwingConstants
 {
-    // These states are system-wide, rather than AppContext wide.
-    private static boolean canAccessEventQueue = false;
-    private static boolean eventQueueTested = false;
-
     /**
      * Indicates if we should change the drop target when a
      * {@code TransferHandler} is set.
@@ -75,12 +65,9 @@ public class SwingUtilities implements SwingConstants
      * Returns true if <code>setTransferHandler</code> should change the
      * <code>DropTarget</code>.
      */
-    @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                    new GetPropertyAction("suppressSwingDropSupport")));
+            suppressDropSupport = Boolean.getBoolean("suppressSwingDropSupport");
             checkedSuppressDropSupport = true;
         }
         return suppressDropSupport;
@@ -422,7 +409,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointToScreen(Point p,Component c) {
             Rectangle b;
             int x,y;
@@ -431,8 +417,7 @@ public class SwingUtilities implements SwingConstants
                 if(c instanceof JComponent) {
                     x = c.getX();
                     y = c.getY();
-                } else if(c instanceof java.applet.Applet ||
-                          c instanceof java.awt.Window) {
+                } else if(c instanceof java.awt.Window) {
                     try {
                         Point pp = c.getLocationOnScreen();
                         x = pp.x;
@@ -449,7 +434,7 @@ public class SwingUtilities implements SwingConstants
                 p.x += x;
                 p.y += y;
 
-                if(c instanceof java.awt.Window || c instanceof java.applet.Applet)
+                if(c instanceof java.awt.Window)
                     break;
                 c = c.getParent();
             } while(c != null);
@@ -462,7 +447,6 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("removal")
     public static void convertPointFromScreen(Point p,Component c) {
         Rectangle b;
         int x,y;
@@ -471,8 +455,7 @@ public class SwingUtilities implements SwingConstants
             if(c instanceof JComponent) {
                 x = c.getX();
                 y = c.getY();
-            }  else if(c instanceof java.applet.Applet ||
-                       c instanceof java.awt.Window) {
+            }  else if (c instanceof java.awt.Window) {
                 try {
                     Point pp = c.getLocationOnScreen();
                     x = pp.x;
@@ -489,7 +472,7 @@ public class SwingUtilities implements SwingConstants
             p.x -= x;
             p.y -= y;
 
-            if(c instanceof java.awt.Window || c instanceof java.applet.Applet)
+            if(c instanceof java.awt.Window)
                 break;
             c = c.getParent();
         } while(c != null);
@@ -522,7 +505,7 @@ public class SwingUtilities implements SwingConstants
     public static boolean isDescendingFrom(Component a,Component b) {
         if(a == b)
             return true;
-        for(Container p = a.getParent();p!=null;p=p.getParent())
+        for(Container p = a.getParent(); p != null; p = p.getParent())
             if(p == b)
                 return true;
         return false;
@@ -1661,20 +1644,15 @@ public class SwingUtilities implements SwingConstants
      * Returns the root component for the current component tree.
      *
      * @param c the component
-     * @return the first ancestor of c that's a Window or the last Applet ancestor
+     * @return the first ancestor of c that's a Window
      */
-    @SuppressWarnings("removal")
     public static Component getRoot(Component c) {
-        Component applet = null;
         for(Component p = c; p != null; p = p.getParent()) {
             if (p instanceof Window) {
                 return p;
             }
-            if (p instanceof Applet) {
-                applet = p;
-            }
         }
-        return applet;
+        return null;
     }
 
     static JComponent getPaintingOrigin(JComponent c) {
@@ -1704,7 +1682,6 @@ public class SwingUtilities implements SwingConstants
      * @return true if a binding has found and processed
      * @since 1.4
      */
-    @SuppressWarnings("removal")
     public static boolean processKeyBindings(KeyEvent event) {
         if (event != null) {
             if (event.isConsumed()) {
@@ -1724,9 +1701,8 @@ public class SwingUtilities implements SwingConstants
                     return ((JComponent)component).processKeyBindings(
                                                    event, pressed);
                 }
-                if ((component instanceof Applet) ||
-                    (component instanceof Window)) {
-                    // No JComponents, if Window or Applet parent, process
+                if (component instanceof Window) {
+                    // No JComponents, if Window parent, process
                     // WHEN_IN_FOCUSED_WINDOW bindings.
                     return JComponent.processKeyBindingsForAllComponents(
                                   event, (Container)component, pressed);
@@ -1836,6 +1812,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             InputMap parent = map.getParent();
+            if (uiInputMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiInputMap);
                 return;
@@ -1860,6 +1839,9 @@ public class SwingUtilities implements SwingConstants
 
         while (map != null) {
             ActionMap parent = map.getParent();
+            if (uiActionMap == null) {
+                map.clear();
+            }
             if (parent == null || (parent instanceof UIResource)) {
                 map.setParent(uiActionMap);
                 return;
@@ -1916,11 +1898,6 @@ public class SwingUtilities implements SwingConstants
         return null;
     }
 
-
-    // Don't use String, as it's not guaranteed to be unique in a Hashtable.
-    private static final Object sharedOwnerFrameKey =
-       new StringBuffer("SwingUtilities.sharedOwnerFrame");
-
     @SuppressWarnings("serial") // JDK-implementation class
     static class SharedOwnerFrame extends Frame implements WindowListener {
         public void addNotify() {
@@ -1976,16 +1953,9 @@ public class SwingUtilities implements SwingConstants
         public void show() {
             // This frame can never be shown
         }
-        public void dispose() {
-            try {
-                getToolkit().getSystemEventQueue();
-                super.dispose();
-            } catch (Exception e) {
-                // untrusted code not allowed to dispose
-            }
-        }
     }
 
+    private static Frame sharedOwnerFrame;
     /**
      * Returns a toolkit-private, shared, invisible Frame
      * to be the owner for JDialogs and JWindows created with
@@ -1995,14 +1965,12 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     static Frame getSharedOwnerFrame() throws HeadlessException {
-        Frame sharedOwnerFrame =
-            (Frame)SwingUtilities.appContextGet(sharedOwnerFrameKey);
-        if (sharedOwnerFrame == null) {
-            sharedOwnerFrame = new SharedOwnerFrame();
-            SwingUtilities.appContextPut(sharedOwnerFrameKey,
-                                         sharedOwnerFrame);
+        synchronized (SharedOwnerFrame.class) {
+            if (sharedOwnerFrame == null) {
+                sharedOwnerFrame = new SharedOwnerFrame();
+            }
+            return sharedOwnerFrame;
         }
-        return sharedOwnerFrame;
     }
 
     /**
@@ -2017,28 +1985,7 @@ public class SwingUtilities implements SwingConstants
         return (WindowListener)sharedOwnerFrame;
     }
 
-    /* Don't make these AppContext accessors public or protected --
-     * since AppContext is in sun.awt in 1.2, we shouldn't expose it
-     * even indirectly with a public API.
-     */
-    // REMIND(aim): phase out use of 4 methods below since they
-    // are just private covers for AWT methods (?)
-
-    static Object appContextGet(Object key) {
-        return AppContext.getAppContext().get(key);
-    }
-
-    static void appContextPut(Object key, Object value) {
-        AppContext.getAppContext().put(key, value);
-    }
-
-    static void appContextRemove(Object key) {
-        AppContext.getAppContext().remove(key);
-    }
-
-
     static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         return Class.forName(className, true, Thread.currentThread().
                              getContextClassLoader());
     }
@@ -2217,8 +2164,7 @@ public class SwingUtilities implements SwingConstants
      * CellRendererPane}.
      * <p>
      * The component hierarchy must be displayable up to the toplevel component
-     * (either a {@code Frame} or an {@code Applet} object.) Otherwise this
-     * method returns {@code null}.
+     * (a {@code Frame}). Otherwise this method returns {@code null}.
      * <p>
      * If the {@code visibleOnly} argument is {@code true}, the found validate
      * root and all its parents up to the toplevel component must also be
@@ -2229,7 +2175,6 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.Component#isVisible()
      * @since 1.7
      */
-    @SuppressWarnings("removal")
     static Container getValidateRoot(Container c, boolean visibleOnly) {
         Container root = null;
 
@@ -2252,7 +2197,7 @@ public class SwingUtilities implements SwingConstants
             if (!c.isDisplayable() || (visibleOnly && !c.isVisible())) {
                 return null;
             }
-            if (c instanceof Window || c instanceof Applet) {
+            if (c instanceof Window) {
                 return root;
             }
         }

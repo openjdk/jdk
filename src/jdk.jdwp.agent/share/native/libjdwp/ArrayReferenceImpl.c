@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ writeObjectComponents(JNIEnv *env, PacketOutputStream *out,
 
         for (i = 0; i < length; i++) {
             component = JNI_FUNC_PTR(env,GetObjectArrayElement)(env, array, index + i);
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 /* cleared by caller */
                 break;
             }
@@ -280,7 +280,7 @@ getValues(PacketInputStream *in, PacketOutputStream *out)
 
     } END_WITH_LOCAL_REFS(env);
 
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         outStream_setError(out, JDWP_ERROR(INTERNAL));
         JNI_FUNC_PTR(env,ExceptionClear)(env);
     }
@@ -470,7 +470,7 @@ readObjectComponents(JNIEnv *env, PacketInputStream *in,
         jobject object = inStream_readObjectRef(env, in);
 
         JNI_FUNC_PTR(env,SetObjectArrayElement)(env, array, index + i, object);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             /* caller will clear */
             break;
         }
@@ -529,7 +529,7 @@ setValues(PacketInputStream *in, PacketOutputStream *out)
         }
     } END_WITH_LOCAL_REFS(env);
 
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         /*
          * TO DO: Check exception type
          */

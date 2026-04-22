@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,22 @@ import java.lang.classfile.instruction.LabelTarget;
 import java.lang.classfile.instruction.LineNumber;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models metadata about a {@link CodeAttribute}, such as entries in the
- * exception table, line number table, local variable table, or the mapping
- * between instructions and labels.  Pseudo-instructions are delivered as part
- * of the element stream of a {@link CodeModel}.  Delivery of some
- * pseudo-instructions can be disabled by modifying the value of classfile
- * options (e.g., {@link ClassFile.DebugElementsOption}).
+ * Models metadata about a {@link CodeModel}, derived from the {@link
+ * CodeAttribute Code} attribute itself or its attributes.
+ * <p>
+ * Order is significant for some pseudo-instructions relative to {@link
+ * Instruction}s, such as {@link LabelTarget} or {@link LineNumber}.  Some
+ * pseudo-instructions can be omitted in reading and writing according to
+ * certain {@link ClassFile.Option}s.  These are specified in the corresponding
+ * modeling interfaces.
  *
- * @since 22
+ * @sealedGraph
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PseudoInstruction
         extends CodeElement
         permits CharacterRange, ExceptionCatch, LabelTarget, LineNumber, LocalVariable, LocalVariableType, AbstractPseudoInstruction {

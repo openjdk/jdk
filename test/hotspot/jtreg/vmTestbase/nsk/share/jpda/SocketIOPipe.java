@@ -62,7 +62,7 @@ import nsk.share.*;
  *  pipe.println(command);
  *
  */
-public class SocketIOPipe extends Log.Logger implements Finalizable {
+public class SocketIOPipe extends Log.Logger {
 
     public static final int DEFAULT_TIMEOUT_VALUE = 1 * 60 * 1000;
 
@@ -93,8 +93,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.timeout = timeout;
         this.listening = listening;
         this.name = name;
-
-        registerCleanup();
     }
 
     /**
@@ -106,8 +104,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
         this.port = port;
         this.timeout = timeout;
         this.listening = listening;
-
-        registerCleanup();
     }
 
     /**
@@ -309,17 +305,6 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
             throw new TestBug("Attempt to get ping timeout for not established connection");
         }
         return connection.getPingTimeout();
-    }
-
-    /**
-     * Perform finalization of the object by invoking close().
-     *
-     * This is replacement of finalize() method and is called
-     * when this instance becomes unreachable.
-     *
-     */
-    public void cleanup() {
-        close();
     }
 
 

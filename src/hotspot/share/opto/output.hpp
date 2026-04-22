@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,6 @@ class PhaseCFG;
 #else
 #define DEBUG_ARG(x)
 #endif
-
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
 
 class BufferSizingData {
 public:
@@ -114,15 +109,13 @@ public:
   // Convert Nodes to instruction bits and pass off to the VM
   void Output();
   bool need_stack_bang(int frame_size_in_bytes) const;
-  bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
 
   void install_code(ciMethod*         target,
                     int               entry_bci,
                     AbstractCompiler* compiler,
                     bool              has_unsafe_access,
-                    bool              has_wide_vectors,
-                    RTMState          rtm_state);
+                    bool              has_wide_vectors);
 
   void install_stub(const char* stub_name);
 
@@ -209,6 +202,9 @@ public:
 
   bool starts_bundle(const Node *n) const;
   bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
+  bool contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                  GrowableArray<ScopeValue*>* objs,
+                                  ObjectValue* ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)

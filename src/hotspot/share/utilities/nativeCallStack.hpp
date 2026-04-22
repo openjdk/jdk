@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 
 /*
@@ -54,6 +55,7 @@
 class MemTracker;
 
 class NativeCallStack : public StackObj {
+  friend class VMTWithVMATreeTest;
 private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;
@@ -123,8 +125,8 @@ public:
     return (unsigned int)hash;
   }
 
+  void print_frame(outputStream* out, address pc) const;
   void print_on(outputStream* out) const;
-  void print_on(outputStream* out, int indent) const;
 };
 
 #define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)

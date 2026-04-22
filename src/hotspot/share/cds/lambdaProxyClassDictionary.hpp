@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,34 @@
  *
  */
 
-#ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
-#define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
-#include "cds/metaspaceShared.hpp"
+#ifndef SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
+#define SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
+
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
+
+// This file contains *legacy* optimization for lambdas before JEP 483. May be removed in the future.
+//
+// The functionalties in this file are used only when CDSConfig::is_dumping_lambdas_in_legacy_mode()
+// returns true during the creation of a CDS archive.
+//
+// With the legacy optimization, generated lambda proxy classes (with names such as
+// java.util.ResourceBundle$Control$$Lambda/0x80000001d) are stored inside the CDS archive, accessible
+// by LambdaProxyClassDictionary::find_proxy_class(). This saves part of the time for resolving a
+// lambda call site (proxy class generation). However, a significant portion of the cost of
+// the lambda call site resolution still remains in the production run.
+//
+// In contrast, with JEP 483, the entire lambda call site (starting from the constant pool entry), is
+// resolved in the AOT cache assembly phase. No extra resolution is needed in the production run.
 
 class InstanceKlass;
 class Method;
+class MetaspaceClosure;
 class Symbol;
 class outputStream;
 
@@ -101,9 +120,78 @@ public:
     return (k1.equals(k2));
   }
 
-  InstanceKlass* caller_ik() const { return _caller_ik; }
+  InstanceKlass* caller_ik()         const { return _caller_ik; }
+  Symbol* invoked_name()             const { return _invoked_name; }
+  Symbol* invoked_type()             const { return _invoked_type; }
+  Symbol* method_type()              const { return _method_type; }
+  Method* member_method()            const { return _member_method; }
+  Symbol* instantiated_method_type() const { return _instantiated_method_type; }
 
-  void init_for_archive(LambdaProxyClassKey& dumptime_key);
+#ifndef PRODUCT
+  void print_on(outputStream* st) const;
+#endif
+};
+
+class RunTimeLambdaProxyClassKey {
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
+  narrowPtr _caller_ik;
+  narrowPtr _invoked_name;
+  narrowPtr _invoked_type;
+  narrowPtr _method_type;
+  narrowPtr _member_method;
+  narrowPtr _instantiated_method_type;
+
+  RunTimeLambdaProxyClassKey(narrowPtr caller_ik,
+                             narrowPtr invoked_name,
+                             narrowPtr invoked_type,
+                             narrowPtr method_type,
+                             narrowPtr member_method,
+                             narrowPtr instantiated_method_type) :
+    _caller_ik(caller_ik),
+    _invoked_name(invoked_name),
+    _invoked_type(invoked_type),
+    _method_type(method_type),
+    _member_method(member_method),
+    _instantiated_method_type(instantiated_method_type) {}
+
+public:
+  static RunTimeLambdaProxyClassKey init_for_dumptime(LambdaProxyClassKey& key) {
+    narrowPtr caller_ik                = AOTCompressedPointers::encode_not_null(key.caller_ik());
+    narrowPtr invoked_name             = AOTCompressedPointers::encode_not_null(key.invoked_name());
+    narrowPtr invoked_type             = AOTCompressedPointers::encode_not_null(key.invoked_type());
+    narrowPtr method_type              = AOTCompressedPointers::encode_not_null(key.method_type());
+    narrowPtr member_method            = AOTCompressedPointers::encode(key.member_method()); // could be null
+    narrowPtr instantiated_method_type = AOTCompressedPointers::encode_not_null(key.instantiated_method_type());
+
+    return RunTimeLambdaProxyClassKey(caller_ik, invoked_name, invoked_type, method_type,
+                                      member_method, instantiated_method_type);
+  }
+
+  static RunTimeLambdaProxyClassKey init_for_runtime(InstanceKlass* caller_ik,
+                                                     Symbol*        invoked_name,
+                                                     Symbol*        invoked_type,
+                                                     Symbol*        method_type,
+                                                     Method*        member_method,
+                                                     Symbol*        instantiated_method_type) {
+    // All parameters must be in shared space, or else you'd get an assert in
+    // ArchiveUtils::to_offset().
+    return RunTimeLambdaProxyClassKey(AOTCompressedPointers::encode_address_in_cache(caller_ik),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_name),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_type),
+                                      AOTCompressedPointers::encode_address_in_cache(method_type),
+                                      AOTCompressedPointers::encode_address_in_cache_or_null(member_method), // could be null
+                                      AOTCompressedPointers::encode_address_in_cache(instantiated_method_type));
+  }
+
+  unsigned int hash() const;
+  bool equals(RunTimeLambdaProxyClassKey const& other) const {
+    return _caller_ik == other._caller_ik &&
+           _invoked_name == other._invoked_name &&
+           _invoked_type == other._invoked_type &&
+           _method_type == other._method_type &&
+           _member_method == other._member_method &&
+           _instantiated_method_type == other._instantiated_method_type;
+  }
 
 #ifndef PRODUCT
   void print_on(outputStream* st) const;
@@ -133,17 +221,17 @@ public:
 };
 
 class RunTimeLambdaProxyClassInfo {
-  LambdaProxyClassKey _key;
+  RunTimeLambdaProxyClassKey _key;
   InstanceKlass* _proxy_klass_head;
 public:
-  RunTimeLambdaProxyClassInfo(LambdaProxyClassKey key, InstanceKlass* proxy_klass_head) :
+  RunTimeLambdaProxyClassInfo(RunTimeLambdaProxyClassKey key, InstanceKlass* proxy_klass_head) :
     _key(key), _proxy_klass_head(proxy_klass_head) {}
 
   InstanceKlass* proxy_klass_head() const { return _proxy_klass_head; }
 
   // Used by LambdaProxyClassDictionary to implement OffsetCompactHashtable::EQUALS
   static inline bool EQUALS(
-       const RunTimeLambdaProxyClassInfo* value, LambdaProxyClassKey* key, int len_unused) {
+       const RunTimeLambdaProxyClassInfo* value, RunTimeLambdaProxyClassKey* key, int len_unused) {
     return (value->_key.equals(*key));
   }
   void init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info);
@@ -151,7 +239,7 @@ public:
   unsigned int hash() const {
     return _key.hash();
   }
-  LambdaProxyClassKey key() const {
+  RunTimeLambdaProxyClassKey key() const {
     return _key;
   }
 #ifndef PRODUCT
@@ -160,7 +248,7 @@ public:
 };
 
 class DumpTimeLambdaProxyClassDictionary
-  : public ResourceHashtable<LambdaProxyClassKey,
+  : public HashTable<LambdaProxyClassKey,
                              DumpTimeLambdaProxyClassInfo,
                              137, // prime number
                              AnyObj::C_HEAP,
@@ -172,9 +260,75 @@ public:
   int _count;
 };
 
+// *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
 class LambdaProxyClassDictionary : public OffsetCompactHashtable<
-  LambdaProxyClassKey*,
+  RunTimeLambdaProxyClassKey*,
   const RunTimeLambdaProxyClassInfo*,
-  RunTimeLambdaProxyClassInfo::EQUALS> {};
+  RunTimeLambdaProxyClassInfo::EQUALS>
+{
+private:
+  class CleanupDumpTimeLambdaProxyClassTable;
+  static DumpTimeLambdaProxyClassDictionary* _dumptime_table;
+  static LambdaProxyClassDictionary _runtime_static_table; // for static CDS archive
+  static LambdaProxyClassDictionary _runtime_dynamic_table; // for dynamic CDS archive
 
-#endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+  static void add_to_dumptime_table(LambdaProxyClassKey& key,
+                                    InstanceKlass* proxy_klass);
+  static InstanceKlass* find_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info);
+  static InstanceKlass* find_lambda_proxy_class(InstanceKlass* caller_ik,
+                                                Symbol* invoked_name,
+                                                Symbol* invoked_type,
+                                                Symbol* method_type,
+                                                Method* member_method,
+                                                Symbol* instantiated_method_type);
+  static InstanceKlass* load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
+                                                         InstanceKlass* caller_ik, TRAPS);
+  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik);
+
+public:
+  static void dumptime_init();
+  static void dumptime_classes_do(MetaspaceClosure* it);
+  static void add_lambda_proxy_class(InstanceKlass* caller_ik,
+                                     InstanceKlass* lambda_ik,
+                                     Symbol* invoked_name,
+                                     Symbol* invoked_type,
+                                     Symbol* method_type,
+                                     Method* member_method,
+                                     Symbol* instantiated_method_type,
+                                     TRAPS);
+  static bool is_supported_invokedynamic(BootstrapInfo* bsi);
+  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
+  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* caller_ik,
+                                                       Symbol* invoked_name,
+                                                       Symbol* invoked_type,
+                                                       Symbol* method_type,
+                                                       Method* member_method,
+                                                       Symbol* instantiated_method_type,
+                                                       TRAPS);
+  static void write_dictionary(bool is_static_archive);
+  static void adjust_dumptime_table();
+  static void cleanup_dumptime_table();
+
+  static void reset_dictionary(bool is_static_archive) {
+    if (is_static_archive) {
+      _runtime_static_table.reset();
+    } else {
+      _runtime_dynamic_table.reset();
+    }
+  }
+
+  static void serialize(SerializeClosure* soc, bool is_static_archive) {
+    if (is_static_archive) {
+      _runtime_static_table.serialize_header(soc);
+    } else {
+      _runtime_dynamic_table.serialize_header(soc);
+    }
+  }
+
+  static void print_on(const char* prefix, outputStream* st,
+                       int start_index, bool is_static_archive);
+  static void print_statistics(outputStream* st,  bool is_static_archive);
+};
+
+#endif // SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP

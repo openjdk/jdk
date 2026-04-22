@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 8027789
  * @summary check that the direct superclass is used as the site when calling
  *          a superclass' method
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */
@@ -61,7 +59,7 @@ public class NonDirectSuper {
         try {
             final ClassModel cf = ClassFile.of().parse(clazz.toPath());
             for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {
                     if (ce instanceof InvokeInstruction instr && (instr.opcode() == Opcode.INVOKESPECIAL ||
                         instr.opcode() == Opcode.INVOKEVIRTUAL)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,15 @@ import jdk.test.lib.SA.SATestUtils;
 public class ClhsdbLauncher {
 
     private Process toolProcess;
+    private boolean ignoreExceptions;
 
     public ClhsdbLauncher() {
         toolProcess = null;
+        ignoreExceptions = false;
+    }
+
+    public void ignoreExceptions() {
+        ignoreExceptions = true;
     }
 
     /**
@@ -147,12 +153,14 @@ public class ClhsdbLauncher {
         // -Xcheck:jni might be set via TEST_VM_OPTS. Make sure there are no warnings.
         oa.shouldNotMatch("^WARNING: JNI local refs:.*$");
         oa.shouldNotMatch("^WARNING in native method:.*$");
-        // This will detect most SA failures, including during the attach.
-        oa.shouldNotMatch("^sun.jvm.hotspot.debugger.DebuggerException:.*$");
-        oa.shouldNotMatch("sun.jvm.hotspot.utilities.AssertionFailure");
-        // This will detect unexpected exceptions, like NPEs and asserts, that are caught
-        // by sun.jvm.hotspot.CommandProcessor.
-        oa.shouldNotMatch("^Error: .*$");
+        if (!ignoreExceptions) {
+            // This will detect most SA failures, including during the attach.
+            oa.shouldNotMatch("^sun.jvm.hotspot.debugger.DebuggerException:.*$");
+            oa.shouldNotMatch("sun.jvm.hotspot.utilities.AssertionFailure");
+            // This will detect unexpected exceptions, like NPEs and asserts, that are caught
+            // by sun.jvm.hotspot.CommandProcessor.
+            oa.shouldNotMatch("^Error: .*$");
+        }
 
         String[] parts = output.split("hsdb>");
         for (String cmd : commands) {

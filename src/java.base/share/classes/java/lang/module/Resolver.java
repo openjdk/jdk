@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,7 +689,6 @@ final class Resolver {
      * </ol>
      */
     private void checkExportSuppliers(Map<ResolvedModule, Set<ResolvedModule>> graph) {
-
         for (Map.Entry<ResolvedModule, Set<ResolvedModule>> e : graph.entrySet()) {
             ModuleDescriptor descriptor1 = e.getKey().descriptor();
             String name1 = descriptor1.name();
@@ -754,7 +753,6 @@ final class Resolver {
                             failTwoSuppliers(descriptor1, source, descriptor2, supplier);
                         }
                     }
-
                 }
             }
 
@@ -764,18 +762,21 @@ final class Resolver {
                 // uses S
                 for (String service : descriptor1.uses()) {
                     String pn = packageName(service);
-                    if (!packageToExporter.containsKey(pn)) {
-                        resolveFail("Module %s does not read a module that exports %s",
-                                    descriptor1.name(), pn);
+                    if (!packageToExporter.containsKey(pn)
+                            && !requiresStaticMissingModule(descriptor1, reads)) {
+                        resolveFail("Module %s uses %s but does not read a module that exports %s to %s",
+                                    descriptor1.name(), service, pn, descriptor1.name());
+
                     }
                 }
 
                 // provides S
                 for (ModuleDescriptor.Provides provides : descriptor1.provides()) {
                     String pn = packageName(provides.service());
-                    if (!packageToExporter.containsKey(pn)) {
-                        resolveFail("Module %s does not read a module that exports %s",
-                                    descriptor1.name(), pn);
+                    if (!packageToExporter.containsKey(pn)
+                            && !requiresStaticMissingModule(descriptor1, reads)) {
+                        resolveFail("Module %s provides %s but does not read a module that exports %s to %s",
+                                    descriptor1.name(), provides.service(), pn, descriptor1.name());
                     }
                 }
 
@@ -783,6 +784,34 @@ final class Resolver {
 
         }
 
+    }
+
+    /**
+     * Returns true if a module 'requires static' a module that is not in the
+     * readability graph, or reads a module that 'requires static transitive'
+     * a module that is not in the readability graph.
+     */
+    private boolean requiresStaticMissingModule(ModuleDescriptor descriptor,
+                                                Set<ResolvedModule> reads) {
+        Set<String> moduleNames = reads.stream()
+                .map(ResolvedModule::name)
+                .collect(Collectors.toSet());
+        for (ModuleDescriptor.Requires r : descriptor.requires()) {
+            if (r.modifiers().contains(Modifier.STATIC)
+                    && !moduleNames.contains(r.name())) {
+                return true;
+            }
+        }
+        for (ResolvedModule rm : reads) {
+            for (ModuleDescriptor.Requires r : rm.descriptor().requires()) {
+                if (r.modifiers().contains(Modifier.STATIC)
+                        && r.modifiers().contains(Modifier.TRANSITIVE)
+                        && !moduleNames.contains(r.name())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

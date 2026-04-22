@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -120,6 +119,7 @@ void Mutex::lock(Thread* self) {
   check_safepoint_state(self);
   check_rank(self);
 
+  OrderAccess::fence();
   if (!_lock.try_lock()) {
     // The lock is contended, use contended slow-path function to lock
     lock_contended(self);
@@ -145,6 +145,7 @@ void Mutex::lock_without_safepoint_check(Thread * self) {
   check_no_safepoint_state(self);
   check_rank(self);
 
+  OrderAccess::fence();
   _lock.lock();
   assert_owner(nullptr);
   set_owner(self);
@@ -171,6 +172,7 @@ bool Mutex::try_lock_inner(bool do_rank_checks) {
   // safepoint state, but can check blocking state.
   check_block_state(self);
 
+  OrderAccess::fence();
   if (_lock.try_lock()) {
     assert_owner(nullptr);
     set_owner(self);
@@ -267,6 +269,16 @@ bool Monitor::wait(uint64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
+static const int MAX_NUM_MUTEX = 1204;
+static Mutex* _internal_mutex_arr[MAX_NUM_MUTEX];
+Mutex** Mutex::_mutex_array = _internal_mutex_arr;
+int Mutex::_num_mutex = 0;
+
+void Mutex::add_mutex(Mutex* var) {
+  assert(Mutex::_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
+  Mutex::_mutex_array[_num_mutex++] = var;
+}
+
 Mutex::~Mutex() {
   assert_owner(nullptr);
   os::free(const_cast<char*>(_name));
@@ -281,7 +293,8 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   _rank            = rank;
   _skip_rank_check = false;
 
-  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %s: %s", rank_name(), name);
+  assert(_rank >= static_cast<Rank>(0) && _rank <= safepoint, "Bad lock rank %d outside [0, %d]: %s",
+         static_cast<int>(rank), static_cast<int>(safepoint), name);
 
   // The allow_vm_block also includes allowing other non-Java threads to block or
   // allowing Java threads to block in native.
@@ -312,25 +325,33 @@ static const char* _rank_names[] = { "event", "service", "stackwatermark", "tty"
 
 static const int _num_ranks = 7;
 
-static const char* rank_name_internal(Mutex::Rank r) {
+static void print_rank_name_internal(outputStream* st, Mutex::Rank r) {
   // Find closest rank and print out the name
-  stringStream st;
   for (int i = 0; i < _num_ranks; i++) {
     if (r == _ranks[i]) {
-      return _rank_names[i];
+      st->print("%s", _rank_names[i]);
     } else if (r  > _ranks[i] && (i < _num_ranks-1 && r < _ranks[i+1])) {
       int delta = static_cast<int>(_ranks[i+1]) - static_cast<int>(r);
-      st.print("%s-%d", _rank_names[i+1], delta);
-      return st.as_string();
+      st->print("%s-%d", _rank_names[i+1], delta);
     }
   }
-  return "fail";
+}
+
+// Requires caller to have ResourceMark.
+static const char* rank_name_internal(Mutex::Rank r) {
+  stringStream st;
+  print_rank_name_internal(&st, r);
+  return st.as_string();
 }
 
 const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
+// Does not require caller to have ResourceMark.
+void Mutex::print_rank_name(outputStream* st) const {
+  print_rank_name_internal(st, _rank);
+}
 
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
@@ -352,7 +373,8 @@ void Mutex::print_on(outputStream* st) const {
   if (_allow_vm_block) {
     st->print("%s", " allow_vm_block");
   }
-  DEBUG_ONLY(st->print(" %s", rank_name()));
+  st->print(" ");
+  DEBUG_ONLY(print_rank_name(st));
   st->cr();
 }
 
@@ -524,6 +546,61 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
 }
 #endif // ASSERT
 
+// Print all mutexes/monitors that are currently owned by a thread; called
+// by fatal error handler.
+void Mutex::print_owned_locks_on_error(outputStream* st) {
+  st->print("VM Mutex/Monitor currently owned by a thread: ");
+  bool none = true;
+  for (int i = 0; i < _num_mutex; i++) {
+    // see if it has an owner
+    if (_mutex_array[i]->owner() != nullptr) {
+      if (none) {
+        // print format used by Mutex::print_on_error()
+        st->print_cr(" ([mutex/lock_event])");
+        none = false;
+      }
+      _mutex_array[i]->print_on_error(st);
+      st->cr();
+    }
+  }
+  if (none) st->print_cr("None");
+}
+
+void Mutex::print_lock_ranks(outputStream* st) {
+  st->print_cr("VM Mutex/Monitor ranks: ");
+
+#ifdef ASSERT
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
+  int min_rank = INT_MAX;
+  int max_rank = INT_MIN;
+  for (int i = 0; i < _num_mutex; i++) {
+    Mutex* m = _mutex_array[i];
+    int r = (int) m->rank();
+    if (min_rank > r) min_rank = r;
+    if (max_rank < r) max_rank = r;
+  }
+
+  // Print the listings rank by rank
+  for (int r = min_rank; r <= max_rank; r++) {
+    bool first = true;
+    for (int i = 0; i < _num_mutex; i++) {
+      Mutex* m = _mutex_array[i];
+      if (r != (int) m->rank()) continue;
+
+      if (first) {
+        st->cr();
+        st->print_cr("Rank \"%s\":", m->rank_name());
+        first = false;
+      }
+      st->print_cr("  %s", m->name());
+    }
+  }
+#else
+  st->print_cr("  Only known in debug builds.");
+#endif // ASSERT
+}
 
 RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}
 

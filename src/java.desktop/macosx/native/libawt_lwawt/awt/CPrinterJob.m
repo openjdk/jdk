@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,6 +383,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     DECLARE_METHOD(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
     DECLARE_METHOD(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
     DECLARE_METHOD(jm_setSides, sjc_CPrinterJob, "setSides", "(I)V");
+    DECLARE_METHOD(jm_setOutputBin, sjc_CPrinterJob, "setOutputBin", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
@@ -449,6 +450,13 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
             (*env)->CallVoidMethod(env, dstPrinterJob, jm_setSides, sides); // AWT_THREADING Safe (known object)
             CHECK_EXCEPTION();
         }
+
+        NSString* outputBin = [[src printSettings] objectForKey:@"OutputBin"];
+        if (outputBin != nil) {
+            jstring outputBinName = NSStringToJavaString(env, outputBin);
+            (*env)->CallVoidMethod(env, dstPrinterJob, jm_setOutputBin, outputBinName);
+            CHECK_EXCEPTION();
+        }
     }
 }
 
@@ -468,6 +476,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     DECLARE_METHOD(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
     DECLARE_METHOD(jm_getDestinationFile, sjc_CPrinterJob, "getDestinationFile", "()Ljava/lang/String;");
     DECLARE_METHOD(jm_getSides, sjc_CPrinterJob, "getSides", "()I");
+    DECLARE_METHOD(jm_getOutputBin, sjc_CPrinterJob, "getOutputBin", "()Ljava/lang/String;");
 
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
@@ -538,6 +547,15 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
             [dst updateFromPMPrintSettings];
         }
     }
+
+    jobject outputBin = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getOutputBin);
+    CHECK_EXCEPTION();
+    if (outputBin != NULL) {
+        NSString *nsOutputBinStr = JavaStringToNSString(env, outputBin);
+        if (nsOutputBinStr != nil) {
+            [[dst printSettings] setObject:nsOutputBinStr forKey:@"OutputBin"];
+        }
+    }
 }
 
 /*
@@ -599,11 +617,11 @@ JNI_COCOA_EXIT(env);
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPrinterJob_createNSPrintInfo
-  (JNIEnv *env, jobject jthis)
+  (JNIEnv *env, jclass clazz)
 {
     jlong result = -1;
 JNI_COCOA_ENTER(env);
-    // This is used to create the NSPrintInfo for this PrinterJob. Thread
+    // This is used to create the NSPrintInfo for a PrinterJob. Thread
     //  safety is assured by the java side of this call.
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
@@ -616,11 +634,11 @@ JNI_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CPrinterJob
- * Method:    dispose
+ * Method:    disposeNSPrintInfo
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_dispose
-  (JNIEnv *env, jobject jthis, jlong nsPrintInfo)
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_disposeNSPrintInfo
+  (JNIEnv *env, jclass clazz, jlong nsPrintInfo)
 {
 JNI_COCOA_ENTER(env);
     if (nsPrintInfo != -1)
@@ -638,7 +656,7 @@ JNI_COCOA_EXIT(env);
  * Signature: ()V
  */
 JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
-  (JNIEnv *env, jobject jthis, jboolean blocks, jint firstPage, jint lastPage)
+  (JNIEnv *env, jobject jthis, jboolean blocks, jint firstPage, jint totalPages)
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
@@ -654,14 +672,14 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
 JNI_COCOA_ENTER(env);
     // Get the first page's PageFormat for setting things up (This introduces
     //  and is a facet of the same problem in Radar 2818593/2708932).
-    jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
+    jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, firstPage); // AWT_THREADING Safe (!appKit)
     CHECK_EXCEPTION();
     if (page != NULL) {
         jobject pageFormatArea = (*env)->CallObjectMethod(env, jthis, jm_getPageFormatArea, page); // AWT_THREADING Safe (!appKit)
         CHECK_EXCEPTION();
 
         PrinterView* printerView = [[PrinterView alloc] initWithFrame:JavaToNSRect(env, pageFormatArea) withEnv:env withPrinterJob:jthis];
-        [printerView setFirstPage:firstPage lastPage:lastPage];
+        [printerView setTotalPages:totalPages];
 
         GET_NSPRINTINFO_METHOD_RETURN(NO)
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)

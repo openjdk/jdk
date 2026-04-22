@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -400,7 +400,7 @@ int InkLimitingSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUI
     SumCMY   = (cmsFloat64Number) In[0]  + In[1] + In[2];
     SumCMYK  = SumCMY + In[3];
 
-    if (SumCMYK > InkLimit) {
+    if (SumCMYK > InkLimit && SumCMY > 0) {
 
         Ratio = 1 - ((SumCMYK - InkLimit) / SumCMY);
         if (Ratio < 0)
@@ -412,7 +412,7 @@ int InkLimitingSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUI
     Out[1] = _cmsQuickSaturateWord(In[1] * Ratio);     // M
     Out[2] = _cmsQuickSaturateWord(In[2] * Ratio);     // Y
 
-    Out[3] = In[3];                                 // K (untouched)
+    Out[3] = In[3];                                    // K (untouched)
 
     return TRUE;
 }
@@ -433,7 +433,7 @@ cmsHPROFILE CMSEXPORT cmsCreateInkLimitingDeviceLinkTHR(cmsContext ContextID,
         return NULL;
     }
 
-    if (Limit < 0.0 || Limit > 400) {
+    if (Limit < 1.0 || Limit > 400) {
 
         cmsSignalError(ContextID, cmsERROR_RANGE, "InkLimiting: Limit should be between 1..400");
         if (Limit < 1) Limit = 1;
@@ -513,16 +513,20 @@ cmsHPROFILE CMSEXPORT cmsCreateLab2ProfileTHR(cmsContext ContextID, const cmsCIE
     cmsSetColorSpace(hProfile,  cmsSigLabData);
     cmsSetPCS(hProfile,         cmsSigLabData);
 
-    if (!SetTextTags(hProfile, L"Lab identity built-in")) return NULL;
+    if (!SetTextTags(hProfile, L"Lab identity built-in"))
+        goto Error;
 
     // An identity LUT is all we need
     LUT = cmsPipelineAlloc(ContextID, 3, 3);
-    if (LUT == NULL) goto Error;
+    if (LUT == NULL)
+        goto Error;
 
     if (!cmsPipelineInsertStage(LUT, cmsAT_BEGIN, _cmsStageAllocIdentityCLut(ContextID, 3)))
         goto Error;
 
-    if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, LUT)) goto Error;
+    if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, LUT))
+        goto Error;
+
     cmsPipelineFree(LUT);
 
     return hProfile;
@@ -550,8 +554,14 @@ cmsHPROFILE CMSEXPORT cmsCreateLab4ProfileTHR(cmsContext ContextID, const cmsCIE
 {
     cmsHPROFILE hProfile;
     cmsPipeline* LUT = NULL;
+    cmsCIEXYZ xyz;
 
-    hProfile = cmsCreateRGBProfileTHR(ContextID, WhitePoint == NULL ? cmsD50_xyY() : WhitePoint, NULL, NULL);
+    if (WhitePoint == NULL)
+        xyz = *cmsD50_XYZ();
+    else
+        cmsxyY2XYZ(&xyz, WhitePoint);
+
+    hProfile = cmsCreateRGBProfileTHR(ContextID, NULL, NULL, NULL);
     if (hProfile == NULL) return NULL;
 
     cmsSetProfileVersion(hProfile, 4.4);
@@ -560,6 +570,7 @@ cmsHPROFILE CMSEXPORT cmsCreateLab4ProfileTHR(cmsContext ContextID, const cmsCIE
     cmsSetColorSpace(hProfile,  cmsSigLabData);
     cmsSetPCS(hProfile,         cmsSigLabData);
 
+    if (!cmsWriteTag(hProfile, cmsSigMediaWhitePointTag, &xyz)) goto Error;
     if (!SetTextTags(hProfile, L"Lab identity built-in")) goto Error;
 
     // An empty LUTs is all we need
@@ -705,7 +716,7 @@ cmsHPROFILE CMSEXPORT cmsCreate_sRGBProfile(void)
 *
 * This virtual profile cannot be saved as an ICC file
 */
-cmsHPROFILE cmsCreate_OkLabProfile(cmsContext ctx)
+cmsHPROFILE CMSEXPORT cmsCreate_OkLabProfile(cmsContext ctx)
 {
     cmsStage* XYZPCS = _cmsStageNormalizeFromXyzFloat(ctx);
     cmsStage* PCSXYZ = _cmsStageNormalizeToXyzFloat(ctx);
@@ -774,6 +785,8 @@ cmsHPROFILE cmsCreate_OkLabProfile(cmsContext ctx)
     cmsPipeline* BToA = cmsPipelineAlloc(ctx, 3, 3);
 
     cmsHPROFILE hProfile = cmsCreateProfilePlaceholder(ctx);
+    if (!hProfile)            // can't allocate
+        goto error;
 
     cmsSetProfileVersion(hProfile, 4.4);
 
@@ -927,25 +940,24 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
 
     for (i=0; i < MAX_INPUT_DIMENSIONS; i++) Dimensions[i] = nLUTPoints;
     CLUT = cmsStageAllocCLut16bitGranular(ContextID, Dimensions, 3, 3, NULL);
-    if (CLUT == NULL) goto Error;
-
-
-    if (!cmsStageSampleCLut16bit(CLUT, bchswSampler, (void*) &bchsw, 0)) {
-
-        // Shouldn't reach here
+    if (CLUT == NULL)
         goto Error;
-    }
 
-    if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT)) {
+    if (!cmsStageSampleCLut16bit(CLUT, bchswSampler, (void*) &bchsw, 0))
         goto Error;
-    }
+
+    if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT))
+        goto Error;
 
     // Create tags
-    if (!SetTextTags(hICC, L"BCHS built-in")) return NULL;
+    if (!SetTextTags(hICC, L"BCHS built-in"))
+        goto Error;
 
-    cmsWriteTag(hICC, cmsSigMediaWhitePointTag, (void*) cmsD50_XYZ());
+    if (!cmsWriteTag(hICC, cmsSigMediaWhitePointTag, (void*)cmsD50_XYZ()))
+        goto Error;
 
-    cmsWriteTag(hICC, cmsSigAToB0Tag, (void*) Pipeline);
+    if (!cmsWriteTag(hICC, cmsSigAToB0Tag, (void*)Pipeline))
+        goto Error;
 
     // Pipeline is already on virtual profile
     cmsPipelineFree(Pipeline);

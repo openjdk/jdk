@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,13 +236,36 @@ public class SecurityTools {
     /**
      * Runs jar.
      *
+     * @param args arguments to jar in the list.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer jar(final List<String> args) throws Exception {
+        return execute(getProcessBuilder("jar", args));
+    }
+
+    /**
+     * Runs jar.
+     *
      * @param args arguments to jar in a single string. The string is
      *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
-    public static OutputAnalyzer jar(String args) throws Exception {
-        return execute(getProcessBuilder("jar", makeList(args)));
+    public static OutputAnalyzer jar(final String args) throws Exception {
+        return  jar(makeList(args));
+    }
+
+    /**
+     * Runs jar.
+     *
+     * @param args arguments to jar in multiple strings.
+     *             Converted to be a List with List.of.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer jar(final String... args) throws Exception {
+        return jar(List.of(args));
     }
 
     /**

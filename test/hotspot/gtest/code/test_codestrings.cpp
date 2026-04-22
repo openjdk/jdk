@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifndef PRODUCT
 #ifndef ZERO
@@ -29,9 +28,12 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include <regex>
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #include "unittest.hpp"
@@ -49,7 +51,8 @@ static const char* replace_addr_expr(const char* str)
     // Padding: riscv
     std::basic_string<char> tmp4  = std::regex_replace(tmp3, std::regex("\\s+<addr>:\\s+unimp"), "");
     // Padding: x64
-    std::basic_string<char> red  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
+    std::basic_string<char> tmp5  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
+    std::basic_string<char> red  = std::regex_replace(tmp5, std::regex("(\\s+<addr>:\\s+nop)[ \\t]*"), "$1");
 
     return os::strdup(red.c_str());
 }

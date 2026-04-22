@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
  *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
  *             vm.cpu.features ~= ".*sse2.*")) |
- *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*") |
- *            (os.arch=="riscv64" & vm.cpu.features ~= ".*v,.*"))
+ *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */

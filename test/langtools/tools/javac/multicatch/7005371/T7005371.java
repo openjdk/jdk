@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 7005371
  * @summary  Multicatch: assertion error while generating LocalVariableTypeTable attribute
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g SubTest.java
  * @run main T7005371
  */
@@ -70,11 +68,11 @@ public class T7005371 {
             if (testMethod == null) {
                 throw new Error("Missing method: " + TEST_METHOD_NAME);
             }
-            CodeAttribute code = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute code = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (code == null) {
                 throw new Error("Missing Code attribute for method: " + TEST_METHOD_NAME);
             }
-            LocalVariableTypeTableAttribute lvt_table = code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null);
+            LocalVariableTypeTableAttribute lvt_table = code.findAttribute(Attributes.localVariableTypeTable()).orElse(null);
             if (lvt_table == null) {
                 throw new Error("Missing LocalVariableTypeTable attribute for method: " + TEST_METHOD_NAME);
             }

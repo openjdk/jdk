@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import apple.laf.JRSUIConstants.*;
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.*;
 
-public class AquaButtonCheckBoxUI extends AquaButtonLabeledUI {
+public final class AquaButtonCheckBoxUI extends AquaButtonLabeledUI {
     private static final RecyclableSingleton<AquaButtonCheckBoxUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaButtonCheckBoxUI>(AquaButtonCheckBoxUI.class);
     private static final RecyclableSingleton<ImageIcon> sizingIcon = new RecyclableSingleton<ImageIcon>() {
         protected ImageIcon getInstance() {
@@ -49,15 +49,17 @@ public class AquaButtonCheckBoxUI extends AquaButtonLabeledUI {
         return sizingIcon.get();
     }
 
+    @Override
     public String getPropertyPrefix() {
         return "CheckBox" + ".";
     }
 
+    @Override
     protected AquaButtonBorder getPainter() {
         return new CheckBoxButtonBorder();
     }
 
-    public static class CheckBoxButtonBorder extends LabeledButtonBorder {
+    public static final class CheckBoxButtonBorder extends LabeledButtonBorder {
         public CheckBoxButtonBorder() {
             super(new SizeDescriptor(new SizeVariant().replaceMargins("CheckBox.margin")));
             painter.state.set(Widget.BUTTON_CHECK_BOX);

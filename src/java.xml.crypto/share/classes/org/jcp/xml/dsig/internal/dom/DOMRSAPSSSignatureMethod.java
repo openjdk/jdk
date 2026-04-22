@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -33,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
@@ -59,6 +60,7 @@ import org.w3c.dom.Text;
 public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMethod {
 
     private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
+    private static final String DOM_SIGNATURE_RANDOM = "jdk.xmldsig.SecureRandom";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMRSAPSSSignatureMethod.class);
@@ -324,7 +326,12 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
                 throw new XMLSignatureException(nsae);
             }
         }
-        signature.initSign((PrivateKey)key);
+        SecureRandom sr = (SecureRandom)context.getProperty(DOM_SIGNATURE_RANDOM);
+        if (sr != null) {
+            signature.initSign((PrivateKey) key, sr);
+        } else {
+            signature.initSign((PrivateKey) key);
+        }
         try {
             signature.setParameter(spec);
         } catch (InvalidAlgorithmParameterException e) {

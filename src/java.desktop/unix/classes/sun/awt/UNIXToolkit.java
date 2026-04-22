@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,16 +50,10 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Arrays;
 
 import sun.awt.X11.XBaseWindow;
-import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
 import sun.java2d.opengl.OGLRenderQueue;
-import sun.security.action.GetPropertyAction;
 
 public abstract class UNIXToolkit extends SunToolkit
 {
@@ -70,19 +64,12 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
 
-    private static final String GTK2_DEPRECATION_MESSAGE =
-            "WARNING: the GTK 2 library is deprecated and " +
-                    "its support will be removed in a future release";
-    private static volatile boolean gtk2WarningIssued = false;
-
     // Allowed GTK versions
     public enum GtkVersions {
         ANY(0),
-        GTK2(Constants.GTK2_MAJOR_NUMBER),
         GTK3(Constants.GTK3_MAJOR_NUMBER);
 
-        static class Constants {
-            static final int GTK2_MAJOR_NUMBER = 2;
+        static final class Constants {
             static final int GTK3_MAJOR_NUMBER = 3;
         }
 
@@ -94,8 +81,6 @@ public abstract class UNIXToolkit extends SunToolkit
 
         public static GtkVersions getVersion(int number) {
             switch (number) {
-                case Constants.GTK2_MAJOR_NUMBER:
-                    return GTK2;
                 case Constants.GTK3_MAJOR_NUMBER:
                     return GTK3;
                 default:
@@ -114,9 +99,7 @@ public abstract class UNIXToolkit extends SunToolkit
     private BufferedImage tmpImage = null;
 
     public static int getDatatransferTimeout() {
-        @SuppressWarnings("removal")
-        Integer dt = AccessController.doPrivileged(
-                new GetIntegerAction("sun.awt.datatransfer.timeout"));
+        Integer dt = Integer.getInteger("sun.awt.datatransfer.timeout");
         if (dt == null || dt <= 0) {
             return DEFAULT_DATATRANSFER_TIMEOUT;
         } else {
@@ -127,18 +110,12 @@ public abstract class UNIXToolkit extends SunToolkit
     @Override
     public String getDesktop() {
         String gnome = "gnome";
-        @SuppressWarnings("removal")
-        String gsi = AccessController.doPrivileged(
-                        (PrivilegedAction<String>) ()
-                                -> System.getenv("GNOME_DESKTOP_SESSION_ID"));
+        String gsi = System.getenv("GNOME_DESKTOP_SESSION_ID");
         if (gsi != null) {
             return gnome;
         }
 
-        @SuppressWarnings("removal")
-        String desktop = AccessController.doPrivileged(
-                (PrivilegedAction<String>) ()
-                        -> System.getenv("XDG_CURRENT_DESKTOP"));
+        String desktop = System.getenv("XDG_CURRENT_DESKTOP");
         return (desktop != null && desktop.toLowerCase().contains(gnome))
                 ? gnome : null;
     }
@@ -261,11 +238,7 @@ public abstract class UNIXToolkit extends SunToolkit
                 result = shouldDisableSystemTray;
                 if (result == null) {
                     if ("gnome".equals(getDesktop())) {
-                        @SuppressWarnings("removal")
-                        Integer gnomeShellMajorVersion =
-                                AccessController
-                                        .doPrivileged((PrivilegedAction<Integer>)
-                                                this::getGnomeShellMajorVersion);
+                        Integer gnomeShellMajorVersion = getGnomeShellMajorVersion();
 
                         if (gnomeShellMajorVersion == null
                                 || gnomeShellMajorVersion < 45) {
@@ -280,14 +253,12 @@ public abstract class UNIXToolkit extends SunToolkit
         return result;
     }
 
-    private Integer getGnomeShellMajorVersion() {
+    public Integer getGnomeShellMajorVersion() {
         try {
             Process process =
                 new ProcessBuilder("/usr/bin/gnome-shell", "--version")
                         .start();
-            try (InputStreamReader isr = new InputStreamReader(process.getInputStream());
-                 BufferedReader reader = new BufferedReader(isr)) {
-
+            try (BufferedReader reader = process.inputReader()) {
                 if (process.waitFor(2, SECONDS) &&  process.exitValue() == 0) {
                     String line = reader.readLine();
                     if (line != null) {
@@ -495,18 +466,8 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     public static GtkVersions getEnabledGtkVersion() {
-        @SuppressWarnings("removal")
-        String version = AccessController.doPrivileged(
-                new GetPropertyAction("jdk.gtk.version"));
-        if (version == null) {
-            return GtkVersions.ANY;
-        } else if (version.startsWith("2")) {
-            if (!gtk2WarningIssued) {
-                System.err.println(GTK2_DEPRECATION_MESSAGE);
-                gtk2WarningIssued = true;
-            }
-            return GtkVersions.GTK2;
-        } else if("3".equals(version) ){
+        String version = System.getProperty("jdk.gtk.version");
+        if ("3".equals(version)) {
             return GtkVersions.GTK3;
         }
         return GtkVersions.ANY;
@@ -516,32 +477,22 @@ public abstract class UNIXToolkit extends SunToolkit
         return GtkVersions.getVersion(get_gtk_version());
     }
 
-    @SuppressWarnings("removal")
     public static boolean isGtkVerbose() {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
-                -> Boolean.getBoolean("jdk.gtk.verbose"));
+        return Boolean.getBoolean("jdk.gtk.verbose");
     }
 
     private static volatile Boolean isOnWayland = null;
 
-    @SuppressWarnings("removal")
     public static boolean isOnWayland() {
         Boolean result = isOnWayland;
         if (result == null) {
             synchronized (GTK_LOCK) {
                 result = isOnWayland;
                 if (result == null) {
+                    final String display = System.getenv("WAYLAND_DISPLAY");
                     isOnWayland
                             = result
-                            = AccessController.doPrivileged(
-                            (PrivilegedAction<Boolean>) () -> {
-                                final String display =
-                                        System.getenv("WAYLAND_DISPLAY");
-
-                                return display != null
-                                        && !display.trim().isEmpty();
-                            }
-                    );
+                            = (display != null && !display.trim().isEmpty());
                 }
             }
         }
@@ -566,6 +517,20 @@ public abstract class UNIXToolkit extends SunToolkit
     // application icons).
     private static final WindowFocusListener waylandWindowFocusListener;
 
+    private static boolean containsWaylandWindowFocusListener(Window window) {
+        if (window == null) {
+            return false;
+        }
+
+        for (WindowFocusListener focusListener : window.getWindowFocusListeners()) {
+            if (focusListener == waylandWindowFocusListener) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     static {
         if (isOnWayland()) {
             waylandWindowFocusListener = new WindowAdapter() {
@@ -575,13 +540,22 @@ public abstract class UNIXToolkit extends SunToolkit
                     Window oppositeWindow = e.getOppositeWindow();
 
                     // The focus can move between the window calling the popup,
-                    // and the popup window itself.
+                    // and the popup window itself or its children.
                     // We only dismiss the popup in other cases.
                     if (oppositeWindow != null) {
-                        if (window == oppositeWindow.getParent() ) {
+                        if (containsWaylandWindowFocusListener(oppositeWindow.getOwner())) {
                             addWaylandWindowFocusListenerToWindow(oppositeWindow);
                             return;
                         }
+
+                        Window owner = window.getOwner();
+                        while (owner != null) {
+                            if (owner == oppositeWindow) {
+                                return;
+                            }
+                            owner = owner.getOwner();
+                        }
+
                         if (window.getParent() == oppositeWindow) {
                             return;
                         }
@@ -602,11 +576,11 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     private static void addWaylandWindowFocusListenerToWindow(Window window) {
-        if (!Arrays
-                .asList(window.getWindowFocusListeners())
-                .contains(waylandWindowFocusListener)
-        ) {
+        if (!containsWaylandWindowFocusListener(window)) {
             window.addWindowFocusListener(waylandWindowFocusListener);
+            for (Window ownedWindow : window.getOwnedWindows()) {
+                addWaylandWindowFocusListenerToWindow(ownedWindow);
+            }
         }
     }
 

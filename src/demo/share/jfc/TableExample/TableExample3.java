@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -97,7 +97,6 @@ public class TableExample3 {
         };
 
         // Create a model of the data.
-        @SuppressWarnings("serial")
         TableModel dataModel = new AbstractTableModel() {
             // These methods always need to be implemented.
 

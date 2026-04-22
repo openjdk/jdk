@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8335927 8345773
  * @summary Testing ClassFile ClassPrinter.
  * @run junit ClassPrinterTest
  */
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
@@ -65,7 +66,7 @@ class ClassPrinterTest {
                         RuntimeInvisibleTypeAnnotationsAttribute.of(
                                 TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                                   List.of(TypeAnnotation.TypePathComponent.WILDCARD),
-                                                  ClassDesc.of("Boo"), List.of()))))))
+                                                  Annotation.of(ClassDesc.of("Boo"), List.of())))))))
                 .with(RuntimeInvisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 2),  AnnotationElement.ofFloat("frfl", 3))))
                 .with(PermittedSubclassesAttribute.ofSymbols(ClassDesc.of("Boo"), ClassDesc.of("Phoo")))
                 .withField("f", ConstantDescs.CD_String, fb -> fb
@@ -100,7 +101,7 @@ class ClassPrinterTest {
                                 tryb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
                                         TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                                 List.of(TypeAnnotation.TypePathComponent.WILDCARD),
-                                                ClassDesc.of("Boo"), List.of())));
+                                                Annotation.of(ClassDesc.of("Boo"), List.of()))));
                                 tryb.invokedynamic(DynamicCallSiteDesc.of(
                                         MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of("Phoo"), "phee", MethodTypeDesc.of(ClassDesc.of("Boo"))),
                                         "intfMethod",
@@ -115,14 +116,13 @@ class ClassPrinterTest {
                             .with(RuntimeVisibleTypeAnnotationsAttribute.of(
                                     TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                           List.of(TypeAnnotation.TypePathComponent.ARRAY),
-                                          ClassDesc.of("Fee"), List.of(AnnotationElement.ofBoolean("yes", false)))))
+                                          Annotation.of(ClassDesc.of("Fee"), List.of(AnnotationElement.ofBoolean("yes", false))))))
                         ))));
     }
 
     @Test
     void testPrintYamlTraceAll() throws IOException {
-        var out = new StringBuilder();
-        ClassPrinter.toYaml(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL, out::append);
+        var out = getClassModel().toDebugString();
         assertOut(out,
                 """
                   - class name: Foo
@@ -249,7 +249,7 @@ class ClassPrinterTest {
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
                         attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
-                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: 99}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, constant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
+                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: c}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, constant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
                         visible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: 22.0}}, {name: frfl, value: {float: 11.0}}]}]
                         invisible parameter annotations:
@@ -471,7 +471,7 @@ class ClassPrinterTest {
                     "source file": "Foo.java",
                     "inner classes": [
                         {"inner class": "Phee", "outer class": "Phoo", "inner name": "InnerName", "flags": ["PROTECTED"]},
-                        {"inner class": "Phoo", "outer class": "null", "inner name": "null", "flags": ["PRIVATE"]}],
+                        {"inner class": "Phoo", "outer class": null, "inner name": null, "flags": ["PRIVATE"]}],
                     "enclosing method": {"class": "Phee", "method name": "enclosingMethod", "method type": "(Ljava/util/Collection;)Ljava/lang/Double;"},
                     "signature": "LBoo;LPhee;LPhoo;",
                     "nest host": "Phee",
@@ -500,7 +500,7 @@ class ClassPrinterTest {
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
                             "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
-                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "99"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "constant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
+                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "c"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "constant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
                             "visible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "22.0"}}, {"name": "frfl", "value": {"float": "11.0"}}]}]},
                             "invisible parameter annotations": {
@@ -724,19 +724,19 @@ class ClassPrinterTest {
                     <source_file>Foo.java</source_file>
                     <inner_classes>
                         <cls><inner_class>Phee</inner_class><outer_class>Phoo</outer_class><inner_name>InnerName</inner_name><flags><flag>PROTECTED</flag></flags></cls>
-                        <cls><inner_class>Phoo</inner_class><outer_class>null</outer_class><inner_name>null</inner_name><flags><flag>PRIVATE</flag></flags></cls></inner_classes>
+                        <cls><inner_class>Phoo</inner_class><outer_class><null/></outer_class><inner_name><null/></inner_name><flags><flag>PRIVATE</flag></flags></cls></inner_classes>
                     <enclosing_method><class>Phee</class><method_name>enclosingMethod</method_name><method_type>(Ljava/util/Collection;)Ljava/lang/Double;</method_type></enclosing_method>
                     <signature>LBoo;LPhee;LPhoo;</signature>
                     <nest_host>Phee</nest_host>
                     <nest_members><member>Phoo</member><member>Boo</member><member>Bee</member></nest_members>
                     <record_components>
-                        <record>
+                        <component>
                             <name>fee</name>
                             <type>LPhoo;</type>
                             <attributes><attribute>Signature</attribute><attribute>RuntimeInvisibleTypeAnnotations</attribute></attributes>
                             <signature>LPhoo;</signature>
                             <invisible_type_annotations>
-                                <anno><annotation_class>LBoo;</annotation_class><target_info>FIELD</target_info><values></values></anno></invisible_type_annotations></record></record_components>
+                                <anno><annotation_class>LBoo;</annotation_class><target_info>FIELD</target_info><values></values></anno></invisible_type_annotations></component></record_components>
                     <invisible_annotations>
                         <anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>2.0</float></value></pair><pair><name>frfl</name><value><float>3.0</float></value></pair></values></anno></invisible_annotations>
                     <permitted_subclasses><subclass>Boo</subclass><subclass>Phoo</subclass></permitted_subclasses>
@@ -756,7 +756,7 @@ class ClassPrinterTest {
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
                             <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
-                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>99</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><constant_name>BOO</constant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
+                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>c</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><constant_name>BOO</constant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
                             <visible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>22.0</float></value></pair><pair><name>frfl</name><value><float>11.0</float></value></pair></values></anno></parameter_1></visible_parameter_annotations>
                             <invisible_parameter_annotations>
@@ -903,10 +903,10 @@ class ClassPrinterTest {
         assertEquals(node.walk().count(), 42);
     }
 
-    private static void assertOut(StringBuilder out, String expected) {
+    private static void assertOut(CharSequence out, String expected) {
 //        System.out.println("-----------------");
 //        System.out.println(out.toString());
 //        System.out.println("-----------------");
-        assertArrayEquals(out.toString().trim().split(" *\r?\n"), expected.trim().split("\n"));
+        assertArrayEquals(expected.trim().split("\n"), out.toString().trim().split(" *\r?\n"));
     }
 }

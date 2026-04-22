@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
@@ -77,7 +76,7 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
 }
 
 void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(Annotations): %p", this);
+  log_trace(aot)("Iter(Annotations): %p", this);
   it->push(&_class_annotations);
   it->push(&_fields_annotations);
   it->push(&_class_type_annotations);

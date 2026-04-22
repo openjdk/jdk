@@ -35,7 +35,9 @@
 
 package java.util.concurrent.locks;
 
-import jdk.internal.misc.VirtualThreads;
+import java.util.concurrent.TimeUnit;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -119,7 +121,7 @@ import jdk.internal.misc.Unsafe;
  *     }
  *
  *     waiters.remove();
- *     // ensure correct interrupt status on return
+ *     // ensure correct interrupted status on return
  *     if (wasInterrupted)
  *       Thread.currentThread().interrupt();
  *   }
@@ -137,7 +139,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-public class LockSupport {
+public final class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
     private static void setBlocker(Thread t, Object arg) {
@@ -176,7 +178,7 @@ public class LockSupport {
     public static void unpark(Thread thread) {
         if (thread != null) {
             if (thread.isVirtual()) {
-                VirtualThreads.unpark(thread);
+                JLA.unparkVirtualThread(thread);
             } else {
                 U.unpark(thread);
             }
@@ -205,7 +207,7 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread upon return.
+     * for example, the interrupted status of the thread upon return.
      *
      * @param blocker the synchronization object responsible for this
      *        thread parking
@@ -216,7 +218,7 @@ public class LockSupport {
         setBlocker(t, blocker);
         try {
             if (t.isVirtual()) {
-                VirtualThreads.park();
+                JLA.parkVirtualThread();
             } else {
                 U.park(false, 0L);
             }
@@ -250,7 +252,7 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the elapsed time
+     * for example, the interrupted status of the thread, or the elapsed time
      * upon return.
      *
      * @param blocker the synchronization object responsible for this
@@ -264,7 +266,7 @@ public class LockSupport {
             setBlocker(t, blocker);
             try {
                 if (t.isVirtual()) {
-                    VirtualThreads.park(nanos);
+                    JLA.parkVirtualThread(nanos);
                 } else {
                     U.park(false, nanos);
                 }
@@ -298,7 +300,7 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the current time
+     * for example, the interrupted status of the thread, or the current time
      * upon return.
      *
      * @param blocker the synchronization object responsible for this
@@ -311,11 +313,7 @@ public class LockSupport {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
         try {
-            if (t.isVirtual()) {
-                VirtualThreads.parkUntil(deadline);
-            } else {
-                U.park(true, deadline);
-            }
+            parkUntil(deadline);
         } finally {
             setBlocker(t, null);
         }
@@ -362,11 +360,11 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread upon return.
+     * for example, the interrupted status of the thread upon return.
      */
     public static void park() {
         if (Thread.currentThread().isVirtual()) {
-            VirtualThreads.park();
+            JLA.parkVirtualThread();
         } else {
             U.park(false, 0L);
         }
@@ -397,7 +395,7 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the elapsed time
+     * for example, the interrupted status of the thread, or the elapsed time
      * upon return.
      *
      * @param nanos the maximum number of nanoseconds to wait
@@ -405,7 +403,7 @@ public class LockSupport {
     public static void parkNanos(long nanos) {
         if (nanos > 0) {
             if (Thread.currentThread().isVirtual()) {
-                VirtualThreads.park(nanos);
+                JLA.parkVirtualThread(nanos);
             } else {
                 U.park(false, nanos);
             }
@@ -436,7 +434,7 @@ public class LockSupport {
      * <p>This method does <em>not</em> report which of these caused the
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
-     * for example, the interrupt status of the thread, or the current time
+     * for example, the interrupted status of the thread, or the current time
      * upon return.
      *
      * @param deadline the absolute time, in milliseconds from the Epoch,
@@ -444,7 +442,8 @@ public class LockSupport {
      */
     public static void parkUntil(long deadline) {
         if (Thread.currentThread().isVirtual()) {
-            VirtualThreads.parkUntil(deadline);
+            long millis = deadline - System.currentTimeMillis();
+            JLA.parkVirtualThread(TimeUnit.MILLISECONDS.toNanos(millis));
         } else {
             U.park(true, deadline);
         }
@@ -462,4 +461,5 @@ public class LockSupport {
     private static final long PARKBLOCKER
         = U.objectFieldOffset(Thread.class, "parkBlocker");
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 }

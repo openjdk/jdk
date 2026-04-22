@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,33 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/rbTree.inline.hpp"
+#include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
@@ -72,34 +77,39 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 }
 
 void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
-  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
-  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+  address* buff_bottom = (address*)ArchiveBuilder::current()->buffer_bottom();
+  address* rw_bottom   = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom   = (address*)ArchiveBuilder::current()->ro_region()->base();
+
+  // The bit in _ptrmap that cover the very first word in the rw/ro regions.
+  size_t rw_start = rw_bottom - buff_bottom;
+  size_t ro_start = ro_bottom - buff_bottom;
+
+  // The number of bits used by the rw/ro ptrmaps. We might have lots of zero
+  // bits at the bottom and top of rw/ro ptrmaps, but these zeros will be
+  // removed by FileMapInfo::write_bitmap_region().
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+
+  // The last (exclusive) bit in _ptrmap that covers the rw/ro regions.
+  // Note: _ptrmap is dynamically expanded only when an actual pointer is written, so
+  // it may not be as large as we want.
+  size_t rw_end = MIN2<size_t>(rw_start + rw_size, _ptrmap->size());
+  size_t ro_end = MIN2<size_t>(ro_start + ro_size, _ptrmap->size());
+
+  rw_ptrmap->initialize(rw_size);
+  ro_ptrmap->initialize(ro_size);
+
+  for (size_t rw_bit = rw_start; rw_bit < rw_end; rw_bit++) {
+    rw_ptrmap->at_put(rw_bit - rw_start, _ptrmap->at(rw_bit));
+  }
+
+  for(size_t ro_bit = ro_start; ro_bit < ro_end; ro_bit++) {
+    ro_ptrmap->at_put(ro_bit - ro_start, _ptrmap->at(ro_bit));
+  }
 
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
-
-  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
-  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
-  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
-  // E.g., if rw_bottom = (address*)100
-  //          ro_bottom = (address*)116
-  //       then for 64-bit platform:
-  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
-  size_t ro_start = ro_bottom - rw_bottom;
-
-  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
-  // See ArchivePtrMarker::compact()
-  _rw_ptrmap->initialize(rw_size);
-  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
-
-  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
-    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
-  }
-
-  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
-    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
-  }
-  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
@@ -108,13 +118,17 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
 
   if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
-    // We don't want any pointer that points to very bottom of the archive, otherwise when
-    // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
-    // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
-    // of the archive.
-    assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
-
     if (value != nullptr) {
+      // We don't want any pointer that points to very bottom of the AOT metaspace, otherwise
+      // when AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
+      // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
+      // of the AOT metaspace.
+      //
+      // This should never happen because the protection zone prevents any valid objects from
+      // being allocated at the bottom of the AOT metaspace.
+      assert(AOTMetaspace::protection_zone_size() > 0, "must be");
+      assert(ArchiveBuilder::current()->any_to_offset(value) > 0, "cannot point to bottom of AOT metaspace");
+
       assert(uintx(ptr_loc) % sizeof(intptr_t) == 0, "pointers must be stored in aligned addresses");
       size_t idx = ptr_loc - ptr_base();
       if (_ptrmap->size() <= idx) {
@@ -122,7 +136,6 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
       }
       assert(idx < _ptrmap->size(), "must be");
       _ptrmap->set_bit(idx);
-      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
     }
   }
 }
@@ -136,7 +149,6 @@ void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
   size_t idx = ptr_loc - ptr_base();
   assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
   _ptrmap->clear_bit(idx);
-  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
 }
 
 class ArchivePtrBitmapCleaner: public BitMapClosure {
@@ -161,7 +173,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(aot, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
     }
 
     return true;
@@ -194,14 +206,14 @@ char* DumpRegion::expand_top_to(char* newtop) {
   commit_to(newtop);
   _top = newtop;
 
-  if (_max_delta > 0) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(_base)) {
     uintx delta = ArchiveBuilder::current()->buffer_to_offset((address)(newtop-1));
-    if (delta > _max_delta) {
+    if (delta > AOTCompressedPointers::MaxMetadataOffsetBytes) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
-      MetaspaceShared::unrecoverable_writing_error();
+      aot_log_error(aot)("Out of memory in the %s: Please reduce the number of shared classes.", CDSConfig::type_of_archive_being_written());
+      AOTMetaspace::unrecoverable_writing_error();
     }
   }
 
@@ -226,28 +238,192 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
+    aot_log_error(aot)("Failed to expand shared space to %zu bytes",
                     need_committed_size);
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   const char* which;
-  if (_rs->base() == (char*)MetaspaceShared::symbol_rs_base()) {
+  if (_rs->base() == (char*)AOTMetaspace::symbol_rs_base()) {
     which = "symbol";
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+  log_debug(aot)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
-
-char* DumpRegion::allocate(size_t num_bytes) {
-  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
-  char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
+// Basic allocation. Any alignment gaps will be wasted.
+char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
+  // Always align to at least minimum alignment
+  alignment = MAX2(SharedSpaceObjectAlignment, alignment);
+  char* p = (char*)align_up(_top, alignment);
+  char* newtop = p + align_up(num_bytes, SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
   return p;
+}
+
+class DumpRegion::AllocGap {
+  size_t _gap_bytes;   // size of this gap in bytes
+  char* _gap_bottom;   // must be SharedSpaceObjectAlignment aligned
+public:
+  size_t gap_bytes() const { return _gap_bytes; }
+  char* gap_bottom() const { return _gap_bottom; }
+
+  AllocGap(size_t bytes, char* bottom) : _gap_bytes(bytes), _gap_bottom(bottom) {
+    precond(is_aligned(gap_bytes(), SharedSpaceObjectAlignment));
+    precond(is_aligned(gap_bottom(), SharedSpaceObjectAlignment));
+  }
+};
+
+struct DumpRegion::AllocGapCmp {
+  static RBTreeOrdering cmp(AllocGap a, AllocGap b) {
+    RBTreeOrdering order = rbtree_primitive_cmp(a.gap_bytes(), b.gap_bytes());
+    if (order == RBTreeOrdering::EQ) {
+      order = rbtree_primitive_cmp(a.gap_bottom(), b.gap_bottom());
+    }
+    return order;
+  }
+};
+
+struct Empty {};
+using AllocGapNode = RBNode<DumpRegion::AllocGap, Empty>;
+
+class DumpRegion::AllocGapTree : public RBTreeCHeap<AllocGap, Empty, AllocGapCmp, mtClassShared> {
+public:
+  size_t add_gap(char* gap_bottom, char* gap_top) {
+    precond(gap_bottom < gap_top);
+    size_t gap_bytes = pointer_delta(gap_top, gap_bottom, 1);
+    precond(gap_bytes > 0);
+
+    _total_gap_bytes += gap_bytes;
+
+    AllocGap gap(gap_bytes, gap_bottom); // constructor checks alignment
+    AllocGapNode* node = allocate_node(gap, Empty{});
+    insert(gap, node);
+
+    log_trace(aot, alloc)("adding a gap of %zu bytes @ %p (total = %zu) in %zu blocks", gap_bytes, gap_bottom, _total_gap_bytes, size());
+    return gap_bytes;
+  }
+
+  char* allocate_from_gap(size_t num_bytes) {
+    // The gaps are sorted in ascending order of their sizes. When two gaps have the same
+    // size, the one with a lower gap_bottom comes first.
+    //
+    // Find the first gap that's big enough, with the lowest gap_bottom.
+    AllocGap target(num_bytes, nullptr);
+    AllocGapNode* node = closest_ge(target);
+    if (node == nullptr) {
+      return nullptr; // Didn't find any usable gap.
+    }
+
+    size_t gap_bytes = node->key().gap_bytes();
+    char* gap_bottom = node->key().gap_bottom();
+    char* result = gap_bottom;
+    precond(is_aligned(result, SharedSpaceObjectAlignment));
+
+    remove(node);
+
+    precond(_total_gap_bytes >= num_bytes);
+    _total_gap_bytes -= num_bytes;
+    _total_gap_bytes_used += num_bytes;
+    _total_gap_allocs++;
+    DEBUG_ONLY(node = nullptr); // Don't use it anymore!
+
+    precond(gap_bytes >= num_bytes);
+    if (gap_bytes > num_bytes) {
+      gap_bytes -= num_bytes;
+      gap_bottom += num_bytes;
+
+      AllocGap gap(gap_bytes, gap_bottom); // constructor checks alignment
+      AllocGapNode* new_node = allocate_node(gap, Empty{});
+      insert(gap, new_node);
+    }
+    log_trace(aot, alloc)("%zu bytes @ %p in a gap of %zu bytes (used gaps %zu times, remain gap = %zu bytes in %zu blocks)",
+                          num_bytes, result, gap_bytes, _total_gap_allocs, _total_gap_bytes, size());
+    return result;
+  }
+};
+
+size_t DumpRegion::_total_gap_bytes = 0;
+size_t DumpRegion::_total_gap_bytes_used = 0;
+size_t DumpRegion::_total_gap_allocs = 0;
+DumpRegion::AllocGapTree DumpRegion::_gap_tree;
+
+// Alignment gaps happen only for the RW space. Collect the gaps into the _gap_tree so they can be
+// used for future small object allocation.
+char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats) {
+  num_bytes = align_up(num_bytes, SharedSpaceObjectAlignment);
+  size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
+  bool is_class = (type == MetaspaceClosureType::ClassType);
+  bool is_instance_class = is_class && ((Klass*)src)->is_instance_klass();
+
+#ifdef _LP64
+  // More strict alignments needed for Klass objects
+  if (is_class) {
+    size_t klass_alignment = checked_cast<size_t>(nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()));
+    alignment = MAX2(alignment, klass_alignment);
+    precond(is_aligned(alignment, SharedSpaceObjectAlignment));
+  }
+#endif
+
+  if (alignment == SharedSpaceObjectAlignment && type != MetaspaceClosureType::SymbolType) {
+    // The addresses of Symbols must be in the same order as they are in ArchiveBuilder::SourceObjList.
+    // If we put them in gaps, their order will change.
+    //
+    // We have enough small objects that all gaps are usually filled.
+    char* p = _gap_tree.allocate_from_gap(num_bytes);
+    if (p != nullptr) {
+      // Already memset to 0 when adding the gap
+      stats->record(type, checked_cast<int>(num_bytes), /*read_only=*/false); // all gaps are from RW space (for classes)
+      return p;
+    }
+  }
+
+  // Reserve space for a pointer directly in front of the buffered InstanceKlass, so
+  // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
+  // without building another hashtable. See RunTimeClassInfo::get_for()
+  // in systemDictionaryShared.cpp.
+  const size_t RuntimeClassInfoPtrSize = is_instance_class ? sizeof(address) : 0;
+
+  if (is_class && !is_aligned(top() + RuntimeClassInfoPtrSize, alignment)) {
+    // We need to add a gap to align the buffered Klass. Save the gap for future small allocations.
+    assert(read_only == false, "only gaps in RW region are reusable");
+    char* gap_bottom = top();
+    char* gap_top = align_up(gap_bottom + RuntimeClassInfoPtrSize, alignment) - RuntimeClassInfoPtrSize;
+    size_t gap_bytes = _gap_tree.add_gap(gap_bottom, gap_top);
+    allocate(gap_bytes);
+  }
+
+  char* oldtop = top();
+  if (is_instance_class) {
+    SystemDictionaryShared::validate_before_archiving((InstanceKlass*)src);
+    allocate(RuntimeClassInfoPtrSize);
+  }
+
+  precond(is_aligned(top(), alignment));
+  char* result = allocate(num_bytes);
+  log_trace(aot, alloc)("%zu bytes @ %p", num_bytes, result);
+  stats->record(type, pointer_delta_as_int(top(), oldtop), read_only); // includes RuntimeClassInfoPtrSize for classes
+
+  return result;
+}
+
+// Usually we have no gaps left.
+void DumpRegion::report_gaps(DumpAllocStats* stats) {
+  _gap_tree.visit_in_order([&](const AllocGapNode* node) {
+        stats->record_gap(checked_cast<int>(node->key().gap_bytes()));
+        return true;
+      });
+  if (_gap_tree.size() > 0) {
+    log_warning(aot)("Unexpected %zu gaps (%zu bytes) for Klass alignment",
+                     _gap_tree.size(), _total_gap_bytes);
+  }
+  if (_total_gap_allocs > 0) {
+    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes)",
+                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes);
+  }
 }
 
 void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
@@ -262,16 +438,17 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  char* base = used() > 0 ? ArchiveBuilder::current()->to_requested(_base) : nullptr;
+  log_debug(aot)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(ArchiveBuilder::current()->to_requested(_base)));
+                 p2i(base));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
-  log_error(cds)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
+  aot_log_error(aot)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
                  _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
   if (strcmp(_name, failing_region) == 0) {
-    log_error(cds)(" required = %d", int(needed_bytes));
+    aot_log_error(aot)(" required = %d", int(needed_bytes));
   }
 }
 
@@ -287,8 +464,11 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 }
 
 void DumpRegion::pack(DumpRegion* next) {
-  assert(!is_packed(), "sanity");
-  _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
+  if (!is_packed()) {
+    _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
+    _is_packed = true;
+  }
+  _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
   _is_packed = true;
   if (next != nullptr) {
     next->_rs = _rs;
@@ -299,30 +479,15 @@ void DumpRegion::pack(DumpRegion* next) {
 }
 
 void WriteClosure::do_ptr(void** p) {
-  // Write ptr into the archive; ptr can be:
-  //   (a) null                 -> written as 0
-  //   (b) a "buffered" address -> written as is
-  //   (c) a "source"   address -> convert to "buffered" and write
-  // The common case is (c). E.g., when writing the vmClasses into the archive.
-  // We have (b) only when we don't have a corresponding source object. E.g.,
-  // the archived c++ vtable entries.
   address ptr = *(address*)p;
-  if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
-    ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
-  }
-  // null pointers do not need to be converted to offsets
-  if (ptr != nullptr) {
-    ptr = (address)ArchiveBuilder::current()->buffer_to_offset(ptr);
-  }
-  _dump_region->append_intptr_t((intptr_t)ptr, false);
+  AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
+  _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp), false);
 }
 
 void ReadClosure::do_ptr(void** p) {
   assert(*p == nullptr, "initializing previous initialized pointer.");
-  intptr_t obj = nextPtr();
-  assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
-         "hit tag while initializing ptrs.");
-  *p = (void*)obj != nullptr ? (void*)(SharedBaseAddress + obj) : (void*)obj;
+  u4 narrowp = checked_cast<u4>(nextPtr());
+  *p = AOTCompressedPointers::decode<void*>(cast_from_u4(narrowp), _base_address);
 }
 
 void ReadClosure::do_u4(u4* p) {
@@ -344,20 +509,20 @@ void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
   // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
+  assert(tag == old_tag, "tag doesn't match (%d, expected %d)", old_tag, tag);
   FileMapInfo::assert_mark(tag == old_tag);
 }
 
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
-    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+    if (LambdaProxyClassDictionary::is_supported_invokedynamic(bootstrap_specifier)) {
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.
         ResourceMark rm(THREAD);
         int pool_index = bootstrap_specifier->bss_index();
         ClassListWriter w;
-        w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+        w.stream()->print("%s %s", ClassListParser::lambda_proxy_tag(), pool->pool_holder()->name()->as_C_string());
         CDSIndyInfo cii;
         ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, CHECK);
         GrowableArray<const char*>* indy_items = cii.items();
@@ -368,4 +533,191 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
       }
     }
   }
+}
+
+bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
+  if (!ArchiveBuilder::current()->has_been_archived(src_ik)) {
+    return false;
+  }
+  return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
+}
+
+size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
+}
+
+int HeapRootSegments::size_in_elems(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  if (seg_idx != _count - 1) {
+    return _max_size_in_elems;
+  } else {
+    // Last slice, leftover
+    return _roots_count % _max_size_in_elems;
+  }
+}
+
+size_t HeapRootSegments::segment_offset(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  return _base_offset + seg_idx * _max_size_in_bytes;
+}
+
+ArchiveWorkers::ArchiveWorkers() :
+        _end_semaphore(0),
+        _num_workers(max_workers()),
+        _started_workers(0),
+        _finish_tokens(0),
+        _state(UNUSED),
+        _task(nullptr) {}
+
+ArchiveWorkers::~ArchiveWorkers() {
+  assert(AtomicAccess::load(&_state) != WORKING, "Should not be working");
+}
+
+int ArchiveWorkers::max_workers() {
+  // The pool is used for short-lived bursty tasks. We do not want to spend
+  // too much time creating and waking up threads unnecessarily. Plus, we do
+  // not want to overwhelm large machines. This is why we want to be very
+  // conservative about the number of workers actually needed.
+  return MAX2(0, log2i_graceful(os::active_processor_count()));
+}
+
+bool ArchiveWorkers::is_parallel() {
+  return _num_workers > 0;
+}
+
+void ArchiveWorkers::start_worker_if_needed() {
+  while (true) {
+    int cur = AtomicAccess::load(&_started_workers);
+    if (cur >= _num_workers) {
+      return;
+    }
+    if (AtomicAccess::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
+      new ArchiveWorkerThread(this);
+      return;
+    }
+  }
+}
+
+void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
+  assert(AtomicAccess::load(&_state) == UNUSED, "Should be unused yet");
+  assert(AtomicAccess::load(&_task) == nullptr, "Should not have running tasks");
+  AtomicAccess::store(&_state, WORKING);
+
+  if (is_parallel()) {
+    run_task_multi(task);
+  } else {
+    run_task_single(task);
+  }
+
+  assert(AtomicAccess::load(&_state) == WORKING, "Should be working");
+  AtomicAccess::store(&_state, SHUTDOWN);
+}
+
+void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
+  // Single thread needs no chunking.
+  task->configure_max_chunks(1);
+
+  // Execute the task ourselves, as there are no workers.
+  task->work(0, 1);
+}
+
+void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
+  // Multiple threads can work with multiple chunks.
+  task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
+
+  // Set up the run and publish the task. Issue one additional finish token
+  // to cover the semaphore shutdown path, see below.
+  AtomicAccess::store(&_finish_tokens, _num_workers + 1);
+  AtomicAccess::release_store(&_task, task);
+
+  // Kick off pool startup by starting a single worker, and proceed
+  // immediately to executing the task locally.
+  start_worker_if_needed();
+
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
+  task->run();
+
+  // Done executing task locally, wait for any remaining workers to complete.
+  // Once all workers report, we can proceed to termination. To do this safely,
+  // we need to make sure every worker has left. A spin-wait alone would suffice,
+  // but we do not want to burn cycles on it. A semaphore alone would not be safe,
+  // since workers can still be inside it as we proceed from wait here. So we block
+  // on semaphore first, and then spin-wait for all workers to terminate.
+  _end_semaphore.wait();
+  SpinYield spin;
+  while (AtomicAccess::load(&_finish_tokens) != 0) {
+    spin.wait();
+  }
+
+  OrderAccess::fence();
+
+  assert(AtomicAccess::load(&_finish_tokens) == 0, "All tokens are consumed");
+}
+
+void ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
+
+  ArchiveWorkerTask* task = AtomicAccess::load_acquire(&_task);
+  task->run();
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
+  // Signal the pool the work is complete, and we are exiting.
+  // Worker cannot do anything else with the pool after this.
+  if (AtomicAccess::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
+    // Last worker leaving. Notify the pool it can unblock to spin-wait.
+    // Then consume the last token and leave.
+    _end_semaphore.signal();
+    int last = AtomicAccess::sub(&_finish_tokens, 1, memory_order_relaxed);
+    assert(last == 0, "Should be");
+  }
+}
+
+void ArchiveWorkerTask::run() {
+  while (true) {
+    int chunk = AtomicAccess::load(&_chunk);
+    if (chunk >= _max_chunks) {
+      return;
+    }
+    if (AtomicAccess::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+      assert(0 <= chunk && chunk < _max_chunks, "Sanity");
+      work(chunk, _max_chunks);
+    }
+  }
+}
+
+void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
+  if (_max_chunks == 0) {
+    _max_chunks = max_chunks;
+  }
+}
+
+ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
+  set_name("ArchiveWorkerThread");
+  if (os::create_thread(this, os::os_thread)) {
+    os::start_thread(this);
+  } else {
+    vm_exit_during_initialization("Unable to create archive worker",
+                                  os::native_thread_creation_failed_msg());
+  }
+}
+
+void ArchiveWorkerThread::run() {
+  // Avalanche startup: each worker starts two others.
+  _pool->start_worker_if_needed();
+  _pool->start_worker_if_needed();
+
+  // Set ourselves up.
+  os::set_priority(this, NearMaxPriority);
+
+  // Work.
+  _pool->run_as_worker();
+}
+
+void ArchiveWorkerThread::post_run() {
+  this->NamedThread::post_run();
+  delete this;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.hpp"
@@ -37,10 +37,11 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 void*       Disassembler::_library               = nullptr;
 bool        Disassembler::_tried_to_load_library = false;
@@ -189,7 +190,7 @@ class decode_env {
     }
   };
 
-  typedef ResourceHashtable<
+  typedef HashTable<
       address, SourceFileInfo,
       15889,      // prime number
       AnyObj::C_HEAP> SourceFileInfoTable;
@@ -596,7 +597,7 @@ void decode_env::print_address(address adr) {
       if (desc != nullptr) {
         st->print("Stub::%s", desc->name());
         if (desc->begin() != adr) {
-          st->print(INTX_FORMAT_W(+) " " PTR_FORMAT, adr - desc->begin(), p2i(adr));
+          st->print("%+zd " PTR_FORMAT, adr - desc->begin(), p2i(adr));
         } else if (WizardMode) {
           st->print(" " PTR_FORMAT, p2i(adr));
         }
@@ -606,10 +607,27 @@ void decode_env::print_address(address adr) {
       return;
     }
 
+    address card_table_base = nullptr;
     BarrierSet* bs = BarrierSet::barrier_set();
-    if (bs->is_a(BarrierSet::CardTableBarrierSet) &&
-        adr == ci_card_table_address_as<address>()) {
-      st->print("word_map_base");
+#if INCLUDE_G1GC
+    if (bs->is_a(BarrierSet::G1BarrierSet)) {
+      G1BarrierSet* g1bs = barrier_set_cast<G1BarrierSet>(bs);
+      card_table_base = g1bs->card_table()->byte_map_base();
+    } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+    if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+      ShenandoahBarrierSet* sbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+      if (sbs->card_table() != nullptr) {
+        card_table_base = sbs->card_table()->byte_map_base();
+      }
+    } else
+#endif
+    if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+      card_table_base = ci_card_table_address_as<address>();
+    }
+    if (card_table_base != nullptr && adr == card_table_base) {
+      st->print("card_table_base");
       if (WizardMode) st->print(" " INTPTR_FORMAT, p2i(adr));
       return;
     }
@@ -785,13 +803,13 @@ bool Disassembler::load_library(outputStream* st) {
   os::jvm_path(buf, sizeof(buf));
   int jvm_offset = -1;
   int lib_offset = -1;
-#ifdef STATIC_BUILD
-  char* p = strrchr(buf, '/');
-  *p = '\0';
-  strcat(p, "/lib/");
-  lib_offset = jvm_offset = (int)strlen(buf);
-#else
-  {
+
+  if (is_vm_statically_linked()) {
+    char* p = strrchr(buf, '/');
+    *p = '\0';
+    strcat(p, "/lib/");
+    lib_offset = jvm_offset = (int)strlen(buf);
+  } else {
     // Match "libjvm" instead of "jvm" on *nix platforms. Creates better matches.
     // Match "[lib]jvm[^/]*" in jvm_path.
     const char* base = buf;
@@ -805,7 +823,6 @@ bool Disassembler::load_library(outputStream* st) {
     if (p != nullptr) jvm_offset = p - base + 3; // this points to 'j' in libjvm.
 #endif
   }
-#endif
 
   // Find the disassembler shared library.
   // Search for several paths derived from libjvm, in this order:

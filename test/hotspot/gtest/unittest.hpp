@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 #ifndef UNITTEST_HPP
 #define UNITTEST_HPP
 
-#include <stdlib.h>
+#include "cppstdlib/cstdlib.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 #include <stdio.h>
 
 #define GTEST_DONT_DEFINE_TEST 1
@@ -49,8 +51,10 @@
 #undef F2
 
 #include "utilities/vmassert_uninstall.hpp"
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #ifdef UNDEFINED_Log
@@ -158,5 +162,23 @@ extern void gtest_exit_from_child_vm(int num);
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
+
+#define TEST_VM_CRASH_SIGNAL(category, name, signame)               \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    gtest_exit_from_child_vm(0);                                    \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::ExitedWithCode(1),                       \
+                "signaled: " signame);                              \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
+
 
 #endif // UNITTEST_HPP

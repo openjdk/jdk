@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
-#include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
-#include "oops/resolvedFieldEntry.hpp"
-#include "oops/resolvedIndyEntry.hpp"
-#include "oops/resolvedMethodEntry.hpp"
+#include "oops/methodData.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
@@ -57,9 +52,9 @@ class BytecodePrinter {
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
   int       _flags;
-  bool      _is_linked;
+  bool      _use_cp_cache;
 
-  bool      is_linked() const        { return _is_linked; }
+  bool      use_cp_cache() const        { return _use_cp_cache; }
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
   int       get_index_u1()           { return *(address)_next_pc++; }  // returns 0x00 - 0xff as an int
@@ -74,7 +69,7 @@ class BytecodePrinter {
   bool      is_wide() const          { return _is_wide; }
   Bytecodes::Code raw_code() const   { return Bytecodes::Code(_code); }
   ConstantPool* constants() const    { return method()->constants(); }
-  ConstantPoolCache* cpcache() const { assert(is_linked(), "must be"); return constants()->cache(); }
+  ConstantPoolCache* cpcache() const { assert(use_cp_cache(), "must be"); return constants()->cache(); }
 
   void      print_constant(int i, outputStream* st);
   void      print_cpcache_entry(int cpc_index, outputStream* st);
@@ -83,20 +78,27 @@ class BytecodePrinter {
   void      print_field_or_method(int cp_index, outputStream* st);
   void      print_dynamic(int cp_index, outputStream* st);
   void      print_attributes(int bci, outputStream* st);
-  void      bytecode_epilog(int bci, outputStream* st);
+  void      print_method_data_at(int bci, outputStream* st);
 
  public:
-  BytecodePrinter(int flags = 0) {
-    _is_wide = false;
-    _code = Bytecodes::_illegal;
-    _flags = flags;
+  BytecodePrinter(int flags = 0) : _is_wide(false), _code(Bytecodes::_illegal), _flags(flags) {}
+
+#ifndef PRODUCT
+  BytecodePrinter(Method* prev_method) : BytecodePrinter(0) {
+    _current_method = prev_method;
   }
 
   // This method is called while executing the raw bytecodes, so none of
   // the adjustments that BytecodeStream performs applies.
   void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
-    if (_current_method != method()) {
+    bool method_changed = _current_method != method();
+    _current_method = method();
+    _use_cp_cache = method->constants()->cache() != nullptr;
+    assert(method->method_holder()->is_linked(),
+           "this function must be called on methods that are already executing");
+
+    if (method_changed) {
       // Note 1: This code will not work as expected with true MT/MP.
       //         Need an explicit lock or a different solution.
       // It is possible for this block to be skipped, if a garbage
@@ -104,12 +106,9 @@ class BytecodePrinter {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
-      _current_method = method();
-      _is_linked = method->method_holder()->is_linked();
-      assert(_is_linked, "this function must be called on methods that are already executing");
     }
     Bytecodes::Code code;
     if (is_wide()) {
@@ -119,34 +118,41 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
-     int bci = (int)(bcp - method->code_base());
-    st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
-    if (Verbose) {
-      st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
-           BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
-    } else {
-      st->print("%8d  %4d  %s",
-           BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
-    }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
-    print_attributes(bci, st);
+    // Trace each bytecode unless we're truncating the tracing output, then only print the first
+    // bytecode in every method as well as returns/throws that pop control flow
+    if (!TraceBytecodesTruncated || method_changed ||
+        code == Bytecodes::_athrow ||
+        code == Bytecodes::_return_register_finalizer ||
+        (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
+      int bci = (int)(bcp - method->code_base());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
+      if (Verbose) {
+        st->print("%8zu  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+            BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
+      } else {
+        st->print("%8zu  %4d  %s",
+            BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
+      }
+      print_attributes(bci, st);
+    }
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     _is_wide = (code == Bytecodes::_wide);
     _code = Bytecodes::_illegal;
 
-#ifndef PRODUCT
     if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
       TraceBytecodes = false;
     }
-#endif
   }
+#endif
 
-  // Used for Method*::print_codes().  The input bcp comes from
+  // Used for Method::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
-    _is_linked = method->method_holder()->is_linked();
+    // This may be called during linking after bytecodes are rewritten to point to the cpCache.
+    _use_cp_cache = method->constants()->cache() != nullptr;
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
@@ -167,38 +173,45 @@ class BytecodePrinter {
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
     print_attributes(bci, st);
-    bytecode_epilog(bci, st);
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_DATA)) {
+      print_method_data_at(bci, st);
+    }
   }
 };
 
-// We need a global instance to keep track of the states when the bytecodes
-// are executed. Access by multiple threads are controlled by ttyLocker.
-static BytecodePrinter _interpreter_printer;
+#ifndef PRODUCT
+// We need a global instance to keep track of the method being printed so we can report that
+// the method has changed. If this method is redefined and removed, that's ok because the method passed
+// in won't match, and this will print the method passed in again. Racing threads changing this global
+// will result in reprinting the method passed in again.
+static Method* _method_currently_being_printed = nullptr;
 
 void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
-    ttyLocker ttyl;  // 5065316: keep the following output coherent
-    // The ttyLocker also prevents races between two threads
-    // trying to use the single instance of BytecodePrinter.
-    //
-    // There used to be a leaf mutex here, but the ttyLocker will
-    // work just as well, as long as the printing operations never block.
-    _interpreter_printer.trace(method, bcp, tos, tos2, st);
+    BytecodePrinter printer(AtomicAccess::load_acquire(&_method_currently_being_printed));
+    stringStream buf;
+    printer.trace(method, bcp, tos, tos2, &buf);
+    st->print("%s", buf.freeze());
+    // Save method currently being printed to detect when method printing changes.
+    AtomicAccess::release_store(&_method_currently_being_printed, method());
   }
 }
+#endif
 
-void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
+void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags, bool buffered) {
   BytecodePrinter method_printer(flags);
   BytecodeStream s(method);
   s.set_interval(from, to);
 
-  // Keep output to st coherent: collect all lines and print at once.
   ResourceMark rm;
   stringStream ss;
+  outputStream* out = buffered ? &ss : st;
   while (s.next() >= 0) {
-    method_printer.trace(method, s.bcp(), &ss);
+    method_printer.trace(method, s.bcp(), out);
   }
-  st->print("%s", ss.as_string());
+  if (buffered) {
+    st->print("%s", ss.as_string());
+  }
 }
 
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
@@ -290,7 +303,7 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
   if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
     print_bsm(cp_index, st);
 
-    if (is_linked()) {
+    if (use_cp_cache()) {
       ResolvedIndyEntry* indy_entry = constants()->resolved_indy_entry_at(indy_index);
       st->print("  ResolvedIndyEntry: ");
       indy_entry->print_on(st);
@@ -336,7 +349,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
-  if (Bytecodes::length_for(code) == 1) {
+  // Also skip this if we're truncating bytecode output
+  if (TraceBytecodesTruncated || Bytecodes::length_for(code) == 1) {
     st->cr();
     return;
   }
@@ -353,7 +367,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
-          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_index_u1();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
@@ -368,7 +382,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
-          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          assert(use_cp_cache(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_native_index_u2();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
@@ -498,7 +512,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_getfield:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int field_index = get_native_index_u2();
           cp_index = cpcache()->resolved_field_entry_at(field_index)->constant_pool_index();
         } else {
@@ -513,7 +527,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokestatic:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int method_index = get_native_index_u2();
           ResolvedMethodEntry* method_entry = cpcache()->resolved_method_entry_at(method_index);
           cp_index = method_entry->constant_pool_index();
@@ -521,7 +535,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 
           if (raw_code() == Bytecodes::_invokehandle &&
               ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
-            assert(is_linked(), "invokehandle is only in rewritten methods");
+            assert(use_cp_cache(), "invokehandle is only in rewritten methods");
             method_entry->print_on(st);
             if (method_entry->has_appendix()) {
               st->print("  appendix: ");
@@ -538,7 +552,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokeinterface:
       {
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           int method_index = get_native_index_u2();
           cp_index = cpcache()->resolved_method_entry_at(method_index)->constant_pool_index();
         } else {
@@ -554,7 +568,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int indy_index;
         int cp_index;
-        if (is_linked()) {
+        if (use_cp_cache()) {
           indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
@@ -588,7 +602,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 }
 
 
-void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
+void BytecodePrinter::print_method_data_at(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
 

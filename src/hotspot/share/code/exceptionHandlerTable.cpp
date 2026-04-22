@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,7 +32,7 @@ void ExceptionHandlerTable::add_entry(HandlerTableEntry entry) {
     // not enough space => grow the table (amortized growth, double its size)
     guarantee(_size > 0, "no space allocated => cannot grow the table since it is part of nmethod");
     int new_size = _size * 2;
-    _table = REALLOC_RESOURCE_ARRAY(HandlerTableEntry, _table, _size, new_size);
+    _table = REALLOC_RESOURCE_ARRAY(_table, _size, new_size);
     _size = new_size;
   }
   assert(_length < _size, "sanity check");
@@ -179,7 +178,7 @@ void ImplicitExceptionTable::append( uint exec_off, uint cont_off ) {
     if (_size == 0) _size = 4;
     _size *= 2;
     uint new_size_in_elements = _size*2;
-    _data = REALLOC_RESOURCE_ARRAY(uint, _data, old_size_in_elements, new_size_in_elements);
+    _data = REALLOC_RESOURCE_ARRAY(_data, old_size_in_elements, new_size_in_elements);
   }
   *(adr(l)  ) = exec_off;
   *(adr(l)+1) = cont_off;

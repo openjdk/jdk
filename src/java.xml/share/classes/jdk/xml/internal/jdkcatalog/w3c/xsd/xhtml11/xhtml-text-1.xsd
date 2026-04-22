@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      Textual Content
+      This is the XML Schema Text module for XHTML
+
+      The Text module includes declarations for all core
+      text container elements and their attributes.
+    
+        +  block phrasal
+        +  block structural
+        +  inline phrasal
+        +  inline structural
+      
+      $Id: xhtml-text-1.xsd,v 1.2 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_textmodule"/>
+    </xs:annotation>
+    <xs:include schemaLocation="xhtml-blkphras-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Block Phrasal module
+        Elements defined here:
+
+          * address, blockquote, pre, h1, h2, h3, h4, h5, h6
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+    <xs:include schemaLocation="xhtml-blkstruct-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Block Structural module 
+        Elements defined here:
+
+          * div, p
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+    <xs:include schemaLocation="xhtml-inlphras-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Inline Phrasal module
+        Elements defined here:
+
+          * abbr, acronym, cite, code, dfn, em, kbd, q, samp, strong, var
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+    <xs:include schemaLocation="xhtml-inlstruct-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Inline Structural module 
+        Elements defined here:
+
+          * br,span
+    </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+</xs:schema>

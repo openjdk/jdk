@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ public class TestDSA2 {
     // NOTE: need to explictly specify provider since the more
     // preferred provider SunPKCS11 provider only supports up
     // 1024 bits.
-    private static final String PROV = "SUN";
+    private static final String PROV =
+                System.getProperty("test.provider.name", "SUN");
 
     private static final String[] SIG_ALGOS = {
         "NONEwithDSA",

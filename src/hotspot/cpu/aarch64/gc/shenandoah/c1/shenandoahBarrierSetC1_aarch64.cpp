@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #define __ masm->masm()->
 
@@ -41,8 +41,6 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
 
-  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, rscratch2);
-
   if (UseCompressedOops) {
     __ encode_heap_oop(tmp1, cmpval);
     cmpval = tmp1;
@@ -52,14 +50,10 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
 
   ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm->masm(), addr, cmpval, newval, /*acquire*/ true, /*release*/ true, /*is_cae*/ false, result);
 
-  if (CompilerConfig::is_c1_only_no_jvmci()) {
-    // The membar here is necessary to prevent reordering between the
-    // release store in the CAS above and a subsequent volatile load.
-    // However for tiered compilation C1 inserts a full barrier before
-    // volatile loads which means we don't need an additional barrier
-    // here (see LIRGenerator::volatile_field_load()).
-    __ membar(__ AnyAny);
-  }
+  // The membar here is necessary to prevent reordering between the
+  // release store in the CAS above and a subsequent volatile load.
+  // See also: LIR_Assembler::casw, LIR_Assembler::casl.
+  __ membar(__ AnyAny);
 }
 
 #undef __
@@ -88,6 +82,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       LIR_Opr result = gen->new_register(T_INT);
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
+
+      if (ShenandoahCardBarrier) {
+        post_barrier(access, access.resolved_addr(), new_value.result());
+      }
       return result;
     }
   }
@@ -102,10 +100,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   value.load_item();
   LIR_Opr value_opr = value.result();
 
-  if (access.is_oop()) {
-    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
-  }
-
   assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");
   LIR_Opr tmp = gen->new_register(T_INT);
   __ xchg(access.resolved_addr(), value_opr, result, tmp);
@@ -118,6 +112,9 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
                   result /* pre_val */);
+    }
+    if (ShenandoahCardBarrier) {
+      post_barrier(access, access.resolved_addr(), result);
     }
   }
 

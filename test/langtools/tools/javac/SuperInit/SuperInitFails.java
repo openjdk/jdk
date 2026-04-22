@@ -3,7 +3,6 @@
  * @bug 8194743
  * @summary Permit additional statements before this/super in constructors
  * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics SuperInitFails.java
- * @enablePreview
  */
 import java.util.concurrent.atomic.AtomicReference;
 public class SuperInitFails extends AtomicReference<Object> implements Iterable<Object> {
@@ -91,7 +90,7 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
     }
 
     public SuperInitFails(short[] x) {
-        this.x = x.length;              // this should FAIL
+        this.x++;                       // this should FAIL
         super();
     }
 
@@ -145,16 +144,6 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
         return null;
     }
 
-    public SuperInitFails(short[][] x) {
-        class Foo {
-            Foo() {
-                SuperInitFails.this.hashCode();
-            }
-        };
-        new Foo();                      // this should FAIL
-        super();
-    }
-
     public SuperInitFails(float[][] x) {
         Runnable r = () -> {
             super();                    // this should FAIL
@@ -167,5 +156,56 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
 
     public SuperInitFails(long[][] z) {
         super(new Inner1());            // this should FAIL
+    }
+
+    public static class Inner2 {
+        int x;
+    }
+    public static class Inner3 extends Inner2 {
+        int y;
+        Inner3(byte z) {
+            x = z;                      // this should FAIL
+            super();
+        }
+        Inner3(short z) {
+            this.x = z;                 // this should FAIL
+            super();
+        }
+        Inner3(char z) {
+            Inner3.this.x = z;          // this should FAIL
+            super();
+        }
+        Inner3(int z) {
+            super.x = z;                // this should FAIL
+            super();
+        }
+    }
+
+    public SuperInitFails(double[][] x) {
+        Runnable r = () -> this.x = 7;  // this should FAIL
+        super();
+    }
+
+    public static class Inner4 {
+        Inner4() {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;         // this should FAIL
+                        super();
+                    }
+                    A(int x) {
+                        {
+                            this();     // this should FAIL
+                        }
+                    }
+                    A(char x) {
+                        super();
+                        this();         // this should FAIL
+                    }
+                }
+            };
+            super();
+        };
     }
 }

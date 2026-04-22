@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.SecureLookupSupplier;
-import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.linker.support.Lookup;
 
 /**
@@ -82,10 +78,6 @@ import jdk.dynalink.linker.support.Lookup;
  * every request.
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
-    @SuppressWarnings("removal")
-    private static final AccessControlContext GET_LOOKUP_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(
-                    SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     private final Executable target;
     private final MethodType type;
@@ -127,10 +119,7 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
 
     @Override
     MethodHandle getTarget(final CallSiteDescriptor desc) {
-        @SuppressWarnings("removal")
-        final MethodHandles.Lookup lookup = AccessController.doPrivileged(
-                (PrivilegedAction<MethodHandles.Lookup>)desc::getLookup,
-                GET_LOOKUP_CONTEXT);
+        final MethodHandles.Lookup lookup = desc.getLookup();
 
         if(target instanceof Method) {
             final MethodHandle mh = unreflect(lookup, (Method)target);

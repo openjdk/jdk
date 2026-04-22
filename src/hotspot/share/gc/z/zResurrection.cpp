@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zResurrection.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
@@ -38,5 +37,5 @@ void ZResurrection::unblock() {
   // No need for anything stronger than a relaxed store here.
   // The preceding handshake makes sure that all non-strong
   // oops have already been healed at this point.
-  Atomic::store(&_blocked, false);
+  AtomicAccess::store(&_blocked, false);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthUI;
 import sun.swing.DefaultLookup;
-import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
 
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
@@ -647,6 +646,22 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 TransferHandler.getCopyAction());
         map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
                 TransferHandler.getPasteAction());
+
+        if (getComponent() instanceof JPasswordField) {
+            // Edit the action map for Password Field.  This map provides
+            // same actions for double mouse click and
+            // and for triple mouse click (see bugs 4231444, 8354646).
+
+            if (map.get(DefaultEditorKit.selectWordAction) != null) {
+                map.remove(DefaultEditorKit.selectWordAction);
+
+                Action a = map.get(DefaultEditorKit.selectLineAction);
+                if (a != null) {
+                    map.put(DefaultEditorKit.selectWordAction, a);
+                }
+            }
+        }
+
         return map;
     }
 
@@ -1013,14 +1028,17 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
 
     /**
-     * Gets the allocation to give the root View.  Due
-     * to an unfortunate set of historical events this
-     * method is inappropriately named.  The Rectangle
-     * returned has nothing to do with visibility.
+     * Gets the allocation (that is the allocated size) for the root view.
+     * <p>
+     * The returned rectangle is unrelated to visibility.
+     * It is used to set the size of the root view.
+     * <p>
      * The component must have a non-zero positive size for
      * this translation to be computed.
      *
      * @return the bounding box for the root view
+     * @see View#paint
+     * @see View#setSize
      */
     protected Rectangle getVisibleEditorRect() {
         Rectangle alloc = editor.getBounds();
@@ -2215,24 +2233,19 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         }
     }
 
+    private static volatile DragListener dragListenerSingleton;
+
     private static DragListener getDragListener() {
         synchronized(DragListener.class) {
-            DragListener listener =
-                (DragListener)AppContext.getAppContext().
-                    get(DragListener.class);
-
-            if (listener == null) {
-                listener = new DragListener();
-                AppContext.getAppContext().put(DragListener.class, listener);
+            if (dragListenerSingleton == null) {
+                dragListenerSingleton = new DragListener();
             }
-
-            return listener;
+            return dragListenerSingleton;
         }
     }
 
     /**
      * Listens for mouse events for the purposes of detecting drag gestures.
-     * BasicTextUI will maintain one of these per AppContext.
      */
     static class DragListener extends MouseInputAdapter
                               implements BeforeDrag {

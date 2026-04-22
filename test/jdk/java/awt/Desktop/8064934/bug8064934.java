@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,23 +32,16 @@
  * @build jdk.test.lib.Platform
  * @run main bug8064934
  */
-import jdk.test.lib.Platform;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 public class bug8064934 {
     private static final String NO_ASSOCIATION_ERROR_MESSAGE = "Error message: No application is associated with" +
             " the specified file for this operation.";
 
     public static void main(String[] args) {
-        // This test is intended only for Windows
-        if (!AccessController.doPrivileged((PrivilegedAction<Boolean>) Platform::isWindows)) {
-            System.out.println("The test is for Windows platform only");
-            return;
-        }
 
         // Test whether Desktop is supported of not
         if (!Desktop.isDesktopSupported()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -306,10 +305,10 @@ static Node* clone_node(Node* def, Block *b, Compile* C) {
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
       // Bailout without retry
-      assert(false, "RA Split failed: attempt to clone node with anti_dependence");
-      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+      assert(C->failure_is_artificial(), "RA Split failed: attempt to clone node with anti_dependence");
+      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence" DEBUG_ONLY(COMMA true));
     }
-    return 0;
+    return nullptr;
   }
   return def->clone();
 }
@@ -341,7 +340,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
       Node *in_spill;
       if (in->ideal_reg() != Op_RegFlags) {
         in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
-        if (!in_spill) { return 0; } // Bailed out
+        if (!in_spill) { return nullptr; } // Bailed out
         insert_proj(b_def, idx_def, in_spill, maxlrg++);
         if (b_def == b) {
           insidx++;
@@ -357,7 +356,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
                  " range and defining node %d: %s may not be rematerialized.",
                  def->_idx, def->Name(), in->_idx, in->Name());
           C->record_method_not_compilable("attempted to spill a non-spillable item with RegFlags input");
-          return 0; // Bailed out
+          return nullptr; // Bailed out
         }
       }
     }
@@ -366,7 +365,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   Node *spill = clone_node(def, b, C);
   if (spill == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
     // Check when generating nodes
-    return 0;
+    return nullptr;
   }
 
   // See if any inputs are currently being spilled, and take the
@@ -477,7 +476,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
         return true;          // Found 1st use!
       }
     }
-    if (n->out_RegMask().is_NotEmpty()) {
+    if (!n->out_RegMask().is_empty()) {
       return false;
     }
   }
@@ -495,7 +494,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
 uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
-  Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
+  Compile::TracePhase tp(_t_regAllocSplit);
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);
@@ -521,7 +520,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Gather info on which LRG's are spilling, and build maps
   for (bidx = 1; bidx < maxlrg; bidx++) {
     if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
-      assert(!lrgs(bidx).mask().is_AllStack(),"AllStack should color");
+      assert(!lrgs(bidx).mask().is_infinite_stack(), "Infinite stack mask should color");
       lrg2reach[bidx] = spill_cnt;
       spill_cnt++;
       lidxs.append(bidx);
@@ -1038,8 +1037,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // Need special logic to handle bound USES. Insert a split at this
             // bound use if we can't rematerialize the def, or if we need the
             // split to form a misaligned pair.
-            if( !umask.is_AllStack() &&
-                (int)umask.Size() <= lrgs(useidx).num_regs() &&
+            if (!umask.is_infinite_stack() &&
+                (int)umask.size() <= lrgs(useidx).num_regs() &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure
@@ -1127,8 +1126,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 // If this node is already a SpillCopy, just patch the edge
                 // except the case of spilling to stack.
                 if( n->is_SpillCopy() ) {
-                  RegMask tmp_rm(umask);
-                  tmp_rm.SUBTRACT(Matcher::STACK_ONLY_mask);
+                  ResourceMark rm(C->regmask_arena());
+                  RegMask tmp_rm(umask, C->regmask_arena());
+                  tmp_rm.subtract(Matcher::STACK_ONLY_mask);
                   if( dmask.overlap(tmp_rm) ) {
                     if( def != n->in(inpidx) ) {
                       n->set_req(inpidx, def);

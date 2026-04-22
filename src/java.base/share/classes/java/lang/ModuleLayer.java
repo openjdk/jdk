@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,7 +45,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.javac.Restricted;
 import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
@@ -53,8 +53,8 @@ import jdk.internal.module.ServicesCatalog;
 import jdk.internal.misc.CDS;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.util.SecurityConstants;
 
 /**
  * A layer of modules in the Java virtual machine.
@@ -146,6 +146,7 @@ import sun.security.util.SecurityConstants;
  * @see Module#getLayer()
  */
 
+@AOTSafeClassInitializer
 public final class ModuleLayer {
 
     // the empty layer (may be initialized from the CDS archive)
@@ -254,6 +255,12 @@ public final class ModuleLayer {
          * module {@code target}. This method is a no-op if {@code source}
          * already exports the package to at least {@code target}.
          *
+         * <p> Exporting a package with this method does not allow the target module to
+         * {@linkplain Field#set(Object, Object) reflectively set} or {@linkplain
+         * java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain a method
+         * handle with write access} to a public final field declared in a public class
+         * in the package.
+         *
          * @param  source
          *         The source module
          * @param  pn
@@ -279,6 +286,11 @@ public final class ModuleLayer {
          * Updates module {@code source} in the layer to open a package to
          * module {@code target}. This method is a no-op if {@code source}
          * already opens the package to at least {@code target}.
+         *
+         * <p> Opening a package with this method does not allow the target module
+         * to {@linkplain Field#set(Object, Object) reflectively set} or {@linkplain
+         * java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain a method
+         * handle with write access} to a final field declared in a class in the package.
          *
          * @param  source
          *         The source module
@@ -323,7 +335,7 @@ public final class ModuleLayer {
         public Controller enableNativeAccess(Module target) {
             ensureInLayer(target);
             Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,
-                "enableNativeAccess");
+                "enableNativeAccess", false);
             target.implAddEnableNativeAccess();
             return this;
         }
@@ -359,10 +371,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithOneLoader} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -401,10 +409,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithManyLoaders} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -440,9 +444,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModules} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      */
     public ModuleLayer defineModules(Configuration cf,
                                      Function<String, ClassLoader> clf) {
@@ -490,10 +491,6 @@ public final class ModuleLayer {
      * a module named "{@code java.base}", or a module contains a package named
      * "{@code java}" or a package with a name starting with "{@code java.}". </p>
      *
-     * <p> If there is a security manager then the class loader created by
-     * this method will load classes and resources with privileges that are
-     * restricted by the calling context of this method. </p>
-     *
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
@@ -510,10 +507,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If all modules cannot be defined to the same class loader for any
      *         of the reasons listed above
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -523,9 +516,6 @@ public final class ModuleLayer {
     {
         List<ModuleLayer> parents = List.copyOf(parentLayers);
         checkConfiguration(cf, parents);
-
-        checkCreateClassLoaderPermission();
-        checkGetClassLoaderPermission();
 
         try {
             Loader loader = new Loader(cf.modules(), parentLoader);
@@ -563,10 +553,6 @@ public final class ModuleLayer {
      * methods) in the module defined to the class loader before searching
      * the parent class loader. </p>
      *
-     * <p> If there is a security manager then the class loaders created by
-     * this method will load classes and resources with privileges that are
-     * restricted by the calling context of this method. </p>
-     *
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
@@ -586,11 +572,6 @@ public final class ModuleLayer {
      *         named "{@code java}" or a package with a name starting with
      *         "{@code java.}"
      *
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
-     *
      * @see #findLoader
      */
     public static Controller defineModulesWithManyLoaders(Configuration cf,
@@ -599,9 +580,6 @@ public final class ModuleLayer {
     {
         List<ModuleLayer> parents = List.copyOf(parentLayers);
         checkConfiguration(cf, parents);
-
-        checkCreateClassLoaderPermission();
-        checkGetClassLoaderPermission();
 
         LoaderPool pool = new LoaderPool(cf, parents, parentLoader);
         try {
@@ -673,9 +651,6 @@ public final class ModuleLayer {
      *         configuration of the parent layers, including order
      * @throws LayerInstantiationException
      *         If creating the layer fails for any of the reasons listed above
-     * @throws SecurityException
-     *         If {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      */
     public static Controller defineModules(Configuration cf,
                                            List<ModuleLayer> parentLayers,
@@ -684,8 +659,6 @@ public final class ModuleLayer {
         List<ModuleLayer> parents = List.copyOf(parentLayers);
         checkConfiguration(cf, parents);
         Objects.requireNonNull(clf);
-
-        checkGetClassLoaderPermission();
 
         // The boot layer is checked during module system initialization
         if (boot() != null) {
@@ -722,20 +695,6 @@ public final class ModuleLayer {
             }
             index++;
         }
-    }
-
-    private static void checkCreateClassLoaderPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(SecurityConstants.CREATE_CLASSLOADER_PERMISSION);
-    }
-
-    private static void checkGetClassLoaderPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
     }
 
     /**
@@ -906,11 +865,6 @@ public final class ModuleLayer {
      * parent} layers are searched in the manner specified by {@link
      * #findModule(String) findModule}.
      *
-     * <p> If there is a security manager then its {@code checkPermission}
-     * method is called with a {@code RuntimePermission("getClassLoader")}
-     * permission to check that the caller is allowed to get access to the
-     * class loader. </p>
-     *
      * @apiNote This method does not return an {@code Optional<ClassLoader>}
      * because `null` must be used to represent the bootstrap class loader.
      *
@@ -921,8 +875,6 @@ public final class ModuleLayer {
      *
      * @throws IllegalArgumentException if a module of the given name is not
      *         defined in this layer or any parent of this layer
-     *
-     * @throws SecurityException if denied by the security manager
      */
     public ClassLoader findLoader(String name) {
         Optional<Module> om = findModule(name);

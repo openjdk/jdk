@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.Objects;
 
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -49,58 +48,30 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * thrown.
  * <p>
  * This class deflates sequences of bytes into ZLIB compressed data format.
- * The input byte sequence is provided in either byte array or byte buffer,
+ * The input byte sequence is provided in either a byte array or a {@link ByteBuffer},
  * via one of the {@code setInput()} methods. The output byte sequence is
- * written to the output byte array or byte buffer passed to the
+ * written to the output byte array or {@code ByteBuffer} passed to the
  * {@code deflate()} methods.
  * <p>
- * The following code fragment demonstrates a trivial compression
- * and decompression of a string using {@code Deflater} and
- * {@code Inflater}.
- *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah";
- *     byte[] input = inputString.getBytes("UTF-8");
- *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *     compresser.end();
- *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
- * }
- * </pre></blockquote>
+ * To release the resources used by a {@code Deflater}, an application must close it
+ * by invoking its {@link #end()} or {@link #close()} method.
  *
  * @apiNote
- * To release resources used by this {@code Deflater}, the {@link #end()} method
- * should be called explicitly. Subclasses are responsible for the cleanup of resources
- * acquired by the subclass. Subclasses that override {@link #finalize()} in order
- * to perform cleanup should be modified to use alternative cleanup mechanisms such
- * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
+ * This class implements {@link AutoCloseable} to facilitate its usage with
+ * {@code try}-with-resources statement. The {@linkplain Deflater#close() close() method} simply
+ * calls {@code end()}.
+ *
+ * <p>
+ * The following code fragment demonstrates a trivial compression
+ * and decompression of a string using {@code Deflater} and {@code Inflater}.
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @see         Inflater
  * @author      David Connelly
  * @since 1.1
  */
 
-public class Deflater {
+public class Deflater implements AutoCloseable {
 
     private final DeflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
@@ -298,6 +269,7 @@ public class Deflater {
      * @param dictionary the dictionary data bytes
      * @param off the start offset of the data
      * @param len the length of the data
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
@@ -316,6 +288,7 @@ public class Deflater {
      * in order to get the Adler-32 value of the dictionary required for
      * decompression.
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
@@ -334,8 +307,11 @@ public class Deflater {
      * return, its position will equal its limit.
      *
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
+     *
+     * @since 11
      */
     public void setDictionary(ByteBuffer dictionary) {
         synchronized (zsRef) {
@@ -345,7 +321,7 @@ public class Deflater {
             if (dictionary.isDirect()) {
                 NIO_ACCESS.acquireSession(dictionary);
                 try {
-                    long address = ((DirectBuffer) dictionary).address();
+                    long address = NIO_ACCESS.getBufferAddress(dictionary);
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseSession(dictionary);
@@ -464,6 +440,7 @@ public class Deflater {
      * @param len the maximum number of bytes of compressed data
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int deflate(byte[] output, int off, int len) {
         return deflate(output, off, len, NO_FLUSH);
@@ -483,6 +460,7 @@ public class Deflater {
      * @param output the buffer for the compressed data
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int deflate(byte[] output) {
         return deflate(output, 0, output.length, NO_FLUSH);
@@ -503,6 +481,7 @@ public class Deflater {
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Deflater is closed
      * @since 11
      */
     public int deflate(ByteBuffer output) {
@@ -558,6 +537,7 @@ public class Deflater {
      *         the output buffer
      *
      * @throws IllegalArgumentException if the flush mode is invalid
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.7
      */
     public int deflate(byte[] output, int off, int len, int flush) {
@@ -596,7 +576,7 @@ public class Deflater {
                 if (input.isDirect()) {
                     NIO_ACCESS.acquireSession(input);
                     try {
-                        long inputAddress = ((DirectBuffer) input).address();
+                        long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         result = deflateBufferBytes(zsRef.address(),
                             inputAddress + inputPos, inputRem,
                             output, off, len,
@@ -684,6 +664,7 @@ public class Deflater {
      *
      * @throws IllegalArgumentException if the flush mode is invalid
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Deflater is closed
      * @since 11
      */
     public int deflate(ByteBuffer output, int flush) {
@@ -719,7 +700,7 @@ public class Deflater {
                 if (output.isDirect()) {
                     NIO_ACCESS.acquireSession(output);
                     try {
-                        long outputAddress = ((DirectBuffer) output).address();
+                        long outputAddress = NIO_ACCESS.getBufferAddress(output);
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
                             outputAddress + outputPos, outputRem,
@@ -741,11 +722,11 @@ public class Deflater {
                 if (input.isDirect()) {
                     NIO_ACCESS.acquireSession(input);
                     try {
-                        long inputAddress = ((DirectBuffer) input).address();
+                        long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         if (output.isDirect()) {
                             NIO_ACCESS.acquireSession(output);
                             try {
-                                long outputAddress = outputPos + ((DirectBuffer) output).address();
+                                long outputAddress = outputPos + NIO_ACCESS.getBufferAddress(output);
                                 result = deflateBufferBuffer(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     outputAddress, outputRem,
@@ -770,7 +751,7 @@ public class Deflater {
                     if (output.isDirect()) {
                         NIO_ACCESS.acquireSession(output);
                         try {
-                            long outputAddress = ((DirectBuffer) output).address();
+                            long outputAddress = NIO_ACCESS.getBufferAddress(output);
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
                                 outputAddress + outputPos, outputRem,
@@ -809,8 +790,8 @@ public class Deflater {
     }
 
     /**
-     * Returns the ADLER-32 value of the uncompressed data.
-     * @return the ADLER-32 value of the uncompressed data
+     * {@return the ADLER-32 value of the uncompressed data}
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int getAdler() {
         synchronized (zsRef) {
@@ -830,6 +811,7 @@ public class Deflater {
      * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of uncompressed bytes input so far
+     * @throws IllegalStateException if the Deflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalIn() {
@@ -840,6 +822,7 @@ public class Deflater {
      * Returns the total number of uncompressed bytes input so far.
      *
      * @return the total (non-negative) number of uncompressed bytes input so far
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.5
      */
     public long getBytesRead() {
@@ -860,6 +843,7 @@ public class Deflater {
      * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of compressed bytes output so far
+     * @throws IllegalStateException if the Deflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalOut() {
@@ -870,6 +854,7 @@ public class Deflater {
      * Returns the total number of compressed bytes output so far.
      *
      * @return the total (non-negative) number of compressed bytes output so far
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.5
      */
     public long getBytesWritten() {
@@ -882,6 +867,7 @@ public class Deflater {
     /**
      * Resets deflater so that a new set of input data can be processed.
      * Keeps current compression level and strategy settings.
+     * @throws IllegalStateException if the Deflater is closed
      */
     public void reset() {
         synchronized (zsRef) {
@@ -896,23 +882,45 @@ public class Deflater {
     }
 
     /**
-     * Closes the compressor and discards any unprocessed input.
+     * Closes and releases the resources held by this {@code Deflater}
+     * and discards any unprocessed input.
+     * <p>
+     * If the {@code Deflater} is already closed then invoking this method has no effect.
      *
-     * This method should be called when the compressor is no longer
-     * being used. Once this method is called, the behavior of the
-     * Deflater object is undefined.
+     * @implSpec Subclasses should override this method to clean up the resources
+     * acquired by the subclass.
+     *
+     * @see #close()
      */
     public void end() {
         synchronized (zsRef) {
+            // check if already closed
+            if (zsRef.address() == 0) {
+                return;
+            }
             zsRef.clean();
             input = ZipUtils.defaultBuf;
+            inputArray = null;
         }
+    }
+
+    /**
+     * Closes and releases the resources held by this {@code Deflater}
+     * and discards any unprocessed input.
+     *
+     * @implSpec This method calls the {@link #end()} method.
+     * @since 25
+     */
+    @Override
+    public void close() {
+        end();
     }
 
     private void ensureOpen() {
         assert Thread.holdsLock(zsRef);
-        if (zsRef.address() == 0)
-            throw new NullPointerException("Deflater has been closed");
+        if (zsRef.address() == 0) {
+            throw new IllegalStateException("Deflater has been closed");
+        }
     }
 
     /**
@@ -956,10 +964,11 @@ public class Deflater {
      */
     static class DeflaterZStreamRef implements Runnable {
 
-        private long address;
+        private long address; // will be a non-zero value when the native resource is in use
         private final Cleanable cleanable;
 
         private DeflaterZStreamRef(Deflater owner, long addr) {
+            assert addr != 0 : "native address is 0";
             this.cleanable = (owner != null) ? CleanerFactory.cleaner().register(owner, this) : null;
             this.address = addr;
         }

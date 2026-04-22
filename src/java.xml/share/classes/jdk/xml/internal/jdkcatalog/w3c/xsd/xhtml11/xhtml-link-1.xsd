@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema Link Element module for XHTML
+      $Id: xhtml-link-1.xsd,v 1.2 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Link element
+    
+        * link
+    
+      This module declares the link element type and its attributes,
+      which could (in principle) be used to define document-level links
+      to external resources.
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_linkmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.link.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="charset" type="xh11d:Charset"/>
+        <xs:attribute name="href" type="xh11d:URI"/>
+        <xs:attribute name="hreflang" type="xh11d:LanguageCode"/>
+        <xs:attribute name="type" type="xh11d:ContentType"/>
+        <xs:attribute name="rel" type="xh11d:LinkTypes"/>
+        <xs:attribute name="rev" type="xh11d:LinkTypes"/>
+        <xs:attribute name="media" type="xh11d:MediaDesc"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.link.content">
+        <xs:sequence/>
+    </xs:group>
+    <xs:complexType name="xhtml.link.type">
+        <xs:group ref="xhtml.link.content"/>
+        <xs:attributeGroup ref="xhtml.link.attlist"/>
+    </xs:complexType>
+</xs:schema>
