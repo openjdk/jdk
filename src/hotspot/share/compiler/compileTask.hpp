@@ -235,6 +235,7 @@ public:
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
 
+  const char*  failure_reason() const { return _failure_reason; }
   void         set_failure_reason(const char* reason, bool on_C_heap = false) {
     _failure_reason = reason;
     _failure_reason_on_C_heap = on_C_heap;
