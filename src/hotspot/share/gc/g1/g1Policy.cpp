@@ -186,8 +186,22 @@ void G1Policy::update_young_length_bounds() {
 void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, card_rs_length, code_root_rs_length);
-  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
+  uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
+  uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
+
+  if (max_young_length_by_sizer < min_young_length_by_sizer) {
+    // This can happen due to races with heap_size_changed() at mutator time. Do not update the young gen
+    // lengths. Will be updated on the next regular call anyway.
+    assert(!SafepointSynchronize::is_at_safepoint(), "must be");
+    return;
+  }
+
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards,
+                                                                      card_rs_length,
+                                                                      code_root_rs_length,
+                                                                      min_young_length_by_sizer,
+                                                                      max_young_length_by_sizer);
+  uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length, min_young_length_by_sizer);
 
   log_trace(gc, ergo, heap)("Young list length update: pending cards %zu card_rs_length %zu old target %u desired: %u target: %u",
                             pending_cards,
@@ -224,9 +238,9 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_l
 //
 uint G1Policy::calculate_young_desired_length(size_t pending_cards,
                                               size_t card_rs_length,
-                                              size_t code_root_rs_length) const {
-  uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
-  uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
+                                              size_t code_root_rs_length,
+                                              uint min_young_length_by_sizer,
+                                              uint max_young_length_by_sizer) const {
 
   assert(min_young_length_by_sizer >= 1, "invariant");
   assert(max_young_length_by_sizer >= min_young_length_by_sizer, "invariant");
@@ -302,7 +316,7 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards,
 // Limit the desired (wished) young length by current free regions. If the request
 // can be satisfied without using up reserve regions, do so, otherwise eat into
 // the reserve, giving away at most what the heap sizer allows.
-uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
+uint G1Policy::calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const {
   uint allocated_young_length = _g1h->young_regions_count();
 
   uint receiving_additional_eden;
@@ -319,7 +333,7 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
     // do, we at most eat the sizer's minimum regions into the reserve or half the
     // reserve rounded up (if possible; this is an arbitrary value).
 
-    uint max_to_eat_into_reserve = MIN2(_young_gen_sizer.min_desired_young_length(),
+    uint max_to_eat_into_reserve = MIN2(min_young_length_by_sizer,
                                         (_reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Young target length: Common "

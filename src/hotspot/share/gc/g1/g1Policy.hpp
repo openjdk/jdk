@@ -224,9 +224,13 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards,
+                                      size_t card_rs_length,
+                                      size_t code_root_rs_length,
+                                      uint min_young_length_by_sizer,
+                                      uint max_young_length_by_sizer) const;
   // Limit the given desired young length to available free regions.
-  uint calculate_young_target_length(uint desired_young_length) const;
+  uint calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const;
 
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
