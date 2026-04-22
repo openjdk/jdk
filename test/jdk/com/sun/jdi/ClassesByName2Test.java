@@ -166,9 +166,9 @@ public class ClassesByName2Test extends TestScaffold {
                 String name = cls.name();
 
                 if (isHiddenClass(name)) {
-                  // Hidden classes may have been unloaded by the time classesByName
-                  // is called so we skip those
-                  continue;
+                    // Hidden classes may have been unloaded by the time classesByName
+                    // is called so we skip those
+                    continue;
                 }
 
                 List found = vm().classesByName(name);
