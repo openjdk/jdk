@@ -138,10 +138,11 @@ G1ConcurrentRefineSweepState::~G1ConcurrentRefineSweepState() {
 }
 
 void G1ConcurrentRefineSweepState::enter_state(State state, Ticks timestamp) {
-  if (state != State::Idle) {
-    assert(_state == State(static_cast<uint>(state) - 1),
-           "must come from previous state but is %s", state_name(_state));
-  }
+  assert(state > State::Idle, "precondition");
+  assert(state != State::Last, "preconditon");
+  assert(_state == State(static_cast<uint>(state) - 1),
+         "must come from previous state but is %s", state_name(_state));
+
   _state_start[static_cast<uint>(state)] = timestamp;
   _state = state;
 }
