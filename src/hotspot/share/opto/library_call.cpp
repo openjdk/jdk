@@ -6933,7 +6933,7 @@ bool LibraryCallKit::inline_reference_get0() {
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
   Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
                                         decorators, /*is_static*/ false,
-                                        Compile::current()->env()->Reference_klass());
+                                        env()->Reference_klass());
   if (result == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -6957,7 +6957,7 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
                                           decorators, /*is_static*/ false,
-                                          Compile::current()->env()->Reference_klass());
+                                          env()->Reference_klass());
   if (referent == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
