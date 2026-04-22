@@ -68,7 +68,7 @@ public class JarExtractTest {
     private static final byte[] FILE_CONTENT = "Hello world!!!".getBytes(StandardCharsets.UTF_8);
     // the jar that will get extracted in the tests
     private Path testJarPath;
-    private static Collection<Path> filesToDelete = new ArrayList<>();
+    private static final Collection<Path> filesToDelete = new ArrayList<>();
 
     @BeforeEach
     public void createTestJar() throws Exception {
