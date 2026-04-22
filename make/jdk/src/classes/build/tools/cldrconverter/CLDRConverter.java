@@ -1069,9 +1069,9 @@ public class CLDRConverter {
                 }
                 outBuffer.append(' ');
                 break;
-            case '\\':
+            case '\\', '"':
                 outBuffer.append('\\');
-                outBuffer.append('\\');
+                outBuffer.append(aChar);
                 break;
             case '\t':
                 outBuffer.append('\\');
@@ -1093,10 +1093,6 @@ public class CLDRConverter {
                 if (aChar < 0x0020) {
                     formatter.format("\\u%04x", (int)aChar);
                 } else {
-                    if (aChar == 0x0022) {
-                        // Escape ASCII quotation marks
-                        outBuffer.append('\\');
-                    }
                     outBuffer.append(aChar);
                 }
             }
