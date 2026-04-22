@@ -5888,6 +5888,7 @@ bool is_excluded(Register excluded_register[], Register reg, int n) {
   return false;
 }
 
+// There are 6 volatile registers on s390 R0 to R5 (excluding R14).
 void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
   const int magic_number = 0x82;
 
