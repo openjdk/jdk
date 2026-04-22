@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1147,7 +1147,9 @@ public abstract class SSLEngine {
      * are not required to do so.
      *
      * @implNote
-     * The JDK SunJSSE provider implementation default for this mode is false.
+     * The JDK SunJSSE provider implementation requires that the desired mode
+     * be set explicitly by calling this method before invoking other methods
+     * of the SSLEngine.
      *
      * @param   mode true if the engine should start its handshaking
      *          in "client" mode
@@ -1163,8 +1165,9 @@ public abstract class SSLEngine {
      * handshaking.
      *
      * @implNote
-     * The JDK SunJSSE provider implementation returns false unless
-     * {@link #setUseClientMode(boolean)} is used to change the mode to true.
+     * The JDK SunJSSE provider implementation requires that the desired mode
+     * be set explicitly by calling {@link #setUseClientMode(boolean)} before
+     * invoking this method.
      *
      * @return  true if the engine should do handshaking
      *          in "client" mode
