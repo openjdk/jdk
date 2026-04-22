@@ -194,7 +194,7 @@ inline void G1HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMar
            "Should stop the scan at limit or end of humongous object. r %u (%s)",
            hrm_index(), get_short_type_str());
   } else {
-    assert(next_addr == limit, "Should stop the scan at the limit.");
+    assert(next_addr == limit, "Should stop the scan at the limit. r %u (%s)", hrm_index(), get_short_type_str());
   }
 #endif
 }
