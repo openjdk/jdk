@@ -1098,6 +1098,7 @@ void VM_Version::get_processor_features() {
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
       UseAPX = false; // by default UseAPX is false
+      _features.clear_feature(CPU_APX_F);
     } else if (!UseAPX) {
       _features.clear_feature(CPU_APX_F);
     }
@@ -1186,7 +1187,7 @@ void VM_Version::get_processor_features() {
     }
     if (!UseAESIntrinsics) {
       if (UseAESCTRIntrinsics) {
-        if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
         }
         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
@@ -1206,22 +1207,22 @@ void VM_Version::get_processor_features() {
       }
     }
   } else {
-    if (!UseAES) {
-      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-    } else if (!cpu_supports_aes()) {
+    if (!cpu_supports_aes()) {
       if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         warning("AES intrinsics are not available on this CPU");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
         warning("AES-CTR intrinsics are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    } else if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
@@ -1370,10 +1371,6 @@ void VM_Version::get_processor_features() {
       warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
-  }
-
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
 #if COMPILER2_OR_JVMCI
@@ -2530,7 +2527,7 @@ const char* VM_Version::cpu_brand_string(void) {
     }
     int ret_val = cpu_extended_brand_string(_cpu_brand_string, CPU_EBS_MAX_LENGTH);
     if (ret_val != OS_OK) {
-      FREE_C_HEAP_ARRAY(char, _cpu_brand_string);
+      FREE_C_HEAP_ARRAY(_cpu_brand_string);
       _cpu_brand_string = nullptr;
     }
   }

@@ -57,7 +57,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
     static byte testMulReduce64() {
         return ByteVector.fromArray(ByteVector.SPECIES_64, input, 0)
@@ -75,7 +75,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
     static byte testMulReduce128() {
         return ByteVector.fromArray(ByteVector.SPECIES_128, input, 0)
@@ -93,7 +93,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     static byte testMulReduce256() {
         return ByteVector.fromArray(ByteVector.SPECIES_256, input, 0)
@@ -111,7 +111,7 @@ public class TestMultiplyReductionByte {
 
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VI, ">=1"},
-        applyIfCPUFeatureOr = {"avx512f", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512f", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     static byte testMulReduce512() {
         return ByteVector.fromArray(ByteVector.SPECIES_512, input, 0)

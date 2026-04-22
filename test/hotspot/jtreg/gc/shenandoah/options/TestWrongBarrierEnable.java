@@ -41,8 +41,7 @@ public class TestWrongBarrierEnable {
                 "ShenandoahLoadRefBarrier",
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
-                "ShenandoahStackWatermarkBarrier",
+                "ShenandoahCloneBarrier"
         };
         String[] generational = { "ShenandoahCardBarrier" };
         String[] all = {
@@ -50,7 +49,6 @@ public class TestWrongBarrierEnable {
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
-                "ShenandoahStackWatermarkBarrier",
                 "ShenandoahCardBarrier"
         };
 

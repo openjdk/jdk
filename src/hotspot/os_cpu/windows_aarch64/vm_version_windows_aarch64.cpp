@@ -26,19 +26,52 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
-// Assembly function to get SVE vector length using INCB instruction
+// Since PF_ARM_SVE_INSTRUCTIONS_AVAILABLE and related constants were added in
+// Windows 11 (version 24H2) and in Windows Server 2025, we define them here for
+// compatibility with older SDK versions.
+#ifndef PF_ARM_SVE_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE_INSTRUCTIONS_AVAILABLE 46
+#endif
+
+#ifndef PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE 47
+#endif
+
+#ifndef PF_ARM_SVE_BITPERM_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE_BITPERM_INSTRUCTIONS_AVAILABLE 51
+#endif
+
+#ifndef PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE 64
+#endif
+
+#ifndef PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE 65
+#endif
+
+#ifndef PF_ARM_V82_FP16_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_V82_FP16_INSTRUCTIONS_AVAILABLE 67
+#endif
+
+// Assembly function to get SVE vector length using RDVL instruction
 extern "C" int get_sve_vector_length();
 
 int VM_Version::get_current_sve_vector_length() {
   assert(VM_Version::supports_sve(), "should not call this");
-  // Use assembly instruction to get the actual SVE vector length
-  return  VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(VM_Version::supports_sve(), "should not call this");
-  // Use assembly instruction to get the SVE vector length
-  return VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
+
+  // Unlike Linux, Windows does not present a way to modify the VL (the
+  // rationale is that the OS expects the application to use the maximum vector
+  // length supported by the hardware), so we simply return the current VL.  If
+  // the user sets `MaxVectorSize` that is not the same as the maximum possible
+  // vector length, then the caller (`VM_Version::initialize()`) will print a
+  // warning, set `MaxVectorSize` to the value returned by this function, and
+  // move on.
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0;
 }
 
 void VM_Version::get_os_cpu_info() {
@@ -66,6 +99,10 @@ void VM_Version::get_os_cpu_info() {
   }
   if (IsProcessorFeaturePresent(PF_ARM_SVE_BITPERM_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_SVEBITPERM);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_V82_FP16_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_FPHP);
+    set_feature(CPU_ASIMDHP);
   }
   if (IsProcessorFeaturePresent(PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE)) {
     set_feature(CPU_SHA3);

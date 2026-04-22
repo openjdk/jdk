@@ -125,10 +125,10 @@ public final class GlyphLayout {
     }
 
     private static final class SDCache {
-        public AffineTransform dtx;
-        public AffineTransform gtx;
-        public Point2D.Float delta;
-        public FontStrikeDesc sd;
+        private final AffineTransform dtx;
+        private final AffineTransform gtx;
+        private final Point2D.Float delta;
+        private final FontStrikeDesc sd;
 
         private SDCache(Font font, FontRenderContext frc) {
             // !!! add getVectorTransform and hasVectorTransform to frc?  then
