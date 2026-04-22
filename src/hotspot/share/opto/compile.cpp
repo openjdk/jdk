@@ -416,6 +416,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(                &_late_inlines, dead);
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
+    remove_useless_late_inlines(         &_vector_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
@@ -480,6 +481,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(                &_late_inlines, useful);
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
+  remove_useless_late_inlines(         &_vector_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
@@ -693,6 +695,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _string_late_inlines(comp_arena(), 2, 0, nullptr),
       _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
       _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+      _vector_late_inlines(comp_arena(), 2, 0, nullptr),
       _late_inlines_pos(0),
       _has_mh_late_inlines(false),
       _oom(false),
@@ -2016,6 +2019,32 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
   igvn.optimize();
 }
 
+void Compile::inline_vector_fallback(PhaseIterGVN& igvn) {
+  while (_vector_late_inlines.length() > 0) {
+    CallGenerator* cg = _vector_late_inlines.pop();
+    assert(cg->is_vector_late_inline(), "");
+    if (cg->inline_fallback()) {
+      cg->enable_fallback_generation();
+      cg->do_late_inline();
+    }
+    if (failing())  return;
+  }
+  _vector_late_inlines.trunc_to(0);
+
+  inline_incrementally_cleanup(igvn);
+
+  while (_late_inlines.length() > 0) {
+    igvn_worklist()->ensure_empty(); // should be done with igvn
+
+    while (inline_incrementally_one()) {
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
+    }
+    if (failing())  return;
+
+    inline_incrementally_cleanup(igvn);
+  }
+}
+
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2096,6 +2125,9 @@ bool Compile::inline_incrementally_one() {
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
+        if (cg->is_vector_late_inline()) {
+          C->vector_late_inlines()->remove_if_existing(cg);
+        }
         break; // process one call site at a time
       } else {
         bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
@@ -2106,6 +2138,9 @@ bool Compile::inline_incrementally_one() {
           // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
           assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
           cg->call_node()->set_generator(cg);
+          if (cg->is_vector_late_inline()) {
+            C->vector_late_inlines()->append_if_missing(cg);
+          }
         }
       }
     } else {
@@ -2225,6 +2260,16 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     inline_string_calls(false);
 
     if (failing())  return;
+
+    inline_incrementally_cleanup(igvn);
+  }
+
+  if (_vector_late_inlines.length() > 0) {
+    inline_vector_fallback(igvn);
+
+    if (failing()) {
+      return;
+    }
 
     inline_incrementally_cleanup(igvn);
   }
