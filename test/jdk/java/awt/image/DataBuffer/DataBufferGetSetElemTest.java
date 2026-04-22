@@ -130,10 +130,6 @@ public class DataBufferGetSetElemTest {
         } catch (ArrayIndexOutOfBoundsException e) {
         }
         try {
-            db.getElemFloat(index);
-        } catch (ArrayIndexOutOfBoundsException e) {
-        }
-        try {
             db.getElemFloat(1, index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
