@@ -1251,16 +1251,13 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // Flag the trailing MemBar so that optimize_simple_memory_chain knows it guards
     // an expanded clone. clone_at_expansion virtual function may replace the ArrayCopyNode
     // but does not set this flag.
-    Node* ctrl_out = ac->proj_out(TypeFunc::Control);
-    if (ctrl_out != nullptr) {
-      Node* membar = ctrl_out->unique_ctrl_out();
-      assert(membar->is_MemBar(), "expect MemBar after clonebasic");
-      assert(membar->in(TypeFunc::Memory)->is_MergeMem() &&
-             membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
-             membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
-             "MemBar is from ac");
-      membar->as_MemBar()->set_trailing_expanded_array_copy();
-    }
+    Node* membar = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
+    assert(membar->is_MemBar(), "expect MemBar after clonebasic");
+    assert(membar->in(TypeFunc::Memory)->is_MergeMem() &&
+            membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
+            membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
+            "MemBar is from ac");
+    membar->as_MemBar()->set_trailing_expanded_array_copy();
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
