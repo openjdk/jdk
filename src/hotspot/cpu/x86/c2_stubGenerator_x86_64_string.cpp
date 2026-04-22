@@ -206,6 +206,10 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
   StubId stub_id = (isLL ?  StubId::stubgen_string_indexof_linear_ll_id : (isUL ? StubId::stubgen_string_indexof_linear_ul_id : StubId::stubgen_string_indexof_linear_uu_id));
+
+  // TODO - attempt to load the stub from the AOT cache
+  // n.b. this requires handling (re-)load time jump_table relocations
+
   StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
@@ -940,6 +944,18 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       // Match found
       __ jmp(L_returnR11);
     }
+  }
+
+  // TODO - attempt to save the stub to the AOT cache
+  // n.b. this requires handling save time jump_table relocations
+
+  // Normally the stub entries are registered in the AOT address table
+  // as a side-effect of an AOT laod or store -- irrespective of
+  // whether we are loading or saving stubs. For now we need to register
+  // the addresses by hand.
+
+  if (AOTCodeCache::is_on()) {
+    AOTCodeCache::cache()->add_stub_entries(stub_id, fnptrs[ae]);
   }
 
   return;
