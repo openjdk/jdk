@@ -873,20 +873,16 @@ public final class ErrorTest {
         for (var withAppImage : List.of(true, false)) {
             for (var existingCertType : CertificateType.values()) {
                 Token keychain;
-                StandardCertificateNamePrefix missingCertificateNamePrefix;
-                switch (existingCertType) {
+                StandardCertificateNamePrefix missingCertificateNamePrefix = switch (existingCertType) {
                     case INSTALLER -> {
                         keychain = Token.KEYCHAIN_WITH_PKG_CERT;
-                        missingCertificateNamePrefix = StandardCertificateNamePrefix.CODE_SIGN;
+                        yield StandardCertificateNamePrefix.CODE_SIGN;
                     }
                     case CODE_SIGN -> {
                         keychain = Token.KEYCHAIN_WITH_APP_IMAGE_CERT;
-                        missingCertificateNamePrefix = StandardCertificateNamePrefix.INSTALLER;
+                        yield StandardCertificateNamePrefix.INSTALLER;
                     }
-                    default -> {
-                        throw new AssertionError();
-                    }
-                }
+                };
 
                 var builder = testSpec()
                         .type(PackageType.MAC_PKG)
@@ -1002,12 +998,6 @@ public final class ErrorTest {
         final List<TestSpec> testCases = new ArrayList<>();
 
         testCases.addAll(Stream.of(
-                testSpec().addArgs("--app-version", "0.2")
-                        .error("message.version-string-first-number-not-zero")
-                        .advice("error.invalid-cfbundle-version.advice"),
-                testSpec().addArgs("--app-version", "1.2.3.4")
-                        .error("message.version-string-too-many-components")
-                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),
@@ -1015,8 +1005,8 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1")
-                        .advice("message.invalid-identifier.advice"),
+                        .error("error.parameter-not-mac-bundle-identifier", "#1", "--mac-package-identifier")
+                        .advice("error.parameter-not-mac-bundle-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),

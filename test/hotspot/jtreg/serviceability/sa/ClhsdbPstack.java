@@ -54,6 +54,10 @@ import jtreg.SkippedException;
 public class ClhsdbPstack {
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         boolean withCore = Boolean.parseBoolean(args[0]);
         System.out.println("Starting ClhsdbPstack test: withCore==" + withCore);
 

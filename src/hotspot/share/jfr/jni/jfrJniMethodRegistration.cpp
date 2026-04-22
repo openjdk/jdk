@@ -101,6 +101,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
       (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
       (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
+      (char*)"hostMemoryUsage", (char*)"()J", (void*) jfr_host_memory_usage,
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
       (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
