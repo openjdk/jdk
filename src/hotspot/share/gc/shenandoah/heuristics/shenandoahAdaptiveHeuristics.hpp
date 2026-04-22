@@ -54,35 +54,13 @@ class ShenandoahCycleDuration {
   double _gc_time_b;            // y-intercept
   double _gc_time_sd;           // sd on deviance from prediction
 
-  TruncatedSeq* _gc_cycle_time_history;
-
 public:
-  enum Source { AVERAGE, LINEAR, NEXT };
-
-  struct Prediction {
-    double duration;
-    Source source;
-
-    const char* get_source() const {
-      switch (source) {
-        case AVERAGE: return "average";
-        case LINEAR:  return "linear prediction";
-        case NEXT:    return "next";
-        default:
-          ShouldNotReachHere();
-      }
-    }
-  };
 
   ShenandoahCycleDuration();
   ~ShenandoahCycleDuration();
 
-  void add_gc_time(double timestamp, double duration);
-  double predict_gc_time(double timestamp_at_start, double margin_of_error) const;
-  Prediction predict(double timestamp_at_start, double margin_of_error) const;
-  double average(double margin_of_error) const;
-
-  void log_prediction_accuracy(double timestamp, double margin_of_error, double actual_cycle_time);
+  void record_duration(double timestamp_at_start, double duration);
+  double predict_duration(double timestamp_at_start, double margin_of_error) const;
 };
 
 /*
@@ -123,6 +101,11 @@ public:
   void record_success_concurrent() override;
   void record_degenerated() override;
   void record_success_full() override;
+
+  bool trigger_average_allocation_rate(size_t allocatable_words, double avg_alloc_rate);
+
+  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, size_t allocatable_words,
+                                            double avg_alloc_rate);
 
   bool should_start_gc() override;
 

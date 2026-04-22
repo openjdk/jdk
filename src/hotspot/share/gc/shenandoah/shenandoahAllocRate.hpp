@@ -54,7 +54,6 @@ private:
   TruncatedSeq _sampled_bytes;
   TruncatedSeq _sampled_rates;
   size_t _minimum_sample_size;
-  size_t _last_sampled_value;
 
 public:
   explicit ShenandoahAllocRate(size_t minimum_sample_size = MINIMUM_SAMPLE_SIZE)
@@ -64,8 +63,7 @@ public:
     , _sampled_times(100)
     , _sampled_bytes(100)
     , _sampled_rates(100)
-    , _minimum_sample_size(minimum_sample_size)
-    , _last_sampled_value(0) {
+    , _minimum_sample_size(minimum_sample_size) {
   }
 
   void set_minimum_sample_size(const size_t minimum_sample_size) {
@@ -115,7 +113,6 @@ public:
     const double bytes_per_second = total_bytes / elapsed_seconds;
 
     _sampled_rates.add(bytes_per_second);
-    _last_sampled_value = bytes_per_second;
 
     _sample_lock.unlock();
   }
@@ -124,8 +121,9 @@ public:
     return _sampled_rates;
   }
 
-  double last_sampled_value() const {
-    return _last_sampled_value;
+  double last_sampled_value() {
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
+    return _sampled_rates.last();
   }
 
   double average() {
