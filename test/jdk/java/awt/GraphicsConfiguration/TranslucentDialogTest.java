@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug     8382201
+` * @key headful
  * @summary This tests window translucency when
  *          `swing.volatileImageBufferEnabled=false`
  * @requires os.family == "mac"
