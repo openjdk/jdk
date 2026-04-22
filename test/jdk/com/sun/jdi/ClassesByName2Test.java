@@ -138,7 +138,7 @@ public class ClassesByName2Test extends TestScaffold {
     }
 
     private static boolean isHiddenClass(String className) {
-      return className.contains("/");
+        return className.contains("/");
     }
 
     protected void runTests() throws Exception {
