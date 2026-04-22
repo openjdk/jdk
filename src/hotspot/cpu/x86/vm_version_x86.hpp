@@ -535,6 +535,10 @@ protected:
 
   static const char* _features_names[];
 
+  static void clear_feature(Feature_Flag feature) {
+    _features.clear_feature(feature);
+  }
+
   static void clear_cpu_features() {
     _features = VM_Features();
     _cpu_features = VM_Features();
@@ -930,6 +934,7 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return _cpu_features.supports_feature(CPU_AVX512F); }
+  static bool cpu_supports_aes()      { return _cpu_features.supports_feature(CPU_AES); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
@@ -957,6 +962,12 @@ public:
   static bool is_intel_cascade_lake();
 
   static bool is_intel_darkmont();
+
+  static bool is_intel_modern_cpu() {
+    precond(is_intel()); // should be called only for intel CPU
+    // Efficient cores in hybrid CPU may not support hyper-threads.
+    return (supports_avx() || (supports_sse4_2() && (supports_ht() || supports_hybrid())));
+  }
 
   static bool is_intel_tsc_synched_at_init();
 

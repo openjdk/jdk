@@ -73,7 +73,7 @@ void ShenandoahBarrierSetC2State::remove_load_reference_barrier(ShenandoahLoadRe
 
 #define __ kit->
 
-bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
+bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseGVN* phase, Node* adr,
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);

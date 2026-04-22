@@ -32,7 +32,7 @@
  *                     -Djdk.httpclient.keepalive.timeout.h3=480
  *                     -Djdk.httpclient.quic.idleTimeout=480
  *                     -Djdk.test.server.quic.idleTimeout=480
- *                     H3ConnectionPoolTest
+ *                     ${test.main.class}
  */
 
 import java.io.IOException;

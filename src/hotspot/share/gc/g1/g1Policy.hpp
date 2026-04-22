@@ -296,7 +296,7 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size) const;
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
@@ -313,9 +313,6 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end();
-
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
@@ -331,11 +328,6 @@ private:
   // Predict the number of bytes of surviving objects from survivor and old
   // regions and update the associated members.
   void update_survival_estimates_for_next_collection();
-
-  // Set the state to start a concurrent marking cycle and clear
-  // _initiate_conc_mark_if_possible because it has now been
-  // acted on.
-  void initiate_conc_mark();
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a
