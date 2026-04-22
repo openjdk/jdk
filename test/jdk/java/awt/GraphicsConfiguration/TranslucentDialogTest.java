@@ -87,13 +87,14 @@ public class TranslucentDialogTest {
         }
     }
 
+    JDialog translucentDialog;
     Sample transparentPixel, translucentPixel;
     Robot robot;
 
     private void run() {
         try {
             SwingUtilities.invokeAndWait(() -> {
-                JDialog translucentDialog = createDialog();
+                translucentDialog = createDialog();
                 translucentDialog.pack();
                 translucentDialog.setLocationRelativeTo(null);
                 transparentPixel = new Sample(translucentDialog.getX() + 4,
@@ -149,6 +150,10 @@ public class TranslucentDialogTest {
             // if this fails: this test isn't capturing pixels correctly.
             throw new RuntimeException("the center pixel was supposed to change");
         }
+
+        SwingUtilities.invokeLater(() -> {
+            translucentDialog.dispose();
+        });
     }
 
     private static JDialog createDialog() {
