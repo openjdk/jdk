@@ -4855,10 +4855,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     // push user on appropriate worklist
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node *use = n->fast_out(i);
-      if (use->is_Phi() || use->is_ClearArray()) {
-        if (use->is_Phi() && (((uint) _compile->get_alias_index(use->as_Phi()->adr_type()) < new_index_start))) {
+      if (use->is_Phi() && (((uint) _compile->get_alias_index(use->as_Phi()->adr_type()) < new_index_start))) {
           orig_phis.append_if_missing(use->as_Phi());
-        }
+      }
+      if (use->is_Phi() || use->is_ClearArray()) {
         memnode_worklist.append_if_missing(use);
       } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
         memnode_worklist.append_if_missing(use);
