@@ -89,6 +89,10 @@ import static jdk.internal.jimage.ImageLocation.PREVIEW_INFIX;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public final class ImageReader implements AutoCloseable {
+
+    // For resource paths, there's no leading '/'.
+    private static final String PREVIEW_RESOURCE_PREFIX = PREVIEW_INFIX.substring(1);
+
     private final SharedImageReader reader;
 
     private volatile boolean closed;
@@ -467,17 +471,26 @@ public final class ImageReader implements AutoCloseable {
          * the node handling code.
          */
         Node findResourceNode(String moduleName, String resourcePath) {
-            // Unlike findNode(), this method makes only one lookup in the
-            // underlying jimage, but can only reliably return resource nodes.
+            // Unlike findNode(), this method can only reliably return resource nodes.
             if (moduleName.indexOf('/') >= 0) {
                 throw new IllegalArgumentException("invalid module name: " + moduleName);
+            }
+            if (resourcePath.startsWith(PREVIEW_RESOURCE_PREFIX)) {
+                return null;
             }
             String nodeName = MODULES_PREFIX + "/" + moduleName + "/" + resourcePath;
             // Synchronize as tightly as possible to reduce locking contention.
             synchronized (this) {
                 Node node = nodes.get(nodeName);
                 if (node == null) {
-                    ImageLocation loc = findLocation(moduleName, resourcePath);
+                    ImageLocation loc = null;
+                    if (isPreviewEnabled) {
+                        // We must test preview location first (if in preview mode).
+                        loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
+                    }
+                    if (loc == null) {
+                        loc = findLocation(moduleName, resourcePath);
+                    }
                     if (loc != null && loc.getType() == RESOURCE) {
                         node = newResource(nodeName, loc);
                         nodes.put(node.getName(), node);
@@ -503,8 +516,12 @@ public final class ImageReader implements AutoCloseable {
             if (moduleName.indexOf('/') >= 0) {
                 throw new IllegalArgumentException("invalid module name: " + moduleName);
             }
+            if (resourcePath.startsWith(PREVIEW_RESOURCE_PREFIX)) {
+                return false;
+            }
             // In preview mode, preview-only resources are eagerly added to the
             // cache, so we must check that first.
+            ImageLocation loc = null;
             if (isPreviewEnabled) {
                 String nodeName = MODULES_PREFIX + "/" + moduleName + "/" + resourcePath;
                 // Synchronize as tightly as possible to reduce locking contention.
@@ -514,8 +531,11 @@ public final class ImageReader implements AutoCloseable {
                         return node.isResource();
                     }
                 }
+                loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
             }
-            ImageLocation loc = findLocation(moduleName, resourcePath);
+            if (loc == null) {
+                loc = findLocation(moduleName, resourcePath);
+            }
             return loc != null && loc.getType() == RESOURCE;
         }
 
