@@ -460,6 +460,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
 
       __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
+
       offset += vec_reg_size;
     }
   }
