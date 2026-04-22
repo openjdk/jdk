@@ -450,12 +450,15 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     for (int i = 0; i < vecregstosave_num; i += 2) {
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
       assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
+
       __ lxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
+
       offset += (2 * vec_reg_size);
     }
   } else {
     for (int i = 0; i < vecregstosave_num; i++) {
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
+
       __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
       offset += vec_reg_size;
     }
