@@ -1838,11 +1838,15 @@ void CodeCache::print() {
 }
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
+  int total_blob_count = 0;
+  int total_nmethod_count = 0;
+  int total_adapter_count = 0;
   int full_count = 0;
   julong total_used = 0;
   julong total_max_used = 0;
   julong total_free = 0;
   julong total_size = 0;
+
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1868,8 +1872,13 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                    p2i(heap->low_boundary()),
                    p2i(heap->high()),
                    p2i(heap->high_boundary()));
-
-      full_count += get_codemem_full_count(heap->code_blob_type());
+      st->print_cr(" blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   heap->blob_count(), heap->nmethod_count(), heap->adapter_count(), heap->full_count());
+      total_blob_count += heap->blob_count();
+      total_nmethod_count += heap->nmethod_count();
+      total_adapter_count += heap->adapter_count();
+      full_count += heap->full_count();
     }
   }
 
@@ -1879,10 +1888,10 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
       st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
                    "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
                    total_size, total_used, total_max_used, total_free);
+      st->print_cr(" total blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   total_blob_count, total_nmethod_count, total_adapter_count, full_count);
     }
-    st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
-                 ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
-                 blob_count(), nmethod_count(), adapter_count(), full_count);
     st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
                  CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
