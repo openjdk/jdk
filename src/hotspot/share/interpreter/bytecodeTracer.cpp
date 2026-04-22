@@ -74,6 +74,7 @@ class BytecodePrinter {
   void      set_wide(bool wide) { _data->set_wide(wide); }
 
   ConstantPool*      constants() const    { return method()->constants(); }
+  // This may be called during linking after bytecodes are rewritten to point to the cpCache.
   bool               use_cp_cache() const { return constants()->cache() != nullptr; }
   ConstantPoolCache* cpcache() const      { assert(use_cp_cache(), "must be"); return constants()->cache(); }
 
@@ -162,7 +163,6 @@ class BytecodePrinter {
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     assert(_raw_code == Bytecodes::_illegal, "invariant");
     set_method(method());
-    // This may be called during linking after bytecodes are rewritten to point to the cpCache.
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
