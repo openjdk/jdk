@@ -353,6 +353,8 @@ public abstract class DataBuffer {
      * as an integer.
      * @param i the index of the requested data array element
      * @return the data array element at the specified index.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
@@ -367,6 +369,8 @@ public abstract class DataBuffer {
      * @param i the index of the requested data array element
      * @return the data array element at the specified index from the
      *         specified bank at the specified index.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
@@ -378,6 +382,8 @@ public abstract class DataBuffer {
      * @param i the specified index into the data array
      * @param val the data to set the element at the specified index in
      * the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
@@ -392,6 +398,8 @@ public abstract class DataBuffer {
      * @param i the specified index into the data array
      * @param val  the data to set the element in the specified bank
      * at the specified index in the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
@@ -405,6 +413,8 @@ public abstract class DataBuffer {
      * @param i the index of the requested data array element
      * @return a float value representing the data array element at the
      *  specified index.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
@@ -437,6 +447,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @param val the value to set the element at the specified index in
      * the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #getElemFloat(int)
      * @see #getElemFloat(int, int)
      */
@@ -453,6 +465,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @param val the value to set the element in the specified bank at
      * the specified index in the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElemFloat(int)
      * @see #getElemFloat(int, int)
      */
@@ -469,6 +483,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @return a double value representing the element at the specified
      * index in the data array.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
@@ -485,6 +501,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @return a double value representing the element from the specified
      * bank at the specified index in the data array.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
@@ -500,6 +518,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @param val the value to set the element at the specified index
      * in the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())}
+     *         is not a valid index.
      * @see #getElemDouble(int)
      * @see #getElemDouble(int, int)
      */
@@ -516,6 +536,8 @@ public abstract class DataBuffer {
      * @param i the specified index
      * @param val the value to set the element in the specified bank
      * at the specified index of the data array
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElemDouble(int)
      * @see #getElemDouble(int, int)
      */
