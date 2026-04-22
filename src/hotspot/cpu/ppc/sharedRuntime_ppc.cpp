@@ -360,7 +360,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
       assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
       __ stxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
-      // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
+      // Note: The contents were read in the same order (see loadV16 node in ppc.ad).
       // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
@@ -374,13 +374,8 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     for (int i = 0; i < vecregstosave_num; i++) {
       int reg_num = RegisterSaver_LiveVecRegs[i].reg_num;
 
-      if (PowerArchitecturePPC64 >= 9) {
-        __ stxv(as_VectorRegister(reg_num)->to_vsr(), offset, R1_SP);
-      } else {
-        __ li(R31, offset);
-        __ stxvd2x(as_VectorRegister(reg_num)->to_vsr(), R31, R1_SP);
-      }
-      // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
+      __ stxv(as_VectorRegister(reg_num)->to_vsr(), offset, R1_SP);
+      // Note: The contents were read in the same order (see loadV16 node in ppc.ad).
       // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         VMReg vsr = RegisterSaver_LiveVecRegs[i].vmreg;
@@ -455,22 +450,13 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     for (int i = 0; i < vecregstosave_num; i += 2) {
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
       assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
-
       __ lxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
-
       offset += (2 * vec_reg_size);
     }
   } else {
     for (int i = 0; i < vecregstosave_num; i++) {
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
-
-      if (PowerArchitecturePPC64 >= 9) {
-        __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
-      } else {
-        __ li(R31, offset);
-        __ lxvd2x(as_VectorRegister(reg_num).to_vsr(), R31, R1_SP);
-      }
-
+      __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
       offset += vec_reg_size;
     }
   }
