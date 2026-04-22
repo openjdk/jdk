@@ -432,6 +432,8 @@ public abstract class DataBuffer {
      * @param i the index of the requested data array element
      * @return a float value representing the data array element from the
      * specified bank at the specified index.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
