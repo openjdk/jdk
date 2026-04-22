@@ -1835,7 +1835,6 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ lxv(Rdst, src_offset, R1_SP);
       }
       size += 4;
-
 #ifndef PRODUCT
       if (st != nullptr) {
         st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
