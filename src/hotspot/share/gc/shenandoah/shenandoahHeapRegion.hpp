@@ -276,7 +276,7 @@ private:
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
-  
+
   // Absolute minimums and maximums we should not ever break.
   static const size_t MIN_NUM_REGIONS = 10;
   static const size_t MIN_REGION_SIZE = 256*K;
