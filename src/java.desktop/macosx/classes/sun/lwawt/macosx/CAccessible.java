@@ -28,7 +28,6 @@ package sun.lwawt.macosx;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Arrays;
 import java.util.Objects;
 
 import javax.accessibility.Accessible;
@@ -53,16 +52,6 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
-        return getCAccessible(a, true);
-    }
-
-    /**
-     * @param createIfUndefined if there is not yet a cached CAccessible for
-     *                          the given Accessible, then this boolean
-     *                          controls whether this method creates a new
-     *                          CAccessible or returns null.
-     */
-    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
@@ -71,12 +60,9 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (cachedCAX != null) {
             return cachedCAX;
         }
-        if (createIfUndefined) {
-            final CAccessible newCAX = new CAccessible(a);
-            accessor.setNativeAXResource(context, newCAX);
-            return newCAX;
-        }
-        return null;
+        final CAccessible newCAX = new CAccessible(a);
+        accessor.setNativeAXResource(context, newCAX);
+        return newCAX;
     }
 
     private static native void unregisterFromCocoaAXSystem(long ptr);
@@ -92,31 +78,9 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     private static native void selectedCellsChanged(long ptr);
     private static native void tableContentCacheClear(long ptr);
 
-    /**
-     * This listens exclusively for "ancestor" changes on java.awt.Components
-     */
-    private static PropertyChangeListener ancestorListener =
-            new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (evt.getSource() instanceof Accessible ax) {
-                        if (evt.getNewValue() == null) {
-                            CAccessible cax = CAccessible.getCAccessible(ax, false);
-                            if (cax != null) {
-                                cax.dispose();
-                            }
-                        } else {
-                            // recreate our CAccessible
-                            getCAccessible(ax, true);
-                        }
-                    }
-                }
-            };
-
     private Accessible accessible;
 
     private AccessibleContext activeDescendant;
-    private AXChangeNotifier axChangeNotifier;
 
     private CAccessible(final Accessible accessible) {
         super(0L, true); // real pointer will be poked in by native
@@ -126,12 +90,11 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
         if (accessible instanceof Component component) {
             addNotificationListeners(component);
-            PropertyChangeListener[] l = component.getPropertyChangeListeners(
-                    "ancestor");
-            if (!Arrays.asList(l).contains(ancestorListener)) {
-                component.addPropertyChangeListener("ancestor",
-                        ancestorListener);
-            }
+            component.addPropertyChangeListener("ancestor", (e) -> {
+                if (e.getNewValue() == null) {
+                    dispose();
+                }
+            });
         }
     }
 
@@ -139,16 +102,6 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     protected synchronized void dispose() {
         if (ptr != 0) unregisterFromCocoaAXSystem(ptr);
         super.dispose();
-
-        AccessibleContext ax = accessible.getAccessibleContext();
-        if (ax != null) {
-            ax.removePropertyChangeListener(axChangeNotifier);
-        }
-
-        AccessibleContext context = accessible.getAccessibleContext();
-        AWTAccessor.AccessibleContextAccessor accessor
-                = AWTAccessor.getAccessibleContextAccessor();
-        accessor.setNativeAXResource(context, null);
     }
 
     @Override
@@ -159,8 +112,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
     public void addNotificationListeners(Component c) {
         if (c instanceof Accessible) {
             AccessibleContext ac = ((Accessible)c).getAccessibleContext();
-            axChangeNotifier = new AXChangeNotifier();
-            ac.addPropertyChangeListener(axChangeNotifier);
+            ac.addPropertyChangeListener(new AXChangeNotifier());
         }
     }
 
