@@ -702,11 +702,11 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
   result = JVM_DefineClass(env, utfName, loader, body, length, pd);
 
   if (utfName && utfName != buf) {
-    FREE_C_HEAP_ARRAY(char, utfName);
+    FREE_C_HEAP_ARRAY(utfName);
   }
 
  free_body:
-  FREE_C_HEAP_ARRAY(jbyte, body);
+  FREE_C_HEAP_ARRAY(body);
   return result;
 }
 

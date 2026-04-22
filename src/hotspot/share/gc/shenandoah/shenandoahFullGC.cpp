@@ -261,7 +261,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
+  FREE_C_HEAP_ARRAY(worker_slices);
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
@@ -688,7 +688,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     }
   }
 
-  FREE_C_HEAP_ARRAY(size_t, live);
+  FREE_C_HEAP_ARRAY(live);
 
 #ifdef ASSERT
   ResourceBitMap map(n_regions);

@@ -130,10 +130,10 @@ bool JfrFilterManager::install(jobjectArray classes, jobjectArray methods, jobje
     modifications[i] = modification_tah->int_at(i);
   }
   if (class_size != method_size || class_size != annotation_size || class_size != modification_size) {
-    FREE_C_HEAP_ARRAY(Symbol*, class_names);
-    FREE_C_HEAP_ARRAY(Symbol*, method_names);
-    FREE_C_HEAP_ARRAY(Symbol*, annotation_names);
-    FREE_C_HEAP_ARRAY(int, modifications);
+    FREE_C_HEAP_ARRAY(class_names);
+    FREE_C_HEAP_ARRAY(method_names);
+    FREE_C_HEAP_ARRAY(annotation_names);
+    FREE_C_HEAP_ARRAY(modifications);
     JfrJavaSupport::throw_internal_error("Method array sizes don't match", jt);
     return false;
   }
