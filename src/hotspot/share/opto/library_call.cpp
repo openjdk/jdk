@@ -568,6 +568,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_Reference_reachabilityFence: return inline_reference_reachabilityFence();
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
@@ -1819,61 +1820,17 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
 
 //------------------------------inline_math_pow-----------------------------
 bool LibraryCallKit::inline_math_pow() {
+  Node* base = argument(0);
   Node* exp = argument(2);
-  const TypeD* d = _gvn.type(exp)->isa_double_constant();
-  if (d != nullptr) {
-    if (d->getd() == 2.0) {
-      // Special case: pow(x, 2.0) => x * x
-      Node* base = argument(0);
-      set_result(_gvn.transform(new MulDNode(base, base)));
-      return true;
-    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
-      // Special case: pow(x, 0.5) => sqrt(x)
-      Node* base = argument(0);
-      Node* zero = _gvn.zerocon(T_DOUBLE);
 
-      RegionNode* region = new RegionNode(3);
-      Node* phi = new PhiNode(region, Type::DOUBLE);
-
-      Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
-      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
-      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
-      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
-      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
-
-      Node* if_pow = generate_slow_guard(test, nullptr);
-      Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
-      phi->init_req(1, value_sqrt);
-      region->init_req(1, control());
-
-      if (if_pow != nullptr) {
-        set_control(if_pow);
-        address target = StubRoutines::dpow() != nullptr ? StubRoutines::dpow() :
-                                                        CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
-        const TypePtr* no_memory_effects = nullptr;
-        Node* trig = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(), target, "POW",
-                                       no_memory_effects, base, top(), exp, top());
-        Node* value_pow = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
-#ifdef ASSERT
-        Node* value_top = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+1));
-        assert(value_top == top(), "second value must be top");
-#endif
-        phi->init_req(2, value_pow);
-        region->init_req(2, _gvn.transform(new ProjNode(trig, TypeFunc::Control)));
-      }
-
-      C->set_has_split_ifs(true); // Has chance for split-if optimization
-      set_control(_gvn.transform(region));
-      record_for_igvn(region);
-      set_result(_gvn.transform(phi));
-
-      return true;
-    }
-  }
-
-  return StubRoutines::dpow() != nullptr ?
-    runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
-    runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow),  "POW");
+  CallNode* pow = new PowDNode(C, base, exp);
+  set_predefined_input_for_runtime_call(pow);
+  pow = _gvn.transform(pow)->as_CallLeafPure();
+  set_predefined_output_for_runtime_call(pow);
+  Node* result = _gvn.transform(new ProjNode(pow, TypeFunc::Parms + 0));
+  record_for_igvn(pow);
+  set_result(result);
+  return true;
 }
 
 //------------------------------inline_math_native-----------------------------
@@ -4354,7 +4311,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    *obj = _gvn.transform(new CheckCastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
@@ -7066,6 +7023,14 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   final_sync(ideal);
 #undef __
 
+  return true;
+}
+
+//-----------------------inline_reference_reachabilityFence-----------------
+// bool java.lang.ref.Reference.reachabilityFence();
+bool LibraryCallKit::inline_reference_reachabilityFence() {
+  Node* referent = argument(0);
+  insert_reachability_fence(referent);
   return true;
 }
 

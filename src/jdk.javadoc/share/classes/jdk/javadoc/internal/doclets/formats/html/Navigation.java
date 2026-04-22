@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -535,6 +537,42 @@ public class Navigation {
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
+        target.add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_SECTION)
+                .add(HtmlTree.DIV(HtmlStyles.searchForm)
+                        .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(),
+                                contents.getContent("doclet.search.for"))))
+                        .add(HtmlTree.DIV(HtmlIds.SEARCH_INPUT_CONTAINER).addUnchecked(Text.EMPTY))
+                        .add(createModuleSelector()))
+                .add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_CONTAINER).addUnchecked(Text.EMPTY))
+                .add(HtmlTree.DIV(HtmlStyles.searchLinks)
+                        .add(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                                        contents.getContent("doclet.search.linkSearchPageLabel"))
+                                .setId(HtmlIds.SEARCH_PAGE_LINK)))
+                        .add(options.noHelp() || !options.helpFile().isEmpty()
+                                ? HtmlTree.DIV(Text.EMPTY).addUnchecked(Text.EMPTY)
+                                : HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
+                                    contents.getContent("doclet.search.linkSearchHelpLabel"))))));
+    }
+
+    private Content createModuleSelector() {
+        if (!configuration.showModules || configuration.modules.size() < 2) {
+            return Text.EMPTY;
+        }
+        var content = new ContentBuilder(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_MODULES.name(),
+                contents.getContent("doclet.search.in_modules"))));
+        var select = HtmlTree.of(HtmlTag.SELECT)
+                .setId(HtmlIds.SEARCH_MODULES)
+                .put(HtmlAttr.ARIA_LABEL, configuration.getDocResources().getText("doclet.selectModule"))
+                .add(HtmlTree.of(HtmlTag.OPTION)
+                        .put(HtmlAttr.VALUE, "")
+                        .add(contents.getContent("doclet.search.all_modules")));
+
+        for (ModuleElement module : configuration.modules) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
+                    .add(Text.of(module.getQualifiedName().toString())));
+        }
+        return content.add(HtmlTree.DIV(select));
     }
 
     /**
