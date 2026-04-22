@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class HtmlIds {
     static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
-    static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
+    public static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId THEME_BUTTON = HtmlId.of("theme-button");
     static final HtmlId THEME_DARK = HtmlId.of("theme-dark");
     static final HtmlId THEME_LIGHT = HtmlId.of("theme-light");

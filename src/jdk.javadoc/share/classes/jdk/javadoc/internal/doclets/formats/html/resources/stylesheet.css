@@ -187,7 +187,7 @@ body {
     height:100%;
     width:100%;
 }
-main [id] {
+main, main [id] {
     scroll-margin-top: calc(var(--nav-height) + 6px);
 }
 div.main-grid {
@@ -435,12 +435,10 @@ ol.sub-nav-list a.current-selection {
     position:absolute;
     top:auto;
     left:-9999px;
-    overflow:hidden;
 }
 .skip-nav:focus-within {
     left: 0;
     top: 0;
-    overflow: visible;
     z-index: 1000;
 }
 .skip-nav a {
