@@ -1251,19 +1251,12 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // Flag the trailing MemBar so that optimize_simple_memory_chain knows it guards
     // an expanded clone. clone_at_expansion virtual function may replace the ArrayCopyNode
     // but does not set this flag.
-    CallProjections callprojs;
-    ac->extract_projections(&callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
-    // The MemBar sits after the Catch chain if one exists, otherwise directly after the
-    // call projection. Either may be null if not yet wired or if the control output has no uses.
-    Node* ctrl_out = callprojs.fallthrough_catchproj;
-    if (ctrl_out == nullptr) ctrl_out = callprojs.fallthrough_proj;
+    Node* ctrl_out = ac->proj_out(TypeFunc::Control);
     if (ctrl_out != nullptr) {
-      for (DUIterator_Fast imax, i = ctrl_out->fast_outs(imax); i < imax; i++) {
-        Node* use = ctrl_out->fast_out(i);
-        if (use->is_MemBar()) {
-          use->as_MemBar()->set_trailing_expanded_array_copy();
-          break;
-        }
+      Node* membar = ctrl_out->unique_ctrl_out_or_null();
+      assert(membar == nullptr || membar->is_MemBar(), "should be a MemBar or null");
+      if (membar != nullptr && membar->is_MemBar()) {
+        membar->as_MemBar()->set_trailing_expanded_array_copy();
       }
     }
 
