@@ -2765,22 +2765,21 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register tmp_reg, bool at_return, bool in_nmethod) {
   const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()));
-  z_lg(tmp_reg, poll_byte_addr);
 
   if (at_return) {
     if (in_nmethod) {
-      z_clgr(Z_SP, tmp_reg);
+      z_clg(Z_SP, poll_byte_addr);
       branch_optimized(Assembler::bcondHigh, slow_path);
     } else {
       // Frame still on stack, need to get fp.
       Register fp = tmp_reg;
       z_lg(fp, _z_abi(callers_sp), Z_SP);
-      z_clgr(fp, tmp_reg);
+      z_clg(fp, poll_byte_addr);
       branch_optimized(Assembler::bcondHigh, slow_path);
     }
   } else {
-    // TODO: CHeck this also how many bytes do we need to test ppc is testing all 64(might be due to lack of instruction) but x86 is anly doing 8
     // Armed page has poll_bit set.
+    z_lg(tmp_reg, poll_byte_addr);
     z_tmll(tmp_reg, SafepointMechanism::poll_bit());
     branch_optimized(Assembler::bcondNotAllZero, slow_path);
   }
