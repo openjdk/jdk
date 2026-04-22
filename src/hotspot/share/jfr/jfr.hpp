@@ -80,7 +80,6 @@ class Jfr : AllStatic {
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
   static void on_report_java_out_of_memory();
-  static bool update_epoch(oop obj);
   CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };
 

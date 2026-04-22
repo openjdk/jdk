@@ -181,10 +181,6 @@ void Jfr::on_report_java_out_of_memory() {
   }
 }
 
-bool Jfr::update_epoch(oop oop) {
-  return JfrTraceIdEpoch::update(oop);
-}
-
 #if INCLUDE_CDS
 void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
   assert(k != nullptr, "invariant");
