@@ -668,9 +668,6 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
 }
 
 size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
-  // Absolute minimums we should not ever break.
-  static const size_t MIN_REGION_SIZE = 256*K;
-
   // Generational Shenandoah needs this alignment for card tables.
   if (strcmp(ShenandoahGCMode, "generational") == 0) {
     max_heap_size = align_up(max_heap_size , CardTable::ct_max_alignment_constraint());
