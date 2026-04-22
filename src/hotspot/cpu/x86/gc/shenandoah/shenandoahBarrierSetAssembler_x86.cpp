@@ -915,7 +915,6 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
       __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ movptr(tmp2, Address(tmp2));
     } else {
-      __ mov(tmp1, res);
       __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
       __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
     }
