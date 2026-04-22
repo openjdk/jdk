@@ -2867,7 +2867,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   // f.is_deoptimized_frame() is always false and we must test hf.is_deoptimized_frame() (see comment above)
   assert(!f.is_deoptimized_frame(), "");
   if (hf.is_deoptimized_frame()) {
-    maybe_set_fastpath(f.sp());
+    maybe_set_fastpath(f.id());
     f.set_deoptimized();
   } else if (_thread->is_interp_only_mode()
               || (stub_caller && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
@@ -2881,7 +2881,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     f.deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
     assert(f.is_deoptimized_frame(), "");
     assert(ContinuationHelper::Frame::is_deopt_return(f.raw_pc(), f), "");
-    maybe_set_fastpath(f.sp());
+    maybe_set_fastpath(f.id());
     assert(!_should_patch_caller_pc, "");
     _should_patch_caller_pc = true;
   }

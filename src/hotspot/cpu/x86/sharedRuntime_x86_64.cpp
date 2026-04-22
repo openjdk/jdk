@@ -1585,7 +1585,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
   __ movptr(c_rarg0, r15_thread);
-  __ movptr(c_rarg1, rsp);
+  __ movptr(c_rarg1, rbp);
   __ call_VM_leaf(Continuation::freeze_entry(), 2);
   __ reset_last_Java_frame(true);
 
