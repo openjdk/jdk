@@ -742,14 +742,9 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   }
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
+    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     ac->set_adr_type(TypeRawPtr::BOTTOM);
-    // The clone copies the entire object content. Set all memory slices
-    // to the clone's output so that subsequent typed loads see the
-    // clone's writes. Using set_predefined_output_for_runtime_call with
-    // TypeRawPtr::BOTTOM would only update the raw slice, leaving typed
-    // per-instance slices (from escape analysis) pointing to the
-    // pre-clone memory state via the Initialize's NarrowMemProj.
-    kit->set_predefined_output_for_runtime_call(ac);
+    kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);
   }
