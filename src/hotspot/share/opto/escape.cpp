@@ -3970,7 +3970,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
 // created phi or an existing phi.  Sets create_new to indicate whether a new
 // phi was created.  Cache the last newly created phi in the node map.
 //
-PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool &new_created) {
+PhiNode *ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created) {
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
   new_created = false;
@@ -4021,7 +4021,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Uni
 // Return a new version of Memory Phi "orig_phi" with the inputs having the
 // specified alias index.
 //
-PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth) {
+PhiNode *ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth) {
   assert(alias_idx != Compile::AliasIdxBot, "can't split out bottom memory");
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
@@ -4070,7 +4070,7 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Uni
       assert((phi->in(i) == nullptr) == (in == nullptr), "inputs must correspond.");
     }
     // we have finished processing a Phi, see if there are any more to do
-    finished = (phi_list.size() == 0 );
+    finished = (phi_list.size() == 0);
     if (!finished) {
       phi = phi_list.pop()->as_Phi();
       idx = cur_input.pop();
@@ -4176,7 +4176,7 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
 // is the specified alias index.
 //
 #define FIND_INST_MEM_RECURSION_DEPTH_LIMIT 1000
-Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, Unique_Node_List& orig_phis, uint rec_depth) {
+Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_List& orig_phis, uint rec_depth) {
   if (rec_depth > FIND_INST_MEM_RECURSION_DEPTH_LIMIT) {
     _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
     return nullptr;
@@ -4269,7 +4269,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, Unique_Node_
                C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
       Node *un = result->as_Phi()->unique_input(igvn);
       if (un != nullptr) {
-        orig_phis.push(result->as_Phi());
+        orig_phis.push(result);
         result = un;
       } else {
         break;
@@ -4805,8 +4805,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
-  if (memnode_worklist.size() == 0)
+  if (memnode_worklist.size() == 0) {
     return;  // nothing to do
+  }
   while (memnode_worklist.size() != 0) {
     Node *n = memnode_worklist.pop();
     if (visited.test_set(n->_idx)) {
@@ -5011,7 +5012,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // to recursively process Phi's encountered on the input memory
   // chains as is done in split_memory_phi() since they  will
   // also be processed here.
-  for (unsigned int j = 0; j < orig_phis.size(); j++) {
+  for (uint j = 0; j < orig_phis.size(); j++) {
     PhiNode* phi = orig_phis.at(j)->as_Phi();
     int alias_idx = _compile->get_alias_index(phi->adr_type());
     igvn->hash_delete(phi);

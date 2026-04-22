@@ -218,7 +218,7 @@ public:
   void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
-  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, Unique_Node_List* safepoints);
+  static bool can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints);
 
 
   PhaseIterGVN &igvn() const { return _igvn; }

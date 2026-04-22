@@ -612,7 +612,7 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, Unique_Node_List* safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = nullptr; )
@@ -978,7 +978,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 }
 
 // Do scalar replacement.
-bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, Unique_Node_List& safepoints) {
+bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints) {
   Unique_Node_List safepoints_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
