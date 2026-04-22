@@ -106,6 +106,7 @@ public:
 
   virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 
+  // See AS_NO_KEEPALIVE for peek semantics
   // weak_handle and obj may alias
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath);
 

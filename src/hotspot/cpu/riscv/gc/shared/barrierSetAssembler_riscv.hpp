@@ -107,6 +107,7 @@ public:
   static void clear_patching_epoch();
   static void increment_patching_epoch();
 
+  // See AS_NO_KEEPALIVE for peek semantics
   // weak_handle and obj may alias
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
                                                Register tmp, Label& slow_path);
