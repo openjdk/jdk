@@ -272,7 +272,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
-  if (is_generational && ShenandoahGenerationalAdaptiveTenuring) {
+  if (is_generational) {
     // Objects above TAMS weren't included in the age census. Since they were all
     // allocated in this cycle they belong in the age 0 cohort. We walk over all
     // young regions and sum the volume of objects between TAMS and top.
@@ -284,15 +284,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // along with the census done during marking, and compute the tenuring threshold.
     ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::heap()->age_census();
     census->update_census(age0_pop);
-#ifndef PRODUCT
-    size_t total_pop = age0_cl.get_total_population();
-    size_t total_census = census->get_total();
-    // Usually total_pop > total_census, but not by too much.
-    // We use integer division so anything up to just less than 2 is considered
-    // reasonable, and the "+1" is to avoid divide-by-zero.
-    assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
-           "%zu/%zu", total_pop, total_census);
-#endif
   }
 
   {
@@ -301,6 +292,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
+    heap->assert_pinned_region_status(this);
     _heuristics->choose_collection_set(collection_set);
   }
 
@@ -309,16 +301,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-
-    // We are preparing for evacuation.
+    // At start of evacation, we do NOT compute_old_generation_balance()
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-      size_t allocation_runway =
-        gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
-      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
-    }
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
   }
 }
@@ -419,12 +404,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 }
 
 size_t ShenandoahGeneration::available() const {
-  size_t result = available(max_capacity());
-  return result;
-}
-
-// For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
-size_t ShenandoahGeneration::available_with_reserve() const {
   size_t result = available(max_capacity());
   return result;
 }
