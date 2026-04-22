@@ -30,13 +30,13 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class UnblockedDialogTest {
 
-    private TestDialog dialog;
+    private volatile TestDialog dialog;
 
     private static final int delay = 500;
     private final ExtendedRobot robot;
 
-    private Dialog parentDialog;
-    private Frame parentFrame;
+    private volatile Dialog parentDialog;
+    private volatile Frame parentFrame;
 
     private enum DialogOwner {HIDDEN_DIALOG, HIDDEN_FRAME, NULL_DIALOG, NULL_FRAME};
 
@@ -120,8 +120,17 @@ public class UnblockedDialogTest {
     }
 
     private void closeAll() {
-        if (dialog != null) { dialog.dispose(); }
-        if (parentDialog != null) { parentDialog.dispose(); }
-        if (parentFrame  != null) {  parentFrame.dispose(); }
+        if (dialog != null) {
+            dialog.dispose();
+            dialog = null;
+        }
+        if (parentDialog != null) {
+            parentDialog.dispose();
+            parentDialog = null;
+        }
+        if (parentFrame  != null) {
+            parentFrame.dispose();
+            parentFrame = null;
+        }
     }
 }
