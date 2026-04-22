@@ -226,8 +226,9 @@ template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thr
 // Entry point to freeze. Transitions are handled manually
 // Called from gen_continuation_yield() in sharedRuntime_<cpu>.cpp through Continuation::freeze_entry();
 template<typename ConfigT>
-static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* sp))
-  assert(sp == current->frame_anchor()->last_Java_sp(), "");
+static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* fp))
+  // Safe to compare, as rsp and rbp are the same when Continuation::freeze_entry() is invoked, because there has just been a call to __enter();
+  assert(fp == current->frame_anchor()->last_Java_sp(), "");
 
   if (current->raw_cont_fastpath() > current->last_continuation()->entry_sp() || current->raw_cont_fastpath() < sp) {
     current->set_cont_fastpath(nullptr);
