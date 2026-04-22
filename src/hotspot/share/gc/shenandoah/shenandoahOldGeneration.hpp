@@ -76,11 +76,6 @@ private:
   // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
 
-  // Keep track of the number and size of promotions that failed. Perhaps we should use this to increase
-  // the size of the old generation for the next collection cycle.
-  Atomic<size_t> _promotion_failure_count;
-  Atomic<size_t> _promotion_failure_words;
-
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
   // This data is used to force the evacuation phase even when the collection set is otherwise
@@ -125,9 +120,8 @@ public:
   // This is used on the allocation path to gate promotions that would exceed the reserve
   size_t get_promoted_expended() const;
 
-  // Return the count and size (in words) of failed promotions since the last reset
-  size_t get_promotion_failed_count() const { return _promotion_failure_count.load_relaxed(); }
-  size_t get_promotion_failed_words() const { return _promotion_failure_words.load_relaxed(); }
+  // Aggregate and log promotion failure stats if logging is enabled
+  void maybe_log_promotion_failure_stats(bool concurrent) const;
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {
@@ -175,7 +169,7 @@ public:
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message
-  void handle_failed_promotion(Thread* thread, size_t size);
+  void handle_failed_promotion(Thread* thread, size_t size) const;
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
@@ -219,7 +213,7 @@ public:
   bool is_concurrent_mark_in_progress() override;
 
   bool entry_coalesce_and_fill();
-  void prepare_for_mixed_collections_after_global_gc();
+  void transition_old_generation_after_global_gc();
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   void record_success_concurrent(bool abbreviated) override;
@@ -262,11 +256,7 @@ public:
   }
 
   bool is_idle() const {
-    return state() == WAITING_FOR_BOOTSTRAP;
-  }
-
-  bool is_bootstrapping() const {
-    return state() == BOOTSTRAPPING;
+    return state() == IDLE;
   }
 
   // Amount of live memory (bytes) in regions waiting for mixed collections
@@ -277,11 +267,11 @@ public:
 
 public:
   enum State {
-    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
+    FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
 
 #ifdef ASSERT
-  bool validate_waiting_for_bootstrap();
+  bool validate_idle();
 #endif
 
 private:
@@ -324,7 +314,7 @@ public:
   size_t usage_trigger_threshold() const;
 
   bool can_start_gc() {
-    return _state == WAITING_FOR_BOOTSTRAP;
+    return _state == IDLE;
   }
 
   static const char* state_name(State state);

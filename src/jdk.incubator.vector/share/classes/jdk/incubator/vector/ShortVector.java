@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code short} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class ShortVector extends AbstractVector<Short> {
+public abstract sealed class ShortVector extends AbstractVector<Short>
+         permits ShortVector64, ShortVector128, ShortVector256, ShortVector512, ShortVectorMax {
 
     ShortVector(short[] vec) {
         super(vec);
