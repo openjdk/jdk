@@ -57,24 +57,10 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   if (heap->mode()->is_generational()) {
     bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
     const ShenandoahGenerationType generation_type = _generation->type();
-    heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc, generation_type);
-    const char* msg = nullptr;
-    if (is_bootstrap_gc) {
-      msg = "At end of Degenerated Bootstrap Old GC";
-    } else {
-      switch (generation_type) {
-        case GLOBAL:
-          msg = "At end of Degenerated Global GC";
-          break;
-        case YOUNG:
-          msg = "At end of Degenerated Young GC";
-          break;
-        default:
-          ShouldNotReachHere();
-          break;
-      }
-    }
-    heap->log_heap_status(msg);
+    FormatBuffer<32> buf("Degenerated %s GC", shenandoah_generation_name(generation_type));
+    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : (const char*) buf;
+    heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
+    heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }
   return true;
 }

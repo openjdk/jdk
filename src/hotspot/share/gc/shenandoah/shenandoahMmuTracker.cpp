@@ -140,23 +140,11 @@ void ShenandoahMmuTracker::record_mixed(size_t gcid) {
   update_utilization(gcid, "Mixed Concurrent GC");
 }
 
-void ShenandoahMmuTracker::record_degenerated(size_t gcid, bool is_old_bootstrap, const ShenandoahGenerationType generation_type) {
+void ShenandoahMmuTracker::record_degenerated(size_t gcid, const char* msg) {
   if ((gcid == _most_recent_gcid) && _most_recent_is_full) {
     // Do nothing.  This is a redundant recording for the full gc that just completed.
-  } else if (is_old_bootstrap) {
-    update_utilization(gcid, "Degenerated Bootstrap Old GC");
   } else {
-    switch (generation_type) {
-      case GLOBAL:
-        update_utilization(gcid, "Degenerated Global GC");
-        break;
-      case YOUNG:
-        update_utilization(gcid, "Degenerated Young GC");
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
+    update_utilization(gcid, msg);
   }
 }
 
