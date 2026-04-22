@@ -2405,8 +2405,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
 
   task->mark_finished(os::elapsed_counter());
-  // We don't need directive further, release it
-  task->set_directive(nullptr);
 
   methodHandle method(thread, task->method());
 
@@ -2418,7 +2416,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ResourceMark rm;
     task->print_post(tty);
   }
-  DirectivesStack::release(directive);
+
+    // We don't need directive further, release it
+  task->set_directive(nullptr);
 
   Log(compilation, codecache) log;
   if (log.is_debug()) {
