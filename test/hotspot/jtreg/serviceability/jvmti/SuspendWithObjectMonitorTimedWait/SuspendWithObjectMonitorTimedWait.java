@@ -26,6 +26,7 @@ import jvmti.JVMTIUtils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 
 import static jdk.test.lib.Asserts.assertTrue;
 
@@ -40,9 +41,6 @@ import static jdk.test.lib.Asserts.assertTrue;
  */
 
 public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
-
-    static final Object startBarrier = new Object();
-    static volatile boolean targetStarted = false;
     static final Object lock = new Object();
 
     private static boolean waitUntilTimedWaiting(Thread thread, long deadlineNs) {
@@ -76,22 +74,16 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
 
-        waitTask task = new waitTask();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        waitTask task = new waitTask(countDownLatch);
         Thread.Builder builder = Thread.ofPlatform();
         Thread targetThread = builder.name("Target Thread").unstarted(task);
 
-        targetStarted = false;
-
-        // run targetThread
-        synchronized (startBarrier) {
-            targetThread.start();
-            while (!targetStarted) {
-                try {
-                    startBarrier.wait();
-                } catch (InterruptedException ex) {
-                    throw new Failure(ex);
-                }
-            }
+        targetThread.start();
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException ex) {
+            throw new Failure(ex);
         }
 
         Thread.yield();
@@ -184,15 +176,15 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
         static int maxNRetries = (int) (1.2 * maxRetries);
 
+        private final CountDownLatch countDownLatch;
+
+        waitTask(final CountDownLatch latch) {
+            this.countDownLatch = latch;
+        }
+
         public void run() {
             synchronized (lock) {
-
-                // notify about starting
-                synchronized (startBarrier) {
-                    targetStarted = true;
-                    startBarrier.notifyAll();
-                }
-
+                countDownLatch.countDown();
                 boolean done = false;
                 int retryNumber = 0;
                 while (!done) {
