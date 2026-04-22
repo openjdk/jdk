@@ -210,6 +210,13 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // TODO - attempt to load the stub from the AOT cache
   // n.b. this requires handling (re-)load time jump_table relocations
 
+  assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
+  address start = stubgen->load_archive_data(stub_id);
+  if (start != nullptr) {
+    fnptrs[ae] = start;
+    return;
+  }
+
   StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
@@ -269,7 +276,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   Label L_wcharBegin, L_continue, L_wideNoExpand, L_returnR11;
 
   __ align(CodeEntryAlignment);
-  fnptrs[ae] = __ pc();
+  start = __ pc();
   __ enter();  // required for proper stackwalking of RuntimeStub frame
 
   // Check for trivial cases
@@ -949,6 +956,14 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // TODO - attempt to save the stub to the AOT cache
   // n.b. this requires handling save time jump_table relocations
 
+  // record the stub entry and end
+  stubgen->store_archive_data(stub_id, start, __ pc());
+
+  // x86 consumes the stub via a shared (i.e. non-cpu specific) static
+  // array
+  fnptrs[ae] = start;
+
+#if 0
   // Normally the stub entries are registered in the AOT address table
   // as a side-effect of an AOT laod or store -- irrespective of
   // whether we are loading or saving stubs. For now we need to register
@@ -957,6 +972,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   if (AOTCodeCache::is_on()) {
     AOTCodeCache::cache()->add_stub_entries(stub_id, fnptrs[ae]);
   }
+#endif
 
   return;
 }
