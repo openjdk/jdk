@@ -77,8 +77,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         System.out.println("Timeout = " + timeout + " msc.");
 
         waitTask task = new waitTask();
-        Thread.Builder builder;
-        builder = Thread.ofPlatform();
+        Thread.Builder builder = Thread.ofPlatform();
         Thread targetThread = builder.name("Target Thread").unstarted(task);
 
         targetStarted = false;
@@ -175,8 +174,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         }
 
         if (failureCounter > 0) {
-            status = DebugeeClass.TEST_FAILED;
-            System.out.println("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which is more than 0.");
+            throw new RuntimeException("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which is more than 0.");
         }
         return status;
     }
@@ -203,7 +201,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    retryNumber+=1;
+                    retryNumber += 1;
                     if (retryNumber == maxNRetries){
                         done = true;
                     }
