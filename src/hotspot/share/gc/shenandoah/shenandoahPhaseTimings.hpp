@@ -112,8 +112,8 @@ class outputStream;
   f(conc_update_card_table,                         "Concurrent Update Cards")         \
   f(conc_final_roots,                               "Concurrent Final Roots")          \
   f(promote_in_place,                               "  Promote Regions")               \
-  f(final_roots_gross,                              "Pause Verify Final Roots (G)")    \
-  f(final_roots,                                    "Pause Verify Final Roots (N)")    \
+  f(final_verify_gross,                             "Pause Final Verify (G)")          \
+  f(final_verify,                                   "Pause Final Verify (N)")          \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init Update Refs (G)")      \
   f(init_update_refs,                               "Pause Init Update Refs (N)")      \

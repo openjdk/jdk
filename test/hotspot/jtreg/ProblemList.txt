@@ -79,7 +79,7 @@ compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 compiler/interpreter/Test6833129.java 8335266 generic-i586
 compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s390x
 
-compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
+compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
 compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
 
@@ -95,7 +95,12 @@ gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
+gc/shenandoah/oom/TestThreadFailure.java 8382637 generic-all
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
 
 #############################################################################
 
