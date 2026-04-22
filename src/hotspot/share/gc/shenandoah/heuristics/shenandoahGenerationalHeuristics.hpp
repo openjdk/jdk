@@ -53,9 +53,12 @@ class ShenandoahGenerationalHeuristics : public ShenandoahAdaptiveHeuristics {
 public:
   explicit ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation);
 
-  void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
-
   void post_initialize() override;
+
+  // Wraps budget computation, subclass region selection, budget adjustment, and tracing.
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size,
+                                             size_t free) override;
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
@@ -84,15 +87,17 @@ private:
                                              ShenandoahGenerationalHeap *const heap,
                                              size_t candidates, AgedRegionData* sorted_regions);
 
-  // Filter and sort remaining regions before adding to collection set.
-  void filter_regions(ShenandoahCollectionSet* collection_set);
-
   // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()
   void adjust_evacuation_budgets(ShenandoahHeap* const heap,
                                  ShenandoahCollectionSet* const collection_set);
 
 protected:
+  // Subclasses override this to perform generation-specific region selection.
+  virtual void select_collection_set_regions(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size,
+                                             size_t free) = 0;
+
   ShenandoahGeneration* _generation;
 
   size_t _add_regions_to_old;
