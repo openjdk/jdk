@@ -1160,7 +1160,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
     compiled_entry_offset = __ pc() - start;
     __ enter();
 
-    __ mov(c_rarg1, sp);
+    __ mov(c_rarg1, rfp);
 
     frame_complete = __ pc() - start;
     address the_pc = __ pc();
