@@ -485,8 +485,9 @@ The following options are provided by the standard doclet.
     ```
 
 <span id="option-docfilessubdirs">`-docfilessubdirs`</span>
-:   This option is no longer required as `javadoc` now recursively copies
-    subdirectories of `doc-files` directories by default. Use the
+:   This option is no longer required and may be removed in a future release.
+    The `javadoc` tool now recursively copies subdirectories of `doc-files`
+    directories by default. Use the
     [`-excludedocfilessubdir`](#option-excludedocfilessubdir) option to
     restrict the subdirectories to be copied.
 

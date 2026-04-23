@@ -388,6 +388,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-docfilessubdirs") {
                     @Override
                     public boolean process(String opt, List<String> args) {
+                        messages.notice("doclet.docfilessubdirs_specified");
                         return true;
                     }
                 },
