@@ -45,19 +45,6 @@ class java_lang_Throwable: AllStatic {
   friend class BacktraceIterator;
 
  private:
-  // Trace constants
-  enum {
-    trace_methods_offset = 0,
-    trace_bcis_offset    = 1,
-    trace_mirrors_offset = 2,
-    trace_names_offset   = 3,
-    trace_conts_offset   = 4,
-    trace_next_offset    = 5,
-    trace_hidden_offset  = 6,
-    trace_size           = 7,
-    trace_chunk_size     = 32
-  };
-
   static int _backtrace_offset;
   static int _detailMessage_offset;
   static int _stackTrace_offset;
