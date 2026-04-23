@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import sun.awt.AppContext;
+import sun.awt.util.ThreadGroupUtils;
+
 import sun.swing.AccumulativeRunnable;
 
 /**
@@ -266,7 +267,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      */
     private AccumulativeRunnable<Integer> doNotifyProgressChange;
 
-    private final AccumulativeRunnable<Runnable> doSubmit = getDoSubmit();
+    private final AccumulativeRunnable<Runnable> doSubmit = new DoSubmitAccumulativeRunnable();
 
     /**
      * Values for the {@code state} bound property.
@@ -755,18 +756,16 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     }
 
 
+    private static ExecutorService executorService;
+
     /**
      * returns workersExecutorService.
      *
-     * returns the service stored in the appContext or creates it if
-     * necessary.
+     * returns the service and creates it if necessary.
      *
      * @return ExecutorService for the {@code SwingWorkers}
      */
     private static synchronized ExecutorService getWorkersExecutorService() {
-        final AppContext appContext = AppContext.getAppContext();
-        ExecutorService executorService =
-            (ExecutorService) appContext.get(SwingWorker.class);
         if (executorService == null) {
             //this creates daemon threads.
             ThreadFactory threadFactory =
@@ -788,46 +787,26 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                                        10L, TimeUnit.MINUTES,
                                        new LinkedBlockingQueue<Runnable>(),
                                        threadFactory);
-            appContext.put(SwingWorker.class, executorService);
 
-            // Don't use ShutdownHook here as it's not enough. We should track
-            // AppContext disposal instead of JVM shutdown, see 6799345 for details
-            final ExecutorService es = executorService;
-            appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
-                new PropertyChangeListener() {
-                    @Override
-                    public void propertyChange(PropertyChangeEvent pce) {
-                        boolean disposed = (Boolean)pce.getNewValue();
-                        if (disposed) {
-                            final WeakReference<ExecutorService> executorServiceRef =
-                                new WeakReference<ExecutorService>(es);
-                            final ExecutorService executorService =
-                                executorServiceRef.get();
-                            if (executorService != null) {
-                                executorService.shutdown();
-                            }
-                        }
-                    }
+            final Runnable shutdownHook = new Runnable() {
+                final WeakReference<ExecutorService> executorServiceRef =
+                      new WeakReference<ExecutorService>(executorService);
+                 public void run() {
+                     final ExecutorService executorService = executorServiceRef.get();
+                     if (executorService != null) {
+                         executorService.shutdown();
+                     }
                 }
-            );
+            };
+            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+            Thread t = new Thread(rootTG, shutdownHook,
+                                    "SwingWorker ES", 0, false);
+            t.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(t);
         }
         return executorService;
     }
 
-    private static final Object DO_SUBMIT_KEY = new StringBuilder("doSubmit");
-    private static AccumulativeRunnable<Runnable> getDoSubmit() {
-        synchronized (DO_SUBMIT_KEY) {
-            final AppContext appContext = AppContext.getAppContext();
-            Object doSubmit = appContext.get(DO_SUBMIT_KEY);
-            if (doSubmit == null) {
-                doSubmit = new DoSubmitAccumulativeRunnable();
-                appContext.put(DO_SUBMIT_KEY, doSubmit);
-            }
-            @SuppressWarnings("unchecked")
-            AccumulativeRunnable<Runnable> tmp = (AccumulativeRunnable<Runnable>) doSubmit;
-            return tmp;
-        }
-    }
     private static class DoSubmitAccumulativeRunnable
           extends AccumulativeRunnable<Runnable> implements ActionListener {
         private static final int DELAY = 1000 / 30;

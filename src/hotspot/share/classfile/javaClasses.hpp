@@ -592,9 +592,6 @@ class java_lang_VirtualThread : AllStatic {
     TIMED_WAITING = 17,
     TIMED_WAIT    = 18,  // waiting in timed-Object.wait
     TERMINATED    = 99,
-
-    // additional state bits
-    SUSPENDED    = 1 << 8,   // suspended when unmounted
   };
 
   static void compute_offsets();

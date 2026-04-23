@@ -58,18 +58,6 @@ public:
   }
 };
 
-// Full GC Mark that holds GC id and CPU time trace. Needs to be separate
-// from the G1FullCollector and G1FullGCScope to allow the Full GC logging
-// to have the same structure as the Young GC logging.
-class G1FullGCMark : StackObj {
-  GCIdMark       _gc_id;
-  G1FullGCTracer _tracer;
-  GCTraceCPUTime _cpu_time;
-public:
-  G1FullGCMark() : _gc_id(), _tracer(), _cpu_time(&_tracer) { }
-  G1FullGCTracer* tracer() { return &_tracer; }
-};
-
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
@@ -102,7 +90,7 @@ public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool clear_soft_refs,
                   bool do_maximal_compaction,
-                  G1FullGCTracer* tracer);
+                  GCTracer* tracer);
   ~G1FullCollector();
 
   void prepare_collection();

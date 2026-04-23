@@ -308,7 +308,7 @@ static jlong* resize_counters_array(jlong* old_counters, int current_size, int n
     if (new_size > current_size) {
       memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
     }
-    FREE_C_HEAP_ARRAY(jlong, old_counters);
+    FREE_C_HEAP_ARRAY(old_counters);
   }
   return new_counters;
 }
@@ -377,15 +377,6 @@ void JavaThread::check_possible_safepoint() {
   // Clear unhandled oops in JavaThreads so we get a crash right away.
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
-
-  // Macos/aarch64 should be in the right state for safepoint (e.g.
-  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
-  // happens in practice, making such issues hard to find and reproduce.
-#if defined(__APPLE__) && defined(AARCH64)
-  if (AssertWXAtThreadSync) {
-    assert_wx_state(WXWrite);
-  }
-#endif
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
@@ -519,6 +510,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
 #if INCLUDE_JFR
   _last_freeze_fail_result(freeze_ok),
+#endif
+
+#ifdef MACOS_AARCH64
+  _cur_wx_enable(nullptr),
+  _cur_wx_mode(nullptr),
 #endif
 
   _lock_stack(this),
@@ -704,7 +700,7 @@ JavaThread::~JavaThread() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
+    FREE_C_HEAP_ARRAY(_jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
 }
@@ -1888,7 +1884,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != nullptr, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
+  FREE_C_HEAP_ARRAY((char*)_popframe_preserved_args);
   _popframe_preserved_args = nullptr;
   _popframe_preserved_args_size = 0;
 }

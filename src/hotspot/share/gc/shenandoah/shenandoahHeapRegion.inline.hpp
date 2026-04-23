@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "runtime/atomicAccess.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest &req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
@@ -147,16 +146,16 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 }
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
-  AtomicAccess::add(&_live_data, s, memory_order_relaxed);
+  _live_data.add_then_fetch(s, memory_order_relaxed);
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
-  AtomicAccess::store(&_live_data, (size_t)0);
+  _live_data.store_relaxed((size_t)0);
   _promoted_in_place = false;
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return AtomicAccess::load(&_live_data);
+  return _live_data.load_relaxed();
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
@@ -205,21 +204,21 @@ inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
 }
 
 inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
-  HeapWord* watermark = AtomicAccess::load_acquire(&_update_watermark);
+  HeapWord* watermark = _update_watermark.load_acquire();
   assert(bottom() <= watermark && watermark <= top(), "within bounds");
   return watermark;
 }
 
 inline void ShenandoahHeapRegion::set_update_watermark(HeapWord* w) {
   assert(bottom() <= w && w <= top(), "within bounds");
-  AtomicAccess::release_store(&_update_watermark, w);
+  _update_watermark.release_store(w);
 }
 
 // Fast version that avoids synchronization, only to be used at safepoints.
 inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w) {
   assert(bottom() <= w && w <= top(), "within bounds");
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
-  _update_watermark = w;
+  _update_watermark.store_relaxed(w);
 }
 
 inline ShenandoahAffiliation ShenandoahHeapRegion::affiliation() const {

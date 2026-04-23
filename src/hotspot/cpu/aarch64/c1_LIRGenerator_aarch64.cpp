@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1287,9 +1287,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
-    tmp3 = new_register(objectType);
-  }
+  tmp3 = new_register(objectType);
   __ checkcast(reg, obj.result(), x->klass(),
                new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
@@ -1308,9 +1306,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   }
   obj.load_item();
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
-    tmp3 = new_register(objectType);
-  }
+  tmp3 = new_register(objectType);
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
@@ -1402,14 +1398,5 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
-  // 8179954: We need to make sure that the code generated for
-  // volatile accesses forms a sequentially-consistent set of
-  // operations when combined with STLR and LDAR.  Without a leading
-  // membar it's possible for a simple Dekker test to fail if loads
-  // use LD;DMB but stores use STLR.  This can happen if C2 compiles
-  // the stores in one method and C1 compiles the loads in another.
-  if (!CompilerConfig::is_c1_only_no_jvmci()) {
-    __ membar();
-  }
   __ volatile_load_mem_reg(address, result, info);
 }

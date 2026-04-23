@@ -178,13 +178,21 @@ jint reuseport_supported(int ipv6_available)
 
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
-                                               int gai_error)
+                                               int gai_error,
+                                               int sys_errno)
 {
     int size;
     char *buf;
+    const char *sys_errno_string = NULL;
     const char *error_string = gai_strerror(gai_error);
-    if (error_string == NULL)
+    if (error_string == NULL) {
         error_string = "unknown error";
+    }
+    if (gai_error == EAI_SYSTEM) {
+        // EAI_SYSTEM implies that the actual error is stored in the system errno.
+        // Here we get the string representation of that errno.
+        sys_errno_string = strerror(sys_errno);
+    }
     int enhancedExceptions = getEnhancedExceptionsAllowed(env);
     if (enhancedExceptions == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
         return;
@@ -195,16 +203,33 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     } else {
         size = 0;
     }
-    size += strlen(error_string) + 3;
-
+    if (sys_errno_string == NULL) {
+        // the 3 is for the additional 3 characters - colon, space and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + 3;
+    } else {
+        // the 5 is for the additional 5 characters - 2 colons, 2 spaces and
+        // the NULL termination character, that we will include in the
+        // message of the Exception that we construct
+        size += strlen(error_string) + strlen(sys_errno_string) + 5;
+    }
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
         int n;
         if (enhancedExceptions == ENH_ENABLED) {
-            n = snprintf(buf, size, "%s: %s", hostname, error_string);
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, "%s: %s", hostname, error_string);
+            } else {
+                n = snprintf(buf, size, "%s: %s: %s", hostname, error_string, sys_errno_string);
+            }
         } else {
-            n = snprintf(buf, size, " %s", error_string);
+            if (sys_errno_string == NULL) {
+                n = snprintf(buf, size, " %s", error_string);
+            } else {
+                n = snprintf(buf, size, " %s: %s", error_string, sys_errno_string);
+            }
         }
         if (n >= 0) {
             s = JNU_NewStringPlatform(env, buf);
