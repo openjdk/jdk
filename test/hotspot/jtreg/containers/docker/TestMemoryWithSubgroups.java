@@ -65,19 +65,19 @@ public class TestMemoryWithSubgroups {
 
         if ("cgroupv1".equals(metrics.getProvider())) {
             try {
-                testMemoryLimitSubgroupV1("200m", "100m", "104857600", false);
-                testMemoryLimitSubgroupV1("1g", "500m", "524288000", false);
-                testMemoryLimitSubgroupV1("200m", "100m", "104857600", true);
-                testMemoryLimitSubgroupV1("1g", "500m", "524288000", true);
+                testMemoryLimitSubgroup("cgroupv1", "200m", "100m", "104857600", false);
+                testMemoryLimitSubgroup("cgroupv1", "1g", "500m", "524288000", false);
+                testMemoryLimitSubgroup("cgroupv1", "200m", "100m", "104857600", true);
+                testMemoryLimitSubgroup("cgroupv1", "1g", "500m", "524288000", true);
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
         } else if ("cgroupv2".equals(metrics.getProvider())) {
             try {
-                testMemoryLimitSubgroupV2("200m", "100m", "104857600", false);
-                testMemoryLimitSubgroupV2("1g", "500m", "524288000", false);
-                testMemoryLimitSubgroupV2("200m", "100m", "104857600", true);
-                testMemoryLimitSubgroupV2("1g", "500m", "524288000", true);
+                testMemoryLimitSubgroup("cgroupv2", "200m", "100m", "104857600", false);
+                testMemoryLimitSubgroup("cgroupv2", "1g", "500m", "524288000", false);
+                testMemoryLimitSubgroup("cgroupv2", "200m", "100m", "104857600", true);
+                testMemoryLimitSubgroup("cgroupv2", "1g", "500m", "524288000", true);
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
@@ -86,10 +86,12 @@ public class TestMemoryWithSubgroups {
         }
     }
 
-    private static void testMemoryLimitSubgroupV1(String containerMemorySize, String valueToSet, String expectedValue, boolean privateNamespace)
+    private static void testMemoryLimitSubgroup(String cgroupVersion, String containerMemorySize,
+                                                String valueToSet, String expectedValue, boolean privateNamespace)
             throws Exception {
 
-        Common.logNewTestCase("Cgroup V1 subgroup memory limit: " + valueToSet);
+        final String upperVersion = "cgroupv1".equals(cgroupVersion) ? "V1" : "V2";
+        Common.logNewTestCase("Cgroup " + upperVersion + " subgroup memory limit: " + valueToSet);
 
         DockerRunOptions opts = new DockerRunOptions(imageName, "sh", "-c");
         opts.javaOpts = new ArrayList<>();
@@ -98,33 +100,19 @@ public class TestMemoryWithSubgroups {
             .addDockerOpts("--user", "root")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
             .addDockerOpts("--memory", containerMemorySize);
-        opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
-            "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
-            "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
-            "/jdk/bin/java -Xlog:os+container=trace -version");
-
-        Common.run(opts)
-            .shouldMatch("Lowest limit was:.*" + expectedValue);
-    }
-
-    private static void testMemoryLimitSubgroupV2(String containerMemorySize, String valueToSet, String expectedValue, boolean privateNamespace)
-            throws Exception {
-
-        Common.logNewTestCase("Cgroup V2 subgroup memory limit: " + valueToSet);
-
-        DockerRunOptions opts = new DockerRunOptions(imageName, "sh", "-c");
-        opts.javaOpts = new ArrayList<>();
-        opts.appendTestJavaOptions = false;
-        opts.addDockerOpts("--privileged")
-            .addDockerOpts("--user", "root")
-            .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", containerMemorySize);
-        opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
-            "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
-            "echo '+memory' > /sys/fs/cgroup/cgroup.subtree_control ; " +
-            "echo '+memory' > /sys/fs/cgroup/memory/cgroup.subtree_control ; " +
-            "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.max ; " +
-            "/jdk/bin/java -Xlog:os+container=trace -version");
+        if ("cgroupv1".equals(cgroupVersion)) {
+            opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
+                "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
+                "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
+                "/jdk/bin/java -Xlog:os+container=trace -version");
+        } else {
+            opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
+                "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
+                "echo '+memory' > /sys/fs/cgroup/cgroup.subtree_control ; " +
+                "echo '+memory' > /sys/fs/cgroup/memory/cgroup.subtree_control ; " +
+                "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.max ; " +
+                "/jdk/bin/java -Xlog:os+container=trace -version");
+        }
 
         Common.run(opts)
             .shouldMatch("Lowest limit was:.*" + expectedValue);
