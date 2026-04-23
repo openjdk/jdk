@@ -125,7 +125,7 @@ class IsAvailable {
     }
 
     @Test
-    void testTaintedSocket() throws Exception {
+    void testSocketWithUnconsumedData() throws Exception {
         try (var infra = new Infra()) {
 
             // Obtain the initial read timeout
@@ -142,16 +142,14 @@ class IsAvailable {
                 clientSocketOutputStream.write("unexpected data".getBytes(US_ASCII));
             }
 
-            // There is a race condition we need to deal with. When we taint
-            // the socket by writing data to it, it might not be instantly
-            // visible to the `HttpClient::available`, which invokes a
-            // socket `read()` using 1ms timeout. Hence, we give the
-            // transfer some time for the data to get delivered.
+            // Writing to the socket on the server side may not make the data
+            // immediately visible to the client side. Make sure we wait long
+            // enough for the data to get delivered.
             Thread.sleep(adjustTimeout(500));
 
             // Verify that the presence of stale data on the socket removes the availability
             LOGGER.info("Checking the connection (#2)...");
-            assertFalse(infra.available(), "Connection over tainted socket should not be available");
+            assertFalse(infra.available(), "available should be false if it managed to read some data from the socket");
             assertEquals(readTimeout, infra.httpClient.getReadTimeout(), "Read-timeout should be restored");
 
         }
