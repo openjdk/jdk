@@ -32,21 +32,21 @@ public:
   static volatile jlong Counter;
   static jlong elapsed_counter() {
     const jlong result = Counter;
-    Counter += 1;
+    Counter += NANOSECS_PER_SEC;
     return result;
   }
 
   static jlong elapsed_frequency() {
-    return 1;
+    return NANOSECS_PER_SEC;
   }
 };
 
-volatile jlong ShenandoahMockClock::Counter = 1;
+volatile jlong ShenandoahMockClock::Counter = 0;
 
 class ShenandoahAllocationRateTest : public testing::Test {
 protected:
   ShenandoahAllocationRateTest() {
-    ShenandoahMockClock::Counter = 1;
+    ShenandoahMockClock::Counter = 0;
   }
 };
 

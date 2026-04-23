@@ -74,6 +74,7 @@ class ShenandoahVerifier;
 class ShenandoahWorkerThreads;
 class VMStructs;
 
+
 // Used for buffering per-region liveness data.
 // Needed since ShenandoahHeapRegion uses atomics to update liveness.
 // The ShenandoahHeap array has max-workers elements, each of which is an array of

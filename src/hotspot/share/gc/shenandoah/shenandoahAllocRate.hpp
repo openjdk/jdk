@@ -50,10 +50,13 @@ private:
   Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
   jlong _last_sample_time;
-  TruncatedSeq _sampled_times;
-  TruncatedSeq _sampled_bytes;
   TruncatedSeq _sampled_rates;
   size_t _minimum_sample_size;
+
+  jlong _accumulated_bytes;
+  jlong _accumulated_duration;
+  jlong _last_cumulative_sample_time;
+  jlong _cumulative_sample_period;
 
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
   // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
@@ -69,11 +72,13 @@ public:
   explicit ShenandoahAllocRate(size_t minimum_sample_size = MINIMUM_SAMPLE_SIZE)
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _last_sample_time(0)
-    , _sampled_times(100)
-    , _sampled_bytes(100)
-    , _sampled_rates(100)
+    , _last_sample_time(Clock::elapsed_counter())
+    , _sampled_rates(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz)
     , _minimum_sample_size(minimum_sample_size)
+    , _accumulated_bytes(0)
+    , _accumulated_duration(0)
+    , _last_cumulative_sample_time(_last_sample_time)
+    , _cumulative_sample_period(Clock::elapsed_frequency() / ShenandoahAdaptiveSampleFrequencyHz)
     , _buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize))
     , _first_sample_index(0)
     , _num_samples(0)

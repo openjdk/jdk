@@ -62,16 +62,17 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   // concurrently by other threads outside the lock, so we still use an atomic access.
   _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
-  _sampled_times.add(elapsed);
-  _sampled_bytes.add(unsampled);
+  _accumulated_bytes += unsampled;
+  _accumulated_duration += elapsed;
 
-  const double total_time  = _sampled_times.sum();
-  const double total_bytes = _sampled_bytes.sum();
-  const double elapsed_seconds = total_time / Clock::elapsed_frequency();
-  const double bytes_per_second = total_bytes / elapsed_seconds;
+  if (now - _last_cumulative_sample_time > _cumulative_sample_period) {
+    _sampled_rates.add(static_cast<double>(_accumulated_bytes) / _accumulated_duration * Clock::elapsed_frequency());
+    _last_cumulative_sample_time = now;
+    _accumulated_bytes = 0;
+    _accumulated_duration = 0;
+  }
 
-  _sampled_rates.add(bytes_per_second);
-  record_rate_sample(_last_sample_time, unsampled / elapsed / Clock::elapsed_frequency());
+  record_rate_sample(_last_sample_time / Clock::elapsed_frequency(), static_cast<double>(unsampled) / elapsed * Clock::elapsed_frequency());
 
   _sample_lock.unlock();
 }
