@@ -458,9 +458,6 @@ final class ProcessHandleImpl implements ProcessHandle {
                     next++;
                 }
             }
-            if (count + 1 >= size) {
-                break;
-            }
             ppid = pids[++count];   // pick up the next pid to scan for
             ppStart = starttimes[count];    // and its start time
         } while (count < next);
@@ -513,7 +510,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * The attributes of a process vary by operating system and are not available
      * in all implementations.  Additionally, information about other processes
      * is limited by the operating system privileges of the process making the request.
-     * If a value is not available, either a {@code null} or {@code -1} is stored.
+     * If a value is not available, either a {@code null} or {@code 0} is stored.
      * The accessor methods return {@code null} if the value is not available.
      */
     static class Info implements ProcessHandle.Info {

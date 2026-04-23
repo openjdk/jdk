@@ -22,7 +22,7 @@
  */
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -40,6 +40,6 @@ public class PidZero {
      */
     @Test
     public void test() {
-         assertDoesNotThrow(() -> ProcessHandle.of(0).orElseThrow().descendants().toList().size());
+         assertTrue(ProcessHandle.of(0).isEmpty());
     }
 }

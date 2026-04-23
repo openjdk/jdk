@@ -203,6 +203,11 @@ pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t jpid,
     struct kinfo_proc kp;
     size_t bufSize = sizeof kp;
 
+    if (jpid == 0) {
+        // macos would return a process 0.  It's not a real process
+        return -1;
+    }
+
     // Read the process info for the specific pid
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
 
