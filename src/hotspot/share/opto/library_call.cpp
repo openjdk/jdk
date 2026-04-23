@@ -6645,7 +6645,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
     inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
-    do_partial_inline = inline_limit >= 16;
+    do_partial_inline = inline_limit > 0 && Matcher::vector_size_supported(elem_bt, inline_limit);
   }
 
   if (do_partial_inline) {

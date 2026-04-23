@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7301,4 +7302,67 @@ void MacroAssembler::try_to_replace_prev_vector_copy_with_movprfx(FloatRegister 
   uint32_t rn = Instruction_aarch64::extract(insn, 9, 5);
   Instruction_aarch64::patch(prev, 31, 0,
                              NativeInstruction::encode_sve_movprfx(rd, rn));
+}
+
+// Code for ArraysSupport::vectorizedMismatch() intrinsic
+// Clobbers: obja, length, tmp, rscratch1-2, vtmp1-2, pgtmp, ptmp
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length,
+                                         Register log2_array_indxscale, Register result,
+                                         Register tmp, FloatRegister vtmp1, FloatRegister vtmp2,
+                                         PRegister pgtmp, PRegister ptmp) {
+  assert(UseVectorizedMismatchIntrinsic, "UseVectorizedMismatchIntrinsic must be enabled");
+  assert(UseSVE > 0, "SVE is required");
+
+  assert_different_registers(obja, objb, length, log2_array_indxscale, tmp, rscratch1, rscratch2);
+  assert_different_registers(vtmp1, vtmp2);
+  assert_different_registers(pgtmp, ptmp);
+
+  uint32_t vector_size = VM_Version::get_initial_sve_vector_length();
+
+  Label LOOP, TAIL, MISMATCH, DONE;
+
+#define LOAD_PAIR(ztmp1, ztmp2, pgtmp, src1, src2, offset)  \
+  sve_ld1b(ztmp1, B, pgtmp, Address(src1, offset)); \
+  sve_ld1b(ztmp2, B, pgtmp, Address(src2, offset));
+
+  assert(vector_size > 8, "unexpected SVE vector size");
+  sve_ptrue(pgtmp, B, 0b01000 | (exact_log2(vector_size) - 3));
+
+  Register limit = tmp;
+  Register off = rscratch1;
+  Register tmp_result = rscratch2;
+  mov(off, 0);
+  mov(tmp_result, -1);
+
+  lslv(length, length, log2_array_indxscale);
+  subs(limit, length, vector_size);
+  br(LT, TAIL);
+
+  // Process full-vector chunk with a ptrue predicated SVE loop
+  bind(LOOP);
+  LOAD_PAIR(vtmp1, vtmp2, pgtmp, obja, objb, off);
+  sve_cmp(Assembler::NE, ptmp, B, pgtmp, vtmp1, vtmp2);
+  br(NE, MISMATCH);
+  add(off, off, vector_size);
+  cmp(off, limit);
+  br(LE, LOOP);
+
+  // Process tail elements
+  bind(TAIL);
+  sve_whilelo(pgtmp, B, off, length);
+  br(EQ, DONE);
+  LOAD_PAIR(vtmp1, vtmp2, pgtmp, obja, objb, off);
+  sve_cmp(Assembler::NE, ptmp, B, pgtmp, vtmp1, vtmp2);
+  br(EQ, DONE);
+
+  bind(MISMATCH);
+  sve_brkb(ptmp, pgtmp, ptmp, false);
+  sve_cntp(tmp_result, B, pgtmp, ptmp);
+  add(tmp_result, tmp_result, off);
+  lsrv(tmp_result, tmp_result, log2_array_indxscale);
+
+  bind(DONE);
+  mov(result, tmp_result);
+
+#undef LOAD_PAIR
 }

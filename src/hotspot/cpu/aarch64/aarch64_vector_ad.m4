@@ -162,6 +162,7 @@ source %{
       case Op_OrVMask:
       case Op_XorVMask:
       case Op_MaskAll:
+      case Op_VectorCmpMasked:
       case Op_VectorMaskGen:
       case Op_LoadVectorMasked:
       case Op_StoreVectorMasked:
@@ -4606,6 +4607,31 @@ VMASKALL_PREDICATE(I, iRegIorL2I)
 VMASKALL_IMM(L, long)
 VMASKALL(L, iRegL)
 VMASKALL_PREDICATE(L, iRegL)
+
+// partial inlining for vectorizedMismatch
+
+instruct vmask_cmp_node(iRegINoSp dst, vReg src1, vReg src2, pRegGov pg, pReg ptmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set dst (VectorCmpMasked src1 (Binary src2 pg)));
+  effect(TEMP_DEF dst, TEMP ptmp, KILL cr);
+  format %{ "vmask_cmp $dst, $src1, $src2, $pg\t# KILL $ptmp, cr" %}
+  ins_encode %{
+    assert(Matcher::vector_length_in_bytes(this, $src1) == Matcher::vector_length_in_bytes(this, $src2), "mismatch");
+    assert(Matcher::vector_element_basic_type(this, $src1) == Matcher::vector_element_basic_type(this, $src2), "mismatch");
+
+    Label DONE;
+    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+
+    __ mov($dst$$Register, -1);
+    __ sve_cmp(Assembler::NE, $ptmp$$PRegister, size, $pg$$PRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ br(Assembler::EQ, DONE);
+    __ sve_brkb($ptmp$$PRegister, $pg$$PRegister, $ptmp$$PRegister, false);
+    __ sve_cntp($dst$$Register, size, $pg$$PRegister, $ptmp$$PRegister);
+    __ bind(DONE);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 // vetcor mask generation
 

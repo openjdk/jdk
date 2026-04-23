@@ -326,11 +326,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
   if (supports_aes()) {
     if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       FLAG_SET_DEFAULT(UseAESIntrinsics, true);
@@ -661,6 +656,17 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
 #endif
+
+  if (UseSVE > 0) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      warning("UseVectorizedMismatchIntrinsic specified, but not supported on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
 
   _spin_wait = get_spin_wait_desc();
 
