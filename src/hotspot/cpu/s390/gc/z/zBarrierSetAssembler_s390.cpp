@@ -59,6 +59,8 @@ long c1_load_fubar = 0;
 long c1_store_fubar = 0;
 long atomic_nmethod_fubar = 0;
 long non_atomic_nmethod_fubar = 0;
+long z_color_fubar = 0;
+long c1_store_stub_fubar = 0;
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -288,10 +290,12 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
+      __ z_lg(rnew_zpointer, ref_addr);
+      __ z_nihf(rnew_zpointer, 0x00000000);
+      __ z_nilh(rnew_zpointer, 0x0000);
+      // TODO: try using z_oill
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-      __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
-      // TODO: Check if this will work or else implement z_chy
-      __ z_ch(rnew_zpointer, ref_addr);
+      __ z_cghi(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     } else {
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
@@ -314,10 +318,13 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
     __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
     __ z_ogr(rnew_zpointer, rnew_zaddress);
+    // TODO: try to optimize it later -> the contents of rnew_zaddress should not change
+    __ z_srlg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
   } else {
     //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
-    // TOOD: try using z_lgh here.
+    // TODO: try using z_lgh here.
+    // TODO: try using z_oill here.
     __ z_lg(rnew_zpointer, ref_addr);
     __ z_nihf(rnew_zpointer, 0x00000000);
     __ z_nilh(rnew_zpointer, 0x0000);
@@ -400,7 +407,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
-    __ stop("is_atomic store_barrier_medium");
     __ z_la(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotEqual, slow_path);
@@ -761,7 +767,11 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
-  __ stop("z color");
+  __ z_ldgr(Z_F2, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&z_color_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F2);
+
   __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_oill(ref->as_register(), barrier_Relocation::unpatched);
@@ -867,6 +877,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
+  // TODO: Why is this here?
   Register rbase = addr->base()->as_pointer_register();
   store_barrier_fast(ce->masm(),
                      ce->as_Address(addr),
@@ -884,14 +895,17 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   // Stub entry
   __ bind(*stub->entry());
 
-  __ stop("generate c1 store barrier stub");
+  Register scratch = stub->new_zpointer()->as_register();
+  __ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
+  __ z_agsi(0, scratch, 1);
+
   Label slow;
   Label slow_continuation;
   breakpoint();
   store_barrier_medium(ce->masm(),
                        ce->as_Address(stub->ref_addr()->as_address_ptr()),
                        Z_R1,
-                       stub->new_zpointer()->as_register(), /* This is probelematic, R2, R3, R4 and R5 all are used here, I think I can pass stub->new_zpointer()->as_register() here */
+                       scratch, /* This is probelematic, R2, R3, R4 and R5 all are used here, I think I can pass stub->new_zpointer()->as_register() here */
                        false /* is_native */,
                        stub->is_atomic(),
                        *stub->continuation(),
@@ -899,6 +913,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                        slow_continuation);
 
   __ bind(slow);
+
+  __ stop("c1 store barrier slow path");
  
   __ z_lay(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
