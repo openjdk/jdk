@@ -166,14 +166,10 @@ public class TestVerifyGCType {
                                        "-Xmx16m",
                                        "-XX:ParallelGCThreads=1",
                                        "-XX:G1HeapWastePercent=1",
+                                       "-XX:+G1VerifyBitmaps",
                                        "-XX:+VerifyBeforeGC",
                                        "-XX:+VerifyAfterGC",
                                        "-XX:+VerifyDuringGC"});
-
-        if (Platform.isDebugBuild()) {
-            // G1VerifyBitmaps is develop only.
-            Collections.addAll(basicOpts, "-XX:+G1VerifyBitmaps");
-        }
 
         for(String verifyType : types) {
             basicOpts.add("-XX:VerifyGCType="+verifyType);
