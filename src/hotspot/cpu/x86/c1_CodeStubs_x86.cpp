@@ -363,13 +363,13 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     // We don't need to replace the NativeGeneralJump::instruction_size first bytes, since insert_unconditional
     // will overwrite.
     for (int i = NativeGeneralJump::instruction_size; i < length_before_immediate + BytesPerLong; ++i) {
-      *(_pc_start + i) = NativeInstruction::nop_instruction_code;
+      _pc_start[i] = NativeInstruction::nop_instruction_code;
     }
   }
 #ifdef ASSERT
   else {  // and we make sure otherwise, we indeed have just nops.
     for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
-      assert(*(_pc_start + i) == NativeInstruction::nop_instruction_code, "patching over an unexpected instruction");
+      assert(_pc_start[i] == NativeInstruction::nop_instruction_code, "patching over an unexpected instruction");
     }
   }
 #endif
