@@ -41,7 +41,6 @@ package compiler.intrinsics.bmi.verifycode;
 import compiler.intrinsics.bmi.TestAndnI;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 public class AndnTestI extends BmiIntrinsicBase.BmiTestCase {
 
@@ -71,12 +70,6 @@ public class AndnTestI extends BmiIntrinsicBase.BmiTestCase {
                 (byte) 0x00,
                 (byte) 0x00,
                 (byte) 0xF2};
-    }
-
-    @Override
-    protected List<String> getCpuFlag() {
-        // blsi instruction requires avx in addition to bmi1 flag
-        return List.of(cpuFlag, "avx");
     }
 
     public static void main(String[] args) throws Exception {
