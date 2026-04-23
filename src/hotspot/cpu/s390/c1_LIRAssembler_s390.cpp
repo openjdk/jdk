@@ -43,6 +43,8 @@
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
+long leal_fubar = 0;
+
 #define __ _masm->
 
 #ifndef PRODUCT
@@ -2883,10 +2885,29 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
   LIR_Address* addr = addr_opr->as_address_ptr();
   assert(addr->scale() == LIR_Address::times_1, "scaling unsupported");
-  __ load_address(dest->as_pointer_register(), as_Address(addr));
+
+  if (addr->index()->is_illegal()) {
+    if (patch_code != lir_patch_none) {
+      PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+ 
+      __ stop("leal patching");
+
+      __ z_ldgr(Z_F1, Z_R1);
+      __ load_const_optimized(Z_R1, (uintptr_t)&leal_fubar);
+      __ z_agsi(0, Z_R1, 1);
+      __ z_lgdr(Z_R1, Z_F1);
+     int zero = 0;
+      __ load_const_optimized(Z_R0_scratch, zero);
+      __ z_agrk(dest->as_pointer_register(), addr->base()->as_pointer_register(), Z_R0_scratch);
+      patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+    } else {
+      __ load_address(dest->as_pointer_register(), as_Address(addr));
+    }
+  } else {
+      __ load_address(dest->as_pointer_register(), as_Address(addr));
+  }
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

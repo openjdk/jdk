@@ -71,6 +71,8 @@ long c1_store_stub_fubar = 0;
 #undef __
 #define __ masm->
 
+// TODO: Put block comments in functions
+
 // Helper for saving and restoring registers across a runtime call that does
 // not have any live vector registers.
 // Purpose: To save all the volatile registers except when Z_R2 is the _result
@@ -896,9 +898,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   __ bind(*stub->entry());
 
   Register scratch = stub->new_zpointer()->as_register();
-  __ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
-  __ z_agsi(0, scratch, 1);
-
+  
   Label slow;
   Label slow_continuation;
   breakpoint();
@@ -914,16 +914,24 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  __ stop("c1 store barrier slow path");
+  __ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
+  __ z_agsi(0, scratch, 1);
  
-  __ z_lay(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
-
-  // Setup arguments and call runtime stub
-  __ add2reg(Z_SP, - 2 * BytesPerWord);
-  // TODO: why 2 when we are only storing on parameter, everybody did this
-  ce->store_parameter(stub->new_zpointer()->as_register(), 0);
+  // TODO: see if i can pass it in another way, currently following ppc
+  // Pass store address in R0
+  __ z_lay(Z_R0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
+  // TODO: I do not want to do this, if anything fails check this first. Proper solution would be to extend the frame and then store this there.
+  __ z_ldgr(Z_F2, Z_R0);
   __ call_stub(stub->runtime_stub());
-  __ add2reg(Z_SP, 2 * BytesPerWord);
+
+  //__ z_lay(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
+//
+  //// Setup arguments and call runtime stub
+  //__ add2reg(Z_SP, - 2 * BytesPerWord);
+  //// TODO: why 2 when we are only storing on parameter, everybody did this
+  //ce->store_parameter(stub->new_zpointer()->as_register(), 0);
+  //__ call_stub(stub->runtime_stub());
+  //__ add2reg(Z_SP, 2 * BytesPerWord);
 
   // Stub exit
   __ branch_optimized(Assembler::bcondAlways, slow_continuation);
@@ -966,17 +974,24 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 // Purpose: We are pushing all the volatile registers except Z_R0 onto the stack and calling the VM
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
-  __ stop("generate c1 store barrier runtime stub");
-  const int stack_parameters = 2;
-  const int volatile_regs = 13;
-  const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
 
-  __ push_frame(nbytes_save);
-  __ save_return_pc();
-  // TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
-  __ save_volatile_regs(Z_SP, stack_parameters, true, false);
 
-  __ z_lgr(Z_ARG1, Z_R0);
+  int nbytes_save = 15 * BytesPerWord; /* R1 to R5, F0 to F7, SP, PC */
+  int offset = 160;
+
+  __ push_frame_abi160(nbytes_save);        offset += 8;
+  __ save_return_pc();                      offset += 8;
+  __ save_volatile_regs(Z_SP, offset, true, false);
+
+  // We stored the store address in R0 above in generate_store_barrier_stub
+  __ z_lgdr(Z_ARG1, Z_F2);
+
+  //__ push_frame(nbytes_save);
+  //__ save_return_pc();
+  //// TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
+  //__ save_volatile_regs(Z_SP, stack_parameters, true, false);
+//
+  //__ z_lgr(Z_ARG1, Z_R0);
 
   if (self_healing) {
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
@@ -984,11 +999,15 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
 
-  __ restore_volatile_regs(Z_SP, stack_parameters, true, false);
+  offset = 168;
+  __ restore_return_pc();                   offset += 8;
+  __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
-  __ restore_return_pc();
 
-  //TODO: Check if there is a better way to do this
+  //__ restore_volatile_regs(Z_SP, stack_parameters, true, false);
+  //__ pop_frame();
+  //__ restore_return_pc();
+
   __ z_br(Z_R14);
 }
 
