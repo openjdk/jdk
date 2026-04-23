@@ -1187,6 +1187,7 @@ bool PhaseIterGVN::deep_revisit() {
 }
 
 void PhaseIterGVN::optimize(bool deep) {
+#ifndef PRODUCT
   if (StressDeepIGVNRevisit != nullptr) {
     if (strcmp(StressDeepIGVNRevisit, "all") == 0) {
       deep = true;
@@ -1195,6 +1196,7 @@ void PhaseIterGVN::optimize(bool deep) {
       deep = (C->random() % 2) == 0;
     }
   }
+#endif
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)

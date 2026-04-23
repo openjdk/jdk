@@ -28,9 +28,10 @@ import jdk.test.lib.process.ProcessTools;
 /*
  * @test
  * @bug 8379629
- * @summary Validate parsing of the StressDeepIGVNRevisit diagnostic flag.
+ * @summary Validate parsing of the StressDeepIGVNRevisit flag.
  * @library /test/lib
  * @requires vm.compiler2.enabled
+ * @requires vm.debug
  * @requires vm.flagless
  * @run driver ${test.main.class}
  */
@@ -45,9 +46,8 @@ public class TestStressDeepIGVNRevisitFlag {
     }
 
     private static void run(int expectedExitValue, String expectedOutput, String... extraArgs) throws Exception {
-        String[] args = new String[extraArgs.length + 2];
-        args[0] = "-XX:+UnlockDiagnosticVMOptions";
-        System.arraycopy(extraArgs, 0, args, 1, extraArgs.length);
+        String[] args = new String[extraArgs.length + 1];
+        System.arraycopy(extraArgs, 0, args, 0, extraArgs.length);
         args[args.length - 1] = "-version";
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
