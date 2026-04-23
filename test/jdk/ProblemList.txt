@@ -353,6 +353,8 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless2Test.java 819619
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFDocModalTest.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFModelessTest.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFNonModalTest.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsModelessTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsNonModalTest.java 8196432 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal1Test.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal2Test.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal3Test.java 8196432 macosx-all
@@ -369,8 +371,6 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal1Test.java 819643
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal2Test.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal3Test.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal4Test.java 8196432 macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsNonModalTest.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsModelessTest.java 8196432 linux-all
 
 java/awt/Modal/MultipleDialogs/MultipleDialogs1Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
