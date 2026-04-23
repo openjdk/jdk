@@ -556,8 +556,8 @@ private:
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
 
-  PhiNode *create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created);
-  PhiNode *split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
+  PhiNode* create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created);
+  PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
 
   void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
   Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);

@@ -3970,7 +3970,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
 // created phi or an existing phi.  Sets create_new to indicate whether a new
 // phi was created.  Cache the last newly created phi in the node map.
 //
-PhiNode *ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created) {
+PhiNode* ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created) {
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
   new_created = false;
@@ -4021,7 +4021,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode* orig_phi, int alias_idx, Uni
 // Return a new version of Memory Phi "orig_phi" with the inputs having the
 // specified alias index.
 //
-PhiNode *ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth) {
+PhiNode* ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth) {
   assert(alias_idx != Compile::AliasIdxBot, "can't split out bottom memory");
   Compile *C = _compile;
   PhaseGVN* igvn = _igvn;
