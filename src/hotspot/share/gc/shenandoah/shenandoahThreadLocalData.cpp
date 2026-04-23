@@ -25,30 +25,9 @@
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-
-// Drain the queue (CAS off each self-forwarded bit), delete it, and null out
-// the referring pointer. No-op if the queue is already null.
-static void drain_and_delete_queue(GrowableArrayCHeap<oop, mtGC>*& q) {
-  if (q == nullptr) {
-    return;
-  }
-  for (int i = 0; i < q->length(); i++) {
-    oop obj = q->at(i);
-    markWord m = obj->mark();
-    while (m.is_self_forwarded()) {
-      markWord n = m.unset_self_forwarded();
-      markWord prev = obj->cas_set_mark(n, m);
-      if (prev == m) break;
-      m = prev;
-    }
-  }
-  delete q;
-  q = nullptr;
-}
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
@@ -58,7 +37,6 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gclab_size(0),
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
-  _evac_failure_queue(nullptr),
   _invisible_root(nullptr),
   _invisible_root_word_size(0) {
 }
@@ -73,22 +51,4 @@ ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
   }
 
   delete _evacuation_stats;
-
-  // Thread may be dying with outstanding self-forwards; clear their bits so
-  // the marks don't linger past the owning thread. Any concurrent
-  // re-self-forward by another thread will be caught at the next degen/full
-  // safepoint drain.
-  drain_and_delete_queue(_evac_failure_queue);
-}
-
-void ShenandoahThreadLocalData::record_evac_failure(Thread* thread, oop obj) {
-  ShenandoahThreadLocalData* d = data(thread);
-  if (d->_evac_failure_queue == nullptr) {
-    d->_evac_failure_queue = new GrowableArrayCHeap<oop, mtGC>(16);
-  }
-  d->_evac_failure_queue->append(obj);
-}
-
-void ShenandoahThreadLocalData::drain_evac_failure_queue(Thread* thread) {
-  drain_and_delete_queue(data(thread)->_evac_failure_queue);
 }

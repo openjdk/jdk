@@ -40,7 +40,6 @@
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
@@ -64,11 +63,6 @@ private:
   ShenandoahPLAB* _shenandoah_plab;
 
   ShenandoahEvacuationStats* _evacuation_stats;
-
-  // Queue of objects that this thread has self-forwarded because their
-  // evacuation allocation failed. Drained at degenerated/full GC entry
-  // safepoints. Lazily allocated on first use.
-  GrowableArrayCHeap<oop, mtGC>* _evac_failure_queue;
 
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
@@ -161,15 +155,6 @@ public:
 
   static ShenandoahPLAB* shenandoah_plab(Thread* thread) {
     return data(thread)->_shenandoah_plab;
-  }
-
-  // Evacuation failure queue: self-forwarded objects this thread has recorded.
-  // The queue is lazily allocated on first record_evac_failure and freed
-  // entirely on drain, so a null queue means "no outstanding failures".
-  static void record_evac_failure(Thread* thread, oop obj);
-  static void drain_evac_failure_queue(Thread* thread);
-  static bool has_evac_failure_queue(Thread* thread) {
-    return data(thread)->_evac_failure_queue != nullptr;
   }
 
   // Offsets

@@ -101,7 +101,8 @@ void ShenandoahDegenGC::op_degenerated() {
   // clean forwarding state.
   if (_degen_point == ShenandoahDegenPoint::_degenerated_evac ||
       _degen_point == ShenandoahDegenPoint::_degenerated_update_refs) {
-    heap->drain_evac_failure_queues();
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
   }
 
   // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
@@ -313,7 +314,7 @@ void ShenandoahDegenGC::op_degenerated() {
       ShouldNotReachHere();
   }
 
-  DEBUG_ONLY(heap->assert_all_evac_failure_queues_empty());
+  DEBUG_ONLY(heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);

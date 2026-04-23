@@ -90,6 +90,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
   _recycling.unset();
+  _has_self_forwards.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -572,6 +573,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
   set_update_watermark(bottom());
+  clear_has_self_forwards();
   if (is_old()) {
     heap->old_generation()->clear_cards_for(this);
   }

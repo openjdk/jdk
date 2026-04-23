@@ -810,15 +810,15 @@ public:
 
   // Evacuates or promotes object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread. On allocation failure, installs the
-  // self-forwarded bit on src and returns src.
+  // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
 
-  // Drain all per-thread evacuation failure queues, CASing off each recorded
-  // object's self-forwarded bit. Must be called at a safepoint; intended for
-  // the degenerated and full GC entry paths.
-  void drain_evac_failure_queues();
+  // Parallel scan of flagged cset regions to clear self-forwarded bits on live
+  // objects. Must be called at a safepoint; intended for the degenerated and
+  // full GC entry paths.
+  void un_self_forward_cset_regions();
 
-  DEBUG_ONLY(void assert_all_evac_failure_queues_empty() const;)
+  DEBUG_ONLY(void assert_no_self_forwards() const;)
 
 // ---------- Helper functions
 //

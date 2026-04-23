@@ -333,7 +333,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     }
     oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
     if (winner == nullptr) {
-      ShenandoahThreadLocalData::record_evac_failure(thread, p);
+      // We own the self-forwarding. Flag the from-region so the degen/full
+      // GC entry drain knows to scan it for self_fwd bits to clear.
+      heap_region_containing(p)->set_has_self_forwards();
       return p;
     }
     return winner;
