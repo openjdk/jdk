@@ -415,7 +415,6 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
   }
 
   if (is_frame_in_continuation(entry, f)) {
-    //thread->push_cont_fastpath(f.id());
     thread->push_cont_fastpath(entry->entry_fp());
     return;
   }
@@ -437,12 +436,6 @@ void Continuation::notify_deopt(JavaThread* thread, const frame& f) {
   if (old == nullptr || slowpath_boundary > old) {
     prev->set_parent_cont_fastpath(slowpath_boundary);
   }
-
-  /*
-  assert(is_frame_in_continuation(entry, f), "");
-  if (f.is_older(prev->parent_cont_fastpath())) {
-    prev->set_parent_cont_fastpath(f.id());
-  }*/
 }
 
 #ifndef PRODUCT

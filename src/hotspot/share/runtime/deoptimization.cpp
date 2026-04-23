@@ -890,7 +890,6 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   RegisterMap map(thread, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::include, RegisterMap::WalkContinuation::skip);
   frame deoptee = stub_frame.sender(&map);
 
-  //Continuation::notify_deopt(thread, stub_frame);
   if (!deoptee.is_first_frame()) {
     Continuation::notify_deopt(thread, deoptee);
   }
