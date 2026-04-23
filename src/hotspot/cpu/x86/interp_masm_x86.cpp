@@ -359,7 +359,7 @@ void InterpreterMacroAssembler::call_VM_preemptable_helper(Register oop_result,
   call_VM_base(noreg, rax, entry_point, number_of_arguments, false);
   pop(rscratch1);
 
-  pop_cont_fastpath();
+  pop_cont_fastpath_frame();
 
 #ifdef ASSERT
   {

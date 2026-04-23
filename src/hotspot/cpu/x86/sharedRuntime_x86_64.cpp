@@ -2361,7 +2361,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // and pin the vthread. Otherwise the fast path won't find it since we don't walk the stack.
     __ push_cont_fastpath();
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 3);
-    __ pop_cont_fastpath();
+    __ pop_cont_fastpath_frame();
     restore_args(masm, total_c_args, c_arg, out_regs);
 
 #ifdef ASSERT

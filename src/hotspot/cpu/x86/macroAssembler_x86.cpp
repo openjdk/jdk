@@ -2448,6 +2448,16 @@ void MacroAssembler::pop_cont_fastpath() {
   bind(L_done);
 }
 
+void MacroAssembler::pop_cont_fastpath_frame() {
+  if (!Continuations::enabled()) return;
+
+  Label L_done;
+  cmpptr(rbp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::below, L_done);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(L_done);
+}
+
 #ifdef ASSERT
 void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
   Label no_cont;

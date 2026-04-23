@@ -887,7 +887,13 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 
   frame stub_frame = thread->last_frame();
 
-  Continuation::notify_deopt(thread, stub_frame);
+  RegisterMap map(thread, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::include, RegisterMap::WalkContinuation::skip);
+  frame deoptee = stub_frame.sender(&map);
+
+  //Continuation::notify_deopt(thread, stub_frame);
+  if (!deoptee.is_first_frame()) {
+    Continuation::notify_deopt(thread, deoptee);
+  }
 
   // Since the frame to unpack is the top frame of this thread, the vframe_array_head
   // must point to the vframeArray for the unpack frame.

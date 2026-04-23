@@ -475,6 +475,7 @@ class MacroAssembler: public Assembler {
 
   void push_cont_fastpath();
   void pop_cont_fastpath();
+  void pop_cont_fastpath_frame();
 
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 

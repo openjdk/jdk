@@ -298,7 +298,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ call(Address(rbx, Method::from_compiled_offset()));
 
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath_frame();
 
   // return value shuffle
   if (!needs_return_buffer) {

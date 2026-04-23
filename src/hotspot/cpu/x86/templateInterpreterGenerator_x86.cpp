@@ -303,7 +303,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   __ push(state);
   __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath_frame();
 
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -962,7 +962,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // 32: result potentially in rdx:rax or ST0
   // 64: result potentially in rax or xmm0
 
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath_frame();
 
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(rscratch1);
