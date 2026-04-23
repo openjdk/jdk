@@ -63,26 +63,18 @@ public class TestMemoryWithSubgroups {
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
-        if ("cgroupv1".equals(metrics.getProvider())) {
-            try {
-                testMemoryLimitSubgroup("cgroupv1", "200m", "100m", "104857600", false);
-                testMemoryLimitSubgroup("cgroupv1", "1g", "500m", "524288000", false);
-                testMemoryLimitSubgroup("cgroupv1", "200m", "100m", "104857600", true);
-                testMemoryLimitSubgroup("cgroupv1", "1g", "500m", "524288000", true);
-            } finally {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
-        } else if ("cgroupv2".equals(metrics.getProvider())) {
-            try {
-                testMemoryLimitSubgroup("cgroupv2", "200m", "100m", "104857600", false);
-                testMemoryLimitSubgroup("cgroupv2", "1g", "500m", "524288000", false);
-                testMemoryLimitSubgroup("cgroupv2", "200m", "100m", "104857600", true);
-                testMemoryLimitSubgroup("cgroupv2", "1g", "500m", "524288000", true);
-            } finally {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
-        } else {
+        String provider = metrics.getProvider();
+        if (!"cgroupv1".equals(provider) && !"cgroupv2".equals(provider)) {
             throw new SkippedException("Metrics are from neither cgroup v1 nor v2, skipped for now.");
+        }
+
+        try {
+            testMemoryLimitSubgroup(provider, "200m", "100m", "104857600", false);
+            testMemoryLimitSubgroup(provider, "1g", "500m", "524288000", false);
+            testMemoryLimitSubgroup(provider, "200m", "100m", "104857600", true);
+            testMemoryLimitSubgroup(provider, "1g", "500m", "524288000", true);
+        } finally {
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 
