@@ -269,7 +269,7 @@ class MetaspaceObj {
 
 #if !INCLUDE_CDS
   static bool is_pointer_in_aot_cache(const void* p) { return false; }
-  static bool aot_metaspace_range_initialized() { return false; }
+  static bool is_pointer_in_aot_cache_no_init_check(const void* p) { return false; }
 #else
 private:
   // All metsapce objects in the AOT cache (CDS archive) are mapped
@@ -280,15 +280,16 @@ private:
   static void* _aot_metaspace_base;  // (inclusive) low address
   static void* _aot_metaspace_top;   // (exclusive) high address
   static volatile bool _aot_metaspace_range_initialized;
+  static bool aot_metaspace_range_initialized();
 
 public:
-  // Caller must check aot_metaspace_range_initialized() if it can call this
-  // function in very early VM bootstrap.
   inline static bool is_pointer_in_aot_cache(const void* p) {
-    // Don't assert with aot_metaspace_range_initialized(), as that has side effect
-    // of making the range visible to the current thread, even if the caller
-    // forgets to call aot_metaspace_range_initialized().
-    assert(_aot_metaspace_range_initialized, "range not initialized");
+    return aot_metaspace_range_initialized() && is_pointer_in_aot_cache_no_init_check(p);
+  }
+
+  // Call this ONLY if you know that the AOT metaspace has already been initialized.
+  inline static bool is_pointer_in_aot_cache_no_init_check(const void* p) {
+    precond(aot_metaspace_range_initialized());
 
     // If no shared metaspace regions are mapped, _aot_metaspace_{base,top} will
     // both be null and all values of p will be rejected quickly.
@@ -296,7 +297,6 @@ public:
             p >= _aot_metaspace_base);
   }
 
-  static bool aot_metaspace_range_initialized();
   static void set_aot_metaspace_range(void* base, void* top);
 
   static void* aot_metaspace_base() { return _aot_metaspace_base; }
@@ -304,7 +304,9 @@ public:
 #endif // INCLUDE_CDS
 
   bool in_aot_cache() const {
-    return is_pointer_in_aot_cache(this);
+    // MetaspaceObjects are only created or loaded from the AOT cache after
+    // the AOT metaspace has been initialized, so we can skip init checks.
+    return is_pointer_in_aot_cache_no_init_check(this);
   }
 
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
