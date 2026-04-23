@@ -1898,10 +1898,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
 
-    // Post monitor waited event. Note that this is past-tense, we are done waiting.
-    // An event could have been enabled after notification, in this case
-    // a thread will have TS_ENTER state and posting the event may hit a suspension point.
-    // From a debugging perspective, it is more important to have no missing events.
+    // The re-enter path will not have a suspension point if there is no
+    // contention, so if a thread is not on the _entry_list, we need to check for suspension now.
+    // If monitor_waited event needs to be posted, we need to check for suspension before posting it.
     if (interruptible && node.TState != ObjectWaiter::TS_ENTER) {
 
       // Process suspend requests now if any, before posting the event.
@@ -1909,6 +1908,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         ThreadBlockInVM tbvm(current, true);
       }
 
+      // Post monitor waited event. Note that this is past-tense, we are done waiting.
       if (JvmtiExport::should_post_monitor_waited()) {
         JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
       }

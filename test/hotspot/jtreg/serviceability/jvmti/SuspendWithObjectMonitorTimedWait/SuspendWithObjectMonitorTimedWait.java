@@ -33,8 +33,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 /**
  * @test
  * @bug 8382088
- * @summary Suspend thread right after it timed out in wait()
- * @requires vm.continuations
+ * @summary Check that a thread suspended at a timed wait() call does not re-acquire the monitor before it is resumed.
  * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/testlibrary
  * @run main/othervm/native SuspendWithObjectMonitorTimedWait
@@ -42,12 +41,12 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     static final Object lock = new Object();
+    static long timeout = 10; // milliseconds
+    static int maxRetries = 2000;
+    static long waitForTimedWaitingMills = 5000;
 
     private static boolean waitUntilTimedWaiting(Thread thread, long deadlineNs) {
         while (System.nanoTime() < deadlineNs) {
-            if (!thread.isAlive()) {
-                return false;
-            }
             if (thread.getState() == Thread.State.TIMED_WAITING) {
                 return true;
             }
@@ -63,41 +62,37 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         }
     }
 
-    static long timeout = 10; // milliseconds
-    static long sleepInterval = 20;
-    static int maxRetries = 2000;
-    static long waitForTimedWaitingMills = 5000;
-
     // run debuggee
     public int runIt() {
         int status = DebugeeClass.TEST_PASSED;
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
 
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        waitTask task = new waitTask(countDownLatch);
-        Thread.Builder builder = Thread.ofPlatform();
-        Thread targetThread = builder.name("Target Thread").unstarted(task);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch iterationLatch = new CountDownLatch(1);
+        waitTask task = new waitTask(startLatch, iterationLatch);
+        Thread targetThread = Thread.ofPlatform().name("Target Thread").unstarted(task);
 
         targetThread.start();
         try {
-            countDownLatch.await();
+            startLatch.await();
         } catch (InterruptedException ex) {
             throw new Failure(ex);
         }
 
-        Thread.yield();
         System.out.println("Target Thread started");
 
         int usefulRun = 0;
         for (int n = 0; n < maxRetries; ++n) {
 
-            long deadlineNanos = System.nanoTime() + waitForTimedWaitingMills * 1000_000L;
+            try {
+                iterationLatch.await();
+            } catch (InterruptedException ex) {
+                throw new Failure(ex);
+            }
+
+            long deadlineNanos = System.nanoTime() + waitForTimedWaitingMills * 1_000_000L;
             if (!waitUntilTimedWaiting(targetThread, deadlineNanos)) {
-                if (!targetThread.isAlive()) {
-                    System.out.println("Target thread finished before retry " + n);
-                    break;
-                }
                 throw new RuntimeException("Timed out waiting to reach TIMED_WAITING state at retry " + n);
             }
 
@@ -121,13 +116,13 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
                 usefulRun += 1;
 
-                if (sleepInterval > 0) {
-                    try {
-                        Thread.sleep(sleepInterval);
-                    } catch (InterruptedException ex) {
-                        throw new Failure(ex);
-                    }
+
+                try {
+                    Thread.sleep(2 * timeout);
+                } catch (InterruptedException ex) {
+                    throw new Failure(ex);
                 }
+
 
                 // Check if the target still does not own monitors
                 threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
@@ -142,13 +137,13 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             } finally {
                 JVMTIUtils.resumeThread(targetThread);
             }
-
-            if (!targetThread.isAlive()) {
-                System.out.println("Target thread finished before retry " + n);
-                break;
-            }
         }
 
+        try {
+            iterationLatch.await();
+        } catch (InterruptedException ex) {
+            throw new Failure(ex);
+        }
 
         // wait for targetThread finish
         try {
@@ -174,12 +169,12 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
     static class waitTask implements Runnable {
 
-        static int maxNRetries = (int) (1.2 * maxRetries);
-
         private final CountDownLatch countDownLatch;
+        private final CountDownLatch iterationLatch;
 
-        waitTask(final CountDownLatch latch) {
-            this.countDownLatch = latch;
+        waitTask(final CountDownLatch startLatch, final CountDownLatch iterationLatch) {
+            this.countDownLatch = startLatch;
+            this.iterationLatch = iterationLatch;
         }
 
         public void run() {
@@ -188,19 +183,20 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                 boolean done = false;
                 int retryNumber = 0;
                 while (!done) {
+                    iterationLatch.countDown();
                     try {
                         lock.wait(timeout);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                     retryNumber += 1;
-                    if (retryNumber == maxNRetries){
+                    if (retryNumber == maxRetries){
                         done = true;
                     }
                 }
             }
+            iterationLatch.countDown();
         }
     }
-
 }
 
