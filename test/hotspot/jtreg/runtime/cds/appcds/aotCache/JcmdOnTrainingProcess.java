@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Microsoft, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +39,12 @@
  * @run driver JcmdOnTrainingProcess
  */
 
+import java.io.IOException;
+
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.io.IOException;
+import jdk.test.lib.process.ProcessTools;
 
 public class JcmdOnTrainingProcess {
     public static void main(String[] args) throws Exception {
@@ -64,7 +66,8 @@ public class JcmdOnTrainingProcess {
             LingeredApp.startApp(theApp,
                                  "-cp", "LingeredApp.jar",
                                  "-XX:AOTMode=record",
-                                 "-XX:AOTConfiguration=LingeredApp.aotconfig");
+                                 "-XX:AOTConfiguration=LingeredApp.aotconfig",
+                                 "-XX:NativeMemoryTracking=summary");
             long pid = theApp.getPid();
 
             JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
@@ -79,8 +82,8 @@ public class JcmdOnTrainingProcess {
                 return output;
             } catch (Exception e) {
                 throw new RuntimeException("Test failed: " + e);
-            }        }
-        catch (IOException e) {
+            }
+        } catch (IOException e) {
             throw new RuntimeException("Test failed: " + e);
         }
         finally {
