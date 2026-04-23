@@ -65,14 +65,10 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   _sampled_times.add(elapsed);
   _sampled_bytes.add(unsampled);
 
-  tty->print_cr("Sampling: %zu, Elapsed: %zu", unsampled, elapsed);
-
   const double total_time  = _sampled_times.sum();
   const double total_bytes = _sampled_bytes.sum();
   const double elapsed_seconds = total_time / Clock::elapsed_frequency();
   const double bytes_per_second = total_bytes / elapsed_seconds;
-
-  tty->print_cr("bytes_per_second: %.2f", bytes_per_second);
 
   _sampled_rates.add(bytes_per_second);
   record_rate_sample(_last_sample_time, unsampled / elapsed / Clock::elapsed_frequency());
