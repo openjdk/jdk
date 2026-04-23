@@ -1981,11 +1981,11 @@ public:
 class ArrayLoadData : public ReceiverTypeData {
 private:
   enum {
-    null_free_array_flag = BitData::last_bit_data_flag + 1,
-  };
-
-  enum {
-    not_flat_count_off_in_extra_cells,
+    not_flat_null_free_count_off_in_extra_cells,
+    not_flat_nullable_count_off_in_extra_cells,
+    flat_nullable_count_off_in_extra_cells,
+    flat_nullfree_atomic_count_off_in_extra_cells,
+    flat_nullfree_not_atomic_count_off_in_extra_cells,
     extra_cells_count
   };
 
@@ -1995,8 +1995,24 @@ private:
     return ReceiverTypeData::static_cell_count() + SingleTypeEntry::static_cell_count();
   }
   
-  static int not_flat_count_off() {
-    return extra_cells_off() + not_flat_count_off_in_extra_cells;
+  static int not_flat_null_free_count_off() {
+    return extra_cells_off() + not_flat_null_free_count_off_in_extra_cells;
+  }
+
+  static int not_flat_nullable_count_off() {
+    return extra_cells_off() + not_flat_nullable_count_off_in_extra_cells;
+  }
+
+  static int flat_nullable_count_off() {
+    return extra_cells_off() + flat_nullable_count_off_in_extra_cells;
+  }
+
+  static int flat_nullfree_atomic_count_off() {
+    return extra_cells_off() + flat_nullfree_atomic_count_off_in_extra_cells;
+  }
+
+  static int flat_nullfree_not_atomic_count_off() {
+    return extra_cells_off() + flat_nullfree_not_atomic_count_off_in_extra_cells;
   }
 
 public:
@@ -2021,25 +2037,54 @@ public:
     return static_cell_count();
   }
 
-  void set_null_free_array() { set_flag_at(null_free_array_flag); }
-  bool null_free_array() const { return flag_at(null_free_array_flag); }
-
   int not_flat_count() const {
-    return uint_at(not_flat_count_off());
+    return not_flat_null_free_count() + not_flat_nullable_count();
+  }
+
+  int not_flat_null_free_count() const {
+    return uint_at(not_flat_null_free_count_off());
+  }
+
+  int not_flat_nullable_count() const {
+    return uint_at(not_flat_nullable_count_off());
+  }
+
+  int flat_nullable_count() const {
+    return uint_at(flat_nullable_count_off());
+  }
+
+  int flat_nullfree_atomic_count() const {
+    return uint_at(flat_nullfree_atomic_count_off());
+  }
+
+  int flat_nullfree_not_atomic_count() const {
+    return uint_at(flat_nullfree_not_atomic_count_off());
   }
 
   // Code generation support
-
-  static int null_free_array_byte_constant() {
-    return flag_number_to_constant(null_free_array_flag);
-  }
 
   static ByteSize element_offset() {
     return cell_offset(ReceiverTypeData::static_cell_count());
   }
 
-  static ByteSize not_flat_count_offset() {
-    return cell_offset(not_flat_count_off());
+  static ByteSize not_flat_null_free_count_offset() {
+    return cell_offset(not_flat_null_free_count_off());
+  }
+
+  static ByteSize not_flat_nullable_count_offset() {
+    return cell_offset(not_flat_nullable_count_off());
+  }
+
+  static ByteSize flat_nullable_count_offset() {
+    return cell_offset(flat_nullable_count_off());
+  }
+
+  static ByteSize flat_nullfree_atomic_count_offset() {
+    return cell_offset(flat_nullfree_atomic_count_off());
+  }
+
+  static ByteSize flat_nullfree_not_atomic_count_offset() {
+    return cell_offset(flat_nullfree_not_atomic_count_off());
   }
 
   virtual void clean_weak_klass_links(bool always_clean) {

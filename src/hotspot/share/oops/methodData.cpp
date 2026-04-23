@@ -729,7 +729,7 @@ void ArrayStoreData::print_data_on(outputStream* st, const char* extra) const {
 
 void ArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArrayLoad", extra);
-  st->print(" not flat: %u", not_flat_count());
+  st->print("not flat %u (null free = %u, nullable = %u)", not_flat_count(), not_flat_null_free_count(), not_flat_nullable_count());
   st->cr();
   tab(st, true);
   st->print("array");

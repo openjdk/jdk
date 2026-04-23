@@ -171,21 +171,21 @@ public:
     assert(array == _array, "");
   }
 
-  bool emit_load_if_known_flat_array(const TypeOopPtr* element_ptr) {
-    if (element_ptr->is_inlinetypeptr()) {
-      pop_stack();
-      ciInlineKlass* vk = element_ptr->inline_klass();
-      // Node* flat_array = cast_to_flat_array(array, vk);
-      Node* flat_array = _array;
-      Node* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
-      Node* ld = _gvn.transform(vt);
-      _parse.push_node(_bt, ld);
-      return true;
-    }
-    return false;
-  }
+  // bool emit_load_if_known_flat_array(const TypeOopPtr* element_ptr) {
+  //   if (element_ptr->is_inlinetypeptr()) {
+  //     pop_stack();
+  //     ciInlineKlass* vk = element_ptr->inline_klass();
+  //     // Node* flat_array = cast_to_flat_array(array, vk);
+  //     Node* flat_array = _array;
+  //     Node* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+  //     Node* ld = _gvn.transform(vt);
+  //     _parse.push_node(_bt, ld);
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
-  Node* emit_plain_load(Node* array, bool pin_if_range_check = false) {
+  Node* emit_plain_load(Node* array, bool pin_if_range_check = false, bool safe_for_replace_in_map = false) {
     const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(_bt);
@@ -196,14 +196,37 @@ public:
       // possibly float above the range check at any point.
       decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
     }
-    const TypeAryPtr* arytype  = _gvn.type(array)->is_aryptr();
-    const TypeInt*    sizetype = arytype->size();
+    const TypeInt*    sizetype = array_type->size();
+    if (element_ptr != nullptr && element_ptr->is_inlinetypeptr() && !array_type->is_null_free()) {
+      ciArrayLoadData* array_load = profile_data();
+      if (array_load != nullptr && array_load->not_flat_nullable_count() == 0 && array_load->not_flat_null_free_count() > 0 &&
+          !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        Node* test = _parse.null_free_array_test(_array, false);
+        IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
+        _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+        {
+          PreserveJVMState pjvms(&_parse);
+          _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+        }
+        _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+        const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
+        array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
+        if (_parse.needs_range_check(array_type->size(), _array_index)) {
+          decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+        }
+      }
+    }
+
     Node* adr = _parse.array_element_address(array, _array_index, _bt, sizetype, _parse.control());
     assert(adr != _parse.top(), "top should go hand-in-hand with stopped");
     Node* ld = _parse.access_load_at(array, adr, adr_type, _elemtype, _bt, decorator_set);
     if (element_ptr != nullptr && element_ptr->is_inlinetypeptr()) {
       assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "inline type array elements should never be null");
       ld = InlineTypeNode::make_from_oop(&_parse, ld, element_ptr->inline_klass());
+    }
+    if (safe_for_replace_in_map) {
+      pop_stack();
+      _parse.replace_in_map(_array, array);
     }
     return _gvn.transform(ld);
   }
@@ -260,7 +283,7 @@ public:
     Node* ld = nullptr;
 
     Node* array = _array;
-    ciArrayLoadData* array_load = profile_data();
+    // ciArrayLoadData* array_load = profile_data();
     // if (array_load != nullptr && array_load->null_free_array() && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
     //   Node* test = _parse.null_free_array_test(_array, false);
     //   IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
@@ -346,8 +369,8 @@ public:
       if (_elemtype == TypeInt::BOOL) {
         _bt = T_BOOLEAN;
       }
-      Node* ld = emit_plain_load(_array);
-      pop_stack();
+      Node* ld = emit_plain_load(_array, false, true);
+      // pop_stack();
       _parse.push_node(_bt, ld);
       return true;
     }

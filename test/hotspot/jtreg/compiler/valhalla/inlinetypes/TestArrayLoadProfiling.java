@@ -58,11 +58,14 @@ public class TestArrayLoadProfiling {
     static MyValue1[] array8 = (MyValue1[])ValueClass.newNullRestrictedAtomicArray(MyValue1.class, 1, new MyValue1((byte)42));
     static MyValue1[] array9 = (MyValue1[])ValueClass.newNullableAtomicArray(MyValue1.class, 1);
     static MyValue3[] array10 = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 1, new MyValue3(42));
+    static MyValue3[] array11 = (MyValue3[])ValueClass.newNullRestrictedAtomicArray(MyValue3.class, 1, new MyValue3(42));
+    static MyValue3[] array12 = (MyValue3[])ValueClass.newReferenceArray(MyValue3.class, 1);
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
         array8[0] = new MyValue1((byte)42);
         array9[0] = new MyValue1((byte)42);
+        array12[0] = new MyValue3((byte)42);
     }
     
     @Test
@@ -465,6 +468,30 @@ public class TestArrayLoadProfiling {
     @ForceInline
     static void test23Inline(I i) {
         i.m();
+    }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "3", IRNode.CLASS_CHECK_TRAP, "1", IRNode.IF, "6" })
+    @IR(failOn = IRNode.ALLOC)
+    public static int test24(MyValue3[] array, int i, int j, int k) {
+        return array[i].intField1 + array[j].intField1 + array[k].intField1;
+    }
+
+    @Run(test = "test24")
+    public static void test24Runner() {
+        test24(array11, 0, 0, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "4", IRNode.RANGE_CHECK_TRAP, "3", IRNode.IF, "7" })
+    @IR(failOn = IRNode.ALLOC)
+    public static int test25(MyValue3[] array, int i, int j, int k) {
+        return array[i].intField1 + array[j].intField1 + array[k].intField1;
+    }
+
+    @Run(test = "test25")
+    public static void test25Runner() {
+        test25(array12, 0, 0, 0);
     }
     
     // @Test

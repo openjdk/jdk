@@ -990,7 +990,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_profile_multiple_array_types: {
       assert(op->as_OpProfileMultipleArrayTypes() != nullptr, "must be");
       LIR_OpProfileMultipleArrayTypes* opProfileMultipleArrayTypes = (LIR_OpProfileMultipleArrayTypes*)op;
-      do_input(opProfileMultipleArrayTypes->_array);
+      do_input(opProfileMultipleArrayTypes->_array); do_temp(opProfileMultipleArrayTypes->_array);
       do_temp(opProfileMultipleArrayTypes->_tmp1);
       do_temp(opProfileMultipleArrayTypes->_tmp2);
 

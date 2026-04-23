@@ -3194,8 +3194,22 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   __ bind(not_flat);
   __ mov_metadata(mdo, md->constant_encoding());
 
-  Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_count_offset()));
-  __ addptr(counter_addr, DataLayout::counter_increment);
+  Label null_free;
+
+  __ test_null_free_array_oop(array, tmp1, null_free);
+
+  {
+    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()));
+    __ addptr(counter_addr, DataLayout::counter_increment);
+  }
+
+  __ jmp(done);
+  __ bind(null_free);
+
+  {
+    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()));
+    __ addptr(counter_addr, DataLayout::counter_increment);
+  }
 
   __ bind(done);
 }

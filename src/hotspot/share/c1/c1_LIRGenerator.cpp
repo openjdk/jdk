@@ -2436,12 +2436,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     LIR_Opr result = rlock_result(x, x->elt_type());
     LoadFlattenedArrayStub* slow_path = nullptr;
 
-    if (x->should_profile() && x->array()->maybe_null_free_array()) {
-      assert(data != nullptr && data->is_ArrayLoadData(), "incorrect profiling entry");
-      ciArrayLoadData* load_data = (ciArrayLoadData*)data;
-      profile_null_free_array(array, md, load_data);
-    }
-
     if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
       assert(x->delayed() == nullptr, "Delayed LoadIndexed only apply to loaded_flat_arrays");
       index.load_item();
