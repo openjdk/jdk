@@ -64,7 +64,6 @@ public final class SunLayoutEngine {
     static {
         String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
-
     }
 
     public static void layout(Font2D font, int script, FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
@@ -75,7 +74,7 @@ public final class SunLayoutEngine {
         if (useFFM) {
             MemorySegment face = HBShaper.getFace(font);
             if (face != null) {
-                HBShaper.shape(font, strike, ptSize, mat, face,
+                HBShaper.shape(font, strike, mat, face,
                         tr.text, data, script,
                         tr.start, tr.limit, baseIndex, pt,
                         typo_flags, gmask);
