@@ -95,10 +95,10 @@ void ShenandoahAllocRate<Clock>::record_rate_sample(double timestamp, double rat
 template<typename Clock>
 size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate,
                                double avg_alloc_rate_words_per_second, double time_delta) const {
-  double *x_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-  double *y_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
   double x_sum = 0.0;
   double y_sum = 0.0;
+  double xy_sum = 0.0;
+  double x2_sum = 0.0;
 
   assert(_num_samples > 0, "At minimum, we should have sample from this period");
 
@@ -109,16 +109,17 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     uint delta = _num_samples - ShenandoahRateAccelerationSampleSize;
     for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
       uint index = (_first_sample_index + delta + i) % _buffer_size;
-      x_array[i] = _rate_timestamps[index];
-      x_sum += x_array[i];
-      y_array[i] = _rate_samples[index];
+      x_sum += _rate_timestamps[index];
+      y_sum += _rate_samples[index];
+      x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
+      xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
       if (i > 0) {
         // first sample not included in weighted average because it has no weight.
-        double sample_weight = x_array[i] - x_array[i-1];
-        weighted_y_sum += y_array[i] * sample_weight;
+        uint preceding_index = index == 0 ? _buffer_size - 1 : index - 1;
+        double sample_weight = _rate_timestamps[index] - _rate_timestamps[preceding_index];
+        weighted_y_sum += _rate_samples[index] * sample_weight;
         total_weight += sample_weight;
       }
-      y_sum += y_array[i];
     }
     weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
   } else {
@@ -137,8 +138,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize; i++) {
       uint sample_index = (_first_sample_index + delta + i) % _buffer_size;
       uint preceding_index = (sample_index == 0)? _buffer_size - 1: sample_index - 1;
-      double sample_weight = (_rate_timestamps[sample_index]
-                              - _rate_timestamps[preceding_index]);
+      double sample_weight = _rate_timestamps[sample_index] - _rate_timestamps[preceding_index];
       weighted_y_sum += _rate_samples[sample_index] * sample_weight;
       total_weight += sample_weight;
     }
@@ -155,26 +155,17 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
     //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
 
-    double *xy_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-    double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-    double xy_sum = 0.0;
-    double x2_sum = 0.0;
-    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
-      xy_array[i] = x_array[i] * y_array[i];
-      xy_sum += xy_array[i];
-      x2_array[i] = x_array[i] * x_array[i];
-      x2_sum += x2_array[i];
-    }
-    // Find the best-fit least-squares linear representation of rate vs time
     double m;                 /* slope */
     double b;                 /* y-intercept */
 
+    // Find the best-fit least-squares linear representation of rate vs time
     m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
          / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
     b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
 
     if (m > 0) {
-      double proposed_current_rate = m * x_array[ShenandoahRateAccelerationSampleSize - 1] + b;
+      uint index = (_first_sample_index + _num_samples - 1) % _buffer_size;
+      double proposed_current_rate = m * _rate_timestamps[index] + b;
       acceleration = m;
       current_rate = proposed_current_rate;
     }
