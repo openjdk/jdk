@@ -25,15 +25,14 @@
 #include "unittest.hpp"
 #include "gc/shared/gc_globals.hpp"
 
-#include "gc/shenandoah/shenandoahAllocRate.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 
-template<jlong Tick = 10>
 class ShenandoahMockClock {
 public:
-  inline static jlong Counter = 1;
+  static volatile jlong Counter;
   static jlong elapsed_counter() {
     const jlong result = Counter;
-    Counter += Tick;
+    Counter += 1;
     return result;
   }
 
@@ -42,39 +41,37 @@ public:
   }
 };
 
-class ShenandoahSlowClock {
-public:
-  static jlong elapsed_counter() {
-    return 1;
-  }
+volatile jlong ShenandoahMockClock::Counter = 1;
 
-  static jlong elapsed_frequency() {
-    return 1;
+class ShenandoahAllocationRateTest : public testing::Test {
+protected:
+  ShenandoahAllocationRateTest() {
+    ShenandoahMockClock::Counter = 1;
   }
 };
 
-TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_sample) {
-  ShenandoahAllocRate<ShenandoahMockClock<>> rate(1024);
+TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(512);
   EXPECT_EQ(rate.average(), 0);
 }
 
-TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahSlowClock> rate(1024);
+TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(2048);
   rate.allocated(2048);
   EXPECT_EQ(rate.average(), 2048);
 }
 
-TEST_VM(ShenandoahAllocationRateTest, two_second_average) {
-  ShenandoahAllocRate<ShenandoahMockClock<1>> rate(1024);
+TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(2048); // t = 1
   rate.allocated(2048); // t = 2
   EXPECT_EQ(rate.average(), 2048.0);
 }
 
-TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
-  ShenandoahAllocRate<ShenandoahSlowClock> rate(1024);
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(1024);
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, rate.average(), 100);
@@ -83,8 +80,8 @@ TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples
   EXPECT_EQ(anticipated_consumption, 0UL);
 }
 
-TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
-  ShenandoahAllocRate<ShenandoahMockClock<1>> rate(512);
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
   for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
     rate.allocated(1024);
   }
@@ -93,6 +90,24 @@ TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
   EXPECT_DOUBLE_EQ(average_rate, 1024);  // Average rate, 1024 bytes per tick
   EXPECT_DOUBLE_EQ(acceleration, 0.0);   // No acceleration, rate is constant
-  EXPECT_DOUBLE_EQ(current_rate, 1024);  // Momentary rate
+  EXPECT_DOUBLE_EQ(current_rate, 1024);  // Momentary rate is the same as the average
   EXPECT_EQ(anticipated_consumption, 102400UL); // 100 clock ticks at 1024 bytes per tick
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
+  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+    rate.allocated(1024);
+  }
+
+  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+    rate.allocated(2048);
+  }
+
+  double acceleration(0), current_rate(0), average_rate(rate.average());
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  EXPECT_GE(average_rate, 1024);
+  EXPECT_GE(acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(current_rate, 2048);
+  EXPECT_GE(anticipated_consumption, 102400UL);
 }
