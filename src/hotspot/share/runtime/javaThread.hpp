@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -290,6 +293,16 @@ class JavaThread: public Thread {
     return _visited_for_critical_count == safepoint_id;
   }
 #endif // ASSERT
+
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData _bytecode_tracer_data;
+
+ public:
+  BytecodeTracerData* bytecode_tracer_data() {
+    return &_bytecode_tracer_data;
+  }
+#endif // PRODUCT
 
   // JavaThread termination support
  public:
