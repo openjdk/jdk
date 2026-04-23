@@ -104,10 +104,49 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
     rate.allocated(2048);
   }
 
-  double acceleration(0), current_rate(0), average_rate(rate.average());
+  // Here we simulate a situation where we are returning from a lull (avg 1024/s) back
+  // to the baseline average allocation rate (2048/s). The momentary rate will reflect
+  // the recent samples, but we will not consider this to be an acceleration.
+  double acceleration(0), current_rate(0), average_rate(2048);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
-  EXPECT_GE(average_rate, 1024);
-  EXPECT_GE(acceleration, 0.0);
+  EXPECT_EQ(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 2048);
+  EXPECT_GE(anticipated_consumption, 102400UL);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
+  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+    rate.allocated(1024);
+  }
+
+  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+    rate.allocated(2048);
+  }
+
+  // Setup as before, but pretend our baseline acceleration rate is lower (512). This
+  // will evaluate the acceleration of the rate.
+  double acceleration(0), current_rate(0), average_rate(512);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  EXPECT_GE(acceleration, 180.0);
+  EXPECT_DOUBLE_EQ(current_rate, 2048);
+  EXPECT_GE(anticipated_consumption, 102400UL);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
+  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+    rate.allocated(2048);
+  }
+
+  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+    rate.allocated(1024);
+  }
+
+  // In this setup, the allocation rate is declining.
+  double acceleration(0), current_rate(0), average_rate(4096);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  EXPECT_GE(acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(current_rate, 1024);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
