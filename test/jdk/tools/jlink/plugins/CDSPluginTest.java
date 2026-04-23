@@ -77,7 +77,10 @@ public class CDSPluginTest {
         subDir += "server" + sep;
 
         WhiteBox wb = WhiteBox.getWhiteBox();
-        String suffix = ".jsa";
+        boolean NOCOMPACT_HEADERS = Platform.is64bit() &&
+                                  wb.getBooleanVMFlag("UseCompactObjectHeaders") &&
+                                  !wb.isDefaultVMFlag("UseCompactObjectHeaders");
+        String suffix = NOCOMPACT_HEADERS ? "_nocoh.jsa" : ".jsa";
 
         if (Platform.isAArch64() || Platform.isX64()) {
             helper.checkImage(image, module, null, null,

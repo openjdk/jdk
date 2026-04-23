@@ -3781,7 +3781,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    // Warn if -UseCompactObjectHeaders is not on the command line, in order to turn off UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
       warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
     }
