@@ -184,18 +184,8 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _last_trigger(OTHER),
   _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
   _free_set(nullptr),
-  _previous_acceleration_sample_timestamp(0.0),
-  _spike_acceleration_buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize)),
-  _spike_acceleration_first_sample_index(0),
-  _spike_acceleration_num_samples(0),
-  _spike_acceleration_rate_samples(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)),
-  _spike_acceleration_rate_timestamps(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)) {
+  _previous_acceleration_sample_timestamp(0.0) {
   }
-
-ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_samples);
-  FREE_C_HEAP_ARRAY(double, _spike_acceleration_rate_timestamps);
-}
 
 void ShenandoahAdaptiveHeuristics::initialize() {
   ShenandoahHeuristics::initialize();
@@ -291,21 +281,6 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
   if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
     _cycles.record_duration(time_at_start, gc_time);
-  }
-}
-
-void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
-  uint new_sample_index =
-    (_spike_acceleration_first_sample_index + _spike_acceleration_num_samples) % _spike_acceleration_buffer_size;
-  _spike_acceleration_rate_timestamps[new_sample_index] = timestamp;
-  _spike_acceleration_rate_samples[new_sample_index] = rate;
-  if (_spike_acceleration_num_samples == _spike_acceleration_buffer_size) {
-    _spike_acceleration_first_sample_index++;
-    if (_spike_acceleration_first_sample_index == _spike_acceleration_buffer_size) {
-      _spike_acceleration_first_sample_index = 0;
-    }
-  } else {
-    _spike_acceleration_num_samples++;
   }
 }
 
@@ -499,11 +474,9 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
     const double anticipated_gc_start_time = now + MAX2(get_planned_sleep_interval(), ACCELERATION_SAMPLE_PERIOD_SEC);
     const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
 
-    const double instantaneous_rate_words_per_second = new_rate.last_sampled_value() / HeapWordSize;
-    add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
-    double current_rate_by_acceleration = instantaneous_rate_words_per_second;
+    double current_rate_by_acceleration = new_rate.last_sampled_value() / HeapWordSize;
     const size_t consumption_accelerated =
-        accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
+        new_rate.accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
                                 ACCELERATION_SAMPLE_PERIOD_SEC + anticipated_gc_duration);
 
     if (consumption_accelerated > allocatable_words) {
@@ -524,8 +497,8 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
                     anticipated_gc_duration * 1000,
                     _spike_threshold_sd);
       }
-      _spike_acceleration_num_samples = 0;
-      _spike_acceleration_first_sample_index = 0;
+
+      new_rate.reset_samples();
 
       // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
       // trigger is influenced more by margin_of_error_sd than by spike_threshold_sd.
@@ -657,105 +630,6 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 
 size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
   return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
-}
-
-// This is called each time a new rate sample has been gathered, as governed by ShenandoahAccelerationSamplePeriod.
-// Unlike traditional calculation of average allocation rate, there is no adjustment for standard deviation of the
-// accelerated rate prediction.
-size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleration, double& current_rate,
-                                                             double avg_alloc_rate_words_per_second,
-                                                             double predicted_cycle_time) const
-{
-  double *x_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-  double *y_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-  double x_sum = 0.0;
-  double y_sum = 0.0;
-
-  assert(_spike_acceleration_num_samples > 0, "At minimum, we should have sample from this period");
-
-  double weighted_average_alloc;
-  if (_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize) {
-    double weighted_y_sum = 0;
-    double total_weight = 0;
-    uint delta = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
-    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
-      uint index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
-      x_array[i] = _spike_acceleration_rate_timestamps[index];
-      x_sum += x_array[i];
-      y_array[i] = _spike_acceleration_rate_samples[index];
-      if (i > 0) {
-        // first sample not included in weighted average because it has no weight.
-        double sample_weight = x_array[i] - x_array[i-1];
-        weighted_y_sum += y_array[i] * sample_weight;
-        total_weight += sample_weight;
-      }
-      y_sum += y_array[i];
-    }
-    weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
-  } else {
-    weighted_average_alloc = 0;
-  }
-
-  double momentary_rate;
-  if (_spike_acceleration_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
-    // Num samples must be strictly greater than sample size, because we need one extra sample to compute rate and weights
-    // In this context, the weight of a y value (an allocation rate) is the duration for which this allocation rate was
-    // active (the time since previous y value was reported).  An allocation rate measured over a span of 300 ms (e.g. during
-    // concurrent GC) has much more "weight" than an allocation rate measured over a span of 15 s.
-    double weighted_y_sum = 0;
-    double total_weight = 0;
-    uint delta = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
-    for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize; i++) {
-      uint sample_index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
-      uint preceding_index = (sample_index == 0)? _spike_acceleration_buffer_size - 1: sample_index - 1;
-      double sample_weight = (_spike_acceleration_rate_timestamps[sample_index]
-                              - _spike_acceleration_rate_timestamps[preceding_index]);
-      weighted_y_sum += _spike_acceleration_rate_samples[sample_index] * sample_weight;
-      total_weight += sample_weight;
-    }
-    momentary_rate = weighted_y_sum / total_weight;
-  } else {
-    momentary_rate = 0.0;
-  }
-
-  // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
-  current_rate = momentary_rate;
-  acceleration = 0.0;
-  if ((_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize)
-      && (weighted_average_alloc >= avg_alloc_rate_words_per_second))  {
-    // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
-    //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
-
-    double *xy_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-    double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
-    double xy_sum = 0.0;
-    double x2_sum = 0.0;
-    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
-      xy_array[i] = x_array[i] * y_array[i];
-      xy_sum += xy_array[i];
-      x2_array[i] = x_array[i] * x_array[i];
-      x2_sum += x2_array[i];
-    }
-    // Find the best-fit least-squares linear representation of rate vs time
-    double m;                 /* slope */
-    double b;                 /* y-intercept */
-
-    m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
-         / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
-    b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
-
-    if (m > 0) {
-      double proposed_current_rate = m * x_array[ShenandoahRateAccelerationSampleSize - 1] + b;
-      acceleration = m;
-      current_rate = proposed_current_rate;
-    }
-    // else, leave current_rate = momentary_rate, acceleration = 0
-  }
-  // and here also, leave current_rate = momentary_rate, acceleration = 0
-
-  double time_delta = get_planned_sleep_interval() + predicted_cycle_time;
-  size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
-  return words_to_be_consumed;
 }
 
 #undef PROPERFMT_F

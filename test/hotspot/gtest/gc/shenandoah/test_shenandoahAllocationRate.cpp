@@ -23,15 +23,17 @@
  */
 
 #include "unittest.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
+template<jlong Tick = 10>
 class ShenandoahMockClock {
 public:
-  static jlong Counter;
+  inline static jlong Counter = 1;
   static jlong elapsed_counter() {
     const jlong result = Counter;
-    Counter += 10;
+    Counter += Tick;
     return result;
   }
 
@@ -51,11 +53,8 @@ public:
   }
 };
 
-jlong ShenandoahMockClock::Counter = 0;
-
-
 TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_sample) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
+  ShenandoahAllocRate<ShenandoahMockClock<>> rate(1024);
   rate.allocated(512);
   EXPECT_EQ(rate.average(), 0);
 }
@@ -67,9 +66,33 @@ TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
   EXPECT_EQ(rate.average(), 2048);
 }
 
-TEST_VM(ShenandoahAllocationRateTest, ten_second_average) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
-  rate.allocated(2048); // t = 0
-  rate.allocated(2048); // t = 10
-  EXPECT_EQ(rate.average(), 409.6);
+TEST_VM(ShenandoahAllocationRateTest, two_second_average) {
+  ShenandoahAllocRate<ShenandoahMockClock<1>> rate(1024);
+  rate.allocated(2048); // t = 1
+  rate.allocated(2048); // t = 2
+  EXPECT_EQ(rate.average(), 2048.0);
+}
+
+TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
+  ShenandoahAllocRate<ShenandoahSlowClock> rate(1024);
+  rate.allocated(1024);
+  double acceleration(0), current_rate(0);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, rate.average(), 100);
+  EXPECT_DOUBLE_EQ(acceleration, 0.0);
+  EXPECT_DOUBLE_EQ(current_rate, 0.0);
+  EXPECT_EQ(anticipated_consumption, 0UL);
+}
+
+TEST_VM(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
+  ShenandoahAllocRate<ShenandoahMockClock<1>> rate(512);
+  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+    rate.allocated(1024);
+  }
+
+  double acceleration(0), current_rate(0), average_rate(rate.average());
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  EXPECT_DOUBLE_EQ(average_rate, 1024);  // Average rate, 1024 bytes per tick
+  EXPECT_DOUBLE_EQ(acceleration, 0.0);   // No acceleration, rate is constant
+  EXPECT_DOUBLE_EQ(current_rate, 1024);  // Momentary rate
+  EXPECT_EQ(anticipated_consumption, 102400UL); // 100 clock ticks at 1024 bytes per tick
 }
