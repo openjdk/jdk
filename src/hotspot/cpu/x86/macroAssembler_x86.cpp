@@ -2432,9 +2432,9 @@ void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
   Label L_done;
-  cmpptr(rsp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rbp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::belowEqual, L_done);
-  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rsp);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbp);
   bind(L_done);
 }
 
