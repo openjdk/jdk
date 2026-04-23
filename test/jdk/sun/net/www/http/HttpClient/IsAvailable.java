@@ -137,7 +137,7 @@ class IsAvailable {
             assertEquals(readTimeout, infra.httpClient.getReadTimeout(), "Read-timeout should be restored");
 
             // Write (unexpected) data to the socket
-            LOGGER.info("Tainting the socket...");
+            LOGGER.info("Writing data to the socket...");
             try (var clientSocketOutputStream = infra.clientSocket.getOutputStream()) {
                 clientSocketOutputStream.write("unexpected data".getBytes(US_ASCII));
             }
