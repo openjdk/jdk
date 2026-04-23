@@ -300,6 +300,10 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
     return JVMTI_ERROR_WRONG_PHASE;
   }
 
+  if (!EventAsyncStackTrace::is_enabled()) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+
   JavaThread* java_thread = JavaThread::cast(current);
 
   // Filter out threads that are exiting or excluded, matching the JFR CPU
