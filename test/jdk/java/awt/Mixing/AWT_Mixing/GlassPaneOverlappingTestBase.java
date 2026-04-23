@@ -156,19 +156,14 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
             if (!latch.await(1, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Ancestor frame didn't receive focus");
             }
-            final CountDownLatch edtLatch = new CountDownLatch(1);
             final Point[] points = new Point[1];
-            SwingUtilities.invokeLater(() -> {
+            SwingUtilities.invokeAndWait(() -> {
                 Point lLoc = testedComponent.getLocationOnScreen();
-                points[0] = lLoc;
                 lLoc.translate(1, testedComponent.getPreferredSize().height + 1);
-                edtLatch.countDown();
+                points[0] = lLoc;
             });
-            if (!edtLatch.await(1, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Point location was not received!");
-            }
             clickAndBlink(robot, points[0]);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
         return wasLWClicked;
