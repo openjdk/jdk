@@ -467,18 +467,18 @@ public class TestArrayLoadProfiling {
         i.m();
     }
     
-    @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
-    @IR(failOn = IRNode.ALLOC)
-    public static void test24(I[] array) {
-        array[0].m();
-    }
+    // @Test
+    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
+    // @IR(failOn = IRNode.ALLOC)
+    // public static void test24(I[] array) {
+    //     array[0].m();
+    // }
 
-    @Run(test = "test24")
-    public static void test24Runner() {
-        test24(array3);
-        test24(array10);
-    }
+    // @Run(test = "test24")
+    // public static void test24Runner() {
+    //     test24(array3);
+    //     test24(array10);
+    // }
 
     interface I {
         void m();

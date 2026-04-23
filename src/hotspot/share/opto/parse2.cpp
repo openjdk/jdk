@@ -261,18 +261,18 @@ public:
 
     Node* array = _array;
     ciArrayLoadData* array_load = profile_data();
-    if (array_load != nullptr && array_load->null_free_array() && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
-      Node* test = _parse.null_free_array_test(_array, false);
-      IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
-      _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
-      {
-        PreserveJVMState pjvms(&_parse);
-        _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
-      }
-      _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
-      const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
-      array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
-    }
+    // if (array_load != nullptr && array_load->null_free_array() && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+    //   Node* test = _parse.null_free_array_test(_array, false);
+    //   IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
+    //   _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+    //   {
+    //     PreserveJVMState pjvms(&_parse);
+    //     _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+    //   }
+    //   _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+    //   const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
+    //   array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
+    // }
 
     if (element_ptr->is_inlinetypeptr()) {
       ciInlineKlass* vk = element_ptr->inline_klass();
