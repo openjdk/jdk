@@ -1184,7 +1184,7 @@ public:
     HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(nullptr),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
-    _thread_status(), _thread_name(nullptr),
+    _thread_status(JavaThreadStatus::TERMINATED), _thread_name(nullptr),
     _locks(nullptr), _blocker() {
   }
   virtual ~GetThreadSnapshotHandshakeClosure() {
@@ -1474,8 +1474,8 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
-  if (is_virtual && (cl._thread_status == JavaThreadStatus::TERMINATED)) {
-    return nullptr; // virtual thread terminated
+  if (cl._thread_status == JavaThreadStatus::TERMINATED) {
+    return nullptr; // thread terminated
   }
 
   // StackTrace
