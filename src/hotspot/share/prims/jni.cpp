@@ -2895,7 +2895,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
-    FREE_C_HEAP_ARRAY(jchar, chars);
+    FREE_C_HEAP_ARRAY(chars);
   } else {
     // StringDedup can have replaced the value array, so don't fetch the array from 's'.
     // Instead, we calculate the address based on the jchar array exposed with GetStringCritical.
