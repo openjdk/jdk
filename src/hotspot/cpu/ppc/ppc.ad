@@ -1187,7 +1187,9 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
     return 12;
   } else {
-    return 24 + MacroAssembler::instr_size_for_decode_klass_not_null();
+    int size = 24 + MacroAssembler::instr_size_for_decode_klass_not_null();
+    if (UseCompactObjectHeaders) size += 4; // one extra instruction
+    return size;
   }
 }
 
