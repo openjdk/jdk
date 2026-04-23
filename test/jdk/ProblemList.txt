@@ -151,6 +151,7 @@ java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/List/NoEvents/ProgrammaticChange.java 8201307 linux-all
+java/awt/List/ListSelection/SelectInvalidTest.java 8369455 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
@@ -744,8 +745,6 @@ jdk/jfr/jvm/TestWaste.java                                      8371630 generic-
 
 # jdk_foreign
 
-java/foreign/TestBufferStackStress.java                         8350455 macosx-all
-
 ############################################################################
 # Client manual tests
 
@@ -800,10 +799,14 @@ tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 83
 # Preview project specific failures go here at the end of the file.
 #
 # These are NOT failures that occur with the '--enable-preview' option
-# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# specified in the task definition; those go in the appropriate
+# ProblemList-enable-preview.txt file.
+#
 # These are failures that occur WITHOUT the '--enable-preview' option
-# specified AND occur because of some issue with preview project code,
-# in either implementation or test code.
+# specified in the task definition OR the '--enable-preview' option
+# MAY BE specified in the test itself. In either case, the failure
+# occurs because of some issue with preview project code, in either
+# implementation or test code.
 
 #############################################################################
 

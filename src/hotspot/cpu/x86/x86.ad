@@ -24924,11 +24924,11 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp) %{
+instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2) %{
   predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) <= 8);
   match(Set dst (VectorLongToMask src));
-  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp);
-  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2);
+  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2" %}
   ins_encode %{
     int mask_len = Matcher::vector_length(this);
     int vec_enc  = vector_length_encoding(mask_len);
