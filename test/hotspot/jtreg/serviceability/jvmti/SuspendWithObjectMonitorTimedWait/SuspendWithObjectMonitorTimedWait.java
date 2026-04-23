@@ -26,7 +26,7 @@ import jvmti.JVMTIUtils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 
 import static jdk.test.lib.Asserts.assertTrue;
 
@@ -68,28 +68,19 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
 
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch iterationLatch = new CountDownLatch(1);
-        waitTask task = new waitTask(startLatch, iterationLatch);
+        Phaser phaser = new Phaser(1);
+        waitTask task = new waitTask(phaser);
         Thread targetThread = Thread.ofPlatform().name("Target Thread").unstarted(task);
 
         targetThread.start();
-        try {
-            startLatch.await();
-        } catch (InterruptedException ex) {
-            throw new Failure(ex);
-        }
+        phaser.arriveAndAwaitAdvance();
 
         System.out.println("Target Thread started");
 
         int usefulRun = 0;
         for (int n = 0; n < maxRetries; ++n) {
 
-            try {
-                iterationLatch.await();
-            } catch (InterruptedException ex) {
-                throw new Failure(ex);
-            }
+            phaser.arriveAndAwaitAdvance();
 
             long deadlineNanos = System.nanoTime() + waitForTimedWaitingMills * 1_000_000L;
             if (!waitUntilTimedWaiting(targetThread, deadlineNanos)) {
@@ -101,13 +92,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             JVMTIUtils.suspendThread(targetThread);
             try {
 
-                ThreadInfo [] threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
-
-                assertTrue(threadInfo != null, "getThreadInfo() failed");
-                assertTrue(threadInfo[0] != null, "getThreadInfo() failed");
-
-                grabbedMonitor =
-                        Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
+                grabbedMonitor = hasGrabbedMonitor(targetThread);
 
                 if (grabbedMonitor) {
                     // Cannot assert anything here.
@@ -125,9 +110,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
 
                 // Check if the target still does not own monitors
-                threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
-                grabbedMonitor =
-                        Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
+                grabbedMonitor = hasGrabbedMonitor(targetThread);
 
                 if (grabbedMonitor) {
                     System.out.println("Grabbed the monitor on iteration " + n);
@@ -139,11 +122,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
             }
         }
 
-        try {
-            iterationLatch.await();
-        } catch (InterruptedException ex) {
-            throw new Failure(ex);
-        }
+        phaser.arriveAndAwaitAdvance();
 
         // wait for targetThread finish
         try {
@@ -166,24 +145,35 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         return status;
     }
 
+    private static boolean hasGrabbedMonitor(Thread targetThread) {
+        boolean grabbedMonitor;
+        ThreadInfo [] threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
+
+        assertTrue(threadInfo != null, "getThreadInfo() failed");
+        assertTrue(threadInfo[0] != null, "getThreadInfo() failed");
+
+        grabbedMonitor =
+                Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
+        return grabbedMonitor;
+    }
+
 
     static class waitTask implements Runnable {
 
-        private final CountDownLatch countDownLatch;
-        private final CountDownLatch iterationLatch;
+        private final Phaser phaser;
 
-        waitTask(final CountDownLatch startLatch, final CountDownLatch iterationLatch) {
-            this.countDownLatch = startLatch;
-            this.iterationLatch = iterationLatch;
+        waitTask(final Phaser phaser) {
+            this.phaser = phaser;
+            phaser.register();
         }
 
         public void run() {
             synchronized (lock) {
-                countDownLatch.countDown();
+                phaser.arriveAndAwaitAdvance();
                 boolean done = false;
                 int retryNumber = 0;
                 while (!done) {
-                    iterationLatch.countDown();
+                    phaser.arriveAndAwaitAdvance();
                     try {
                         lock.wait(timeout);
                     } catch (InterruptedException e) {
@@ -195,7 +185,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                     }
                 }
             }
-            iterationLatch.countDown();
+            phaser.arriveAndDeregister();
         }
     }
 }
