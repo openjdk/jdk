@@ -557,7 +557,7 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   if (!Continuations::enabled()) return;
   Label done;
   ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
-  cmp(sp, rscratch1);
+  cmp(rfp, rscratch1);
   br(Assembler::LO, done);
   str(zr, Address(java_thread, JavaThread::cont_fastpath_offset()));
   bind(done);
