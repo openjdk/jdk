@@ -125,7 +125,6 @@ public class ClhsdbDumpheap {
 
     private static void runTest(long appPid, SubTest subtest) throws Exception {
         ClhsdbLauncher test = new ClhsdbLauncher();
-        test.allowStderrOutput(); // for help message
         String fileName = subtest.getFileName();
         String cmd = subtest.getCmd();
         String expectedOutput = subtest.getExpectedOutput();
