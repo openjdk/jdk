@@ -216,7 +216,7 @@ public class WindowsAsynchronousFileChannelImpl
 
     @Override
     public void force(boolean metaData) throws IOException {
-        if (!FileForceEvent.enabled()) {
+        if (!jfrTracing || !FileForceEvent.enabled()) {
             implForce(metaData);
             return;
         }

@@ -75,7 +75,7 @@ public class FileChannelImpl
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
     // Flag set by jdk.internal.event.JFRTracing to indicate if
-    // file reads and writes should be traced by JFR.
+    // file reads, writes, and force should be traced by JFR.
     private static boolean jfrTracing;
 
     // File descriptor
@@ -635,7 +635,7 @@ public class FileChannelImpl
 
     @Override
     public void force(boolean metaData) throws IOException {
-        if (!FileForceEvent.enabled()) {
+        if (!jfrTracing || !FileForceEvent.enabled()) {
             implForce(metaData);
             return;
         }

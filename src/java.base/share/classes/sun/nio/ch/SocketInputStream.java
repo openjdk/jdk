@@ -35,6 +35,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * An InputStream that reads bytes from a socket channel.
  */
 class SocketInputStream extends InputStream {
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads should be traced by JFR.
+    private static boolean jfrTracing;
     private final SocketChannelImpl sc;
     private final IntSupplier timeoutSupplier;
 
@@ -74,7 +77,7 @@ class SocketInputStream extends InputStream {
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int timeout = timeoutSupplier.getAsInt();
-        if (!SocketReadEvent.enabled()) {
+        if (!jfrTracing || !SocketReadEvent.enabled()) {
             return implRead(b, off, len, timeout);
         }
         long start = SocketReadEvent.timestamp();

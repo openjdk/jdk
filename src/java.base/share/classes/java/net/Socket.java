@@ -118,6 +118,11 @@ public class Socket implements java.io.Closeable {
     private static final int CLOSED         = 1 << 3;
     private static final int SHUT_IN        = 1 << 9;
     private static final int SHUT_OUT       = 1 << 10;
+
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
+
     private volatile int state;
 
     // used to coordinate creating and closing underlying socket
@@ -970,7 +975,7 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (!SocketReadEvent.enabled()) {
+            if (!jfrTracing || !SocketReadEvent.enabled()) {
                 return implRead(b, off, len);
             }
             long start = SocketReadEvent.timestamp();
@@ -1083,7 +1088,7 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            if (!SocketWriteEvent.enabled()) {
+            if (!jfrTracing || !SocketWriteEvent.enabled()) {
                 implWrite(b, off, len);
                 return;
             }

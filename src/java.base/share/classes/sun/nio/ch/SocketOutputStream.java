@@ -33,6 +33,9 @@ import java.io.OutputStream;
  * An OutputStream that writes bytes to a socket channel.
  */
 class SocketOutputStream extends OutputStream {
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket writes should be traced by JFR.
+    private static boolean jfrTracing;
     private final SocketChannelImpl sc;
 
     /**
@@ -57,7 +60,7 @@ class SocketOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (!SocketWriteEvent.enabled()) {
+        if (!jfrTracing || !SocketWriteEvent.enabled()) {
             sc.blockingWriteFully(b, off, len);
             return;
         }

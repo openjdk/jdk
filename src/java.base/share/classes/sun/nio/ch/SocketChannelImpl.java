@@ -76,6 +76,10 @@ class SocketChannelImpl
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new SocketDispatcher();
 
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
+
     // The protocol family of the socket
     private final ProtocolFamily family;
 
@@ -484,7 +488,7 @@ class SocketChannelImpl
 
     @Override
     public int read(ByteBuffer buf) throws IOException {
-        if (!SocketReadEvent.enabled()) {
+        if (!jfrTracing || !SocketReadEvent.enabled()) {
             return implRead(buf);
         }
         long start = SocketReadEvent.timestamp();
@@ -498,7 +502,7 @@ class SocketChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if (!SocketReadEvent.enabled()) {
+        if (!jfrTracing || !SocketReadEvent.enabled()) {
             return implRead(dsts, offset, length);
         }
         long start = SocketReadEvent.timestamp();
@@ -609,7 +613,7 @@ class SocketChannelImpl
 
     @Override
     public int write(ByteBuffer buf) throws IOException {
-        if (!SocketWriteEvent.enabled()) {
+        if (!jfrTracing || !SocketWriteEvent.enabled()) {
             return implWrite(buf);
         }
         long start = SocketWriteEvent.timestamp();
@@ -622,7 +626,7 @@ class SocketChannelImpl
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if (!SocketWriteEvent.enabled()) {
+        if (!jfrTracing || !SocketWriteEvent.enabled()) {
             return implWrite(srcs, offset, length);
         }
         long start = SocketWriteEvent.timestamp();

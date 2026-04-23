@@ -44,6 +44,10 @@ abstract class AsynchronousFileChannelImpl
 {
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // file force should be traced by JFR.
+    protected static boolean jfrTracing;
+
     // close support
     protected final ReadWriteLock closeLock = new ReentrantReadWriteLock();
     protected volatile boolean closed;
