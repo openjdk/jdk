@@ -4855,6 +4855,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     // push user on appropriate worklist
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node *use = n->fast_out(i);
+      // Push user memory phis on the orig_phis worklist to update
+      // during Phase 4 if needed.
       if (use->is_Phi() && (((uint) _compile->get_alias_index(use->as_Phi()->adr_type()) < new_index_start))) {
           orig_phis.append_if_missing(use->as_Phi());
       }
