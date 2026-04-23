@@ -546,9 +546,9 @@ void MacroAssembler::push_cont_fastpath(Register java_thread) {
   if (!Continuations::enabled()) return;
   Label done;
   ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
-  cmp(sp, rscratch1);
+  cmp(rfp, rscratch1);
   br(Assembler::LS, done);
-  mov(rscratch1, sp); // we can't use sp as the source in str
+  mov(rscratch1, rfp); // we can't use sp as the source in str
   str(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
   bind(done);
 }
