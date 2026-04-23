@@ -73,6 +73,7 @@ public class AfterShutdown {
                     testLateRecording();
                     testLateRecordingStream();
                 } catch (Throwable t) {
+                    fail = true;
                     t.printStackTrace();
                 }
                 if (!fail) {
@@ -103,7 +104,6 @@ public class AfterShutdown {
     }
 
     public static void assertClosedBehavior(Recording recording, String kind) {
-      //  fail("apa");
         assertClosed(recording);
         try {
             recording.start();
