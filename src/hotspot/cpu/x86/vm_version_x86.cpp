@@ -2527,7 +2527,7 @@ const char* VM_Version::cpu_brand_string(void) {
     }
     int ret_val = cpu_extended_brand_string(_cpu_brand_string, CPU_EBS_MAX_LENGTH);
     if (ret_val != OS_OK) {
-      FREE_C_HEAP_ARRAY(char, _cpu_brand_string);
+      FREE_C_HEAP_ARRAY(_cpu_brand_string);
       _cpu_brand_string = nullptr;
     }
   }

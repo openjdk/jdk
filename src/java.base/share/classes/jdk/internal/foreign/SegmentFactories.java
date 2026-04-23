@@ -190,15 +190,16 @@ public class SegmentFactories {
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, AbstractMemorySegmentImpl.NIO_ACCESS.pageSize());
         }
+        // Always allocate at least some memory so that zero-length segments have distinct
+        // non-zero addresses.
+        byteSize = Math.max(1, byteSize);
+
         // Align the allocation size up to a multiple of 8 so we can init the memory with longs
         long alignedSize = init ? Utils.alignUp(byteSize, Long.BYTES) : byteSize;
         // Check for wrap around
         if (alignedSize < 0) {
             throw new OutOfMemoryError();
         }
-        // Always allocate at least some memory so that zero-length segments have distinct
-        // non-zero addresses.
-        alignedSize = Math.max(1, alignedSize);
 
         long allocationSize;
         long allocationBase;
@@ -226,12 +227,13 @@ public class SegmentFactories {
         if (init) {
             initNativeMemory(result, alignedSize);
         }
+        final long cleanupByteSize = byteSize;
         sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 UNSAFE.freeMemory(allocationBase);
                 if (shouldReserve) {
-                    AbstractMemorySegmentImpl.NIO_ACCESS.unreserveMemory(allocationSize, byteSize);
+                    AbstractMemorySegmentImpl.NIO_ACCESS.unreserveMemory(allocationSize, cleanupByteSize);
                 }
             }
         });

@@ -533,7 +533,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -556,6 +555,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -851,7 +851,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin orig
   }
   if (JVMFlagAccess::set_ccstr(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(value);
   return true;
 }
 
@@ -876,9 +876,9 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
   }
   (void) JVMFlagAccess::set_ccstr(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
-  FREE_C_HEAP_ARRAY(char, value);
+  FREE_C_HEAP_ARRAY(value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
-  FREE_C_HEAP_ARRAY(char, free_this_too);
+  FREE_C_HEAP_ARRAY(free_this_too);
   return true;
 }
 
@@ -1013,7 +1013,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   if (*bldarray == nullptr) {
     *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtArguments);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtArguments);
+    *bldarray = REALLOC_C_HEAP_ARRAY(*bldarray, new_count, mtArguments);
   }
   (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
@@ -1490,13 +1490,7 @@ jint Arguments::set_ergonomics_flags() {
 }
 
 size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
-  // The AggressiveHeap check is a temporary workaround to avoid calling
-  // GCarguments::heap_virtual_to_physical_ratio() before a GC has been
-  // selected. This works because AggressiveHeap implies UseParallelGC
-  // where we know the ratio will be 1. Once the AggressiveHeap option is
-  // removed, this can be cleaned up.
-  size_t heap_virtual_to_physical_ratio = (AggressiveHeap ? 1 : GCConfig::arguments()->heap_virtual_to_physical_ratio());
-  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio;
+  size_t fraction = MaxVirtMemFraction * GCConfig::arguments()->heap_virtual_to_physical_ratio();
   size_t max_allocatable = os::commit_memory_limit();
 
   return MIN2(limit, max_allocatable / fraction);
@@ -1627,107 +1621,6 @@ void Arguments::set_heap_size() {
   }
 }
 
-// This option inspects the machine and attempts to set various
-// parameters to be optimal for long-running, memory allocation
-// intensive jobs.  It is intended for machines with large
-// amounts of cpu and memory.
-jint Arguments::set_aggressive_heap_flags() {
-  // initHeapSize is needed since _initial_heap_size is 4 bytes on a 32 bit
-  // VM, but we may not be able to represent the total physical memory
-  // available (like having 8gb of memory on a box but using a 32bit VM).
-  // Thus, we need to make sure we're using a julong for intermediate
-  // calculations.
-  julong initHeapSize;
-  physical_memory_size_type phys_mem = os::physical_memory();
-  julong total_memory = static_cast<julong>(phys_mem);
-
-  if (total_memory < (julong) 256 * M) {
-    jio_fprintf(defaultStream::error_stream(),
-            "You need at least 256mb of memory to use -XX:+AggressiveHeap\n");
-    vm_exit(1);
-  }
-
-  // The heap size is half of available memory, or (at most)
-  // all of possible memory less 160mb (leaving room for the OS
-  // when using ISM).  This is the maximum; because adaptive sizing
-  // is turned on below, the actual space used may be smaller.
-
-  initHeapSize = MIN2(total_memory / (julong) 2,
-          total_memory - (julong) 160 * M);
-
-  initHeapSize = limit_heap_by_allocatable_memory(initHeapSize);
-
-  if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    if (FLAG_SET_CMDLINE(MaxHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(InitialHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(MinHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-  }
-  if (FLAG_IS_DEFAULT(NewSize)) {
-    // Make the young generation 3/8ths of the total heap.
-    if (FLAG_SET_CMDLINE(NewSize,
-            ((julong) MaxHeapSize / (julong) 8) * (julong) 3) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(MaxNewSize, NewSize) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-  }
-
-#if !defined(_ALLBSD_SOURCE) && !defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
-  FLAG_SET_DEFAULT(UseLargePages, true);
-#endif
-
-  // Increase some data structure sizes for efficiency
-  if (FLAG_SET_CMDLINE(ResizeTLAB, false) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-  if (FLAG_SET_CMDLINE(TLABSize, 256 * K) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  // See the OldPLABSize comment below, but replace 'after promotion'
-  // with 'after copying'.  YoungPLABSize is the size of the survivor
-  // space per-gc-thread buffers.  The default is 4kw.
-  if (FLAG_SET_CMDLINE(YoungPLABSize, 256 * K) != JVMFlag::SUCCESS) { // Note: this is in words
-    return JNI_EINVAL;
-  }
-
-  // OldPLABSize is the size of the buffers in the old gen that
-  // UseParallelGC uses to promote live data that doesn't fit in the
-  // survivor spaces.  At any given time, there's one for each gc thread.
-  // The default size is 1kw. These buffers are rarely used, since the
-  // survivor spaces are usually big enough.  For specjbb, however, there
-  // are occasions when there's lots of live data in the young gen
-  // and we end up promoting some of it.  We don't have a definite
-  // explanation for why bumping OldPLABSize helps, but the theory
-  // is that a bigger PLAB results in retaining something like the
-  // original allocation order after promotion, which improves mutator
-  // locality.  A minor effect may be that larger PLABs reduce the
-  // number of PLAB allocation events during gc.  The value of 8kw
-  // was arrived at by experimenting with specjbb.
-  if (FLAG_SET_CMDLINE(OldPLABSize, 8 * K) != JVMFlag::SUCCESS) { // Note: this is in words
-    return JNI_EINVAL;
-  }
-
-  // Enable parallel GC and adaptive generation sizing
-  if (FLAG_SET_CMDLINE(UseParallelGC, true) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  // Encourage steady state memory management
-  if (FLAG_SET_CMDLINE(ThresholdTolerance, 100) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  return JNI_OK;
-}
-
 // This must be called after ergonomics.
 void Arguments::set_bytecode_flags() {
   if (!RewriteBytecodes) {
@@ -1809,14 +1702,6 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
-
-  if (TLABRefillWasteFraction == 0) {
-    jio_fprintf(defaultStream::error_stream(),
-                "TLABRefillWasteFraction should be a denominator, "
-                "not %zu\n",
-                TLABRefillWasteFraction);
-    status = false;
-  }
 
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
@@ -2050,7 +1935,7 @@ int Arguments::process_patch_mod_option(const char* patch_mod_tail) {
       *(module_name + module_len) = '\0';
       // The path piece begins one past the module_equal sign
       add_patch_mod_prefix(module_name, module_equal + 1);
-      FREE_C_HEAP_ARRAY(char, module_name);
+      FREE_C_HEAP_ARRAY(module_name);
       if (!create_numbered_module_property("jdk.module.patch", patch_mod_tail, patch_mod_count++)) {
         return JNI_ENOMEM;
       }
@@ -2201,8 +2086,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add_xrun(name, options, false);
-        FREE_C_HEAP_ARRAY(char, name);
-        FREE_C_HEAP_ARRAY(char, options);
+        FREE_C_HEAP_ARRAY(name);
+        FREE_C_HEAP_ARRAY(options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2331,7 +2216,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         JvmtiAgentList::add("instrument", options, false);
-        FREE_C_HEAP_ARRAY(char, options);
+        FREE_C_HEAP_ARRAY(options);
 
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
@@ -2938,16 +2823,6 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
-  // This must be done after all arguments have been processed
-  // and the container support has been initialized since AggressiveHeap
-  // relies on the amount of total memory available.
-  if (AggressiveHeap) {
-    jint result = set_aggressive_heap_flags();
-    if (result != JNI_OK) {
-      return result;
-    }
-  }
-
   // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
   // but like -Xint, leave compilation thresholds unaffected.
   // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
@@ -3066,7 +2941,7 @@ class ScopedVMInitArgs : public StackObj {
     for (int i = 0; i < _args.nOptions; i++) {
       os::free(_args.options[i].optionString);
     }
-    FREE_C_HEAP_ARRAY(JavaVMOption, _args.options);
+    FREE_C_HEAP_ARRAY(_args.options);
   }
 
   // Insert options into this option list, to replace option at
@@ -3215,7 +3090,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
   ::close(fd);
   if (bytes_read < 0) {
-    FREE_C_HEAP_ARRAY(char, buf);
+    FREE_C_HEAP_ARRAY(buf);
     jio_fprintf(defaultStream::error_stream(),
                 "Could not read options file '%s'\n", file_name);
     return JNI_ERR;
@@ -3223,13 +3098,13 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
 
   if (bytes_read == 0) {
     // tell caller there is no option data and that is ok
-    FREE_C_HEAP_ARRAY(char, buf);
+    FREE_C_HEAP_ARRAY(buf);
     return JNI_OK;
   }
 
   retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
   return retcode;
 }
 
@@ -3562,7 +3437,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   char *vmoptions = ClassLoader::lookup_vm_options();
   if (vmoptions != nullptr) {
     code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &initial_vm_options_args);
-    FREE_C_HEAP_ARRAY(char, vmoptions);
+    FREE_C_HEAP_ARRAY(vmoptions);
     if (code != JNI_OK) {
       return code;
     }
