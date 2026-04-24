@@ -26,7 +26,7 @@
  * @bug 8381362
  * @summary Verify no crash for vector late-inline queue draining when MH/virtual late inlining is disabled
  * @modules jdk.incubator.vector
- * @run main/othervm -Xcomp
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-IncrementalInlineVirtual -XX:-IncrementalInlineMH -XX:-UseInlineCaches
  *                   ${test.main.class} vector
  */
@@ -36,7 +36,7 @@
  * @bug 8381362
  * @summary Verify no crash for non-vector late-inline queue draining when MH/virtual late inlining is disabled
  * @modules jdk.incubator.vector
- * @run main/othervm -Xcomp
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-IncrementalInlineVirtual -XX:-IncrementalInlineMH -XX:-UseInlineCaches
  *                   -XX:LiveNodeCountInliningCutoff=50
  *                   -XX:CompileCommand=compileonly,${test.main.class}::nonVector*

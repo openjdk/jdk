@@ -258,6 +258,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   if (sts_active && !cancelled_gc()) {
+    assert(!ShenandoahEvacOOMHandler::is_active(), "Potential deadlock: cannot yield while OOM evac handler is active");
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
