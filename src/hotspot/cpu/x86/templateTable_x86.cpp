@@ -2140,7 +2140,7 @@ void TemplateTable::_return(TosState state) {
     __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::at_safepoint));
-    __ pop_cont_fastpath_frame();
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }

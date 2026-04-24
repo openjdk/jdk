@@ -362,7 +362,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
   }
 #endif
 
-  __ pop_cont_fastpath();
+  __ pop_cont_fastpath_unwind();
 
   // restore regs belonging to calling function
 #ifdef _WIN64

@@ -2438,7 +2438,7 @@ void MacroAssembler::push_cont_fastpath() {
   bind(L_done);
 }
 
-void MacroAssembler::pop_cont_fastpath() {
+void MacroAssembler::pop_cont_fastpath_unwind() {
   if (!Continuations::enabled()) return;
 
   Label L_done;
@@ -2448,7 +2448,7 @@ void MacroAssembler::pop_cont_fastpath() {
   bind(L_done);
 }
 
-void MacroAssembler::pop_cont_fastpath_frame() {
+void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
   Label L_done;
