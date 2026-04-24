@@ -43,6 +43,10 @@ public class Statement {
         this.predicate = predicate;
     }
 
+    public Statement(Template.OneArg<Context> template) {
+        this(template, () -> { return true; });
+    }
+
     Template.OneArg<Context> getTemplate() {
         return template;
     }
@@ -59,7 +63,12 @@ public class Statement {
         }
 
         public Object dispatch() {
-            return "// dispatched!\n";
+            var filtered = statements.stream().filter(Statement::isApplicable).toList();
+            if (Template.fuel() <= 0) {
+                return "// out of fuel!\n";
+            }
+            var statement = filtered.get(0);
+            return statement.getTemplate().asToken(this);
         }
     }
 }

@@ -50,7 +50,18 @@ import static compiler.lib.template_framework.Template.scope;
 public class TemplateFuzzer {
 
     private static String generate() {
-        var context = new Statement.Context(List.of());
+        var statements = List.of(
+            new Statement(Template.make("context", (Statement.Context context) -> scope(
+                """
+                { // open
+                """,
+                context.dispatch(),
+                """
+                } // close
+                """
+            )))
+        );
+        var context = new Statement.Context(statements);
 
         var template = Template.make(() -> scope(
             """
