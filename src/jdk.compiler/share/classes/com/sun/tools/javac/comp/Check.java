@@ -3685,16 +3685,20 @@ public class Check {
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
-        if (lint.isEnabled(LintCategory.DEP_ANN) && s.isDeprecatableViaAnnotation() &&
-            (s.flags() & DEPRECATED) != 0 &&
-            !syms.deprecatedType.isErroneous() &&
-            s.attribute(syms.deprecatedType.tsym) == null) {
-            log.warning(pos, LintWarnings.MissingDeprecatedAnnotation);
-        }
-        // Note: @Deprecated has no effect on local variables, parameters and package decls.
-        if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation()) {
-            if (!syms.deprecatedType.isErroneous() && s.attribute(syms.deprecatedType.tsym) != null) {
-                log.warning(pos, LintWarnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
+        if (lint.isEnabled(LintCategory.DEP_ANN)) {
+            if (s.isDeprecatableViaAnnotation()) {
+                if ((s.flags() & DEPRECATED) != 0 &&
+                    !syms.deprecatedType.isErroneous() &&
+                    s.attribute(syms.deprecatedType.tsym) == null) {
+                    log.warning(pos, LintWarnings.MissingDeprecatedAnnotation);
+                }
+            } else {
+                // Note: @Deprecated has no effect on local variables, parameters and package decls.
+                if ((s.flags() & RECORD) == 0 &&
+                    !syms.deprecatedType.isErroneous() &&
+                    s.attribute(syms.deprecatedType.tsym) != null) {
+                    log.warning(pos, LintWarnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
+                }
             }
         }
     }

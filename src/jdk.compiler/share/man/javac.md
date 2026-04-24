@@ -592,7 +592,8 @@ file system locations may be directories, JAR files or JMOD files.
     -   `deprecation`: Warns about the use of deprecated items.
 
     -   `dep-ann`: Warns about the items marked as deprecated in `javadoc` but
-        without the `@Deprecated` annotation.
+        without the `@Deprecated` annotation or about the items marked with the
+        `@Deprecated` annotation but the annotation has no effect there.
 
     -   `divzero`: Warns about the division by the constant integer 0.
 
@@ -1635,14 +1636,18 @@ internal and subject to change at any time.
 
 `dep-ann`
 :   Warns about items that are documented with the `@deprecated` Javadoc
-    comment, but do not have the `@Deprecated` annotation, for example:
+    comment, but do not have the `@Deprecated` annotation, or about items
+    that have `@Deprecated` annotation, but the annotation has no effect
+    there, for example:
 
     ```
     /**
       * @deprecated As of Java SE 7, replaced by {@link #newMethod()}
       */
     public static void deprecatedMethod() { }
-    public static void newMethod() { }
+    public static void newMethod() {
+        @Deprecated int i = 0;
+    }
     ```
 
 `divzero`

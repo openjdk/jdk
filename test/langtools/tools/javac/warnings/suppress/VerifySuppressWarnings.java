@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class VerifySuppressWarnings {
 
         for (final int[] declarationSpan : declarationSpans) {
             final String suppressWarnings =
-                    "@SuppressWarnings({\"deprecation\", \"unchecked\", \"serial\", \"divzero\"})";
+                    "@SuppressWarnings({\"deprecation\", \"dep-ann\", \"unchecked\", \"serial\", \"divzero\"})";
             final String updatedContent = testContent.substring(0, declarationSpan[0]) + suppressWarnings + testContent.substring(declarationSpan[0]);
             final List<Diagnostic<?>> foundErrors = new ArrayList<>(diagnostics);
             DiagnosticListener<JavaFileObject> verifyDiagnostics = new DiagnosticListener<JavaFileObject>() {
