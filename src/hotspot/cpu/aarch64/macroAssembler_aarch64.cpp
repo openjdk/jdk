@@ -637,20 +637,18 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 }
 
-static inline bool target_needs_far_branch(address addr) {
+bool MacroAssembler::target_needs_far_branch(address addr) {
   if (AOTCodeCache::is_on_for_dump()) {
     return true;
   }
-  // codecache size <= 128M
-  if (!MacroAssembler::far_branches()) {
+  if (!far_branches()) {
     return false;
   }
-  // codecache size > 240M
-  if (MacroAssembler::codestub_branch_needs_far_jump()) {
-    return true;
+  if (CodeCache::is_non_nmethod(addr)
+      && CodeCache::max_distance_to_non_nmethod() <= branch_range) {
+    return false;
   }
-  // codecache size: 128M..240M
-  return !CodeCache::is_non_nmethod(addr);
+  return true;
 }
 
 void MacroAssembler::far_call(Address entry, Register tmp) {
@@ -944,7 +942,7 @@ void MacroAssembler::emit_static_call_stub() {
   mov_metadata(rmethod, nullptr);
 
   // Jump to the entry point of the c2i stub.
-  if (codestub_branch_needs_far_jump()) {
+  if (far_branches()) {
     movptr(rscratch1, 0);
     br(rscratch1);
   } else {
@@ -956,7 +954,7 @@ int MacroAssembler::static_call_stub_size() {
   // During AOT production run AOT and JIT compiled code
   // are used at the same time. We need this size
   // to be the same for both types of code.
-  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
+  if (!far_branches() && !AOTCodeCache::is_on_for_use()) {
     // isb; movk; movz; movz; b
     return 5 * NativeInstruction::instruction_size;
   }

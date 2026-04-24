@@ -1199,7 +1199,11 @@ class HandlerImpl {
 
   static uint size_deopt_handler() {
     // count one branch instruction and one far call instruction sequence
-    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
+    address target = SharedRuntime::deopt_blob()->unpack();
+    uint deopt_handler_size = NativeInstruction::instruction_size;
+    deopt_handler_size += MacroAssembler::target_needs_far_branch(target) ? 3 * 4 // adrp, add, br
+                                                                          : 4;
+    return deopt_handler_size;
   }
 };
 
