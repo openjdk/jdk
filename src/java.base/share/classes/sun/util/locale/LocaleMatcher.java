@@ -52,8 +52,6 @@ public final class LocaleMatcher {
                                       Collection<Locale> locales,
                                       FilteringMode mode) {
         if (priorityList.isEmpty() || locales.isEmpty()) {
-            requireNonNullElements(priorityList);
-            requireNonNullElements(locales);
             return new ArrayList<>(); // need to return a empty mutable List
         }
 
@@ -79,8 +77,6 @@ public final class LocaleMatcher {
                                           Collection<String> tags,
                                           FilteringMode mode) {
         if (priorityList.isEmpty() || tags.isEmpty()) {
-            requireNonNullElements(priorityList);
-            requireNonNullElements(tags);
             return new ArrayList<>(); // need to return a empty mutable List
         }
 
@@ -320,8 +316,6 @@ public final class LocaleMatcher {
     public static Locale lookup(List<LanguageRange> priorityList,
                                 Collection<Locale> locales) {
         if (priorityList.isEmpty() || locales.isEmpty()) {
-            requireNonNullElements(priorityList);
-            requireNonNullElements(locales);
             return null;
         }
 
@@ -344,8 +338,6 @@ public final class LocaleMatcher {
     public static String lookupTag(List<LanguageRange> priorityList,
                                    Collection<String> tags) {
         if (priorityList.isEmpty() || tags.isEmpty()) {
-            requireNonNullElements(priorityList);
-            requireNonNullElements(tags);
             return null;
         }
 
@@ -677,12 +669,6 @@ public final class LocaleMatcher {
         }
 
         return list;
-    }
-
-    private static void requireNonNullElements(Collection<?> vals) {
-        for (var val : vals) {
-            Objects.requireNonNull(val);
-        }
     }
 
     private LocaleMatcher() {}

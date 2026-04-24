@@ -3489,8 +3489,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of {@code Locale} instances for matching language tags
      *     sorted in descending order based on priority or weight, or an empty
      *     list if nothing matches. The list is modifiable.
-     * @throws NullPointerException if {@code priorityList}, {@code locales}, or
-     *     any elements within either are {@code null}.
+     * @throws NullPointerException if {@code priorityList} or {@code locales}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @throws IllegalArgumentException if one or more extended language ranges
      *     are included in the given list when
      *     {@link FilteringMode#REJECT_EXTENDED_RANGES} is specified
@@ -3520,8 +3521,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of {@code Locale} instances for matching language tags
      *     sorted in descending order based on priority or weight, or an empty
      *     list if nothing matches. The list is modifiable.
-     * @throws NullPointerException if {@code priorityList}, {@code locales}, or
-     *     any elements within either are {@code null}.
+     * @throws NullPointerException if {@code priorityList} or {@code locales}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      *
      * @since 1.8
      */
@@ -3554,8 +3556,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of matching language tags sorted in descending order
      *     based on priority or weight, or an empty list if nothing matches.
      *     The list is modifiable.
-     * @throws NullPointerException if {@code priorityList}, {@code tags}, or
-     *     any elements within either are {@code null}.
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @throws IllegalArgumentException if one or more extended language ranges
      *     are included in the given list when
      *     {@link FilteringMode#REJECT_EXTENDED_RANGES} is specified
@@ -3593,8 +3596,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of matching language tags sorted in descending order
      *     based on priority or weight, or an empty list if nothing matches.
      *     The list is modifiable.
-     * @throws NullPointerException if {@code priorityList}, {@code tags}, or
-     *     any elements within either are {@code null}.
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static List<String> filterTags(List<LanguageRange> priorityList,
@@ -3613,8 +3617,9 @@ public final class Locale implements Cloneable, Serializable {
      * @param locales {@code Locale} instances used for matching
      * @return the best matching {@code Locale} instance chosen based on
      *     priority or weight, or {@code null} if nothing matches.
-     * @throws NullPointerException if {@code priorityList}, {@code locales}, or
-     *     any elements within either are {@code null}.
+     * @throws NullPointerException if {@code priorityList} or {@code locales}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static Locale lookup(List<LanguageRange> priorityList,
@@ -3636,9 +3641,9 @@ public final class Locale implements Cloneable, Serializable {
      * @param tags language tags used for matching
      * @return the best matching language tag chosen based on priority or
      *     weight, or {@code null} if nothing matches.
-     * @throws NullPointerException if {@code priorityList}, {@code tags}, or
-     *     any elements within either are {@code null}.
-     *
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static String lookupTag(List<LanguageRange> priorityList,

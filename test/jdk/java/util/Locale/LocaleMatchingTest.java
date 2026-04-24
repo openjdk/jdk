@@ -34,7 +34,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -204,22 +203,11 @@ public class LocaleMatchingTest {
     }
 
     static Stream<Arguments> LFilterLookupNPEData() {
-        // Arbitrary value to exercise path with a non-empty collection
-        var validPrioList = LanguageRange.parse("en");
-        var validTagList = List.of("en");
         return Stream.of(
                 // null Locale list
                 Arguments.of(List.of(), null),
-                Arguments.of(validPrioList, null),
                 // null priority list
-                Arguments.of(null, List.of()),
-                Arguments.of(null, validTagList),
-                // Priority list with null element
-                Arguments.of(Collections.singletonList(null), validTagList),
-                Arguments.of(Collections.singletonList(null), List.of()),
-                // Locale list with null element
-                Arguments.of(List.of(), Collections.singletonList(null)),
-                Arguments.of(validPrioList, Collections.singletonList(null))
+                Arguments.of(null, List.of())
         );
     }
 
@@ -409,10 +397,10 @@ public class LocaleMatchingTest {
 
     @MethodSource("LFilterLookupNPEData")
     @ParameterizedTest
-    void testLFilterNPE(List<LanguageRange> priorityList, List<String> locList) {
-        assertThrows(NullPointerException.class, () -> Locale.filter(priorityList, toLocaleList(locList)));
+    void testLFilterNPE(List<LanguageRange> priorityList, List<Locale> locList) {
+        assertThrows(NullPointerException.class, () -> Locale.filter(priorityList, locList));
         // Exercise 3-arg variant
-        assertThrows(NullPointerException.class, () -> Locale.filter(priorityList, toLocaleList(locList), REJECT_EXTENDED_RANGES));
+        assertThrows(NullPointerException.class, () -> Locale.filter(priorityList, locList, REJECT_EXTENDED_RANGES));
     }
 
     @Test
@@ -472,8 +460,8 @@ public class LocaleMatchingTest {
 
     @MethodSource("LFilterLookupNPEData")
     @ParameterizedTest
-    void testLLookupNPE(List<LanguageRange> priorityList, List<String> locList) {
-        assertThrows(NullPointerException.class, () -> Locale.lookup(priorityList, toLocaleList(locList)));
+    void testLLookupNPE(List<LanguageRange> priorityList, List<Locale> locList) {
+        assertThrows(NullPointerException.class, () -> Locale.lookup(priorityList, locList));
     }
 
     @MethodSource("LLookupTagData")
@@ -490,28 +478,6 @@ public class LocaleMatchingTest {
     @ParameterizedTest
     void testLLookupTagsNPE(List<LanguageRange> priorityList, List<String> tagList) {
         assertThrows(NullPointerException.class, () -> Locale.lookupTag(priorityList, tagList));
-    }
-
-    // Converts a list of tags to a list of locales.
-    // This conversion is null safe for both the list itself and elements.
-    private static List<Locale> toLocaleList(List<String> tags) {
-        if (tags != null) {
-            if (tags.isEmpty()) {
-                return List.of();
-            } else {
-                List<Locale> locs = new ArrayList<>(tags.size());
-                for (var tag : tags) {
-                    if (tag == null) {
-                        locs.add(null);
-                    } else {
-                        locs.add(Locale.forLanguageTag(tag));
-                    }
-                }
-                return locs;
-            }
-        } else {
-            return null;
-        }
     }
 
     private static List<Locale> generateLocales(String tags) {
