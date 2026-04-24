@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 8256377 8382815
- * @summary Based on test/jdk/java/lang/ref/ReferenceRefersTo.java.
+ * @bug 8382815
  * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::test_* ${test.main.class}
  */
 
@@ -36,56 +35,42 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
-public class TestReferenceRefersTo {
+public class TestReferenceGet {
     private static final void fail(String msg) throws Exception {
         throw new RuntimeException(msg);
     }
 
-    // Test java.lang.ref.Reference::refersTo0 intrinsic.
     private static final void test0(Reference ref,
-                                   Object expectedValue,
-                                   Object unexpectedValue,
-                                   String kind) throws Exception {
-        if ((expectedValue != null) && ref.refersTo(null)) {
+                                    Object expectedValue,
+                                    Object unexpectedValue,
+                                    String kind) throws Exception {
+        if ((expectedValue != null) && ref.get() == null) {
             fail(kind + " refers to null");
         }
-        if (!ref.refersTo(expectedValue)) {
+        if (ref.get() != expectedValue) {
             fail(kind + " doesn't refer to expected value");
         }
-        if (ref.refersTo(unexpectedValue)) {
+        if (ref.get() == unexpectedValue) {
             fail(kind + " refers to unexpected value");
         }
     }
 
-    // Test java.lang.ref.PhantomReference::refersTo0 intrinsic.
     private static final void test_phantom0(PhantomReference ref,
-                                           Object expectedValue,
-                                           Object unexpectedValue,
-                                           String kind) throws Exception {
-        if ((expectedValue != null) && ref.refersTo(null)) {
-            fail(kind + " refers to null");
-        }
-        if (!ref.refersTo(expectedValue)) {
-            fail(kind + " doesn't refer to expected value");
-        }
-        if (ref.refersTo(unexpectedValue)) {
-            fail(kind + " refers to unexpected value");
+                                            String kind) throws Exception {
+        if (ref.get() != null) {
+            fail(kind + " does not refer to null");
         }
     }
 
     // Entry points to the test, important to push down type information to
     // individual test methods.
 
-    private static final void test_phantom(PhantomReference ref,
-                                           Object expectedValue,
-                                           Object unexpectedValue) throws Exception {
-        test_phantom0(ref, expectedValue, unexpectedValue, "phantom");
+    private static final void test_phantom(PhantomReference ref) throws Exception {
+        test_phantom0(ref, "phantom");
     }
 
-    private static final void test_phantom_shadow(ShadowPhantomReference ref,
-                                           Object expectedValue,
-                                           Object unexpectedValue) throws Exception {
-        test_phantom0(ref, expectedValue, unexpectedValue, "phantom shadow");
+    private static final void test_phantom_shadow(ShadowPhantomReference ref) throws Exception {
+        test_phantom0(ref, "phantom shadow");
     }
 
     private static final void test_weak(WeakReference ref,
@@ -136,10 +121,10 @@ public class TestReferenceRefersTo {
             var ssref = new ShadowSoftReference<>(obj5);
 
             System.out.println("After creation");
-            test_phantom(pref, obj0, unexpected);
+            test_phantom(pref);
             test_weak(wref, obj1, unexpected);
             test_soft(sref, obj2, unexpected);
-            test_phantom_shadow(psref, obj3, unexpected);
+            test_phantom_shadow(psref);
             test_weak_shadow(wsref, obj4, unexpected);
             test_soft_shadow(ssref, obj5, unexpected);
 
@@ -152,10 +137,10 @@ public class TestReferenceRefersTo {
             ssref.clear();
 
             System.out.println("Testing after cleaning");
-            test_phantom(pref, null, unexpected);
+            test_phantom(pref);
             test_weak(wref, null, unexpected);
             test_soft(sref, null, unexpected);
-            test_phantom_shadow(psref, null, unexpected);
+            test_phantom_shadow(psref);
             test_weak_shadow(wsref, null, unexpected);
             test_soft_shadow(ssref, null, unexpected);
         }
