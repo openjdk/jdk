@@ -50,9 +50,9 @@ private:
   Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
   jlong _last_sample_time;
-  TruncatedSeq _sampled_rates;
   size_t _minimum_sample_size;
 
+  TruncatedSeq _sampled_rates;
   jlong _accumulated_bytes;
   jlong _accumulated_duration;
   jlong _last_cumulative_sample_time;
@@ -73,8 +73,8 @@ public:
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
-    , _sampled_rates(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz)
     , _minimum_sample_size(minimum_sample_size)
+    , _sampled_rates(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz)
     , _accumulated_bytes(0)
     , _accumulated_duration(0)
     , _last_cumulative_sample_time(_last_sample_time)
@@ -96,10 +96,10 @@ public:
     _minimum_sample_size = minimum_sample_size;
   }
 
-  void allocated(const size_t allocated_bytes);
+  void allocated(size_t allocated_bytes);
   void record_rate_sample(double timestamp, double rate);
   size_t accelerated_consumption(double& acceleration, double& current_rate,
-                                 double avg_alloc_rate_words_per_second, double time_delta) const;
+                                 double avg_alloc_rate_words_per_second, double time_delta);
 
   const TruncatedSeq& rate() const {
     return _sampled_rates;

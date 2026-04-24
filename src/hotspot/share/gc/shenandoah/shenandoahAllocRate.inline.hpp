@@ -94,64 +94,51 @@ void ShenandoahAllocRate<Clock>::record_rate_sample(double timestamp, double rat
 
 template<typename Clock>
 size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate,
-                               double avg_alloc_rate_words_per_second, double time_delta) const {
+                               double avg_alloc_rate_words_per_second, double time_delta) {
+  MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
+
   double x_sum = 0.0;
   double y_sum = 0.0;
   double xy_sum = 0.0;
   double x2_sum = 0.0;
+  double weighted_y_sum = 0;
+  double total_weight = 0;
+  bool momentary_done = false;
+  double momentary_rate = 0.0;
 
   assert(_num_samples > 0, "At minimum, we should have sample from this period");
+  const uint count = MIN2(ShenandoahRateAccelerationSampleSize, _num_samples);
+  const uint last = (_first_sample_index + _num_samples - 1) % _buffer_size;
+  uint index = last;
+  for (uint i = 0; i < count; i++) {
+    const uint preceding_index = index == 0 ? _buffer_size - 1 : index - 1;
 
-  double weighted_average_alloc;
-  if (_num_samples >= ShenandoahRateAccelerationSampleSize) {
-    double weighted_y_sum = 0;
-    double total_weight = 0;
-    uint delta = _num_samples - ShenandoahRateAccelerationSampleSize;
-    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
-      uint index = (_first_sample_index + delta + i) % _buffer_size;
-      x_sum += _rate_timestamps[index];
-      y_sum += _rate_samples[index];
-      x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
-      xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
-      if (i > 0) {
-        // first sample not included in weighted average because it has no weight.
-        uint preceding_index = index == 0 ? _buffer_size - 1 : index - 1;
-        double sample_weight = _rate_timestamps[index] - _rate_timestamps[preceding_index];
-        weighted_y_sum += _rate_samples[index] * sample_weight;
-        total_weight += sample_weight;
-      }
-    }
-    weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
-  } else {
-    weighted_average_alloc = 0;
-  }
+    x_sum += _rate_timestamps[index];
+    y_sum += _rate_samples[index];
+    x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
+    xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
 
-  double momentary_rate;
-  if (_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
-    // Num samples must be strictly greater than sample size, because we need one extra sample to compute rate and weights
-    // In this context, the weight of a y value (an allocation rate) is the duration for which this allocation rate was
-    // active (the time since previous y value was reported).  An allocation rate measured over a span of 300 ms (e.g. during
-    // concurrent GC) has much more "weight" than an allocation rate measured over a span of 15 s.
-    double weighted_y_sum = 0;
-    double total_weight = 0;
-    uint delta = _num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
-    for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize; i++) {
-      uint sample_index = (_first_sample_index + delta + i) % _buffer_size;
-      uint preceding_index = (sample_index == 0)? _buffer_size - 1: sample_index - 1;
-      double sample_weight = _rate_timestamps[sample_index] - _rate_timestamps[preceding_index];
-      weighted_y_sum += _rate_samples[sample_index] * sample_weight;
+    if (i != count - 1 || _num_samples > count) {
+      // oldest value will not have a preceding element to compute weight, so skip it.
+      const double sample_weight = _rate_timestamps[index] - _rate_timestamps[preceding_index];
+      weighted_y_sum += _rate_samples[index] * sample_weight;
       total_weight += sample_weight;
     }
-    momentary_rate = weighted_y_sum / total_weight;
-  } else {
-    momentary_rate = 0.0;
+
+    if (!momentary_done && i >= ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+      momentary_rate = total_weight > 0 ? weighted_y_sum / total_weight: 0;
+      momentary_done = true;
+    }
+    index = preceding_index;
   }
+
+  double weighted_average_alloc = total_weight > 0 ? weighted_y_sum / total_weight: 0;
 
   // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
   current_rate = momentary_rate;
   acceleration = 0.0;
-  if ((_num_samples >= ShenandoahRateAccelerationSampleSize)
-      && (weighted_average_alloc >= avg_alloc_rate_words_per_second))  {
+  if (_num_samples >= ShenandoahRateAccelerationSampleSize
+      && weighted_average_alloc >= avg_alloc_rate_words_per_second)  {
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
     //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
 
@@ -164,8 +151,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
 
     if (m > 0) {
-      uint index = (_first_sample_index + _num_samples - 1) % _buffer_size;
-      double proposed_current_rate = m * _rate_timestamps[index] + b;
+      double proposed_current_rate = m * _rate_timestamps[last] + b;
       acceleration = m;
       current_rate = proposed_current_rate;
     }
@@ -173,7 +159,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   }
   // and here also, leave current_rate = momentary_rate, acceleration = 0
 
-  size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+  const size_t words_to_be_consumed = static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
   return words_to_be_consumed;
 }
 
