@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id=vector
+ * @test
  * @bug 8381362
  * @summary Verify no crash for vector late-inline queue draining when MH/virtual late inlining is disabled
  * @modules jdk.incubator.vector
@@ -32,7 +32,7 @@
  */
 
 /*
- * @test id=nonverctor
+ * @test
  * @bug 8381362
  * @summary Verify no crash for non-vector late-inline queue draining when MH/virtual late inlining is disabled
  * @modules jdk.incubator.vector
@@ -46,10 +46,8 @@
 
 package compiler.inlining;
 
+import jdk.incubator.vector.*;
 import java.lang.invoke.VarHandle;
-
-import jdk.incubator.vector.FloatVector;
-import jdk.incubator.vector.VectorShuffle;
 
 public class LateInlineQueueDrainTest {
     private static final int SIZE = 60_000;
@@ -61,9 +59,14 @@ public class LateInlineQueueDrainTest {
             throw new RuntimeException("Expected one argument: vector|nonvector");
         }
         switch (args[0]) {
-            case "vector" -> vectorWorkload();
-            case "nonvector" -> nonVectorWorkload();
-            default -> throw new RuntimeException("Unknown mode: " + args[0]);
+            case "vector":
+                vectorWorkload();
+                break;
+            case "nonvector":
+                nonVectorWorkload();
+                break;
+            default:
+                throw new RuntimeException("Unknown mode: " + args[0]);
         }
         System.out.println("PASS " + args[0] + " " + sink);
     }
