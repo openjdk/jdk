@@ -50,6 +50,7 @@
 #endif // COMPILER2
 
 long load_fubar = 0;
+long c1_store_runtime_fubar = 0;
 long load_slow_fubar = 0;
 long load_slow_pre_fubar = 0;
 long store_fubar = 0;
@@ -58,6 +59,8 @@ long store_slow_fubar = 0;
 long c1_load_fubar = 0;
 long c1_store_fubar = 0;
 long atomic_nmethod_fubar = 0;
+long c1_load_runtime_fubar = 0;
+long c1_load_stub_fubar = 0;
 long non_atomic_nmethod_fubar = 0;
 long z_color_fubar = 0;
 long c1_store_stub_fubar = 0;
@@ -409,6 +412,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
+    __ stop("is_atomic in store_barrier_medium");
     __ z_la(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotEqual, slow_path);
@@ -801,7 +805,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   if (on_non_strong) {
     // Test against MarkBad mask
     // TODO: This is not working
-    __ stop ("on non string");
+    __ stop ("on non strong");
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
     __ z_nill(ref->as_register(), barrier_Relocation::unpatched);
 
@@ -835,16 +839,28 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   // Stub entry
   __ bind(*stub->entry());
 
-  __ stop("generate c1 load barrier stub");
+  __ z_ldgr(Z_F1, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F1);
+
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
   Register temp = noreg;
+
+  // fast-path check destroyed the color, need to re-read it
+  __ z_lg(ref, ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
   if (stub->tmp()->is_valid()) {
     //Load address into tmp register
     ce->leal(stub->ref_addr(), stub->tmp());
     ref_addr = temp = stub->tmp()->as_pointer_register();
   } else {
+    // 'tmp' register is not given, so address must have neither an index nor a displacement.
+    // The address' base register is thus usable as-is.
+    assert(stub->ref_addr()->as_address_ptr()->disp() == 0, "illegal displacement");
+    assert(!stub->ref_addr()->as_address_ptr()->index()->is_valid(), "illegal index");
+
     // Address already in register
     ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
   }
@@ -852,15 +868,24 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   assert_different_registers(ref, ref_addr, noreg);
 
   // Setup arguments and call runtime stub
-  __ add2reg(Z_SP, - 2 * BytesPerWord);
-  ce->store_parameter(ref_addr, 1);
-  ce->store_parameter(ref, 0);
-  __ call_stub(stub->runtime_stub());
-  __ add2reg(Z_SP, 2 * BytesPerWord);
+  int nbytes_save = 4 * BytesPerWord; /* SP, PC, 2 args */
+  int offset = 160;
 
-  // TODO: x86 and aarch64 verified results whereas ppc did not, but implementation of verify oop in s390 and x86 varies
-  // Runtime TODO: verify the result is stored in Z_R0
-  __ z_lgr(ref, Z_R0);
+  //TODO: I do not think so that we need abi160 here.
+  __ push_frame_abi160(nbytes_save);     offset += 8;
+  __ save_return_pc();                   offset += 8;
+  __ z_stg(ref, offset, Z_SP);           offset += 8;
+  __ z_stg(ref_addr, offset, Z_SP);
+  __ call_stub(stub->runtime_stub());
+
+  //__ add2reg(Z_SP, - 2 * BytesPerWord);
+  //ce->store_parameter(ref_addr, 1);
+  //ce->store_parameter(ref, 0);
+  //__ call_stub(stub->runtime_stub());
+  //__ add2reg(Z_SP, 2 * BytesPerWord);
+
+  // Runtime TODO: verify the result is stored in Z_R0 -> it is being stored in Z_F0
+  __ z_lgdr(ref, Z_F0);
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
@@ -943,31 +968,50 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 // Purpose: We are just calling the VM here
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
-  __ stop("generate c1 load barrier runtime stub");
-  const int stack_parameters = 2;
-  const int volatile_regs = 13;
-  const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
+  //const int stack_parameters = 2;
+  //const int volatile_regs = 13;
+  //const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
+//
+  //__ push_frame(nbytes_save);
+  //__ save_return_pc();
+  //// TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
+  //__ save_volatile_regs(Z_SP, stack_parameters, true, false);
+//
+  //// Load arguments back gain from the stack
+  //__ z_lay(Z_ARG1, -2 * BytesPerWord, Z_SP); //ref
+  //__ z_lay(Z_ARG2, -3 * BytesPerWord, Z_SP); //ref_addr
 
-  __ push_frame(nbytes_save);
-  __ save_return_pc();
-  // TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
-  __ save_volatile_regs(Z_SP, stack_parameters, true, false);
 
-  // Load arguments back gain from the stack
-  __ z_lay(Z_ARG1, -2 * BytesPerWord, Z_SP); //ref
-  __ z_lay(Z_ARG2, -3 * BytesPerWord, Z_SP); //ref_addr
+  int offset = 176;
+  __ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
+  __ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
+
+  int nbytes_save = 7 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
+  // TODO: use frame::z_abi_160_size instead of just writing 160
+  offset = 160;
+
+  __ push_frame_abi160(nbytes_save);         offset += 8;
+  __ save_return_pc();                       offset += 8;
+  // TODO: If anything goes wrong, check here if something useful was stored in the float registers or i can save these register if the c1_load_stub
+  __ save_volatile_regs(Z_SP, offset, false, false);
+
+  __ z_lgdr(Z_ARG1, Z_F0);                                    // ref
+  __ z_lgdr(Z_ARG2, Z_F1);                                    // ref_addr
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
 
-  //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not
+  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_runtime_fubar);
+  __ z_agsi(0, Z_R1, 1);
+
+  //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not -> they are also doing it, but in the load_stub
   __ verify_oop(Z_RET, "Bad pointer after barrier invocation");
-  __ z_lgr(Z_R0, Z_RET);
+  __ z_ldgr(Z_F0, Z_RET);
 
-  __ restore_volatile_regs(Z_SP, stack_parameters, true, false);
+  offset = 168;
+  __ restore_return_pc();                    offset += 8;
+  __ restore_volatile_regs(Z_SP, offset, false, false);
   __ pop_frame();
-  __ restore_return_pc();
 
-  //TODO: Check if there is a better way to do this -> there isn't
   __ z_br(Z_R14);
 }
 
@@ -998,6 +1042,9 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   } else {
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
+
+  __ load_const_optimized(Z_R5, (uintptr_t)&c1_store_runtime_fubar);
+  __ z_agsi(0, Z_R5, 1);
 
   offset = 168;
   __ restore_return_pc();                   offset += 8;
