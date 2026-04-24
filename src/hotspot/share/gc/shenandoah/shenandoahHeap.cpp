@@ -1150,11 +1150,9 @@ public:
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj;
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
@@ -1165,7 +1163,10 @@ private:
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != nullptr) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _sh->marked_object_iterate(r, &cl);
+      {
+         ShenandoahEvacOOMScope oom_evac_scope;
+        _sh->marked_object_iterate(r, &cl);
+      }
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
@@ -2285,6 +2286,11 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
+
+  if (mode()->is_generational()) {
+    old_generation()->set_parsable(false);
+  }
+
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 

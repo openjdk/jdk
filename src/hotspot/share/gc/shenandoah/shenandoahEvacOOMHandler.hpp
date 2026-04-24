@@ -147,6 +147,11 @@ public:
 
   void clear();
 
+  /**
+   * Returns true if current thread is in evacuation OOM protocol.
+   */
+  static bool is_active();
+
 private:
   // Register/Unregister thread to evacuation OOM protocol
   void register_thread(Thread* t);
