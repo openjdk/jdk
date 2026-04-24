@@ -39,21 +39,40 @@ import compiler.lib.compile_framework.*;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.library.Hooks; // TODO: or do we use our own?
+import compiler.lib.template_framework.library.Statement;
+import static compiler.lib.template_framework.Template.scope;
+
 /**
  * TODO: desc
  */
 public class TemplateFuzzer {
 
     private static String generate() {
-        return """
-               package compiler.c2.templated;
+        var context = new Statement.Context(List.of());
 
-               public class Generated {
-                   public static void main(String args[]) {
-                       System.out.println("Hello world!");
-                   }
-               }
-               """;
+        var template = Template.make(() -> scope(
+            """
+            package compiler.c2.templated;
+
+            public class Templated {
+            // --- CLASS_HOOK insertions start ---
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
+            // --- CLASS_HOOK insertions end   ---
+                public static void main(String[] vmFlags) {
+            """,
+            context.dispatch(),
+            """
+                    throw new RuntimeException("done.");
+                }
+            }
+            """
+            ))
+        ));
+        return template.render();
     }
     // TODO: design the mechanics!
     // - Statement
@@ -68,7 +87,7 @@ public class TemplateFuzzer {
         CompileFramework comp = new CompileFramework();
 
         // Add a Java source file.
-        comp.addJavaSourceCode("compiler.c2.templated.Generated", generate());
+        comp.addJavaSourceCode("compiler.c2.templated.Templated", generate());
 
         // Compile the source file.
         comp.compile();
@@ -77,7 +96,7 @@ public class TemplateFuzzer {
             "-classpath",
             comp.getEscapedClassPathOfCompiledClasses(),
             "-Xbatch",
-            "compiler.c2.templated.Generated"
+            "compiler.c2.templated.Templated"
         );
 
         List<String> cmd1 = new ArrayList<>();
