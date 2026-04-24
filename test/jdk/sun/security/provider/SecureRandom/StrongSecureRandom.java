@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  */
 public class StrongSecureRandom {
 
-    private static final String os = System.getProperty("os.name", "unknown");
+    private static final String OS = System.getProperty("os.name", "unknown");
 
     private static Stream<String> nativePrngAlgorithms() {
         return Stream.of("NativePRNG",
@@ -108,8 +108,8 @@ public class StrongSecureRandom {
     public void testNativePRNGImpl(final String algorithm)
             throws NoSuchAlgorithmException {
         // 'assuming' in order to skip the test if needed
-        assumeFalse(os.startsWith("Windows"), "Skip Windows testing");
-        assumeFalse(os.equals("Linux") &&
+        assumeFalse(OS.startsWith("Windows"), "Skip Windows testing");
+        assumeFalse(OS.equals("Linux") &&
                     algorithm.equals("NativePRNGBlocking"),
                 "Skip Linux blocking test");
 
@@ -127,8 +127,8 @@ public class StrongSecureRandom {
     @MethodSource("nativePrngAlgorithms")
     public void testUnsupportedParams(final String alg) {
         // 'assuming' in order to skip the test if needed
-        assumeFalse(os.startsWith("Windows"), "Skip Windows testing");
-        assumeFalse(os.equals("Linux") &&
+        assumeFalse(OS.startsWith("Windows"), "Skip Windows testing");
+        assumeFalse(OS.equals("Linux") &&
                     alg.equals("NativePRNGBlocking"),
                 "Skip Linux blocking test");
 
@@ -187,7 +187,7 @@ public class StrongSecureRandom {
      * Linux tends to block, so ignore anything that reads /dev/random.
      */
     private void handleLinuxRead(final SecureRandom sr) {
-        if (os.equals("Linux")) {
+        if (OS.equals("Linux")) {
             if (!sr.getAlgorithm().equalsIgnoreCase("NativePRNGBlocking")) {
                 sr.nextBytes(new byte[34]);
             }
