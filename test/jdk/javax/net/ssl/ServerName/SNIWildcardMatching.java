@@ -75,7 +75,7 @@ public final class SNIWildcardMatching extends SSLSocketTemplate {
     private static final String CERT_SIG_ALG = "SHA256withECDSA";
 
     private static final String[][] VALID_VALUES = new String[][]{
-            {"secret.foo.com", "secret.foo.com", "pass"},
+            {"secret.foo.com", "secret.foo.com"},
             {"secret.foo.com", "*.foo.com"},
             {"secret.foo.com", "s*.foo.com"},
             {"secret.foo.com", "*t.foo.com"},
