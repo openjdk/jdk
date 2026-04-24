@@ -1419,9 +1419,8 @@ public class Config {
             }
         }
         if (srvs == null) {
-            KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
-                "Unable to locate KDC for realm " + realm);
-            throw ke;
+            throw new KrbException(Krb5.KRB_ERR_GENERIC,
+                    "Unable to locate KDC for realm " + realm);
         }
         if (srvs.length == 0) {
             return null;
