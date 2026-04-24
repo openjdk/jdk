@@ -132,7 +132,6 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"desktopicon"];
     [rolesMap setObject:@"SpinboxAccessibility" forKey:@"spinbox"];
-    [rolesMap setObject:@"LinkAccessibility" forKey:@"hyperlink"];
     [rolesMap setObject:@"StaticTextAccessibility" forKey:@"label"];
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
