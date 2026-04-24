@@ -110,7 +110,7 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
   } else if (SuperwordUseVSX) {
-    warning("SuperwordUseVSX is not recommended on POWER8 due to poor VSX performance.");
+    warning("SuperwordUseVSX specified, but needs at least Power9.");
     FLAG_SET_DEFAULT(SuperwordUseVSX, false);
   }
 
