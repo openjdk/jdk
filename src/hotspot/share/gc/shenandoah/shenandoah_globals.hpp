@@ -34,9 +34,6 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(bool, ShenandoahUseNewAllocRate, false, EXPERIMENTAL,             \
-          "Enable experimental alloc rate tracker")                         \
-                                                                            \
   product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
           "When at least this much time (measured in ms) has passed "       \
           "since the acceleration allocation rate was most recently "       \
@@ -47,7 +44,7 @@
           "more monitoring effort.")                                        \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
+  product(uint, ShenandoahRateAccelerationSampleSize, 100, EXPERIMENTAL,    \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), "                        \
@@ -66,10 +63,10 @@
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
           "acceleration.")                                                  \
-          range(1,64)                                                       \
+          range(1,128)                                                      \
                                                                             \
   product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
-          2, EXPERIMENTAL,                                                  \
+          25, EXPERIMENTAL,                                                 \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), we compute "             \
@@ -88,7 +85,7 @@
           "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
           "momentary spike detection less sensitive.  A smaller value "     \
           "may result in excessive GC triggers.")                           \
-          range(1,64)                                                       \
+          range(1,128)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \

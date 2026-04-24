@@ -362,9 +362,6 @@ static double saturate(double value, double min, double max) {
 
 bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const size_t allocatable_words, const double avg_alloc_rate) {
   // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
-  // TODO: planned sleep interval should never be more than ShenandoahControlIntervalMax (default 10 ms)
-  // ShenandoahAccelerationSamplePeriod is 15 ms. Are we really going to see a difference between now,
-  // planned sleep interval and acceleration sample period?
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   log_debug(gc)("%s: predicted GC time: %.2f ms, allocation rate: " PROPERFMT_F "/s",
@@ -465,46 +462,36 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const size_t 
 // are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 8 and
 // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
 bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, const size_t allocatable_words, const double avg_alloc_rate) {
-  const double now = get_most_recent_wake_time();
-  const double ACCELERATION_SAMPLE_PERIOD_SEC = ShenandoahAccelerationSamplePeriod / 1000.0;
-  if (now - _previous_acceleration_sample_timestamp >= ACCELERATION_SAMPLE_PERIOD_SEC) {
-    _previous_acceleration_sample_timestamp = now;
+  double acceleration = 0.0;
+  double current_rate_by_acceleration = 0.0;
 
-    double acceleration = 0.0;
-    const double anticipated_gc_start_time = now + MAX2(get_planned_sleep_interval(), ACCELERATION_SAMPLE_PERIOD_SEC);
-    const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
+  const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
+  const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
+  const size_t anticipated_consumption = new_rate.accelerated_consumption(acceleration, current_rate_by_acceleration, anticipated_gc_duration);
 
-    double current_rate_by_acceleration = new_rate.last_sampled_value() / HeapWordSize;
-    const size_t consumption_accelerated =
-        new_rate.accelerated_consumption(acceleration, current_rate_by_acceleration, avg_alloc_rate / HeapWordSize,
-                                ACCELERATION_SAMPLE_PERIOD_SEC + anticipated_gc_duration);
-
-    if (consumption_accelerated > allocatable_words) {
-      if (acceleration > 0) {
-        log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                    "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated GC duration (%.2f ms)",
-                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
-                    PROPERFMTARGS(allocatable_words * HeapWordSize),
-                    PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
-                    PROPERFMT_F_ARGS(acceleration * HeapWordSize),
-                    anticipated_gc_duration * 1000);
-      } else {
-        log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
-                    "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms) (spike threshold = %.2f)",
-                    PROPERFMTARGS(consumption_accelerated * HeapWordSize),
-                    PROPERFMTARGS(allocatable_words * HeapWordSize),
-                    PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
-                    anticipated_gc_duration * 1000,
-                    _spike_threshold_sd);
-      }
-
-      new_rate.reset_samples();
-
-      // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
-      // trigger is influenced more by margin_of_error_sd than by spike_threshold_sd.
-      accept_trigger_with_type(RATE);
-      return true;
+  if (anticipated_consumption > allocatable_words) {
+    if (acceleration > 0) {
+      log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                  "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated GC duration (%.2f ms)",
+                  PROPERFMTARGS(anticipated_consumption * HeapWordSize),
+                  PROPERFMTARGS(allocatable_words * HeapWordSize),
+                  PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
+                  PROPERFMT_F_ARGS(acceleration * HeapWordSize),
+                  anticipated_gc_duration * 1000);
+    } else {
+      log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
+                  "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms) (spike threshold = %.2f)",
+                  PROPERFMTARGS(anticipated_consumption * HeapWordSize),
+                  PROPERFMTARGS(allocatable_words * HeapWordSize),
+                  PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
+                  anticipated_gc_duration * 1000,
+                  _spike_threshold_sd);
     }
+
+    // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
+    // trigger is influenced more by margin_of_error_sd than by spike_threshold_sd.
+    accept_trigger_with_type(RATE);
+    return true;
   }
   return false;
 }

@@ -183,7 +183,7 @@ void ShenandoahArguments::initialize() {
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
   // historical data, assigning more recent data the weight according to TLABAllocationWeight.
   // Current default is good for generational collectors that run frequent young GCs.
-  // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
+  // With Shenandoah, GC cycles are much less frequent, so we need sizing policy
   // to converge faster over smaller number of resizing decisions.
   if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
@@ -192,7 +192,7 @@ void ShenandoahArguments::initialize() {
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
-      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, ShenandoahMinCardSizeInBytes));
   }
 
   // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
@@ -201,6 +201,12 @@ void ShenandoahArguments::initialize() {
     log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
       " supports adaptive heuristics", ShenandoahGCHeuristics);
     FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
+  }
+
+  if (ShenandoahRateAccelerationSampleSize < ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+    vm_exit_during_initialization(
+      err_msg("ShenandoahRateAccelerationSampleSize (%u) must not be less than ShenandoahMomentaryAllocationRateSpikeSampleSize (%u)",
+        ShenandoahRateAccelerationSampleSize, ShenandoahMomentaryAllocationRateSpikeSampleSize));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

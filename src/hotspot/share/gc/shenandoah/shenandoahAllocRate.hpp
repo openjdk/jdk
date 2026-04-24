@@ -79,7 +79,7 @@ public:
     , _accumulated_duration(0)
     , _last_cumulative_sample_time(_last_sample_time)
     , _cumulative_sample_period(Clock::elapsed_frequency() / ShenandoahAdaptiveSampleFrequencyHz)
-    , _buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize))
+    , _buffer_size(ShenandoahRateAccelerationSampleSize)
     , _first_sample_index(0)
     , _num_samples(0)
     , _rate_samples(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
@@ -98,6 +98,10 @@ public:
 
   void allocated(size_t allocated_bytes);
   void record_rate_sample(double timestamp, double rate);
+  size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
+    return accelerated_consumption(acceleration, current_rate, average(), time_delta);
+  }
+
   size_t accelerated_consumption(double& acceleration, double& current_rate,
                                  double avg_alloc_rate_words_per_second, double time_delta);
 
