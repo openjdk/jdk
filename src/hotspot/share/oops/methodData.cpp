@@ -447,8 +447,8 @@ void VirtualCallTypeData::print_data_on(outputStream* st, const char* extra) con
 // that the check is reached, and a series of (Klass*, count) pairs
 // which are used to store a type profile for the receiver of the check.
 
-void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
-    for (uint row = 0; row < row_limit(); row++) {
+void MegamorphicTypeData::clean_weak_klass_links(bool always_clean) {
+  for (uint row = 0; row < row_limit(); row++) {
     Klass* p = receiver(row);
     if (p != nullptr) {
       if (!always_clean && p->is_instance_klass() && InstanceKlass::cast(p)->is_not_initialized()) {
@@ -461,33 +461,52 @@ void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
   }
 }
 
-void ReceiverTypeData::metaspace_pointers_do(MetaspaceClosure *it) {
+void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
+  _megamorphic_type_data.clean_weak_klass_links(always_clean);
+}
+
+void MegamorphicTypeData::metaspace_pointers_do(MetaspaceClosure *it) {
   for (uint row = 0; row < row_limit(); row++) {
-    Klass** recv = (Klass**)intptr_at_adr(receiver_cell_index(row));
+    Klass** recv = (Klass**)_pd->intptr_at_adr(receiver_cell_index(row));
     it->push(recv);
   }
 }
 
-void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
-  uint row;
+void ReceiverTypeData::metaspace_pointers_do(MetaspaceClosure *it) {
+  _megamorphic_type_data.metaspace_pointers_do(it);
+}
+
+int MegamorphicTypeData::entries() const {
   int entries = 0;
-  for (row = 0; row < row_limit(); row++) {
+  for (uint row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr)  entries++;
   }
-  st->print_cr("count(%u) entries(%u)", count(), entries);
-  int total = count();
-  for (row = 0; row < row_limit(); row++) {
+  return entries;
+}
+
+int MegamorphicTypeData::count() const {
+  int total = 0;
+  for (uint row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr) {
       total += receiver_count(row);
     }
   }
-  for (row = 0; row < row_limit(); row++) {
+  return total;
+}
+
+void MegamorphicTypeData::print_receiver_data_on(outputStream* st, int total) const {
+  total += count();
+  for (uint row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr) {
-      tab(st);
+      _pd->tab(st);
       receiver(row)->print_value_on(st);
       st->print_cr("(%u %4.2f)", receiver_count(row), (float) receiver_count(row) / (float) total);
     }
   }
+}
+void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
+  st->print_cr("count(%u) entries(%u)", count(), _megamorphic_type_data.entries());
+  _megamorphic_type_data.print_receiver_data_on(st, count());
 }
 void ReceiverTypeData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ReceiverTypeData", extra);

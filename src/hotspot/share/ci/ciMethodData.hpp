@@ -196,13 +196,12 @@ public:
 
   void set_receiver(uint row, ciKlass* recv) {
     assert((uint)row < row_limit(), "oob");
-    set_intptr_at(receiver0_offset + row * receiver_type_row_cell_count,
-                  (intptr_t) recv);
+    set_intptr_at(_megamorphic_type_data.receiver_cell_index(row), (intptr_t) recv);
   }
 
   ciKlass* receiver(uint row) const {
     assert((uint)row < row_limit(), "oob");
-    ciKlass* recv = (ciKlass*)intptr_at(receiver0_offset + row * receiver_type_row_cell_count);
+    ciKlass* recv = (ciKlass*)intptr_at(_megamorphic_type_data.receiver_cell_index(row));
     assert(recv == nullptr || recv->is_klass(), "wrong type");
     return recv;
   }
