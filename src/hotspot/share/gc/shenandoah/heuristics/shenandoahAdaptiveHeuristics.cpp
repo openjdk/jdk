@@ -183,8 +183,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER),
   _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor),
-  _free_set(nullptr),
-  _previous_acceleration_sample_timestamp(0.0) {
+  _headroom_adjustment(0) {
   }
 
 void ShenandoahAdaptiveHeuristics::initialize() {
@@ -193,7 +192,6 @@ void ShenandoahAdaptiveHeuristics::initialize() {
 
 void ShenandoahAdaptiveHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
-  _free_set = ShenandoahHeap::heap()->free_set();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "ShenandoahGenerationalHeuristics overrides this method");
   compute_headroom_adjustment();
 }

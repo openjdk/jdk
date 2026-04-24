@@ -103,7 +103,7 @@ public:
   }
 
   size_t accelerated_consumption(double& acceleration, double& current_rate,
-                                 double avg_alloc_rate_words_per_second, double time_delta);
+                                 double baseline_bytes_per_second, double time_delta);
 
   const TruncatedSeq& rate() const {
     return _sampled_rates;

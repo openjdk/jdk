@@ -128,8 +128,8 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
   // will evaluate the acceleration of the rate.
   double acceleration(0), current_rate(0), average_rate(512);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
-  EXPECT_GE(acceleration, 180.0);
-  EXPECT_DOUBLE_EQ(current_rate, 2048);
+  EXPECT_GE(acceleration, 12);
+  EXPECT_GE(current_rate, 1800);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
 

@@ -116,7 +116,7 @@ public:
   void adjust_spike_threshold(double amount);
 
   // Returns number of words that can be allocated before we need to trigger next GC, given available in bytes.
-  inline size_t allocatable(size_t available) const {
+  size_t allocatable(size_t available) const {
     return (available > _headroom_adjustment)? (available - _headroom_adjustment) / HeapWordSize: 0;
   }
 
@@ -162,11 +162,6 @@ protected:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
-
-  ShenandoahFreeSet* _free_set;
-
-  // This represents the time at which the allocation rate was most recently sampled for the purpose of detecting acceleration.
-  double _previous_acceleration_sample_timestamp;
 
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
