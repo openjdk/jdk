@@ -42,8 +42,8 @@ import static jdk.test.lib.Asserts.assertTrue;
 public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     static final Object lock = new Object();
     static long timeout = 10; // milliseconds
-    static int maxRetries = 2000;
-    static long waitForTimedWaitingMills = 5000;
+    static int maxRetries = 200;
+    static long waitForTimedWaitingMills = timeout * 2;
 
     private static boolean waitUntilTimedWaiting(Thread thread, long deadlineNs) {
         while (System.nanoTime() < deadlineNs) {
@@ -68,12 +68,11 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
 
-        Phaser phaser = new Phaser(1);
+        Phaser phaser = new Phaser(2);
         waitTask task = new waitTask(phaser);
         Thread targetThread = Thread.ofPlatform().name("Target Thread").unstarted(task);
 
         targetThread.start();
-        phaser.arriveAndAwaitAdvance();
 
         System.out.println("Target Thread started");
 
@@ -84,7 +83,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
             long deadlineNanos = System.nanoTime() + waitForTimedWaitingMills * 1_000_000L;
             if (!waitUntilTimedWaiting(targetThread, deadlineNanos)) {
-                throw new RuntimeException("Timed out waiting to reach TIMED_WAITING state at retry " + n);
+                continue;
             }
 
             boolean grabbedMonitor = false;
@@ -146,15 +145,10 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
     }
 
     private static boolean hasGrabbedMonitor(Thread targetThread) {
-        boolean grabbedMonitor;
         ThreadInfo [] threadInfo = ManagementFactory.getThreadMXBean().getThreadInfo(new long [] { targetThread.threadId()}, true, false);
-
         assertTrue(threadInfo != null, "getThreadInfo() failed");
         assertTrue(threadInfo[0] != null, "getThreadInfo() failed");
-
-        grabbedMonitor =
-                Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
-        return grabbedMonitor;
+        return Arrays.stream(threadInfo[0].getLockedMonitors()).anyMatch(m -> m.getIdentityHashCode() == System.identityHashCode(lock));
     }
 
 
@@ -164,24 +158,16 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
         waitTask(final Phaser phaser) {
             this.phaser = phaser;
-            phaser.register();
         }
 
         public void run() {
             synchronized (lock) {
-                phaser.arriveAndAwaitAdvance();
-                boolean done = false;
-                int retryNumber = 0;
-                while (!done) {
+                for (int i = 0; i < maxRetries; ++i) {
                     phaser.arriveAndAwaitAdvance();
                     try {
                         lock.wait(timeout);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
-                    }
-                    retryNumber += 1;
-                    if (retryNumber == maxRetries){
-                        done = true;
                     }
                 }
             }

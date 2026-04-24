@@ -1898,9 +1898,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
 
-    // The re-enter path will not have a suspension point if there is no
-    // contention, so if a thread is not on the _entry_list, we need to check for suspension now.
-    // If monitor_waited event needs to be posted, we need to check for suspension before posting it.
+    // When the thread is not on the _entry_list, the re-enter path does not have a suspension point if
+    // there is no contention, so we need to check for suspension now.
     if (interruptible && node.TState != ObjectWaiter::TS_ENTER) {
 
       // Process suspend requests now if any, before posting the event.
