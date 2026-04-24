@@ -2891,7 +2891,11 @@ JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
 JVM_END
 
 JVM_ENTRY(jlong, JVM_GetJfrEpochGenerationOffset(JNIEnv* env, jclass clazz))
-  return JFR_ONLY(Jfr::epoch_generation_offset();) NOT_JFR_RETURN_(0);
+#if INCLUDE_JFR
+  return Jfr::epoch_generation_offset();
+#else
+  return 0;
+#endif
 JVM_END
 
 JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
