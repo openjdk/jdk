@@ -464,7 +464,7 @@ void initializeRoles()
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"frame"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"glasspane"];
     [sRoles setObject:NSAccessibilityGroupRole forKey:@"groupbox"];
-    [sRoles setObject:NSAccessibilityStaticTextRole forKey:@"hyperlink"]; //maybe a group?
+    [sRoles setObject:NSAccessibilityLinkRole forKey:@"hyperlink"];
     [sRoles setObject:NSAccessibilityImageRole forKey:@"icon"];
     [sRoles setObject:NSAccessibilityGroupRole forKey:@"internalframe"];
     [sRoles setObject:NSAccessibilityStaticTextRole forKey:@"label"];
