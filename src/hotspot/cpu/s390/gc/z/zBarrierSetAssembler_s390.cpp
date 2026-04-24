@@ -61,6 +61,8 @@ long c1_store_fubar = 0;
 long atomic_nmethod_fubar = 0;
 long c1_load_runtime_fubar = 0;
 long c1_load_stub_fubar = 0;
+long atomic_null_fubar = 0;
+long atomic_store_medium_fubar = 0;
 long non_atomic_nmethod_fubar = 0;
 long z_color_fubar = 0;
 long c1_store_stub_fubar = 0;
@@ -412,13 +414,19 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
-    __ stop("is_atomic in store_barrier_medium");
-    __ z_la(temp2, ref_addr);
+    __ load_const_optimized(temp2, (uintptr_t)&atomic_store_medium_fubar);
+    __ z_agsi(0, temp2, 1);
+    __ z_lg(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
-    __ branch_optimized(Assembler::bcondNotEqual, slow_path);
+    __ branch_optimized(Assembler::bcondNotZero, slow_path);
+
+    __ load_const_optimized(temp2, (uintptr_t)&atomic_null_fubar);
+    __ z_agsi(0, temp2, 1);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
+
+    __ z_xgr(temp2, temp2);
     // TODO: If relocate does not work out see it that can be replaced by this
     __ z_lg(temp1, Address(Z_thread , ZThreadLocalData::store_good_mask_offset()));
 
@@ -427,7 +435,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // did happen go to slow_path else store the mask in it
     __ z_csg(temp2, temp1, ref_addr);
 
-    __ branch_optimized(Assembler::bcondNotEqual, slow_path);
+    __ branch_optimized(Assembler::bcondNotZero, slow_path);
 
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
