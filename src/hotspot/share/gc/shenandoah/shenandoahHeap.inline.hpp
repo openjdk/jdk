@@ -49,7 +49,7 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -61,7 +61,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -75,15 +75,15 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  AtomicAccess::store(&_gc_no_progress_count, (size_t) 0);
+  _gc_no_progress_count.store_relaxed((size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
-  AtomicAccess::inc(&_gc_no_progress_count);
+  _gc_no_progress_count.add_then_fetch((size_t) 1);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
-  return AtomicAccess::load(&_gc_no_progress_count);
+  return _gc_no_progress_count.load_relaxed();
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
@@ -258,6 +258,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   if (sts_active && !cancelled_gc()) {
+    assert(!ShenandoahEvacOOMHandler::is_active(), "Potential deadlock: cannot yield while OOM evac handler is active");
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -344,6 +345,8 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
+  } else {
+    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();

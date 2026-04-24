@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
@@ -188,7 +188,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          AtomicAccess::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
+          _ld[obj_reg->index()].add_then_fetch((uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live() ||
@@ -609,7 +609,7 @@ private:
   ShenandoahHeap* _heap;
   ShenandoahLivenessData* _ld;
   MarkBitMap* _bitmap;
-  volatile size_t _processed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -628,7 +628,7 @@ public:
     _generation(generation) {};
 
   size_t processed() const {
-    return _processed;
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -664,7 +664,7 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 };
 
@@ -685,8 +685,8 @@ class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
   ShenandoahHeap *_heap;
   MarkBitMap* _bitmap;
   ShenandoahLivenessData* _ld;
-  volatile size_t _claimed;
-  volatile size_t _processed;
+  Atomic<size_t> _claimed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -706,7 +706,7 @@ public:
           _generation(generation) {}
 
   size_t processed() {
-    return AtomicAccess::load(&_processed);
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -721,7 +721,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = AtomicAccess::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = _claimed.fetch_then_add(1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!in_generation(r)) {
@@ -749,7 +749,7 @@ public:
     if (_generation->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -782,7 +782,7 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
@@ -1051,12 +1051,12 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = AtomicAccess::load(&ld[r->humongous_start_region()->index()]);
+        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = AtomicAccess::load(&ld[r->index()]);
+        verf_live = ld[r->index()].load_relaxed();
       }
 
       size_t reg_live = r->get_live_data_words();
@@ -1073,7 +1073,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
   log_info(gc)("Verify %s, Level %zd (%zu reachable, %zu marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
-  FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);
+  FREE_C_HEAP_ARRAY(ld);
 }
 
 void ShenandoahVerifier::verify_generic(ShenandoahGeneration* generation, VerifyOption vo) {
@@ -1086,7 +1086,7 @@ void ShenandoahVerifier::verify_generic(ShenandoahGeneration* generation, Verify
           _verify_cset_disable,        // cset may be inconsistent
           _verify_liveness_disable,    // no reliable liveness data
           _verify_regions_disable,     // no reliable region data
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
+          _verify_size_disable,        // no reliable sizing data
           _verify_gcstate_disable      // no data about gcstate
   );
 }
@@ -1180,7 +1180,7 @@ void ShenandoahVerifier::verify_before_update_refs(ShenandoahGeneration* generat
   );
 }
 
-// We have not yet cleanup (reclaimed) the collection set
+// We have not yet cleaned up (reclaimed) the collection set
 void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,
@@ -1194,6 +1194,23 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
                                        // expect generation and heap sizes to match exactly, including trash
           _verify_size_exact_including_trash,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
+  );
+}
+
+// We have not yet cleaned up (reclaimed) the collection set
+void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
+  verify_at_safepoint(
+          generation,
+          "After GC",
+          _verify_remembered_disable,  // do not verify remembered set
+          _verify_forwarded_none,      // no forwarded references
+          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_cset_none,           // no cset references, all updated
+          _verify_liveness_disable,    // no reliable liveness data anymore
+          _verify_regions_nocset,      // no cset regions, trash regions have appeared
+                                       // expect generation and heap sizes to match exactly, including trash
+          _verify_size_exact_including_trash,
+          _verify_gcstate_stable       // GC state was turned off
   );
 }
 

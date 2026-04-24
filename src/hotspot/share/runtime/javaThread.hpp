@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -81,6 +84,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -289,6 +293,16 @@ class JavaThread: public Thread {
     return _visited_for_critical_count == safepoint_id;
   }
 #endif // ASSERT
+
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData _bytecode_tracer_data;
+
+ public:
+  BytecodeTracerData* bytecode_tracer_data() {
+    return &_bytecode_tracer_data;
+  }
+#endif // PRODUCT
 
   // JavaThread termination support
  public:
@@ -1288,6 +1302,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#ifdef MACOS_AARCH64
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 

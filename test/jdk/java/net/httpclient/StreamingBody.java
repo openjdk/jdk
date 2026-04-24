@@ -72,20 +72,19 @@ import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StreamingBody implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
+    private static HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
     static final AtomicLong clientCount = new AtomicLong();
     static final AtomicLong serverCount = new AtomicLong();
@@ -186,7 +185,7 @@ public class StreamingBody implements HttpServerAdapters {
     static final String MESSAGE = "StreamingBody message body";
     static final int ITERATIONS = 100;
 
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { http3URI,   },
                 { httpURI,    },
@@ -253,7 +252,7 @@ public class StreamingBody implements HttpServerAdapters {
     // -- Infrastructure
 
     @BeforeAll
-    public void setup() throws Exception {
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new MessageHandler(), "/http1/streamingbody/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/streamingbody/w";
@@ -290,7 +289,7 @@ public class StreamingBody implements HttpServerAdapters {
     }
 
     @AfterAll
-    public void teardown() throws Exception {
+    public static void teardown() throws Exception {
         try {
             httpTestServer.stop();
             httpsTestServer.stop();
@@ -303,7 +302,7 @@ public class StreamingBody implements HttpServerAdapters {
         }
     }
 
-    static final void printFailedTests() {
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
             out.printf("%n%sCreated %s servers and %s clients%n",

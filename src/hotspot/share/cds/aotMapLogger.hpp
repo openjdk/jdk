@@ -33,8 +33,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
@@ -127,7 +127,12 @@ private:
   static void runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs);
   static void dumptime_log_metaspace_region(const char* name, DumpRegion* region,
-                                            const ArchiveBuilder::SourceObjList* src_objs);
+                                            const ArchiveBuilder::SourceObjList* rw_objs,
+                                            const ArchiveBuilder::SourceObjList* ro_objs);
+  static void collect_metaspace_objs(GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                     address region_base, address region_top ,
+                                     const ArchiveBuilder::SourceObjList* src_objs);
+  static int compare_by_address(ArchivedObjInfo* a, ArchivedObjInfo* b);
 
   // Common code for dumptime/runtime
   static void log_file_header(FileMapInfo* mapinfo);
@@ -157,8 +162,8 @@ private:
 
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* mapped_heap_info);
-  static void dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* streamed_heap_info);
+  static void dumptime_log_mapped_heap_region(AOTMappedHeapInfo* mapped_heap_info);
+  static void dumptime_log_streamed_heap_region(AOTStreamedHeapInfo* streamed_heap_info);
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
 
   static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_location = true);
@@ -173,7 +178,7 @@ public:
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
 
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                           ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
+                           AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);
   static void runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo);
 };

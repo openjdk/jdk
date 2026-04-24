@@ -37,22 +37,19 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
-  _plab(nullptr),
-  _plab_desired_size(0),
-  _plab_actual_size(0),
-  _plab_promoted(0),
-  _plab_allows_promotion(true),
-  _plab_retries_enabled(true),
-  _evacuation_stats(new ShenandoahEvacuationStats()) {
+  _shenandoah_plab(nullptr),
+  _evacuation_stats(new ShenandoahEvacuationStats()),
+  _invisible_root(nullptr),
+  _invisible_root_word_size(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
   if (_gclab != nullptr) {
     delete _gclab;
   }
-  if (_plab != nullptr) {
-    ShenandoahGenerationalHeap::heap()->retire_plab(_plab);
-    delete _plab;
+  if (_shenandoah_plab != nullptr) {
+    _shenandoah_plab->retire();
+    delete _shenandoah_plab;
   }
 
   delete _evacuation_stats;

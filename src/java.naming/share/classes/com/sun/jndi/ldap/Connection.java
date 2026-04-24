@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.sasl.SaslException;
 
+import jdk.internal.misc.InnocuousThread;
+
 /**
   * A thread that creates a connection to an LDAP server.
   * After the connection, the thread reads from the connection.
@@ -112,9 +114,6 @@ import javax.security.sasl.SaslException;
   * for v2.
   * %%% made public for access by LdapSasl %%%
   *
-  * @author Vincent Ryan
-  * @author Rosanna Lee
-  * @author Jagane Sundar
   */
 public final class Connection implements Runnable {
 
@@ -254,7 +253,7 @@ public final class Connection implements Runnable {
             throw ce;
         }
 
-        worker = new Thread(this);
+        worker = InnocuousThread.newSystemThread("LDAP Connection", this);
         worker.setDaemon(true);
         worker.start();
     }
@@ -523,7 +522,15 @@ public final class Connection implements Runnable {
     void abandonRequest(LdapRequest ldr, Control[] reqCtls) {
         // Remove from queue
         removeRequest(ldr);
-
+        // an optimistic check to avoid having to construct the BER
+        // messages for the "abandon request". we repeat
+        // this check later when holding the lock, before actually
+        // writing out the "abandon request", and that check actually
+        // determines whether or not the "abandon request" is actually
+        // sent
+        if (!ldr.shouldAbandonRequest()) {
+            return;
+        }
         BerEncoder ber = new BerEncoder(256);
         int abandonMsgId = getMsgId();
 
@@ -547,6 +554,9 @@ public final class Connection implements Runnable {
 
             lock.lock();
             try {
+                if (!ldr.shouldAbandonRequest()) {
+                    return;
+                }
                 outStream.write(ber.getBuf(), 0, ber.getDataLen());
                 outStream.flush();
             } finally {
@@ -680,7 +690,7 @@ public final class Connection implements Runnable {
             if (nparent) {
                 LdapRequest ldr = pendingRequests;
                 while (ldr != null) {
-                    ldr.close();
+                    ldr.connectionClosed();
                     ldr = ldr.next;
                 }
             }
@@ -901,7 +911,7 @@ public final class Connection implements Runnable {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-
+    @Override
     public void run() {
         byte inbuf[];   // Buffer for reading incoming bytes
         int inMsgId;    // Message id of incoming response

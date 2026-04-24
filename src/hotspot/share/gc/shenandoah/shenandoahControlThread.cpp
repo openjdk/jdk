@@ -45,7 +45,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _requested_gc_cause(GCCause::_no_gc),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true) {
-  set_name("Shenandoah Control Thread");
+  set_name("ShenControl");
   create_and_start();
 }
 
@@ -59,6 +59,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
+  double most_recent_wake_time = os::elapsedTime();
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
@@ -137,7 +138,10 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      heap->reset_bytes_allocated_since_gc_start();
+      if (mode != stw_degenerated) {
+        // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
+        heap->reset_bytes_allocated_since_gc_start();
+      }
 
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
@@ -222,16 +226,26 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    const double current = os::elapsedTime();
+    const double before_sleep = most_recent_wake_time;
     if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
-    } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
+    } else if ((before_sleep - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
-      last_sleep_adjust_time = current;
+      last_sleep_adjust_time = before_sleep;
     }
-
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
     ml.wait(sleep);
+    // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
+    double planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
+    most_recent_wake_time = os::elapsedTime();
+    heuristics->update_should_start_query_times(most_recent_wake_time, planned_sleep_interval);
+    if (LogTarget(Debug, gc, thread)::is_enabled()) {
+      double elapsed = most_recent_wake_time - before_sleep;
+      double hiccup = elapsed - double(sleep);
+      if (hiccup > 0.001) {
+        log_debug(gc, thread)("Control Thread hiccup time: %.3fs", hiccup);
+      }
+    }
   }
 }
 
@@ -332,7 +346,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), true,
+                              point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
 
   heap->increment_total_collections(false);
 
