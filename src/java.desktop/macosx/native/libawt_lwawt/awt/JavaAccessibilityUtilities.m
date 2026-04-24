@@ -503,4 +503,7 @@ void initializeRoles()
     [sRoles setObject:NSAccessibilityUnknownRole forKey:@"unknown"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"viewport"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"window"];
+    if (@available(macOS 26, *)) {
+        [sRoles setObject:NSAccessibilityHeadingRole forKey:@"header"];
+    }
 }
