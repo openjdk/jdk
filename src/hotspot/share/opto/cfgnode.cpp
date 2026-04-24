@@ -735,7 +735,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
       }
       // Remove the RegionNode itself from DefUse info
-      igvn->remove_dead_node(this);
+      igvn->remove_dead_node(this, PhaseIterGVN::NodeOrigin::Graph);
       return nullptr;
     }
     return this;                // Record progress
@@ -1007,7 +1007,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
     BoolNode* new_bol = new BoolNode(bol2->in(1), res);
     igvn->replace_input_of(iff2, 1, igvn->transform((proj2->_con == 1) ? new_bol : new_bol->negate(igvn)));
     if (new_bol->outcnt() == 0) {
-      igvn->remove_dead_node(new_bol);
+      igvn->remove_dead_node(new_bol, PhaseIterGVN::NodeOrigin::Speculative);
     }
   }
   return false;
@@ -2480,7 +2480,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(offset);
         }
-        return new AddPNode(base, address, offset);
+        return AddPNode::make_with_base(base, address, offset);
       }
     }
   }
@@ -2675,6 +2675,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
+      // MemNode::optimize_memory_chain above may kill us!
+      if (outcnt() == 0) {
+        return top;
+      }
       if (ii != new_in ) {
         set_req_X(i, new_in, phase);
         progress = this;
@@ -2685,7 +2689,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifdef _LP64
   // Push DecodeN/DecodeNKlass down through phi.
   // The rest of phi graph will transform by split EncodeP node though phis up.
-  if ((UseCompressedOops || UseCompressedClassPointers) && can_reshape && progress == nullptr) {
+  if (can_reshape && progress == nullptr) {
     bool may_push = true;
     bool has_decodeN = false;
     bool is_decodeN = false;

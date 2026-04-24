@@ -116,7 +116,9 @@ FT_BEGIN_HEADER
 
     /* The GSUB table. */
     FT_Byte*         gsub;
-    /* Lookup offsets, with only SingleSubst and AlternateSubst non-NULL. */
+    /* An array of lookup offsets (of `gsub_lookup_count` elements), */
+    /* with only SingleSubst and AlternateSubst lookups non-NULL.    */
+    FT_UShort        gsub_lookup_count;
     FT_UInt32*       gsub_lookups_single_alternate;
 #endif
 
