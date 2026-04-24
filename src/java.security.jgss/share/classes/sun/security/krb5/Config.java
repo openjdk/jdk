@@ -1419,8 +1419,9 @@ public class Config {
             }
         }
         if (srvs == null) {
+            // no DNS SRV records
             throw new KrbException(Krb5.KRB_ERR_GENERIC,
-                    "Unable to locate KDC for realm " + realm);
+                "Unable to locate KDC for realm " + realm);
         }
         if (srvs.length == 0) {
             return null;
