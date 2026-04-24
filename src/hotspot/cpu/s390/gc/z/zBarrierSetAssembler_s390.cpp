@@ -816,20 +816,15 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   } else {
     Label good;
     // TODO: double check this implementation, this follows aarch64 but ppc has done it differently
+    __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
-    __ z_nill(ref->as_register(), barrier_Relocation::unpatched);
+    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
     __ branch_optimized(Assembler::bcondZero, good);
     __ branch_optimized(Assembler::bcondAlways, *stub->entry());
     __ bind(good);
     z_uncolor(ce, ref);
   }
 
-  //int relocFormat = on_non_strong ? ZBarrierRelocationFormatMarkBadBeforeTest
-                                  //: ZBarrierRelocationFormatLoadGoodBeforeTestBit;
-  //__ relocate(barrier_Relocation::spec(), relocFormat);
-  //__ z_nill(ref->as_register(), barrier_Relocation::unpatched);
-  //__ branch_optimized(Assembler::bcondNotZero, *stub->entry());
-  //z_uncolor(ce, ref);
   __ bind(*stub->continuation());
 }
 
@@ -839,17 +834,9 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   // Stub entry
   __ bind(*stub->entry());
 
-  __ z_ldgr(Z_F1, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F1);
-
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
   Register temp = noreg;
-
-  // fast-path check destroyed the color, need to re-read it
-  __ z_lg(ref, ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
   if (stub->tmp()->is_valid()) {
     //Load address into tmp register
@@ -942,21 +929,11 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   __ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
   __ z_agsi(0, scratch, 1);
  
-  // TODO: see if i can pass it in another way, currently following ppc
-  // Pass store address in R0
+  // Pass store address in the stack
   __ z_lay(Z_R0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
-  // TODO: I do not want to do this, if anything fails check this first. Proper solution would be to extend the frame and then store this there.
-  __ z_ldgr(Z_F2, Z_R0);
-  __ call_stub(stub->runtime_stub());
 
-  //__ z_lay(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
-//
-  //// Setup arguments and call runtime stub
-  //__ add2reg(Z_SP, - 2 * BytesPerWord);
-  //// TODO: why 2 when we are only storing on parameter, everybody did this
-  //ce->store_parameter(stub->new_zpointer()->as_register(), 0);
-  //__ call_stub(stub->runtime_stub());
-  //__ add2reg(Z_SP, 2 * BytesPerWord);
+  __ z_ldgr(Z_F0, Z_R0);
+  __ call_stub(stub->runtime_stub());
 
   // Stub exit
   __ branch_optimized(Assembler::bcondAlways, slow_continuation);
@@ -968,32 +945,22 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 // Purpose: We are just calling the VM here
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
-  //const int stack_parameters = 2;
-  //const int volatile_regs = 13;
-  //const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
-//
-  //__ push_frame(nbytes_save);
-  //__ save_return_pc();
-  //// TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
-  //__ save_volatile_regs(Z_SP, stack_parameters, true, false);
-//
-  //// Load arguments back gain from the stack
-  //__ z_lay(Z_ARG1, -2 * BytesPerWord, Z_SP); //ref
-  //__ z_lay(Z_ARG2, -3 * BytesPerWord, Z_SP); //ref_addr
-
 
   int offset = 176;
   __ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
   __ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
 
-  int nbytes_save = 7 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
+  __ restore_return_pc();
+  __ pop_frame();
+
+  int nbytes_save = 15 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
   // TODO: use frame::z_abi_160_size instead of just writing 160
   offset = 160;
 
   __ push_frame_abi160(nbytes_save);         offset += 8;
   __ save_return_pc();                       offset += 8;
   // TODO: If anything goes wrong, check here if something useful was stored in the float registers or i can save these register if the c1_load_stub
-  __ save_volatile_regs(Z_SP, offset, false, false);
+  __ save_volatile_regs(Z_SP, offset, true, false);
 
   __ z_lgdr(Z_ARG1, Z_F0);                                    // ref
   __ z_lgdr(Z_ARG2, Z_F1);                                    // ref_addr
@@ -1009,7 +976,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 
   offset = 168;
   __ restore_return_pc();                    offset += 8;
-  __ restore_volatile_regs(Z_SP, offset, false, false);
+  __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
 
   __ z_br(Z_R14);
@@ -1019,7 +986,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
 
-
   int nbytes_save = 15 * BytesPerWord; /* R1 to R5, F0 to F7, SP, PC */
   int offset = 160;
 
@@ -1027,8 +993,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_return_pc();                      offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  // We stored the store address in R0 above in generate_store_barrier_stub
-  __ z_lgdr(Z_ARG1, Z_F2);
+  __ z_lgdr(Z_ARG1, Z_F0);
 
   //__ push_frame(nbytes_save);
   //__ save_return_pc();
