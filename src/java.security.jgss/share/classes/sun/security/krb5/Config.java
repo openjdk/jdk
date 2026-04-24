@@ -47,8 +47,6 @@ import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.SecurityProperties;
 
-import javax.naming.NamingException;
-
 import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
@@ -1392,31 +1390,13 @@ public class Config {
         if (DEBUG != null) {
             DEBUG.println("getKDCFromDNS using UDP");
         }
-        try {
-            srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
-        } catch (NamingException e) {
-            if (DEBUG != null) {
-                DEBUG.println("[KDC DNS] SRV lookup failed for _kerberos._udp." + realm +
-                        " ex=" + e.getClass().getName() +
-                        " msg=" + e.getMessage());
-                e.printStackTrace(DEBUG.getPrintStream());
-            }
-        }
+        srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
         if (srvs == null) {
             // locate DNS SRV record using TCP
             if (DEBUG != null) {
                 DEBUG.println("getKDCFromDNS using TCP");
             }
-            try {
-                srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
-            } catch (NamingException e) {
-                if (DEBUG != null) {
-                    DEBUG.println("[KDC DNS] SRV lookup failed for _kerberos._tcp." + realm +
-                            " ex=" + e.getClass().getName() +
-                            " msg=" + e.getMessage());
-                    e.printStackTrace(DEBUG.getPrintStream());
-                }
-            }
+            srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
         }
         if (srvs == null) {
             // no DNS SRV records

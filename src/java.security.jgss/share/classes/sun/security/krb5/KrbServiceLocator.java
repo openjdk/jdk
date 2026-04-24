@@ -25,6 +25,8 @@
 
 package sun.security.krb5;
 
+import sun.security.util.Debug;
+
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Random;
@@ -51,6 +53,9 @@ class KrbServiceLocator {
     private static final String[] SRV_TXT_ATTR = new String[] {SRV_TXT};
 
     private static final Random random = new Random();
+
+    public static final Debug DEBUG = Debug.of("krb5",
+            System.getProperty("sun.security.krb5.debug"));
 
     private KrbServiceLocator() {
     }
@@ -113,7 +118,9 @@ class KrbServiceLocator {
                 }
             }
         } catch (NamingException e) {
-            // ignore
+            if (DEBUG) {
+                e.printStackTrace();
+            }
         }
         return records;
     }
@@ -128,7 +135,7 @@ class KrbServiceLocator {
      * @return An ordered list of hostports for the Kerberos service or null if
      *          the service has not been located.
      */
-    static String[] getKerberosService(String realmName, String protocol) throws NamingException{
+    static String[] getKerberosService(String realmName, String protocol) {
 
         String dnsUrl = "dns:///_kerberos." + protocol + "." + realmName;
         String[] hostports = null;
@@ -185,7 +192,9 @@ class KrbServiceLocator {
                 hostports = extractHostports(srvRecords);
             }
         } catch (NamingException e) {
-            throw e;
+            if (DEBUG) {
+                e.printStackTrace();
+            }
         }
         return hostports;
     }
