@@ -168,7 +168,8 @@ public class MultiPixelPackedSampleModel extends SampleModel
         if (scanlineStride <= 0) {
             throw new IllegalArgumentException("scanlineStride must be > 0");
         }
-        if (((numberOfBits * (long)w) / DataBuffer.getDataTypeSize(dataType)) > scanlineStride) {
+        int dataTypeSize = DataBuffer.getDataTypeSize(dataType);
+        if ((((numberOfBits * (long)w) + dataTypeSize - 1) / dataTypeSize) > scanlineStride) {
             throw new RasterFormatException("scanlineStride is too small for width");
         }
         if (dataBitOffset < 0) {
@@ -180,7 +181,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
         this.pixelBitStride = numberOfBits;
         this.scanlineStride = scanlineStride;
         this.dataBitOffset = dataBitOffset;
-        this.dataElementSize = DataBuffer.getDataTypeSize(dataType);
+        this.dataElementSize = dataTypeSize;
         this.pixelsPerDataElement = dataElementSize/numberOfBits;
         if (pixelsPerDataElement*numberOfBits != dataElementSize) {
            throw new RasterFormatException("MultiPixelPackedSampleModel " +
