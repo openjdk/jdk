@@ -55,8 +55,6 @@ void LRUCurrentHeapPolicy::setup() {
   set_max_interval(integer_cast<jlong>(Universe::heap()->free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB);
 }
 
-/////////////////////// MaxHeap //////////////////////
-
 // Capture state (of-the-VM) information needed to evaluate the policy
 void LRUMaxHeapPolicy::setup() {
   size_t max_heap = MaxHeapSize;
