@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "assembler_x86.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -158,6 +157,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
     __ kmovql(masks[i], t0);
   }
 
+/*
   // Normalize A
   __ evpsraq(Carry, masks[0], A, 51, false, Assembler::AVX_512bit);
   __ evpandq(A, masks[0], A, Mask51, true, Assembler::AVX_512bit);
@@ -199,6 +199,7 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpandq(BN, masks[3], BN, Mask51, true, Assembler::AVX_512bit);
   __ vpermq(Carry, shift1L, Carry, Assembler::AVX_512bit);
   __ evpaddq(BN, masks[4], BN, Carry, true, Assembler::AVX_512bit);
+*/
 
   // Acc1 = 0, Acc2 = 0
   __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_512bit);
@@ -209,6 +210,21 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpermq(BN, shift1R, BN, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+
+  __ mov64(rax, 0x0004000000000000ULL);
+  __ evpbroadcastq(CarryAdd, rax, Assembler::AVX_512bit);
+  XMMRegister AN = T;
+
+  // Convert product from unsigned to signed
+  __ evpaddq(BN, allLimbs, B, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(BN, allLimbs, BN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(BN, allLimbs, BN, A, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, A, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(AN, allLimbs, AN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(AN, allLimbs, AN, B, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, AN, BN, false, Assembler::AVX_512bit);
+  __ evpsubq(Acc2, allLimbs, Acc2, AN, true, Assembler::AVX_512bit);
+
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ mov64(t0, 0x3F);
   __ kmovql(allColumns, t0);
@@ -225,6 +241,17 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpermq(BN, shift1R, BN, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+
+  // Convert product from unsigned to signed
+  __ evpaddq(BN, allLimbs, B, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(BN, allLimbs, BN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(BN, allLimbs, BN, A, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, A, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(AN, allLimbs, AN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(AN, allLimbs, AN, B, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, AN, BN, false, Assembler::AVX_512bit);
+  __ evpsubq(Acc2, allLimbs, Acc2, AN, true, Assembler::AVX_512bit);
+
   __ evpandq(CarryH, masks[3], Carry, Mask51, false, Assembler::AVX_512bit);
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
@@ -236,6 +263,17 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpermq(BN, shift1R, BN, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+
+  // Convert product from unsigned to signed
+  __ evpaddq(BN, allLimbs, B, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(BN, allLimbs, BN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(BN, allLimbs, BN, A, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, A, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(AN, allLimbs, AN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(AN, allLimbs, AN, B, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, AN, BN, false, Assembler::AVX_512bit);
+  __ evpsubq(Acc2, allLimbs, Acc2, AN, true, Assembler::AVX_512bit);
+
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
@@ -253,6 +291,17 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // Non-merge of luq of Acc1 zeros out c0..c2 positions, no need for them now.
   __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+
+  // Convert product from unsigned to signed
+  __ evpaddq(BN, allLimbs, B, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(BN, allLimbs, BN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(BN, allLimbs, BN, A, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, A, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(AN, allLimbs, AN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(AN, allLimbs, AN, B, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, AN, BN, false, Assembler::AVX_512bit);
+  __ evpsubq(Acc2, allLimbs, Acc2, AN, true, Assembler::AVX_512bit);
+
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
@@ -262,6 +311,17 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ vpbroadcastq(B, BN, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+
+  // Convert product from unsigned to signed
+  __ evpaddq(BN, allLimbs, B, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(BN, allLimbs, BN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(BN, allLimbs, BN, A, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, A, CarryAdd, false, Assembler::AVX_512bit);
+  __ evpsrlq(AN, allLimbs, AN, 51, false, Assembler::AVX_512bit);
+  __ evpmullq(AN, allLimbs, AN, B, false, Assembler::AVX_512bit);
+  __ evpaddq(AN, allLimbs, AN, BN, false, Assembler::AVX_512bit);
+  __ evpsubq(Acc2, allLimbs, Acc2, AN, true, Assembler::AVX_512bit);
+
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
@@ -278,9 +338,6 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpaddq(Acc1L, allLimbs, Acc1L, Acc1, false, Assembler::AVX_512bit);
 
   // Perform carry and reduction from said carry-over. Note: masks[i] = limbs[i]
-  __ mov64(rax, 0x0004000000000000ULL);
-  __ evpbroadcastq(CarryAdd, rax, Assembler::AVX_512bit);
-
   for (int i = 0; i < 5; i++) {
     __ mov64(t0, 1ULL << i);
     __ kmovql(masks[i], t0);
