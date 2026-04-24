@@ -25,7 +25,6 @@
 
 package sun.security.krb5;
 
-import sun.security.util.Debug;
 
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -35,6 +34,8 @@ import java.util.StringTokenizer;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.spi.NamingManager;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class discovers the location of Kerberos services by querying DNS,
@@ -53,9 +54,6 @@ class KrbServiceLocator {
     private static final String[] SRV_TXT_ATTR = new String[] {SRV_TXT};
 
     private static final Random random = new Random();
-
-    public static final Debug DEBUG = Debug.of("krb5",
-            System.getProperty("sun.security.krb5.debug"));
 
     private KrbServiceLocator() {
     }
