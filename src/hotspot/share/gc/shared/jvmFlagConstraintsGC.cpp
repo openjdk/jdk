@@ -35,6 +35,8 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
@@ -120,7 +122,7 @@ JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
 }
 
 static JVMFlag::Error CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(size_t maxHeap, intx softRef, bool verbose) {
-  if ((softRef > 0) && ((maxHeap / M) > (max_uintx / softRef))) {
+  if ((softRef > 0) && (integer_cast<jlong>(maxHeap / M) > (max_jlong / softRef))) {
     JVMFlag::printError(verbose,
                         "Desired lifetime of SoftReferences cannot be expressed correctly. "
                         "MaxHeapSize (%zu) or SoftRefLRUPolicyMSPerMB "
