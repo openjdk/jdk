@@ -1071,8 +1071,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     // loading it turns out it was volatile so we have to throw the
     // compiled code out and let it be regenerated.
     if (TracePatching) {
-        tty->print_cr("Deoptimizing for patching volatile field reference");
-      }
+      tty->print_cr("Deoptimizing for patching volatile field reference");
     }
 
     // It's possible the nmethod was invalidated in the last
