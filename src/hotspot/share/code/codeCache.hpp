@@ -109,7 +109,6 @@ class CodeCache : AllStatic {
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
   static volatile bool     _unloading_threshold_gc_requested;
-  static volatile bool     _non_nmethod_overflow;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -250,7 +249,6 @@ class CodeCache : AllStatic {
 
   static size_t max_distance_to_non_nmethod();
   static bool is_non_nmethod(address addr);
-  static bool non_nmethod_overflow() { return AtomicAccess::load_acquire(&_non_nmethod_overflow); }
 
   static void clear_inline_caches();                  // clear all inline caches
   static void cleanup_inline_caches_whitebox();       // clean bad nmethods from inline caches

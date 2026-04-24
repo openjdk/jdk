@@ -591,8 +591,6 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
-volatile bool CodeCache::_non_nmethod_overflow = false;
-
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -627,7 +625,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
         CodeBlobType type = code_blob_type;
         switch (type) {
         case CodeBlobType::NonNMethod:
-          AtomicAccess::release_store(&_non_nmethod_overflow, true);
           type = CodeBlobType::MethodNonProfiled;
           break;
         case CodeBlobType::MethodNonProfiled:
