@@ -28,7 +28,7 @@ package gc.arguments;
  * @bug 8383186
  * @summary Verify that too large SoftRefLRUPolicyMSPerMB values are rejected during option validation
  * @key flag-sensitive
- * @requires vm.bits == 64 & vm.opt.SoftRefLRUPolicyMSPerMB == null
+ * @requires vm.bits == 64 & vm.opt.SoftRefLRUPolicyMSPerMB == null & vm.opt.AOTCache == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
