@@ -230,11 +230,11 @@ static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* fp))
   // Safe to compare, as rsp and rbp are the same when Continuation::freeze_entry() is invoked, because there has just been a call to __enter();
   assert(fp == current->frame_anchor()->last_Java_sp(), "");
 
-  if (current->raw_cont_fastpath() > current->last_continuation()->entry_sp() || current->raw_cont_fastpath() < sp) {
+  if (current->raw_cont_fastpath() > current->last_continuation()->entry_fp() || current->raw_cont_fastpath() < fp) {
     current->set_cont_fastpath(nullptr);
   }
 
-  return checked_cast<int>(ConfigT::freeze(current, sp));
+  return checked_cast<int>(ConfigT::freeze(current, fp));
 JRT_END
 
 JRT_LEAF(int, Continuation::prepare_thaw(JavaThread* thread, bool return_barrier))
