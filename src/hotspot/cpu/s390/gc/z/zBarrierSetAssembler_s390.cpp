@@ -838,6 +838,11 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   Register ref_addr = noreg;
   Register temp = noreg;
 
+  __ z_ldgr(Z_F0, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F0);
+
   if (stub->tmp()->is_valid()) {
     //Load address into tmp register
     ce->leal(stub->ref_addr(), stub->tmp());
@@ -870,6 +875,9 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   //ce->store_parameter(ref, 0);
   //__ call_stub(stub->runtime_stub());
   //__ add2reg(Z_SP, 2 * BytesPerWord);
+
+  __ restore_return_pc();
+  __ pop_frame();
 
   // Runtime TODO: verify the result is stored in Z_R0 -> it is being stored in Z_F0
   __ z_lgdr(ref, Z_F0);
@@ -950,9 +958,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
   __ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
 
-  __ restore_return_pc();
-  __ pop_frame();
-
   int nbytes_save = 15 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
   // TODO: use frame::z_abi_160_size instead of just writing 160
   offset = 160;
@@ -960,7 +965,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ push_frame_abi160(nbytes_save);         offset += 8;
   __ save_return_pc();                       offset += 8;
   // TODO: If anything goes wrong, check here if something useful was stored in the float registers or i can save these register if the c1_load_stub
-  __ save_volatile_regs(Z_SP, offset, true, false);
+  __ save_volatile_regs(Z_SP, offset, false, false);
 
   __ z_lgdr(Z_ARG1, Z_F0);                                    // ref
   __ z_lgdr(Z_ARG2, Z_F1);                                    // ref_addr
@@ -976,7 +981,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 
   offset = 168;
   __ restore_return_pc();                    offset += 8;
-  __ restore_volatile_regs(Z_SP, offset, true, false);
+  __ restore_volatile_regs(Z_SP, offset, false, false);
   __ pop_frame();
 
   __ z_br(Z_R14);
