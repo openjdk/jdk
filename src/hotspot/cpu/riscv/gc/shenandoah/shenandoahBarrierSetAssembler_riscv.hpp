@@ -48,7 +48,6 @@ private:
                     Register thread,
                     Register tmp1,
                     Register tmp2,
-                    bool tosca_live,
                     bool expand_call);
 
   void card_barrier(MacroAssembler* masm, Register obj);

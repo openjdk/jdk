@@ -46,7 +46,6 @@ private:
                     Register obj,
                     Register pre_val,
                     Register tmp,
-                    bool tosca_live,
                     bool expand_call);
 
   void card_barrier(MacroAssembler* masm, Register obj);
