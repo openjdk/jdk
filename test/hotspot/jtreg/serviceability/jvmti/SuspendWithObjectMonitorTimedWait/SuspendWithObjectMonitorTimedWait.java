@@ -90,7 +90,6 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
             JVMTIUtils.suspendThread(targetThread);
             try {
-
                 grabbedMonitor = hasGrabbedMonitor(targetThread);
 
                 if (grabbedMonitor) {
@@ -100,13 +99,11 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
                 usefulRun += 1;
 
-
                 try {
                     Thread.sleep(2 * timeout);
                 } catch (InterruptedException ex) {
                     throw new Failure(ex);
                 }
-
 
                 // Check if the target still does not own monitors
                 grabbedMonitor = hasGrabbedMonitor(targetThread);
@@ -115,7 +112,6 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                     System.out.println("Grabbed the monitor on iteration " + n);
                     failureCounter++;
                 }
-
             } finally {
                 JVMTIUtils.resumeThread(targetThread);
             }
