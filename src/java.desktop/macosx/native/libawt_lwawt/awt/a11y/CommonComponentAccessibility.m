@@ -849,10 +849,6 @@ static jobject sAccessibilityClass = NULL;
              parent != nil &&
              ![[parent javaRole] isEqualToString:@"combobox"] ) {
              fNSRole = NSAccessibilityMenuRole;
-        } else if ( [javaRole isEqualToString:@"header"]) {
-            if (@available(macOS 26, *)) {
-                fNSRole = NSAccessibilityHeadingRole;
-            }
         }
         if (fNSRole == nil) {
             // this component has assigned itself a custom AccessibleRole not in the sRoles array
