@@ -1302,6 +1302,10 @@ private:
   void vcvtps2ph(Address dst, XMMRegister src, int imm8, int vector_len);
   void vcvtph2ps(XMMRegister dst, Address src, int vector_len);
 
+  // Convert Packed Halffloat to Packed integral values
+  void evcvttph2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttph2qq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
   void vcvtdq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1320,6 +1324,9 @@ private:
   void evcvttsd2sisl(Register dst, Address src);
   void evcvttsd2sisq(Register dst, XMMRegister src);
   void evcvttsd2sisq(Register dst, Address src);
+
+  void evcvttsh2sil(Register dst, XMMRegister src);
+  void evcvttsh2siq(Register dst, XMMRegister src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
