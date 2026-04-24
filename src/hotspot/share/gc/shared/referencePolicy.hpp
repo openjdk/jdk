@@ -64,8 +64,8 @@ class AbstractLRUReferencePolicy : public ReferencePolicy {
   void set_max_interval(jlong max_interval);
 
  public:
-  void setup() override = 0;
   bool should_clear_reference(oop p, jlong timestamp_clock) final;
+  void setup() override = 0;
 };
 
 class LRUCurrentHeapPolicy : public AbstractLRUReferencePolicy {
