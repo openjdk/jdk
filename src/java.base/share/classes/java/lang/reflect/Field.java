@@ -34,7 +34,6 @@ import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.FinalFieldMutationEvent;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
