@@ -181,7 +181,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      *         does not support this operation
      */
     static Stream<ProcessHandle> allProcesses() {
-        return ProcessHandleImpl.children(0);
+        return ProcessHandleImpl.allProcesses();
     }
 
     /**
