@@ -25,7 +25,6 @@
 
 package sun.security.krb5;
 
-
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Random;
@@ -116,8 +115,8 @@ class KrbServiceLocator {
                 }
             }
         } catch (NamingException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return records;
@@ -190,8 +189,8 @@ class KrbServiceLocator {
                 hostports = extractHostports(srvRecords);
             }
         } catch (NamingException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return hostports;
