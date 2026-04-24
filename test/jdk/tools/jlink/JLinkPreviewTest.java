@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *        tests.*
  * @modules jdk.jlink/jdk.tools.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
+ *          java.base/jdk.internal.jimage
  * @run junit/othervm JLinkPreviewTest
  */
 public class JLinkPreviewTest {
