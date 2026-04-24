@@ -157,8 +157,8 @@ class VectorNode : public TypeNode {
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc, 0 if not handled
   static Node* make_scalar(Compile* c, int vopc, BasicType bt, Node* control, Node* in1, Node* in2, Node* in3);
 
-  bool can_push_through_broadcast(BasicType bt);
-  Node* push_through_broadcast(PhaseGVN* phase);
+  bool can_push_through_replicate(BasicType bt);
+  Node* push_through_replicate(PhaseGVN* phase);
 
   static int shift_count_opcode(int opc);
 

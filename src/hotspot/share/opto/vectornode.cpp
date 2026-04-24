@@ -1181,8 +1181,8 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   return false;
 }
 
-// Check whether we can push this vector op through a broadcast (all inputs are Replicate).
-bool VectorNode::can_push_through_broadcast(BasicType bt) {
+// Check whether we can push this vector op through replicate (all inputs are Replicate).
+bool VectorNode::can_push_through_replicate(BasicType bt) {
   if (!scalar_opcode(Opcode(), bt)) {
     return false;
   }
@@ -1290,7 +1290,7 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
 }
 
 // Try to reassociate commutative vector operations using following ideal transformation,
-// this will facilitate strength reducing vector operation with all broadcasted inputs to
+// this will facilitate strength reducing vector operation with all replicated inputs to
 // scalar operation.
 //
 // VectorOp (Replicate INP1) (VectorOp (Replicate INP2) INP3) =>
@@ -1339,9 +1339,9 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
 // VectorOp (Replicate INP1, Replicate INP2) =>
 //   Replicate (ScalarOp INP1, INP2)
 //
-Node* VectorNode::push_through_broadcast(PhaseGVN* phase) {
+Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
   BasicType bt = vect_type()->element_basic_type();
-  if (!can_push_through_broadcast(bt)) {
+  if (!can_push_through_replicate(bt)) {
     return nullptr;
   }
 
@@ -1398,7 +1398,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     swap_edges(1, 2);
   }
 
-  n = push_through_broadcast(phase);
+  n = push_through_replicate(phase);
   if (n != nullptr) {
     return n;
   }
