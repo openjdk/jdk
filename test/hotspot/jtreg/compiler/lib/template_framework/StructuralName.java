@@ -190,7 +190,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<StructuralName>(StructuralName.class, predicate(), name, type, n -> Template.transparentScope());
+            return new NameSampleToken<>(StructuralName.class, predicate(), name, type, n -> Template.transparentScope());
         }
 
         /**
