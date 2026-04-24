@@ -70,7 +70,7 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
-  develop(ccstr, StressDeepIGVNRevisit, nullptr,                             \
+  develop(ccstr, StressDeepIGVNRevisit, "random",                            \
           "Override deep IGVN revisit for all optimize() calls: "           \
           "all or random. Requires UseDeepIGVNRevisit=true.")               \
           constraint(StressDeepIGVNRevisitConstraintFunc, AtParse)          \
