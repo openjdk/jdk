@@ -2584,14 +2584,13 @@ void Compile::Optimize() {
 
   assert(igvn._worklist.size() == 0, "not empty");
 
-  assert(_late_inlines.length() == 0 || IncrementalInlineMH || IncrementalInlineVirtual, "not empty");
-
   if (_late_inlines.length() > 0) {
     // More opportunities to optimize virtual and MH calls.
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
     if (failing())  return;
   }
+  assert(_late_inlines.length() == 0, "late inline queue must be drained");
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
