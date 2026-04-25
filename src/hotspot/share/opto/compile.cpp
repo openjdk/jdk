@@ -3158,27 +3158,17 @@ void Compile::Code_Gen() {
 // This class defines counters to help identify when a method
 // may/must be executed using hardware with only 24-bit precision.
 struct Final_Reshape_Counts : public StackObj {
-  int  _call_count;             // count non-inlined 'common' calls
-  int  _float_count;            // count float ops requiring 24-bit precision
-  int  _double_count;           // count double ops requiring more precision
   int  _java_call_count;        // count non-inlined 'java' calls
   int  _inner_loop_count;       // count loops which need alignment
   VectorSet _visited;           // Visitation flags
   Node_List _tests;             // Set of IfNodes & PCTableNodes
 
   Final_Reshape_Counts() :
-    _call_count(0), _float_count(0), _double_count(0),
     _java_call_count(0), _inner_loop_count(0) { }
 
-  void inc_call_count  () { _call_count  ++; }
-  void inc_float_count () { _float_count ++; }
-  void inc_double_count() { _double_count++; }
   void inc_java_call_count() { _java_call_count++; }
   void inc_inner_loop_count() { _inner_loop_count++; }
 
-  int  get_call_count  () const { return _call_count  ; }
-  int  get_float_count () const { return _float_count ; }
-  int  get_double_count() const { return _double_count; }
   int  get_java_call_count() const { return _java_call_count; }
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
@@ -3280,7 +3270,6 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
 
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
-  // Count all float operations that may use FPU
   case Op_AddHF:
   case Op_MulHF:
   case Op_AddF:
@@ -3295,17 +3284,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CmpF3:
   case Op_StoreF:
   case Op_LoadF:
-  // case Op_ConvL2F: // longs are split into 32-bit halves
-    frc.inc_float_count();
-    break;
-
   case Op_ConvF2D:
   case Op_ConvD2F:
-    frc.inc_float_count();
-    frc.inc_double_count();
-    break;
-
-  // Count all double operations that may use FPU
   case Op_AddD:
   case Op_SubD:
   case Op_MulD:
@@ -3314,15 +3294,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_ModD:
   case Op_ConvI2D:
   case Op_ConvD2I:
-  // case Op_ConvL2D: // handled by leaf call
-  // case Op_ConvD2L: // handled by leaf call
   case Op_ConD:
   case Op_CmpD:
   case Op_CmpD3:
   case Op_StoreD:
   case Op_LoadD:
   case Op_LoadD_unaligned:
-    frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
@@ -3343,7 +3320,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
       n->subsume_by(new_call, this);
     }
-    frc.inc_call_count();
     break;
   }
   case Op_CallStaticJava:
@@ -3356,13 +3332,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
-    // Count call sites where the FP mode bit would have to be flipped.
-    // Do not count uncommon runtime calls:
-    // uncommon_trap, _complete_monitor_locking, _complete_monitor_unlocking,
-    // _new_Java, _new_typeArray, _new_objArray, _rethrow_Java, ...
-    if (!call->is_CallStaticJava() || !call->as_CallStaticJava()->_name) {
-      frc.inc_call_count();   // Count the call site
-    } else {                  // See if uncommon argument is shared
+    // See if uncommon argument is shared
+    if (call->is_CallStaticJava() && call->as_CallStaticJava()->_name) {
       Node *n = call->in(TypeFunc::Parms);
       int nop = n->Opcode();
       // Clone shared simple arguments to uncommon calls, item (1).
