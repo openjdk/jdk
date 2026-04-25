@@ -106,6 +106,7 @@ class FinalizerTarg {
             }
             System.runFinalization();
         }
+        System.out.println("The Debuggee should not reach here in theory!");
         return;
     }
 
