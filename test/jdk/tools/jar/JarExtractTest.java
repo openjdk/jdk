@@ -299,6 +299,8 @@ public class JarExtractTest {
             tempTestDir = Files.createTempDirectory(Path.of("/tmp"), "8173970-");
         } catch (IOException ioe) {
             Assumptions.abort("skipping test, since /tmp cannot be written to: " + ioe);
+            // The above Assumptions.abort(...) call makes this "return" unreachable, but we keep
+            // the "return" for code clarity.
             return;
         }
         final String leadingSlashEntryName = tempTestDir.toString() + "/foo/f1.txt";
