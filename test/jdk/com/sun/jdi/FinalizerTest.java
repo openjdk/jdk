@@ -79,28 +79,27 @@ class FinalizerTarg {
         System.gc();
         System.runFinalization();
         try {
-            // finalize() run in another lower priority Finalizer thread,
-            // wait for it to finish
+            // finalize() is run in another lower priority Finalizer thread.
+            // Wait for it to finish.
             finalizerDone.await(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
         // If System.gc() and System.runFinalization() did not trigger the
-        // finalizer, then finalizerDone.await() will timed out and the code
-        // below will be needed as second attempt to trigger finalization.
+        // finalizer, then finalizerDone.await() will time out and the code
+        // below will be needed as a second attempt to trigger finalization.
         List holdAlot = new ArrayList();
         for (int chunk=10000000; chunk > 10000; chunk = chunk / 2) {
             if (finalizerDone.getCount() == 0) {
                 return;
             }
             try {
-                while(finalizerDone.getCount() > 0) {
+                while (finalizerDone.getCount() > 0) {
                     holdAlot.add(new byte[chunk]);
                     System.err.println("Allocated " + chunk);
                 }
-            }
-            catch ( Throwable thrown ) {  // OutOfMemoryError
+} catch ( Throwable thrown ) {  // OutOfMemoryError
             } finally {
                 holdAlot.clear();
                 System.gc();
