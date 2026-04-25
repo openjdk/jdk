@@ -696,7 +696,6 @@ void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
   check_soft_max_changed();
-  _alloc_rate.set_minimum_sample_size(align_up(SoftMaxHeapSize / 256, 2 * M));
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
@@ -767,7 +766,6 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
   _soft_max_size.store_relaxed(v);
-  _alloc_rate.set_minimum_sample_size(align_up(v / 256, 2 * M));
   heuristics()->compute_headroom_adjustment();
 }
 

@@ -44,55 +44,50 @@ public:
 
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
-private:
-  static constexpr uint MINIMUM_SAMPLE_SIZE = 1024 * 1024;
-
   Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
   jlong _last_sample_time;
-  size_t _minimum_sample_size;
-
-  TruncatedSeq _sampled_rates;
-  jlong _accumulated_bytes;
-  jlong _accumulated_duration;
-  jlong _last_cumulative_sample_time;
-  jlong _cumulative_sample_period;
 
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
   // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
   // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
-  uint _buffer_size;
   uint _first_sample_index;
   uint _num_samples;
+  uint _buffer_size;
+  uint _recent_window_size;
   uint _momentary_sample_size;
+  double _sample_period_seconds;
 
   double* const _rate_samples;
   double* const _rate_timestamps;
-  //
-  // bool recompute;
-  // double _weighted_average;
-  // double _momentary_average;
-  // double _acceleration;
+
+  bool _recompute;
+  double _baseline_average;
+  double _recent_average;
+  double _momentary_average;
+  double _acceleration;
 
 public:
-  explicit ShenandoahAllocRate(uint minimum_sample_size = MINIMUM_SAMPLE_SIZE,
-                               uint recent_sample_size = ShenandoahRateAccelerationSampleSize,
-                               uint momentary_sample_size = ShenandoahMomentaryAllocationRateSpikeSampleSize)
+  explicit ShenandoahAllocRate(uint baseline_window_millis = ShenandoahAdaptiveSampleSizeSeconds,
+                               uint recent_window_millis = ShenandoahRateAccelerationSampleSize,
+                               uint momentary_window_millis = ShenandoahMomentaryAllocationRateSpikeSampleSize,
+                               uint sample_period_millis = ShenandoahAdaptiveSampleFrequencyHz)
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
-    , _minimum_sample_size(minimum_sample_size)
-    , _sampled_rates(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz)
-    , _accumulated_bytes(0)
-    , _accumulated_duration(0)
-    , _last_cumulative_sample_time(_last_sample_time)
-    , _cumulative_sample_period(Clock::elapsed_frequency() / ShenandoahAdaptiveSampleFrequencyHz)
-    , _buffer_size(recent_sample_size)
     , _first_sample_index(0)
     , _num_samples(0)
-    , _momentary_sample_size(momentary_sample_size)
+    , _buffer_size(baseline_window_millis / sample_period_millis)
+    , _recent_window_size(recent_window_millis / sample_period_millis)
+    , _momentary_sample_size(momentary_window_millis / sample_period_millis)
+    , _sample_period_seconds(sample_period_millis / 1000.0)
     , _rate_samples(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
     , _rate_timestamps(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
+    , _recompute(false)
+    , _baseline_average(0.0)
+    , _recent_average(0.0)
+    , _momentary_average(0.0)
+    , _acceleration(0.0)
   {
   }
 
@@ -101,42 +96,20 @@ public:
     FREE_C_HEAP_ARRAY(double, _rate_timestamps);
   }
 
-  void set_minimum_sample_size(const size_t minimum_sample_size) {
-    _minimum_sample_size = minimum_sample_size;
-  }
-
   void allocated(size_t allocated_bytes);
   void record_rate_sample(double timestamp, double rate);
-  size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
-    return accelerated_consumption(acceleration, current_rate, average(), time_delta);
-  }
-
-  size_t accelerated_consumption(double& acceleration, double& current_rate,
-                                 double baseline_bytes_per_second, double time_delta);
-
-  const TruncatedSeq& rate() const {
-    return _sampled_rates;
-  }
-
-  double last_sampled_value() {
-    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _sampled_rates.last();
-  }
+  size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
 
   double average() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _sampled_rates.avg();
+    // TODO: cache results
+    return _baseline_average;
   }
 
   double upper_bound(const double standard_deviations) {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    const double max_rate = MAX2(_sampled_rates.predict_next(), _sampled_rates.davg());
-    return max_rate + (standard_deviations * _sampled_rates.dsd());
-  }
-
-  double predict_next() {
-    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _sampled_rates.predict_next();
+    // TODO: compute standard deviation along with average
+    return _baseline_average;
   }
 };
 

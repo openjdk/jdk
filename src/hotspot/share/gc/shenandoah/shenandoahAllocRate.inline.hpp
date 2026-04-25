@@ -30,51 +30,31 @@
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
-  size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
-  if (unsampled < _minimum_sample_size) {
-    // Not enough to sample yet
-    return;
-  }
+  _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
 
   if (!_sample_lock.try_lock()) {
     // Another thread has the lock and will take the sample
     return;
   }
 
-  unsampled = _allocated_bytes_since_last_sample.load_relaxed();
-  if (unsampled < _minimum_sample_size) {
-    // Another thread has sampled and reset the allocated bytes under the lock
-    _sample_lock.unlock();
-    return;
-  }
-
   const jlong now = Clock::elapsed_counter();
-  const jlong elapsed = now - _last_sample_time;
+  const double elapsed = static_cast<double>(now - _last_sample_time) / Clock::elapsed_frequency();
 
-  if (elapsed <= 0) {
+  if (elapsed <= _sample_period_seconds) {
     // Avoid sampling nonsense allocation rates
     _sample_lock.unlock();
     return;
   }
 
   _last_sample_time = now;
+  const size_t unsampled = _allocated_bytes_since_last_sample.load_relaxed();
 
   // We are recording this sample, deduct it from the counter. It may be increased
   // concurrently by other threads outside the lock, so we still use an atomic access.
   _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
-  _accumulated_bytes += unsampled;
-  _accumulated_duration += elapsed;
-
-  if (now - _last_cumulative_sample_time > _cumulative_sample_period) {
-    _sampled_rates.add(static_cast<double>(_accumulated_bytes) / _accumulated_duration * Clock::elapsed_frequency());
-    _last_cumulative_sample_time = now;
-    _accumulated_bytes = 0;
-    _accumulated_duration = 0;
-  }
-
   auto timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
-  auto rate_seconds = static_cast<double>(unsampled) / elapsed * Clock::elapsed_frequency();
+  auto rate_seconds = static_cast<double>(unsampled) / elapsed;
   record_rate_sample(timestamp, rate_seconds);
 
   _sample_lock.unlock();
@@ -96,8 +76,7 @@ void ShenandoahAllocRate<Clock>::record_rate_sample(double timestamp, double rat
 }
 
 template<typename Clock>
-size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate,
-                                                           double baseline_bytes_per_second, double time_delta) {
+size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
 
   MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
 
@@ -110,26 +89,34 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   bool momentary_done = false;
   double momentary_rate = 0.0;
   uint momentary_oldest_index = 0;
+  bool recent_done = false;
+  double recent_rate = 0.0;
+  uint recent_oldest_index = 0;
 
   assert(_num_samples > 0, "At minimum, we should have sample from this period");
   const uint count = MIN2(_buffer_size, _num_samples);
   const uint newest = (_first_sample_index + _num_samples - 1) % _buffer_size;
-  uint oldest = newest;
   uint index = newest;
   for (uint i = 0; i < count; i++) {
     const uint preceding_index = index == 0 ? _buffer_size - 1 : index - 1;
-
-    x_sum += _rate_timestamps[index];
-    y_sum += _rate_samples[index];
-    x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
-    xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
 
     if (i != count - 1) {
       // oldest value will not have a preceding element to compute weight, so skip it.
       const double sample_weight = _rate_timestamps[index] - _rate_timestamps[preceding_index];
       weighted_y_sum += _rate_samples[index] * sample_weight;
       total_weight += sample_weight;
-      oldest = index;
+    }
+
+    if (!recent_done) {
+      x_sum += _rate_timestamps[index];
+      y_sum += _rate_samples[index];
+      x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
+      xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
+      if (i >= _recent_window_size - 1) {
+        recent_rate = total_weight > 0 ? weighted_y_sum / total_weight : 0;
+        recent_done = true;
+        recent_oldest_index = preceding_index;
+      }
     }
 
     if (!momentary_done && i >= _momentary_sample_size) {
@@ -140,34 +127,34 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     index = preceding_index;
   }
 
-  const double weighted_average_alloc = total_weight > 0 ? weighted_y_sum / total_weight: 0;
+  const double baseline_rate = total_weight > 0 ? weighted_y_sum / total_weight: 0;
+  _baseline_average = baseline_rate;
 
   if (log_is_enabled(Debug, gc, sampling)) {
     log_debug(gc, sampling)("Baseline: " PROPERFMT "/s, Recent: " PROPERFMT "/s, Momentary: " PROPERFMT "/s",
-      PROPERFMTARGS(baseline_bytes_per_second), PROPERFMTARGS(weighted_average_alloc), PROPERFMTARGS(momentary_rate));
+      PROPERFMTARGS(baseline_rate), PROPERFMTARGS(recent_rate), PROPERFMTARGS(momentary_rate));
 
     const double latest = _rate_timestamps[newest];
-    const double oldest_time = _rate_timestamps[oldest];
-    const double oldest_momentary = _rate_timestamps[momentary_oldest_index];
-    if (latest > oldest_time && latest > oldest_momentary) {
-      log_debug(gc, sampling)("Acceleration samples span last %.3fs, Momentary samples span last: %.3fs",
-        (latest - oldest_time),
-        (latest - oldest_momentary));
+    const double oldest_recent_time = _rate_timestamps[recent_oldest_index];
+    const double oldest_momentary_time = _rate_timestamps[momentary_oldest_index];
+    if (latest > oldest_recent_time && latest > oldest_momentary_time) {
+      log_debug(gc, sampling)("Recent samples span last %.3fs, Momentary samples span last: %.3fs",
+        (latest - oldest_recent_time),
+        (latest - oldest_momentary_time));
     }
   }
 
   // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
   current_rate = momentary_rate;
   acceleration = 0.0;
-  if (_num_samples >= _buffer_size
-      && weighted_average_alloc >= baseline_bytes_per_second)  {
+  if (_num_samples >= _buffer_size && recent_rate > baseline_rate)  {
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
     //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
 
     // Find the best-fit least-squares linear representation of rate vs time
-    const double slope = (_buffer_size * xy_sum - x_sum * y_sum)
-                       / (_buffer_size * x2_sum - x_sum * x_sum);
-    const double y_intercept = (y_sum - slope * x_sum) / _buffer_size;
+    const double slope = (_recent_window_size * xy_sum - x_sum * y_sum)
+                       / (_recent_window_size * x2_sum - x_sum * x_sum);
+    const double y_intercept = (y_sum - slope * x_sum) / _recent_window_size;
     log_debug(gc, sampling)("slope: %.2f, intercept: %.2f", slope, y_intercept);
     if (slope > 0) {
       const double proposed_current_rate = slope * _rate_timestamps[newest] + y_intercept;

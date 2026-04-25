@@ -50,105 +50,116 @@ protected:
   }
 };
 
-constexpr uint RECENT_SAMPLE_SIZE = 8;
-constexpr uint MOMENTARY_SAMPLE_SIZE = 2;
+constexpr uint BASELINE_WINDOW_MILLIS = 100000;
+constexpr uint RECENT_WINDOW_MILLIS = 8000;
+constexpr uint MOMENTARY_WINDOW_MILLIS = 2000;
+constexpr uint SAMPLE_PERIOD_MILLIS = 999;
 
-TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
-  rate.allocated(512);
+constexpr uint BASELINE_SAMPLES = BASELINE_WINDOW_MILLIS / 1000;  // 100
+constexpr uint RECENT_SAMPLES = RECENT_WINDOW_MILLIS / 1000;      // 8
+constexpr uint MOMENTARY_SAMPLES = MOMENTARY_WINDOW_MILLIS / 1000; // 2
+
+
+TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, 500);
+  rate.allocated(2048);
+  rate.allocated(2048);
   EXPECT_EQ(rate.average(), 0);
 }
 
-TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
-  rate.allocated(2048);
-  rate.allocated(2048);
-  EXPECT_EQ(rate.average(), 2048);
-}
-
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   rate.allocated(2048); // t = 1
   rate.allocated(2048); // t = 2
+  double acceleration(0), current_rate(0);
+  rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_EQ(rate.average(), 2048.0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   rate.allocated(1024);
   double acceleration(0), current_rate(0);
-  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, rate.average(), 100);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_DOUBLE_EQ(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 0.0);
   EXPECT_EQ(anticipated_consumption, 0UL);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
-  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
+  for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
     rate.allocated(1024);
   }
 
-  double acceleration(0), current_rate(0), average_rate(rate.average());
-  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
-  EXPECT_DOUBLE_EQ(average_rate, 1024);  // Average rate, 1024 bytes per tick
+  double acceleration(0), current_rate(0);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
+  EXPECT_DOUBLE_EQ(rate.average(), 1024);  // Average rate, 1024 bytes per tick
   EXPECT_DOUBLE_EQ(acceleration, 0.0);   // No acceleration, rate is constant
   EXPECT_DOUBLE_EQ(current_rate, 1024);  // Momentary rate is the same as the average
   EXPECT_EQ(anticipated_consumption, 102400UL); // 100 clock ticks at 1024 bytes per tick
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
-  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
+  for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
+    rate.allocated(2048);
+  }
+
+  for (uint i = 0; i < RECENT_SAMPLES; ++i) {
     rate.allocated(1024);
   }
 
-  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
     rate.allocated(2048);
   }
 
   // Here we simulate a situation where we are returning from a lull (avg 1024/s) back
   // to the baseline average allocation rate (2048/s). The momentary rate will reflect
   // the recent samples, but we will not consider this to be an acceleration.
-  double acceleration(0), current_rate(0), average_rate(2048);
-  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  double acceleration(0), current_rate(0);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_EQ(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 2048);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE ,MOMENTARY_SAMPLE_SIZE);
-  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS ,MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
+  for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
+    rate.allocated(512);
+  }
+
+  for (uint i = 0; i < RECENT_SAMPLES; ++i) {
     rate.allocated(1024);
   }
 
-  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
     rate.allocated(2048);
   }
 
   // Setup as before, but pretend our baseline acceleration rate is lower (512). This
   // will evaluate the acceleration of the rate.
-  double acceleration(0), current_rate(0), average_rate(512);
-  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  double acceleration(0), current_rate(0);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_GE(acceleration, 180);
   EXPECT_GE(current_rate, 2048);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
-  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
+  for (uint i = 0; i < RECENT_SAMPLES; ++i) {
     rate.allocated(2048);
   }
 
-  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
     rate.allocated(1024);
   }
 
   // In this setup, the allocation rate is declining.
-  double acceleration(0), current_rate(0), average_rate(4096);
-  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
+  double acceleration(0), current_rate(0);
+  size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_GE(acceleration, 0.0);
   EXPECT_DOUBLE_EQ(current_rate, 1024);
   EXPECT_GE(anticipated_consumption, 102400UL);
