@@ -577,7 +577,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   }
 
   if (ZapUnusedHeapArea) {
-    SpaceMangler::mangle_region(MemRegion(bottom(), end()));
+    SpaceMangler::mangle_region(MemRegion(bottom(), top()));
   }
   set_top(bottom());
   set_affiliation(FREE);
