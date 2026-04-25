@@ -57,15 +57,16 @@ import java.util.Map;
  * Align bounds is a rect that defines how to align this to margins.
  * it generally allows some overhang that logical bounds would prevent.
  */
-class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
+final class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
 
   private final TextSource source;
   private final Decoration decorator;
 
   // caches
-  private Font font;
-  private AffineTransform baseTX;
-  private CoreMetrics cm;
+  private final Font font;
+  private final AffineTransform baseTX;
+  private final CoreMetrics cm;
+  private final float advTracking;
 
   private Rectangle2D lb;
   private Rectangle2D ab;
@@ -74,34 +75,18 @@ class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
   private StandardGlyphVector gv;
   private float[] charinfo;
 
-  private float advTracking;
-
   /**
    * Create from a TextSource.
    */
   public ExtendedTextSourceLabel(TextSource source, Decoration decorator) {
     this.source = source;
     this.decorator = decorator;
-    finishInit();
-  }
 
-  /**
-   * Create from a TextSource, optionally using cached data from oldLabel starting at the offset.
-   * If present oldLabel must have been created from a run of text that includes the text used in
-   * the new label.  Start in source corresponds to logical character offset in oldLabel.
-   */
-  public ExtendedTextSourceLabel(TextSource source, ExtendedTextSourceLabel oldLabel, int offset) {
-    // currently no optimization.
-    this.source = source;
-    this.decorator = oldLabel.decorator;
-    finishInit();
-  }
-
-  private void finishInit() {
-    font = source.getFont();
-
+    Font font = source.getFont();
     Map<TextAttribute, ?> atts = font.getAttributes();
-    baseTX = AttributeValues.getBaselineTransform(atts);
+    AffineTransform baseTX = AttributeValues.getBaselineTransform(atts);
+
+    CoreMetrics cm;
     if (baseTX == null){
         cm = source.getCoreMetrics();
     } else {
@@ -110,13 +95,15 @@ class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
           charTX = new AffineTransform();
       }
       font = font.deriveFont(charTX);
-
       LineMetrics lm = font.getLineMetrics(source.getChars(), source.getStart(),
           source.getStart() + source.getLength(), source.getFRC());
       cm = CoreMetrics.get(lm);
     }
 
-    advTracking = font.getSize() * AttributeValues.getTracking(atts);
+    this.font = font;
+    this.baseTX = baseTX;
+    this.cm = cm;
+    this.advTracking = font.getSize() * AttributeValues.getTracking(atts);
   }
 
   /**

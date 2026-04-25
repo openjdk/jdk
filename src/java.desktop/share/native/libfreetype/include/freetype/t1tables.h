@@ -92,7 +92,7 @@ FT_BEGIN_HEADER
     FT_String*  full_name;
     FT_String*  family_name;
     FT_String*  weight;
-    FT_Long     italic_angle;
+    FT_Fixed    italic_angle;
     FT_Bool     is_fixed_pitch;
     FT_Short    underline_position;
     FT_UShort   underline_thickness;
@@ -645,7 +645,7 @@ FT_BEGIN_HEADER
     PS_DICT_UNDERLINE_POSITION,     /* FT_Short   */
     PS_DICT_UNDERLINE_THICKNESS,    /* FT_UShort  */
     PS_DICT_FS_TYPE,                /* FT_UShort  */
-    PS_DICT_ITALIC_ANGLE,           /* FT_Long    */
+    PS_DICT_ITALIC_ANGLE,           /* FT_Fixed   */
 
     PS_DICT_MAX = PS_DICT_ITALIC_ANGLE
 

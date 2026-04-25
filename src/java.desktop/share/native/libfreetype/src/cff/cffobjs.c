@@ -846,10 +846,8 @@
           cffface->height = (FT_Short)( cffface->ascender -
                                         cffface->descender );
 
-        cffface->underline_position  =
-          (FT_Short)( dict->underline_position >> 16 );
-        cffface->underline_thickness =
-          (FT_Short)( dict->underline_thickness >> 16 );
+        cffface->underline_position  = (FT_Short)dict->underline_position;
+        cffface->underline_thickness = (FT_Short)dict->underline_thickness;
 
         /* retrieve font family & style name */
         if ( dict->family_name )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,56 +23,54 @@
 
 package javax.xml.datatype.ptests;
 
-import static java.util.Calendar.HOUR;
-import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static java.util.Calendar.HOUR;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.YEAR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 5049592 5041845 5048932 5064587 5040542 5049531 5049528
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.datatype.ptests.XMLGregorianCalendarTest
+ * @run junit/othervm javax.xml.datatype.ptests.XMLGregorianCalendarTest
  * @summary Class containing the test cases for XMLGregorianCalendar
  */
 public class XMLGregorianCalendarTest {
 
     private DatatypeFactory datatypeFactory;
 
-    @BeforeClass
+    @BeforeEach
     public void setup() throws DatatypeConfigurationException {
         datatypeFactory = DatatypeFactory.newInstance();
-    }
-
-    @DataProvider(name = "valid-milliseconds")
-    public Object[][] getValidMilliSeconds() {
-        return new Object[][] { { 0 }, { 1 }, { 2 }, { 16 }, { 1000 }   };
     }
 
     /*
      * Test DatatypeFactory.newXMLGregorianCalendar(..) with milliseconds > 1.
      *
      * Bug # 5049592
-     *
      */
-    @Test(dataProvider = "valid-milliseconds")
-    public void checkNewCalendar(int ms) {
+    @ParameterizedTest
+    @ValueSource(ints={ 0, 1, 2, 16, 1000 })
+    public void checkNewCalendar(int expectedMillis) {
         // valid milliseconds
         XMLGregorianCalendar calendar = datatypeFactory.newXMLGregorianCalendar(2004, // year
                 6, // month
@@ -80,12 +78,12 @@ public class XMLGregorianCalendarTest {
                 19, // hour
                 20, // minute
                 59, // second
-                ms, // milliseconds
+                expectedMillis, // milliseconds
                 840 // timezone
                 );
         // expected success
 
-        assertEquals(calendar.getMillisecond(), ms);
+        assertEquals(expectedMillis, calendar.getMillisecond());
     }
 
     /*
@@ -93,23 +91,19 @@ public class XMLGregorianCalendarTest {
      *
      * Bug # 5049592
      */
-    @Test(dataProvider = "valid-milliseconds")
-    public void checkNewTime(int ms) {
+    @ParameterizedTest
+    @ValueSource(ints={ 0, 1, 2, 16, 1000 })
+    public void checkNewTime(int expectedMillis) {
         // valid milliseconds
         XMLGregorianCalendar calendar2 = datatypeFactory.newXMLGregorianCalendarTime(19, // hour
                 20, // minute
                 59, // second
-                ms, // milliseconds
+                expectedMillis, // milliseconds
                 840 // timezone
                 );
         // expected success
 
-        assertEquals(calendar2.getMillisecond(), ms);
-    }
-
-    @DataProvider(name = "invalid-milliseconds")
-    public Object[][] getInvalidMilliSeconds() {
-        return new Object[][] { { -1 }, { 1001 } };
+        assertEquals(expectedMillis, calendar2.getMillisecond());
     }
 
     /*
@@ -119,18 +113,21 @@ public class XMLGregorianCalendarTest {
      * 1001.
      *
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "invalid-milliseconds")
-    public void checkNewCalendarNeg(int milliseconds) {
+    @ParameterizedTest
+    @ValueSource(ints={ -1, 1001 })
+    public void checkNewCalendarNeg(int invalidMilliseconds) {
         // invalid milliseconds
-        datatypeFactory.newXMLGregorianCalendar(2004, // year
-                6, // month
-                2, // day
-                19, // hour
-                20, // minute
-                59, // second
-                milliseconds, // milliseconds
-                840 // timezone
-                );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> datatypeFactory.newXMLGregorianCalendar(2004, // year
+                        6, // month
+                        2, // day
+                        19, // hour
+                        20, // minute
+                        59, // second
+                        invalidMilliseconds, // milliseconds
+                        840 // timezone
+                ));
     }
 
     /*
@@ -140,19 +137,21 @@ public class XMLGregorianCalendarTest {
      * 1001.
      *
      */
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "invalid-milliseconds")
-    public void checkNewTimeNeg(int milliseconds) {
+    @ParameterizedTest
+    @ValueSource(ints={ -1, 1001 })
+    public void checkNewTimeNeg(int invalidMilliseconds) {
         // invalid milliseconds
-        datatypeFactory.newXMLGregorianCalendarTime(19, // hour
-                20, // minute
-                59, // second
-                milliseconds, // milliseconds
-                840 // timezone
-                );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> datatypeFactory.newXMLGregorianCalendarTime(19, // hour
+                        20, // minute
+                        59, // second
+                        invalidMilliseconds, // milliseconds
+                        840 // timezone
+                ));
     }
 
-    @DataProvider(name = "data-for-add")
-    public Object[][] getDataForAdd() {
+    public static Object[][] getDataForAdd() {
         return new Object[][] {
                 //calendar1, calendar2, duration
                 { "1999-12-31T00:00:00Z", "2000-01-01T00:00:00Z", "P1D" },
@@ -173,7 +172,8 @@ public class XMLGregorianCalendarTest {
      * Test XMLGregorianCalendar.add(Duration).
      *
      */
-    @Test(dataProvider = "data-for-add")
+    @ParameterizedTest
+    @MethodSource("getDataForAdd")
     public void checkAddDays(String cal1, String cal2, String dur) {
 
         XMLGregorianCalendar calendar1 = datatypeFactory.newXMLGregorianCalendar(cal1);
@@ -184,70 +184,51 @@ public class XMLGregorianCalendarTest {
         XMLGregorianCalendar calendar1Clone = (XMLGregorianCalendar)calendar1.clone();
 
         calendar1Clone.add(duration);
-        assertEquals(calendar1Clone, calendar2);
+        assertEquals(calendar2, calendar1Clone);
 
         calendar2.add(duration.negate());
-        assertEquals(calendar2, calendar1);
+        assertEquals(calendar1, calendar2);
 
     }
 
-    @DataProvider(name = "gMonth")
-    public Object[][] getGMonth() {
-        return new Object[][] {
-                { "2000-02" },
-                { "2000-03" },
-                { "2018-02" }};
-    }
     /*
      * Test XMLGregorianCalendar#isValid(). for gMonth
      *
      * Bug # 5041845
-     *
      */
-    @Test(dataProvider = "gMonth")
+    @ParameterizedTest
+    @ValueSource(strings={ "2000-02", "2000-03", "2018-02" })
     public void checkIsValid(String month) {
-
         XMLGregorianCalendar gMonth = datatypeFactory.newXMLGregorianCalendar(month);
         gMonth.setYear(null);
-        Assert.assertTrue(gMonth.isValid(), gMonth.toString() + " should isValid");
-
-    }
-
-    @DataProvider(name = "lexical01")
-    public Object[][] getLexicalRepresentForNormalize01() {
-        return new Object[][] { { "2000-01-16T12:00:00Z" }, { "2000-01-16T12:00:00" } };
+        assertTrue(gMonth.isValid(), gMonth + " should isValid");
     }
 
     /*
      * Test XMLGregorianCalendar#normalize(...).
      *
      * Bug # 5048932 XMLGregorianCalendar.normalize works
-     *
      */
-    @Test(dataProvider = "lexical01")
+    @ParameterizedTest
+    @ValueSource(strings={ "2000-01-16T12:00:00Z", "2000-01-16T12:00:00" })
     public void checkNormalize01(String lexical) {
         XMLGregorianCalendar lhs = datatypeFactory.newXMLGregorianCalendar(lexical);
         lhs.normalize();
-    }
-
-    @DataProvider(name = "lexical02")
-    public Object[][] getLexicalRepresentForNormalize02() {
-        return new Object[][] { { "2000-01-16T00:00:00.01Z" }, { "2000-01-16T00:00:00.01" }, { "13:20:00" } };
     }
 
     /*
      * Test XMLGregorianCalendar#normalize(...).
      *
      * Bug # 5064587 XMLGregorianCalendar.normalize shall not change timezone
-     *
      */
-    @Test(dataProvider = "lexical02")
+    @ParameterizedTest
+    @ValueSource(strings={ "2000-01-16T00:00:00.01Z", "2000-01-16T00:00:00.01", "13:20:00" })
     public void checkNormalize02(String lexical) {
         XMLGregorianCalendar orig = datatypeFactory.newXMLGregorianCalendar(lexical);
         XMLGregorianCalendar normalized = datatypeFactory.newXMLGregorianCalendar(lexical).normalize();
 
-        assertEquals(normalized.getTimezone(), orig.getTimezone());
-        assertEquals(normalized.getMillisecond(), orig.getMillisecond());
+        assertEquals(orig.getTimezone(), normalized.getTimezone());
+        assertEquals(orig.getMillisecond(), normalized.getMillisecond());
     }
 
     /*
@@ -291,8 +272,6 @@ public class XMLGregorianCalendarTest {
         int hour = calendar.get(HOUR);
 
         assertTrue((year == 2003 && hour == 2 && minute == 3), " expecting year == 2003, hour == 2, minute == 3" + ", result is year == " + year + ", hour == " + hour + ", minute == " + minute);
-
-
     }
 
     /*
@@ -311,8 +290,7 @@ public class XMLGregorianCalendarTest {
         calendar.toGregorianCalendar(TimeZone.getDefault(), Locale.getDefault(), null);
     }
 
-    @DataProvider(name = "calendar")
-    public Object[][] getXMLGregorianCalendarData() {
+    public static Object[][] getXMLGregorianCalendarData() {
         return new Object[][] {
                 // year, month, day, hour, minute, second
                 { 1970, 1, 1, 0, 0, 0 }, // DATETIME
@@ -332,10 +310,12 @@ public class XMLGregorianCalendarTest {
      * Bug # 5049528
      *
      */
-    @Test(dataProvider = "calendar")
+    @ParameterizedTest
+    @MethodSource("getXMLGregorianCalendarData")
     public void checkToStringPos(final int year, final int month, final int day, final int hour, final int minute, final int second) {
         XMLGregorianCalendar calendar = datatypeFactory.newXMLGregorianCalendar(year, month, day, hour, minute, second, undef, undef);
-        calendar.toString();
+        assertNotNull(calendar.toString());
+        assertFalse(calendar.toString().isEmpty());
     }
 
     /*
@@ -345,13 +325,13 @@ public class XMLGregorianCalendarTest {
      * if all parameters are undef
      *
      */
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void checkToStringNeg() {
         XMLGregorianCalendar calendar = datatypeFactory.newXMLGregorianCalendar(undef, undef, undef, undef, undef, undef, undef, undef);
         // expected to fail
-        calendar.toString();
+        assertThrows(IllegalStateException.class, calendar::toString);
     }
 
-    private final int undef = DatatypeConstants.FIELD_UNDEFINED;
+    private static final int undef = DatatypeConstants.FIELD_UNDEFINED;
 
 }
