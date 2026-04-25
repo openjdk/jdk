@@ -50,28 +50,31 @@ protected:
   }
 };
 
+constexpr uint RECENT_SAMPLE_SIZE = 8;
+constexpr uint MOMENTARY_SAMPLE_SIZE = 2;
+
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
   rate.allocated(512);
   EXPECT_EQ(rate.average(), 0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
   rate.allocated(2048);
   rate.allocated(2048);
   EXPECT_EQ(rate.average(), 2048);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
   rate.allocated(2048); // t = 1
   rate.allocated(2048); // t = 2
   EXPECT_EQ(rate.average(), 2048.0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
   rate.allocated(1024);
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, rate.average(), 100);
@@ -81,8 +84,8 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_sampl
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
-  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
+  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
     rate.allocated(1024);
   }
 
@@ -95,12 +98,12 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
-  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
+  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
     rate.allocated(1024);
   }
 
-  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
     rate.allocated(2048);
   }
 
@@ -115,12 +118,12 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
-  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE ,MOMENTARY_SAMPLE_SIZE);
+  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
     rate.allocated(1024);
   }
 
-  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
     rate.allocated(2048);
   }
 
@@ -128,18 +131,18 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
   // will evaluate the acceleration of the rate.
   double acceleration(0), current_rate(0), average_rate(512);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, average_rate, 100);
-  EXPECT_GE(acceleration, 12);
-  EXPECT_GE(current_rate, 1800);
+  EXPECT_GE(acceleration, 180);
+  EXPECT_GE(current_rate, 2048);
   EXPECT_GE(anticipated_consumption, 102400UL);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(512);
-  for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; ++i) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(512, RECENT_SAMPLE_SIZE, MOMENTARY_SAMPLE_SIZE);
+  for (uint i = 0; i < RECENT_SAMPLE_SIZE; ++i) {
     rate.allocated(2048);
   }
 
-  for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize + 1; ++i) {
+  for (uint i = 0; i < MOMENTARY_SAMPLE_SIZE + 1; ++i) {
     rate.allocated(1024);
   }
 

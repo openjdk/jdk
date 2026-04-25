@@ -44,7 +44,7 @@
           "more monitoring effort.")                                        \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRateAccelerationSampleSize, 96, EXPERIMENTAL,     \
+  product(uint, ShenandoahRateAccelerationSampleSize, 16, EXPERIMENTAL,     \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), "                        \
@@ -66,7 +66,7 @@
           range(1,128)                                                      \
                                                                             \
   product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
-          24, EXPERIMENTAL,                                                 \
+          4, EXPERIMENTAL,                                                 \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), we compute "             \

@@ -73,7 +73,9 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
     _accumulated_duration = 0;
   }
 
-  record_rate_sample(_last_sample_time / Clock::elapsed_frequency(), static_cast<double>(unsampled) / elapsed * Clock::elapsed_frequency());
+  auto timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
+  auto rate_seconds = static_cast<double>(unsampled) / elapsed * Clock::elapsed_frequency();
+  record_rate_sample(timestamp, rate_seconds);
 
   _sample_lock.unlock();
 }
@@ -110,8 +112,9 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   uint momentary_oldest_index = 0;
 
   assert(_num_samples > 0, "At minimum, we should have sample from this period");
-  const uint count = MIN2(ShenandoahRateAccelerationSampleSize, _num_samples);
+  const uint count = MIN2(_buffer_size, _num_samples);
   const uint newest = (_first_sample_index + _num_samples - 1) % _buffer_size;
+  uint oldest = newest;
   uint index = newest;
   for (uint i = 0; i < count; i++) {
     const uint preceding_index = index == 0 ? _buffer_size - 1 : index - 1;
@@ -126,9 +129,10 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
       const double sample_weight = _rate_timestamps[index] - _rate_timestamps[preceding_index];
       weighted_y_sum += _rate_samples[index] * sample_weight;
       total_weight += sample_weight;
+      oldest = index;
     }
 
-    if (!momentary_done && i >= ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+    if (!momentary_done && i >= _momentary_sample_size) {
       momentary_rate = total_weight > 0 ? weighted_y_sum / total_weight: 0;
       momentary_done = true;
       momentary_oldest_index = preceding_index;
@@ -136,30 +140,35 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     index = preceding_index;
   }
 
-  if (log_is_enabled(Debug, gc, ergo)) {
-    const uint latest = _rate_timestamps[newest];
-    const uint oldest = _rate_timestamps[index];
-    const uint oldest_momemntary = _rate_timestamps[momentary_oldest_index];
-    log_debug(gc, ergo)("Momentary samples span last: %.2fs, Acceleration samples span last %.2f",
-      static_cast<double>(latest - oldest_momemntary) / Clock::elapsed_frequency(),
-      static_cast<double>(latest - oldest) / Clock::elapsed_frequency());
-  }
-
   const double weighted_average_alloc = total_weight > 0 ? weighted_y_sum / total_weight: 0;
+
+  if (log_is_enabled(Debug, gc, sampling)) {
+    log_debug(gc, sampling)("Baseline: " PROPERFMT "/s, Recent: " PROPERFMT "/s, Momentary: " PROPERFMT "/s",
+      PROPERFMTARGS(baseline_bytes_per_second), PROPERFMTARGS(weighted_average_alloc), PROPERFMTARGS(momentary_rate));
+
+    const double latest = _rate_timestamps[newest];
+    const double oldest_time = _rate_timestamps[oldest];
+    const double oldest_momentary = _rate_timestamps[momentary_oldest_index];
+    if (latest > oldest_time && latest > oldest_momentary) {
+      log_debug(gc, sampling)("Acceleration samples span last %.3fs, Momentary samples span last: %.3fs",
+        (latest - oldest_time),
+        (latest - oldest_momentary));
+    }
+  }
 
   // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
   current_rate = momentary_rate;
   acceleration = 0.0;
-  if (_num_samples >= ShenandoahRateAccelerationSampleSize
+  if (_num_samples >= _buffer_size
       && weighted_average_alloc >= baseline_bytes_per_second)  {
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
     //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
 
     // Find the best-fit least-squares linear representation of rate vs time
-    const double slope = (ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
-                       / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum);
-    const double y_intercept = (y_sum - slope * x_sum) / ShenandoahRateAccelerationSampleSize;
-
+    const double slope = (_buffer_size * xy_sum - x_sum * y_sum)
+                       / (_buffer_size * x2_sum - x_sum * x_sum);
+    const double y_intercept = (y_sum - slope * x_sum) / _buffer_size;
+    log_debug(gc, sampling)("slope: %.2f, intercept: %.2f", slope, y_intercept);
     if (slope > 0) {
       const double proposed_current_rate = slope * _rate_timestamps[newest] + y_intercept;
       acceleration = slope;

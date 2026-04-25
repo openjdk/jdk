@@ -45,7 +45,7 @@ public:
 template<typename Clock = ShenandoahAllocationClock>
 class ShenandoahAllocRate {
 private:
-  static constexpr size_t MINIMUM_SAMPLE_SIZE = 1024 * 1024;
+  static constexpr uint MINIMUM_SAMPLE_SIZE = 1024 * 1024;
 
   Atomic<size_t> _allocated_bytes_since_last_sample;
   Monitor _sample_lock;
@@ -64,12 +64,20 @@ private:
   uint _buffer_size;
   uint _first_sample_index;
   uint _num_samples;
+  uint _momentary_sample_size;
 
   double* const _rate_samples;
   double* const _rate_timestamps;
+  //
+  // bool recompute;
+  // double _weighted_average;
+  // double _momentary_average;
+  // double _acceleration;
 
 public:
-  explicit ShenandoahAllocRate(size_t minimum_sample_size = MINIMUM_SAMPLE_SIZE)
+  explicit ShenandoahAllocRate(uint minimum_sample_size = MINIMUM_SAMPLE_SIZE,
+                               uint recent_sample_size = ShenandoahRateAccelerationSampleSize,
+                               uint momentary_sample_size = ShenandoahMomentaryAllocationRateSpikeSampleSize)
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
@@ -79,9 +87,10 @@ public:
     , _accumulated_duration(0)
     , _last_cumulative_sample_time(_last_sample_time)
     , _cumulative_sample_period(Clock::elapsed_frequency() / ShenandoahAdaptiveSampleFrequencyHz)
-    , _buffer_size(ShenandoahRateAccelerationSampleSize)
+    , _buffer_size(recent_sample_size)
     , _first_sample_index(0)
     , _num_samples(0)
+    , _momentary_sample_size(momentary_sample_size)
     , _rate_samples(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
     , _rate_timestamps(NEW_C_HEAP_ARRAY(double, _buffer_size, mtGC))
   {
@@ -128,11 +137,6 @@ public:
   double predict_next() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _sampled_rates.predict_next();
-  }
-
-  void reset_samples() {
-    _num_samples = 0;
-    _first_sample_index = 0;
   }
 };
 
