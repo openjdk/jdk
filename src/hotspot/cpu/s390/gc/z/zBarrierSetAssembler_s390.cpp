@@ -53,6 +53,7 @@ long load_fubar = 0;
 long c1_store_runtime_fubar = 0;
 long load_slow_fubar = 0;
 long load_slow_pre_fubar = 0;
+long arraycopy_prologue_fubar = 0;
 long store_fubar = 0;
 long some_fubar = 0;
 long store_slow_fubar = 0;
@@ -180,7 +181,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
   Register scratch = noreg;
-  if (dst != src.base()) {
+  if (dst != src.base() && src.base() != Z_R2) {
     scratch = src.base();
   } else if (dst != Z_R4) {
     scratch = Z_R4;
@@ -529,6 +530,13 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
 
+// TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
+// because BarrierSetAssembler::copy_load_at is not implemented on s390 as well as on ppc but 
+// implemented on x86 and aarch64 -> currently decided to go with ppc
+/* array copy */
+// RuntimeTODO: Check if these registers are free or not 
+const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask = Z_R7;
+
 // Purpose: We want to load the oop address for memory to zpointer and then we will check if the
 // pointer has load bad mask, the compare is not making any sense we will jump to the slow path
 // if we have the oop addr has a bad mask?
@@ -555,10 +563,10 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
                                              // Register temp,
                                              Label& slow_path,
                                              Label& continuation) const {
-  __ stop("copy load at slow");
 
   __ align(32);
   __ bind(slow_path);
+  __ stop("copy load at slow");
   {
     ZRuntimeCallSpill rcs(masm, Z_R0);
     assert(zpointer != Z_ARG2, "or change argument setup");
@@ -616,13 +624,6 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
     __ branch_optimized(Assembler::bcondAlways, continuation);
   }
 }
-
-// TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
-// because BarrierSetAssembler::copy_load_at is not implemented on s390 as well as on ppc but 
-// implemented on x86 and aarch64 -> currently decided to go with ppc
-/* array copy */
-// RuntimeTODO: Check if these register allocations is correct or not
-const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask = Z_R7;
 
 // Arguments for generated stub:
 //      from:  Z_ARG1
@@ -694,7 +695,6 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
                                               Register src,
                                               Register dst,
                                               Register count) {
-  __ stop("arraycopy prologue");
   bool is_checkcast_copy = (decorators & ARRAYCOPY_CHECKCAST)    != 0,
        dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
@@ -703,6 +703,11 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
   }
 
   __ block_comment("arraycopy_prologue (zgc) {");
+
+  __ z_ldgr(Z_F0, Z_R1);
+  __ load_const_optimized(Z_R1, (uintptr_t)&arraycopy_prologue_fubar);
+  __ z_agsi(0, Z_R1, 1);
+  __ z_lgdr(Z_R1, Z_F0);
 
   load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
 
@@ -714,13 +719,12 @@ void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
                                            Register store_bad_mask,
                                            Register store_good_mask,
                                            bool dest_uninitialized) const {
-  __ stop("load copy masks");
   __ z_lg(load_bad_mask, Address(Z_thread, ZThreadLocalData::load_bad_mask_offset()));
   __ z_lg(store_good_mask, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   if (dest_uninitialized) {
-    DEBUG_ONLY(  __ z_lgfi(store_bad_mask, -1) );
+    DEBUG_ONLY(  __ load_const_optimized(store_bad_mask, (long)-1) );
   } else {
-    __ z_lg(store_bad_mask, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+  __ z_lg(store_bad_mask, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
   }
 }
 
@@ -806,16 +810,16 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     ZLoadBarrierStubC1* stub,
                                                     bool on_non_strong) const {
   
-  __ z_ldgr(Z_F0, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F0);
+
   if (on_non_strong) {
+    __ z_ldgr(Z_F0, Z_R1);
+    __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
+    __ z_agsi(0, Z_R1, 1);
+    __ z_lgdr(Z_R1, Z_F0);
     // Test against MarkBad mask
-    // TODO: This is not working
-    __ stop ("on non strong");
+    __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-    __ z_nill(ref->as_register(), barrier_Relocation::unpatched);
+    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
 
     // Slow path if not zero
     __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
@@ -929,7 +933,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   
   Label slow;
   Label slow_continuation;
-  breakpoint();
   store_barrier_medium(ce->masm(),
                        ce->as_Address(stub->ref_addr()->as_address_ptr()),
                        Z_R1,
