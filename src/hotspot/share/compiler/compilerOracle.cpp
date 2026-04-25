@@ -80,7 +80,7 @@ inline int bitmask_applies_to_comp_level(int bitmask, int comp_level) {
   return (bitmask / comp_level_bitmask[comp_level]) % 10 == 1;
 }
 
-static bool is_valid_comp_level_bitmask(int bitmask) {
+static bool is_valid_comp_level_bitmask(intx bitmask) {
   if (bitmask < 0 || bitmask > comp_level_bitmask_all_levels) {
     return false;
   }
@@ -777,7 +777,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   size_t s = 0;
   char* end;
   if (!parse_integer<size_t>(line, &end, &s)) {
-    jio_snprintf(errorbuf, buf_size, ": invalid integer: '%.22s'", line);
+    jio_snprintf(errorbuf, buf_size, ": invalid integer: '%.20s'", line);
     return false;
   }
   bytes_read = (int)(end - line);
