@@ -99,7 +99,7 @@ class FinalizerTarg {
                     holdAlot.add(new byte[chunk]);
                     System.err.println("Allocated " + chunk);
                 }
-} catch ( Throwable thrown ) {  // OutOfMemoryError
+            } catch ( Throwable thrown ) {  // OutOfMemoryError
             } finally {
                 holdAlot.clear();
                 System.gc();
