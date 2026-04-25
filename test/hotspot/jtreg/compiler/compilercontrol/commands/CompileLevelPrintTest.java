@@ -120,28 +120,28 @@ public class CompileLevelPrintTest {
             if (Arrays.asList(InputArguments.getVmInputArgs()).contains("-XX:-TieredCompilation")) {
                 // If we have -XX:-TieredCompilation, we check only for C2 compilation
                 // A space is printed instead of compile level
-                Runner.run("compileonly", "1", "1", "1", Set.of(), Set.of("4"), true, false);
-                Runner.run("compileonly", "2", "1", "1", Set.of(), Set.of("4"), true, false);
-                Runner.run("compileonly", "4", "1", "1", Set.of(), Set.of("4"), true, false);
-                Runner.run("compileonly", "8", "8", "4", Set.of(" "), Set.of(), true, false);
-                Runner.run("compileonly", "12", "12", "4", Set.of(" "), Set.of(), true, false);
+                Runner.run("compileonly",    1,    1, 1, Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly",   10,    1, 1, Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly",  100,    1, 1, Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly", 1000, 1000, 4, Set.of(" "), Set.of(), true, false);
+                Runner.run("compileonly", 1100, 1100, 4, Set.of(" "), Set.of(), true, false);
 
-                Runner.run("exclude", "14", "1", "1", Set.of(), Set.of("4"), true, false);
-                Runner.run("exclude", "13", "2", "2", Set.of(), Set.of("4"), true, false);
-                Runner.run("exclude", "11", "4", "3", Set.of(), Set.of("4"), true, false);
-                Runner.run("exclude", "7", "8", "4", Set.of(" "), Set.of(), true, false);
+                Runner.run("exclude", 1110,    1, 1, Set.of(), Set.of("4"), true, false);
+                Runner.run("exclude", 1101,   10, 2, Set.of(), Set.of("4"), true, false);
+                Runner.run("exclude", 1011,  100, 3, Set.of(), Set.of("4"), true, false);
+                Runner.run("exclude",  111, 1000, 4, Set.of(" "), Set.of(), true, false);
             } else {
                 // -XX:+TieredCompilation
-                Runner.run("compileonly", "1", "1", "1", Set.of("1"), Set.of(), false, true);
-                Runner.run("compileonly", "2", "2", "2", Set.of("2"), Set.of(), true, true);
-                Runner.run("compileonly", "4", "4", "3", Set.of("3"), Set.of(), true, true);
-                Runner.run("compileonly", "8", "8", "4", Set.of("4"), Set.of("3"), true, true);
-                Runner.run("compileonly", "12", "12", "4", Set.of("3", "4"), Set.of(), true, true);
+                Runner.run("compileonly",    1,    1, 1, Set.of("1"), Set.of(), false, true);
+                Runner.run("compileonly",   10,   10, 2, Set.of("2"), Set.of(), true, true);
+                Runner.run("compileonly",  100,  100, 3, Set.of("3"), Set.of(), true, true);
+                Runner.run("compileonly", 1000, 1000, 4, Set.of("4"), Set.of("3"), true, true);
+                Runner.run("compileonly", 1100, 1100, 4, Set.of("3", "4"), Set.of(), true, true);
 
-                Runner.run("exclude", "14", "1", "1", Set.of("1"), Set.of(), false, true);
-                Runner.run("exclude", "13", "2", "2", Set.of("2"), Set.of(), true, true);
-                Runner.run("exclude", "11", "4", "3", Set.of("3"), Set.of(), true, true);
-                Runner.run("exclude", "7", "8", "4", Set.of("4"), Set.of("3"), true, true);
+                Runner.run("exclude", 1110,    1, 1, Set.of("1"), Set.of(), false, true);
+                Runner.run("exclude", 1101,   10, 2, Set.of("2"), Set.of(), true, true);
+                Runner.run("exclude", 1011,  100, 3, Set.of("3"), Set.of(), true, true);
+                Runner.run("exclude",  111, 1000, 4, Set.of("4"), Set.of("3"), true, true);
             }
         } else if (args.length > 1 && "parse-logs".equals(args[0])) {
             // For test troubleshooting: if test has failed due to regexp matching,
@@ -169,19 +169,20 @@ public class CompileLevelPrintTest {
         private static final Pattern reExcludeCompile = Pattern.compile(
                 ".*made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
-                ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
+                ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) ([Cc][12]): *"
                       + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) +(@ -?[0-9]+ +)?\\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
         private static final Pattern reEndOfLog = Pattern.compile("<hotspot_log_done .*/>");
 
         public static void run(String compileCmd,
-                               String cmdCompLevel,
-                               String printCmdCompLevel,
-                               String tieredStopAtLevel,
+                               int cmdCompLevel,
+                               int printCmdCompLevel,
+                               int tieredStopAtLevel,
                                Set<String> expectedCompLevel,
                                Set<String> expectExcludedAtLevels,
-                               boolean expectMDOPrinted, boolean tieredCompilation)
+                               boolean expectMDOPrinted,
+                               boolean tieredCompilation)
                 throws IOException, InterruptedException {
 
             IO.println("\n########> Testing " + compileCmd + " " + cmdCompLevel);

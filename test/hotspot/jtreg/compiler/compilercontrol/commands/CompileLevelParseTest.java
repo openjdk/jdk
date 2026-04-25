@@ -39,8 +39,10 @@ import java.util.List;
 
 public class CompileLevelParseTest {
     private final static List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
-    private final static List<String> compLevels = List.of("0", "7", "8", "15");
-    private static final String DEFAULT_COMP_LEVEL = "15";
+    private final static List<String> compLevels = List.of("0", "1", "11", "111", "10", "100", "101", "1000", "1111");
+    private final static List<String> invalidCompLevels = List.of("-1", "-1111", "10000", "2", "20000", "01012",
+            "91", "9", "c1", "true", "false");
+    private static final String DEFAULT_COMP_LEVEL = "1111";
     private static final String METHOD_EXP = "java/lang/Object.toString";
 
     public static void main(String[] args) throws Exception {
@@ -56,8 +58,8 @@ public class CompileLevelParseTest {
                         .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + level); // should be registered
             }
             // Note that values like "1suffix" are still accepted
-            for (String incorrectLevel : List.of("c1", "true", "false")) {
-                ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," + incorrectLevel, "-version")
+            for (String incorrectLevel : invalidCompLevels) {
+                ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," +incorrectLevel, "-version")
                         .shouldHaveExitValue(1)
                         .shouldContain("CompileCommand: An error occurred during parsing")
                         .shouldNotContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + incorrectLevel);

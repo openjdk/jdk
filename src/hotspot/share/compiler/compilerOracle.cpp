@@ -61,24 +61,36 @@ static const char* const default_compile_commands[] = {
 #endif
     nullptr };
 
-// CompLevel               | -XX:CompileCommand bitmask
-// ----------------------------------------------------
-// 0 (interpreter)         | not applicable
-// 1 (C1)                  | 1
-// 2 (C1 + counters)       | 2
-// 3 (C1 + counters + mdo) | 4
-// 4 (C2/JVMCI)            | 8
-// All C1 levels           | 7
-// All levels              | 15
-inline int comp_level_bitmask(int comp_level) {
+// CompLevel               | return value | -XX:CompileCommand bitmask
+// -------------------------------------------------------------------
+// 0 (interpreter)         | N/A          |  N/A
+// 1 (C1)                  |   1          |    1
+// 2 (C1 + counters)       |   2          |   10
+// 3 (C1 + counters + mdo) |   4          |  100
+// 4 (C2/JVMCI)            |   8          | 1000
+// All C1 levels           |   7          |  111
+// All levels              |  15          | 1111
+
+static const int comp_level_bitmask[CompLevel_count] = {0, 1, 10, 100, 1000};
+static const int comp_level_bitmask_all_levels = 1111;
+static const intx default_comp_level_argument = comp_level_bitmask_all_levels;
+
+inline int bitmask_applies_to_comp_level(int bitmask, int comp_level) {
   assert(comp_level > CompLevel_none && comp_level < CompLevel_count, "CompLevel out of bounds");
-  return 1 << (comp_level - 1);
+  return (bitmask / comp_level_bitmask[comp_level]) % 10 == 1;
 }
 
-static const intx default_comp_level_argument = comp_level_bitmask(CompLevel_simple)
-                                               | comp_level_bitmask(CompLevel_limited_profile)
-                                               | comp_level_bitmask(CompLevel_full_profile)
-                                               | comp_level_bitmask(CompLevel_full_optimization);
+static bool is_valid_comp_level_bitmask(int bitmask) {
+  if (bitmask < 0 || bitmask > comp_level_bitmask_all_levels) {
+    return false;
+  }
+  for (; bitmask != 0; bitmask /= 10) {
+    if (bitmask % 10 > 1) {
+      return false;
+    }
+  }
+  return true;
+}
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -481,13 +493,15 @@ bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCo
     return false;
   }
 
-  intx command_level = 0;
-  if (!has_option_value(method, command, command_level)) {
+  intx bitmask = 0;
+  if (!has_option_value(method, command, bitmask)) {
     return false;
   }
 
+  // Since we don't have bitmask for interpreter level (0), but still need to call CompilerOracle::should_print()
+  // from collect_profiled_methods() in java.cpp, a special value of CompLevel_any matches any bitmask, even 0
   return current_level == CompLevel_any
-      || command_level & comp_level_bitmask(current_level);
+      || bitmask_applies_to_comp_level(bitmask, current_level);
 }
 
 bool CompilerOracle::has_option(const methodHandle& method, CompileCommandEnum option) {
@@ -717,14 +731,14 @@ static void usage() {
   tty->print_cr("top-level compilations (i.e. they can still be inlined into other compilation units).");
   tty->cr();
   tty->print_cr("Compilation levels can be specified in the 'compileonly', 'exclude', 'print',");
-  tty->print_cr("and 'break' commands using a bitmask as an optional value:");
-  tty->print_cr("  -XX:CompileCommand=exclude,java/*.*,11 -XX:CompileCommand=print,java/*.*,4");
+  tty->print_cr("and 'break' commands using a binary bitmask as an optional value:");
+  tty->print_cr("  -XX:CompileCommand=exclude,java/*.*,1011 -XX:CompileCommand=print,java/*.*,100");
   tty->cr();
   tty->print_cr("The bitmask is calculated by summing the desired compilation level values:");
   tty->print_cr("  C1 without profiling = 1");
-  tty->print_cr("  C1 with limited profiling = 2");
-  tty->print_cr("  C1 with full profiling = 4");
-  tty->print_cr("  C2 = 8");
+  tty->print_cr("  C1 with limited profiling = 10");
+  tty->print_cr("  C1 with full profiling = 100");
+  tty->print_cr("  C2 = 1000");
   tty->cr();
   tty->print_cr("Note: Excluding specific compilation levels may disrupt normal state transitions");
   tty->print_cr("between the levels, as the VM will not automatically work around the excluded ones.");
@@ -763,7 +777,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   size_t s = 0;
   char* end;
   if (!parse_integer<size_t>(line, &end, &s)) {
-    jio_snprintf(errorbuf, buf_size, "MemLimit: invalid value");
+    jio_snprintf(errorbuf, buf_size, ": invalid integer: '%.22s'", line);
     return false;
   }
   bytes_read = (int)(end - line);
@@ -777,7 +791,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
       // ok, this is the default
       bytes_read += 5;
     } else {
-      jio_snprintf(errorbuf, buf_size, "MemLimit: invalid option");
+      jio_snprintf(errorbuf, buf_size, ": invalid suffix: '%.6s'", end);
       return false;
     }
   }
@@ -802,7 +816,7 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   });
 #undef IF_ENUM_STRING
 
-  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+  jio_snprintf(errorbuf, buf_size, ": invalid option: '%.8s'", line);
 
   return false;
 }
@@ -814,13 +828,15 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
   const char* type_str = optiontype2name(type);
   int skipped = skip_whitespace(line);
   total_bytes_read += skipped;
+  char parseErrorBuf[80] = {};
+
   if (type == OptionType::Intx) {
     intx value;
     bool success = false;
     switch (option) {
       case CompileCommandEnum::MemLimit:
         // Special parsing for MemLimit
-        success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+        success = parseMemLimit(line, value, bytes_read, parseErrorBuf, sizeof(parseErrorBuf));
         break;
       case CompileCommandEnum::Break:
       case CompileCommandEnum::CompileOnly:
@@ -829,10 +845,14 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
         // In the commands above the parameter used to be a boolean. Now it is an int (a compilation level mask).
         // For compatibility with previous versions we keep it optional. If user did not specify the mask, assume default value
         if (*line == '\0') {
-            value = default_comp_level_argument;
-            success = true;
+          value = default_comp_level_argument;
+          success = true;
         } else {
-            success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+          success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+          if (success && !is_valid_comp_level_bitmask(value)) {
+            jio_snprintf(parseErrorBuf, sizeof(parseErrorBuf), ": invalid compilation level bitmask '%.*s'", bytes_read, line);
+            success = false;
+          }
         }
         break;
       default:
@@ -843,7 +863,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parseErrorBuf);
       return false;
     }
   } else if (type == OptionType::Uintx) {
@@ -851,7 +871,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     bool success = false;
     if (option == CompileCommandEnum::MemStat) {
       // Special parsing for MemStat
-      success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
+      success = parseMemStat(line, value, bytes_read, parseErrorBuf, sizeof(parseErrorBuf));
     } else {
       // parse as raw number
       success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
@@ -860,7 +880,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
-      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'%s", ccname, type_str, parseErrorBuf);
       return false;
     }
   } else if (type == OptionType::Ccstr) {

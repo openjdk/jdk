@@ -101,7 +101,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,10
  *                               ${test.main.class}
  *                               1 3 4
  */
@@ -118,7 +118,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,10
  *                               ${test.main.class}
  *                               1 3/4 4
  */
@@ -135,7 +135,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,10
  *                               ${test.main.class}
  *                               4
  */
@@ -152,7 +152,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,11
  *                               ${test.main.class}
  *                               3 4
  */
@@ -169,7 +169,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,11
  *                               ${test.main.class}
  *                               3/4 4
  */
@@ -186,7 +186,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,11
  *                               ${test.main.class}
  *                               4
  */
@@ -203,7 +203,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,4
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,100
  *                               ${test.main.class}
  *                               1 2 4
  */
@@ -220,7 +220,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,4
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,100
  *                               ${test.main.class}
  *                               4
  */
@@ -237,7 +237,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,5
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,101
  *                               ${test.main.class}
  *                               2 4
  */
@@ -254,7 +254,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,5
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,101
  *                               ${test.main.class}
  *                               4
  */
@@ -271,7 +271,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,6
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,110
  *                               ${test.main.class}
  *                               1 4
  */
@@ -288,7 +288,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,6
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,110
  *                               ${test.main.class}
  *                               4
  */
@@ -305,7 +305,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,7
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,111
  *                               ${test.main.class}
  *                               4
  */
@@ -322,7 +322,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,8
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1000
  *                               ${test.main.class}
  *                               1 2 3
  */
@@ -339,7 +339,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,9
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1001
  *                               ${test.main.class}
  *                               2 3
  */
@@ -356,7 +356,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,10
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1010
  *                               ${test.main.class}
  *                               1 3
  */
@@ -373,7 +373,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,11
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1011
  *                               ${test.main.class}
  *                               3
  */
@@ -390,7 +390,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,12
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1100
  *                               ${test.main.class}
  *                               1 2
  */
@@ -407,7 +407,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,13
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1101
  *                               ${test.main.class}
  *                               2
  */
@@ -424,7 +424,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,14
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1110
  *                               ${test.main.class}
  *                               1
  */
@@ -441,7 +441,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,15
+ *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1111
  *                               ${test.main.class}
  */
 
@@ -525,7 +525,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,2
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,10
  *                               ${test.main.class}
  *                               2
  */
@@ -542,7 +542,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,3
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,11
  *                               ${test.main.class}
  *                               1 2
  */
@@ -559,7 +559,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,4
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,100
  *                               ${test.main.class}
  *                               3
  */
@@ -576,7 +576,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,5
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,101
  *                               ${test.main.class}
  *                               1 3
  */
@@ -593,7 +593,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,6
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,110
  *                               ${test.main.class}
  *                               2 3
  */
@@ -610,7 +610,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,7
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,111
  *                               ${test.main.class}
  *                               1 2 3
  */
@@ -627,7 +627,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,8
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1000
  *                               ${test.main.class}
  *                               4
  */
@@ -644,7 +644,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,9
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1001
  *                               ${test.main.class}
  *                               1 4
  */
@@ -661,7 +661,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,9
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1001
  *                               ${test.main.class}
  *                               4
  */
@@ -678,7 +678,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,10
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1010
  *                               ${test.main.class}
  *                               2 4
  */
@@ -695,7 +695,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,10
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1010
  *                               ${test.main.class}
  *                               4
  */
@@ -712,7 +712,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,11
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1011
  *                               ${test.main.class}
  *                               1 2 4
  */
@@ -729,7 +729,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,11
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1011
  *                               ${test.main.class}
  *                               4
  */
@@ -746,7 +746,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1100
  *                               ${test.main.class}
  *                               3 4
  */
@@ -763,7 +763,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1100
  *                               ${test.main.class}
  *                               3/4 4
  */
@@ -780,7 +780,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1100
  *                               ${test.main.class}
  *                               4
  */
@@ -797,7 +797,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1101
  *                               ${test.main.class}
  *                               1 3 4
  */
@@ -814,7 +814,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1101
  *                               ${test.main.class}
  *                               1 3/4 4
  */
@@ -831,7 +831,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1101
  *                               ${test.main.class}
  *                               4
  */
@@ -848,7 +848,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1110
  *                               ${test.main.class}
  *                               2 3 4
  */
@@ -865,7 +865,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1110
  *                               ${test.main.class}
  *                               2 3/4 4
  */
@@ -882,7 +882,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1110
  *                               ${test.main.class}
  *                               4
  */
@@ -899,7 +899,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1111
  *                               ${test.main.class}
  *                               1 2 3 4
  */
@@ -916,7 +916,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1111
  *                               ${test.main.class}
  *                               1 2 3/4 4
  */
@@ -933,7 +933,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
- *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
+ *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1111
  *                               ${test.main.class}
  *                               4
  */
