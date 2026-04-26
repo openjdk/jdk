@@ -54,8 +54,33 @@ public class FpMinMaxIntrinsics {
         c2 = COUNT - (s2 = step());
 
         for (int i = 0; i < COUNT; i++) {
-            floats[i] = r.nextFloat();
-            doubles[i] = r.nextDouble();
+            final int mapped_index = i % 100;
+
+            if (mapped_index >= 0 && mapped_index < 10) {
+                // NaN
+                floats[i] = Float.NaN;
+                doubles[i] = Double.NaN;
+            } else if (mapped_index >= 20 && mapped_index < 30) {
+                // Equal (+0.0)
+                floats[i] = +0.0f;
+                doubles[i] = +0.0;
+            } else if (mapped_index >= 40 && mapped_index < 50) {
+                // Equal (-0.0)
+                floats[i] = -0.0f;
+                doubles[i] = -0.0;
+            } else if (mapped_index >= 60 && mapped_index < 70) {
+                // Descending
+                floats[i] = (float) (COUNT - i);
+                doubles[i] = (double) (COUNT - i);
+            } else if (mapped_index >= 80 && mapped_index < 90) {
+                // Ascending
+                floats[i] = (float) i;
+                doubles[i] = (double) i;
+            } else {
+                // Random
+                floats[i] = r.nextFloat();
+                doubles[i] = r.nextDouble();
+            }
         }
     }
 
