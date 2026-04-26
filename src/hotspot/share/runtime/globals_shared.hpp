@@ -69,6 +69,31 @@
 
 #define IGNORE_FLAG(...)
 
+typedef void (*JVMFlagReadTracer)(const void* addr);
+extern JVMFlagReadTracer _flag_tracer;
+
+template <typename T>
+class JVMFlagImpl {
+  T _value;
+public:
+  JVMFlagImpl() : _value{} {}
+  operator T() const {
+    if (_flag_tracer != nullptr) {
+      _flag_tracer(&_value);
+    }
+    return _value;
+  }
+  JVMFlagImpl& operator=(const T& v) {
+    _value = v;
+    return *this;
+  }
+  T value() const {
+    return _value;
+  }
+};
+
+extern "C" JVMFlagImpl<int> SomeFlag;
+
 #define DECLARE_PRODUCT_FLAG(type, name, value, ...)      extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, ...)          extern "C" type name;
 #ifdef PRODUCT
