@@ -44,7 +44,7 @@ public class GetAccessibleTextAddsDocumentListeners {
                 getMethod(args[0]).invoke(null);
     }
 
-    public static void testOriginalComplaint() {
+    public static void testOriginalComplaint() throws Exception {
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
         for (int a = 0; a < 10_000; a++) {
@@ -52,7 +52,7 @@ public class GetAccessibleTextAddsDocumentListeners {
         }
         HTMLDocument doc = (HTMLDocument) textPane.getDocument();
         if (doc.getDocumentListeners().length > 1000) {
-            throw new Error("too many DocumentListeners");
+            throw new Exception("too many DocumentListeners");
         }
     }
 
