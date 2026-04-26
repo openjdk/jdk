@@ -29,8 +29,8 @@ package compiler.ccp;
  * @bug 8379555
  * @summary Test that there are no crashed in CCP with DivL.
  * @library /test/lib /
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.ccp.TestIntegerDivCCP::* -XX:CompileCommand=dontinline,compiler.ccp.TestIntegerDivCCP::test
- *                   compiler.ccp.TestIntegerDivCCP
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,${test.main.class}::* -XX:CompileCommand=dontinline,${test.main.class}::test
+ *                   ${test.main.class}
  */
 public class TestIntegerDivCCP {
     public static void main(String[] strArr) throws Exception {
