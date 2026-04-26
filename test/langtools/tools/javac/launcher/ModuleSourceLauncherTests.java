@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304400 8332226 8346778
+ * @bug 8304400 8332226 8346778 8377010
  * @summary Test source launcher running Java programs contained in one module
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit ModuleSourceLauncherTests
@@ -226,6 +226,111 @@ class ModuleSourceLauncherTests {
                       """
                       WARNING: Unknown module: baz specified to --enable-native-access
                       """.lines(), err.stream())
+        );
+    }
+
+    @Test
+    void testInheritedMainFromOtherPackage(@TempDir Path base) throws Exception {
+        var appPackageDir = Files.createDirectories(base.resolve("app"));
+        var mainFile = Files.writeString(appPackageDir.resolve("Main.java"),
+                """
+                package app;
+                import lib.Base;
+                public class Main extends Base {}
+                """);
+        var libPackageDir = Files.createDirectories(base.resolve("lib"));
+        Files.writeString(libPackageDir.resolve("Base.java"),
+                """
+                package lib;
+                public class Base {
+                    protected void main() {
+                        System.out.println("same module separate packages");
+                    }
+                }
+                """);
+        Files.writeString(base.resolve("module-info.java"),
+                """
+                module app {}
+                """);
+
+        var run = Run.of(mainFile);
+        assertAll("Run -> " + run,
+                () -> assertTrue(run.stdErr().isEmpty()),
+                () -> assertLinesMatch(
+                        """
+                        same module separate packages
+                        """.lines(),
+                        run.stdOut().lines()),
+                () -> assertNull(run.exception())
+        );
+    }
+
+    @Test
+    void testInheritedMainFromOtherModule(@TempDir Path base) throws Exception {
+        var sourceRoot = base.resolve("src");
+        var dependencyModuleDir = Files.createDirectories(sourceRoot.resolve("lib"));
+        Files.writeString(dependencyModuleDir.resolve("module-info.java"),
+                """
+                module lib {
+                    exports lib;
+                }
+                """);
+        var libPackageDir = Files.createDirectories(dependencyModuleDir.resolve("lib"));
+        Files.writeString(libPackageDir.resolve("Base.java"),
+                """
+                package lib;
+                public class Base {
+                    protected void main() {
+                        System.out.println("main from across modules");
+                    }
+                }
+                """);
+        var compiledModule = Files.createDirectories(base.resolve("mods"));
+        var javac = ToolProvider.findFirst("javac").orElseThrow();
+        javac.run(System.out, System.err,
+                "--module-source-path", sourceRoot.toString(),
+                "--module", "lib",
+                "-d", compiledModule.toString());
+
+
+        var appModuleDir = Files.createDirectories(sourceRoot.resolve("app"));
+        var appPackageDir = Files.createDirectories(appModuleDir.resolve("app"));
+        var mainFile = Files.writeString(appPackageDir.resolve("Main.java"),
+                """
+                package app;
+                import lib.Base;
+                public class Main extends Base {}
+                """);
+        Files.writeString(appModuleDir.resolve("module-info.java"),
+                """
+                module app {
+                    requires lib;
+                }
+                """);
+
+        var command = List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "--module-path", compiledModule.toString(),
+                "--add-modules", "lib",
+                mainFile.toString());
+        var redirectedOut = base.resolve("out.redirected");
+        var redirectedErr = base.resolve("err.redirected");
+        var process = new ProcessBuilder(command)
+                .directory(base.toFile())
+                .redirectOutput(redirectedOut.toFile())
+                .redirectError(redirectedErr.toFile())
+                .start();
+        var code = process.waitFor();
+        var out = Files.readAllLines(redirectedOut);
+        var err = Files.readAllLines(redirectedErr);
+
+        assertAll(
+                () -> assertEquals(0, code, err.toString()),
+                () -> assertLinesMatch(
+                        """
+                        main from across modules
+                        """.lines(), out.stream()),
+                () -> assertTrue(err.isEmpty(), err.toString())
         );
     }
 

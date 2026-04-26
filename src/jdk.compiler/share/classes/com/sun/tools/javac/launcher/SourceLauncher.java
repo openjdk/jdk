@@ -41,6 +41,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import jdk.internal.misc.MethodFinder;
+import jdk.internal.module.Modules;
 import jdk.internal.misc.VM;
 
 /**
@@ -217,6 +218,13 @@ public final class SourceLauncher {
             }
         }
 
+        // Open packages needed for reflection by jdk.compiler for main class
+        // construction and main method invocation.
+        var thisModule = getClass().getModule();
+        var mainMethodDeclaringClass = mainMethod.getDeclaringClass();
+        openPackageTo(mainMethodDeclaringClass.getModule(), mainMethodDeclaringClass.getPackageName(), thisModule);
+        openPackageTo(mainClass.getModule(), mainClass.getPackageName(), thisModule);
+
         String mainClassName = mainClass.getName();
         var isStatic = Modifier.isStatic(mainMethod.getModifiers());
 
@@ -277,5 +285,12 @@ public final class SourceLauncher {
         }
 
         return mainClass;
+    }
+
+    private static void openPackageTo(Module module, String packageName, Module target) {
+        // Packages outside named modules are already open
+        if (module.isNamed()) {
+            Modules.addOpens(module, packageName, target);
+        }
     }
 }
