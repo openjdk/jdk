@@ -203,18 +203,21 @@ double TruncatedSeq::oldest() const {
   }
 }
 
-double TruncatedSeq::predict_next() const {
+void TruncatedSeq::fit_line(double &slope, double &intercept) const {
   if (_num == 0) {
     // No data points, pick function: y = 0 + 0*x
-    return 0.0;
+    slope = 0;
+    intercept = 0;
+    return;
   }
 
   if (_num == 1) {
     // Only one point P, pick function: y = P_y + 0*x
-    return _sequence[0];
+    slope = 0;
+    intercept = _sequence[0];
+    return;
   }
 
-  double num           = (double) _num;
   double x_squared_sum = 0.0;
   double x_sum         = 0.0;
   double y_sum         = 0.0;
@@ -232,15 +235,22 @@ double TruncatedSeq::predict_next() const {
     y_sum         += y;
     xy_sum        += x * y;
   }
-  x_avg = x_sum / num;
-  y_avg = y_sum / num;
+  x_avg = x_sum / _num;
+  y_avg = y_sum / _num;
 
-  double Sxx = x_squared_sum - x_sum * x_sum / num;
-  double Sxy = xy_sum - x_sum * y_sum / num;
-  double b1 = Sxy / Sxx;
-  double b0 = y_avg - b1 * x_avg;
+  const double Sxx = x_squared_sum - x_sum * x_sum / _num;
+  const double Sxy = xy_sum - x_sum * y_sum / _num;
+  const double b1 = Sxy / Sxx;
+  const double b0 = y_avg - b1 * x_avg;
 
-  return b0 + b1 * num;
+  slope = b1;
+  intercept = b0;
+}
+
+double TruncatedSeq::predict_next() const {
+  double slope(0), intercept(0);
+  fit_line(slope, intercept);
+  return intercept + slope * _num;
 }
 
 

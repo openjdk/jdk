@@ -55,13 +55,13 @@ constexpr uint RECENT_WINDOW_MILLIS = 8000;
 constexpr uint MOMENTARY_WINDOW_MILLIS = 2000;
 constexpr uint SAMPLE_PERIOD_MILLIS = 999;
 
-constexpr uint BASELINE_SAMPLES = BASELINE_WINDOW_MILLIS / 1000;  // 100
-constexpr uint RECENT_SAMPLES = RECENT_WINDOW_MILLIS / 1000;      // 8
-constexpr uint MOMENTARY_SAMPLES = MOMENTARY_WINDOW_MILLIS / 1000; // 2
+constexpr uint BASELINE_SAMPLES = BASELINE_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS;  // 100
+constexpr uint RECENT_SAMPLES = RECENT_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS;      // 8
+constexpr uint MOMENTARY_SAMPLES = MOMENTARY_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS; // 2
 
 
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, 500);
+  ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, 2000);
   rate.allocated(2048);
   rate.allocated(2048);
   EXPECT_EQ(rate.average(), 0);
@@ -76,14 +76,14 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   EXPECT_EQ(rate.average(), 2048.0);
 }
 
-TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_not_enough_samples) {
+TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_small_number_of_samples) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   rate.allocated(1024);
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_DOUBLE_EQ(acceleration, 0.0);
-  EXPECT_DOUBLE_EQ(current_rate, 0.0);
-  EXPECT_EQ(anticipated_consumption, 0UL);
+  EXPECT_DOUBLE_EQ(current_rate, 1024.0);
+  EXPECT_EQ(anticipated_consumption, 102400UL);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {

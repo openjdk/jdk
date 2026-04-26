@@ -127,7 +127,8 @@ public:
 
   double oldest() const; // the oldest valid value in the sequence
   double predict_next() const; // prediction based on linear regression
-
+  // compute slope and intercept of line of best fit (based on linear regression)
+  void fit_line(double& slope, double& intercept) const;
   // Debugging/Printing
   virtual void dump_on(outputStream* s);
 };
