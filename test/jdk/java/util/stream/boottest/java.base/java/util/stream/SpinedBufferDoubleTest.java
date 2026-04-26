@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,22 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.function.DoubleConsumer;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Test
 public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
-    @DataProvider(name = "DoubleSpinedBuffer")
-    public Object[][] createDoubleSpinedBuffer() {
-        List<Object[]> params = new ArrayList<>();
+
+    public static Stream<Arguments> createDoubleSpinedBuffer() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : SIZES) {
             // @@@ replace with double range when implemented
@@ -43,13 +45,14 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
             SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
             Arrays.stream(array).forEach(sb);
 
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    @Test(dataProvider = "DoubleSpinedBuffer")
+    @ParameterizedTest
+    @MethodSource("createDoubleSpinedBuffer")
     public void testDoubleSpliterator(double[] array, SpinedBuffer.OfDouble sb) {
         assertEquals(sb.count(), array.length);
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
@@ -57,7 +60,9 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
         SpliteratorTestHelper.testDoubleSpliterator(sb::spliterator);
     }
 
-    @Test(dataProvider = "DoubleSpinedBuffer", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("createDoubleSpinedBuffer")
+    @Tag("serialization-hostile")
     public void testLongLastSplit(double[] array, SpinedBuffer.OfDouble sb) {
         Spliterator.OfDouble spliterator = sb.spliterator();
         Spliterator.OfDouble split = spliterator.trySplit();
@@ -79,7 +84,8 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
         assertEquals(contentOfLastSplit, end);
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testDoubleSpinedBuffer() {
         List<Double> list1 = new ArrayList<>();
         List<Double> list2 = new ArrayList<>();

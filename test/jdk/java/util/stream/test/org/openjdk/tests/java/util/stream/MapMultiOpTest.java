@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,10 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,14 +40,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.DefaultMethodStreams;
 import java.util.stream.DoubleStream;
-import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
-import java.util.stream.IntStreamTestDataProvider;
 import java.util.stream.LongStream;
-import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
 import static java.util.stream.DefaultMethodStreams.delegateTo;
@@ -59,9 +57,9 @@ import static java.util.stream.LambdaTestHelpers.mfId;
 import static java.util.stream.LambdaTestHelpers.mfLt;
 import static java.util.stream.LambdaTestHelpers.mfNull;
 import static java.util.stream.ThrowableHelper.checkNPE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
-public class mapMultiOpTest extends OpTestCase {
+public class MapMultiOpTest extends OpTestCase {
 
     BiConsumer<Integer, Consumer<Integer>> nullConsumer =
             (e, sink) -> mfNull.apply(e).forEach(sink);
@@ -78,15 +76,15 @@ public class mapMultiOpTest extends OpTestCase {
     BiConsumer<Integer, Consumer<Integer>> rangeConsumerWithLimit =
             (e, sink) -> IntStream.range(0, e).boxed().limit(10).forEach(sink);
 
-    @DataProvider(name = "Stream<Integer>")
-    public Object[][] streamProvider() {
-        return new Object[][]{
-                {Stream.of(0, 1, 2)},
-                {DefaultMethodStreams.delegateTo(Stream.of(0, 1, 2))}
-        };
+    static Stream<Arguments> integerStreamProvider() {
+        return Stream.of(
+                Arguments.of(Stream.of(0, 1, 2)),
+                Arguments.of(DefaultMethodStreams.delegateTo(Stream.of(0, 1, 2)))
+        );
     }
 
-    @Test(dataProvider = "Stream<Integer>")
+    @ParameterizedTest
+    @MethodSource("integerStreamProvider")
     public void testNullMapper(Stream<Integer> s) {
         checkNPE(() -> s.mapMulti(null));
         checkNPE(() -> s.mapMultiToInt(null));
@@ -134,8 +132,8 @@ public class mapMultiOpTest extends OpTestCase {
                 new String[]{LONG_STRING}), s -> delegateTo(s).mapMulti(charConsumer));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>",
-            dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         testOps(name, data, s -> s);
         testOps(name, data, s -> delegateTo(s));
@@ -155,16 +153,16 @@ public class mapMultiOpTest extends OpTestCase {
         assertEquals(0, result.size());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>.small",
-            dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#smallIntegerStreamTestData")
     public void testOpsX(String name, TestData.OfRef<Integer> data) {
         exerciseOps(data, s -> s.mapMulti(listConsumer));
         exerciseOps(data, s -> s.mapMulti(intRangeConsumer));
         exerciseOps(data, s -> s.mapMulti(rangeConsumerWithLimit));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>.small",
-            dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#smallIntegerStreamTestData")
     public void testDefaultOpsX(String name, TestData.OfRef<Integer> data) {
         exerciseOps(data, s -> delegateTo(s).mapMulti(listConsumer));
         exerciseOps(data, s -> delegateTo(s).mapMulti(intRangeConsumer));
@@ -173,20 +171,21 @@ public class mapMultiOpTest extends OpTestCase {
 
     // Int
 
-    @DataProvider(name = "IntStream")
-    public Object[][] intStreamProvider() {
-        return new Object[][]{
-                {IntStream.of(0, 1, 2)},
-                {DefaultMethodStreams.delegateTo(IntStream.of(0, 1, 2))}
-        };
+    private static Stream<Arguments> intStreamProvider() {
+        return Stream.of(
+                Arguments.of(IntStream.of(0, 1, 2)),
+                Arguments.of(DefaultMethodStreams.delegateTo(IntStream.of(0, 1, 2)))
+        );
     }
 
-    @Test(dataProvider = "IntStream")
+    @ParameterizedTest
+    @MethodSource("intStreamProvider")
     public void testIntNullMapper(IntStream s) {
         checkNPE(() -> s.mapMulti(null));
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOps(String name, TestData.OfInt data) {
         testIntOps(name, data, s -> s);
         testIntOps(name, data, s -> delegateTo(s));
@@ -207,7 +206,8 @@ public class mapMultiOpTest extends OpTestCase {
         assertEquals(0, result.size());
     }
 
-    @Test(dataProvider = "IntStreamTestData.small", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#smallIntStreamTestData")
     public void testIntOpsX(String name, TestData.OfInt data) {
         exerciseOps(data, s -> s.mapMulti((e, sink) -> IntStream.range(0, e).forEach(sink)));
         exerciseOps(data, s -> s.mapMulti((e, sink) -> IntStream.range(0, e).limit(10).forEach(sink)));
@@ -216,7 +216,8 @@ public class mapMultiOpTest extends OpTestCase {
         exerciseOps(data, s -> s.boxed().mapMultiToInt((e, sink) -> IntStream.range(0, e).limit(10).forEach(sink)));
     }
 
-    @Test(dataProvider = "IntStreamTestData.small", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#smallIntStreamTestData")
     public void testDefaultIntOpsX(String name, TestData.OfInt data) {
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> IntStream.range(0, e).forEach(sink)));
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> IntStream.range(0, e).limit(10).forEach(sink)));
@@ -227,20 +228,21 @@ public class mapMultiOpTest extends OpTestCase {
 
     // Double
 
-    @DataProvider(name = "DoubleStream")
-    public Object[][] doubleStreamProvider() {
-        return new Object[][]{
-                {DoubleStream.of(0, 1, 2)},
-                {DefaultMethodStreams.delegateTo(DoubleStream.of(0, 1, 2))}
-        };
+    private static Stream<Arguments> doubleStreamProvider() {
+        return Stream.of(
+                Arguments.of(DoubleStream.of(0, 1, 2)),
+                Arguments.of(DefaultMethodStreams.delegateTo(DoubleStream.of(0, 1, 2)))
+        );
     }
 
-    @Test(dataProvider = "DoubleStream")
+    @ParameterizedTest
+    @MethodSource("doubleStreamProvider")
     public void testDoubleNullMapper(DoubleStream s) {
         checkNPE(() -> s.mapMulti(null));
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, TestData.OfDouble data) {
         testDoubleOps(name, data, s -> s);
         testDoubleOps(name, data, s -> delegateTo(s));
@@ -261,13 +263,15 @@ public class mapMultiOpTest extends OpTestCase {
         assertEquals(0, result.size());
     }
 
-    @Test(dataProvider = "DoubleStreamTestData.small", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#smallDoubleStreamTestData")
     public void testDoubleOpsX(String name, TestData.OfDouble data) {
         exerciseOps(data, s -> s.mapMulti((e, sink) -> IntStream.range(0, (int) e).asDoubleStream().forEach(sink)));
         exerciseOps(data, s -> s.mapMulti((e, sink) -> IntStream.range(0, (int) e).limit(10).asDoubleStream().forEach(sink)));
     }
 
-    @Test(dataProvider = "DoubleStreamTestData.small", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#smallDoubleStreamTestData")
     public void testDefaultDoubleOpsX(String name, TestData.OfDouble data) {
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> IntStream.range(0, (int) e).asDoubleStream().forEach(sink)));
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> IntStream.range(0, (int) e).limit(10).asDoubleStream().forEach(sink)));
@@ -275,20 +279,21 @@ public class mapMultiOpTest extends OpTestCase {
 
     // Long
 
-    @DataProvider(name = "LongStream")
-    public Object[][] longStreamProvider() {
-        return new Object[][]{
-                {LongStream.of(0, 1, 2)},
-                {DefaultMethodStreams.delegateTo(LongStream.of(0, 1, 2))}
-        };
+    private static Stream<Arguments> longStreamProvider() {
+        return Stream.of(
+                Arguments.of(LongStream.of(0, 1, 2)),
+                Arguments.of(DefaultMethodStreams.delegateTo(LongStream.of(0, 1, 2)))
+        );
     }
 
-    @Test(dataProvider = "LongStream")
+    @ParameterizedTest
+    @MethodSource("longStreamProvider")
     public void testLongNullMapper(LongStream s) {
         checkNPE(() -> s.mapMulti(null));
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, TestData.OfLong data) {
         testLongOps(name, data, s -> s);
         testLongOps(name, data, s -> delegateTo(s));
@@ -309,13 +314,15 @@ public class mapMultiOpTest extends OpTestCase {
         assertEquals(0, result.size());
     }
 
-    @Test(dataProvider = "LongStreamTestData.small", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#smallLongStreamTestData")
     public void testLongOpsX(String name, TestData.OfLong data) {
         exerciseOps(data, s -> s.mapMulti((e, sink) -> LongStream.range(0, e).forEach(sink)));
         exerciseOps(data, s -> s.mapMulti((e, sink) -> LongStream.range(0, e).limit(10).forEach(sink)));
     }
 
-    @Test(dataProvider = "LongStreamTestData.small", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#smallLongStreamTestData")
     public void testDefaultLongOpsX(String name, TestData.OfLong data) {
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> LongStream.range(0, e).forEach(sink)));
         exerciseOps(data, s -> delegateTo(s).mapMulti((e, sink) -> LongStream.range(0, e).limit(10).forEach(sink)));

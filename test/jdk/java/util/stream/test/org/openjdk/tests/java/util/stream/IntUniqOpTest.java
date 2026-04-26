@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,23 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Collection;
 import java.util.stream.*;
 
-import org.testng.annotations.Test;
-
 import static java.util.stream.LambdaTestHelpers.assertCountSum;
 import static java.util.stream.LambdaTestHelpers.assertUnique;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * UniqOpTest
  */
-@Test
 public class IntUniqOpTest extends OpTestCase {
 
+    @Test
     public void testUniqOp() {
         assertCountSum(IntStream.generate(() -> 0).limit(10).distinct().boxed(), 1, 0);
         assertCountSum(IntStream.generate(() -> 1).limit(10).distinct().boxed(), 1, 1);
@@ -44,7 +47,8 @@ public class IntUniqOpTest extends OpTestCase {
         assertCountSum(IntStream.range(1, 11).distinct().boxed(), 10, 55);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOp(String name, TestData.OfInt data) {
         Collection<Integer> result = exerciseOps(data, s -> s.distinct().boxed());
 
@@ -56,7 +60,8 @@ public class IntUniqOpTest extends OpTestCase {
         assertTrue(result.size() <= data.size());
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOpSorted(String name, TestData.OfInt data) {
         Collection<Integer> result = withData(data).
                 stream(s -> s.sorted().distinct().boxed()).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.stream.*;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,9 +42,10 @@ import static java.util.stream.LambdaTestHelpers.*;
 /**
  * TeeOpTest
  */
-@Test(groups = { "serialization-hostile" })
+@Tag("serialization-hostile")
 public class TeeOpTest extends OpTestCase {
 
+    @Test
     public void testTee() {
         List<Integer> copy = new ArrayList<>();
 
@@ -73,7 +77,8 @@ public class TeeOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, final TestData.OfRef<Integer> data) {
         class RecordingConsumer extends AbstractRecordingConsumer<Integer> implements Consumer<Integer> {
             public void accept(Integer t) {
@@ -89,7 +94,8 @@ public class TeeOpTest extends OpTestCase {
                 .exercise();
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOps(String name, final TestData.OfInt data) {
         class RecordingConsumer extends AbstractRecordingConsumer<Integer> implements IntConsumer {
             public void accept(int t) {
@@ -105,7 +111,8 @@ public class TeeOpTest extends OpTestCase {
                 .exercise();
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, final TestData.OfLong data) {
         class RecordingConsumer extends AbstractRecordingConsumer<Long> implements LongConsumer {
             public void accept(long t) {
@@ -121,7 +128,8 @@ public class TeeOpTest extends OpTestCase {
                 .exercise();
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, final TestData.OfDouble data) {
         class RecordingConsumer extends AbstractRecordingConsumer<Double> implements DoubleConsumer {
             public void accept(double t) {

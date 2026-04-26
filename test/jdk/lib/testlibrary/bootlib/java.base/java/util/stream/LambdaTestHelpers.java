@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,11 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * LambdaTestHelpers -- assertion methods and useful objects for lambda test cases
@@ -426,6 +427,14 @@ public class LambdaTestHelpers {
     public static void assertContentsEqual(Object a, Object b) {
         if (a instanceof Iterable && b instanceof Iterable)
             assertContents((Iterable) a, (Iterable) b);
+        else if (a instanceof double[] && b instanceof double[])
+            assertArrayEquals((double[]) a, (double[]) b);
+        else if (a instanceof int[] && b instanceof int[])
+            assertArrayEquals((int[]) a, (int[]) b);
+        else if (a instanceof long[] && b instanceof long[])
+            assertArrayEquals((long[]) a, (long[]) b);
+        else if (a instanceof Object[] && b instanceof Object[])
+            assertArrayEquals((Object[]) a, (Object[]) b);
         else
             assertEquals(a, b);
     }

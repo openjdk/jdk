@@ -26,13 +26,13 @@
  * @summary Tests for stream returning methods
  * @library /lib/testlibrary/bootlib /test/lib
  * @build java.base/java.util.stream.OpTestCase
- * @run testng/othervm NetworkInterfaceStreamTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
+ * @run junit/othervm NetworkInterfaceStreamTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
  */
 
-import org.testng.SkipException;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -40,7 +40,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
@@ -52,12 +51,9 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
 
     private final static boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
-    @BeforeTest
-    void setup() {
-        Optional<String> configurationIssue = diagnoseConfigurationIssue();
-        configurationIssue.map(SkipException::new).ifPresent(x -> {
-            throw x;
-        });
+    @BeforeAll
+    static void setup() {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
     }
 
     @Test

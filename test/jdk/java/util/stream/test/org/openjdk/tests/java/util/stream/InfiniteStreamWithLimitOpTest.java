@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -47,68 +46,55 @@ import java.util.stream.StreamTestScenario;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.assertUnique;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
-@Test
 public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
     private static final long SKIP_LIMIT_SIZE = 1 << 16;
 
-    @DataProvider(name = "Stream.limit")
     @SuppressWarnings("rawtypes")
-    public static Object[][] sliceFunctionsDataProvider() {
+    static Stream<Arguments> streamWithLimit() {
         Function<String, String> f = s -> String.format(s, SKIP_LIMIT_SIZE);
 
-        List<Object[]> data = new ArrayList<>();
-
-        data.add(new Object[]{f.apply("Stream.limit(%d)"),
-                (UnaryOperator<Stream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("Stream.skip(%1$d).limit(%1$d)"),
-                (UnaryOperator<Stream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
-
-        return data.toArray(new Object[0][]);
+        return Stream.of(
+                Arguments.of(f.apply("Stream.limit(%d)"),
+                        (UnaryOperator<Stream>) s -> s.limit(SKIP_LIMIT_SIZE)),
+                Arguments.of(f.apply("Stream.skip(%1$d).limit(%1$d)"),
+                        (UnaryOperator<Stream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE))
+        );
     }
 
-    @DataProvider(name = "IntStream.limit")
-    public static Object[][] intSliceFunctionsDataProvider() {
+    static Stream<Arguments> intStreamWithLimit() {
         Function<String, String> f = s -> String.format(s, SKIP_LIMIT_SIZE);
 
-        List<Object[]> data = new ArrayList<>();
-
-        data.add(new Object[]{f.apply("IntStream.limit(%d)"),
-                (UnaryOperator<IntStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("IntStream.skip(%1$d).limit(%1$d)"),
-                (UnaryOperator<IntStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
-
-        return data.toArray(new Object[0][]);
+        return Stream.of(
+                Arguments.of(f.apply("IntStream.limit(%d)"),
+                        (UnaryOperator<IntStream>) s -> s.limit(SKIP_LIMIT_SIZE)),
+                Arguments.of(f.apply("IntStream.skip(%1$d).limit(%1$d)"),
+                        (UnaryOperator<IntStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE))
+        );
     }
 
-    @DataProvider(name = "LongStream.limit")
-    public static Object[][] longSliceFunctionsDataProvider() {
+    static Stream<Arguments> longStreamWithLimit() {
         Function<String, String> f = s -> String.format(s, SKIP_LIMIT_SIZE);
 
-        List<Object[]> data = new ArrayList<>();
-
-        data.add(new Object[]{f.apply("LongStream.limit(%d)"),
-                (UnaryOperator<LongStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("LongStream.skip(%1$d).limit(%1$d)"),
-                (UnaryOperator<LongStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
-
-        return data.toArray(new Object[0][]);
+        return Stream.of(
+                Arguments.of(f.apply("LongStream.limit(%d)"),
+                        (UnaryOperator<LongStream>) s -> s.limit(SKIP_LIMIT_SIZE)),
+                Arguments.of(f.apply("LongStream.skip(%1$d).limit(%1$d)"),
+                        (UnaryOperator<LongStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE))
+        );
     }
 
-    @DataProvider(name = "DoubleStream.limit")
-    public static Object[][] doubleSliceFunctionsDataProvider() {
+    static Stream<Arguments> doubleStreamWithLimit() {
         Function<String, String> f = s -> String.format(s, SKIP_LIMIT_SIZE);
 
-        List<Object[]> data = new ArrayList<>();
-
-        data.add(new Object[]{f.apply("DoubleStream.limit(%d)"),
-                (UnaryOperator<DoubleStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("DoubleStream.skip(%1$d).limit(%1$d)"),
-                (UnaryOperator<DoubleStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
-
-        return data.toArray(new Object[0][]);
+        return Stream.of(
+                Arguments.of(f.apply("DoubleStream.limit(%d)"),
+                        (UnaryOperator<DoubleStream>) s -> s.limit(SKIP_LIMIT_SIZE)),
+                Arguments.of(f.apply("DoubleStream.skip(%1$d).limit(%1$d)"),
+                        (UnaryOperator<DoubleStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE))
+        );
     }
 
     private <T> ResultAsserter<Iterable<T>> unorderedAsserter() {
@@ -123,7 +109,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 for (T l : act) {
                     count++;
                 }
-                assertEquals(count, SKIP_LIMIT_SIZE, "size not equal");
+                assertEquals(SKIP_LIMIT_SIZE, count, "size not equal");
             }
             else {
                 LambdaTestHelpers.assertContents(act, exp);
@@ -174,7 +160,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
     // Sized/subsized range
 
-    @Test(dataProvider = "Stream.limit")
+    @ParameterizedTest
+    @MethodSource("streamWithLimit")
     public void testSubsizedWithRange(String description, UnaryOperator<Stream<Long>> fs) {
         // Range is [0, Long.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -185,7 +172,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStream.limit")
+    @ParameterizedTest
+    @MethodSource("intStreamWithLimit")
     public void testIntSubsizedWithRange(String description, UnaryOperator<IntStream> fs) {
         // Range is [0, Integer.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -196,7 +184,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStream.limit")
+    @ParameterizedTest
+    @MethodSource("longStreamWithLimit")
     public void testLongSubsizedWithRange(String description, UnaryOperator<LongStream> fs) {
         // Range is [0, Long.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -207,7 +196,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStream.limit")
+    @ParameterizedTest
+    @MethodSource("doubleStreamWithLimit")
     public void testDoubleSubsizedWithRange(String description, UnaryOperator<DoubleStream> fs) {
         // Range is [0, 2^53), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -221,7 +211,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
     // Unordered finite not SIZED/SUBSIZED
 
-    @Test(dataProvider = "Stream.limit")
+    @ParameterizedTest
+    @MethodSource("streamWithLimit")
     public void testUnorderedFinite(String description, UnaryOperator<Stream<Long>> fs) {
         // Range is [0, Long.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -232,7 +223,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStream.limit")
+    @ParameterizedTest
+    @MethodSource("intStreamWithLimit")
     public void testIntUnorderedFinite(String description, UnaryOperator<IntStream> fs) {
         // Range is [0, Integer.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -243,7 +235,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStream.limit")
+    @ParameterizedTest
+    @MethodSource("longStreamWithLimit")
     public void testLongUnorderedFinite(String description, UnaryOperator<LongStream> fs) {
         // Range is [0, Long.MAX_VALUE), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -254,7 +247,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStream.limit")
+    @ParameterizedTest
+    @MethodSource("doubleStreamWithLimit")
     public void testDoubleUnorderedFinite(String description, UnaryOperator<DoubleStream> fs) {
         // Range is [0, 1L << 53), splits are SUBSIZED
         // Such a size will induce out of memory errors for incorrect
@@ -301,7 +295,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 () -> StreamSupport.longStream(proxyNotSubsized(LongStream.range(l, u).spliterator()), false));
     }
 
-    @Test(dataProvider = "Stream.limit")
+    @ParameterizedTest
+    @MethodSource("streamWithLimit")
     public void testUnorderedSizedNotSubsizedFinite(String description, UnaryOperator<Stream<Long>> fs) {
         // Range is [0, Long.MAX_VALUE), splits are not SUBSIZED (proxy clears
         // the SUBSIZED characteristic)
@@ -313,7 +308,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStream.limit")
+    @ParameterizedTest
+    @MethodSource("intStreamWithLimit")
     public void testIntUnorderedSizedNotSubsizedFinite(String description, UnaryOperator<IntStream> fs) {
         // Range is [0, Integer.MAX_VALUE), splits are not SUBSIZED (proxy clears
         // the SUBSIZED characteristic)
@@ -325,7 +321,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStream.limit")
+    @ParameterizedTest
+    @MethodSource("longStreamWithLimit")
     public void testLongUnorderedSizedNotSubsizedFinite(String description, UnaryOperator<LongStream> fs) {
         // Range is [0, Long.MAX_VALUE), splits are not SUBSIZED (proxy clears
         // the SUBSIZED characteristic)
@@ -337,7 +334,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStream.limit")
+    @ParameterizedTest
+    @MethodSource("doubleStreamWithLimit")
     public void testDoubleUnorderedSizedNotSubsizedFinite(String description, UnaryOperator<DoubleStream> fs) {
         // Range is [0, Double.MAX_VALUE), splits are not SUBSIZED (proxy clears
         // the SUBSIZED characteristic)
@@ -352,7 +350,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
     // Unordered generation
 
-    @Test(dataProvider = "Stream.limit")
+    @ParameterizedTest
+    @MethodSource("streamWithLimit")
     public void testUnorderedGenerator(String description, UnaryOperator<Stream<Long>> fs) {
         // Source is spliterator of infinite size
         TestData.OfRef<Long> generator = TestData.Factory.ofSupplier(
@@ -363,7 +362,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStream.limit")
+    @ParameterizedTest
+    @MethodSource("intStreamWithLimit")
     public void testIntUnorderedGenerator(String description, UnaryOperator<IntStream> fs) {
         // Source is spliterator of infinite size
         TestData.OfInt generator = TestData.Factory.ofIntSupplier(
@@ -374,7 +374,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStream.limit")
+    @ParameterizedTest
+    @MethodSource("longStreamWithLimit")
     public void testLongUnorderedGenerator(String description, UnaryOperator<LongStream> fs) {
         // Source is spliterator of infinite size
         TestData.OfLong generator = TestData.Factory.ofLongSupplier(
@@ -385,7 +386,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStream.limit")
+    @ParameterizedTest
+    @MethodSource("doubleStreamWithLimit")
     public void testDoubleUnorderedGenerator(String description, UnaryOperator<DoubleStream> fs) {
         // Source is spliterator of infinite size
         TestData.OfDouble generator = TestData.Factory.ofDoubleSupplier(
@@ -399,7 +401,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
     // Unordered iteration
 
-    @Test(dataProvider = "Stream.limit")
+    @ParameterizedTest
+    @MethodSource("streamWithLimit")
     public void testUnorderedIteration(String description, UnaryOperator<Stream<Long>> fs) {
         // Source is a right-balanced tree of infinite size
         TestData.OfRef<Long> iterator = TestData.Factory.ofSupplier(
@@ -412,7 +415,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStream.limit")
+    @ParameterizedTest
+    @MethodSource("intStreamWithLimit")
     public void testIntUnorderedIteration(String description, UnaryOperator<IntStream> fs) {
         // Source is a right-balanced tree of infinite size
         TestData.OfInt iterator = TestData.Factory.ofIntSupplier(
@@ -425,7 +429,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStream.limit")
+    @ParameterizedTest
+    @MethodSource("longStreamWithLimit")
     public void testLongUnorderedIteration(String description, UnaryOperator<LongStream> fs) {
         // Source is a right-balanced tree of infinite size
         TestData.OfLong iterator = TestData.Factory.ofLongSupplier(
@@ -438,7 +443,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStream.limit")
+    @ParameterizedTest
+    @MethodSource("doubleStreamWithLimit")
     public void testDoubleUnorderedIteration(String description, UnaryOperator<DoubleStream> fs) {
         // Source is a right-balanced tree of infinite size
         TestData.OfDouble iterator = TestData.Factory.ofDoubleSupplier(

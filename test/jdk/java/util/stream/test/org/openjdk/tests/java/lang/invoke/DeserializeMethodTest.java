@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  */
 package org.openjdk.tests.java.lang.invoke;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Ensure that the $deserializeLambda$ method is present when it should be, and absent otherwise
  */
 
-@Test(groups = { "serialization-hostile" })
+@Tag("serialization-hostile")
 public class DeserializeMethodTest {
     private void assertDeserializeMethod(Class<?> clazz, boolean expectedPresent) {
         try {
@@ -50,6 +51,7 @@ public class DeserializeMethodTest {
 
     static class Empty {}
 
+    @Test
     public void testEmptyClass() {
         assertDeserializeMethod(Empty.class, false);
     }
@@ -60,6 +62,7 @@ public class DeserializeMethodTest {
         }
     }
 
+    @Test
     public void testCapturingSerLambda() {
         assertDeserializeMethod(Cap1.class, true);
     }
@@ -70,6 +73,7 @@ public class DeserializeMethodTest {
         }
     }
 
+    @Test
     public void testCapturingNonSerLambda() {
         assertDeserializeMethod(Cap2.class, false);
     }
@@ -81,6 +85,7 @@ public class DeserializeMethodTest {
         }
     }
 
+    @Test
     public void testCapturingNonserIntersectionLambda() {
         assertDeserializeMethod(Cap3.class, false);
     }

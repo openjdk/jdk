@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,19 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.stream.Stream;
-import java.util.stream.StreamOpFlag;
-import java.util.stream.Streams;
 
 import static java.util.stream.StreamOpFlag.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * StreamFlagsTest
  *
  * @author Brian Goetz
  */
-@Test
 public class StreamFlagsTest {
     Stream<String> arrayList = new ArrayList<String>().stream();
     Stream<String> linkedList = new LinkedList<String>().stream();
@@ -56,6 +52,7 @@ public class StreamFlagsTest {
             assertTrue(!flag.isKnown(value));
     }
 
+    @Test
     public void testBaseStreams() {
         Stream<String> arrayList = new ArrayList<String>().stream();
         Stream<String> linkedList = new LinkedList<String>().stream();
@@ -84,6 +81,7 @@ public class StreamFlagsTest {
                     EnumSet.of(DISTINCT, SORTED, SHORT_CIRCUIT));
     }
 
+    @Test
     public void testFilter() {
         for (Stream<?> s : streams) {
             int baseFlags = OpTestCase.getStreamFlags(s);

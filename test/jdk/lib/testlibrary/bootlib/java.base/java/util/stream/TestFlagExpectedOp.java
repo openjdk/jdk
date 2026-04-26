@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package java.util.stream;
 
-import org.testng.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.EnumSet;
 
@@ -108,17 +108,17 @@ class TestFlagExpectedOp<T> extends FlagDeclaringOp<T> {
 
     private void assertFlags(int flags) {
         for (StreamOpFlag f : known) {
-            Assert.assertTrue(f.isKnown(flags),
+            Assertions.assertTrue(f.isKnown(flags),
                               String.format("Flag %s is not known, but should be known.", f.toString()));
         }
 
         for (StreamOpFlag f : preserve) {
-            Assert.assertTrue(f.isPreserved(flags),
+            Assertions.assertTrue(f.isPreserved(flags),
                               String.format("Flag %s is not preserved, but should be preserved.", f.toString()));
         }
 
         for (StreamOpFlag f : notKnown) {
-            Assert.assertFalse(f.isKnown(flags),
+            Assertions.assertFalse(f.isKnown(flags),
                                String.format("Flag %s is known, but should be not known.", f.toString()));
         }
     }

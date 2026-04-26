@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.*;
 import java.util.Spliterators;
@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  *
  * @author Brian Goetz
  */
-/** TestNG DataProvider for ref-valued streams */
+/** JUnit MethodSource for ref-valued streams */
 public class StreamTestDataProvider {
     private static final Integer[] to0 = new Integer[0];
     private static final Integer[] to1 = new Integer[1];
@@ -199,30 +199,25 @@ public class StreamTestDataProvider {
         return new Object[] { description, ss };
     }
 
-    // Return an array of ( String name, StreamTestData<Integer> )
-    @DataProvider(name = "StreamTestData<Integer>")
-    public static Object[][] makeStreamTestData() {
-        return testData;
+    // Return an array of ( String name, StreamTestData<Integer>
+    public static Stream<Arguments> integerStreamTestData() {
+        return Arrays.stream(testData).map(Arguments::of);
     }
 
-    @DataProvider(name = "StreamTestData<Integer>.small")
-    public static Object[][] makeSmallStreamTestData() {
-        return testSmallData;
+    public static Stream<Arguments> smallIntegerStreamTestData() {
+        return Arrays.stream(testSmallData).map(Arguments::of);
     }
 
-    @DataProvider(name = "StreamTestData<Integer>.mini")
-    public static Object[][] makeMiniStreamTestData() {
-        return testMiniData;
+    public static Stream<Arguments> miniIntegerStreamTestData() {
+        return Arrays.stream(testMiniData).map(Arguments::of);
     }
 
-    @DataProvider(name = "withNull:StreamTestData<Integer>")
-    public static Object[][] makeStreamWithNullTestData() {
-        return withNullTestData;
+    public static Stream<Arguments> integerWithNullStreamTestData() {
+        return Arrays.stream(withNullTestData).map(Arguments::of);
     }
 
     // returns an array of (String name, Supplier<Spliterator<Integer>>)
-    @DataProvider(name = "Spliterator<Integer>")
-    public static Object[][] spliteratorProvider() {
-        return spliteratorTestData;
+    public static Stream<Arguments> spliteratorProvider() {
+        return Arrays.stream(spliteratorTestData).map(Arguments::of);
     }
 }

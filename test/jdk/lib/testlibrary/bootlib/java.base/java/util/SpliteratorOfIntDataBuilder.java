@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,23 @@
 
 package java.util;
 
+import org.junit.jupiter.params.provider.Arguments;
+
 import java.util.function.Supplier;
 
 public class SpliteratorOfIntDataBuilder {
-        List<Object[]> data;
+        List<Arguments> data;
 
         List<Integer> exp;
 
-        public SpliteratorOfIntDataBuilder(List<Object[]> data, List<Integer> exp) {
+        public SpliteratorOfIntDataBuilder(List<Arguments> data, List<Integer> exp) {
             this.data = data;
             this.exp = exp;
         }
 
         public void add(String description, List<Integer> expected, Supplier<Spliterator.OfInt> s) {
             description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
+            data.add(Arguments.of(description, expected, s));
         }
 
         public void add(String description, Supplier<Spliterator.OfInt> s) {

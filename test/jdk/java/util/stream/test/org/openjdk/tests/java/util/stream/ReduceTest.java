@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,28 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.stream.OpTestCase;
-import java.util.stream.Stream;
-import java.util.stream.StreamTestDataProvider;
-import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ReduceOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class ReduceTest extends OpTestCase {
+
+    @Test
     public void testReduce() {
         List<Integer> list = countTo(10);
 
@@ -56,7 +60,8 @@ public class ReduceTest extends OpTestCase {
         assertEquals(2, (int) list.stream().map(mDoubler).reduce(rMin).get());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         assertEquals(0, (int) exerciseTerminalOps(data, s -> s.filter(pFalse), s -> s.reduce(0, rPlus, rPlus)));
 

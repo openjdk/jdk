@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,36 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.function.IntConsumer;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Test
 public class SpinedBufferIntTest extends AbstractSpinedBufferTest {
-    @DataProvider(name = "IntSpinedBuffer")
-    public Object[][] createIntSpinedBuffer() {
-        List<Object[]> params = new ArrayList<>();
+
+    public static Stream<Arguments> createIntSpinedBuffer() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : SIZES) {
             int[] array = IntStream.range(0, size).toArray();
             SpinedBuffer.OfInt sb = new SpinedBuffer.OfInt();
             Arrays.stream(array).forEach(sb);
 
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    @Test(dataProvider = "IntSpinedBuffer")
+    @ParameterizedTest
+    @MethodSource("createIntSpinedBuffer")
     public void testIntSpliterator(int[] array, SpinedBuffer.OfInt sb) {
         assertEquals(sb.count(), array.length);
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
@@ -56,7 +59,9 @@ public class SpinedBufferIntTest extends AbstractSpinedBufferTest {
         SpliteratorTestHelper.testIntSpliterator(sb::spliterator);
     }
 
-    @Test(dataProvider = "IntSpinedBuffer", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("createIntSpinedBuffer")
+    @Tag("serialization-hostile")
     public void testIntLastSplit(int[] array, SpinedBuffer.OfInt sb) {
         Spliterator.OfInt spliterator = sb.spliterator();
         Spliterator.OfInt split = spliterator.trySplit();
@@ -78,7 +83,8 @@ public class SpinedBufferIntTest extends AbstractSpinedBufferTest {
         assertEquals(contentOfLastSplit, end);
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testIntSpinedBuffer() {
         List<Integer> list1 = new ArrayList<>();
         List<Integer> list2 = new ArrayList<>();

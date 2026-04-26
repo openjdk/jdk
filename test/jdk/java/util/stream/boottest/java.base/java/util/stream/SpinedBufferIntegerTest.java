@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,44 +22,47 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Test
 public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
-    @DataProvider(name = "SpinedBuffer")
-    public Object[][] createSpinedBuffer() {
-        List<Object[]> params = new ArrayList<>();
+
+    public static Stream<Arguments> createSpinedBuffer() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : SIZES) {
             int[] array = IntStream.range(0, size).toArray();
 
             SpinedBuffer<Integer> sb = new SpinedBuffer<>();
             Arrays.stream(array).boxed().forEach(sb);
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
 
             sb = new SpinedBuffer<>(size / 2);
             Arrays.stream(array).boxed().forEach(sb);
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
 
             sb = new SpinedBuffer<>(size);
             Arrays.stream(array).boxed().forEach(sb);
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
 
             sb = new SpinedBuffer<>(size * 2);
             Arrays.stream(array).boxed().forEach(sb);
-            params.add(new Object[]{array, sb});
+            params.add(Arguments.of(array, sb));
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    @Test(dataProvider = "SpinedBuffer")
+    @ParameterizedTest
+    @MethodSource("createSpinedBuffer")
     public void testSpliterator(int[] array, SpinedBuffer<Integer> sb) {
         assertEquals(sb.count(), array.length);
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
@@ -67,7 +70,9 @@ public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
         SpliteratorTestHelper.testSpliterator(sb::spliterator);
     }
 
-    @Test(dataProvider = "SpinedBuffer", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("createSpinedBuffer")
+    @Tag("serialization-hostile")
     public void testLastSplit(int[] array, SpinedBuffer<Integer> sb) {
         Spliterator<Integer> spliterator = sb.spliterator();
         Spliterator<Integer> split = spliterator.trySplit();
@@ -89,7 +94,8 @@ public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
         assertEquals(contentOfLastSplit, end);
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testSpinedBuffer() {
         List<Integer> list1 = new ArrayList<>();
         List<Integer> list2 = new ArrayList<>();

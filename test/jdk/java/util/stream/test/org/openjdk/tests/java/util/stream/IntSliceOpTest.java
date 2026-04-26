@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,31 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Collection;
 import java.util.stream.*;
-
-import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.stream.LambdaTestHelpers.assertCountSum;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * SliceOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class IntSliceOpTest extends OpTestCase {
 
     private static final int[] EMPTY_INT_ARRAY = new int[0];
 
+    @Test
     public void testSkip() {
         assertCountSum(IntStream.range(0, 0).skip(0).boxed(), 0, 0);
         assertCountSum(IntStream.range(0, 0).skip(4).boxed(), 0, 0);
@@ -67,6 +71,7 @@ public class IntSliceOpTest extends OpTestCase {
         exerciseOps(IntStream.range(1, 101).toArray(), s -> s.skip(200), EMPTY_INT_ARRAY);
     }
 
+    @Test
     public void testLimit() {
         assertCountSum(IntStream.range(0, 0).limit(4).boxed(), 0, 0);
         assertCountSum(IntStream.range(1, 3).limit(4).boxed(), 2, 3);
@@ -91,6 +96,7 @@ public class IntSliceOpTest extends OpTestCase {
         exerciseOps(IntStream.range(1, 101).toArray(), s -> s.limit(200), IntStream.range(1, 101).toArray());
     }
 
+    @Test
     public void testSkipLimit() {
         exerciseOps(EMPTY_INT_ARRAY, s -> s.skip(0).limit(0), EMPTY_INT_ARRAY);
         exerciseOps(EMPTY_INT_ARRAY, s -> s.skip(0).limit(10), EMPTY_INT_ARRAY);
@@ -122,7 +128,8 @@ public class IntSliceOpTest extends OpTestCase {
         return Math.max(0, dataSize - skip);
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testSkipOps(String name, TestData.OfInt data) {
         List<Integer> skips = sizes(data.size());
 
@@ -136,7 +143,8 @@ public class IntSliceOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testSkipLimitOps(String name, TestData.OfInt data) {
         List<Integer> skips = sizes(data.size());
         List<Integer> limits = skips;
@@ -154,7 +162,8 @@ public class IntSliceOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testLimitOps(String name, TestData.OfInt data) {
         List<Integer> limits = sizes(data.size());
 
@@ -168,11 +177,13 @@ public class IntSliceOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testLimitSort() {
         exerciseOps(IntStream.range(1, 101).map(i -> 101 - i).toArray(), s -> s.limit(10).sorted());
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testLimitShortCircuit() {
         for (int l : Arrays.asList(0, 10)) {
             setContext("limit", l);
@@ -185,16 +196,18 @@ public class IntSliceOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testSkipParallel() {
         int[] l = IntStream.range(1, 1001).parallel().skip(200).limit(200).sequential().toArray();
-        assertEquals(l.length, 200);
-        assertEquals(l[l.length - 1], 400);
+        assertEquals(200, l.length);
+        assertEquals(400, l[l.length - 1]);
     }
 
+    @Test
     public void testLimitParallel() {
         int[] l = IntStream.range(1, 1001).parallel().limit(500).sequential().toArray();
-        assertEquals(l.length, 500);
-        assertEquals(l[l.length - 1], 500);
+        assertEquals(500, l.length);
+        assertEquals(500, l[l.length - 1]);
     }
 
     private List<Integer> sizes(int size) {

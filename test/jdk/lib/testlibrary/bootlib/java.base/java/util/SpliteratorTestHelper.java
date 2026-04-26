@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,17 @@
  */
 package java.util;
 
+import org.junit.jupiter.api.function.Executable;
+
 import java.util.function.*;
 import java.util.stream.LambdaTestHelpers;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Assertion methods for spliterators, to be called from other tests
@@ -644,14 +651,14 @@ public class SpliteratorTestHelper {
 
     private static<T> void assertContents(Collection<T> actual, Collection<T> expected, boolean isOrdered) {
         if (isOrdered) {
-            assertEquals(actual, expected);
+            assertEquals(new ArrayList<>(expected), new ArrayList<>(actual));
         }
         else {
             LambdaTestHelpers.assertContentsUnordered(actual, expected);
         }
     }
 
-    public static void assertThrowsNPE(ThrowingRunnable r) {
+    public static void assertThrowsNPE(Executable r) {
         assertThrows(NullPointerException.class, r);
     }
 

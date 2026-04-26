@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
  * @summary Tests for stream returning methods
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
- * @run testng/othervm PermissionCollectionStreamTest
+ * @run junit/othervm PermissionCollectionStreamTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FilePermission;
 import java.security.Permission;
@@ -44,20 +45,18 @@ import java.util.stream.TestData;
 
 public class PermissionCollectionStreamTest extends OpTestCase {
 
-    @DataProvider
-    public static Object[][] permissions() {
-        return new Object[][]{
-                {
+    private static Stream<Arguments> permissions() {
+        return Stream.of(
+                Arguments.of(
                         "FilePermission",
                         new Permission[]{
                                 new FilePermission("/tmp/foobar", "read"),
                                 new FilePermission("/tmp/foo", "write"),
                                 new FilePermission("/tmp/foobar", "read,write"),
                         }
-                },
-        };
+                )
+        );
     }
-
 
     private PermissionCollection create(Permission[] pa) {
         PermissionCollection pc = pa[0].newPermissionCollection();
@@ -67,7 +66,8 @@ public class PermissionCollectionStreamTest extends OpTestCase {
         return pc;
     }
 
-    @Test(dataProvider = "permissions")
+    @ParameterizedTest
+    @MethodSource("permissions")
     public void testElementsAsStream(String description, Permission[] pa) {
         PermissionCollection pc = create(pa);
 

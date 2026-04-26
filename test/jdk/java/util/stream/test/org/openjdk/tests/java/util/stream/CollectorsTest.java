@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 package org.openjdk.tests.java.util.stream;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,10 +56,7 @@ import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamOpFlagTestHelper;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
-
-import org.testng.annotations.Test;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.flatMapping;
@@ -72,6 +74,9 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.assertContentsUnordered;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -363,7 +368,8 @@ public class CollectorsTest extends OpTestCase {
         withData(data).terminal(s -> s.collect(collector)).expectedResult(check).exercise();
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         assertCollect(data, Collectors.reducing(0, Integer::sum),
                       s -> s.reduce(0, Integer::sum));
@@ -412,7 +418,8 @@ public class CollectorsTest extends OpTestCase {
                       s -> s.mapToInt(x -> x * 2).average().orElse(0));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testJoining(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         withData(data)
                 .terminal(s -> s.map(Object::toString).collect(Collectors.joining()))
@@ -473,7 +480,8 @@ public class CollectorsTest extends OpTestCase {
         return sb.toString();
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimpleToMap(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> keyFn = i -> i * 2;
         Function<Integer, Integer> valueFn = i -> i * 4;
@@ -522,7 +530,8 @@ public class CollectorsTest extends OpTestCase {
                               new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentSkipListMap.class));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimpleGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
@@ -546,7 +555,8 @@ public class CollectorsTest extends OpTestCase {
                                                         new ToCollectionAssertion<Integer>(HashSet.class, false)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Function<Integer, Integer> mapper = i -> i * 2;
@@ -558,7 +568,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                new ToListAssertion<>())));
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testFlatMappingClose() {
         Function<Integer, Integer> classifier = i -> i;
         AtomicInteger ai = new AtomicInteger();
@@ -567,7 +578,8 @@ public class CollectorsTest extends OpTestCase {
         assertEquals(m.size(), ai.get());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithFlatMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Function<Integer, Stream<Integer>> flatMapperByNull = i -> null;
@@ -591,7 +603,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                    new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithFiltering(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Predicate<Integer> filteringByMod2 = i -> i % 2 == 0;
@@ -621,7 +634,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                    new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoLevelGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 6;
         Function<Integer, Integer> classifier2 = i -> i % 23;
@@ -677,7 +691,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                   new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupubgByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
@@ -726,7 +741,8 @@ public class CollectorsTest extends OpTestCase {
                                                         new ReducingAssertion<>(0, mDoubler, Integer::sum)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimplePartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
 
@@ -739,7 +755,8 @@ public class CollectorsTest extends OpTestCase {
                               new PartitioningByAssertion<>(classifier, new ToListAssertion<>()));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoLevelPartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
         Predicate<Integer> classifier2 = i -> i % 7 == 0;
@@ -757,7 +774,8 @@ public class CollectorsTest extends OpTestCase {
                                                             new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testComposeFinisher(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         List<Integer> asList = exerciseTerminalOps(data, s -> s.collect(toList()));
         List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::unmodifiableList)));
@@ -769,7 +787,8 @@ public class CollectorsTest extends OpTestCase {
         catch (UnsupportedOperationException ignored) { }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTeeing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Collector<Integer, ?, Long> summing = Collectors.summingLong(Integer::valueOf);
         Collector<Integer, ?, Long> counting = Collectors.counting();

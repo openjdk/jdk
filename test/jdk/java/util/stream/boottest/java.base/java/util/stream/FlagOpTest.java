@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package java.util.stream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -31,11 +32,12 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class FlagOpTest extends OpTestCase {
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testFlagsPassThrough(String name, TestData<Integer, Stream<Integer>> data) {
 
         @SuppressWarnings({"unchecked", "rawtypes"})
@@ -79,6 +81,7 @@ public class FlagOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testFlagsClearAllSet() {
         int clearAllFlags = 0;
         for (StreamOpFlag f : EnumSet.allOf(StreamOpFlag.class)) {
@@ -116,6 +119,7 @@ public class FlagOpTest extends OpTestCase {
                 exercise();
     }
 
+    @Test
     public void testFlagsSetAllClear() {
         EnumSet<StreamOpFlag> known = StreamOpFlagTestHelper.allStreamFlags();
         int setAllFlags = 0;
@@ -156,6 +160,7 @@ public class FlagOpTest extends OpTestCase {
                 exercise();
     }
 
+    @Test
     public void testFlagsParallelCollect() {
         testFlagsSetSequence(CollectorOps::collector);
     }
@@ -190,6 +195,7 @@ public class FlagOpTest extends OpTestCase {
     }
 
 
+    @Test
     public void testFlagsClearParallelCollect() {
         testFlagsClearSequence(CollectorOps::collector);
     }
@@ -225,6 +231,7 @@ public class FlagOpTest extends OpTestCase {
                 exercise();
     }
 
+    @Test
     public void testFlagsSizedOrderedParallelCollect() {
         EnumSet<StreamOpFlag> parKnown = EnumSet.of(StreamOpFlag.SIZED);
         EnumSet<StreamOpFlag> serKnown = parKnown.clone();
@@ -269,12 +276,12 @@ public class FlagOpTest extends OpTestCase {
         protected void assertFlags(int flags, boolean parallel) {
             if (parallel) {
                 for (StreamOpFlag f : parKnown) {
-                    Assert.assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
+                    assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
                 }
 
             } else {
                 for (StreamOpFlag f : serKnown) {
-                    Assert.assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
+                    assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
                 }
 
             }

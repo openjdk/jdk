@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,24 +33,31 @@ import java.util.Arrays;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.ThrowableHelper.checkNPE;
 import static java.util.stream.ThrowableHelper.checkISE;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@Test(groups = { "serialization-hostile" })
+@Tag("serialization-hostile")
 public class StreamCloseTest extends OpTestCase {
+
+    @Test
     public void testNullCloseHandler() {
         checkNPE(() -> Stream.of(1).onClose(null));
     }
 
+    @Test
     public void testEmptyCloseHandler() {
         try (Stream<Integer> ints = countTo(100).stream()) {
             ints.forEach(i -> {});
         }
     }
 
+    @Test
     public void testOneCloseHandler() {
         final boolean[] holder = new boolean[1];
         Runnable closer = () -> { holder[0] = true; };
@@ -80,6 +87,7 @@ public class StreamCloseTest extends OpTestCase {
         assertTrue(holder[0]);
     }
 
+    @Test
     public void testTwoCloseHandlers() {
         final boolean[] holder = new boolean[2];
         Runnable close1 = () -> { holder[0] = true; };
@@ -110,6 +118,7 @@ public class StreamCloseTest extends OpTestCase {
         assertTrue(holder[0] && holder[1]);
     }
 
+    @Test
     public void testCascadedExceptions() {
         final boolean[] holder = new boolean[3];
         boolean caught = false;
@@ -172,6 +181,7 @@ public class StreamCloseTest extends OpTestCase {
         assertTrue(e.getSuppressed()[i].getMessage().equals(String.valueOf(i + 2)));
     }
 
+    @Test
     public void testConsumed() {
         try(Stream<Integer> s = countTo(100).stream()) {
             s.forEach(i -> {});
