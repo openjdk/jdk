@@ -164,10 +164,10 @@ public class GZIPInputStream extends InflaterInputStream {
      * -1]} is undefined.
      * <p>
      * When decompressing the data of a member or when checking for the presence of a subsequent
-     * member, this class may read past a member's trailer from the underlying stream. The number
-     * of additional bytes read past a member's trailer are unspecified. If those additional bytes
-     * do not represent the header of a subsequent member, then this stream is considered
-     * to have reached end-of-stream and {@code -1} is returned.
+     * member, this class may read additional bytes past a member's trailer from the underlying
+     * stream. The number of additional bytes read past a member's trailer are unspecified.
+     * If those additional bytes do not represent the header of a subsequent member, then this
+     * stream is considered to have reached end-of-stream and {@code -1} is returned.
      * <p>
      * When this method reads from a {@linkplain ##gzip_file_format concatenated GZIP stream},
      * then the decompressed data written into the given {@code buf} will correspond to the data
