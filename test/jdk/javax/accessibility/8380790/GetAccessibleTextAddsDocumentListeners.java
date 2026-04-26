@@ -124,13 +124,15 @@ public class GetAccessibleTextAddsDocumentListeners {
 
     private static void assertEquals(int expected, int actual)
             throws Exception {
-        if (expected != actual)
+        if (expected != actual) {
             throw new Exception("expected: " + expected + ", actual: " + actual);
+        }
     }
 
     private static void assertTrue(boolean b) throws Exception {
-        if (!b)
+        if (!b) {
             throw new Exception("expected: true, actual: false");
+        }
     }
 
     /**
