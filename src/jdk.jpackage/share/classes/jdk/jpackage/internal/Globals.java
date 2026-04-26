@@ -65,6 +65,14 @@ public final class Globals {
         return this;
     }
 
+    public EnvironmentProvider system() {
+        return this.<EnvironmentProvider>findProperty(EnvironmentProvider.class).orElse(EnvironmentProvider.DEFAULT);
+    }
+
+    public Globals system(EnvironmentProvider v) {
+        return setProperty(EnvironmentProvider.class, v);
+    }
+
     Log.Logger logger() {
         return logger;
     }

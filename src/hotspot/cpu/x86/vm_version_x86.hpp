@@ -517,13 +517,20 @@ protected:
       return (_features_bitmap[idx] & bit_mask(feature)) != 0;
     }
 
-    bool supports_features(VM_Features* features_to_test) {
+    bool verify_aot_code_cache_features(VM_Features* features_to_test) {
       for (int i = 0; i < features_bitmap_element_count(); i++) {
-        if ((_features_bitmap[i] & features_to_test->_features_bitmap[i]) != features_to_test->_features_bitmap[i]) {
+        if (_features_bitmap[i] != features_to_test->_features_bitmap[i]) {
           return false;
-       }
+        }
       }
       return true;
+    }
+
+    VM_Features aot_code_cache_features() {
+      VM_Features copy = *this;
+      // HT does not result in incompatibility of aot code cache
+      copy.clear_feature(CPU_HT);
+      return copy;
     }
   };
 
@@ -534,6 +541,10 @@ protected:
   static VM_Features _cpu_features;
 
   static const char* _features_names[];
+
+  static void clear_feature(Feature_Flag feature) {
+    _features.clear_feature(feature);
+  }
 
   static void clear_cpu_features() {
     _features = VM_Features();
@@ -930,6 +941,7 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return _cpu_features.supports_feature(CPU_AVX512F); }
+  static bool cpu_supports_aes()      { return _cpu_features.supports_feature(CPU_AES); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
@@ -958,7 +970,11 @@ public:
 
   static bool is_intel_darkmont();
 
-  static int avx3_threshold();
+  static bool is_intel_modern_cpu() {
+    precond(is_intel()); // should be called only for intel CPU
+    // Efficient cores in hybrid CPU may not support hyper-threads.
+    return (supports_avx() || (supports_sse4_2() && (supports_ht() || supports_hybrid())));
+  }
 
   static bool is_intel_tsc_synched_at_init();
 
@@ -1125,7 +1141,7 @@ public:
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf);
 
-  static bool supports_features(void* features_to_test);
+  static bool verify_aot_code_cache_features(void* features_buffer);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP
