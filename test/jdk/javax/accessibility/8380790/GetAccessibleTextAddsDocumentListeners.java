@@ -22,53 +22,137 @@
  */
 
 
+import javax.accessibility.AccessibleHypertext;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 
 /*
  * @test
  * @bug 8380790
  * @summary make sure getAccessibleText() doesn't add DocumentListeners
- * @run main GetAccessibleTextAddsDocumentListeners
+ * @run main GetAccessibleTextAddsDocumentListeners testOriginalComplaint
+ * @run main GetAccessibleTextAddsDocumentListeners testSetDocument
+ * @run main GetAccessibleTextAddsDocumentListeners testDocumentListeners
  */
 
 public class GetAccessibleTextAddsDocumentListeners {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
+        GetAccessibleTextAddsDocumentListeners.class.
+                getMethod(args[0]).invoke(null);
+    }
+
+    public static void testOriginalComplaint() {
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
-        HTMLDocument doc1 = (HTMLDocument) textPane.getDocument();
-        int listenerCountA = log("A", doc1.getDocumentListeners());
         for (int a = 0; a < 10_000; a++) {
             textPane.getAccessibleContext().getAccessibleText();
         }
-        int listenerCountB = log("B", doc1.getDocumentListeners());
-        if (listenerCountB > listenerCountA + 1_000 ||
-            listenerCountB == listenerCountA) {
-            throw new Exception();
-        }
-        HTMLEditorKit kit = (HTMLEditorKit) textPane.getEditorKit();
-        HTMLDocument doc2 = (HTMLDocument) kit.createDefaultDocument();
-        textPane.setDocument(doc2);
-        int listenerCountC = log("C", doc2.getDocumentListeners());
-        for (int a = 0; a < 10_000; a++) {
-            textPane.getAccessibleContext().getAccessibleText();
-        }
-        int listenerCountD = log("D", doc2.getDocumentListeners());
-        if (listenerCountD > listenerCountC + 1_000 ||
-                listenerCountD == listenerCountC) {
-            throw new Exception();
+        HTMLDocument doc = (HTMLDocument) textPane.getDocument();
+        if (doc.getDocumentListeners().length > 1000) {
+            throw new Error("too many DocumentListeners");
         }
     }
 
-    private static int log(String name, DocumentListener[] listeners) {
-        System.out.println(listeners.length + " listeners  at \"" +
+    /**
+     * This makes sure getAccessibleText().getLinkCount() is based on the
+     * current Document (instead of based on an old/stale Document).
+     *
+     * see https://github.com/openjdk/jdk/pull/30401#issuecomment-4144874584
+     */
+    public static void testSetDocument() throws Exception {
+        JTextPane textPane = new JTextPane();
+        textPane.setContentType("text/html");
+
+        // test some baseline expectations:
+        testLinkCount(textPane);
+        // now change the document
+        textPane.setDocument(new HTMLDocument());
+
+        testLinkCount(textPane);
+    }
+
+    /**
+     * This tests AccessibleHypertext.getLinkCount() when a text pane is given
+     * 0, 1, and 2 link tags.
+     *
+     * By calling `getAccessibleText().getLinkCount()` we also trigger code
+     * that installs listeners in the JTextPane.
+     */
+    private static void testLinkCount(JTextPane textPane) throws Exception {
+        textPane.setText("");
+        assertEquals(0, ((AccessibleHypertext) textPane.
+                getAccessibleContext().getAccessibleText()).getLinkCount());
+
+        textPane.setText("<a href=\"x\">y</a>");
+        assertEquals(1, ((AccessibleHypertext) textPane.
+                getAccessibleContext().getAccessibleText()).getLinkCount());
+
+        textPane.setText("<a href=\"x\">y</a> <a href=\"x\">y</a>");
+        assertEquals(2, ((AccessibleHypertext) textPane.
+                getAccessibleContext().getAccessibleText()).getLinkCount());
+    }
+
+    /**
+     * This switches between a DefaultStyledDocument and an HTMLDocument
+     * several times and tests whether we ended up with too many
+     * DocumentListeners
+     *
+     * see https://github.com/openjdk/jdk/pull/30401#discussion_r3025612299
+     */
+    public static void testDocumentListeners() throws Exception {
+        JTextPane textPane = new JTextPane();
+
+        // each call to setContentType replaces textPane.getDocument()
+        textPane.setContentType("text/html");
+
+        for (int a = 0; a < 100; a++) {
+            textPane.setContentType("text/plain");
+            assertTrue(!(textPane.getAccessibleContext().getAccessibleText()
+                    instanceof AccessibleHypertext));
+
+            textPane.setContentType("text/html");
+            testLinkCount(textPane);
+        }
+
+        int docListenerCount = log("testDocumentListeners_simpleCase",
+                textPane.getDocument());
+        assertTrue(docListenerCount < 10);
+    }
+
+    private static void assertEquals(int expected, int actual)
+            throws Exception {
+        if (expected != actual)
+            throw new Exception("expected: " + expected + ", actual: " + actual);
+    }
+
+    private static void assertTrue(boolean b) throws Exception {
+        if (!b)
+            throw new Exception("expected: true, actual: false");
+    }
+
+    /**
+     * This returns the number of DocumentListeners, and it writes them
+     * to System.out.
+     */
+    private static int log(String name, Document doc) {
+        DocumentListener[] docListeners;
+        if (doc instanceof HTMLDocument) {
+            HTMLDocument htmlDoc = (HTMLDocument) doc;
+            docListeners = htmlDoc.getDocumentListeners();
+        } else {
+            DefaultStyledDocument styledDoc = (DefaultStyledDocument) doc;
+            docListeners = styledDoc.getDocumentListeners();
+        }
+
+        System.out.println(docListeners.length + " listeners  at \"" +
                 name  + "\"");
-        for (DocumentListener l : listeners) {
+        for (DocumentListener l : docListeners) {
             System.out.println("\t" + l.getClass().getName() + " 0x" +
                     Long.toHexString(System.identityHashCode(l)));
         }
-        return listeners.length;
+        return docListeners.length;
     }
 }
