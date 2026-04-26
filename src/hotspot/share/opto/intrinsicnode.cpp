@@ -332,9 +332,16 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // result in a non-negative value. This guarantees that MSB bit of result value will
       // always be set to zero.
       result_bit_width = mask_bit_width - 1;
+    } else if (mask_type->hi_as_long() == 0L) {
+      // Case B.3 Upper bound is zero.
+      // Since we filtered for lo < 0 and hi >= -1 before, this can only occur if the mask if the lower bound is also zero
+      // We have to special case this since count_leading_zeros is not defined for 0
+      // Since the mask is constant zero, that means the result is also zero, which means the result has zero bits set
+      assert(mask_type->is_con(), "must be a constant in this case");
+      result_bit_width = 0;
     } else {
       assert(mask_type->lo_as_long() >= 0, "");
-      // Case B.3 Mask value range only includes non-negative values. Since all integral
+      // Case B.4 Mask value range only includes non-negative values. Since all integral
       // types honours an invariant that TypeInteger._lo <= TypeInteger._hi, thus computing
       // leading zero bits of upper bound of mask value will allow us to ascertain
       // optimistic upper bound of result i.e. all the bits other than leading zero bits
