@@ -258,8 +258,8 @@ class Abstract_VM_Version: AllStatic {
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf) { return; }
 
-  // features_to_test is an opaque object that stores arch specific representation of cpu features
-  static bool supports_features(void* features_to_test) { return false; };
+  // features_buffer is an opaque object that stores arch specific representation of cpu features
+  static bool verify_aot_code_cache_features(void* features_buffer) { return false; };
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP
