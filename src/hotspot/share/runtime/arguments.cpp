@@ -1415,7 +1415,7 @@ void Arguments::no_shared_spaces(const char* message) {
 
 static void set_object_alignment() {
   // Object alignment.
-  assert(is_power_of_2(ObjectAlignmentInBytes.value()), "ObjectAlignmentInBytes must be power of 2");
+  assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
   MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
   assert(MinObjAlignmentInBytes >= HeapWordsPerLong * HeapWordSize, "ObjectAlignmentInBytes value is too small");
   MinObjAlignment            = MinObjAlignmentInBytes / HeapWordSize;

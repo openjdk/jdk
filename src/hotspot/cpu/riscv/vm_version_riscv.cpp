@@ -110,7 +110,7 @@ void VM_Version::common_initialize() {
       FLAG_SET_DEFAULT(CacheLineSize, 64);
     }
   } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize.value())) {
+    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
       warning("CacheLineSize must be a power of 2");
       FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
     }

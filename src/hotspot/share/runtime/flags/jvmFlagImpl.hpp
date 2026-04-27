@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_FLAGS_JVMFLAGIMPL_HPP
 #define SHARE_RUNTIME_FLAGS_JVMFLAGIMPL_HPP
 
-#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 typedef void (*JVMFlagReadTracer)(const void* addr);

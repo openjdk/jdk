@@ -52,7 +52,7 @@ JVMFlag::Error G1RemSetHowlNumBucketsConstraintFunc(uint value, bool verbose) {
   if (!FLAG_IS_CMDLINE(G1RemSetHowlNumBuckets)) {
     return JVMFlag::SUCCESS;
   }
-  if (value == 0 || !is_power_of_2(G1RemSetHowlNumBuckets.value())) {
+  if (value == 0 || !is_power_of_2(G1RemSetHowlNumBuckets)) {
     JVMFlag::printError(verbose,
                         "G1RemSetHowlNumBuckets (%u) must be a power of two "
                         "and greater than or equal to 1.\n",
@@ -68,7 +68,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   if (!FLAG_IS_CMDLINE(G1RemSetHowlMaxNumBuckets)) {
     return JVMFlag::SUCCESS;
   }
-  if (!is_power_of_2(G1RemSetHowlMaxNumBuckets.value())) {
+  if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
     JVMFlag::printError(verbose,
                         "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);

@@ -28,6 +28,7 @@
 #include "cppstdlib/limits.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "runtime/flags/jvmFlagImpl.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
@@ -45,6 +46,11 @@ constexpr T max_power_of_2() {
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 constexpr bool is_power_of_2(T value) {
   return (value > T(0)) && ((value & (value - 1)) == T(0));
+}
+
+template <typename T>
+constexpr bool is_power_of_2(JVMFlagImpl<T> f) {
+  return is_power_of_2(f.value());
 }
 
 // Log2 of a positive, integral value, i.e., largest i such that 2^i <= value

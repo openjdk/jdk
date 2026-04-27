@@ -1414,7 +1414,7 @@ void VM_Version::get_processor_features() {
       warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
       FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
     }
-    if (!is_power_of_2(MaxVectorSize.value())) {
+    if (!is_power_of_2(MaxVectorSize)) {
       warning("MaxVectorSize must be a power of 2, setting to default: %i", max_vector_size);
       FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
     }

@@ -598,7 +598,7 @@ void VM_Version::initialize() {
       warning("SVE does not support vector length less than %d bytes. Disabling SVE.",
               FloatRegister::sve_vl_min);
       UseSVE = 0;
-    } else if (!((MaxVectorSize % FloatRegister::sve_vl_min) == 0 && is_power_of_2(MaxVectorSize.value()))) {
+    } else if (!((MaxVectorSize % FloatRegister::sve_vl_min) == 0 && is_power_of_2(MaxVectorSize))) {
       vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize.value()));
     }
 
@@ -626,7 +626,7 @@ void VM_Version::initialize() {
     int min_vector_size = 8;
     int max_vector_size = FloatRegister::neon_vl;
     if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
-      if (!is_power_of_2(MaxVectorSize.value())) {
+      if (!is_power_of_2(MaxVectorSize)) {
         vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
       } else if (MaxVectorSize < min_vector_size) {
         warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
