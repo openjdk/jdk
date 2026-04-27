@@ -3214,7 +3214,7 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
   stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
 }
 
-int MacroAssembler::instr_size_for_decode_klass_not_null() {
+int MacroAssembler::instr_size_for_load_klass() {
   static int computed_size = -1;
 
   // Not yet computed?
@@ -3222,10 +3222,10 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
 
     // Determine by scratch emit.
     ResourceMark rm;
-    int code_size = 8 * BytesPerInstWord;
-    CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
+    int code_size = 16 * BytesPerInstWord;
+    CodeBuffer cb("load_klass scratch buffer", code_size, 0);
     MacroAssembler* a = new MacroAssembler(&cb);
-    a->decode_klass_not_null(R11_scratch1);
+    a->load_klass(R11_scratch1, R11_scratch1);
     computed_size = a->offset();
   }
 
