@@ -507,7 +507,7 @@ void MacroAssembler::ghash_modmul(FloatRegister result,
 //
 // Clobbers all vector registers.
 //
-void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register state,
+void MacroAssembler::ghash_processBlocks_wide(Label& field_polynomial, Register state,
                                               Register subkeyH,
                                               Register data, Register blocks, int unrolls) {
   int register_stride = 7;
@@ -531,7 +531,10 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
   FloatRegister p = v31;
   eor(vzr, T16B, vzr, vzr); // zero register
 
-  ldrq(p, field_polynomial);    // The field polynomial
+  // load polynomial via label which must identify local data in the
+  // same code stub
+  adr(rscratch1, field_polynomial);
+  ldrq(p, rscratch1);    // The field polynomial
 
   ldrq(v0, Address(state));
   ldrq(Hprime, Address(subkeyH));

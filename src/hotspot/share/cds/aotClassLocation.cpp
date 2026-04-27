@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -241,18 +241,12 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
       // The timestamp of $JAVA_HOME/lib/modules is not checked at runtime.
       check_time = !is_jrt;
     }
-#ifdef _WINDOWS
-  } else if (errno == ERROR_FILE_NOT_FOUND || errno == ERROR_PATH_NOT_FOUND) {
-    // On Windows, the errno could be ERROR_PATH_NOT_FOUND (3) in case the directory
-    // path doesn't exist.
-    type = FileType::NOT_EXIST;
-#endif
   } else if (errno == ENOENT) {
     // We allow the file to not exist, as long as it also doesn't exist during runtime.
     type = FileType::NOT_EXIST;
   } else {
     aot_log_error(aot)("Unable to open file %s.", path);
-    MetaspaceShared::unrecoverable_loading_error();
+    AOTMetaspace::unrecoverable_loading_error();
   }
 
   ResourceMark rm(current);
@@ -432,7 +426,8 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
     bool size_differs = _filesize != st.st_size;
     bool time_differs = _check_time && (_timestamp != st.st_mtime);
     if (size_differs || time_differs) {
-      aot_log_warning(aot)("This file is not the one used while building the shared archive file: '%s'%s%s",
+      aot_log_warning(aot)("This file is not the one used while building the %s: '%s'%s%s",
+                       CDSConfig::type_of_archive_being_loaded(),
                        runtime_path,
                        time_differs ? ", timestamp has changed" : "",
                        size_differs ? ", size has changed" : "");
@@ -453,6 +448,13 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
     // shouldn't happen this early in bootstrap.
     java_lang_Throwable::print(current->pending_exception(), tty);
     vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
+  }
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // The _max_used_index is usually updated by ClassLoader::record_result(). However,
+    // when dumping the final archive, the classes are loaded from their images in
+    // the AOT config file, so we don't go through ClassLoader::record_result().
+    dumptime_update_max_used_index(runtime()->_max_used_index); // Same value as recorded in the training run.
   }
 }
 
@@ -1034,10 +1036,10 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
         vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
       } else {
         aot_log_error(aot)("%s%s", mismatch_msg, hint_msg);
-        MetaspaceShared::unrecoverable_loading_error();
+        AOTMetaspace::unrecoverable_loading_error();
       }
     } else {
-      MetaspaceShared::report_loading_error("%s%s", mismatch_msg, hint_msg);
+      AOTMetaspace::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
   }
   return success;

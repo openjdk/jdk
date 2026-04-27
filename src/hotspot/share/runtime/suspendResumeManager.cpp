@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -78,18 +78,32 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
     }
   }
 #endif
-  Atomic::store(&_suspended, is_suspend);
+  AtomicAccess::store(&_suspended, is_suspend);
+}
+
+void SuspendResumeManager::set_suspended_current_thread(int64_t vthread_id, bool register_vthread_SR) {
+  assert(_target == JavaThread::current(), "should be current thread");
+#if INCLUDE_JVMTI
+  if (register_vthread_SR) {
+    assert(_target->is_vthread_mounted(), "sanity check");
+    JvmtiVTSuspender::register_vthread_suspend(vthread_id);
+  }
+#endif
+  AtomicAccess::store(&_suspended, true);
 }
 
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {
-  JVMTI_ONLY(assert(!_target->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_target == self) {
     // If target is the current thread we can bypass the handshake machinery
-    // and just suspend directly
+    // and just suspend directly.
+    // Self-suspending while in transition can cause deadlocks.
+    assert(!self->is_in_vthread_transition(), "no self-suspend allowed in transition");
+    // The vthread() oop must only be accessed before state is set to _thread_blocked.
+    int64_t id = java_lang_Thread::thread_id(_target->vthread());
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
-    set_suspended(true, register_vthread_SR);
+    set_suspended_current_thread(id, register_vthread_SR);
     do_owner_suspend();
     return true;
   } else {
@@ -116,6 +130,7 @@ void SuspendResumeManager::do_owner_suspend() {
   assert(_state_lock->owned_by_self(), "Lock must be held");
   assert(!_target->has_last_Java_frame() || _target->frame_anchor()->walkable(), "should have walkable stack");
   assert(_target->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
+  JVMTI_ONLY(assert(!_target->is_vthread_transition_disabler(), "attempt to suspend a vthread transition disabler");)
 
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_target));

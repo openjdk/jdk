@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // Constructor
 inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_references_map,
@@ -73,6 +73,9 @@ inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) c
 }
 
 inline int ConstantPoolCache::resolved_indy_entries_length() const {
+  if (_resolved_indy_entries == nullptr) {
+    return 0;
+  }
   return _resolved_indy_entries->length();
 }
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

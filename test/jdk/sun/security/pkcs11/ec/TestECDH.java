@@ -111,6 +111,7 @@ public class TestECDH extends PKCS11Test {
          * PKCS11Test.main will remove this provider if needed
          */
         Providers.setAt(p, 1);
+        System.out.println("Testing provider " + p.getName());
 
         if (false) {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);

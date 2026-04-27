@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class Filters {
         return !types.stream().anyMatch(f);
     }
 
-    public static <T> Predicate<T> matchAny(List<Predicate<T>> filters) {
+    public static <T> Predicate<T> matchAll(List<Predicate<T>> filters) {
         if (filters.isEmpty()) {
             return t -> true;
         }

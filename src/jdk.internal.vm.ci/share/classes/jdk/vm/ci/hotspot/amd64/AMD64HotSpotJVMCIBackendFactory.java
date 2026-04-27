@@ -26,6 +26,8 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 import java.util.Map;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -50,11 +52,15 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         Map<String, Long> constants = config.getStore().getConstants();
         Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
         long featuresBitMapAddress = config.vmVersionFeatures + config.vmFeaturesFeaturesOffset;
-        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class,
-                                                                                  constants,
-                                                                                  featuresBitMapAddress,
-                                                                                  config.vmFeaturesFeaturesSize,
-                                                                                  renaming);
+        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, idx -> {
+            final long featuresElementShiftCount = 6; // log (# of bits per long)
+            final long featuresElementMask = (1L << featuresElementShiftCount) - 1;
+            return 1L << (idx & featuresElementMask);
+        }, idx -> {
+            final long featuresElementShiftCount = 6; // log (# of bits per long)
+            long featureIndex = idx >>> featuresElementShiftCount;
+            return Unsafe.getUnsafe().getLong(featuresBitMapAddress + featureIndex * Long.BYTES);
+        }, renaming);
         assert features.contains(AMD64.CPUFeature.SSE) : "minimum config for x64";
         assert features.contains(AMD64.CPUFeature.SSE2) : "minimum config for x64";
         return features;

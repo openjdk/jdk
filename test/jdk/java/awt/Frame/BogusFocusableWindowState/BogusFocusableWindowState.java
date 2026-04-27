@@ -25,7 +25,7 @@ import java.awt.Window;
 
 /**
  * @test
- * @bug 8346952
+ * @bug 8346952 8361521
  * @summary Verifies no exception occurs when triggering updateCG()
  * for an ownerless window.
  * @key headful

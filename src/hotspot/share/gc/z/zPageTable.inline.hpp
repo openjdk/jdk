@@ -26,13 +26,12 @@
 
 #include "gc/z/zPageTable.hpp"
 
+#include "cppstdlib/limits.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
-
-#include <limits>
 
 inline int ZPageTable::count() const {
   const size_t size = _map._size;

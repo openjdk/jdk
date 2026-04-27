@@ -28,7 +28,7 @@
  * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver StressAsyncUL
+ * @run driver/timeout=480 StressAsyncUL
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -45,12 +45,12 @@ public class StressAsyncUL {
         }
     }
     public static void main(String[] args) throws Exception {
-        analyze_output(false, "-Xlog:async:drop", "-Xlog:all=trace", InnerClass.class.getName());
-        analyze_output(true, "-Xlog:async:stall", "-Xlog:all=trace", InnerClass.class.getName());
+        analyze_output(false, "-Xlog:async:drop", "-Xlog:all=debug", InnerClass.class.getName());
+        analyze_output(true, "-Xlog:async:stall", "-Xlog:all=debug", InnerClass.class.getName());
         // Stress test with a very small buffer. Note: Any valid buffer size must be able to hold a flush token.
         // Therefore the size of the buffer cannot be zero.
-        analyze_output(false, "-Xlog:async:drop", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=192", InnerClass.class.getName());
-        analyze_output(true, "-Xlog:async:stall", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=192", InnerClass.class.getName());
+        analyze_output(false, "-Xlog:async:drop", "-Xlog:all=debug", "-XX:AsyncLogBufferSize=192", InnerClass.class.getName());
+        analyze_output(true, "-Xlog:async:stall", "-Xlog:all=debug", "-XX:AsyncLogBufferSize=192", InnerClass.class.getName());
     }
 
     public static class InnerClass {

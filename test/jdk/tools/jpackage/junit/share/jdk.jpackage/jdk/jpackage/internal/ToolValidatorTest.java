@@ -23,33 +23,141 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.DottedVersion;
-import jdk.jpackage.internal.model.ConfigException;
-import java.nio.file.Path;
-import jdk.internal.util.OperatingSystem;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 public class ToolValidatorTest {
 
-    @Test
-    public void testAvailable() {
-        assertNull(new ToolValidator(TOOL_JAVA).validate());
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testAvailable(boolean checkExistsOnly) {
+        assertNull(new ToolValidator(TOOL_JAVA).checkExistsOnly(checkExistsOnly).validate());
     }
 
     @Test
-    public void testNotAvailable() {
-        assertValidationFailure(new ToolValidator(TOOL_UNKNOWN).validate(), true);
+    public void testAvailable_setCommandLine() {
+        // java doesn't recognize "--foo" command line option, but the validation will
+        // still pass as there is no minimal version specified and the validator ignores
+        // the exit code
+        assertNull(new ToolValidator(TOOL_JAVA).setCommandLine("--foo").validate());
+    }
+
+    enum TestAvailableMode {
+        NO_VERSION(null),
+        TOO_OLD("0.9"),
+        EQUALS("1.0"),
+        NEWER("1.1");
+
+        TestAvailableMode(String parsedVersion) {
+            this.parsedVersion = parsedVersion;
+        }
+
+        final String parsedVersion;
+    }
+
+    @ParameterizedTest
+    @EnumSource(TestAvailableMode.class)
+    public void testAvailable(TestAvailableMode mode) {
+        var minVer = TestAvailableMode.EQUALS.parsedVersion;
+        var err = new ToolValidator(TOOL_JAVA).setVersionParser(lines -> {
+            return mode.parsedVersion;
+        }).setMinimalVersion(DottedVersion.greedy(minVer)).validate();
+
+        if (Set.of(TestAvailableMode.NO_VERSION, TestAvailableMode.TOO_OLD).contains(mode)) {
+            var expectedMessage = I18N.format("error.tool-old-version", TOOL_JAVA, minVer);
+            var expectedAdvice = I18N.format("error.tool-old-version.advice", TOOL_JAVA, minVer);
+
+            assertEquals(expectedMessage, err.getMessage());
+            assertEquals(expectedAdvice, err.getAdvice());
+        } else {
+            assertNull(err);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(TestAvailableMode.class)
+    public void testAvailable_setToolOldVersionErrorHandler(TestAvailableMode mode) {
+        var handler = new ToolOldVersionErrorHandler();
+        var minVer = TestAvailableMode.EQUALS.parsedVersion;
+        var err = new ToolValidator(TOOL_JAVA).setVersionParser(lines -> {
+            return mode.parsedVersion;
+        }).setMinimalVersion(DottedVersion.greedy(minVer)).setToolOldVersionErrorHandler(handler).validate();
+
+        if (Set.of(TestAvailableMode.NO_VERSION, TestAvailableMode.TOO_OLD).contains(mode)) {
+            assertSame(ToolOldVersionErrorHandler.ERR, err);
+            handler.verifyCalled(Path.of(TOOL_JAVA), mode.parsedVersion);
+        } else {
+            assertNull(err);
+            handler.verifyNotCalled();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testNotAvailable(boolean checkExistsOnly, @TempDir Path dir) {
+        var err = new ToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly).validate();
+        if (checkExistsOnly) {
+            assertValidationFailure(err, false);
+        } else {
+            assertValidationFailureNoAdvice(err, !checkExistsOnly);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testToolIsDirectory(boolean checkExistsOnly, @TempDir Path dir) {
+        var err = new ToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
+        assertValidationFailureNoAdvice(err, !checkExistsOnly);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testNotAvailable_setToolNotFoundErrorHandler(boolean checkExistsOnly, @TempDir Path dir) {
+        var handler = new ToolNotFoundErrorHandler();
+        var err = new ToolValidator(dir.resolve("foo")).checkExistsOnly(checkExistsOnly)
+                .setToolNotFoundErrorHandler(handler)
+                .validate();
+        if (checkExistsOnly) {
+            handler.verifyCalled(dir.resolve("foo"));
+            assertSame(ToolNotFoundErrorHandler.ERR, err);
+        } else {
+            handler.verifyNotCalled();
+            assertValidationFailureNoAdvice(err, !checkExistsOnly);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testToolIsDirectory_setToolNotFoundErrorHandler(boolean checkExistsOnly, @TempDir Path dir) {
+        var handler = new ToolNotFoundErrorHandler();
+        var err = new ToolValidator(dir).checkExistsOnly(checkExistsOnly).validate();
+        handler.verifyNotCalled();
+        assertValidationFailureNoAdvice(err, !checkExistsOnly);
     }
 
     @Test
     public void testVersionParserUsage() {
         // Without minimal version configured, version parser should not be used
         new ToolValidator(TOOL_JAVA).setVersionParser(unused -> {
-            throw new RuntimeException();
+            throw new AssertionError();
         }).validate();
 
         // Minimal version is 1, actual is 10. Should be OK.
@@ -81,9 +189,68 @@ public class ToolValidatorTest {
         }
     }
 
+    private static void assertValidationFailureNoAdvice(ConfigException v, boolean withCause) {
+        assertNotNull(v);
+        assertNotEquals("", v.getMessage().strip());
+        assertNull(v.getAdvice());
+        if (withCause) {
+            assertNotNull(v.getCause());
+        } else {
+            assertNull(v.getCause());
+        }
+    }
+
+
+    private static final class ToolNotFoundErrorHandler implements Function<Path, ConfigException> {
+
+        @Override
+        public ConfigException apply(Path tool) {
+            assertNotNull(tool);
+            this.tool = tool;
+            return ERR;
+        }
+
+        void verifyCalled(Path expectedTool) {
+            assertEquals(Objects.requireNonNull(expectedTool), tool);
+        }
+
+        void verifyNotCalled() {
+            assertNull(tool);
+        }
+
+        private Path tool;
+
+        static final ConfigException ERR = new ConfigException("no tool", "install the tool");
+    }
+
+
+    private static final class ToolOldVersionErrorHandler implements BiFunction<Path, String, ConfigException> {
+
+        @Override
+        public ConfigException apply(Path tool, String parsedVersion) {
+            assertNotNull(tool);
+            this.tool = tool;
+            this.parsedVersion = parsedVersion;
+            return ERR;
+        }
+
+        void verifyCalled(Path expectedTool, String expectedParsedVersion) {
+            assertEquals(Objects.requireNonNull(expectedTool), tool);
+            assertEquals(expectedParsedVersion, parsedVersion);
+        }
+
+        void verifyNotCalled() {
+            assertNull(tool);
+        }
+
+        private Path tool;
+        private String parsedVersion;
+
+        static final ConfigException ERR = new ConfigException("tool too old", "install the newer version");
+    }
+
+
     private static final String TOOL_JAVA;
-    private static final String TOOL_UNKNOWN = Path.of(System.getProperty(
-            "java.home"), "bin").toString();
 
     static {
         String fname = "java";

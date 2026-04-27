@@ -25,15 +25,18 @@
 package jdk.jpackage.internal.model;
 
 
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathGroup;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 
 /**
@@ -41,9 +44,14 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
  *
  * App image layout is a collection of files and directories with specific roles
  * (executables, configuration files, etc.) sharing the same root directory.
- *
- * The layout is "unresolved" if the root directory is an empty string and
- * "resolved" otherwise.
+ * <p>
+ * The layout is "unresolved" if the root directory is an empty path
+ * ({@code Path.of("")}) and "resolved" otherwise.
+ * <p>
+ * The return value of the {@link #runtimeDirectory()} method call is always a
+ * path starting with the path returned by the {@link #rootDirectory()} method
+ * call. Public methods without parameters and with the return type {@link Path}
+ * in the derived interfaces must comply to this constrain.
  */
 public interface AppImageLayout {
 
@@ -56,29 +64,94 @@ public interface AppImageLayout {
     Path runtimeDirectory();
 
     /**
-     * Root directory of this app image.
+     * Root directory of this app image layout.
      * It should normally be equal to <code>Path.of("")</code> for unresolved layout.
      *
-     * @return the root directory of this app image
+     * @return the root directory of this app image layout
      */
     Path rootDirectory();
 
     /**
-     * Creates a copy of this app image resolved at the given root directory.
+     * Returns a copy of this app image layout with the root directory set to an empty
+     * path ({@code Path.of("")}) or this instance if its root directory is already
+     * an empty path.
+     *
+     * @return an app image layout with the root directory set to an empty path
+     */
+    AppImageLayout resetRootDirectory();
+
+    /**
+     * Returns <code>true</code> if the root directory of this app image layout is
+     * not an empty path, i.e, if it is not equal to <code>Path.of("")</code>.
+     *
+     * @return <code>true</code> if the root directory of this app image layout is
+     *         not an empty path
+     */
+    default boolean isResolved() {
+        return !rootDirectory().equals(Path.of(""));
+    }
+
+    /**
+     * Creates a copy of this app image layout resolved at the given root directory.
      *
      * @param root path to a directory at which to resolve the layout
-     * @return a copy of this app image resolved at the given root directory
+     * @return a copy of this app image layout resolved at the given root directory
      */
-    AppImageLayout resolveAt(Path root);
+    default AppImageLayout resolveAt(Path root) {
+        return map(root::resolve);
+    }
+
+    /**
+     * Returns a copy of this app image layout resolved such that its root directory
+     * is set to an empty path ({@code Path.of("")}) or this instance if its root
+     * directory is already an empty path.
+     *
+     * @return an app image layout resolved at {@code Path.of("")} path
+     */
+    default AppImageLayout unresolve() {
+        if (isResolved()) {
+            final var root = rootDirectory();
+            return map(root::relativize);
+        } else {
+            return this;
+        }
+    }
+
+    /**
+     * Returns a copy of this app image layout with the specified mapper applied to
+     * every path.
+     *
+     * @param mapper the mapper to use with every path in this app image layout.
+     * @return the copy of this app image layout with the specified mapper applied
+     *         to every path
+     */
+    AppImageLayout map(UnaryOperator<Path> mapper);
 
     /**
      * Default implementation of {@link AppImageLayout} interface.
-    */
+     */
     record Stub(Path rootDirectory, Path runtimeDirectory) implements AppImageLayout {
 
+        public Stub {
+            Objects.requireNonNull(rootDirectory);
+        }
+
+        public Stub(Path runtimeDirectory) {
+            this(Path.of(""), runtimeDirectory);
+        }
+
         @Override
-        public AppImageLayout resolveAt(Path base) {
-            return new Stub(resolveNullablePath(base, rootDirectory), resolveNullablePath(base, runtimeDirectory));
+        public AppImageLayout resetRootDirectory() {
+            if (isResolved()) {
+                return new Stub(runtimeDirectory);
+            } else {
+                return this;
+            }
+        }
+
+        @Override
+        public AppImageLayout map(UnaryOperator<Path> mapper) {
+            return new Stub(mapNullablePath(mapper, rootDirectory), mapNullablePath(mapper, runtimeDirectory));
         }
     }
 

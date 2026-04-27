@@ -25,7 +25,7 @@
  * @test
  * @bug 8350808
  * @summary Check for proper formatting of SnippetEvent.toString()
- * @run testng SnippetEventToStringTest
+ * @run junit SnippetEventToStringTest
  */
 
 import java.util.Map;
@@ -35,13 +35,14 @@ import jdk.jshell.JShell;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.execution.LocalExecutionControlProvider;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SnippetEventToStringTest {
 
-    @DataProvider(name = "cases")
     public String[][] sourceLevels() {
         return new String[][] {
             { "*",                              ",causeSnippet=null" },
@@ -50,11 +51,12 @@ public class SnippetEventToStringTest {
         };
     }
 
-    @Test(dataProvider = "cases")
-    private void verifySnippetEvent(String source, String match) {
+    @ParameterizedTest
+    @MethodSource("sourceLevels")
+    void verifySnippetEvent(String source, String match) {
         try (JShell jsh = JShell.builder().executionEngine(new LocalExecutionControlProvider(), Map.of()).build()) {
             List<SnippetEvent> result = jsh.eval(source);
-            assertEquals(result.size(), 1);
+            assertEquals(1, result.size());
             String string = result.get(0).toString();
             if (!string.contains(match))
                 throw new AssertionError(String.format("\"%s\" not found in \"%s\"", match, string));

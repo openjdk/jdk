@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.TimespanRate;
 import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.settings.CPUThrottleSetting;
 import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.tracing.Modification;
 
@@ -49,6 +49,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJDK;
     private final boolean isMethodSampling;
     private final boolean isCPUTimeMethodSampling;
+    private final boolean isBackToBackSensitive;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -60,7 +61,7 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
-    private TimespanRate cpuRate;
+    private TimespanRate cpuRate = TimespanRate.of(CPUThrottleSetting.DEFAULT_VALUE);
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -82,8 +83,23 @@ public final class PlatformEventType extends Type {
         this.isJVM = Type.isDefinedByJVM(id);
         this.isMethodSampling = determineMethodSampling();
         this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
+        this.isBackToBackSensitive = determineBackToBackSensitive();
         this.isJDK = isJDK;
         this.stackTraceOffset = determineStackTraceOffset();
+    }
+
+    private boolean determineBackToBackSensitive() {
+        if (getName().equals(Type.EVENT_NAME_PREFIX + "ThreadDump")) {
+            return true;
+        }
+        if (getName().equals(Type.EVENT_NAME_PREFIX + "ClassLoaderStatistics")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isBackToBackSensitive() {
+        return isBackToBackSensitive;
     }
 
     private boolean isExceptionEvent() {
@@ -110,6 +126,7 @@ public final class PlatformEventType extends Type {
                      Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
                 case Type.EVENT_NAME_PREFIX + "FileRead",
                      Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                case Type.EVENT_NAME_PREFIX + "FinalFieldMutation" -> 4;
                 default -> 3;
             };
         }

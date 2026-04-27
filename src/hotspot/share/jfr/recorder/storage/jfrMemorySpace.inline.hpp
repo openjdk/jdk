@@ -28,7 +28,7 @@
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
@@ -267,7 +267,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
   assert(node != nullptr, "invariant");
   _free_list.add(node);
   if (is_free_list_cache_limited()) {
-    Atomic::inc(&_free_list_cache_count);
+    AtomicAccess::inc(&_free_list_cache_count);
   }
 }
 
@@ -280,7 +280,7 @@ inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline void JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::decrement_free_list_count() {
   if (is_free_list_cache_limited()) {
-    Atomic::dec(&_free_list_cache_count);
+    AtomicAccess::dec(&_free_list_cache_count);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,10 @@ public class ThreadDumper {
                 // park blocker
                 Object parkBlocker = snapshot.parkBlocker();
                 if (parkBlocker != null) {
-                    writer.println("    - parking to wait for " + decorateObject(parkBlocker));
+                    String suffix = (snapshot.parkBlockerOwner() instanceof Thread owner)
+                            ? ", owner #"  + owner.threadId()
+                            : "";
+                    writer.println("    - parking to wait for " + decorateObject(parkBlocker) + suffix);
                 }
 
                 // blocked on monitor enter or Object.wait
@@ -248,17 +251,42 @@ public class ThreadDumper {
     }
 
     /**
+     * JSON is schema-less and the thread dump format will evolve over time.
+     * {@code HotSpotDiagnosticMXBean.dumpThreads} links to a JSON file that documents
+     * the latest/current format. A system property can be used to generate the thread
+     * dump in older formats if necessary.
+     */
+    private static class JsonFormat {
+        private static final String JSON_FORMAT_VERSION_PROP =
+                "com.sun.management.HotSpotDiagnosticMXBean.dumpThreads.format";
+        static final int JSON_FORMAT_V1 = 1;
+        static final int JSON_FORMAT_V2 = 2;
+        private static final int JSON_FORMAT_LATEST = JSON_FORMAT_V2;
+        private static final int JSON_FORMAT;
+        static {
+            int ver = Integer.getInteger(JSON_FORMAT_VERSION_PROP, JSON_FORMAT_LATEST);
+            JSON_FORMAT = Math.clamp(ver, JSON_FORMAT_V1, JSON_FORMAT_LATEST);
+        }
+
+        static int formatVersion() {
+            return JSON_FORMAT;
+        }
+    }
+
+    /**
      * Generate a thread dump to the given text stream in JSON format.
      * @throws UncheckedIOException if an I/O error occurs
      */
     private static void dumpThreadsToJson(TextWriter textWriter) {
-        var jsonWriter = new JsonWriter(textWriter);
-
+        int format = JsonFormat.formatVersion();
+        var jsonWriter = new JsonWriter(textWriter, (format == JsonFormat.JSON_FORMAT_V1));
         jsonWriter.startObject();  // top-level object
-
         jsonWriter.startObject("threadDump");
+        if (format > JsonFormat.JSON_FORMAT_V1) {
+            jsonWriter.writeProperty("formatVersion", format);
+        }
 
-        jsonWriter.writeProperty("processId", processId());
+        jsonWriter.writeLongProperty("processId", processId());
         jsonWriter.writeProperty("time", Instant.now());
         jsonWriter.writeProperty("runtimeVersion", Runtime.version());
 
@@ -281,7 +309,11 @@ public class ThreadDumper {
         jsonWriter.writeProperty("parent", container.parent());
 
         Thread owner = container.owner();
-        jsonWriter.writeProperty("owner", (owner != null) ? owner.threadId() : null);
+        if (owner != null) {
+            jsonWriter.writeLongProperty("owner", owner.threadId());
+        } else {
+            jsonWriter.writeProperty("owner", null);  // owner is not optional
+        }
 
         long threadCount = 0;
         jsonWriter.startArray("threads");
@@ -298,7 +330,7 @@ public class ThreadDumper {
         if (!ThreadContainers.trackAllThreads()) {
             threadCount = Long.max(threadCount, container.threadCount());
         }
-        jsonWriter.writeProperty("threadCount", threadCount);
+        jsonWriter.writeLongProperty("threadCount", threadCount);
 
         jsonWriter.endObject();
 
@@ -321,7 +353,7 @@ public class ThreadDumper {
         StackTraceElement[] stackTrace = snapshot.stackTrace();
 
         jsonWriter.startObject();
-        jsonWriter.writeProperty("tid", thread.threadId());
+        jsonWriter.writeLongProperty("tid", thread.threadId());
         jsonWriter.writeProperty("time", now);
         if (thread.isVirtual()) {
             jsonWriter.writeProperty("virtual", Boolean.TRUE);
@@ -335,6 +367,9 @@ public class ThreadDumper {
             // parkBlocker is an object to allow for exclusiveOwnerThread in the future
             jsonWriter.startObject("parkBlocker");
             jsonWriter.writeProperty("object", Objects.toIdentityString(parkBlocker));
+            if (snapshot.parkBlockerOwner() instanceof Thread owner) {
+                jsonWriter.writeLongProperty("owner", owner.threadId());
+            }
             jsonWriter.endObject();
         }
 
@@ -374,7 +409,7 @@ public class ThreadDumper {
 
         // thread identifier of carrier, when mounted
         if (thread.isVirtual() && snapshot.carrierThread() instanceof Thread carrier) {
-            jsonWriter.writeProperty("carrier", carrier.threadId());
+            jsonWriter.writeLongProperty("carrier", carrier.threadId());
         }
 
         jsonWriter.endObject();
@@ -405,10 +440,12 @@ public class ThreadDumper {
             }
         }
         private final Deque<Node> stack = new ArrayDeque<>();
+        private final boolean generateLongsAsString;
         private final TextWriter writer;
 
-        JsonWriter(TextWriter writer) {
+        JsonWriter(TextWriter writer, boolean generateLongsAsString) {
             this.writer = writer;
+            this.generateLongsAsString = generateLongsAsString;
         }
 
         private void indent() {
@@ -455,6 +492,7 @@ public class ThreadDumper {
          */
         void writeProperty(String name, Object obj) {
             Node node = stack.peek();
+            assert node != null;
             if (node.getAndIncrementPropertyCount() > 0) {
                 writer.println(",");
             }
@@ -463,12 +501,23 @@ public class ThreadDumper {
                 writer.print("\"" + name + "\": ");
             }
             switch (obj) {
-                // Long may be larger than safe range of JSON integer value
-                case Long   _  -> writer.print("\"" + obj + "\"");
                 case Number _  -> writer.print(obj);
                 case Boolean _ -> writer.print(obj);
                 case null      -> writer.print("null");
                 default        -> writer.print("\"" + escape(obj.toString()) + "\"");
+            }
+        }
+
+        /**
+         * Write a property with a long value. If the value is outside the "interop"
+         * range of IEEE-754 double-precision floating point (64-bit) then it is
+         * written as a string.
+         */
+        void writeLongProperty(String name, long value) {
+            if (generateLongsAsString || value < -0x1FFFFFFFFFFFFFL || value > 0x1FFFFFFFFFFFFFL) {
+                writeProperty(name, Long.toString(value));
+            } else {
+                writeProperty(name, value);
             }
         }
 

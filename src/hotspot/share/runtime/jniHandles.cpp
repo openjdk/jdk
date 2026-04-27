@@ -335,7 +335,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
     } else {
       block = new JNIHandleBlock();
     }
-    Atomic::inc(&_blocks_allocated);
+    AtomicAccess::inc(&_blocks_allocated);
     block->zap();
   }
   block->_top = 0;
@@ -372,7 +372,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     DEBUG_ONLY(block->set_pop_frame_link(nullptr));
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
-      Atomic::dec(&_blocks_allocated);
+      AtomicAccess::dec(&_blocks_allocated);
       assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;

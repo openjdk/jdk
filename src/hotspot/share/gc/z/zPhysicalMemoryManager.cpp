@@ -25,6 +25,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zNMT.hpp"
@@ -107,7 +108,7 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   // Test if uncommit is supported by the operating system by committing
   // and then uncommitting a granule.
   const ZVirtualMemory vmem(zoffset(0), ZGranuleSize);
-  if (!commit(vmem, (uint32_t)-1) || !uncommit(vmem)) {
+  if (!commit(vmem, 0) || !uncommit(vmem)) {
     log_info_p(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
     FLAG_SET_ERGO(ZUncommit, false);
     return;
@@ -214,9 +215,20 @@ void ZPhysicalMemoryManager::free(const ZVirtualMemory& vmem, uint32_t numa_id) 
   });
 }
 
+static size_t inject_commit_limit(const ZVirtualMemory& vmem) {
+  // To facilitate easier interoperability with multi partition allocations we
+  // divide by ZNUMA::count(). Users of ZFailLargerCommits need to be aware of
+  // this when writing tests. In the future we could probe the VirtualMemoryManager
+  // and condition this division on whether the vmem is in the multi partition
+  // address space.
+  return align_up(MIN2(ZFailLargerCommits / ZNUMA::count(), vmem.size()), ZGranuleSize);
+}
+
 size_t ZPhysicalMemoryManager::commit(const ZVirtualMemory& vmem, uint32_t numa_id) {
   zbacking_index* const pmem = _physical_mappings.addr(vmem.start());
-  const size_t size = vmem.size();
+  const size_t size = ZFailLargerCommits > 0
+      ? inject_commit_limit(vmem)
+      : vmem.size();
 
   size_t total_committed = 0;
 
@@ -281,7 +293,7 @@ void ZPhysicalMemoryManager::map(const ZVirtualMemory& vmem, uint32_t numa_id) c
 
   // Setup NUMA preferred for large pages
   if (ZNUMA::is_enabled() && ZLargePages::is_explicit()) {
-    os::numa_make_local((char*)addr, size, (int)numa_id);
+    os::numa_make_local((char*)addr, size, ZNUMA::numa_id_to_node(numa_id));
   }
 }
 

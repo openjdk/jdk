@@ -35,6 +35,8 @@ import jdk.test.whitebox.WhiteBox;
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @requires os.family == "linux" | os.family == "windows"
  * @requires sun.arch.data.model == "64"
+ * @comment Asan changes memory layout and we get a different coops mode
+ * @requires !vm.asan
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

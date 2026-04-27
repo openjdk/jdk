@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@
  * @run main Test4512704
  * @summary Verify that AES cipher can generate default IV in encrypt mode
  */
-import java.io.PrintStream;
-import java.security.*;
-import java.security.spec.*;
-import java.util.Random;
+import jtreg.SkippedException;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Provider;
+import java.security.spec.AlgorithmParameterSpec;
 
 public class Test4512704 extends PKCS11Test {
 
@@ -48,9 +50,8 @@ public class Test4512704 extends PKCS11Test {
             transformation = "AES/" + mode + "/NoPadding";
             c = Cipher.getInstance(transformation, p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Skip testing " + p.getName() +
-                    ", no support for " + mode);
-            return;
+            throw new SkippedException("Skip testing " + p.getName() +
+                                       ", no support for " + mode);
         }
         SecretKey key = new SecretKeySpec(new byte[16], "AES");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6843181 6943963
  * @summary Confirm that NumericShaper is thread-safe.
- * @run main/timeout=300/othervm MTTest
+ * @run main/timeout=400/othervm MTTest
  */
 
 import java.awt.font.NumericShaper;

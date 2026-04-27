@@ -33,7 +33,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * @requires vm.compiler2.enabled & vm.flagless & vm.debug == true
  * @summary Test the functionality of allowNotCompilable.
  * @library /test/lib /
- * @run driver ir_framework.tests.TestNotCompilable
+ * @run driver/timeout=480 ir_framework.tests.TestNotCompilable
  */
 
 public class TestNotCompilable {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,19 @@
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compMode != "Xcomp"
+ * @requires vm.bits == 64
+ * @requires vm.opt.final.UseCompressedOops
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *             JavacBenchApp
  *             JavacBenchApp$ClassFile
  *             JavacBenchApp$FileManager
  *             JavacBenchApp$SourceFile
- * @run driver AOTCodeCompressedOopsTest
+ * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
 import java.util.ArrayList;
@@ -199,12 +201,18 @@ public class AOTCodeCompressedOopsTest {
                  if (aotCacheShift == -1 || currentShift == -1 || aotCacheBase == -1 || currentBase == -1) {
                      throw new RuntimeException("Failed to find CompressedOops settings");
                  }
+
+                 // Changes in compressed oop encoding could randomly affect flags like AllocatePrefetchDistance
+                 // due to the OS-assigned range of the Java heap. If that happens, the exact error message may vary
+                 String disabledMsg = "AOT Code Cache disabled:";
                  if (aotCacheShift != currentShift) {
-                     out.shouldContain("AOT Code Cache disabled: it was created with different CompressedOops::shift()");
+                     out.shouldContain(disabledMsg);
                  } else if ((aotCacheBase == 0 || currentBase == 0) && (aotCacheBase != currentBase)) {
-                     out.shouldContain("AOTStubCaching is disabled: incompatible CompressedOops::base()");
+                     out.shouldContain(disabledMsg);
                  } else {
-                     out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     if (!out.contains(disabledMsg)) {
+                         out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     }
                  }
             }
         }

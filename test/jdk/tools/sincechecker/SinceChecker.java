@@ -297,7 +297,6 @@ public class SinceChecker {
                         Collections.singletonList(SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"), "")));
                 ct.analyze();
                 Elements elements = ct.getElements();
-                elements.getModuleElement("java.base");
                 try (EffectiveSourceSinceHelper javadocHelper = EffectiveSourceSinceHelper.create(ct, List.of(root), this)) {
                     processModuleCheck(elements.getModuleElement(moduleName), ct, moduleDirectory, javadocHelper);
                 } catch (Exception e) {

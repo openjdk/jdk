@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,32 +168,45 @@ final class P11HKDF extends KDFSpi {
         checkDerivedKeyType(ki, alg);
         P11KeyGenerator.checkKeySize(ki.keyGenMech, outLen * 8, token);
 
-        P11Key p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
-                " could not be converted to a token key for HKDF derivation.");
-
+        long baseKeyID;
+        P11Key p11BaseKey = null;
+        try {
+            p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
+                    " could not be converted to a token key for HKDF derivation.");
+            baseKeyID = p11BaseKey.getKeyID();
+        } catch (ProviderException pe) {
+            if (p11BaseKey != null) {
+                throw pe;
+            }
+            // special handling for FIPS mode when key cannot be imported
+            if (isExtract) {
+                baseKeyID = convertKeyToData(baseKey, pe);
+            } else {
+                throw pe;
+            }
+        }
+        Session session = null;
         long saltType = CKF_HKDF_SALT_NULL;
         byte[] saltBytes = null;
         P11Key p11SaltKey = null;
-        if (salt instanceof SecretKeySpec) {
-            saltType = CKF_HKDF_SALT_DATA;
-            saltBytes = salt.getEncoded();
-        } else if (salt != EMPTY_KEY) {
-            // consolidateKeyMaterial returns a salt from the token.
-            saltType = CKF_HKDF_SALT_KEY;
-            p11SaltKey = (P11Key.P11SecretKey) salt;
-            assert p11SaltKey.token == token : "salt must be from the same " +
-                    "token as service.";
-        }
-
-        long derivedKeyClass = isData ? CKO_DATA : CKO_SECRET_KEY;
-        CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_CLASS, derivedKeyClass),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, ki.keyType),
-                new CK_ATTRIBUTE(CKA_VALUE_LEN, outLen)
-        };
-        Session session = null;
-        long baseKeyID = p11BaseKey.getKeyID();
         try {
+            if (salt instanceof SecretKeySpec) {
+                saltType = CKF_HKDF_SALT_DATA;
+                saltBytes = salt.getEncoded();
+            } else if (salt != EMPTY_KEY) {
+                // consolidateKeyMaterial returns a salt from the token.
+                saltType = CKF_HKDF_SALT_KEY;
+                p11SaltKey = (P11Key.P11SecretKey) salt;
+                assert p11SaltKey.token == token : "salt must be from the same " +
+                        "token as service.";
+            }
+
+            long derivedKeyClass = isData ? CKO_DATA : CKO_SECRET_KEY;
+            CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
+                    new CK_ATTRIBUTE(CKA_CLASS, derivedKeyClass),
+                    new CK_ATTRIBUTE(CKA_KEY_TYPE, ki.keyType),
+                    new CK_ATTRIBUTE(CKA_VALUE_LEN, outLen)
+            };
             session = token.getOpSession();
             CK_HKDF_PARAMS params = new CK_HKDF_PARAMS(isExtract, isExpand,
                     svcKi.hmacMech, saltType, saltBytes, p11SaltKey != null ?
@@ -230,8 +244,51 @@ final class P11HKDF extends KDFSpi {
             if (p11SaltKey != null) {
                 p11SaltKey.releaseKeyID();
             }
-            p11BaseKey.releaseKeyID();
+            if (p11BaseKey != null) {
+                p11BaseKey.releaseKeyID();
+            } else {
+                destroyDataObject(baseKeyID);
+            }
             token.releaseSession(session);
+        }
+    }
+
+    private void destroyDataObject(long baseKeyID) {
+        try {
+            Session session = token.getObjSession();
+            try {
+                token.p11.C_DestroyObject(session.id(), baseKeyID);
+            } finally {
+                token.releaseSession(session);
+            }
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("Failed to destroy IKM data object.", e);
+        }
+    }
+
+    private long convertKeyToData(SecretKey key, ProviderException pe) {
+        if (!"RAW".equalsIgnoreCase(key.getFormat())) {
+            throw pe;
+        }
+        byte[] keyBytes = key.getEncoded();
+        if (keyBytes == null) {
+            throw pe;
+        }
+        CK_ATTRIBUTE[] inputAttributes = new CK_ATTRIBUTE[]{
+                new CK_ATTRIBUTE(CKA_CLASS, CKO_DATA),
+                new CK_ATTRIBUTE(CKA_VALUE, keyBytes),
+        };
+        try {
+            Session session = token.getObjSession();
+            try {
+                return token.p11.C_CreateObject(session.id(), inputAttributes);
+            } finally {
+                token.releaseSession(session);
+            }
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("Failed to create IKM data object.", e);
+        } finally {
+            Arrays.fill(keyBytes, (byte)0);
         }
     }
 

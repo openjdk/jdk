@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @test
  * @bug 8217375
  * @library /test/lib
- * @run testng InsufficientSectionDelimiter
+ * @run testng/timeout=480 InsufficientSectionDelimiter
  * @summary Checks some cases signing a jar the manifest of which has no or
  * only one line break at the end and no proper delimiting blank line does not
  * result in an invalid signed jar without jarsigner noticing and failing.

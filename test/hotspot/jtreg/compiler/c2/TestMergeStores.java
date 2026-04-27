@@ -34,28 +34,31 @@ import java.util.Random;
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8347405
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores aligned
+ * @run main/timeout=480 compiler.c2.TestMergeStores aligned
  */
 
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8347405
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores unaligned
+ * @run main/timeout=480 compiler.c2.TestMergeStores unaligned
  */
 
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8348959 8351414
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main compiler.c2.TestMergeStores StressIGVN
+ * @run main/timeout=480 compiler.c2.TestMergeStores StressIGVN
  */
 
 public class TestMergeStores {

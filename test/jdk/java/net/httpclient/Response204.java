@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8211437 8216974 8218662
- * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests Response204
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests ${test.main.class}
  * @summary
  */
 

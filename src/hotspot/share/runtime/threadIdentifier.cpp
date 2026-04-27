@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/threadIdentifier.hpp"
 
 // starting at 3, excluding reserved values defined in ObjectMonitor.hpp
@@ -38,14 +38,14 @@ int64_t ThreadIdentifier::unsafe_offset() {
 }
 
 int64_t ThreadIdentifier::current() {
-  return Atomic::load(&next_thread_id);
+  return AtomicAccess::load(&next_thread_id);
 }
 
 int64_t ThreadIdentifier::next() {
   int64_t next_tid;
   do {
-    next_tid = Atomic::load(&next_thread_id);
-  } while (Atomic::cmpxchg(&next_thread_id, next_tid, next_tid + 1) != next_tid);
+    next_tid = AtomicAccess::load(&next_thread_id);
+  } while (AtomicAccess::cmpxchg(&next_thread_id, next_tid, next_tid + 1) != next_tid);
   return next_tid;
 }
 

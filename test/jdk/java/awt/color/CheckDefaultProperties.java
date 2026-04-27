@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import static java.awt.color.ICC_Profile.CLASS_DISPLAY;
 
 /**
  * @test
- * @bug 8256321
- * @summary Verifies profile properties are the same before/after activation
+ * @bug 8256321 8359380
+ * @summary Verifies built-in profile properties are the same before and after
+ *          activation and in copies of built-in profiles
  */
 public final class CheckDefaultProperties {
 
@@ -46,21 +47,26 @@ public final class CheckDefaultProperties {
         ICC_Profile lrgb = ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB);
         ICC_Profile pycc = ICC_Profile.getInstance(ColorSpace.CS_PYCC);
 
-        // check default values, before profile activation
-        test(srgb, TYPE_RGB, 3, CLASS_DISPLAY);
-        test(gray, TYPE_GRAY, 1, CLASS_DISPLAY);
-        test(xyz, TYPE_XYZ, 3, CLASS_ABSTRACT);
-        test(lrgb, TYPE_RGB, 3, CLASS_DISPLAY);
-        test(pycc, TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION);
+        // checks default values before built-in profiles are activated
+        test(srgb, gray, xyz, lrgb, pycc);
 
-        // activate profiles
-        srgb.getData();
-        gray.getData();
-        xyz.getData();
-        lrgb.getData();
-        pycc.getData();
+        // activates built-in profiles and creates copies
+        ICC_Profile srgbCopy = ICC_Profile.getInstance(srgb.getData());
+        ICC_Profile grayCopy = ICC_Profile.getInstance(gray.getData());
+        ICC_Profile xyzCopy = ICC_Profile.getInstance(xyz.getData());
+        ICC_Profile lrgbCopy = ICC_Profile.getInstance(lrgb.getData());
+        ICC_Profile pyccCopy = ICC_Profile.getInstance(pycc.getData());
 
-        // check default values, after profile activation
+        // checks default values after profile activation
+        test(srgb, gray, xyz, lrgb, pycc);
+
+        // checks default values in copies of the built-in profiles
+        test(srgbCopy, grayCopy, xyzCopy, lrgbCopy, pyccCopy);
+    }
+
+    private static void test(ICC_Profile srgb, ICC_Profile gray,
+                             ICC_Profile xyz, ICC_Profile lrgb,
+                             ICC_Profile pycc) {
         test(srgb, TYPE_RGB, 3, CLASS_DISPLAY);
         test(gray, TYPE_GRAY, 1, CLASS_DISPLAY);
         test(xyz, TYPE_XYZ, 3, CLASS_ABSTRACT);

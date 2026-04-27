@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,15 @@ public class ContentBuilder extends Content {
         for (Content c : contents)
             n += c.charCount();
         return n;
+    }
+
+    @Override
+    public Content stripTags() {
+        var text = new ContentBuilder();
+        for (Content c : contents) {
+            text.add(c.stripTags());
+        }
+        return text;
     }
 
     @Override

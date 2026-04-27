@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 
 import javax.net.ssl.*;
+import sun.net.util.IPAddressUtil;
 import sun.net.www.http.HttpClient;
 import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
@@ -471,7 +472,13 @@ final class HttpsClient extends HttpClient
                     SSLParameters parameters = s.getSSLParameters();
                     parameters.setEndpointIdentificationAlgorithm("HTTPS");
                     // host has been set previously for SSLSocketImpl
-                    if (!(s instanceof SSLSocketImpl)) {
+                    if (!(s instanceof SSLSocketImpl) &&
+                            !IPAddressUtil.isIPv4LiteralAddress(host) &&
+                            !(host.charAt(0) == '[' && host.charAt(host.length() - 1) == ']' &&
+                                IPAddressUtil.isIPv6LiteralAddress(host.substring(1, host.length() - 1))
+                            )) {
+                        // Fully qualified DNS hostname of the server, as per section 3, RFC 6066
+                        // Literal IPv4 and IPv6 addresses are not permitted in "HostName".
                         parameters.setServerNames(List.of(new SNIHostName(host)));
                     }
                     s.setSSLParameters(parameters);
@@ -590,75 +597,6 @@ final class HttpsClient extends HttpClient
         if (http != null) {
             http.closeServer();
         }
-    }
-
-    /**
-     * Returns the cipher suite in use on this connection.
-     */
-    String getCipherSuite() {
-        return session.getCipherSuite();
-    }
-
-    /**
-     * Returns the certificate chain the client sent to the
-     * server, or null if the client did not authenticate.
-     */
-    public java.security.cert.Certificate [] getLocalCertificates() {
-        return session.getLocalCertificates();
-    }
-
-    /**
-     * Returns the certificate chain with which the server
-     * authenticated itself, or throw a SSLPeerUnverifiedException
-     * if the server did not authenticate.
-     */
-    java.security.cert.Certificate [] getServerCertificates()
-            throws SSLPeerUnverifiedException
-    {
-        return session.getPeerCertificates();
-    }
-
-    /**
-     * Returns the principal with which the server authenticated
-     * itself, or throw a SSLPeerUnverifiedException if the
-     * server did not authenticate.
-     */
-    Principal getPeerPrincipal()
-            throws SSLPeerUnverifiedException
-    {
-        Principal principal;
-        try {
-            principal = session.getPeerPrincipal();
-        } catch (AbstractMethodError e) {
-            // if the provider does not support it, fallback to peer certs.
-            // return the X500Principal of the end-entity cert.
-            java.security.cert.Certificate[] certs =
-                        session.getPeerCertificates();
-            principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
-        }
-        return principal;
-    }
-
-    /**
-     * Returns the principal the client sent to the
-     * server, or null if the client did not authenticate.
-     */
-    Principal getLocalPrincipal()
-    {
-        Principal principal;
-        try {
-            principal = session.getLocalPrincipal();
-        } catch (AbstractMethodError e) {
-            principal = null;
-            // if the provider does not support it, fallback to local certs.
-            // return the X500Principal of the end-entity cert.
-            java.security.cert.Certificate[] certs =
-                        session.getLocalCertificates();
-            if (certs != null) {
-                principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
-            }
-        }
-        return principal;
     }
 
     /**

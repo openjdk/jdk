@@ -25,10 +25,10 @@
  * @test
  * @summary check calls from interpreted to native using InvokeDynamic
  * @library /test/lib /
- * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *
  * @build jdk.test.whitebox.WhiteBox
+ * @build compiler.calls.common.InvokeDynamic
  * @run driver compiler.calls.common.InvokeDynamicPatcher
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.

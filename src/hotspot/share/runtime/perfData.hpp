@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
@@ -697,7 +697,7 @@ class PerfDataManager : AllStatic {
     }
 
     static void destroy();
-    static bool has_PerfData() { return Atomic::load_acquire(&_has_PerfData); }
+    static bool has_PerfData() { return AtomicAccess::load_acquire(&_has_PerfData); }
 };
 
 // Useful macros to create the performance counters
@@ -716,7 +716,7 @@ class PerfDataManager : AllStatic {
 // Utility Classes
 
 /*
- * this class will administer a PerfCounter used as a time accumulator
+ * This class will administer a PerfCounter used as a time accumulator
  * for a basic block much like the TraceTime class.
  *
  * Example:
@@ -731,6 +731,9 @@ class PerfDataManager : AllStatic {
  * Note: use of this class does not need to occur within a guarded
  * block. The UsePerfData guard is used with the implementation
  * of this class.
+ *
+ * But also note this class does not guard against shutdown races -
+ * see SafePerfTraceTime below.
  */
 class PerfTraceTime : public StackObj {
 
@@ -754,6 +757,26 @@ class PerfTraceTime : public StackObj {
       _t.stop();
       _timerp->inc(_t.ticks());
     }
+};
+
+/* A variant of PerfTraceTime that guards against use during shutdown -
+ * see PerfDataManager::destroy.
+ */
+class SafePerfTraceTime : public StackObj {
+
+  protected:
+    elapsedTimer _t;
+    PerfLongCounter* _timerp;
+
+  public:
+    inline SafePerfTraceTime(PerfLongCounter* timerp);
+
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
+
+    inline ~SafePerfTraceTime();
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the

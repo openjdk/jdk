@@ -57,3 +57,21 @@ NativeCallStackStorage::NativeCallStackStorage(bool is_detailed_mode, int table_
 NativeCallStackStorage::~NativeCallStackStorage() {
   FREE_C_HEAP_ARRAY(LinkPtr, _table);
 }
+
+NativeCallStackStorage::NativeCallStackStorage(const NativeCallStackStorage& other)
+  : _table_size(other._table_size),
+    _table(nullptr),
+    _stacks(),
+    _is_detailed_mode(other._is_detailed_mode),
+    _fake_stack(other._fake_stack) {
+  if (_is_detailed_mode) {
+    _table = NEW_C_HEAP_ARRAY(TableEntryIndex, _table_size, mtNMT);
+    for (int i = 0; i < _table_size; i++) {
+      _table[i] = other._table[i];
+    }
+  }
+  _stacks.reserve(other._stacks.length());
+  for (int i = 0; i < other._stacks.length(); i++) {
+    _stacks.at_grow(i) = other._stacks.at(i);
+  }
+}

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ requires.properties= \
     vm.gc.Z \
     vm.jvmci \
     vm.jvmci.enabled \
-    vm.emulatedClient \
     vm.cpu.features \
     vm.pageSize \
     vm.debug \
@@ -80,10 +79,13 @@ requires.properties= \
     vm.rtm.compiler \
     vm.cds \
     vm.cds.default.archive.available \
+    vm.cds.nocoops.archive.available \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
@@ -98,19 +100,15 @@ requires.properties= \
     container.support \
     systemd.support \
     jdk.containerized \
+    jdk.explodedImage \
     jlink.runtime.linkable \
     jlink.packagedModules \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.5.2+1
+requiredVersion=8.2.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them
 external.lib.roots = ../../../
 
-# Use new module options
-useNewOptions=true
-
-# Use --patch-module instead of -Xmodule:
-useNewPatchModule=true

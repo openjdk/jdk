@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build LimitUpdateChecker
- * @run driver TestLimitsUpdating
+ * @run driver/timeout=480 TestLimitsUpdating
  */
 
 import java.io.File;
@@ -55,18 +55,14 @@ public class TestLimitsUpdating {
     private static final String imageName = Common.imageName("limitsUpdatingJDK");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testLimitUpdates();
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

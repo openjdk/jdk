@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class IllegalCharsetName {
         assertThrows(IllegalCharsetNameException.class,
                 () -> Charset.forName(name));
         assertThrows(IllegalCharsetNameException.class,
-                () -> Charset.forName(name));
+                () -> Charset.isSupported(name));
     }
 
     // Charset.forName, Charset.isSupported, and the Charset constructor should
@@ -60,7 +60,7 @@ public class IllegalCharsetName {
         assertThrows(IllegalCharsetNameException.class,
                 () -> Charset.forName(""));
         assertThrows(IllegalCharsetNameException.class,
-                () -> Charset.forName(""));
+                () -> Charset.isSupported(""));
         assertThrows(IllegalCharsetNameException.class,
                 () -> new Charset("", new String[]{}) {
                     @Override

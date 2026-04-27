@@ -28,7 +28,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -60,7 +60,7 @@ int MemoryManager::add_pool(MemoryPool* pool) {
 }
 
 bool MemoryManager::is_manager(instanceHandle mh) const {
-  if (Atomic::load_acquire(&_memory_mgr_obj_initialized)) {
+  if (AtomicAccess::load_acquire(&_memory_mgr_obj_initialized)) {
     return mh() == _memory_mgr_obj.resolve();
   } else {
     return false;
@@ -79,7 +79,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   // Lazily create the manager object.
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_mgr_obj points to or implies.
-  if (!Atomic::load_acquire(&_memory_mgr_obj_initialized)) {
+  if (!AtomicAccess::load_acquire(&_memory_mgr_obj_initialized)) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
     Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
@@ -136,7 +136,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     // Get lock since another thread may have created and installed the instance.
     MutexLocker ml(THREAD, Management_lock);
 
-    if (Atomic::load(&_memory_mgr_obj_initialized)) {
+    if (AtomicAccess::load(&_memory_mgr_obj_initialized)) {
       // Some other thread won the race.  Release the handle we allocated and
       // use the other one.  Relaxed load is sufficient because flag update is
       // under the lock.
@@ -147,7 +147,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       _memory_mgr_obj = mgr_handle;
       // Record manager has been created.  Release matching unlocked acquire,
       // to safely publish the manager object.
-      Atomic::release_store(&_memory_mgr_obj_initialized, true);
+      AtomicAccess::release_store(&_memory_mgr_obj_initialized, true);
     }
   }
 

@@ -275,14 +275,6 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
 }
 
 
-static void restore_sp_for_method_handle(StubAssembler* sasm) {
-  // Restore SP from its saved reg (FP) if the exception PC is a MethodHandle call site.
-  __ ldr_s32(Rtemp, Address(Rthread, JavaThread::is_method_handle_return_offset()));
-  __ cmp(Rtemp, 0);
-  __ mov(SP, Rmh_SP_save, ne);
-}
-
-
 OopMapSet* Runtime1::generate_handle_exception(StubId id, StubAssembler* sasm) {
   __ block_comment("generate_handle_exception");
 
@@ -339,7 +331,6 @@ OopMapSet* Runtime1::generate_handle_exception(StubId id, StubAssembler* sasm) {
     break;
   case StubId::c1_handle_exception_from_callee_id:
     restore_live_registers_without_return(sasm); // must not jump immediately to handler
-    restore_sp_for_method_handle(sasm);
     __ ret();
     break;
   default:  ShouldNotReachHere();
@@ -371,9 +362,6 @@ void Runtime1::generate_unwind_exception(StubAssembler* sasm) {
   // Exception oop should be still in Rexception_obj and pc in Rexception_pc
   // Jump to handler
   __ verify_not_null_oop(Rexception_obj);
-
-  // JSR292 extension
-  restore_sp_for_method_handle(sasm);
 
   __ jump(R0);
 }

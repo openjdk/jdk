@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
         <key>CFBundleDevelopmentRegion</key>
-        <string>English</string>
+        <string>en-US</string>
         <key>CFBundleExecutable</key>
         <string>libjli.dylib</string>
         <key>CFBundleIdentifier</key>

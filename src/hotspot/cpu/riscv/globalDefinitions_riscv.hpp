@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -43,8 +43,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define DEOPTIMIZE_WHEN_PATCHING
 
 #define SUPPORTS_NATIVE_CX8
-
-#define SUPPORT_MONITOR_COUNT
 
 #define SUPPORT_RESERVED_STACK_AREA
 

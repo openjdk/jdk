@@ -184,6 +184,7 @@ class ClassLoader: AllStatic {
 
   // Count the time taken to hash the scondary superclass arrays.
   static PerfCounter* _perf_secondary_hash_time;
+  static PerfCounter* _perf_change_wx_time;
 
   // The boot class path consists of 3 ordered pieces:
   //  1. the module/path pairs specified to --patch-module
@@ -212,7 +213,7 @@ class ClassLoader: AllStatic {
   //    Note: boot loader append path does not support named modules.
   static ClassPathEntry* volatile _first_append_entry_list;
   static ClassPathEntry* first_append_entry() {
-    return Atomic::load_acquire(&_first_append_entry_list);
+    return AtomicAccess::load_acquire(&_first_append_entry_list);
   }
 
   // Last entry in linked list of appended ClassPathEntry instances
@@ -267,6 +268,9 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_secondary_hash_time() {
     return _perf_secondary_hash_time;
+  }
+  static PerfCounter* perf_change_wx_time() {
+    return _perf_change_wx_time;
   }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }

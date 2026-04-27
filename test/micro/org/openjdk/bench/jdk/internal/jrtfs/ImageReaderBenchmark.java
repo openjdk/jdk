@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,9 +195,9 @@ public class ImageReaderBenchmark {
     static long countAllNodes(ImageReader reader, Node node) {
         long count = 1;
         if (node.isDirectory()) {
-            count += node.getChildren().stream().mapToLong(n -> {
+            count += node.getChildNames().mapToLong(n -> {
                 try {
-                    return countAllNodes(reader, reader.findNode(n.getName()));
+                    return countAllNodes(reader, reader.findNode(n));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -447,7 +447,6 @@ public class ImageReaderBenchmark {
             "/modules/java.base/jdk/internal/access/JavaLangRefAccess.class",
             "/modules/java.base/java/lang/ref/ReferenceQueue.class",
             "/modules/java.base/java/lang/ref/ReferenceQueue$Null.class",
-            "/modules/java.base/java/lang/ref/ReferenceQueue$Lock.class",
             "/modules/java.base/jdk/internal/access/JavaLangAccess.class",
             "/modules/java.base/jdk/internal/util/SystemProps.class",
             "/modules/java.base/jdk/internal/util/SystemProps$Raw.class",
@@ -1062,7 +1061,6 @@ public class ImageReaderBenchmark {
             "/modules/java.base/jdk/internal/loader/URLClassPath$FileLoader.class",
             "/modules/java.base/jdk/internal/loader/Resource.class",
             "/modules/java.base/java/io/FileCleanable.class",
-            "/modules/java.base/sun/nio/ByteBuffered.class",
             "/modules/java.base/java/security/SecureClassLoader$CodeSourceKey.class",
             "/modules/java.base/java/security/PermissionCollection.class",
             "/modules/java.base/java/security/Permissions.class",
@@ -1074,6 +1072,5 @@ public class ImageReaderBenchmark {
             "/modules/java.base/java/nio/charset/CoderResult.class",
             "/modules/java.base/java/util/IdentityHashMap$IdentityHashMapIterator.class",
             "/modules/java.base/java/util/IdentityHashMap$KeyIterator.class",
-            "/modules/java.base/java/lang/Shutdown.class",
-            "/modules/java.base/java/lang/Shutdown$Lock.class");
+            "/modules/java.base/java/lang/Shutdown.class");
 }

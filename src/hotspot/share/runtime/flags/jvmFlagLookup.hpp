@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_RUNTIME_FLAGS_JVMFLAGLOOKUP_HPP
 #define SHARE_RUNTIME_FLAGS_JVMFLAGLOOKUP_HPP
 
-#include "runtime/globals_extension.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals_extension.hpp"
 
 // This is a hashtable that maps from (const char*) to (JVMFlag*) to speed up
 // the processing of JVM command-line arguments at runtime.

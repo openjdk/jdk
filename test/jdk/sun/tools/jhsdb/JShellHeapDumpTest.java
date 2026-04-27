@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8225715
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @compile JShellHeapDumpTest.java
  * @run main/timeout=240 JShellHeapDumpTest
@@ -162,12 +163,7 @@ public class JShellHeapDumpTest {
         long startTime = System.currentTimeMillis();
         try {
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jshell");
-            if (doSleep) {
-                launcher.addVMArgs(Utils.getTestJavaOpts());
-            } else {
-                // Don't allow use of SerialGC. See JDK-8313655.
-                launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
-            }
+            launcher.addVMArgs(Utils.getTestJavaOpts());
             ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
             // Needed so we can properly parse the "Welcome to JShell" output.
             pb.command().add("-J-Duser.language=en");

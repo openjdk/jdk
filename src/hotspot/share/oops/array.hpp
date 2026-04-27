@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 #ifndef SHARE_OOPS_ARRAY_HPP
 #define SHARE_OOPS_ARRAY_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 // Array for metadata allocation
+
+class MetaspaceClosure;
 
 template <typename T>
 class Array: public MetaspaceObj {
@@ -133,8 +135,8 @@ protected:
   T*   adr_at(const int i)             { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); return &data()[i]; }
   int  find(const T& x)                { return index_of(x); }
 
-  T at_acquire(const int i)            { return Atomic::load_acquire(adr_at(i)); }
-  void release_at_put(int i, T x)      { Atomic::release_store(adr_at(i), x); }
+  T at_acquire(const int i)            { return AtomicAccess::load_acquire(adr_at(i)); }
+  void release_at_put(int i, T x)      { AtomicAccess::release_store(adr_at(i), x); }
 
   static int size(int length) {
     size_t bytes = align_up(byte_sizeof(length), BytesPerWord);
@@ -156,6 +158,9 @@ protected:
   void print_value_on(outputStream* st) const {
     st->print("Array<T>(" PTR_FORMAT ")", p2i(this));
   }
+
+  // This function does nothing. The iteration of the elements are done inside metaspaceClosure.hpp
+  void metaspace_pointers_do(MetaspaceClosure* it) {}
 
 #ifndef PRODUCT
   void print(outputStream* st) {

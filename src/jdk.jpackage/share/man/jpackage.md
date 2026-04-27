@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,12 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
     to add to the application payload.
 
     This option can be used more than once.
+
+    macOS note: The value should be a directory with the "Resources"
+                subdirectory (or any other directory that is valid in the
+                "Contents" directory of the application bundle). Otherwise,
+                jpackage may produce invalid application bundle which may fail
+                code signing and/or notarization.
 
 ### Options for creating the application launcher(s):
 
@@ -404,7 +410,8 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-win-menu">`--win-menu`</a>
 
-:   Request to add a Start Menu shortcut for this application
+:   Adds a Start menu shortcut for this application, or requests to do so
+    if --win-shortcut-prompt is specified
 
 <a id="option-win-menu-group">`--win-menu-group` *menu-group-name*</a>
 
@@ -412,15 +419,17 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-win-per-user-install">`--win-per-user-install`</a>
 
-:   Request to perform an install on a per-user basis
+:   Installs the application on a per-user basis. Without this option installs per-machine
 
 <a id="option-win-shortcut">`--win-shortcut`</a>
 
-:   Request to create a desktop shortcut for this application
+:   Adds a desktop shortcut for this application, or requests to do so
+    if --win-shortcut-prompt is specified
 
 <a id="option-win-shortcut-prompt">`--win-shortcut-prompt`</a>
 
-:   Adds a dialog to enable the user to choose if shortcuts will be created by installer
+:   Adds a dialog if at least one of --win-menu or --win-shortcut are specified
+    to enable the user to choose if these shortcuts will be created by the installer
 
 <a id="option-win-update-url">`--win-update-url` *url*</a>
 
@@ -429,6 +438,10 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 <a id="option-win-upgrade-uuid">`--win-upgrade-uuid` *id*</a>
 
 :   UUID associated with upgrades for this package
+
+<a id="option-win-with-ui">`--win-with-ui`</a>
+
+:   Enforces the installer to have UI
 
 #### Linux platform options (available only when running on Linux):
 

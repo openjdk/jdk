@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ ObjectBitSet<MT>::~ObjectBitSet() {
     delete current;
     current = next;
   }
-  // destructors for ResourceHashtable base deletes nodes, and
-  // ResizeableResourceHashtableStorage deletes the table.
+  // destructors for HashTable base deletes nodes, and
+  // ResizeableHashTableStorage deletes the table.
 }
 
 template<MemTag MT>

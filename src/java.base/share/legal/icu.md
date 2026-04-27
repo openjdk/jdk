@@ -1,4 +1,4 @@
-## International Components for Unicode (ICU4J) v76.1
+## International Components for Unicode (ICU4J) v78.1
 
 ### ICU4J License
 ```
@@ -6,7 +6,7 @@ UNICODE LICENSE V3
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 2016-2024 Unicode, Inc.
+Copyright © 2016-2025 Unicode, Inc.
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR

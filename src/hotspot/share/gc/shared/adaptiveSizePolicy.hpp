@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // Default: 100ms.
   static constexpr double MinGCDistanceSecond = 0.100;
   static_assert(MinGCDistanceSecond >= 0.001, "inv");
-
-  // Goal for the fraction of the total time during which application
-  // threads run
-  const double _throughput_goal;
 
   // pause and interval times for collections
   static elapsedTimer _minor_timer;
@@ -170,8 +166,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   size_t eden_increment(size_t cur_eden, uint percent_change);
 
 public:
-  AdaptiveSizePolicy(double gc_pause_goal_sec,
-                     uint gc_cost_ratio);
+  AdaptiveSizePolicy(double gc_pause_goal_sec);
 
   void record_gc_pause_end_instant() {
     _gc_distance_timer.reset();

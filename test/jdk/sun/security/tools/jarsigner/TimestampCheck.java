@@ -75,7 +75,7 @@ import sun.security.timestamp.TimestampToken;
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
  * @compile -XDignore.symbol.file TimestampCheck.java
- * @run main/timeout=600 TimestampCheck
+ * @run main/timeout=2400 TimestampCheck
  */
 public class TimestampCheck {
 

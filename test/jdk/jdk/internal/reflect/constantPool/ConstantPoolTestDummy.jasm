@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-package  jdk/internal/reflect/constantPool;
-
 super public    #2; //class ConstantPoolTestDummy
     version 52:0
 {
@@ -41,7 +39,7 @@ const #7 = Asciz    "LineNumberTable";
 const #8 = Asciz    "SourceFile";
 const #9 = Asciz    "ConstantPoolTestDummy.java";
 const #10 = NameAndType #4:#5;  //  "<init>":"()V"
-const #11 = Asciz   "jdk/internal/reflect/constantPool/ConstantPoolTestDummy";
+const #11 = Asciz   "ConstantPoolTestDummy";
 const #12 = Asciz   "java/lang/Object";
 const #13 = long    6l;
 const #15 = int     1;
@@ -76,7 +74,7 @@ const #44 = Asciz   "Lookup";
 const #45 = class   #47;    //  java/lang/invoke/MethodHandles
 const #46 = Asciz   "java/lang/invoke/MethodHandles$Lookup";
 const #47 = Asciz   "java/lang/invoke/MethodHandles";
-const #48 = Field    #2.#49;    //  jdk/internal/reflect/constantPool/ConstantPoolTestDummy.myField:"I"
+const #48 = Field    #2.#49;    //  ConstantPoolTestDummy.myField:"I"
 const #49 = NameAndType #50:#51;    //  myField:"I"
 const #50 = Asciz   "myField";
 const #51 = Asciz   "I";

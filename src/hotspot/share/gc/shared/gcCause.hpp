@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,13 @@ class GCCause : public AllStatic {
   inline static bool is_codecache_requested_gc(GCCause::Cause cause) {
       return (cause == _codecache_GC_threshold  ||
               cause == _codecache_GC_aggressive);
+  }
+
+  // Does the "cause" of GC indicate that
+  // we absolutely __must__ clear soft refs?
+  inline static bool should_clear_all_soft_refs(GCCause::Cause cause) {
+    return cause == GCCause::_metadata_GC_clear_soft_refs ||
+           cause == GCCause::_wb_full_gc;
   }
 
   // Return a string describing the GCCause.

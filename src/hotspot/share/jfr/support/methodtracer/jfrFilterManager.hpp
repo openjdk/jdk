@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERMANAGER_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERMANAGER_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 
 class JfrFilter;
 class JavaThread;

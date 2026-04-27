@@ -23,8 +23,8 @@
  */
 
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -136,12 +136,36 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error LargePageSizeInBytesConstraintFunc(size_t value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose, "LargePageSizeInBytes ( %zu ) must be "
+                        "a power of 2\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
 #ifdef AARCH64
   if (value == nullptr) {
     JVMFlag::printError(verbose, "OnSpinWaitInst cannot be empty\n");
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
+
+#ifdef LINUX
+  if (strcmp(value, "wfet") == 0) {
+    if (UnlockExperimentalVMOptions) {
+      return JVMFlag::SUCCESS;
+    } else {
+      JVMFlag::printError(verbose,
+                          "'wfet' value for OnSpinWaitInst is experimental and "
+                          "must be enabled via -XX:+UnlockExperimentalVMOptions.\n"
+                          "Error: The unlock option must precede 'OnSpinWaitInst'.\n");
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
 
   if (strcmp(value, "nop")   != 0 &&
       strcmp(value, "isb")   != 0 &&
@@ -150,7 +174,7 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
       strcmp(value, "none")  != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
-                        "nop, isb, yield, sb, none\n",
+                        "nop, isb, yield, sb," LINUX_ONLY(" wfet,") " none\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

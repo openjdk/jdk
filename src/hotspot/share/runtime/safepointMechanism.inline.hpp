@@ -27,7 +27,7 @@
 
 #include "runtime/safepointMechanism.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -37,18 +37,18 @@
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_page(uintptr_t poll_value) {
-  Atomic::store(&_polling_page, poll_value);
+  AtomicAccess::store(&_polling_page, poll_value);
 }
 
 // Caller is responsible for using a memory barrier if needed.
 inline void SafepointMechanism::ThreadData::set_polling_word(uintptr_t poll_value) {
-  Atomic::store(&_polling_word, poll_value);
+  AtomicAccess::store(&_polling_word, poll_value);
 }
 
 // The acquire makes sure reading of polling page is done before
 // the reading the handshake operation or the global state
 inline uintptr_t SafepointMechanism::ThreadData::get_polling_word() {
-  return Atomic::load_acquire(&_polling_word);
+  return AtomicAccess::load_acquire(&_polling_word);
 }
 
 bool SafepointMechanism::local_poll_armed(JavaThread* thread) {

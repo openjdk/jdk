@@ -28,8 +28,6 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 
-class G1AdaptiveIHOPControl;
-
 // Track allocation details in the old generation.
 class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
   // Total number of bytes allocated in the old generation at the end

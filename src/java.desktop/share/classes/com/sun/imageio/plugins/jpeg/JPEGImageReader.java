@@ -391,6 +391,12 @@ public class JPEGImageReader extends ImageReader {
         tablesOnlyChecked = true;
     }
 
+    private void verifyImageIndex(int imageIndex) {
+        if (imageIndex < minIndex) {
+            throw new IndexOutOfBoundsException("imageIndex < " + minIndex);
+        }
+    }
+
     @Override
     public int getNumImages(boolean allowSearch) throws IOException {
         setThreadLock();
@@ -497,9 +503,7 @@ public class JPEGImageReader extends ImageReader {
         if (iis == null) {
             throw new IllegalStateException("Input not set");
         }
-        if (imageIndex < minIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        verifyImageIndex(imageIndex);
         if (!tablesOnlyChecked) {
             checkTablesOnly();
         }
@@ -842,6 +846,7 @@ public class JPEGImageReader extends ImageReader {
     public int getWidth(int imageIndex) throws IOException {
         setThreadLock();
         try {
+            verifyImageIndex(imageIndex);
             if (currentImage != imageIndex) {
                 cbLock.check();
                 readHeader(imageIndex, true);
@@ -856,6 +861,7 @@ public class JPEGImageReader extends ImageReader {
     public int getHeight(int imageIndex) throws IOException {
         setThreadLock();
         try {
+            verifyImageIndex(imageIndex);
             if (currentImage != imageIndex) {
                 cbLock.check();
                 readHeader(imageIndex, true);
@@ -886,6 +892,7 @@ public class JPEGImageReader extends ImageReader {
         throws IOException {
         setThreadLock();
         try {
+            verifyImageIndex(imageIndex);
             if (currentImage != imageIndex) {
                 cbLock.check();
 
@@ -904,6 +911,7 @@ public class JPEGImageReader extends ImageReader {
         throws IOException {
         setThreadLock();
         try {
+            verifyImageIndex(imageIndex);
             return getImageTypesOnThread(imageIndex);
         } finally {
             clearThreadLock();

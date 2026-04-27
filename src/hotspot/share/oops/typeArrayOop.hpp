@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_TYPEARRAYOOP_HPP
 #define SHARE_OOPS_TYPEARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/typeArrayKlass.hpp"
-
-#include <type_traits>
 
 // A typeArrayOop is an array containing basic types (non oop elements).
 // It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}

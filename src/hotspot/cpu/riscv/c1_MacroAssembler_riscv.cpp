@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -48,110 +48,30 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
   }
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
-  const int aligned_mask = BytesPerWord - 1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lock, Register temp, Label& slow_case) {
+  assert_different_registers(hdr, obj, basic_lock, temp, t0, t1);
   int null_check_offset = -1;
 
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  sd(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  sd(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
 
   null_check_offset = offset();
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(hdr, obj);
-      lbu(hdr, Address(hdr, Klass::misc_flags_offset()));
-      test_bit(temp, hdr, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bnez(temp, slow_case, /* is_far */ true);
-    }
-
-    Label done;
-    // Load object header
-    ld(hdr, Address(obj, hdr_offset));
-    // and mark it as unlocked
-    ori(hdr, hdr, markWord::unlocked_value);
-    // save unlocked object header into the displaced header location on the stack
-    sd(hdr, Address(disp_hdr, 0));
-    // test if object header is still the same (i.e. unlocked), and if so, store the
-    // displaced header address in the object header - if it is not the same, get the
-    // object header instead
-    la(temp, Address(obj, hdr_offset));
-    // if the object header was the same, we're done
-    cmpxchgptr(hdr, disp_hdr, temp, t1, done, /*fallthough*/nullptr);
-    // if the object header was not the same, it is now in the hdr register
-    // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
-    //
-    // 1) (hdr & aligned_mask) == 0
-    // 2) sp <= hdr
-    // 3) hdr <= sp + page_size
-    //
-    // these 3 tests can be done by evaluating the following expression:
-    //
-    // (hdr -sp) & (aligned_mask - page_size)
-    //
-    // assuming both the stack pointer and page_size have their least
-    // significant 2 bits cleared and page_size is a power of 2
-    sub(hdr, hdr, sp);
-    mv(temp, aligned_mask - (int)os::vm_page_size());
-    andr(hdr, hdr, temp);
-    // for recursive locking, the result is zero => save it in the displaced header
-    // location (null in the displaced hdr location indicates recursive locking)
-    sd(hdr, Address(disp_hdr, 0));
-    // otherwise we don't care about the result and handle locking via runtime call
-    bnez(hdr, slow_case, /* is_far */ true);
-
-    // done
-    bind(done);
-    inc_held_monitor_count(t0);
-  }
+  fast_lock(basic_lock, obj, hdr, temp, t1, slow_case);
 
   return null_check_offset;
 }
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
-  const int aligned_mask = BytesPerWord - 1;
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
-  Label done;
-
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // load displaced header
-    ld(hdr, Address(disp_hdr, 0));
-    // if the loaded hdr is null we had recursive locking
-    // if we had recursive locking, we are done
-    beqz(hdr, done);
-  }
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic_lock, Register temp, Label& slow_case) {
+  assert_different_registers(hdr, obj, basic_lock, temp, t0, t1);
 
   // load object
-  ld(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  ld(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(obj, hdr, temp, t1, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-    // test if object header is pointing to the displaced header, and if so, restore
-    // the displaced header in the object - if the object header is not pointing to
-    // the displaced header, get the object header instead
-    // if the object header was not pointing to the displaced header,
-    // we do unlocking via runtime call
-    if (hdr_offset) {
-      la(temp, Address(obj, hdr_offset));
-      cmpxchgptr(disp_hdr, hdr, temp, t1, done, &slow_case);
-    } else {
-      cmpxchgptr(disp_hdr, hdr, obj, t1, done, &slow_case);
-    }
-
-    // done
-    bind(done);
-    dec_held_monitor_count(t0);
-  }
+  fast_unlock(obj, hdr, temp, t1, slow_case);
 }
 
 // Defines obj, preserves var_size_in_bytes
@@ -172,12 +92,8 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     // This assumes that all prototype bits fitr in an int32_t
     mv(tmp1, checked_cast<int32_t>(markWord::prototype().value()));
     sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    if (UseCompressedClassPointers) { // Take care not to kill klass
-      encode_klass_not_null(tmp1, klass, tmp2);
-      sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
-    } else {
-      sd(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
+    encode_klass_not_null(tmp1, klass, tmp2);
+    sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 
   if (len->is_valid()) {
@@ -188,7 +104,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       // Clear gap/first 4 bytes following the length field.
       sw(zr, Address(obj, base_offset));
     }
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (!UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
   }
 }

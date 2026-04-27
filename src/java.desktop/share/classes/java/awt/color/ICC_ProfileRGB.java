@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ package java.awt.color;
 
 import java.io.Serial;
 
+import sun.java2d.cmm.BuiltinProfileInfo;
 import sun.java2d.cmm.Profile;
-import sun.java2d.cmm.ProfileDeferralInfo;
 
 /**
  * The {@code ICC_ProfileRGB} class is a subclass of the {@code ICC_Profile}
@@ -122,12 +122,10 @@ public final class ICC_ProfileRGB extends ICC_Profile {
 
     /**
      * Constructs a new {@code ICC_ProfileRGB} from a
-     * {@code ProfileDeferralInfo} object.
-     *
-     * @param  pdi
+     * {@code BuiltinProfileInfo} object.
      */
-    ICC_ProfileRGB(ProfileDeferralInfo pdi) {
-        super(pdi);
+    ICC_ProfileRGB(BuiltinProfileInfo bpi) {
+        super(bpi);
     }
 
     /**
@@ -137,6 +135,7 @@ public final class ICC_ProfileRGB extends ICC_Profile {
      * @return a 3-element {@code float} array containing the x, y, and z
      *         components of the profile's {@code mediaWhitePointTag}
      */
+    @Override
     public float[] getMediaWhitePoint() {
         return super.getMediaWhitePoint();
     }
@@ -188,6 +187,7 @@ public final class ICC_ProfileRGB extends ICC_Profile {
      * @throws ProfileDataException if the profile does not specify the
      *         corresponding TRC as a single gamma value
      */
+    @Override
     public float getGamma(int component) {
         return super.getGamma(toTag(component));
     }
@@ -220,6 +220,7 @@ public final class ICC_ProfileRGB extends ICC_Profile {
      * @throws ProfileDataException if the profile does not specify the
      *         corresponding TRC as a table
      */
+    @Override
     public short[] getTRC(int component) {
         return super.getTRC(toTag(component));
     }

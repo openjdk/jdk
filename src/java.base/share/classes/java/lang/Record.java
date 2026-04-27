@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,12 @@ public abstract class Record {
      *
      * </ul>
      *
-     * Apart from the semantics described above, the precise algorithm
+     * Note that these rules imply that {@linkplain
+     * Double##repEquivalence representation equivalence} is used for
+     * the equality comparison of both primitive floating-point values
+     * and wrapped floating-point values.
+     *
+     * <p>Apart from the semantics described above, the precise algorithm
      * used in the implicitly provided implementation is unspecified
      * and is subject to change. The implementation may or may not use
      * calls to the particular methods listed, and may or may not

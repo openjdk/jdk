@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -55,8 +55,8 @@ CompiledICLocker::~CompiledICLocker() {
   }
 }
 
-bool CompiledICLocker::is_safe(nmethod* method) {
-  return CompiledICProtectionBehaviour::current()->is_safe(method);
+bool CompiledICLocker::is_safe(nmethod* nm) {
+  return CompiledICProtectionBehaviour::current()->is_safe(nm);
 }
 
 bool CompiledICLocker::is_safe(address code) {
@@ -76,11 +76,7 @@ CompiledICData::CompiledICData()
 // Inline cache callsite info is initialized once the first time it is resolved
 void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
   _speculated_method = call_info->selected_method();
-  if (UseCompressedClassPointers) {
-    _speculated_klass = (uintptr_t)CompressedKlassPointers::encode_not_null(receiver_klass);
-  } else {
-    _speculated_klass = (uintptr_t)receiver_klass;
-  }
+  _speculated_klass = (uintptr_t)CompressedKlassPointers::encode_not_null(receiver_klass);
   if (call_info->call_kind() == CallInfo::itable_call) {
     assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
@@ -104,8 +100,8 @@ void CompiledICData::clean_metadata() {
   // subsequent miss handlers will upgrade the callsite to megamorphic,
   // which makes sense as it obviously is megamorphic then.
   if (!speculated_klass()->is_loader_alive()) {
-    Atomic::store(&_speculated_klass, (uintptr_t)0);
-    Atomic::store(&_speculated_method, (Method*)nullptr);
+    AtomicAccess::store(&_speculated_klass, (uintptr_t)0);
+    AtomicAccess::store(&_speculated_method, (Method*)nullptr);
   }
 
   assert(_speculated_method == nullptr || _speculated_method->method_holder()->is_loader_alive(),
@@ -133,12 +129,7 @@ Klass* CompiledICData::speculated_klass() const {
   if (is_speculated_klass_unloaded()) {
     return nullptr;
   }
-
-  if (UseCompressedClassPointers) {
-    return CompressedKlassPointers::decode_not_null((narrowKlass)_speculated_klass);
-  } else {
-    return (Klass*)_speculated_klass;
-  }
+  return CompressedKlassPointers::decode_not_null((narrowKlass)_speculated_klass);
 }
 
 //-----------------------------------------------------------------------------

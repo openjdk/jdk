@@ -24,25 +24,25 @@
 #include "logging/logLevel.hpp"
 #include "logging/logOutputList.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 jint LogOutputList::increase_readers() {
-  jint result = Atomic::add(&_active_readers, 1);
+  jint result = AtomicAccess::add(&_active_readers, 1);
   assert(_active_readers > 0, "Ensure we have consistent state");
   return result;
 }
 
 jint LogOutputList::decrease_readers() {
-  jint result = Atomic::add(&_active_readers, -1);
+  jint result = AtomicAccess::add(&_active_readers, -1);
   assert(result >= 0, "Ensure we have consistent state");
   return result;
 }
 
 void LogOutputList::wait_until_no_readers() const {
   OrderAccess::storeload();
-  while (Atomic::load(&_active_readers) != 0) {
+  while (AtomicAccess::load(&_active_readers) != 0) {
     // Busy wait
   }
   // Prevent mutations to the output list to float above the active reader check.
@@ -133,16 +133,16 @@ void LogOutputList::add_output(LogOutput* output, LogLevelType level) {
 
   // Update the _level_start index
   for (int l = LogLevel::Last; l >= level; l--) {
-    LogOutputNode* lnode = Atomic::load(&_level_start[l]);
+    LogOutputNode* lnode = AtomicAccess::load(&_level_start[l]);
     if (lnode == nullptr || lnode->_level < level) {
-      Atomic::store(&_level_start[l], node);
+      AtomicAccess::store(&_level_start[l], node);
     }
   }
 
   // Add the node the list
-  for (LogOutputNode* cur = Atomic::load(&_level_start[LogLevel::Last]); cur != nullptr; cur = Atomic::load(&cur->_next)) {
-    if (cur != node && Atomic::load(&cur->_next) == node->_next) {
-      Atomic::store(&cur->_next, node);
+  for (LogOutputNode* cur = AtomicAccess::load(&_level_start[LogLevel::Last]); cur != nullptr; cur = AtomicAccess::load(&cur->_next)) {
+    if (cur != node && AtomicAccess::load(&cur->_next) == node->_next) {
+      AtomicAccess::store(&cur->_next, node);
       break;
     }
   }

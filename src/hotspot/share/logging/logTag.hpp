@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ class outputStream;
   LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
+  LOG_TAG(asan) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
@@ -89,11 +90,13 @@ class outputStream;
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   NOT_PRODUCT(LOG_TAG(generate)) \
+  LOG_TAG(generateoopmap) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
   LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
+  COMPILER2_PRESENT(LOG_TAG(hotcode)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \

@@ -34,7 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/events.hpp"
@@ -361,7 +361,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx current_thread_id = os::current_thread_id();
   intx invalid_id = -1;
   int log_fd;
-  if (_first_error_tid == invalid_id && Atomic::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
+  if (_first_error_tid == invalid_id && AtomicAccess::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
     if (ErrorFileToStdout) {
       log_fd = 1;
     } else if (ErrorFileToStderr) {

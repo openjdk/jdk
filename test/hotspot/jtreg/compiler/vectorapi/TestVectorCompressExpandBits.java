@@ -38,6 +38,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @bug 8301012
+ * @key randomness
  * @library /test/lib /
  * @requires os.arch == "aarch64" & vm.cpu.features ~= ".*sve2.*" & vm.cpu.features ~= ".*svebitperm.*"
  * @summary [vectorapi]: Intrinsify CompressBitsV/ExpandBitsV and add the AArch64 SVE backend implementation

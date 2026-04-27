@@ -29,10 +29,10 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/semaphore.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class LogFileStreamOutput;
 
@@ -66,7 +66,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
-  using AsyncLogMap = ResourceHashtable<LogFileStreamOutput*,
+  using AsyncLogMap = HashTable<LogFileStreamOutput*,
                           uint32_t, 17, /*table_size*/
                           ALLOC_TYPE, mtLogging>;
 

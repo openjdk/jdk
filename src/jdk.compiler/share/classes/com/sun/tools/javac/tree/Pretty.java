@@ -724,7 +724,10 @@ public class Pretty extends JCTree.Visitor {
                     print("... ");
                     print(tree.name);
                 } else {
-                    printExpr(tree.vartype);
+                    if (tree.vartype == null && tree.declaredUsingVar())
+                        print("var");
+                    else
+                        printExpr(tree.vartype);
                     print(' ');
                     if (tree.name.isEmpty()) {
                         print('_');
@@ -1521,6 +1524,15 @@ public class Pretty extends JCTree.Visitor {
                     print("error");
                     break;
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitVarType(JCVarType that) {
+        try {
+            print("var");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -39,11 +39,11 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "runtime/handles.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
@@ -52,7 +52,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/growableArray.hpp"
-#include "classfile/vmSymbols.hpp"
 
 #ifdef ASSERT
 static void check_java_thread_state(JavaThread* t, JavaThreadState state) {
@@ -229,7 +228,7 @@ void JfrJavaSupport::new_object_global_ref(JfrJavaArguments* args, TRAPS) {
 jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
   assert(c_str != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
-  const oop result = java_lang_String::create_oop_from_str(c_str, THREAD);
+  const oop result = java_lang_String::create_oop_from_str(c_str, CHECK_NULL);
   return (jstring)local_jni_handle(result, THREAD);
 }
 

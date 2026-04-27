@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 4938801
+ * @bug 4938801 8376169
  * @key headful
  * @summary Verifies popup is removed when the component is removed
  * @run main TestPopupInvoker
  */
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Robot;
 import java.util.concurrent.CountDownLatch;
@@ -48,6 +49,7 @@ public class TestPopupInvoker {
     static JFrame frame;
     static JLabel label;
     static Container pane;
+    static volatile Component invoker;
 
     private static final CountDownLatch popupShown = new CountDownLatch(1);
     private static final CountDownLatch popupHidden = new CountDownLatch(1);
@@ -73,6 +75,7 @@ public class TestPopupInvoker {
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 popupHidden.countDown();
+                popupMenu.setInvoker(null);
             }
 
             @Override
@@ -105,6 +108,11 @@ public class TestPopupInvoker {
             });
             if (!popupHidden.await(1, SECONDS)) {
                 throw new RuntimeException("Popup is visible after component is removed");
+            }
+
+            SwingUtilities.invokeAndWait(() -> invoker = popupMenu.getInvoker());
+            if (invoker != null) {
+                throw new RuntimeException("Invoker is not null");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {

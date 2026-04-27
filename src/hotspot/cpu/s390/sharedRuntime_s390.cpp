@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1567,7 +1567,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //---------------------------------------------------------------------
   wrapper_VEPStart = __ offset();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = Z_R1_scratch;
     // Notify OOP recorder (don't need the relocation)
@@ -1764,13 +1765,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_lock kills r_temp_1, r_temp_2.
+    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1965,13 +1961,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_unlock kills r_tmp1, r_tmp2.
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2357,12 +2348,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
   __ align(CodeEntryAlignment);
-  address i2c_entry = __ pc();
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
-
-  address c2i_unverified_entry;
 
   Label skip_fixup;
   {
@@ -2373,7 +2362,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
     // Unverified Entry Point UEP
     __ align(CodeEntryAlignment);
-    c2i_unverified_entry = __ pc();
+    entry_address[AdapterBlob::C2I_Unverified] = __ pc();
 
     __ ic_check(2);
     __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
@@ -2386,32 +2375,28 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     // Fallthru to VEP. Duplicate LTG, but saved taken branch.
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
-      __ z_bfalse(L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+  __ z_bfalse(L_skip_barrier); // non-static
 
-    Register klass = Z_R11;
-    __ load_method_holder(klass, Z_method);
-    __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = Z_R11;
+  __ load_method_holder(klass, Z_method);
+  __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
-    __ z_br(klass);
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(klass);
 
-    __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -2558,14 +2543,10 @@ void SharedRuntime::generate_deopt_blob() {
   // Normal entry (non-exception case)
   //
   // We have been called from the deopt handler of the deoptee.
-  // Z_R14 points behind the call in the deopt handler. We adjust
-  // it such that it points to the start of the deopt handler.
+  // Z_R14 points to the entry point of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  // The (int) cast is necessary, because -((unsigned int)14)
-  // is an unsigned int.
-  __ add2reg(Z_R14, -(int)NativeCall::max_instruction_size());
 
   const Register   exec_mode_reg = Z_tmp_1;
 

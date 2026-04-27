@@ -48,8 +48,9 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -146,7 +147,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const oop o = AtomicAccess::load(p); // C1 PatchingStub may replace it concurrently.
       const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);
@@ -245,8 +246,16 @@ void ZNMethod::set_guard_value(nmethod* nm, int value) {
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
+  ICacheInvalidationContext icic;
+  nmethod_patch_barriers(nm, &icic);
+}
+
+void ZNMethod::nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
+  if (gc_data(nm)->barriers()->is_nonempty()) {
+    icic->set_has_modified_code();
+  }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
@@ -258,6 +267,11 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
 }
 
 void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+  ICacheInvalidationContext icic;
+  nmethod_oops_do_inner(nm, cl, &icic);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -283,7 +297,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations();
+    nm->fix_oop_relocations(icic);
   }
 }
 
@@ -314,7 +328,7 @@ oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
 
 oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
   // The rest of the code is not ready to handle const nmethod, so cast it away
-  // until we are more consistent with our const corectness.
+  // until we are more consistent with our const correctness.
   nmethod* nm = const_cast<nmethod*>(const_nm);
 
   if (!is_armed(nm)) {

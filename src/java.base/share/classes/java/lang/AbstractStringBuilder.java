@@ -1448,8 +1448,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         shift(currValue, coder, count, dstOffset, len);
         count += len;
         // Coder of CharSequence may be a mismatch, requiring the value array to be inflated
-        byte[] newValue = (s instanceof String str)
-            ? putStringAt(currValue, coder, count, dstOffset, str, start, end)
+        byte[] newValue = (s instanceof String str && str.length() == len)
+            ? putStringAt(currValue, coder, count, dstOffset, str)
             : putCharsAt(currValue, coder, count, dstOffset, s, start, end);
         if (currValue != newValue) {
             this.coder = UTF16;
@@ -1928,10 +1928,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param index the index to insert the string
      * @param str the string
      */
-     private static byte[] putStringAt(byte[] value, byte coder, int count, int index, String str, int off, int end) {
+     private static byte[] putStringAt(byte[] value, byte coder, int count, int index, String str) {
         byte[] newValue = inflateIfNeededFor(value, count, coder, str.coder());
         coder = (newValue == value) ? coder : UTF16;
-        str.getBytes(newValue, off, index, coder, end - off);
+        str.getBytes(newValue, 0, index, coder, str.length());
         return newValue;
     }
 
@@ -2044,42 +2044,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringUTF16.putCharsSB(value, count, s, off, end);
         }
         return value;
-    }
-
-    /**
-     * Used by StringConcatHelper via JLA. Adds the current builder count to the
-     * accumulation of items being concatenated. If the coder for the builder is
-     * UTF16 then upgrade the whole concatenation to UTF16.
-     *
-     * @param lengthCoder running accumulation of length and coder
-     *
-     * @return updated accumulation of length and coder
-     */
-    long mix(long lengthCoder) {
-        return (lengthCoder + count) | ((long)coder << 32);
-    }
-
-    /**
-     * Used by StringConcatHelper via JLA. Adds the characters in the builder value to the
-     * concatenation buffer and then updates the running accumulation of length.
-     *
-     * @param lengthCoder running accumulation of length and coder
-     * @param buffer      concatenation buffer
-     *
-     * @return running accumulation of length and coder minus the number of characters added
-     */
-    long prepend(long lengthCoder, byte[] buffer) {
-        lengthCoder -= count;
-
-        if (lengthCoder < ((long)UTF16 << 32)) {
-            System.arraycopy(value, 0, buffer, (int)lengthCoder, count);
-        } else if (isLatin1(coder)) {
-            StringUTF16.inflate(value, 0, buffer, (int)lengthCoder, count);
-        } else {
-            System.arraycopy(value, 0, buffer, (int)lengthCoder << 1, count << 1);
-        }
-
-        return lengthCoder;
     }
 
     private AbstractStringBuilder repeat(char c, int count) {

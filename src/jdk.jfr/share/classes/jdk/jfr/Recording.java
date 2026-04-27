@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
@@ -44,7 +45,7 @@ import jdk.jfr.internal.WriteablePath;
 /**
  * Provides means to configure, start, stop and dump recording data to disk.
  * <p>
- * The following example shows how configure, start, stop and dump recording data to disk.
+ * The following example shows how to configure, start, stop and dump recording data to disk.
  *
  * {@snippet class="Snippets" region="RecordingOverview"}
  *
@@ -100,11 +101,16 @@ public final class Recording implements Closeable {
      * @since 11
      */
     public Recording(Map<String, String> settings) {
+        this(RecordingState.NEW, settings);
+    }
+
+    // package private
+    Recording(RecordingState state, Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
-            this.internal = r.newRecording(sanitized);
+            this.internal = r.newRecording(state, sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
                 throw new InternalError("Internal recording not properly setup");
@@ -138,7 +144,7 @@ public final class Recording implements Closeable {
      * The newly created recording is in the {@link RecordingState#NEW} state. To
      * start the recording, invoke the {@link Recording#start()} method.
      *
-     * @param configuration configuration that contains the settings to be use, not
+     * @param configuration configuration that contains the settings to be used, not
      *        {@code null}
      *
      * @throws IllegalStateException if Flight Recorder can't be created (for
@@ -339,7 +345,7 @@ public final class Recording implements Closeable {
      * <p>
      * Clones are useful for dumping data without stopping the recording. After
      * a clone is created, the amount of data to copy is constrained
-     * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)}method.
+     * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)} method.
      *
      * @param stop {@code true} if the newly created copy should be stopped
      *        immediately, {@code false} otherwise
@@ -615,9 +621,9 @@ public final class Recording implements Closeable {
     /**
      * Disables event with the specified name.
      * <p>
-     * If multiple events with same name (for example, the same class is loaded
+     * If multiple events with the same name (for example, the same class is loaded
      * in different class loaders), then all events that match the
-     * name is disabled. To disable a specific class, use the
+     * name are disabled. To disable a specific class, use the
      * {@link #disable(Class)} method or a {@code String} representation of the event
      * type ID.
      *
@@ -653,7 +659,7 @@ public final class Recording implements Closeable {
     /**
      * Disables event.
      *
-     * @param eventClass the event to enable, not {@code null}
+     * @param eventClass the event to disable, not {@code null}
      *
      * @throws IllegalArgumentException if {@code eventClass} is an abstract
      *         class or not a subclass of {@link Event}

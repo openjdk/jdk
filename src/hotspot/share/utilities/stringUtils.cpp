@@ -24,6 +24,7 @@
 
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
@@ -78,14 +78,10 @@ class OopMapForCacheEntry: public GenerateOopMap {
   int               _stack_top;
 
   virtual bool report_results() const     { return false; }
-  virtual bool possible_gc_point          (BytecodeStream *bcs);
-  virtual void fill_stackmap_prolog       (int nof_gc_points);
-  virtual void fill_stackmap_epilog       ();
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top);
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars);
 
  public:
   OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry *entry);
@@ -117,26 +113,6 @@ bool OopMapForCacheEntry::compute_map(Thread* current) {
     result_for_basicblock(_bci);
   }
   return true;
-}
-
-
-bool OopMapForCacheEntry::possible_gc_point(BytecodeStream *bcs) {
-  return false; // We are not reporting any result. We call result_for_basicblock directly
-}
-
-
-void OopMapForCacheEntry::fill_stackmap_prolog(int nof_gc_points) {
-  // Do nothing
-}
-
-
-void OopMapForCacheEntry::fill_stackmap_epilog() {
-  // Do nothing
-}
-
-
-void OopMapForCacheEntry::fill_init_vars(GrowableArray<intptr_t> *init_vars) {
-  // Do nothing
 }
 
 
@@ -280,8 +256,8 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
   if (log) st.print("Locals (%d): ", max_locals);
   for(int i = 0; i < max_locals; i++) {
-    bool v1 = is_oop(i)               ? true : false;
-    bool v2 = vars[i].is_reference()  ? true : false;
+    bool v1 = is_oop(i);
+    bool v2 = vars[i].is_reference();
     assert(v1 == v2, "locals oop mask generation error");
     if (log) st.print("%d", v1 ? 1 : 0);
   }
@@ -289,8 +265,8 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
   if (log) st.print("Stack (%d): ", stack_top);
   for(int j = 0; j < stack_top; j++) {
-    bool v1 = is_oop(max_locals + j)  ? true : false;
-    bool v2 = stack[j].is_reference() ? true : false;
+    bool v1 = is_oop(max_locals + j);
+    bool v2 = stack[j].is_reference();
     assert(v1 == v2, "stack oop mask generation error");
     if (log) st.print("%d", v1 ? 1 : 0);
   }
@@ -374,7 +350,7 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
     }
 
     // set oop bit
-    if ( cell->is_reference()) {
+    if (cell->is_reference()) {
       value |= (mask << oop_bit_number );
       _num_oops++;
     }
@@ -448,11 +424,11 @@ OopMapCache::~OopMapCache() {
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return Atomic::load_acquire(&(_array[i % size]));
+  return AtomicAccess::load_acquire(&(_array[i % size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(&_array[i % size], old, entry) == old;
+  return AtomicAccess::cmpxchg(&_array[i % size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
@@ -562,9 +538,9 @@ void OopMapCache::lookup(const methodHandle& method,
 
 void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
   while (true) {
-    OopMapCacheEntry* head = Atomic::load(&_old_entries);
+    OopMapCacheEntry* head = AtomicAccess::load(&_old_entries);
     entry->_next = head;
-    if (Atomic::cmpxchg(&_old_entries, head, entry) == head) {
+    if (AtomicAccess::cmpxchg(&_old_entries, head, entry) == head) {
       // Enqueued successfully.
       break;
     }
@@ -578,7 +554,7 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
 }
 
 bool OopMapCache::has_cleanup_work() {
-  return Atomic::load(&_old_entries) != nullptr;
+  return AtomicAccess::load(&_old_entries) != nullptr;
 }
 
 void OopMapCache::try_trigger_cleanup() {
@@ -592,7 +568,7 @@ void OopMapCache::try_trigger_cleanup() {
 }
 
 void OopMapCache::cleanup() {
-  OopMapCacheEntry* entry = Atomic::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
+  OopMapCacheEntry* entry = AtomicAccess::xchg(&_old_entries, (OopMapCacheEntry*)nullptr);
   if (entry == nullptr) {
     // No work.
     return;

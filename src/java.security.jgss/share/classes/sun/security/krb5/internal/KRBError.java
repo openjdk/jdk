@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.security.krb5.RealmException;
 import sun.security.util.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,7 +86,8 @@ import static sun.security.krb5.internal.Krb5.DEBUG;
  */
 
 public class KRBError implements java.io.Serializable {
-    static final long serialVersionUID = 3643809337475284503L;
+    @Serial
+    private static final long serialVersionUID = 3643809337475284503L;
 
     private transient int pvno;
     private transient int msgType;
@@ -112,7 +114,7 @@ public class KRBError implements java.io.Serializable {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
+    @Serial
     private void readObject(ObjectInputStream is)
             throws IOException, ClassNotFoundException {
         try {
@@ -123,6 +125,7 @@ public class KRBError implements java.io.Serializable {
         }
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream os)
             throws IOException {
         try {

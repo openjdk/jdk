@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,48 +24,55 @@
  /*
  * @test
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
+ *      8354548 8381379
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
- * @run testng TimeZoneNamesTest
+ * @run junit TimeZoneNamesTest
  */
 
 import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Test
 public class TimeZoneNamesTest {
 
-    @DataProvider
-    Object[][] sampleTZs() {
+    private static Object[][] sampleTZs() {
         return new Object[][] {
             // tzid, locale, style, expected
 
-            // This list is as of CLDR version 47, and should be examined
+            // This list is as of CLDR version 48, and should be examined
             // on the CLDR data upgrade.
 
-            // no "metazone" zones
-            {"Asia/Srednekolymsk",      Locale.US, "Srednekolymsk Standard Time",
+            // no "metazone" zones (some of them were assigned metazones
+            // over time, thus they are not "generated" per se
+            {"Asia/Srednekolymsk",      Locale.US, "Magadan Standard Time",
                                                     "GMT+11:00",
-                                                    "Srednekolymsk Daylight Time",
+                                                    "Magadan Summer Time",
                                                     "GMT+12:00",
-                                                    "Srednekolymsk Time",
+                                                    "Magadan Time",
                                                     "GMT+11:00"},
-            {"Asia/Srednekolymsk",      Locale.FRANCE, "Srednekolymsk (heure standard)",
+            {"Asia/Srednekolymsk",      Locale.FRANCE, "heure normale de Magadan",
                                                     "UTC+11:00",
-                                                    "Srednekolymsk (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure d’été de Magadan",
                                                     "UTC+12:00",
-                                                    "heure : Srednekolymsk",
+                                                    "heure de Magadan",
                                                     "UTC+11:00"},
             {"America/Punta_Arenas",    Locale.US, "Punta Arenas Standard Time",
                                                     "GMT-03:00",
@@ -74,58 +81,58 @@ public class TimeZoneNamesTest {
                                                     "Punta Arenas Time",
                                                     "GMT-03:00"},
             {"America/Punta_Arenas",    Locale.FRANCE, "Punta Arenas (heure standard)",
-                                                    "UTC\u221203:00",
-                                                    "Punta Arenas (heure d\u2019\u00e9t\u00e9)",
-                                                    "UTC\u221202:00",
+                                                    "UTC−03:00",
+                                                    "Punta Arenas (heure d’été)",
+                                                    "UTC−02:00",
                                                     "heure : Punta Arenas",
-                                                    "UTC\u221203:00"},
-            {"Asia/Famagusta",          Locale.US, "Famagusta Standard Time",
+                                                    "UTC−03:00"},
+            {"Asia/Famagusta",          Locale.US, "Eastern European Standard Time",
                                                     "EET",
-                                                    "Famagusta Daylight Time",
+                                                    "Eastern European Summer Time",
                                                     "EEST",
-                                                    "Famagusta Time",
+                                                    "Eastern European Time",
                                                     "EET"},
-            {"Asia/Famagusta",          Locale.FRANCE, "Famagouste (heure standard)",
+            {"Asia/Famagusta",          Locale.FRANCE, "heure normale d’Europe de l’Est",
                                                     "EET",
-                                                    "Famagouste (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure d’été d’Europe de l’Est",
                                                     "EEST",
-                                                    "heure : Famagouste",
+                                                    "heure d’Europe de l’Est",
                                                     "EET"},
-            {"Europe/Astrakhan",        Locale.US, "Astrakhan Standard Time",
+            {"Europe/Astrakhan",        Locale.US, "Samara Standard Time",
                                                     "GMT+04:00",
-                                                    "Astrakhan Daylight Time",
+                                                    "Samara Summer Time",
                                                     "GMT+05:00",
-                                                    "Astrakhan Time",
+                                                    "Samara Time",
                                                     "GMT+04:00"},
-            {"Europe/Astrakhan",        Locale.FRANCE, "Astrakhan (heure standard)",
+            {"Europe/Astrakhan",        Locale.FRANCE, "heure normale de Samara",
                                                     "UTC+04:00",
-                                                    "Astrakhan (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure d’été de Samara",
                                                     "UTC+05:00",
-                                                    "heure : Astrakhan",
+                                                    "heure de Samara",
                                                     "UTC+04:00"},
-            {"Europe/Saratov",          Locale.US, "Saratov Standard Time",
+            {"Europe/Saratov",          Locale.US, "Samara Standard Time",
                                                     "GMT+04:00",
-                                                    "Saratov Daylight Time",
+                                                    "Samara Summer Time",
                                                     "GMT+05:00",
-                                                    "Saratov Time",
+                                                    "Samara Time",
                                                     "GMT+04:00"},
-            {"Europe/Saratov",          Locale.FRANCE, "Saratov (heure standard)",
+            {"Europe/Saratov",          Locale.FRANCE, "heure normale de Samara",
                                                     "UTC+04:00",
-                                                    "Saratov (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure d’été de Samara",
                                                     "UTC+05:00",
-                                                    "heure : Saratov",
+                                                    "heure de Samara",
                                                     "UTC+04:00"},
-            {"Europe/Ulyanovsk",        Locale.US, "Ulyanovsk Standard Time",
+            {"Europe/Ulyanovsk",        Locale.US, "Samara Standard Time",
                                                     "GMT+04:00",
-                                                    "Ulyanovsk Daylight Time",
+                                                    "Samara Summer Time",
                                                     "GMT+05:00",
-                                                    "Ulyanovsk Time",
+                                                    "Samara Time",
                                                     "GMT+04:00"},
-            {"Europe/Ulyanovsk",        Locale.FRANCE, "Oulianovsk (heure standard)",
+            {"Europe/Ulyanovsk",        Locale.FRANCE, "heure normale de Samara",
                                                     "UTC+04:00",
-                                                    "Oulianovsk (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure d’été de Samara",
                                                     "UTC+05:00",
-                                                    "heure : Oulianovsk",
+                                                    "heure de Samara",
                                                     "UTC+04:00"},
             {"Pacific/Bougainville",    Locale.US, "Bougainville Standard Time",
                                                     "GMT+11:00",
@@ -135,45 +142,45 @@ public class TimeZoneNamesTest {
                                                     "GMT+11:00"},
             {"Pacific/Bougainville",    Locale.FRANCE, "Bougainville (heure standard)",
                                                     "UTC+11:00",
-                                                    "Bougainville (heure d\u2019\u00e9t\u00e9)",
+                                                    "Bougainville (heure d’été)",
                                                     "UTC+11:00",
                                                     "heure : Bougainville",
                                                     "UTC+11:00"},
-            {"Europe/Istanbul",    Locale.US, "Istanbul Standard Time",
+            {"Europe/Istanbul",    Locale.US, "Türkiye Standard Time",
                                                     "GMT+03:00",
-                                                    "Istanbul Daylight Time",
+                                                    "Türkiye Summer Time",
                                                     "GMT+04:00",
-                                                    "Istanbul Time",
+                                                    "Türkiye Time",
                                                     "GMT+03:00"},
-            {"Europe/Istanbul",    Locale.FRANCE, "Istanbul (heure standard)",
+            {"Europe/Istanbul",    Locale.FRANCE, "heure normale de Turquie",
                                                     "UTC+03:00",
-                                                    "Istanbul (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure avancée de Turquie",
                                                     "UTC+04:00",
-                                                    "heure : Istanbul",
+                                                    "heure de Turquie",
                                                     "UTC+03:00"},
-            {"Asia/Istanbul",    Locale.US, "Istanbul Standard Time",
+            {"Asia/Istanbul",    Locale.US, "Türkiye Standard Time",
                                                     "GMT+03:00",
-                                                    "Istanbul Daylight Time",
+                                                    "Türkiye Summer Time",
                                                     "GMT+04:00",
-                                                    "Istanbul Time",
+                                                    "Türkiye Time",
                                                     "GMT+03:00"},
-            {"Asia/Istanbul",    Locale.FRANCE, "Istanbul (heure standard)",
+            {"Asia/Istanbul",    Locale.FRANCE, "heure normale de Turquie",
                                                     "UTC+03:00",
-                                                    "Istanbul (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure avancée de Turquie",
                                                     "UTC+04:00",
-                                                    "heure : Istanbul",
+                                                    "heure de Turquie",
                                                     "UTC+03:00"},
-            {"Turkey",    Locale.US, "Istanbul Standard Time",
+            {"Turkey",    Locale.US, "Türkiye Standard Time",
                                                     "GMT+03:00",
-                                                    "Istanbul Daylight Time",
+                                                    "Türkiye Summer Time",
                                                     "GMT+04:00",
-                                                    "Istanbul Time",
+                                                    "Türkiye Time",
                                                     "GMT+03:00"},
-            {"Turkey",    Locale.FRANCE, "Istanbul (heure standard)",
+            {"Turkey",    Locale.FRANCE, "heure normale de Turquie",
                                                     "UTC+03:00",
-                                                    "Istanbul (heure d\u2019\u00e9t\u00e9)",
+                                                    "heure avancée de Turquie",
                                                     "UTC+04:00",
-                                                    "heure : Istanbul",
+                                                    "heure de Turquie",
                                                     "UTC+03:00"},
 
             // Short names derived from TZDB at build time
@@ -216,20 +223,33 @@ public class TimeZoneNamesTest {
         };
     }
 
+    private static Stream<Arguments> explicitDstOffsets() {
+        return Stream.of(
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Irish Standard Time"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Greenwich Mean Time"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Irish Standard Time"),
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Greenwich Mean Time"),
+            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time"),
+            // This needs to change once TZDB adopts -7 offset year round, and CLDR uses explicit dst offset
+            // namely, "Pacific Standard Time" -> "Pacific Daylight Time"
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Standard Time")
+        );
+    }
 
-    @Test(dataProvider="sampleTZs")
+    @ParameterizedTest
+    @MethodSource("sampleTZs")
     public void test_tzNames(String tzid, Locale locale, String lstd, String sstd, String ldst, String sdst, String lgen, String sgen) {
         // Standard time
-        assertEquals(TimeZone.getTimeZone(tzid).getDisplayName(false, TimeZone.LONG, locale), lstd);
-        assertEquals(TimeZone.getTimeZone(tzid).getDisplayName(false, TimeZone.SHORT, locale), sstd);
+        assertEquals(lstd, TimeZone.getTimeZone(tzid).getDisplayName(false, TimeZone.LONG, locale));
+        assertEquals(sstd, TimeZone.getTimeZone(tzid).getDisplayName(false, TimeZone.SHORT, locale));
 
         // daylight saving time
-        assertEquals(TimeZone.getTimeZone(tzid).getDisplayName(true, TimeZone.LONG, locale), ldst);
-        assertEquals(TimeZone.getTimeZone(tzid).getDisplayName(true, TimeZone.SHORT, locale), sdst);
+        assertEquals(ldst, TimeZone.getTimeZone(tzid).getDisplayName(true, TimeZone.LONG, locale));
+        assertEquals(sdst, TimeZone.getTimeZone(tzid).getDisplayName(true, TimeZone.SHORT, locale));
 
         // generic name
-        assertEquals(ZoneId.of(tzid).getDisplayName(TextStyle.FULL, locale), lgen);
-        assertEquals(ZoneId.of(tzid).getDisplayName(TextStyle.SHORT, locale), sgen);
+        assertEquals(lgen, ZoneId.of(tzid).getDisplayName(TextStyle.FULL, locale));
+        assertEquals(sgen, ZoneId.of(tzid).getDisplayName(TextStyle.SHORT, locale));
     }
 
     // Make sure getZoneStrings() returns non-empty string array
@@ -245,5 +265,20 @@ public class TimeZoneNamesTest {
                 .flatMap(Arrays::stream)
                 .anyMatch(name -> Objects.isNull(name) || name.isEmpty()),
             "getZoneStrings() returned array containing non-empty string element(s)");
+    }
+
+    // Explicit metazone dst offset test. As of CLDR v48, only Europe/Dublin utilizes
+    // this attribute, but will be used for America/Vancouver once CLDR adopts the
+    // explicit offset for that zone, which warrants the test data modification.
+    @ParameterizedTest
+    @MethodSource("explicitDstOffsets")
+    public void test_ExplicitMetazoneOffsets(ZonedDateTime zdt, String expected) {
+        // java.time
+        assertEquals(expected, DateTimeFormatter.ofPattern("zzzz").format(zdt));
+
+        // java.text/util
+        var sdf = new SimpleDateFormat("zzzz");
+        sdf.setTimeZone(TimeZone.getTimeZone(zdt.getZone()));
+        assertEquals(expected, sdf.format(Date.from(zdt.toInstant())));
     }
 }

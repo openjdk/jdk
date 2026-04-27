@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 /* @test
  * @summary Validation of signatures succeed when it should fail
+ * @enablePreview
  * @bug 6896700
  */
 
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
+import java.security.PEMDecoder;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 
 public class InvalidBitString {
 
@@ -87,34 +87,21 @@ public class InvalidBitString {
         "ZAM6mgkuSY7/vdnsiJtU\n" +
         "-----END CERTIFICATE-----\n";
 
-    public static void main(String args[]) throws Exception {
-
-        Certificate signer = generate(signerCertStr);
+    public static void main(String[] args) throws Exception {
+        final PEMDecoder pemDecoder = PEMDecoder.of();
+        Certificate signer = pemDecoder.decode(signerCertStr, X509Certificate.class);
 
         // the valid certificate
-        Certificate normal = generate(normalCertStr);
+        Certificate normal = pemDecoder.decode(normalCertStr, X509Certificate.class);
         // the invalid certificate with extra signature bits
-        Certificate longer = generate(longerCertStr);
+        Certificate longer = pemDecoder.decode(longerCertStr, X509Certificate.class);
         // the invalid certificate without enough signature bits
-        Certificate shorter = generate(shorterCertStr);
+        Certificate shorter = pemDecoder.decode(shorterCertStr, X509Certificate.class);
 
         if (!test(normal, signer, " normal", true) ||
                 !test(longer, signer, " longer", false) ||
                 !test(shorter, signer, "shorter", false)) {
             throw new Exception("Test failed.");
-        }
-    }
-
-    private static Certificate generate(String certStr) throws Exception {
-        InputStream is = null;
-        try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            is = new ByteArrayInputStream(certStr.getBytes());
-            return cf.generateCertificate(is);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
         }
     }
 

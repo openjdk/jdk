@@ -443,7 +443,7 @@ public:
 
 };
 
-TEST(BasicShenandoahSimpleBitMapTest, minimum_test) {
+TEST_F(ShenandoahSimpleBitMapTest, minimum_test) {
 
   bool result = ShenandoahSimpleBitMapTest::run_test();
   ASSERT_EQ(result, true);

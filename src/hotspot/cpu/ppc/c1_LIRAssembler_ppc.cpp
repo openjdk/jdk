@@ -227,12 +227,8 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
-    stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ b(*stub->entry());
-    } else {
-      __ unlock_object(R5, R6, R4, *stub->entry());
-    }
+    stub = new MonitorExitStub(FrameMap::R4_opr, 0);
+    __ unlock_object(R5, R6, R4, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -268,12 +264,19 @@ int LIR_Assembler::emit_deopt_handler() {
   }
 
   int offset = code_offset();
+  Label start;
+
+  __ bind(start);
   __ bl64_patchable(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type);
+  int entry_offset = __ offset();
+  __ b(start);
 
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
@@ -2618,44 +2621,18 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (LockingMode != LM_MONITOR) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      // Add debug info for NullPointerException only if one is possible.
-      if (op->info() != nullptr) {
-        if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
-          explicit_null_check(obj, op->info());
-        } else {
-          add_debug_info_for_null_check_here(op->info());
-        }
-      }
-      __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
-    } else {
-      // always do slow locking
-      // note: The slow locking code could be inlined here, however if we use
-      //       slow locking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow locking code is the same in either case which simplifies
-      //       debugging.
-      if (op->info() != nullptr) {
+    // Add debug info for NullPointerException only if one is possible.
+    if (op->info() != nullptr) {
+      if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
+        explicit_null_check(obj, op->info());
+      } else {
         add_debug_info_for_null_check_here(op->info());
-        __ null_check(obj);
       }
-      __ b(*op->stub()->entry());
     }
+    __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (LockingMode != LM_MONITOR) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      __ unlock_object(hdr, obj, lock, *op->stub()->entry());
-    } else {
-      // always do slow unlocking
-      // note: The slow unlocking code could be inlined here, however if we use
-      //       slow unlocking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow unlocking code is the same in either case which simplifies
-      //       debugging.
-      __ b(*op->stub()->entry());
-    }
+    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2772,11 +2749,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 void LIR_Assembler::align_backward_branch_target() {
   __ align(32, 12); // Insert up to 3 nops to align with 32 byte boundary.
-}
-
-
-void LIR_Assembler::emit_delay(LIR_OpDelay* op) {
-  Unimplemented();
 }
 
 

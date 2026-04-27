@@ -36,7 +36,7 @@
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -70,6 +70,10 @@ void VM_Version_init();
 void icache_init2();
 void initialize_stub_info();    // must precede all blob/stub generation
 void preuniverse_stubs_init();
+
+#if INCLUDE_CDS
+void stubs_AOTAddressTable_init();
+#endif // INCLUDE_CDS
 void initial_stubs_init();
 
 jint universe_init();           // depends on codeCache_init and preuniverse_stubs_init
@@ -149,13 +153,19 @@ jint init_globals() {
   AOTCodeCache::init2();     // depends on universe_init, must be before initial_stubs_init
   AsyncLogWriter::initialize();
 
+#if INCLUDE_CDS
+  stubs_AOTAddressTable_init(); // publish external addresses used by stubs
+                                // depends on AOTCodeCache::init2
+#endif // INCLUDE_CDS
   initial_stubs_init();      // stubgen initial stub routines
   // stack overflow exception blob is referenced by the interpreter
-  AOTCodeCache::init_early_stubs_table();  // need this after stubgen initial stubs and before shared runtime initial stubs
   SharedRuntime::generate_initial_stubs();
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
-  continuation_stubs_init(); // depends on continuations_init
+  AOTCodeCache::init3();     // depends on stubs_AOTAddressTable_init
+                             // and continuations_init and must
+                             // precede continuation stub generation
+  continuation_stubs_init(); // depends on continuations_init and AOTCodeCache::init3
 #if INCLUDE_JFR
   SharedRuntime::generate_jfr_stubs();
 #endif
@@ -164,7 +174,6 @@ jint init_globals() {
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
-  AOTCodeCache::init_shared_blobs_table();  // need this after generate_stubs
   SharedRuntime::init_adapter_library(); // do this after AOTCodeCache::init_shared_blobs_table
   return JNI_OK;
 }
@@ -195,10 +204,7 @@ jint init_globals2() {
   }
 #endif
 
-  // Initialize TrainingData only we're recording/replaying
-  if (TrainingData::have_data() || TrainingData::need_data()) {
-   TrainingData::initialize();
-  }
+  TrainingData::initialize();
 
   if (!universe_post_init()) {
     return JNI_ERR;
@@ -241,7 +247,7 @@ void exit_globals() {
 static volatile bool _init_completed = false;
 
 bool is_init_completed() {
-  return Atomic::load_acquire(&_init_completed);
+  return AtomicAccess::load_acquire(&_init_completed);
 }
 
 void wait_init_completed() {
@@ -254,6 +260,6 @@ void wait_init_completed() {
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
   MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-  Atomic::release_store(&_init_completed, true);
+  AtomicAccess::release_store(&_init_completed, true);
   ml.notify_all();
 }

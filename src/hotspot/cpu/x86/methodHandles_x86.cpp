@@ -110,14 +110,13 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ andl(temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ cmpl(temp, ref_kind);
   __ jcc(Assembler::equal, L);
-  { char* buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-    jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
-    if (ref_kind == JVM_REF_invokeVirtual ||
-        ref_kind == JVM_REF_invokeSpecial)
-      // could do this for all ref_kinds, but would explode assembly code size
-      trace_method_handle(_masm, buf);
-    __ STOP(buf);
+  const char* msg = ref_kind_to_verify_msg(ref_kind);
+  if (ref_kind == JVM_REF_invokeVirtual ||
+      ref_kind == JVM_REF_invokeSpecial) {
+    // could do this for all ref_kinds, but would explode assembly code size
+    trace_method_handle(_masm, msg);
   }
+  __ STOP(msg);
   BLOCK_COMMENT("} verify_ref_kind");
   __ bind(L);
 }
@@ -137,7 +136,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
         __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
-        __ jccb(Assembler::equal, L_ok);
+        __ jcc(Assembler::equal, L_ok);
         break;
 
       case vmIntrinsicID::_linkToStatic:
@@ -154,7 +153,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
         // init_state check failed, but it may be an abstract interface method
         __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
         __ testl(temp, JVM_ACC_ABSTRACT);
-        __ jccb(Assembler::notZero, L_ok);
+        __ jcc(Assembler::notZero, L_ok);
         break;
 
       default:
@@ -561,7 +560,6 @@ void trace_method_handle_stub(const char* adaptername,
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
-#ifdef AMD64
       int num_regs = UseAPX ? 32 : 16;
       assert(Register::available_gp_registers() == num_regs, "sanity");
       if (r == rsp) {
@@ -570,9 +568,6 @@ void trace_method_handle_stub(const char* adaptername,
       } else {
         ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
-#else
-      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
-#endif
       if ((i + 1) % 4 == 0) {
         ls.cr();
       } else {

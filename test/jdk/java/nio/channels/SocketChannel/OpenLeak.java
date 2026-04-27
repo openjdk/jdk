@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *     connection cannot be established
  * @requires vm.flagless
  * @build OpenLeak
- * @run junit/othervm OpenLeak
+ * @run junit/othervm/timeout=480 OpenLeak
  */
 
 import java.io.IOException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "jfrfiles/jfrEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
@@ -40,13 +39,15 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
+#include "jfr/support/jfrSymbolTable.inline.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfr/writers/jfrJavaEventWriter.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -54,6 +55,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/growableArray.hpp"
 
 // incremented on each flushpoint
 static u8 flushpoint_id = 0;
@@ -67,7 +69,7 @@ class JfrRotationLock : public StackObj {
   bool _recursive;
 
   static bool acquire(Thread* thread) {
-    if (Atomic::cmpxchg(&_lock, 0, 1) == 0) {
+    if (AtomicAccess::cmpxchg(&_lock, 0, 1) == 0) {
       assert(_owner_thread == nullptr, "invariant");
       _owner_thread = thread;
       return true;
@@ -121,30 +123,6 @@ class JfrRotationLock : public StackObj {
 const Thread* JfrRotationLock::_owner_thread = nullptr;
 const int JfrRotationLock::retry_wait_millis = 10;
 volatile int JfrRotationLock::_lock = 0;
-
-// Reset thread local state used for object allocation sampling.
-class ClearObjectAllocationSampling : public ThreadClosure {
- public:
-  void do_thread(Thread* t) {
-    assert(t != nullptr, "invariant");
-    t->jfr_thread_local()->clear_last_allocated_bytes();
-  }
-};
-
-template <typename Iterator>
-static inline void iterate(Iterator& it, ClearObjectAllocationSampling& coas) {
-  while (it.has_next()) {
-    coas.do_thread(it.next());
-  }
-}
-
-static void clear_object_allocation_sampling() {
-  ClearObjectAllocationSampling coas;
-  JfrJavaThreadIterator jit;
-  iterate(jit, coas);
-  JfrNonJavaThreadIterator njit;
-  iterate(njit, coas);
-}
 
 template <typename Instance, size_t(Instance::*func)()>
 class Content {
@@ -367,13 +345,14 @@ static u4 flush_typeset(JfrCheckpointManager& checkpoint_manager, JfrChunkWriter
 class MetadataEvent : public StackObj {
  private:
   JfrChunkWriter& _cw;
+  size_t _elements;
  public:
-  MetadataEvent(JfrChunkWriter& cw) : _cw(cw) {}
+  MetadataEvent(JfrChunkWriter& cw) : _cw(cw), _elements(0) {}
   bool process() {
-    JfrMetadataEvent::write(_cw);
+    _elements = JfrMetadataEvent::write(_cw);
     return true;
   }
-  size_t elements() const { return 1; }
+  size_t elements() const { return _elements; }
 };
 
 typedef WriteContent<MetadataEvent> WriteMetadata;
@@ -413,6 +392,7 @@ class JfrSafepointWriteVMOperation : public VM_Operation {
 JfrRecorderService::JfrRecorderService() :
   _checkpoint_manager(JfrCheckpointManager::instance()),
   _chunkwriter(JfrRepository::chunkwriter()),
+  _post_box(JfrPostBox::instance()),
   _repository(JfrRepository::instance()),
   _stack_trace_repository(JfrStackTraceRepository::instance()),
   _storage(JfrStorage::instance()),
@@ -471,9 +451,9 @@ void JfrRecorderService::clear() {
 }
 
 void JfrRecorderService::pre_safepoint_clear() {
-  clear_object_allocation_sampling();
   _storage.clear();
   JfrStackTraceRepository::clear();
+  JfrSymbolTable::allocate_next_epoch();
 }
 
 void JfrRecorderService::invoke_safepoint_clear() {
@@ -485,7 +465,7 @@ void JfrRecorderService::invoke_safepoint_clear() {
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _storage.clear();
-  _checkpoint_manager.notify_threads();
+  _checkpoint_manager.notify_threads(true);
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
@@ -531,6 +511,7 @@ void JfrRecorderService::rotate(int msgs) {
     return;
   }
   if (msgs & MSGBIT(MSG_VM_ERROR)) {
+    stop();
     vm_error_rotation();
     return;
   }
@@ -581,6 +562,7 @@ void JfrRecorderService::pre_safepoint_write() {
   }
   write_storage(_storage, _chunkwriter);
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  JfrSymbolTable::allocate_next_epoch();
 }
 
 void JfrRecorderService::invoke_safepoint_write() {
@@ -690,17 +672,173 @@ void JfrRecorderService::evaluate_chunk_size_for_rotation() {
   JfrChunkRotation::evaluate(_chunkwriter);
 }
 
-void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
-  // Take the rotation lock to exclude flush() during event emits. This is because event emit
-  // also creates a number checkpoint events. Those checkpoint events require a future typeset checkpoint
-  // event for completeness, i.e. to be generated before being flushed to a segment.
+// LeakProfiler event serialization support.
+
+struct JfrLeakProfilerEmitRequest {
+  int64_t cutoff_ticks;
+  bool emit_all;
+  bool skip_bfs;
+  bool oom;
+};
+
+typedef GrowableArrayCHeap<JfrLeakProfilerEmitRequest, mtTracing> JfrLeakProfilerEmitRequestQueue;
+static JfrLeakProfilerEmitRequestQueue* _queue = nullptr;
+constexpr const static int64_t _no_path_to_gc_roots = 0;
+static bool _oom_emit_request_posted = false;
+static bool _oom_emit_request_delivered = false;
+
+static inline bool exclude_paths_to_gc_roots(int64_t cutoff_ticks) {
+  return cutoff_ticks <= _no_path_to_gc_roots;
+}
+
+static void enqueue(const JfrLeakProfilerEmitRequest& request) {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  if (_queue == nullptr) {
+    _queue = new JfrLeakProfilerEmitRequestQueue(4);
+  }
+  assert(_queue != nullptr, "invariant");
+  assert(!_oom_emit_request_posted, "invariant");
+  if (request.oom) {
+    _oom_emit_request_posted = true;
+  }
+  _queue->append(request);
+}
+
+static JfrLeakProfilerEmitRequest dequeue() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  assert(_queue != nullptr, "invariant");
+  assert(_queue->is_nonempty(), "invariant");
+  const JfrLeakProfilerEmitRequest& request = _queue->first();
+  _queue->remove_at(0);
+  return request;
+}
+
+// This version of emit excludes path-to-gc-roots, i.e. it skips reference chains.
+static void emit_leakprofiler_events(bool emit_all, bool skip_bfs, JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  // Take the rotation lock to exclude flush() during event emits. This is because the event emit operation
+  // also creates a number of checkpoint events. Those checkpoint events require a future typeset checkpoint
+  // event for completeness, i.e., to be generated before being flushed to a segment.
   // The upcoming flush() or rotation() after event emit completes this typeset checkpoint
-  // and serializes all event emit checkpoint events to the same segment.
+  // and serializes all checkpoint events to the same segment.
   JfrRotationLock lock;
+  // Take the rotation lock before the thread transition, to avoid blocking safepoints.
+  if (_oom_emit_request_posted) {
+    // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+    // is pending or has already been completed. We are about to crash at any time now.
+    assert(CrashOnOutOfMemoryError, "invariant");
+    return;
+  }
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  ThreadInVMfromNative transition(jt);
+  // Since we are not requesting path-to-gc-roots, i.e., reference chains, we need not issue a VM_Operation.
+  // Therefore, we can let the requesting thread process the request directly, since it already holds the requisite lock.
+  LeakProfiler::emit_events(_no_path_to_gc_roots, emit_all, skip_bfs);
+}
+
+void JfrRecorderService::transition_and_post_leakprofiler_emit_msg(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  assert(!JfrRotationLock::is_owner(), "invariant");
+  // Transition to _thread_in_VM and post a synchronous message to the JFR Recorder Thread
+  // for it to process our enqueued request, which includes paths-to-gc-roots, i.e., reference chains.
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  ThreadInVMfromNative transition(jt);
+  _post_box.post(MSG_EMIT_LEAKP_REFCHAINS);
+}
+
+// This version of emit includes path-to-gc-roots, i.e., it includes in the request traversing of reference chains.
+// Traversing reference chains is performed as part of a VM_Operation, and we initiate it from the JFR Recorder Thread.
+// Because multiple threads can concurrently report_on_java_out_of_memory(), having them all post a synchronous JFR msg,
+// they rendezvous at a safepoint in a convenient state, ThreadBlockInVM. This mechanism prevents any thread from racing past
+// this point and begin executing VMError::report_and_die(), until at least one oom request has been delivered.
+void JfrRecorderService::emit_leakprofiler_events_paths_to_gc_roots(int64_t cutoff_ticks,
+                                                                    bool emit_all,
+                                                                    bool skip_bfs,
+                                                                    bool oom,
+                                                                    JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  assert(!exclude_paths_to_gc_roots(cutoff_ticks), "invariant");
+
+  {
+    JfrRotationLock lock;
+    // Take the rotation lock to read and post a request for the JFR Recorder Thread.
+    if (_oom_emit_request_posted) {
+      if (!oom) {
+        // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+        // is pending or has already been completed. We are about to crash at any time now.
+        assert(CrashOnOutOfMemoryError, "invariant");
+        return;
+      }
+    } else {
+      assert(!_oom_emit_request_posted, "invariant");
+      JfrLeakProfilerEmitRequest request = { cutoff_ticks, emit_all, skip_bfs, oom };
+      enqueue(request);
+    }
+  }
+  JfrRecorderService service;
+  service.transition_and_post_leakprofiler_emit_msg(jt);
+}
+
+// Leakprofiler serialization request, the jdk.jfr.internal.JVM.emitOldObjectSamples() Java entry point.
+void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks,
+                                                  bool emit_all,
+                                                  bool skip_bfs) {
+  JavaThread* const jt = JavaThread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  if (exclude_paths_to_gc_roots(cutoff_ticks)) {
+    ::emit_leakprofiler_events(emit_all, skip_bfs, jt);
+    return;
+  }
+  emit_leakprofiler_events_paths_to_gc_roots(cutoff_ticks, emit_all, skip_bfs, /* oom */ false, jt);
+}
+
+// Leakprofiler serialization request, the report_on_java_out_of_memory VM entry point.
+void JfrRecorderService::emit_leakprofiler_events_on_oom() {
+  assert(CrashOnOutOfMemoryError, "invariant");
+  if (EventOldObjectSample::is_enabled()) {
+    JavaThread* const jt = JavaThread::current();
+    DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
+    ThreadToNativeFromVM transition(jt);
+    emit_leakprofiler_events_paths_to_gc_roots(max_jlong, false, false, /* oom */ true, jt);
+  }
+}
+
+// The worker routine for the JFR Recorder Thread when processing MSG_EMIT_LEAKP_REFCHAINS messages.
+void JfrRecorderService::emit_leakprofiler_events() {
+  JavaThread* const jt = JavaThread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // Take the rotation lock before the transition.
-  JavaThread* current_thread = JavaThread::current();
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
-  ThreadInVMfromNative transition(current_thread);
-  LeakProfiler::emit_events(cutoff_ticks, emit_all, skip_bfs);
+  JfrRotationLock lock;
+  if (_oom_emit_request_delivered) {
+    // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+    // has already been completed. We are about to crash at any time now.
+    assert(_oom_emit_request_posted, "invariant");
+    assert(CrashOnOutOfMemoryError, "invariant");
+    return;
+  }
+
+  assert(_queue->is_nonempty(), "invariant");
+
+  {
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+    ThreadInVMfromNative transition(jt);
+    while (_queue->is_nonempty()) {
+      const JfrLeakProfilerEmitRequest& request = dequeue();
+      LeakProfiler::emit_events(request.cutoff_ticks, request.emit_all, request.skip_bfs);
+      if (_oom_emit_request_posted && request.oom) {
+        assert(CrashOnOutOfMemoryError, "invariant");
+        _oom_emit_request_delivered = true;
+        break;
+      }
+    }
+  }
+
+  // If processing involved an out-of-memory request, issue an immediate flush operation.
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  if (_chunkwriter.is_valid() && _oom_emit_request_delivered) {
+    invoke_flush();
+  }
 }

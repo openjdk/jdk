@@ -31,7 +31,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // Overview
 //
@@ -147,7 +147,7 @@ class ConstraintSet {                               // copied into hashtable as 
 };
 
 
-using InternalLoaderConstraintTable = ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+using InternalLoaderConstraintTable = HashTable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
 static InternalLoaderConstraintTable* _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,

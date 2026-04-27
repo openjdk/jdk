@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -49,11 +50,11 @@ unsigned int LambdaProxyClassKey::hash() const {
 }
 
 unsigned int RunTimeLambdaProxyClassKey::hash() const {
-  return primitive_hash<u4>(_caller_ik) +
-         primitive_hash<u4>(_invoked_name) +
-         primitive_hash<u4>(_invoked_type) +
-         primitive_hash<u4>(_method_type) +
-         primitive_hash<u4>(_instantiated_method_type);
+  return primitive_hash<u4>(cast_to_u4(_caller_ik)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_name)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_type)) +
+         primitive_hash<u4>(cast_to_u4(_method_type)) +
+         primitive_hash<u4>(cast_to_u4(_instantiated_method_type));
 }
 
 #ifndef PRODUCT
@@ -71,12 +72,12 @@ void LambdaProxyClassKey::print_on(outputStream* st) const {
 void RunTimeLambdaProxyClassKey::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("LambdaProxyClassKey       : " INTPTR_FORMAT " hash: %0x08x", p2i(this), hash());
-  st->print_cr("_caller_ik                : %d", _caller_ik);
-  st->print_cr("_instantiated_method_type : %d", _instantiated_method_type);
-  st->print_cr("_invoked_name             : %d", _invoked_name);
-  st->print_cr("_invoked_type             : %d", _invoked_type);
-  st->print_cr("_member_method            : %d", _member_method);
-  st->print_cr("_method_type              : %d", _method_type);
+  st->print_cr("_caller_ik                : %d", cast_to_u4(_caller_ik));
+  st->print_cr("_instantiated_method_type : %d", cast_to_u4(_instantiated_method_type));
+  st->print_cr("_invoked_name             : %d", cast_to_u4(_invoked_name));
+  st->print_cr("_invoked_type             : %d", cast_to_u4(_invoked_type));
+  st->print_cr("_member_method            : %d", cast_to_u4(_member_method));
+  st->print_cr("_method_type              : %d", cast_to_u4(_method_type));
 }
 
 void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
@@ -247,12 +248,12 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   assert(method_type != nullptr, "sanity");
   assert(instantiated_method_type != nullptr, "sanity");
 
-  if (!caller_ik->is_shared()     ||
-      !invoked_name->is_shared()  ||
-      !invoked_type->is_shared()  ||
-      !method_type->is_shared()   ||
-      (member_method != nullptr && !member_method->is_shared()) ||
-      !instantiated_method_type->is_shared()) {
+  if (!caller_ik->in_aot_cache()     ||
+      !invoked_name->in_aot_cache()  ||
+      !invoked_type->in_aot_cache()  ||
+      !method_type->in_aot_cache()   ||
+      (member_method != nullptr && !member_method->in_aot_cache()) ||
+      !instantiated_method_type->in_aot_cache()) {
     // These can't be represented as u4 offset, but we wouldn't have archived a lambda proxy in this case anyway.
     return nullptr;
   }
@@ -325,7 +326,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
 
   InstanceKlass* shared_nest_host = get_shared_nest_host(lambda_ik);
   assert(shared_nest_host != nullptr, "unexpected nullptr _nest_host");
-  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
+  assert(shared_nest_host->in_aot_cache(), "nest host must be in aot metaspace");
 
   Klass* resolved_nest_host = SystemDictionary::resolve_or_fail(shared_nest_host->name(), class_loader, true, CHECK_NULL);
   if (resolved_nest_host != shared_nest_host) {
@@ -357,7 +358,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
-  EventClassLoad class_load_start_event;
+  EventClassLoad class_load_event;
 
   // Add to class hierarchy, and do possible deoptimizations.
   lambda_ik->add_to_hierarchy(THREAD);
@@ -368,8 +369,8 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
-  if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);
@@ -418,8 +419,7 @@ public:
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
-    u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
-    _writer->add(hash, delta);
+    _writer->add(hash, AOTCompressedPointers::encode_not_null(runtime_info));
     return true;
   }
 };
@@ -471,12 +471,12 @@ class LambdaProxyClassDictionary::CleanupDumpTimeLambdaProxyClassTable: StackObj
 
     // If the caller class and/or nest_host are excluded, the associated lambda proxy
     // must also be excluded.
-    bool always_exclude = SystemDictionaryShared::check_for_exclusion(caller_ik, nullptr) ||
-                          SystemDictionaryShared::check_for_exclusion(nest_host, nullptr);
+    bool always_exclude = SystemDictionaryShared::should_be_excluded(caller_ik) ||
+                          SystemDictionaryShared::should_be_excluded(nest_host);
 
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (always_exclude || SystemDictionaryShared::check_for_exclusion(ik, nullptr)) {
+      if (always_exclude || SystemDictionaryShared::should_be_excluded(ik)) {
         LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }
@@ -518,7 +518,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   if (!dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
+    dictionary->iterate_all(&ldp);
   }
 }
 

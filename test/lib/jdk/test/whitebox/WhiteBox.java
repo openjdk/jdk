@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class WhiteBox {
 
   // Memory
   private native long getObjectAddress0(Object o);
-  public           long getObjectAddress(Object o) {
+  public         long getObjectAddress(Object o) {
     Objects.requireNonNull(o);
     return getObjectAddress0(o);
   }
@@ -77,6 +77,14 @@ public class WhiteBox {
   public native long getVMLargePageSize();
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
+  public native long getMinimumJavaStackSize();
+
+  public native boolean  shipsFullDebugInfo();
+  public native boolean  shipsPublicDebugInfo();
+
+  public        boolean  shipsDebugInfo() {
+    return shipsFullDebugInfo() || shipsPublicDebugInfo();
+  }
 
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
@@ -122,7 +130,7 @@ public class WhiteBox {
 
   public native int getLockStackCapacity();
 
-  public native boolean supportsRecursiveLightweightLocking();
+  public native boolean supportsRecursiveFastLocking();
 
   public native void forceSafepoint();
 
@@ -490,6 +498,12 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
+  private native void     relocateNMethodFromMethod0(Executable method, int type);
+  public         void     relocateNMethodFromMethod(Executable method, int type) {
+    Objects.requireNonNull(method);
+    relocateNMethodFromMethod0(method, type);
+  }
+  public native void    relocateNMethodFromAddr(long address, int type);
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
@@ -785,12 +799,12 @@ public class WhiteBox {
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsMapped();
-  public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
+  public native boolean canWriteMappedJavaHeapArchive();
+  public native boolean canWriteStreamedJavaHeapArchive();
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
@@ -840,6 +854,12 @@ public class WhiteBox {
   public native boolean isJVMTIIncluded();
 
   public native void waitUnsafe(int time_ms);
+
+  public native void busyWaitCPUTime(int cpuTimeMs);
+
+
+  // returns true if supported, false if not
+  public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
 
   public native void pinObject(Object o);
 

@@ -99,8 +99,8 @@ public class SystemMapTestBase {
             regexBase_java_heap + "JAVAHEAP.*",
             // metaspace
             regexBase_committed + "META.*",
-            // parts of metaspace should be uncommitted
-            regexBase + "-" + space + "META.*",
+            // parts of metaspace should be uncommitted, those parts may or may not be be thp-eligible
+            regexBase + "(-|thpel)" + space + "META.*",
             // code cache
             regexBase_committed + "CODE.*",
             // Main thread stack
@@ -179,7 +179,8 @@ public class SystemMapTestBase {
 
         static final String macow = "cow";
         static final String macprivate = "pvt";
-        static final String macprivate_or_shared = "(pvt|tsh|cow|p/a)";
+        static final String macprivate_or_shared = "(pvt|shr)";
+        static final String macmem = "(pvt|tsh|cow|p/a)";
         static final String macprivatealiased = "p/a";
 
         static final String macOSbase = range + space + someSize + space + macprot + space;
@@ -187,8 +188,11 @@ public class SystemMapTestBase {
         static final String shouldMatchUnconditionally_macOS[] = {
             // java launcher
             macOSbase + macow + space + someNumber + space + "/.*/bin/java",
-            // we should see the hs-perf data file, and it should appear as shared as well as committed
-            macOSbase + macprivate + space + someNumber + space + ".*/.*/hsperfdata_.*"
+            /*
+             * We should see the hs-perf data file, and it should appear as shared as well as committed.
+             * In the jtreg tests this segment appears private.
+             */
+            macOSbase + macprivate_or_shared + space + someNumber + space + ".*/.*/hsperfdata_.*"
         };
 
         static final String shouldMatch_macOS_libjvm[] = {
@@ -198,7 +202,7 @@ public class SystemMapTestBase {
 
         static final String shouldMatchIfNMTIsEnabled_macOS[] = {
             // heap is private with G1GC, shared with ZGC
-            macOSbase + macprivate_or_shared + space + someNumber + space + "JAVAHEAP.*",
+            macOSbase + macmem + space + someNumber + space + "JAVAHEAP.*",
             // metaspace
             macOSbase + macprivate + space + someNumber + space + "META.*",
             // code cache

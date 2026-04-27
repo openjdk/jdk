@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "oops/markWord.inline.hpp"
 #include "oops/objLayout.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -47,20 +47,19 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
+void* oopDesc::base_addr() { return this; }
+const void* oopDesc::base_addr() const { return this; }
+
 markWord oopDesc::mark() const {
-  return Atomic::load(&_mark);
+  return AtomicAccess::load(&_mark);
 }
 
 markWord oopDesc::mark_acquire() const {
-  return Atomic::load_acquire(&_mark);
-}
-
-markWord* oopDesc::mark_addr() const {
-  return (markWord*) &_mark;
+  return AtomicAccess::load_acquire(&_mark);
 }
 
 void oopDesc::set_mark(markWord m) {
-  Atomic::store(&_mark, m);
+  AtomicAccess::store(&_mark, m);
 }
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
@@ -68,19 +67,19 @@ void oopDesc::set_mark(HeapWord* mem, markWord m) {
 }
 
 void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
-  Atomic::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
+  AtomicAccess::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
 }
 
 void oopDesc::release_set_mark(markWord m) {
-  Atomic::release_store(&_mark, m);
+  AtomicAccess::release_store(&_mark, m);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  return Atomic::cmpxchg(&_mark, old_mark, new_mark);
+  return AtomicAccess::cmpxchg(&_mark, old_mark, new_mark);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order) {
-  return Atomic::cmpxchg(&_mark, old_mark, new_mark, order);
+  return AtomicAccess::cmpxchg(&_mark, old_mark, new_mark, order);
 }
 
 markWord oopDesc::prototype_mark() const {
@@ -100,9 +99,9 @@ Klass* oopDesc::klass() const {
     case ObjLayout::Compact:
       return mark().klass();
     case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
+      return CompressedKlassPointers::decode_not_null(_compressed_klass);
     default:
-      return _metadata._klass;
+      ShouldNotReachHere();
   }
 }
 
@@ -111,9 +110,9 @@ Klass* oopDesc::klass_or_null() const {
     case ObjLayout::Compact:
       return mark().klass_or_null();
     case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode(_metadata._compressed_klass);
+      return CompressedKlassPointers::decode(_compressed_klass);
     default:
-      return _metadata._klass;
+      ShouldNotReachHere();
   }
 }
 
@@ -122,11 +121,11 @@ Klass* oopDesc::klass_or_null_acquire() const {
     case ObjLayout::Compact:
       return mark_acquire().klass();
     case ObjLayout::Compressed: {
-      narrowKlass narrow_klass = Atomic::load_acquire(&_metadata._compressed_klass);
+      narrowKlass narrow_klass = AtomicAccess::load_acquire(&_compressed_klass);
       return CompressedKlassPointers::decode(narrow_klass);
     }
     default:
-      return Atomic::load_acquire(&_metadata._klass);
+      ShouldNotReachHere();
   }
 }
 
@@ -135,9 +134,9 @@ Klass* oopDesc::klass_without_asserts() const {
     case ObjLayout::Compact:
       return mark().klass_without_asserts();
     case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
+      return CompressedKlassPointers::decode_without_asserts(_compressed_klass);
     default:
-      return _metadata._klass;
+      ShouldNotReachHere();
   }
 }
 
@@ -146,7 +145,7 @@ narrowKlass oopDesc::narrow_klass() const {
     case ObjLayout::Compact:
       return mark().narrow_klass();
     case ObjLayout::Compressed:
-      return _metadata._compressed_klass;
+      return _compressed_klass;
     default:
       ShouldNotReachHere();
   }
@@ -155,23 +154,14 @@ narrowKlass oopDesc::narrow_klass() const {
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
-  if (UseCompressedClassPointers) {
-    _metadata._compressed_klass = CompressedKlassPointers::encode_not_null(k);
-  } else {
-    _metadata._klass = k;
-  }
+  _compressed_klass = CompressedKlassPointers::encode_not_null(k);
 }
 
 void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
   char* raw_mem = ((char*)mem + klass_offset_in_bytes());
-  if (UseCompressedClassPointers) {
-    Atomic::release_store((narrowKlass*)raw_mem,
-                          CompressedKlassPointers::encode_not_null(k));
-  } else {
-    Atomic::release_store((Klass**)raw_mem, k);
-  }
+  AtomicAccess::release_store((narrowKlass*)raw_mem, CompressedKlassPointers::encode_not_null(k));
 }
 
 void oopDesc::set_klass_gap(HeapWord* mem, int v) {
@@ -272,8 +262,8 @@ inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_add
 
 inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
 inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
-inline jint oopDesc::int_field_relaxed(int offset) const            { return Atomic::load(field_addr<jint>(offset)); }
-inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { Atomic::store(field_addr<jint>(offset), value); }
+inline jint oopDesc::int_field_relaxed(int offset) const            { return AtomicAccess::load(field_addr<jint>(offset)); }
+inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { AtomicAccess::store(field_addr<jint>(offset), value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
 inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }

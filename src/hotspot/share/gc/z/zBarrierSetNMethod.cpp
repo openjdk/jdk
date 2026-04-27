@@ -33,6 +33,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -70,12 +71,15 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal barriers
-  ZNMethod::nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic;
+    // Heal barriers
+    ZNMethod::nmethod_patch_barriers(nm, &icic);
 
-  // Heal oops
-  ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
-  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    // Heal oops
+    ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
+  }
 
   const uintptr_t prev_color = ZNMethod::color(nm);
   const uintptr_t new_color = *ZPointerStoreGoodMaskLowOrderBitsAddr;
@@ -104,34 +108,6 @@ oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
 
 oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
   return ZNMethod::oop_load_phantom(nm, index);
-}
-
-void ZBarrierSetNMethod::guard_with(nmethod* nm, int value) {
-  assert((value & not_entrant) == 0, "not_entrant bit is reserved");
-  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-  // Preserve the sticky bit
-  if (is_not_entrant(nm)) {
-    value |= not_entrant;
-  }
-  if (guard_value(nm) != value) {
-    // Patch the code only if needed.
-    set_guard_value(nm, value);
-  }
-}
-
-bool ZBarrierSetNMethod::is_armed(nmethod* nm) {
-  int value = guard_value(nm) & ~not_entrant;
-  return value != disarmed_guard_value();
-}
-
-void ZBarrierSetNMethod::make_not_entrant(nmethod* nm) {
-  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-  int value = guard_value(nm) | not_entrant; // permanent sticky value
-  set_guard_value(nm, value);
-}
-
-bool ZBarrierSetNMethod::is_not_entrant(nmethod* nm) {
-  return (guard_value(nm) & not_entrant) != 0;
 }
 
 uintptr_t ZBarrierSetNMethod::color(nmethod* nm) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,8 +260,7 @@ public class ClientAuth extends PKCS11Test {
         try {
             javax.crypto.Cipher.getInstance("RSA/ECB/PKCS1Padding", p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Not supported by provider, skipping");
         }
 
         this.provider = p;

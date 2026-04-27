@@ -70,7 +70,6 @@ INCLUDE_STACK := $(THIS_INCLUDE) $(INCLUDE_STACK)
 
 # Setup an automatic include guard
 ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)
-  INCLUDE_GUARD_$(THIS_INCLUDE) := true
   INCLUDE := true
 
   # Hook to include the corresponding custom file, if present.

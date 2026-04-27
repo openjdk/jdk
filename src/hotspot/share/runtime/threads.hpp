@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -134,9 +134,6 @@ public:
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 
-  // Get owning Java thread from the basicLock address.
-  static JavaThread *owning_thread_from_stacklock(ThreadsList * t_list, address basicLock);
-
   static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
   static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);
 
@@ -146,6 +143,16 @@ public:
   static int number_of_non_daemon_threads()      { return _number_of_non_daemon_threads; }
 
   struct Test;                  // For private gtest access.
+};
+
+// Used by GC for calling Threads::possibly_parallel_oops_do.
+struct ThreadsClaimTokenScope : StackObj {
+  ThreadsClaimTokenScope() {
+    Threads::change_thread_claim_token();
+  }
+  ~ThreadsClaimTokenScope() {
+    Threads::assert_all_threads_claimed();
+  }
 };
 
 #endif // SHARE_RUNTIME_THREADS_HPP

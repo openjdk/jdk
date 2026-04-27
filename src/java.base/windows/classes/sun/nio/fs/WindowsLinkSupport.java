@@ -84,7 +84,7 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(path);
         }
         try {
-            return readLinkImpl(path, handle);
+            return readLink(path, handle);
         } finally {
             CloseHandle(handle);
         }
@@ -289,9 +289,7 @@ class WindowsLinkSupport {
      * Returns target of a symbolic link given the handle of an open file
      * (that should be a link).
      */
-    private static String readLinkImpl(WindowsPath path, long handle)
-        throws IOException
-    {
+    static String readLink(WindowsPath path, long handle) throws IOException {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
         try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             try {
