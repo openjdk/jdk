@@ -1743,6 +1743,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // are needed make sure that after placement in a block we don't
       // need any new precedence edges.
       verify_anti_dependences(late, self);
+      if (C->failing()) {
+        return;
+      }
     }
 #endif
   } // Loop until all nodes have been visited
