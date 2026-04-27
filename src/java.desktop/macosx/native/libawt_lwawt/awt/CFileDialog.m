@@ -209,6 +209,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFileDialog_nativeDispose(JNIEnv *e
         return;
     }
 
+    [dialogDelegate retain];
     [ThreadUtilities performOnMainThreadWaiting:[NSThread isMainThread] block:^(){
         if (dialogDelegate->inModalLoop == YES) {
             NSApplication *app = [NSApplication sharedApplication];
@@ -218,6 +219,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CFileDialog_nativeDispose(JNIEnv *e
             }
         }
     }];
+    [dialogDelegate release];
    }
 
 /*
