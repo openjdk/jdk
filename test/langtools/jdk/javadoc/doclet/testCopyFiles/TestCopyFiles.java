@@ -126,8 +126,8 @@ public class TestCopyFiles extends JavadocTester {
     }
 
     @Test
-    public void testDocFilesInMultiModulePackagesWithRecursiveCopy() {
-        javadoc("-d", "multi-modules-out-recursive",
+    public void testDocFilesInMultiModulePackages() {
+        javadoc("-d", "multi-modules-out",
                 "-docfilessubdirs",
                 "-top", "phi-TOP-phi",
                 "-bottom", "phi-BOTTOM-phi",
@@ -193,41 +193,65 @@ public class TestCopyFiles extends JavadocTester {
     }
 
     @Test
-    public void testDocFilesInModulePackagesWithRecursiveCopy() {
-        javadoc("-d", "modules-out-recursive",
+    public void testDocFilesInMultiModulePackagesWithExclusion() {
+        javadoc("-d", "multi-modules-out-exclusion",
+                "-excludedocfilessubdir", "sub-dir",
                 "--module-source-path", testSrc("modules"),
-                "--module", "acme.mdle");
+                "--module", "acme.mdle,acme2.mdle");
         checkExit(Exit.OK);
+
         checkOutput("acme.mdle/p/doc-files/inpackage.html", true,
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>."""
         );
-        checkOutput("acme.mdle/p/doc-files/sub-dir/SubReadme.html", true,
+
+        checkFiles(false, "acme.mdle/p/doc-files/sub-dir");
+
+        checkOutput("acme2.mdle/p2/doc-files/inpackage.html", true,
                 """
-                    SubReadme.html at second level of doc-file directory for acme.module."""
+                    In a named module acme2.mdle and named package <a href="../package-summary.html"><code>p2</code></a>."""
         );
-        checkOutput("acme.mdle/p/doc-files/sub-dir/sub-dir-1/SubSubReadme.html", true,
-                """
-                    SubSubReadme.html at third level of doc-file directory."""
-        );
+
+        checkFiles(false, "acme2.mdle/p2/doc-files/sub-dir");
     }
 
     @Test
-    public void testDocFilesInModulePackagesWithRecursiveCopyWithExclusion() {
-        javadoc("-d", "modules-out-recursive-with-exclusion",
+    public void testDocFilesInModulePackagesWithExclusion() {
+        javadoc("-d", "modules-out-exclusion",
                 "-excludedocfilessubdir", "sub-dir-1",
                 "--module-source-path", testSrc("modules"),
                 "--module", "acme.mdle");
         checkExit(Exit.OK);
+
         checkOutput("acme.mdle/p/doc-files/inpackage.html", true,
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>."""
         );
+
         checkOutput("acme.mdle/p/doc-files/sub-dir/SubReadme.html", true,
                 """
                     SubReadme.html at second level of doc-file directory for acme.module."""
         );
-        checkFiles(false, "acme2.mdle/p2/doc-files/sub-dir/sub-dir-1");
+
+        checkFiles(false, "acme.mdle/p/doc-files/sub-dir/sub-dir-1");
+
+        checkFiles(false, "acme2.mdle/p2/doc-files");
+    }
+
+    @Test
+    public void testDocFilesInModulePackagesWithWildcardExclusion() {
+        javadoc("-d", "modules-out-wildcard-exclusion",
+                "-excludedocfilessubdir", "*",
+                "--module-source-path", testSrc("modules"),
+                "--module", "acme.mdle");
+        checkExit(Exit.OK);
+
+        checkOutput("acme.mdle/p/doc-files/inpackage.html", true,
+                """
+                    In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>."""
+        );
+
+        checkFiles(false, "acme.mdle/p/doc-files/sub-dir");
     }
 
     @Test
@@ -247,8 +271,9 @@ public class TestCopyFiles extends JavadocTester {
     }
 
     @Test
-    public void testDocFilesInPackagesWithRecursiveCopy() {
-        javadoc("-d", "packages-out-recursive",
+    public void testDocFilesInPackagesWithExclusion() {
+        javadoc("-d", "packages-out-exclusion",
+                "-excludedocfilessubdir", "sub-dir",
                 "-sourcepath", testSrc("packages"),
                 "p1");
         checkExit(Exit.OK);
@@ -257,16 +282,13 @@ public class TestCopyFiles extends JavadocTester {
                 "A named package in an unnamed module"
         );
 
-        checkOutput("p1/doc-files/sub-dir/SubReadme.html", true,
-                "<title>SubReadme</title>",
-                "SubReadme.html at second level of doc-file directory."
-        );
+        checkFiles(false, "p1/doc-files/sub-dir");
     }
 
     @Test
-    public void testDocFilesInPackagesWithRecursiveCopyWithExclusion() {
-        javadoc("-d", "packages-out-recursive-with-exclusion",
-                "-excludedocfilessubdir", "sub-dir",
+    public void testDocFilesInPackagesWithWildcardExclusion() {
+        javadoc("-d", "packages-out-wildcard-exclusion",
+                "-excludedocfilessubdir", "*",
                 "-sourcepath", testSrc("packages"),
                 "p1");
         checkExit(Exit.OK);
@@ -299,6 +321,44 @@ public class TestCopyFiles extends JavadocTester {
                     """,
                 "SubReadme.html at second level of doc-file directory for unnamed package."
         );
+    }
+
+    @Test
+    public void testDocFilesInUnnamedPackagesWithExclusion() {
+        javadoc("-d", "unnamed-out-exclusion",
+                "-windowtitle", "phi-WINDOW-TITLE-phi",
+                "-excludedocfilessubdir", "doc-file",
+                "-sourcepath", testSrc("unnamed"),
+                testSrc("unnamed/Foo.java")
+        );
+        checkExit(Exit.OK);
+        checkOutput("doc-files/inpackage.html", true,
+                """
+                    <title>(phi-WINDOW-TITLE-phi)</title>
+                    """,
+                "In an unnamed package"
+        );
+
+        checkFiles(false, "doc-files/doc-file");
+    }
+
+    @Test
+    public void testDocFilesInUnnamedPackagesWithWildcardExclusion() {
+        javadoc("-d", "unnamed-out-wildcard-exclusion",
+                "-windowtitle", "phi-WINDOW-TITLE-phi",
+                "-excludedocfilessubdir", "*",
+                "-sourcepath", testSrc("unnamed"),
+                testSrc("unnamed/Foo.java")
+        );
+        checkExit(Exit.OK);
+        checkOutput("doc-files/inpackage.html", true,
+                """
+                    <title>(phi-WINDOW-TITLE-phi)</title>
+                    """,
+                "In an unnamed package"
+        );
+
+        checkFiles(false, "doc-files/doc-file");
     }
 
     @Test
