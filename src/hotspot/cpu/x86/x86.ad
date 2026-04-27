@@ -2761,7 +2761,7 @@ bool Matcher::can_be_java_arg(int reg)
 
 uint Matcher::int_pressure_limit()
 {
-  return (INTPRESSURE == -1) ? _INT_REG_mask.size() : (uint)INTPRESSURE;
+  return (INTPRESSURE == -1) ? _INT_REG_mask.size() : INTPRESSURE.value();
 }
 
 uint Matcher::float_pressure_limit()
@@ -2770,7 +2770,7 @@ uint Matcher::float_pressure_limit()
   // works best for LCM's register pressure scheduling on x64.
   uint dec_count  = VM_Version::supports_evex() ? 4 : 2;
   uint default_float_pressure_threshold = _FLOAT_REG_mask.size() - dec_count;
-  return (FLOATPRESSURE == -1) ? default_float_pressure_threshold : (uint)FLOATPRESSURE;
+  return (FLOATPRESSURE == -1) ? default_float_pressure_threshold : FLOATPRESSURE.value();
 }
 
 // Register for DIVI projection of divmodI

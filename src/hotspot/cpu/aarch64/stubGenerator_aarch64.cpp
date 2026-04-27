@@ -8825,7 +8825,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   __ bind(LARGE_LOOP);
     if (SoftwarePrefetchHintDistance >= 0) {
-      __ prfm(Address(ary1, SoftwarePrefetchHintDistance));
+      __ prfm(Address(ary1, SoftwarePrefetchHintDistance.value()));
     }
     // Issue load instructions first, since it can save few CPU/MEM cycles, also
     // instead of 4 triples of "orr(...), addr(...);cbnz(...);" (for each ldp)
@@ -8916,8 +8916,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
     __ bind(LOOP);
     if (usePrefetch) {
-      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
-      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance.value()));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance.value()));
     }
     __ ldp(tmp5, tmp7, Address(__ post(a1, 2 * wordSize)));
     __ eor(tmp1, tmp1, tmp2);
@@ -8964,8 +8964,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(LOOP);
     if (usePrefetch) {
-      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
-      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance.value()));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance.value()));
     }
     __ ld1(v0, v1, v2, v3, __ T2D, Address(__ post(a1, 4 * 2 * wordSize)));
     __ sub(cnt1, cnt1, 8 * wordSize);
@@ -9516,14 +9516,14 @@ class StubGenerator: public StubCodeGenerator {
       __ subs(rscratch2, cnt2, prefetchLoopExitCondition);
       __ br(__ LT, NO_PREFETCH);
       __ bind(LARGE_LOOP_PREFETCH);
-        __ prfm(Address(tmp2, SoftwarePrefetchHintDistance));
+        __ prfm(Address(tmp2, SoftwarePrefetchHintDistance.value()));
         __ mov(tmp4, 2);
-        __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+        __ prfm(Address(cnt1, SoftwarePrefetchHintDistance.value()));
         __ bind(LARGE_LOOP_PREFETCH_REPEAT1);
           compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
           __ subs(tmp4, tmp4, 1);
           __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT1);
-          __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+          __ prfm(Address(cnt1, SoftwarePrefetchHintDistance.value()));
           __ mov(tmp4, 2);
         __ bind(LARGE_LOOP_PREFETCH_REPEAT2);
           compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
@@ -9743,8 +9743,8 @@ class StubGenerator: public StubCodeGenerator {
     if (SoftwarePrefetchHintDistance >= 0) {
       __ align(OptoLoopAlignment);
       __ bind(LARGE_LOOP_PREFETCH);
-        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
-        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
+        __ prfm(Address(str1, SoftwarePrefetchHintDistance.value()));
+        __ prfm(Address(str2, SoftwarePrefetchHintDistance.value()));
 
         for (int i = 0; i < 4; i++) {
           __ ldp(tmp1, tmp1h, Address(str1, i * 16));
@@ -10306,7 +10306,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zip1(v1, __ T16B, src1, v0);
     __ zip2(v2, __ T16B, src1, v0);
     if (generatePrfm) {
-      __ prfm(Address(dst, SoftwarePrefetchHintDistance), PSTL1STRM);
+      __ prfm(Address(dst, SoftwarePrefetchHintDistance.value()), PSTL1STRM);
     }
     __ zip1(v3, __ T16B, src2, v0);
     __ zip2(v4, __ T16B, src2, v0);
@@ -10349,7 +10349,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(LOOP_PRFM);
       __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
     __ bind(LOOP_PRFM_START);
-      __ prfm(Address(src, SoftwarePrefetchHintDistance));
+      __ prfm(Address(src, SoftwarePrefetchHintDistance.value()));
       __ sub(octetCounter, octetCounter, 8);
       __ subs(rscratch1, octetCounter, large_loop_threshold);
       inflate_and_store_2_fp_registers(true, v3, v4);

@@ -2169,7 +2169,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ push(rscratch1);
   __ mov(rscratch1, (address) &BytecodeCounter::_counter_value);
   __ ldr(rscratch1, Address(rscratch1));
-  __ mov(rscratch2, StopInterpreterAt);
+  __ mov(rscratch2, StopInterpreterAt.value());
   __ cmp(rscratch1, rscratch2);
   __ br(Assembler::NE, L);
   __ brk(0);

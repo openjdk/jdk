@@ -2355,7 +2355,7 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // and fill the remainings with zero.
   // dst   =  00  00  00  00  00  0g  0c  0a
   unsigned extended_size = vector_length_in_bytes << 1;
-  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize.value() : extended_size);
   // Narrow the result back to type BYTE.
   // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
   sve_uzp1(dst, B, dst, vzr);

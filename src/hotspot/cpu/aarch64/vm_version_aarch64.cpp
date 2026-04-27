@@ -78,7 +78,7 @@ static SpinWait get_spin_wait_desc() {
       vm_exit_during_initialization("The CPU does not support the SB instruction required by the -XX:OnSpinWaitInst=wfet implementation");
     }
 
-    if (OnSpinWaitInstCount != 1) {
+    if (OnSpinWaitInstCount.value() != 1) {
       vm_exit_during_initialization("OnSpinWaitInstCount for OnSpinWaitInst 'wfet' must be 1");
     }
   } else {
@@ -137,28 +137,28 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance))
     FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, 3*dcache_line);
 
-  if (PrefetchCopyIntervalInBytes != -1 &&
+  if (PrefetchCopyIntervalInBytes.value() != -1 &&
        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
     warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
-    PrefetchCopyIntervalInBytes &= ~7;
+    PrefetchCopyIntervalInBytes = PrefetchCopyIntervalInBytes & ~7;
     if (PrefetchCopyIntervalInBytes >= 32768)
       PrefetchCopyIntervalInBytes = 32760;
   }
 
-  if (AllocatePrefetchDistance != -1 && (AllocatePrefetchDistance & 7)) {
+  if (AllocatePrefetchDistance.value() != -1 && (AllocatePrefetchDistance & 7)) {
     warning("AllocatePrefetchDistance must be multiple of 8");
-    AllocatePrefetchDistance &= ~7;
+    AllocatePrefetchDistance = AllocatePrefetchDistance & ~7;
   }
 
   if (AllocatePrefetchStepSize & 7) {
     warning("AllocatePrefetchStepSize must be multiple of 8");
-    AllocatePrefetchStepSize &= ~7;
+    AllocatePrefetchStepSize = AllocatePrefetchStepSize & ~7;
   }
 
   if (SoftwarePrefetchHintDistance != -1 &&
        (SoftwarePrefetchHintDistance & 7)) {
     warning("SoftwarePrefetchHintDistance must be -1, or a multiple of 8");
-    SoftwarePrefetchHintDistance &= ~7;
+    SoftwarePrefetchHintDistance = SoftwarePrefetchHintDistance & ~7;
   }
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) && (dcache_line > ContendedPaddingWidth)) {
@@ -562,7 +562,7 @@ void VM_Version::initialize() {
     warning("ROP-protection specified, but this VM was built without ROP-protection support. Disabling ROP-protection.");
 #endif
   } else {
-    vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
+    vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection.value()));
   }
 
   if (_rop_protection == true) {
@@ -598,15 +598,15 @@ void VM_Version::initialize() {
       warning("SVE does not support vector length less than %d bytes. Disabling SVE.",
               FloatRegister::sve_vl_min);
       UseSVE = 0;
-    } else if (!((MaxVectorSize % FloatRegister::sve_vl_min) == 0 && is_power_of_2(MaxVectorSize))) {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+    } else if (!((MaxVectorSize % FloatRegister::sve_vl_min) == 0 && is_power_of_2(MaxVectorSize.value()))) {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize.value()));
     }
 
     if (UseSVE > 0) {
       // Acquire the largest supported vector length of this machine
       _max_supported_sve_vector_length = set_and_get_current_sve_vector_length(FloatRegister::sve_vl_max);
 
-      if (MaxVectorSize != _max_supported_sve_vector_length) {
+      if (MaxVectorSize.value() != _max_supported_sve_vector_length) {
         int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
         if (new_vl < 0) {
           vm_exit_during_initialization(
@@ -626,7 +626,7 @@ void VM_Version::initialize() {
     int min_vector_size = 8;
     int max_vector_size = FloatRegister::neon_vl;
     if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
-      if (!is_power_of_2(MaxVectorSize)) {
+      if (!is_power_of_2(MaxVectorSize.value())) {
         vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
       } else if (MaxVectorSize < min_vector_size) {
         warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
@@ -640,10 +640,10 @@ void VM_Version::initialize() {
     }
   }
 
-  int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize : 0;
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize.value() : 0;
   if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
     FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
-  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
+  } else if (ArrayOperationPartialInlineSize.value() != 0 && ArrayOperationPartialInlineSize.value() != inline_size) {
     warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
     ArrayOperationPartialInlineSize = inline_size;
   }
