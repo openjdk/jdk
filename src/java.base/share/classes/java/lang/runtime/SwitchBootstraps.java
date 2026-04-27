@@ -151,18 +151,15 @@ public final class SwitchBootstraps {
      * <ul>
      *   <li>the element is of type {@code Class} that is assignable
      *       from the target's class</li>
-     *   <li>the element is of type {@code String} and equals to the target
-     *       (matched by content using {@code equals})</li>
-     *   <li>the element is of type {@code Integer} and equals to the target
-     *       (matched by value comparison using {@code ==} after unboxing if necessary)</li>
+     *   <li>the element is of type {@code String} and {@code equals} to the target</li>
+     *   <li>the element is of type {@code Integer} and {@code ==} to the target after
+     *       unboxing if necessary</li>
      *   <li>(Preview) the element is of type {@code Long} or {@code Boolean}
-     *       and equals to the target (matched by value comparison using {@code ==}
-     *       after unboxing if necessary)</li>
+     *       and {@code ==} to the target after unboxing if necessary</li>
      *   <li>(Preview) the element is of type {@code Float} or {@code Double}
-     *       and equals to the target (matched by representation equivalence using
-     *       {@code equals} on boxed values)</li>
-     *   <li>the element is of type {@code EnumDesc}, that describes a constant
-     *       that is equal to the target (matched using {@code ==} on enum constants)</li>
+     *       and {@code equals} to the target after boxing if necessary</li>
+     *   <li>the element is of type {@code EnumDesc}, that describes an enum constant
+     *       that is {@code ==} to the target</li>
      * </ul>
      * <p>
      * If no element in the {@code labels} array matches the target, then
