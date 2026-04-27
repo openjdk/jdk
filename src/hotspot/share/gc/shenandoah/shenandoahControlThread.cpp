@@ -292,7 +292,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   }
   heap->increment_total_collections(false);
 
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), heap->cycle_memory_manager());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
@@ -335,7 +335,7 @@ void ShenandoahControlThread::stop_service() {
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), heap->cycle_memory_manager());
 
   heap->increment_total_collections(true);
 
@@ -346,7 +346,7 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation(), true,
+  ShenandoahGCSession session(cause, heap->global_generation(), heap->cycle_memory_manager(), true,
                               point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
 
   heap->increment_total_collections(false);

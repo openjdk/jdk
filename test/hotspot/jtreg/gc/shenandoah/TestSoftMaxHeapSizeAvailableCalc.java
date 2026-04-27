@@ -94,11 +94,17 @@ public class TestSoftMaxHeapSizeAvailableCalc {
         public static void test() throws Exception {
             final int expectedMaxGcCount = Integer.getInteger("expectedMaxGcCount", 30);
             List<java.lang.management.GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
-            java.lang.management.GarbageCollectorMXBean cycleCollector = null;
+            // There are multiple types of GC cycles that exist for Generational Shenandoah (Global/Young/Old).
+            // Each generation has its own MXBean, so we must account for all types of GC cycles.
+            List<java.lang.management.GarbageCollectorMXBean> cycleCollectors = new ArrayList<>();
             for (java.lang.management.GarbageCollectorMXBean bean : collectors) {
-                if (bean.getName().contains("Cycles")) {
-                    cycleCollector = bean;
+                if (bean.getName().contains("Cycle")) {
+                    cycleCollectors.add(bean);
                 }
+            }
+
+            if (cycleCollectors.isEmpty()) {
+                throw new IllegalStateException("Could not find Shenandoah GC cycle type.");
             }
 
             // Allocate ~300MB of long-lived objects
@@ -116,7 +122,12 @@ public class TestSoftMaxHeapSizeAvailableCalc {
                 Thread.sleep(10); // Pace to generate garbage at speed of ~100M/s
             }
 
-            long gcCount = cycleCollector.getCollectionCount();
+            long gcCount = 0;
+
+            for (java.lang.management.GarbageCollectorMXBean bean : cycleCollectors) {
+                gcCount += bean.getCollectionCount();
+            }
+
             Asserts.assertLessThan(gcCount, (long) expectedMaxGcCount, "GC was triggered too many times. Expected to be less than: " + expectedMaxGcCount + ", triggered: " + gcCount);
         }
     }

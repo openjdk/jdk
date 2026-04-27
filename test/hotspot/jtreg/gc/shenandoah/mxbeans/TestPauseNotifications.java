@@ -147,7 +147,10 @@ public class TestPauseNotifications {
                             if (!isExpectedPauseAction(info.getGcAction())) {
                                 throw new IllegalStateException("Unknown action: " + info.getGcAction());
                             }
-                        } else if (name.equals("Shenandoah Cycles")) {
+                        } else if (name.equals("Shenandoah Cycles") ||
+                                   name.equals("Shenandoah Young Gen GC Cycle") ||
+                                   name.equals("Shenandoah Old Gen GC Cycle") ||
+                                   name.equals("Shenandoah Global GC Cycle")) {
                             cyclesCount.incrementAndGet();
                             cyclesDuration.addAndGet(d);
                         } else {
