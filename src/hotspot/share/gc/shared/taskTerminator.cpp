@@ -38,7 +38,7 @@ TaskTerminator::DelayContext::DelayContext() {
 
 void TaskTerminator::DelayContext::reset_hard_spin_information() {
   _hard_spin_count = 0;
-  _hard_spin_limit = WorkStealingHardSpins >> WorkStealingSpinToYieldRatio;
+  _hard_spin_limit = checked_cast<uint>(WorkStealingHardSpins.value() >> WorkStealingSpinToYieldRatio.value());
 }
 
 bool TaskTerminator::DelayContext::needs_sleep() const {
