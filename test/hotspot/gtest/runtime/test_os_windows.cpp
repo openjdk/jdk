@@ -60,8 +60,8 @@ void TestReserveMemorySpecial_test() {
   }
 
   // set globals to make sure we hit the correct code path
-  AutoSaveRestore<bool> FLAG_GUARD(UseLargePagesIndividualAllocation);
-  AutoSaveRestore<bool> FLAG_GUARD(UseNUMAInterleaving);
+  AutoSaveRestore<JVMFlagImpl<bool>> FLAG_GUARD(UseLargePagesIndividualAllocation);
+  AutoSaveRestore<JVMFlagImpl<bool>> FLAG_GUARD(UseNUMAInterleaving);
   FLAG_SET_CMDLINE(UseLargePagesIndividualAllocation, false);
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
@@ -727,9 +727,9 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
     GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
   }
   // Set globals to make sure we hit the correct code path
-  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
-  AutoSaveRestore<bool> guardEnableAllLargePageSizesForWindows(EnableAllLargePageSizesForWindows);
-  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  AutoSaveRestore<JVMFlagImpl<bool>> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<JVMFlagImpl<bool>> guardEnableAllLargePageSizesForWindows(EnableAllLargePageSizesForWindows);
+  AutoSaveRestore<JVMFlagImpl<size_t>> guardLargePageSizeInBytes(LargePageSizeInBytes);
   FLAG_SET_CMDLINE(UseLargePages, true);
   FLAG_SET_CMDLINE(EnableAllLargePageSizesForWindows, true);
 
@@ -780,8 +780,8 @@ TEST_VM(os_windows, large_page_init_decide_size) {
   if (!os::win32::request_lock_memory_privilege()) {
     GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
   }
-  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
-  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  AutoSaveRestore<JVMFlagImpl<bool>> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<JVMFlagImpl<size_t>> guardLargePageSizeInBytes(LargePageSizeInBytes);
   FLAG_SET_CMDLINE(UseLargePages, true);
   FLAG_SET_CMDLINE(LargePageSizeInBytes, 0); // Reset to default
 

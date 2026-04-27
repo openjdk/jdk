@@ -3016,7 +3016,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
   size_t page_size = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
-  size_t chunk_size = UseNUMAInterleaving ? NUMAInterleaveGranularity : page_size;
+  size_t chunk_size = UseNUMAInterleaving ? NUMAInterleaveGranularity.value() : page_size;
 
   // first reserve enough address space in advance since we want to be
   // able to break a single contiguous virtual address range into multiple
