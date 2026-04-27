@@ -141,9 +141,9 @@ const size_t minimumSymbolTableSize = 1024;
                            product_pd,                                      \
                            range,                                           \
                            constraint)
-const bool UseCompressedOops = false;
-const bool UseCompactObjectHeaders = false;
-const int ObjectAlignmentInBytes = 8;
+constexpr JVMFlagImpl<bool> UseCompressedOops = false;
+constexpr JVMFlagImpl<bool> UseCompactObjectHeaders = false;
+constexpr JVMFlagImpl<int> ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
 
