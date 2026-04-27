@@ -34,21 +34,11 @@
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class LogRecordThreadIdTest {
-
-    private static LogRecord record, record1, record2;
-
-    @BeforeAll
-    public static void setUp() throws Exception {
-        record  = new LogRecord(Level.INFO, "record");
-        record1 = new LogRecord(Level.INFO, "record1");
-        record2 = new LogRecord(Level.INFO, "record2");
-    }
 
     /**
      * Tests threadID setter methods for consistency
@@ -56,6 +46,9 @@ public class LogRecordThreadIdTest {
      */
     @Test
     public void testSetThreadId() {
+        LogRecord record  = new LogRecord(Level.INFO, "record");
+        LogRecord record1 = new LogRecord(Level.INFO, "record1");
+
         record.setThreadID(Integer.MAX_VALUE - 20);
         record1.setThreadID(Integer.MAX_VALUE - 1);
         assertEquals(Integer.MAX_VALUE - 20L, record.getLongThreadID());
@@ -70,15 +63,18 @@ public class LogRecordThreadIdTest {
      */
     @Test
     public void testSetLongThreadId() {
-      record.setLongThreadID(Integer.MAX_VALUE - 20L);
-      record1.setLongThreadID(Integer.MAX_VALUE + 10L);
-      record2.setLongThreadID(Integer.MAX_VALUE);
-      assertEquals(Integer.MAX_VALUE - 20, record.getThreadID());
-      assertEquals(Integer.MAX_VALUE - 20L, record.getLongThreadID());
-      assertNotEquals(Integer.MAX_VALUE + 10L, record1.getThreadID());
-      assertEquals(Integer.MAX_VALUE + 10L, record1.getLongThreadID());
-      assertEquals(Integer.MAX_VALUE, record2.getThreadID());
-      assertEquals(Integer.MAX_VALUE, record2.getLongThreadID());
+        LogRecord record = new LogRecord(Level.INFO, "record");
+        LogRecord record1 = new LogRecord(Level.INFO, "record1");
+        LogRecord record2 = new LogRecord(Level.INFO, "record2");
 
+        record.setLongThreadID(Integer.MAX_VALUE - 20L);
+        record1.setLongThreadID(Integer.MAX_VALUE + 10L);
+        record2.setLongThreadID(Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE - 20, record.getThreadID());
+        assertEquals(Integer.MAX_VALUE - 20L, record.getLongThreadID());
+        assertNotEquals(Integer.MAX_VALUE + 10L, record1.getThreadID());
+        assertEquals(Integer.MAX_VALUE + 10L, record1.getLongThreadID());
+        assertEquals(Integer.MAX_VALUE, record2.getThreadID());
+        assertEquals(Integer.MAX_VALUE, record2.getLongThreadID());
     }
 }
