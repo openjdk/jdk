@@ -28,7 +28,14 @@ import java.util.List;
 import compiler.lib.template_framework.Template;
 
 /**
- * TODO: desc
+ *  TODO: design the mechanics!
+ *  - Statement
+ *    - can check if applicable in context
+ *    - can instantiate the template, and recurse
+ *  - Context
+ *    - Has list of available statements
+ *    - Can dispatch the nested statements
+ *    - Optional: available expressions, types, etc?
  */
 public class Statement {
     public interface ApplicabilityPredicate {

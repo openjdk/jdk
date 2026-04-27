@@ -42,6 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.library.Hooks; // TODO: or do we use our own?
 import compiler.lib.template_framework.library.Statement;
+import compiler.lib.template_framework.library.Statements;
 import static compiler.lib.template_framework.Template.scope;
 
 /**
@@ -50,18 +51,7 @@ import static compiler.lib.template_framework.Template.scope;
 public class TemplateFuzzer {
 
     private static String generate() {
-        var statements = List.of(
-            new Statement(Template.make("context", (Statement.Context context) -> scope(
-                """
-                { // open
-                """,
-                context.dispatch(),
-                """
-                } // close
-                """
-            )))
-        );
-        var context = new Statement.Context(statements);
+        var context = new Statement.Context(Statements.BASIC_STATEMENTS);
 
         var template = Template.make(() -> scope(
             """
@@ -85,13 +75,6 @@ public class TemplateFuzzer {
         ));
         return template.render();
     }
-    // TODO: design the mechanics!
-    // - Statement
-    //   - can check if applicable in context
-    //   - can instantiate the template, and recurse
-    // - Context
-    //   - Has list of available statements
-    //   - Can dispatch the nested statements
 
     public static void main(String[] args) throws Exception {
         // Create a new CompileFramework instance.
