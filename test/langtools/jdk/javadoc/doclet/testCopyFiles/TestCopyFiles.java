@@ -140,10 +140,10 @@ public class TestCopyFiles extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 """
-                    Note: The -docfilessubdirs option is no longer required and
+                    The -docfilessubdirs option is no longer required and
                     may be removed in a future release.""",
                 """
-                    warning: The -footer option is no longer supported and will be ignored.
+                    The -footer option is no longer supported and will be ignored.
                       It may be removed in a future release.""");
 
         checkOrder("acme.mdle/p/doc-files/inpackage.html",
