@@ -95,7 +95,6 @@ public final class GlyphLayout {
     private Point2D.Float _pt;
     private FontStrikeDesc _sd;
     private float[] _mat;
-    private float ptSize;
     private int _typo_flags;
     private int _offset;
 
@@ -283,8 +282,6 @@ public final class GlyphLayout {
         _mat[3] = (float) txinfo.ftx.getScaleY();
         _pt.setLocation(txinfo.ftx.getTranslateX(),
                         txinfo.ftx.getTranslateY());
-
-        ptSize = font.getSize2D();
 
         int lim = offset + count;
 
@@ -568,7 +565,7 @@ public final class GlyphLayout {
         void layout() {
             _textRecord.start = start;
             _textRecord.limit = limit;
-            SunLayoutEngine.layout(font, script, _sd, _mat, ptSize, gmask, start - _offset, _textRecord,
+            SunLayoutEngine.layout(font, script, _sd, _mat, gmask, start - _offset, _textRecord,
                           _typo_flags | eflags, _pt, _gvdata);
         }
     }

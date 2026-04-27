@@ -39,10 +39,8 @@ typedef struct JDKFontInfo_Struct {
     jobject font2D;
     jobject fontStrike;
     float matrix[4];
-    float ptSize;
     float xPtSize;
     float yPtSize;
-    float devScale; // How much applying the full glyph tx scales x distance.
 } JDKFontInfo;
 
 
@@ -62,8 +60,7 @@ typedef struct JDKFontInfo_Struct {
 
 hb_font_t *
 hb_jdk_font_create(hb_face_t* hbFace,
-                   JDKFontInfo*   jdkFontInfo,
-                   hb_destroy_func_t destroy);
+                   JDKFontInfo*   jdkFontInfo);
 
 
 /* Makes an hb_font_t use JDK internally to implement font functions. */
