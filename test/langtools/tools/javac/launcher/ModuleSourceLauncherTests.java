@@ -329,7 +329,6 @@ class ModuleSourceLauncherTests {
                 .outdir(compiledModule)
                 .run();
 
-
         var appModuleDir = Files.createDirectories(sourceRoot.resolve("app"));
         var appPackageDir = Files.createDirectories(appModuleDir.resolve("app"));
         var mainFile = Files.writeString(appPackageDir.resolve("Main.java"),
@@ -387,7 +386,6 @@ class ModuleSourceLauncherTests {
                          "--module", "lib")
                 .outdir(compiledModule)
                 .run();
-
 
         var appModuleDir = Files.createDirectories(sourceRoot.resolve("app"));
         var appPackageDir = Files.createDirectories(appModuleDir.resolve("app"));

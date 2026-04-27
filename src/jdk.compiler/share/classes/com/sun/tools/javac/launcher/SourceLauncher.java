@@ -41,8 +41,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import jdk.internal.misc.MethodFinder;
-import jdk.internal.module.Modules;
 import jdk.internal.misc.VM;
+import jdk.internal.module.Modules;
 
 /**
  * Compiles a source file, and executes the main method it contains.
