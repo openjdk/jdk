@@ -139,7 +139,7 @@ public final class SwitchBootstraps {
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
-     * will be an instance or value of the ({@code target}) type and the second
+     * will be a value of the ({@code target}) type and the second
      * will be {@code int} ({@code restart}).
      * <p>
      * If the {@code target} is {@code null}, then the method of the call site
@@ -155,10 +155,10 @@ public final class SwitchBootstraps {
      *       (matched by content using {@code equals})</li>
      *   <li>the element is of type {@code Integer} and equals to the target
      *       (matched by value comparison using {@code ==} after unboxing if necessary)</li>
-     *   <li>the element is of type {@code Long} or {@code Boolean} (preview)
+     *   <li>(Preview) the element is of type {@code Long} or {@code Boolean}
      *       and equals to the target (matched by value comparison using {@code ==}
      *       after unboxing if necessary)</li>
-     *   <li>the element is of type {@code Float} or {@code Double} (preview)
+     *   <li>(Preview) the element is of type {@code Float} or {@code Double}
      *       and equals to the target (matched by representation equivalence using
      *       {@code equals} on boxed values)</li>
      *   <li>the element is of type {@code EnumDesc}, that describes a constant
