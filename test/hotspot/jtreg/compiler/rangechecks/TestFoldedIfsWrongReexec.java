@@ -32,6 +32,8 @@
  *
  */
 
+package compiler.rangechecks;
+
 public class TestFoldedIfsWrongReexec {
     private static int taken1;
     private static int taken2;
@@ -65,17 +67,17 @@ public class TestFoldedIfsWrongReexec {
             }
             test4Helper1(16, 0, 1, 2);
             test5(12);
-            if (taken4 != 0) {
+            if (taken5 != 0) {
                 throw new RuntimeException("branch shouldn't have been taken");
             }
             test5Helper1(16, 0);
             test6(12, 1, 2);
-            if (taken4 != 0) {
+            if (taken6 != 0) {
                 throw new RuntimeException("branch shouldn't have been taken");
             }
             test6Helper1(16, 0, 1, 2);
             test7(12);
-            if (taken4 != 0) {
+            if (taken7 != 0) {
                 throw new RuntimeException("branch shouldn't have been taken");
             }
             test7Helper1(16, 0);
@@ -124,7 +126,6 @@ public class TestFoldedIfsWrongReexec {
             for (int k = 0; k < 10; k++) {
 
             }
-
         }
     }
 
@@ -148,7 +149,6 @@ public class TestFoldedIfsWrongReexec {
             for (int k = 0; k < 10; k++) {
 
             }
-
         }
     }
 
@@ -172,7 +172,6 @@ public class TestFoldedIfsWrongReexec {
             for (int k = 0; k < 10; k++) {
 
             }
-
         }
     }
 
@@ -225,7 +224,6 @@ public class TestFoldedIfsWrongReexec {
             for (int k = 0; k < 10; k++) {
 
             }
-
         }
     }
 
@@ -277,7 +275,6 @@ public class TestFoldedIfsWrongReexec {
             for (int k = 0; k < 10; k++) {
 
             }
-
         }
     }
 

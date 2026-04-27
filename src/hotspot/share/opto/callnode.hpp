@@ -887,7 +887,7 @@ protected:
   virtual uint size_of() const; // Size is bigger
 public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
-    : CallJavaNode(tf, addr, method) {
+    : CallJavaNode(tf, addr, method), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
