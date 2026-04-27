@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
 
         public ProfiledType(ResolvedJavaType type, double probability) {
             super(type, probability);
-            assert type.isArray() || type.isConcrete() : type + " " + Modifier.toString(type.getModifiers());
+            assert type.isArray() || type.isConcrete() : type + " %04x".formatted(type.getModifiers());
         }
 
         /**

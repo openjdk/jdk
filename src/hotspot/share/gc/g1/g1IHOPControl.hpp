@@ -115,7 +115,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   void add_marking_start_to_mixed_length(double length_s);
 
   // Get the current non-young occupancy at which concurrent marking should start.
-  size_t old_gen_threshold_for_conc_mark_start();
+  size_t old_gen_threshold_for_conc_mark_start() const;
 
   void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };

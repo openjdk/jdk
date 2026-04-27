@@ -303,8 +303,6 @@ class Arguments : AllStatic {
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
 
-  static jint set_aggressive_heap_flags();
-
   // Argument parsing
   static bool parse_argument(const char* arg, JVMFlagOrigin origin);
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlagOrigin origin);

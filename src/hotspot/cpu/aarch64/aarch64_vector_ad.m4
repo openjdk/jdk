@@ -567,13 +567,9 @@ instruct vloadcon(vReg dst, immI0 src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (UseSVE == 0) {
       uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+      int entry_idx = __ vector_iota_entry_index(bt);
       assert(length_in_bytes <= 16, "must be");
-      // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 16.
-      int offset = exact_log2(type2aelembytes(bt)) << 4;
-      if (is_floating_point_type(bt)) {
-        offset += 32;
-      }
-      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + offset));
+      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices(entry_idx)));
       if (length_in_bytes == 16) {
         __ ldrq($dst$$FloatRegister, rscratch1);
       } else {

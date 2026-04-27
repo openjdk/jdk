@@ -45,19 +45,22 @@ class outputStream;
 class stringStream;
 enum class vmIntrinsicID;
 
+#define SINGLE_INST_WARNING_MSG " instruction is not available on this CPU"
+#define MULTI_INST_WARNING_MSG " instructions are not available on this CPU"
+
 // Helper macro to test and set VM flag and corresponding cpu feature
-#define CHECK_CPU_FEATURE(feature_test_fn, feature) \
-  if (feature_test_fn()) { \
-    if (FLAG_IS_DEFAULT(Use##feature)) { \
-      FLAG_SET_DEFAULT(Use##feature, true); \
-    } else if (!Use##feature) { \
-      clear_feature(CPU_##feature); \
+#define CHECK_CPU_FEATURE(vmflag, feature_id, predicate, warning_msg) \
+  if (predicate) { \
+    if (FLAG_IS_DEFAULT(vmflag)) { \
+      FLAG_SET_DEFAULT(vmflag, true); \
+    } else if (!vmflag) { \
+      clear_feature(CPU_##feature_id); \
     } \
-  } else if (Use##feature) { \
-    if (!FLAG_IS_DEFAULT(Use##feature)) { \
-      warning(#feature " instructions are not available on this CPU"); \
+  } else if (vmflag) { \
+    if (!FLAG_IS_DEFAULT(vmflag)) { \
+      warning(#feature_id warning_msg); \
     } \
-    FLAG_SET_DEFAULT(Use##feature, false); \
+    FLAG_SET_DEFAULT(vmflag, false); \
   }
 
 // Abstract_VM_Version provides information about the VM.
@@ -255,8 +258,8 @@ class Abstract_VM_Version: AllStatic {
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf) { return; }
 
-  // features_to_test is an opaque object that stores arch specific representation of cpu features
-  static bool supports_features(void* features_to_test) { return false; };
+  // features_buffer is an opaque object that stores arch specific representation of cpu features
+  static bool verify_aot_code_cache_features(void* features_buffer) { return false; };
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

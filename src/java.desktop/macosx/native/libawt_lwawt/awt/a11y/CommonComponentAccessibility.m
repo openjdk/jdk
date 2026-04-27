@@ -1190,13 +1190,24 @@ static jobject sAccessibilityClass = NULL;
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
     GET_CACCESSIBILITY_CLASS_RETURN(FALSE);
-    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
-                                 "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
-    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
-                                 [self axContextWithEnv:(env)], index, fComponent);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleAction, sjc_CAccessibility, "getAccessibleAction",
+                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleAction;", FALSE);
+
+    jobject axAction = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleAction, fAccessible, fComponent);
     CHECK_EXCEPTION();
 
-    return TRUE;
+    if (axAction != NULL) {
+        DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+                                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
+        (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
+                                     axAction, index, fComponent);
+        CHECK_EXCEPTION();
+
+        (*env)->DeleteLocalRef(env, axAction);
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 
 // NSAccessibilityActions methods

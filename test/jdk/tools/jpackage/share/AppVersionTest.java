@@ -767,6 +767,11 @@ public final class AppVersionTest {
         AppTestSpec {
             Objects.requireNonNull(appDesc);
             Objects.requireNonNull(spec);
+            spec.findVersionSource(ModuleVersionSource.class).map(ModuleVersionSource::appDesc).ifPresent(moduleAppDesc -> {
+                if (!moduleAppDesc.equals(appDesc)) {
+                    throw new IllegalArgumentException();
+                }
+            });
         }
 
         AppTestSpec(TestSpec spec) {

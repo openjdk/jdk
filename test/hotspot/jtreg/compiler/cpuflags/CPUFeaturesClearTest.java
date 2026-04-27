@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8364584 8381988
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -38,6 +39,7 @@
 package compiler.cpuflags;
 
 import java.util.List;
+import java.util.Map;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -62,15 +64,23 @@ public class CPUFeaturesClearTest {
     }
 
     public void testX86Flags() throws Throwable {
+        Map<String, String> vmFlagToCpuFeatureMap = Map.of("UseCLMUL", "clmul",
+                                                           "UseAES", "aes",
+                                                           "UseFMA", "fma",
+                                                           "UseCountLeadingZerosInstruction", "lzcnt",
+                                                           "UseBMI1Instructions", "bmi1",
+                                                           "UseBMI2Instructions", "bmi2",
+                                                           "UsePopCountInstruction", "popcnt",
+                                                           "UseSHA", "sha");
+        vmFlagToCpuFeatureMap.forEach((vmFlag, cpuFeature) -> {
+            try {
+                OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag(vmFlag, false)));
+                outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* " + cpuFeature + ".*");
+            } catch (Exception e) {
+                throw new RuntimeException (e);
+            }
+        });
         OutputAnalyzer outputAnalyzer;
-        String vmFlagsToTest[] = {"UseCLMUL", "UseAES", "UseFMA", "UseSHA"};
-        String cpuFeatures[] =   {"clmul",    "aes",    "fma",    "sha"};
-        for (int i = 0; i < vmFlagsToTest.length; i++) {
-            String vmFlag = vmFlagsToTest[i];
-            String cpuFeature = cpuFeatures[i];
-            outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag(vmFlag, false)));
-            outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* " + cpuFeatures[i] + ".*");
-        }
         if (isCpuFeatureSupported("sse4")) {
             outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareNumericFlag("UseSSE", 3)));
             outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sse4.*");
@@ -103,18 +113,20 @@ public class CPUFeaturesClearTest {
     }
 
     public void testAArch64Flags() throws Throwable {
-        OutputAnalyzer outputAnalyzer;
-        String vmFlagsToTest[] = {"UseCRC32", "UseLSE", "UseAES"};
-        String cpuFeatures[] =   {"crc32",    "lse",    "aes"};
-        for (int i = 0; i < vmFlagsToTest.length; i++) {
-            String vmFlag = vmFlagsToTest[i];
-            String cpuFeature = cpuFeatures[i];
-            outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag(vmFlag, false)));
-            outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* " + cpuFeatures[i] + ".*");
-        }
+        Map<String, String> vmFlagToCpuFeatureMap = Map.of("UseCRC32", "crc32",
+                                                           "UseLSE", "lse",
+                                                           "UseAES", "aes");
+        vmFlagToCpuFeatureMap.forEach((vmFlag, cpuFeature) -> {
+            try {
+                OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag(vmFlag, false)));
+                outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* " + cpuFeature + ".*");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         // Disabling UseSHA should clear all shaXXX cpu features
-        outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag("UseSHA", false)));
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(generateArgs(prepareBooleanFlag("UseSHA", false)));
         outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sha1.*");
         outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sha256.*");
         outputAnalyzer.shouldNotMatch("[os,cpu] CPU: .* sha3.*");

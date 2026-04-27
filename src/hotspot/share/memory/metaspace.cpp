@@ -739,6 +739,9 @@ void Metaspace::global_initialize() {
     AOTMetaspace::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
+  } else {
+    // Trivially set the range to empty to satisfy the assert in MetaspaceObj::is_pointer_in_aot_cache()
+    MetaspaceObj::set_aot_metaspace_range(nullptr, nullptr);
   }
 #endif // INCLUDE_CDS
 

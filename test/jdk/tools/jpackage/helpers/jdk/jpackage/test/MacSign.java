@@ -890,17 +890,14 @@ public final class MacSign {
 
             private String validatedCN() {
                 return Optional.ofNullable(subjectCommonName).orElseGet(() -> {
-                    switch (type) {
+                    return switch (type) {
                         case CODE_SIGN -> {
-                            return StandardCertificateNamePrefix.CODE_SIGN.value() + validatedUserName();
+                            yield StandardCertificateNamePrefix.CODE_SIGN.value() + validatedUserName();
                         }
                         case INSTALLER -> {
-                            return StandardCertificateNamePrefix.INSTALLER.value() + validatedUserName();
+                            yield StandardCertificateNamePrefix.INSTALLER.value() + validatedUserName();
                         }
-                        default -> {
-                            throw new UnsupportedOperationException();
-                        }
-                    }
+                    };
                 });
             }
 

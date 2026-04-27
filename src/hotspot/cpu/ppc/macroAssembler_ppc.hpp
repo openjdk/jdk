@@ -802,7 +802,7 @@ class MacroAssembler: public Assembler {
                            MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
-  static int instr_size_for_decode_klass_not_null();
+  static int instr_size_for_load_klass();
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
 

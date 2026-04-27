@@ -1362,6 +1362,13 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     return false;
   } else {
     assert(mapped_base == requested_base, "must be");
+
+    if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
+      aot_log_error(aot)("region %d CRC error", AOTMetaspace::ac);
+      os::unmap_memory(mapped_base, r->used_aligned());
+      return false;
+    }
+
     r->set_mapped_from_file(true);
     r->set_mapped_base(mapped_base);
     aot_log_info(aot)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
@@ -1464,14 +1471,14 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   return count;
 }
 
-// Get the total size in bytes of a read only region
+// Get the total size in bytes of all mapped read only region
 size_t FileMapInfo::readonly_total() {
   size_t total = 0;
-  if (current_info() != nullptr) {
+  if (current_info() != nullptr && current_info()->is_mapped()) {
     FileMapRegion* r = FileMapInfo::current_info()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }
-  if (dynamic_info() != nullptr) {
+  if (dynamic_info() != nullptr && current_info()->is_mapped()) {
     FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }

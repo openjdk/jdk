@@ -305,9 +305,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  CHECK_CPU_FEATURE(supports_crc32, CRC32);
-  CHECK_CPU_FEATURE(supports_lse, LSE);
-  CHECK_CPU_FEATURE(supports_aes, AES);
+  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -789,9 +789,9 @@ void VM_Version::store_cpu_features(void* buf) {
   *(uint64_t*)buf = _features;
 }
 
-bool VM_Version::supports_features(void* features_buffer) {
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
   uint64_t features_to_test = *(uint64_t*)features_buffer;
-  return (_features & features_to_test) == features_to_test;
+  return (_features == features_to_test);
 }
 
 #if defined(LINUX)

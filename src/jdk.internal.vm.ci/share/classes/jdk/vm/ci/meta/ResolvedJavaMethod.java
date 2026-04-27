@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,9 +305,9 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 typename = typename.replaceFirst("\\[\\]$", "...");
             }
 
-            final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
-            if (sb.length() != 0) {
-                sb.append(' ');
+            final StringBuilder sb = new StringBuilder();
+            if (Modifier.isFinal(getModifiers())) {
+                sb.append("final ");
             }
             return sb.append(typename).append(' ').append(getName()).toString();
         }

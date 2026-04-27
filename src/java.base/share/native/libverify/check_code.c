@@ -3831,7 +3831,7 @@ signature_to_fieldtype(context_type *context,
             case JVM_SIGNATURE_CLASS: {
                 char buffer_space[256];
                 char *buffer = buffer_space;
-                char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
+                const char* finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
                 int length;
                 if (finish == NULL) {
                     /* Signature must have ';' after the class name.

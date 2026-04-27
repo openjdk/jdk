@@ -4705,16 +4705,8 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybenull, R
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  z_lg(result, 0, result);
-}
-
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset()));
-  mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
-  resolve_oop_handle(mirror);
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2) {
+  access_load_at(T_OBJECT, IN_NATIVE, Address(result, 0), result, tmp1, tmp2);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
@@ -5885,6 +5877,28 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
   asm_assert(bcondEqual, msg, id);
 #endif // ASSERT
 }
+
+#ifdef ASSERT
+bool is_excluded(Register excluded_register[], Register reg, int n) {
+  for (int i = 0; i < n; i++) {
+    if (excluded_register[i] == reg) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
+  const int magic_number = 0x82;
+
+  for (int i = 0; i < 6 /* R0 to R5 */; i++) {
+    Register reg = as_Register(i);
+    if (!is_excluded(excluded_register, reg, n)) {
+      load_const_optimized(reg, magic_number);
+    }
+  }
+}
+#endif // ASSERT
 
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {

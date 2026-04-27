@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.spi.ToolProvider;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -74,51 +73,45 @@ class JPackageCommandTest extends JUnitAdapter.TestSrcInitializer {
 
         void test() {
 
-            final Optional<ToolProvider> global;
-            switch (globalType) {
+            final Optional<ToolProvider> global = switch (globalType) {
                 case SET_CUSTOM_TOOL_PROVIDER -> {
-                    global = Optional.of(createNewToolProvider("jpackage-mock-global"));
-                    JPackageCommand.useToolProviderByDefault(global.get());
+                    var tp = createNewToolProvider("jpackage-mock-global");
+                    JPackageCommand.useToolProviderByDefault(tp);
+                    yield Optional.of(tp);
                 }
                 case SET_DEFAULT_TOOL_PROVIDER -> {
-                    global = Optional.of(JavaTool.JPACKAGE.asToolProvider());
                     JPackageCommand.useToolProviderByDefault();
+                    yield Optional.of(JavaTool.JPACKAGE.asToolProvider());
                 }
                 case SET_PROCESS -> {
-                    global = Optional.empty();
                     JPackageCommand.useExecutableByDefault();
+                    yield Optional.empty();
                 }
                 case SET_NONE -> {
-                    global = Optional.empty();
+                    yield Optional.empty();
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
 
             var cmd = new JPackageCommand();
 
-            final Optional<ToolProvider> instance;
-            switch (instanceType) {
+            final Optional<ToolProvider> instance = switch (instanceType) {
                 case SET_CUSTOM_TOOL_PROVIDER -> {
-                    instance = Optional.of(createNewToolProvider("jpackage-mock"));
-                    cmd.useToolProvider(instance.get());
+                    var tp = createNewToolProvider("jpackage-mock");
+                    cmd.useToolProvider(tp);
+                    yield Optional.of(tp);
                 }
                 case SET_DEFAULT_TOOL_PROVIDER -> {
-                    instance = Optional.of(JavaTool.JPACKAGE.asToolProvider());
                     cmd.useToolProvider(true);
+                    yield Optional.of(JavaTool.JPACKAGE.asToolProvider());
                 }
                 case SET_PROCESS -> {
-                    instance = Optional.empty();
                     cmd.useToolProvider(false);
+                    yield Optional.empty();
                 }
                 case SET_NONE -> {
-                    instance = Optional.empty();
+                    yield Optional.empty();
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
 
             var actual = cmd.createExecutor().getToolProvider();
 

@@ -2938,12 +2938,6 @@ they're used.
     (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
     threads always perform reference processing in parallel.
 
-[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2975,6 +2969,12 @@ when they're used.
     -XX:{+|-}EnableJVMCI
     -XX:{+|-}UseJVMCICompiler
     ```
+
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
+:   Enabled Java heap optimization. This set various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    was disabled and the heap sizes configured less aggressively.
 
 ## Removed Java Options
 

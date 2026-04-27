@@ -100,10 +100,14 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1     
 # Preview project specific failures go here at the end of the file.
 #
 # These are NOT failures that occur with the '--enable-preview' option
-# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# specified in the task definition; those go in the appropriate
+# ProblemList-enable-preview.txt file.
+#
 # These are failures that occur WITHOUT the '--enable-preview' option
-# specified AND occur because of some issue with preview project code,
-# in either implementation or test code.
+# specified in the task definition OR the '--enable-preview' option
+# MAY BE specified in the test itself. In either case, the failure
+# occurs because of some issue with preview project code, in either
+# implementation or test code.
 
 #############################################################################
 

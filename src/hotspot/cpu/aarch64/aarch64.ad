@@ -7708,10 +7708,11 @@ instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
   match(Set dst (ReverseBytesUS src));
 
   ins_cost(INSN_COST);
-  format %{ "rev16w  $dst, $src" %}
+  format %{ "rev16w $dst, $src\t# $dst -> unsigned short" %}
 
   ins_encode %{
     __ rev16w(as_Register($dst$$reg), as_Register($src$$reg));
+    __ narrow_subword_type(as_Register($dst$$reg), T_CHAR);
   %}
 
   ins_pipe(ialu_reg);

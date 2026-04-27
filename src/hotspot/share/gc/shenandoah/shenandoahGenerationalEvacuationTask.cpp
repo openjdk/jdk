@@ -78,7 +78,6 @@ void ShenandoahGenerationalEvacuationTask::do_work() {
     promote_regions();
   } else {
     assert(!_heap->collection_set()->is_empty(), "Should have a collection set here");
-    ShenandoahEvacOOMScope oom_evac_scope;
     evacuate_and_promote_regions();
   }
 }
@@ -123,6 +122,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
     if (r->is_cset()) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+      ShenandoahEvacOOMScope oom_evac_scope;
       _heap->marked_object_iterate(r, &cl);
     } else {
       promoter.maybe_promote_region(r);

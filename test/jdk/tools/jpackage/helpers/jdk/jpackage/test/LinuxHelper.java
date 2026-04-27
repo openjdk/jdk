@@ -585,17 +585,14 @@ public final class LinuxHelper {
         var appLayout = cmd.appLayout();
 
         LauncherShortcut.LINUX_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).map(shortcutWorkDirType -> {
-            switch (shortcutWorkDirType) {
+            return switch (shortcutWorkDirType) {
                 case DEFAULT -> {
-                    return (Path)null;
+                    yield (Path)null;
                 }
                 case APP_DIR -> {
-                    return cmd.pathToPackageFile(appLayout.appDirectory());
+                    yield cmd.pathToPackageFile(appLayout.appDirectory());
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }).map(Path::toString).ifPresentOrElse(shortcutWorkDir -> {
             var actualShortcutWorkDir = data.find("Path");
             TKit.assertTrue(actualShortcutWorkDir.isPresent(), "Check [Path] key exists");

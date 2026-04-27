@@ -279,7 +279,7 @@ public:
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf);
 
-  static bool supports_features(void* features_to_test);
+  static bool verify_aot_code_cache_features(void* features_buffer);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

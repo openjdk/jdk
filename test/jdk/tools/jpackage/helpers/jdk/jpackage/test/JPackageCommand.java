@@ -65,7 +65,6 @@ import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -495,8 +494,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static Path createInputRuntimeImage(RuntimeImageType role) {
         Objects.requireNonNull(role);
 
-        final Path runtimeImageDir;
-        switch (role) {
+        return switch (role) {
 
             case RUNTIME_TYPE_FAKE -> {
                 Consumer<Path> createBulkFile = ThrowingConsumer.toConsumer(path -> {
@@ -508,7 +506,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                     }
                 });
 
-                runtimeImageDir = TKit.createTempDirectory("fake_runtime");
+                var runtimeImageDir = TKit.createTempDirectory("fake_runtime");
 
                 TKit.trace(String.format("Init fake runtime in [%s] directory", runtimeImageDir));
 
@@ -521,32 +519,28 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 // Package bundles with 0KB size are unexpected and considered
                 // an error by PackageTest.
                 createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib", "bulk")));
+
+                yield runtimeImageDir;
             }
 
             case RUNTIME_TYPE_HELLO_APP -> {
-                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
-                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-                } else {
-                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+                yield DEFAULT_RUNTIME_IMAGE.filter(Predicate.not(JPackageCommand::isFakeRuntime)).orElseGet(() -> {
+                    var dir = TKit.createTempDirectory("runtime-image").resolve("data");
 
                     new Executor().setToolProvider(JavaTool.JLINK)
                             .dumpOutput()
                             .addArguments(
-                                    "--output", runtimeImageDir.toString(),
+                                    "--output", dir.toString(),
                                     "--add-modules", "java.desktop",
                                     "--strip-debug",
                                     "--no-header-files",
                                     "--no-man-pages")
                             .execute();
-                }
-            }
 
-            default -> {
-                throw ExceptionBox.reachedUnreachable();
+                    return dir;
+                });
             }
-        }
-
-        return runtimeImageDir;
+        };
     }
 
     public JPackageCommand setPackageType(PackageType type) {
@@ -868,6 +862,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else if (TKit.isLinux()) {
             criticalRuntimeFiles = LinuxHelper.CRITICAL_RUNTIME_FILES;
         } else if (TKit.isOSX()) {
+            runtimeDir = MacBundle.fromPath(runtimeDir).map(MacBundle::homeDir).orElse(runtimeDir);
             criticalRuntimeFiles = MacHelper.CRITICAL_RUNTIME_FILES;
         } else {
             throw TKit.throwUnknownPlatformError();
@@ -972,8 +967,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
-                .map(JPackageCommand::isFakeRuntime).orElse(false));
+        return ignoreDefaultRuntime(DEFAULT_RUNTIME_IMAGE.map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
@@ -1801,9 +1795,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
-            addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
-        }
+
+        DEFAULT_RUNTIME_IMAGE.filter(_ -> {
+            return Stream.of("--runtime-image", "--jlink-options", "--app-image").noneMatch(this::hasArgument) && !ignoreDefaultRuntime;
+        }).ifPresent(defaultRuntime -> {
+            addArguments("--runtime-image", defaultRuntime);
+        });
 
         if (!hasArgument("--verbose") && TKit.verboseJPackage() && !ignoreDefaultVerbose) {
             addArgument("--verbose");
@@ -2015,26 +2012,23 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         Optional<ToolProvider> toolProvider() {
-            switch (mode) {
+            return switch (mode) {
                 case USE_PROCESS -> {
-                    return Optional.empty();
+                    yield Optional.empty();
                 }
                 case USE_TOOL_PROVIDER -> {
                     if (customToolProvider != null) {
-                        return Optional.of(customToolProvider);
+                        yield Optional.of(customToolProvider);
                     } else {
-                        return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
+                        yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
                             return Optional.of(JavaTool.JPACKAGE.asToolProvider());
                         });
                     }
                 }
                 case INHERIT_DEFAULTS -> {
-                    return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
+                    yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
         }
 
         ToolProviderSource() {
@@ -2088,7 +2082,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     // The value of the property will be automatically appended to
     // jpackage command line if the command line doesn't have
     // `--runtime-image` parameter set.
-    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
+    private static final Optional<Path> DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of);
 
     public static final String DEFAULT_VERSION = "1.0";
 
