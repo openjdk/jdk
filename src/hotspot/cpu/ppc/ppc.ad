@@ -2735,7 +2735,7 @@ encode %{
         __ addis($dst$$Register, $toc$$Register, 0);
         __ ld($dst$$Register, 0, $dst$$Register);
       }
-    return;
+      return;
     }
 
     intptr_t val = $src$$constant;
