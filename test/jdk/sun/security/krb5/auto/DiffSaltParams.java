@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ public class DiffSaltParams {
 
         OneKDC kdc = new OneKDC(null).writeJAASConf();
         kdc.addPrincipal("user1", "user1pass".toCharArray(),
-                "hello", new byte[]{0, 0, 1, 0});
+                "hello", new byte[]{0, 1, 0, 0});
         kdc.addPrincipal("user2", "user2pass".toCharArray(),
                 "hello", null);
         kdc.addPrincipal("user3", "user3pass".toCharArray(),
-                null, new byte[]{0, 0, 1, 0});
+                null, new byte[]{0, 1, 0, 0});
         kdc.addPrincipal("user4", "user4pass".toCharArray());
 
         Context.fromUserPass("user1", "user1pass".toCharArray(), true);
