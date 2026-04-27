@@ -60,19 +60,6 @@ public:
   }
 };
 
-template <typename T>
-class ConstExprJVMFlagImpl {
-  const T _value;
-public:
-  constexpr ConstExprJVMFlagImpl(T v) : _value{v} {}
-  operator T() const {
-    return _value;
-  }
-  T value() const {
-    return _value;
-  }
-};
-
 template<typename T> constexpr T MAX2(JVMFlagImpl<T> a, T b)   { return MAX2(a.value(), b); }
 template<typename T> constexpr T MAX2(T a, JVMFlagImpl<T> b)   { return MAX2(a, b.value()); }
 template<typename T> constexpr T MAX2(JVMFlagImpl<T> a, JVMFlagImpl<T> b)  { return MAX2(a.value(), b.value()); }

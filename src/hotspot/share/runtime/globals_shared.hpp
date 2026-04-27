@@ -73,8 +73,8 @@
 #define DECLARE_PRODUCT_FLAG(type, name, value, ...)      extern "C" JVMFlagImpl<type> name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, ...)          extern "C" JVMFlagImpl<type> name;
 #ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    constexpr ConstExprJVMFlagImpl<type> name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        constexpr ConstExprJVMFlagImpl<type> name = pd_##name;
+#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    constexpr JVMFlagImpl<type> name = value;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        constexpr JVMFlagImpl<type> name = pd_##name;
 #else
 #define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    extern "C" JVMFlagImpl<type> name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        extern "C" JVMFlagImpl<type> name;

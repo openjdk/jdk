@@ -75,7 +75,7 @@ class oopDesc;
 // FIXME: this is necessary as this header file may be included before globals.hpp, which declares
 // CheckUnhandledOops.
 #ifdef PRODUCT
-extern "C" constexpr ConstExprJVMFlagImpl<bool> CheckUnhandledOops = false;
+extern "C" constexpr JVMFlagImpl<bool> CheckUnhandledOops = false;
 #else
 extern "C" JVMFlagImpl<bool> CheckUnhandledOops;
 #endif
