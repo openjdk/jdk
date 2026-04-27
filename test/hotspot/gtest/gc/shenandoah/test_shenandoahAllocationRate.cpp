@@ -48,6 +48,12 @@ protected:
   ShenandoahAllocationRateTest() {
     ShenandoahMockClock::Counter = 0;
   }
+
+  template<typename Clock>
+  static void allocate(ShenandoahAllocRate<Clock>& rate, size_t quantity) {
+    rate.allocated(quantity);
+    rate.maybe_record_sample();
+  }
 };
 
 constexpr uint BASELINE_WINDOW_MILLIS = 100000;
@@ -62,15 +68,15 @@ constexpr uint MOMENTARY_SAMPLES = MOMENTARY_WINDOW_MILLIS / SAMPLE_PERIOD_MILLI
 
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, 2000);
-  rate.allocated(2048);
-  rate.allocated(2048);
+  allocate(rate, 2048);
+  allocate(rate, 2048);
   EXPECT_EQ(rate.average(), 0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
-  rate.allocated(2048); // t = 1
-  rate.allocated(2048); // t = 2
+  allocate(rate, 2048); // t = 1
+  allocate(rate, 2048); // t = 2
   double acceleration(0), current_rate(0);
   rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_EQ(rate.average(), 2048.0);
@@ -78,7 +84,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_small_number_of_samples) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
-  rate.allocated(1024);
+  allocate(rate, 1024);
   double acceleration(0), current_rate(0);
   size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate, 100);
   EXPECT_DOUBLE_EQ(acceleration, 0.0);
@@ -89,7 +95,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_small_number_of_
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
-    rate.allocated(1024);
+    allocate(rate, 1024);
   }
 
   double acceleration(0), current_rate(0);
@@ -103,15 +109,15 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_uniform_rate) {
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
-    rate.allocated(2048);
+    allocate(rate, 2048);
   }
 
   for (uint i = 0; i < RECENT_SAMPLES; ++i) {
-    rate.allocated(1024);
+    allocate(rate, 1024);
   }
 
   for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
-    rate.allocated(2048);
+    allocate(rate, 2048);
   }
 
   // Here we simulate a situation where we are returning from a lull (avg 1024/s) back
@@ -127,15 +133,15 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS ,MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   for (uint i = 0; i < BASELINE_SAMPLES; ++i) {
-    rate.allocated(512);
+    allocate(rate, 512);
   }
 
   for (uint i = 0; i < RECENT_SAMPLES; ++i) {
-    rate.allocated(1024);
+    allocate(rate, 1024);
   }
 
   for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
-    rate.allocated(2048);
+    allocate(rate, 2048);
   }
 
   // Setup as before, but pretend our baseline acceleration rate is lower (512). This
@@ -150,11 +156,11 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_decelerating) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);
   for (uint i = 0; i < RECENT_SAMPLES; ++i) {
-    rate.allocated(2048);
+    allocate(rate, 2048);
   }
 
   for (uint i = 0; i < MOMENTARY_SAMPLES + 1; ++i) {
-    rate.allocated(1024);
+    allocate(rate, 1024);
   }
 
   // In this setup, the allocation rate is declining.

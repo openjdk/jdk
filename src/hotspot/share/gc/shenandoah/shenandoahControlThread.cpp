@@ -218,6 +218,7 @@ void ShenandoahControlThread::run_service() {
       }
     }
 
+    heap->alloc_rate().maybe_record_sample();
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.

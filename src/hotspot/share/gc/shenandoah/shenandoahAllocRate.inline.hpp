@@ -31,7 +31,10 @@
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
+}
 
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::maybe_record_sample() {
   if (!_sample_lock.try_lock()) {
     // Another thread has the lock and will take the sample
     return;
@@ -64,6 +67,11 @@ void ShenandoahAllocRate<Clock>::record_rate_sample(double rate) {
 
 template<typename Clock>
 size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
+
+  if (time_delta <= 0.0) {
+    log_warning(gc, sampling)("time_delta is: %.3f", time_delta);
+    return 0;
+  }
 
   MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
 

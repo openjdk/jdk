@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -53,10 +53,10 @@ class ShenandoahAllocRate {
   TruncatedSeq _recent;
   TruncatedSeq _momentary;
 public:
-  explicit ShenandoahAllocRate(uint baseline_window_millis = ShenandoahAdaptiveSampleSizeSeconds,
-                               uint recent_window_millis = ShenandoahRateAccelerationSampleSize,
-                               uint momentary_window_millis = ShenandoahMomentaryAllocationRateSpikeSampleSize,
-                               uint sample_period_millis = ShenandoahAdaptiveSampleFrequencyHz)
+  explicit ShenandoahAllocRate(uint baseline_window_millis = ShenandoahAllocRateSampleWindowMs,
+                               uint recent_window_millis = ShenandoahRecentAllocRateSampleWindowMs,
+                               uint momentary_window_millis = ShenandoahMomentaryAllocRateSampleWindowMs,
+                               uint sample_period_millis = ShenandoahAllocRateSamplePeriodMs)
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
@@ -68,7 +68,7 @@ public:
   }
 
   void allocated(size_t allocated_bytes);
-  void record_rate_sample(double rate);
+  void maybe_record_sample();
   size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
 
   double average() {
@@ -78,8 +78,10 @@ public:
 
   double upper_bound(const double standard_deviations) {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    return _baseline.avg() + (standard_deviations * _baseline.sd());
+    return _baseline.davg() + standard_deviations * _baseline.dsd();
   }
+private:
+  void record_rate_sample(double rate);
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP

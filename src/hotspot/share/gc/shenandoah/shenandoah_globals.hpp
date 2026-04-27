@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
+  product(uint, ShenandoahMomentaryAllocRateSampleWindowMs, 100, EXPERIMENTAL,       \
           "When at least this much time (measured in ms) has passed "       \
           "since the acceleration allocation rate was most recently "       \
           "sampled, capture another allocation rate sample for the purpose "\
@@ -44,7 +44,7 @@
           "more monitoring effort.")                                        \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRateAccelerationSampleSize, 16, EXPERIMENTAL,     \
+  product(uint, ShenandoahRecentAllocRateSampleWindowMs, 500, EXPERIMENTAL,     \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), "                        \
@@ -63,7 +63,7 @@
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
           "acceleration.")                                                  \
-          range(1,128)                                                      \
+          range(1,5000)                                                      \
                                                                             \
   product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
           4, EXPERIMENTAL,                                                 \
@@ -299,11 +299,11 @@
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahAdaptiveSampleFrequencyHz, 10, EXPERIMENTAL,     \
+  product(uint, ShenandoahAllocRateSamplePeriodMs, 5, EXPERIMENTAL,     \
           "The number of times per second to update the allocation rate "   \
           "moving average.")                                                \
                                                                             \
-  product(uintx, ShenandoahAdaptiveSampleSizeSeconds, 10, EXPERIMENTAL,     \
+  product(uint, ShenandoahAllocRateSampleWindowMs, 5000, EXPERIMENTAL,     \
           "The size of the moving window over which the average "           \
           "allocation rate is maintained. The total number of samples "     \
           "is the product of this number and the sample frequency.")        \

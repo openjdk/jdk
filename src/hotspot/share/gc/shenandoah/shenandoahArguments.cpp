@@ -203,10 +203,14 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
-  if (ShenandoahRateAccelerationSampleSize < ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+  if (ShenandoahMomentaryAllocRateSampleWindowMs > ShenandoahRecentAllocRateSampleWindowMs
+    || ShenandoahRecentAllocRateSampleWindowMs > ShenandoahAllocRateSampleWindowMs) {
     vm_exit_during_initialization(
-      err_msg("ShenandoahRateAccelerationSampleSize (%u) must not be less than ShenandoahMomentaryAllocationRateSpikeSampleSize (%u)",
-        ShenandoahRateAccelerationSampleSize, ShenandoahMomentaryAllocationRateSpikeSampleSize));
+      err_msg("Relation must hold: ShenandoahMomentaryAllocRateSampleWindowMs (%u) "
+              "< ShenandoahRecentAllocRateSampleWindowMs (%u)"
+              "< ShenandoahAllocRateSampleWindowMs (%u)",
+        ShenandoahMomentaryAllocRateSampleWindowMs, ShenandoahRecentAllocRateSampleWindowMs,
+        ShenandoahAllocRateSampleWindowMs));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
