@@ -40,9 +40,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
-import java.util.spi.ToolProvider;
 
 import toolbox.JavaTask;
 import toolbox.JavacTask;
@@ -187,8 +185,11 @@ class ModuleSourceLauncherTests {
                 package foo;
                 public record Foo() {}
                 """);
-        var javac = ToolProvider.findFirst("javac").orElseThrow();
-        javac.run(System.out, System.err, "--module-source-path", base.toString(), "--module", "foo", "-d", base.toString());
+        new JavacTask(tb)
+                .options("--module-source-path", base.toString(),
+                         "--module", "foo")
+                .outdir(base)
+                .run();
 
         Files.createDirectories(base.resolve("bar", "bar"));
         Files.writeString(base.resolve("bar", "module-info.java"),
@@ -209,34 +210,23 @@ class ModuleSourceLauncherTests {
                 }
                 """);
 
-        var command = List.of(
-                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-p", ".",
-                "--enable-native-access", "foo,bar,baz,ALL-UNNAMED",
-                "bar/bar/Prog1.java");
-        var redirectedOut = base.resolve("out.redirected");
-        var redirectedErr = base.resolve("err.redirected");
-        var process = new ProcessBuilder(command)
-                .directory(base.toFile())
-                .redirectOutput(redirectedOut.toFile())
-                .redirectError(redirectedErr.toFile())
-                .start();
-        var code = process.waitFor();
-        var out = Files.readAllLines(redirectedOut);
-        var err = Files.readAllLines(redirectedErr);
+        var run = new JavaTask(tb)
+                .vmOptions("--module-path", base.toString(),
+                           "--enable-native-access", "foo,bar,baz,ALL-UNNAMED")
+                .className(base.resolve("bar/bar/Prog1.java").toString())
+                .run();
 
         assertAll(
-                () -> assertEquals(0, code, out.toString()),
                 () -> assertLinesMatch(
                       """
                       Foo[]
                       bar=true
                       foo=true
-                      """.lines(), out.stream()),
+                      """.lines(), run.getOutputLines(Task.OutputKind.STDOUT).stream()),
                 () -> assertLinesMatch(
                       """
                       WARNING: Unknown module: baz specified to --enable-native-access
-                      """.lines(), err.stream())
+                      """.lines(), run.getOutputLines(Task.OutputKind.STDERR).stream())
         );
     }
 
