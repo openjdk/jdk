@@ -306,24 +306,24 @@ public class GposTest {
                 Dimension tall4 = new Dimension(dim.width, dim.height * 4);
                 Dimension tall8 = new Dimension(dim.width, dim.height * 8);
 
-                Dimension orig  = new Dimension(dim.width / scale, dim.height / scale);
+                Dimension orig  = measure(image, g2d, unscaled, "a");
                 Dimension orig2 = new Dimension(orig.width, orig.height * 2);
 
-                checkSizes(image, g2d, unscaled, "unscaled", orig, orig2);
-                checkSizes(image, g2d, scaled1, "scaled 1", dim, tall2);
-                checkSizes(image, g2d, scaled2, "scaled 2", dim, tall2);
-                checkSizes(image, g2d, scaled3, "scaled 3", tall2, tall4);
+                checkSizes(image, g2d, unscaled, orig, orig2, "unscaled");
+                checkSizes(image, g2d, scaled1, dim, tall2, "scaled 1");
+                checkSizes(image, g2d, scaled2, dim, tall2, "scaled 2");
+                checkSizes(image, g2d, scaled3, tall2, tall4, "scaled 3");
 
                 g2d.setTransform(at1);
-                checkSizes(image, g2d, unscaled, "unscaled", dim, tall2);
+                checkSizes(image, g2d, unscaled, dim, tall2, "unscaled with G2D 1");
 
                 g2d.setTransform(at2);
-                checkSizes(image, g2d, unscaled, "unscaled", tall2, tall4);
+                checkSizes(image, g2d, unscaled, tall2, tall4, "unscaled with G2D 2");
 
                 g2d.setTransform(AffineTransform.getScaleInstance(1, 2));
-                checkSizes(image, g2d, scaled1, "scaled 1", tall2, tall4);
-                checkSizes(image, g2d, scaled2, "scaled 2", tall2, tall4);
-                checkSizes(image, g2d, scaled3, "scaled 3", tall4, tall8);
+                checkSizes(image, g2d, scaled1, tall2, tall4, "scaled 1 with G2D 3");
+                checkSizes(image, g2d, scaled2, tall2, tall4, "scaled 2 with G2D 3");
+                checkSizes(image, g2d, scaled3, tall4, tall8, "scaled 3 with G2D 3");
 
                 g2d.setTransform(new AffineTransform()); // reset
             }
@@ -333,36 +333,36 @@ public class GposTest {
     }
 
     private static void checkSizes(BufferedImage image, Graphics2D g2d,
-                                   Font font, String fontName,
-                                   Dimension normal, Dimension tall) {
+                                   Font font, Dimension normal, Dimension tall,
+                                   String scenario) {
 
         // individual glyphs
-        checkSize(image, g2d, font, fontName, "a", normal);
-        checkSize(image, g2d, font, fontName, "b", normal);
-        checkSize(image, g2d, font, fontName, "c", normal);
-        checkSize(image, g2d, font, fontName, "d", normal);
-        checkSize(image, g2d, font, fontName, "e", normal);
-        checkSize(image, g2d, font, fontName, "f", normal);
-        checkSize(image, g2d, font, fontName, "g", normal);
+        checkSize(image, g2d, font, "a", normal, scenario);
+        checkSize(image, g2d, font, "b", normal, scenario);
+        checkSize(image, g2d, font, "c", normal, scenario);
+        checkSize(image, g2d, font, "d", normal, scenario);
+        checkSize(image, g2d, font, "e", normal, scenario);
+        checkSize(image, g2d, font, "f", normal, scenario);
+        checkSize(image, g2d, font, "g", normal, scenario);
 
         // GPOS combinations
-        checkSize(image, g2d, font, fontName, "ab", normal);
-        checkSize(image, g2d, font, fontName, "ac", normal);
-        checkSize(image, g2d, font, fontName, "ad", normal);
-        checkSize(image, g2d, font, fontName, "ade", normal);
-        checkSize(image, g2d, font, fontName, "af", tall);
+        checkSize(image, g2d, font, "ab", normal, scenario);
+        checkSize(image, g2d, font, "ac", normal, scenario);
+        checkSize(image, g2d, font, "ad", normal, scenario);
+        checkSize(image, g2d, font, "ade", normal, scenario);
+        checkSize(image, g2d, font, "af", tall, scenario);
     }
 
     private static void checkSize(BufferedImage image, Graphics2D g2d,
-                                  Font font, String fontName, String text,
-                                  Dimension expected) {
+                                  Font font, String text, Dimension expected,
+                                  String scenario) {
         int maxWidthVariance = Math.max((int) Math.ceil(expected.width * 0.05), 1);
         int maxHeightVariance = Math.max((int) Math.ceil(expected.height * 0.05), 1);
         Dimension actual = measure(image, g2d, font, text);
         if (actual == null ||
             Math.abs(actual.width - expected.width) > maxWidthVariance ||
             Math.abs(actual.height - expected.height) > maxHeightVariance) {
-            String id = fontName + " " + text;
+            String id = scenario + " " + text;
             saveImage(id, image);
             throw new RuntimeException(id + ": " + actual + " != " + expected);
         }
