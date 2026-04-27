@@ -39,7 +39,7 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @run main/othervm/native SuspendWithObjectMonitorTimedWait
  */
 
-public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
+public class SuspendWithObjectMonitorTimedWait {
     static final Object lock = new Object();
     static long timeout = 10; // milliseconds
     static int maxRetries = 200;
@@ -55,15 +55,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         return false;
     }
 
-    public static void main(String args[]) {
-        int result = new SuspendWithObjectMonitorTimedWait().runIt();
-        if (result != 0) {
-            throw new RuntimeException("Unexpected status: " + result);
-        }
-    }
-
-    // run debuggee
-    public int runIt() {
+    public static void main(String[] args) throws RuntimeException {
         int status = DebugeeClass.TEST_PASSED;
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
@@ -76,7 +68,7 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
 
         System.out.println("Target Thread started");
 
-        int usefulRun = 0;
+        int usefulRuns = 0;
         for (int n = 0; n < maxRetries; ++n) {
 
             phaser.arriveAndAwaitAdvance();
@@ -97,12 +89,12 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
                     continue;
                 }
 
-                usefulRun += 1;
+                usefulRuns += 1;
 
                 try {
                     Thread.sleep(2 * timeout);
-                } catch (InterruptedException ex) {
-                    throw new Failure(ex);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
 
                 // Check if the target still does not own monitors
@@ -123,21 +115,19 @@ public class SuspendWithObjectMonitorTimedWait extends DebugeeClass {
         try {
             targetThread.join();
         } catch (InterruptedException e) {
-            throw new Failure(e);
+            throw new RuntimeException(e);
         }
 
         System.out.println("Sync: targetThread finished");
 
-        if (usefulRun == 0) {
+        if (usefulRuns == 0) {
             // not representative
             System.out.println("Test succeeded, but there were 0 useful runs.");
-            return status;
         }
 
         if (failureCounter > 0) {
-            throw new RuntimeException("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRun + " useful runs, which is more than 0.");
+            throw new RuntimeException("Grabbed the monitor in total " + failureCounter + " times out of " + usefulRuns + " useful runs, which is more than 0.");
         }
-        return status;
     }
 
     private static boolean hasGrabbedMonitor(Thread targetThread) {
