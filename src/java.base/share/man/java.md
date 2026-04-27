@@ -1804,10 +1804,10 @@ performed by the Java HotSpot VM.
     and `break` commands using a bitmask as an optional value:
 
     ```
-    -XX:CompileCommand=exclude,java/lang/String.indexOf,11
-    -XX:CompileCommand=compileonly,java/lang/String.indexOf,4
-    -XX:CompileCommand=print,java/lang/String.indexOf,4
-    -XX:CompileCommand=break,java/lang/StringBuffer.append,8
+    -XX:CompileCommand=exclude,java/lang/String.indexOf,1011
+    -XX:CompileCommand=compileonly,java/lang/String.indexOf,100
+    -XX:CompileCommand=print,java/lang/String.indexOf,100
+    -XX:CompileCommand=break,java/lang/StringBuffer.append,1000
     ```
 
     The bitmask is calculated by summing the desired compilation level values:
@@ -1815,13 +1815,13 @@ performed by the Java HotSpot VM.
     `1`
     : C1 JIT compiler without profiling.
 
-    `2`
+    `10`
     : C1 JIT compiler with limited profiling.
 
-    `4`
+    `100`
     : C1 JIT compiler with full profiling.
 
-    `8`
+    `1000`
     : C2 JIT compiler: no profiling, full optimization.
 
     If the bitmask is not specified, all levels are assumed.
