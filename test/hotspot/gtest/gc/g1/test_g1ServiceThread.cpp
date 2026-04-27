@@ -74,7 +74,7 @@ TEST_VM(G1ServiceThread, test_add) {
 TEST_VM(G1ServiceThread, test_add_while_waiting) {
   // Make sure default tasks use long intervals so that the service thread
   // is doing a long wait for the next execution.
-  AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
+  AutoModifyRestore<JVMFlagImpl<uintx>> f1(G1PeriodicGCInterval, 100000);
 
   // Create thread and let it start.
   G1ServiceThread* st = new G1ServiceThread();

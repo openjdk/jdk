@@ -192,14 +192,14 @@ void ShenandoahArguments::initialize() {
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
-      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes.value(), (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
   // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
   if ((strcmp(ShenandoahGCMode, "generational") == 0)
       && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
     log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
-      " supports adaptive heuristics", ShenandoahGCHeuristics);
+      " supports adaptive heuristics", ShenandoahGCHeuristics.value());
     FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
@@ -207,7 +207,7 @@ void ShenandoahArguments::initialize() {
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
-  size_t align = next_power_of_2(ShenandoahMaxRegionSize);
+  size_t align = next_power_of_2(ShenandoahMaxRegionSize.value());
   if (UseLargePages) {
     align = MAX2(align, os::large_page_size());
   }

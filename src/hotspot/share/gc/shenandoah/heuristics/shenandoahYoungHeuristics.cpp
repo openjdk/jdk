@@ -143,7 +143,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
   // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
   // gets priority over old-gen marking.
-  size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
+  size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold.value());
   size_t promo_potential = old_generation->get_promotion_potential();
   if (promo_potential > promo_expedite_threshold) {
     // Detect unsigned arithmetic underflow

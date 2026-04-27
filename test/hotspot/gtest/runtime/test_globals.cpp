@@ -33,9 +33,9 @@
 #define TEST_FLAG(f, type, value)                                \
   do {                                                           \
     ASSERT_TRUE(JVMFlag::find_flag(#f)->is_ ## type());          \
-    type original_value = f;                                     \
+    JVMFlagImpl<type> original_value = f;                        \
     {                                                            \
-      AutoSaveRestore<type> FLAG_GUARD(f);                       \
+      AutoSaveRestore<JVMFlagImpl<type>> FLAG_GUARD(f);          \
       f = value;                                                 \
     }                                                            \
     ASSERT_EQ(original_value, f);                                \

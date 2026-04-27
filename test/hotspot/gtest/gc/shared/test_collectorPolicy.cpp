@@ -56,12 +56,12 @@ class TestGenCollectorPolicy {
   class TestWrapper {
    public:
     static void test(Executor* setter1, Executor* setter2, Executor* checker) {
-      AutoSaveRestore<size_t> FLAG_GUARD(MinHeapSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(InitialHeapSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(MaxHeapSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(MaxNewSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(MinHeapDeltaBytes);
-      AutoSaveRestore<size_t> FLAG_GUARD(NewSize);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(MinHeapSize);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(InitialHeapSize);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(MaxHeapSize);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(MaxNewSize);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(MinHeapDeltaBytes);
+      AutoSaveRestore<JVMFlagImpl<size_t>> FLAG_GUARD(NewSize);
 
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);

@@ -69,17 +69,3 @@ size_t CDSConstants::get_cds_constant(const char* name) {
   }
   return -1;
 }
-
-extern "C" JVMFlagImpl<int> SomeFlag;
-
-extern "C" {
-  JVMFlagImpl<int> SomeFlag;
-}
-
-JVMFlagReadTracer _flag_tracer = nullptr;
-
-int foo() {
-  bool x = is_aligned(SomeFlag, 128);
-  return (int)SomeFlag;
-}
-

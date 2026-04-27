@@ -41,3 +41,5 @@ ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,
           MATERIALIZE_PD_PRODUCT_FLAG,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
+
+JVMFlagReadTracer _flag_tracer = nullptr;

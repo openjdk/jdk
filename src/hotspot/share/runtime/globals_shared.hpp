@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_GLOBALS_SHARED_HPP
 #define SHARE_RUNTIME_GLOBALS_SHARED_HPP
 
+#include "runtime/flags/jvmFlagImpl.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -68,63 +69,6 @@
 #define IGNORE_CONSTRAINT(func,type)
 
 #define IGNORE_FLAG(...)
-
-typedef void (*JVMFlagReadTracer)(const void* addr);
-extern JVMFlagReadTracer _flag_tracer;
-
-template <typename T>
-class JVMFlagImpl {
-  T _value;
-public:
-  constexpr JVMFlagImpl(T v) : _value{v} {}
-  constexpr JVMFlagImpl() : _value{} {}
-  operator T() const {
-    if (_flag_tracer != nullptr) {
-      _flag_tracer(&_value);
-    }
-    return _value;
-  }
-  JVMFlagImpl& operator=(const T& v) {
-    _value = v;
-    return *this;
-  }
-  //bool operator!=(const T& other) const {
-  //  return _value != other._value;
-  //}
-  bool operator!=(T other) const {
-    return _value != other;
-  }
-  T value() const {
-    return _value;
-  }
-  T& value_ref() {
-    return _value; // used by gcConfig.cpp ??FIXME??
-  }
-};
-
-template <typename T>
-class ConstExprJVMFlagImpl {
-  const T _value;
-public:
-  constexpr ConstExprJVMFlagImpl(T v) : _value{v} {}
-  operator T() const {
-    return _value;
-  }
-  T value() const {
-    return _value;
-  }
-};
-
-extern "C" JVMFlagImpl<int> SomeFlag;
-
-template<typename T> constexpr T MAX2(JVMFlagImpl<T> a, T b)   { return MAX2(a.value(), b); }
-template<typename T> constexpr T MAX2(T a, JVMFlagImpl<T> b)   { return MAX2(a, b.value()); }
-template<typename T> constexpr T MAX2(JVMFlagImpl<T> a, JVMFlagImpl<T> b)  { return MAX2(a.value(), b.value()); }
-
-template<typename T> constexpr T MIN2(JVMFlagImpl<T> a, T b)   { return MIN2(a.value(), b); }
-template<typename T> constexpr T MIN2(T a, JVMFlagImpl<T> b)   { return MIN2(a, b.value()); }
-template<typename T> constexpr T MIN2(JVMFlagImpl<T> a, JVMFlagImpl<T> b)  { return MIN2(a.value(), b.value()); }
-
 
 #define DECLARE_PRODUCT_FLAG(type, name, value, ...)      extern "C" JVMFlagImpl<type> name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, ...)          extern "C" JVMFlagImpl<type> name;

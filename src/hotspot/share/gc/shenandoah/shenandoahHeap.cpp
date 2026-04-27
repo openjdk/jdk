@@ -203,7 +203,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size.store_relaxed(clamp(SoftMaxHeapSize, min_capacity(), max_capacity()));
+  _soft_max_size.store_relaxed(clamp(SoftMaxHeapSize.value(), min_capacity(), max_capacity()));
 
   _committed.store_relaxed(_initial_size);
 
@@ -557,7 +557,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
-  _max_workers(MAX3(ConcGCThreads, ParallelGCThreads, 1U)),
+  _max_workers(MAX3(ConcGCThreads.value(), ParallelGCThreads.value(), 1U)),
   _workers(nullptr),
   _safepoint_workers(nullptr),
   _heap_region_special(false),
@@ -819,7 +819,7 @@ void ShenandoahHeap::notify_explicit_gc_requested() {
 }
 
 bool ShenandoahHeap::check_soft_max_changed() {
-  size_t new_soft_max = AtomicAccess::load(&SoftMaxHeapSize);
+  size_t new_soft_max = AtomicAccess::load(&SoftMaxHeapSize.value_ref());
   size_t old_soft_max = soft_max_capacity();
   if (new_soft_max != old_soft_max) {
     new_soft_max = MAX2(min_capacity(), new_soft_max);
@@ -2478,11 +2478,11 @@ void ShenandoahHeap::assert_gc_workers(uint nworkers) {
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     // Use ParallelGCThreads inside safepoints
     assert(nworkers == ParallelGCThreads, "Use ParallelGCThreads (%u) within safepoint, not %u",
-           ParallelGCThreads, nworkers);
+           ParallelGCThreads.value(), nworkers);
   } else {
     // Use ConcGCThreads outside safepoints
     assert(nworkers == ConcGCThreads, "Use ConcGCThreads (%u) outside safepoints, %u",
-           ConcGCThreads, nworkers);
+           ConcGCThreads.value(), nworkers);
   }
 }
 #endif

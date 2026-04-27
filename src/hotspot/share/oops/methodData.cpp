@@ -987,7 +987,7 @@ int MethodData::compute_extra_data_count(int data_size, int empty_bc_count, bool
     // the SpeculativeTrapData entries doesn't directly depend on the
     // size of the method. Because it's hard to estimate, we reserve
     // space for an arbitrary number of entries.
-    int spec_data_count = (needs_speculative_traps ? SpecTrapLimitExtraEntries : 0) *
+    int spec_data_count = (needs_speculative_traps ? SpecTrapLimitExtraEntries.value() : 0) *
       (SpeculativeTrapData::static_cell_count() + DataLayout::header_size_in_cells());
 
     return MAX2(extra_data_count, spec_data_count);

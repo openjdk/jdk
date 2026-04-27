@@ -40,7 +40,7 @@ ShenandoahAgeCensus::ShenandoahAgeCensus(uint max_workers)
     vm_exit_during_initialization(
       err_msg("ShenandoahGenerationalMinTenuringAge=%zu"
               " should be no more than ShenandoahGenerationalMaxTenuringAge=%zu",
-              ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge));
+              ShenandoahGenerationalMinTenuringAge.value(), ShenandoahGenerationalMaxTenuringAge.value()));
   }
 
   _global_age_tables = NEW_C_HEAP_ARRAY(AgeTable*, MAX_SNAPSHOTS, mtGC);
@@ -256,7 +256,7 @@ void ShenandoahAgeCensus::update_tenuring_threshold() {
 
   print();
   log_info(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
-    (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge);
+    (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge.value(), ShenandoahGenerationalMaxTenuringAge.value());
 }
 
 // Currently Shenandoah{Min,Max}TenuringAge have a floor of 1 because we
