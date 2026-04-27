@@ -28,8 +28,7 @@
  *      instead of a close_notify alert.
  * @library /test/lib
  *
- * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached false
- * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached true
+ * @run main/othervm -Dtest.separateThreads=true CloseKeepAliveCached
  *
  * @comment SunJSSE does not support dynamic system properties, no way to re-use
  *    system properties in samevm/agentvm mode.
@@ -44,8 +43,7 @@
  *      instead of a close_notify alert.
  * @library /test/lib
  *
- * @run main/othervm -Dtest.separateThreads=false CloseKeepAliveCached false
- * @run main/othervm -Dtest.separateThreads=false CloseKeepAliveCached true
+ * @run main/othervm -Dtest.separateThreads=false CloseKeepAliveCached
  *
  * @comment SunJSSE does not support dynamic system properties, no way to re-use
  *    system properties in samevm/agentvm mode.
@@ -64,6 +62,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URL;
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLServerSocket;
@@ -72,7 +71,8 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 public class CloseKeepAliveCached {
-    public static final String CLOSE_THE_SSL_CONNECTION_PASSIVE = "close the SSL connection (passive)";
+    public static final String CLOSE_THE_SSL_CONNECTION_PASSIVE =
+            "close the SSL connection (passive)";
 
     /*
      * =============================================================
@@ -85,7 +85,8 @@ public class CloseKeepAliveCached {
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = Boolean.getBoolean("test.separateThreads");
+    static boolean separateServerThread =
+            Boolean.getBoolean("test.separateThreads");
 
     /*
      * Where do we find the keystores?
@@ -98,7 +99,7 @@ public class CloseKeepAliveCached {
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    volatile static CountDownLatch serverReady = new CountDownLatch(1);
 
     private SSLServerSocket sslServerSocket = null;
 
@@ -113,13 +114,14 @@ public class CloseKeepAliveCached {
                 (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
         // autoclose sslServerSocket, but keeping it global to be used by the client
-        try (var _ = this.sslServerSocket = (SSLServerSocket) sslSsf.createServerSocket(serverPort)) {
+        try (var _ = this.sslServerSocket =
+                (SSLServerSocket) sslSsf.createServerSocket(serverPort)) {
             serverPort = sslServerSocket.getLocalPort();
 
             /*
              * Signal Client, we're ready for his connect.
              */
-            serverReady = true;
+            serverReady.countDown();
             try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept()) {
 
                 // getting input and output streams
@@ -165,9 +167,7 @@ public class CloseKeepAliveCached {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        serverReady.await();
 
         HostnameVerifier reservedHV =
                 HttpsURLConnection.getDefaultHostnameVerifier();
@@ -227,7 +227,6 @@ public class CloseKeepAliveCached {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        separateServerThread = Boolean.parseBoolean(args[0]);
         System.out.printf("separateServerThread: %s%n", separateServerThread);
 
         String keyFilename =
@@ -247,7 +246,8 @@ public class CloseKeepAliveCached {
         // setting up the error stream for further analysis
         var errorCapture = new ByteArrayOutputStream();
         var errorStream = new PrintStream(errorCapture);
-        var originalErr = System.err; // saving the initial error stream, so it can be restored
+        // saving the initial error stream, so it can be restored
+        var originalErr = System.err;
         System.setErr(errorStream);
 
         /*
@@ -256,14 +256,16 @@ public class CloseKeepAliveCached {
         try {
             new CloseKeepAliveCached();
         } finally {
-            // this will allow the error stream to be printed in case of an exception inside for debugging purposes
+            // this will allow the error stream to be printed in case of an
+            // exception inside for debugging purposes
             System.setErr(originalErr);
             if (Boolean.getBoolean("test.debug")) {
                 System.err.println(errorCapture);
             }
         }
 
-        // Parses the captured error stream, which is used by debug, to find out who closed the SSL connection
+        // Parses the captured error stream, which is used by debug,
+        // to find out who closed the SSL connection
         // example of pass: javax.net.ssl|DEBUG|91|MainThread|...|close the SSL connection (passive)
         // example of fail: javax.net.ssl|DEBUG|C1|Keep-Alive-Timer|...|close the SSL connection (passive)
         var isTestPassed = false;
@@ -282,7 +284,9 @@ public class CloseKeepAliveCached {
                 System.out.println("close was called by the Keep-Alive-Timer: ");
                 System.out.println(line);
 
-                throw new RuntimeException("SSL connection was closed by the Keep-Alive-Timer. Should have been MainThread");
+                throw new RuntimeException(
+                        "SSL connection was closed by the Keep-Alive-Timer. " +
+                        "Should have been MainThread");
             }
         }
 
@@ -340,7 +344,7 @@ public class CloseKeepAliveCached {
                      * Release the client, if not active already...
                      */
                     System.err.println("Server died...");
-                    serverReady = true;
+                    serverReady.countDown();
                     serverException = e;
                 }
             });
