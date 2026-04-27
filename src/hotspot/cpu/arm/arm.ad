@@ -74,9 +74,6 @@ static inline bool cache_reachable() {
 #define str_32 str
 #define tst_32 tst
 #define teq_32 teq
-#if 1
-extern bool PrintOptoAssembly;
-#endif
 
 class c2 {
 public:

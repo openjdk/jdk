@@ -742,7 +742,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     }
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth.value());
     }
   }
 }

@@ -78,7 +78,7 @@ void VM_Version::initialize() {
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
-            "%zu on this machine", PowerArchitecturePPC64);
+            "%zu on this machine", PowerArchitecturePPC64.value());
 
   // Power 8: Configure Data Stream Control Register.
   if (VM_Version::has_mfdscr()) {
@@ -464,7 +464,7 @@ void VM_Version::print_features() {
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth.value());
     }
   }
 }
@@ -612,7 +612,7 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64.value());
   os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }
