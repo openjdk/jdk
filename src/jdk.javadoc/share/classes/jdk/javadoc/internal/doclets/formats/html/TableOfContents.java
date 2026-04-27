@@ -103,7 +103,7 @@ public class TableOfContents {
                 .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.table_of_contents"));
         var header = HtmlTree.DIV(HtmlStyles.tocHeader, writer.contents.contentsHeading);
         if (hasFilterInput) {
-            var filterLabel =  writer.resources.getText("doclet.filter_label");
+            var filterLabel = writer.resources.getText("doclet.filter_label");
             header.add(Entity.NO_BREAK_SPACE)
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyles.filterInput)
                             .put(HtmlAttr.TITLE, filterLabel)
