@@ -91,9 +91,17 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
       __ push_call_clobbered_registers(/* save_fpu = */ false);
 
-      assert(src == c_rarg0, "expected");
-      assert(dst == c_rarg1, "expected");
-      assert(count == c_rarg2, "expected");
+      if (c_rarg0 != src) {
+        assert_different_registers(c_rarg0, dst, count);
+        __ movptr(c_rarg0, src);
+      }
+      if (c_rarg1 != dst) {
+        assert_different_registers(c_rarg1, count);
+        __ movptr(c_rarg1, dst);
+      }
+      if (c_rarg2 != count) {
+        __ movptr(c_rarg2, count);
+      }
       if (UseCompressedOops) {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop), 3);
       } else {
@@ -211,7 +219,6 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
 
   assert(thread != c_rarg0, "smashed arg");
   if (c_rarg0 != pre_val) {
-    __ push(c_rarg0);
     __ mov(c_rarg0, pre_val);
   }
 
@@ -220,10 +227,6 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), c_rarg0);
   } else {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), 1);
-  }
-
-  if (c_rarg0 != pre_val) {
-    __ pop(c_rarg0);
   }
 
   __ pop_call_clobbered_registers(/* restore_fpu = */ true);
@@ -295,10 +298,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ push_call_clobbered_registers_except(rax, /* save_fpu = */ true);
 
   // Shuffle registers such that dst is in c_rarg0 and addr in c_rarg1.
-  // Since c_rargs are not the part of default call_clobbered set, we need to save them separately.
-  __ push(c_rarg0);
-  __ push(c_rarg1);
-
   if (dst == c_rarg1) {
     __ lea(c_rarg0, src);
     __ xchgptr(c_rarg1, c_rarg0);
@@ -326,8 +325,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), c_rarg0, c_rarg1);
   }
 
-  __ pop(c_rarg1);
-  __ pop(c_rarg0);
   __ pop_call_clobbered_registers_except(rax, /* restore_fpu = */ true);
   if (dst != rax) {
     __ movptr(dst, rax);
