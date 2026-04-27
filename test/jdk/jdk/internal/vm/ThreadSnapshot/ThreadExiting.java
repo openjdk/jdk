@@ -26,7 +26,6 @@
  * @bug 8379968
  * @summary Test jdk.internal.vm.ThreadSnapshot.of(Thread) when thread is exiting
  * @modules java.base/jdk.internal.vm
- * @compile/module=java.base jdk/internal/vm/Helper.java
  * @run main/othervm ThreadExiting platform 100
  * @run main/othervm ThreadExiting virtual 100
  */
@@ -35,7 +34,7 @@ import java.time.Instant;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Phaser;
 
-import jdk.internal.vm.Helper;
+import jdk.internal.vm.ThreadSnapshot;
 
 public class ThreadExiting {
     static volatile Thread target;
@@ -67,7 +66,7 @@ public class ThreadExiting {
             System.out.format("%s %d of %d ...%n", Instant.now(), i, iterations);
             sync.arriveAndAwaitAdvance();
             while (creatorAtIteration == i) {
-                Helper.isAlive(target);
+                ThreadSnapshot.of(target);
             }
         }
         threadCreator.join();
