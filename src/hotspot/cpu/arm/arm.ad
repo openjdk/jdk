@@ -1104,12 +1104,12 @@ bool Matcher::can_be_java_arg( int reg ) {
 
 uint Matcher::int_pressure_limit()
 {
-  return (INTPRESSURE == -1) ? 12 : INTPRESSURE;
+  return (INTPRESSURE == -1) ? 12 : INTPRESSURE.value();
 }
 
 uint Matcher::float_pressure_limit()
 {
-  return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
+  return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE.value();
 }
 
 // Register for DIVI projection of divmodI
