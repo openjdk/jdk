@@ -218,8 +218,8 @@ public final class SourceLauncher {
             }
         }
 
-        // Open packages needed for reflection by jdk.compiler for main class
-        // construction and main method invocation.
+        // Open packages needed for reflection for main class construction and
+        // main method invocation.
         var thisModule = getClass().getModule();
         var mainMethodDeclaringClass = mainMethod.getDeclaringClass();
         openPackageTo(mainMethodDeclaringClass.getModule(), mainMethodDeclaringClass.getPackageName(), thisModule);
