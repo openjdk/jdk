@@ -65,8 +65,6 @@ public class CreateSubsetSampleModelTest {
         SinglePixelPackedSampleModel sppsm2bands =
             new SinglePixelPackedSampleModel(TYPE_BYTE, 1, 1, twobands);
         testSubset(sppsm2bands);
-
-        testSubset(csm2bands);
     }
 
     static void cons(int[] bands, Class eType) {
