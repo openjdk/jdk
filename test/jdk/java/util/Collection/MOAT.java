@@ -1466,6 +1466,16 @@ public class MOAT {
 
         if (supportsPut(m)) {
             try {
+                check(m.put(3333, 77777) == null);
+                check(m.put(9134, 74982) == null);
+                check(m.get(9134) == 74982);
+                check(m.put(9134, 1382) == 74982);
+                check(m.get(9134) == 1382);
+                check(m.size() == 2);
+                checkFunctionalInvariants(m);
+                checkNPEConsistency(m);
+
+                // Test putAll with HashMap source and target
                 int oldSize = m.size();
                 Map<Integer,Integer> source = Map.of(10, 1000, 11, 1001, 12, 1002);
                 m.putAll(source);
