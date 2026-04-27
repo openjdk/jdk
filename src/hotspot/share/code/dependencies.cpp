@@ -1757,7 +1757,7 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
     // Make sure the dependency mechanism will pass this discovery:
     if (VerifyDependencies) {
       // Turn off dependency tracing while actually testing deps.
-      FlagSetting fs(_verify_in_progress, true);
+      AutoModifyRestore<bool> amr(_verify_in_progress, true);
       if (!Dependencies::is_concrete_klass(ctxk)) {
         guarantee(nullptr == (void *)
                   check_abstract_with_unique_concrete_subtype(ctxk, conck),

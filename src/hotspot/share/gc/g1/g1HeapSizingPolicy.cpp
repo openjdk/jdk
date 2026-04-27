@@ -417,7 +417,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
     log_debug(gc, ergo, heap)("Heap resize. Attempt heap expansion (capacity lower than min desired capacity). "
                               "Capacity: %zuB occupancy: %zuB live: %zuB "
                               "min_desired_capacity: %zuB (%zu %%)",
-                              capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio);
+                              capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio.value());
 
     expand = true;
     return expand_bytes;
@@ -429,7 +429,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
     log_debug(gc, ergo, heap)("Heap resize. Attempt heap shrinking (capacity higher than max desired capacity). "
                               "Capacity: %zuB occupancy: %zuB live: %zuB "
                               "maximum_desired_capacity: %zuB (%zu %%)",
-                              capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio);
+                              capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio.value());
 
     expand = false;
     return shrink_bytes;

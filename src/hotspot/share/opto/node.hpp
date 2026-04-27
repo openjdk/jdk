@@ -2033,7 +2033,7 @@ protected:
 
 public:
   Node_Stack(int size) {
-    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
+    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize.value();
     _a = Thread::current()->resource_area();
     _inodes = NEW_ARENA_ARRAY( _a, INode, max );
     _inode_max = _inodes + max;
@@ -2041,7 +2041,7 @@ public:
   }
 
   Node_Stack(Arena *a, int size) : _a(a) {
-    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
+    size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize.value();
     _inodes = NEW_ARENA_ARRAY( _a, INode, max );
     _inode_max = _inodes + max;
     _inode_top = _inodes - 1; // stack is empty

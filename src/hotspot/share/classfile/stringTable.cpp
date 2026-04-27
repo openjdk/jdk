@@ -292,7 +292,7 @@ public:
 };
 
 void StringTable::create_table() {
-  size_t start_size_log_2 = log2i_ceil(StringTableSize);
+  size_t start_size_log_2 = log2i_ceil(StringTableSize.value());
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(stringtable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);

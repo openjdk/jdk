@@ -306,7 +306,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     if (CompressedClassSpaceBaseAddress == (size_t)_base) {
       vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-                    CompressedClassSpaceBaseAddress, _shift));
+                    CompressedClassSpaceBaseAddress.value(), _shift));
     } else {
       // If this fails, it's a bug in the allocation code.
       fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
@@ -318,7 +318,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompactObjectHeaders %d", UseCompactObjectHeaders);
+  st->print_cr("UseCompactObjectHeaders %d", UseCompactObjectHeaders.value());
   st->print_cr("Narrow klass pointer bits %d, Max shift %d",
                _narrow_klass_pointer_bits, _max_shift);
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",

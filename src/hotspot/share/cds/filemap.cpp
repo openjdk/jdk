@@ -253,8 +253,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = AOTClassLocationConfig::dumptime()->has_platform_or_app_classes();
-  _requested_base_address = (char*)SharedBaseAddress;
-  _mapped_base_address = (char*)SharedBaseAddress;
+  _requested_base_address = (char*)SharedBaseAddress.value();
+  _mapped_base_address = (char*)SharedBaseAddress.value();
 }
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
@@ -1931,7 +1931,7 @@ bool FileMapHeader::validate() {
   if (compressed_oops() != UseCompressedOops) {
     aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops (%d) is "
                                "different from runtime (%d), CDS will be disabled.", file_type,
-                               compressed_oops(), UseCompressedOops);
+                               compressed_oops(), UseCompressedOops.value());
     return false;
   }
 

@@ -52,8 +52,8 @@ struct IncludedGC {
   GCArguments&        _arguments;
   const char*         _hs_err_name;
 
-  IncludedGC(bool& flag, CollectedHeap::Name name, GCArguments& arguments, const char* hs_err_name) :
-      _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
+  IncludedGC(JVMFlagImpl<bool>& flag, CollectedHeap::Name name, GCArguments& arguments, const char* hs_err_name) :
+      _flag(flag.value_ref()), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
    EPSILONGC_ONLY(static EpsilonArguments    epsilonArguments;)

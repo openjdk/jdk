@@ -1354,7 +1354,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
       // create handler if necessary
       if (handler_index < 0) {
         ResourceMark rm;
-        ptrdiff_t align_offset = align_up(_buffer, CodeEntryAlignment) - (address)_buffer;
+        ptrdiff_t align_offset = align_up(_buffer, CodeEntryAlignment.value()) - (address)_buffer;
         CodeBuffer buffer((address)(_buffer + align_offset),
                           checked_cast<int>(SignatureHandlerLibrary::buffer_size - align_offset));
         InterpreterRuntime::SignatureHandlerGenerator(method, &buffer).generate(fingerprint);

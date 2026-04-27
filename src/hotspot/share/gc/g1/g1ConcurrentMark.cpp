@@ -497,8 +497,8 @@ void G1ConcurrentMark::fully_initialize() {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
 
-  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
-  log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
+  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads.value(), _worker_id_offset);
+  log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads.value());
 
   _max_concurrent_workers = ConcGCThreads;
 
@@ -1661,7 +1661,7 @@ void G1ConcurrentMark::weak_refs_work() {
     fatal("Overflow during reference processing, can not continue. Current mark stack depth: "
           "%zu, MarkStackSize: %zu, MarkStackSizeMax: %zu. "
           "Please increase MarkStackSize and/or MarkStackSizeMax and restart.",
-          _global_mark_stack.size(), MarkStackSize, MarkStackSizeMax);
+          _global_mark_stack.size(), MarkStackSize.value(), MarkStackSizeMax.value());
     return;
   }
 

@@ -52,7 +52,7 @@ JVMFlag::Error G1RemSetHowlNumBucketsConstraintFunc(uint value, bool verbose) {
   if (!FLAG_IS_CMDLINE(G1RemSetHowlNumBuckets)) {
     return JVMFlag::SUCCESS;
   }
-  if (value == 0 || !is_power_of_2(G1RemSetHowlNumBuckets)) {
+  if (value == 0 || !is_power_of_2(G1RemSetHowlNumBuckets.value())) {
     JVMFlag::printError(verbose,
                         "G1RemSetHowlNumBuckets (%u) must be a power of two "
                         "and greater than or equal to 1.\n",
@@ -68,7 +68,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   if (!FLAG_IS_CMDLINE(G1RemSetHowlMaxNumBuckets)) {
     return JVMFlag::SUCCESS;
   }
-  if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
+  if (!is_power_of_2(G1RemSetHowlMaxNumBuckets.value())) {
     JVMFlag::printError(verbose,
                         "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);
@@ -99,7 +99,7 @@ JVMFlag::Error G1NewSizePercentConstraintFunc(uint value, bool verbose) {
     JVMFlag::printError(verbose,
                         "G1NewSizePercent (%u) must be "
                         "less than or equal to G1MaxNewSizePercent (%u)\n",
-                        value, G1MaxNewSizePercent);
+                        value, G1MaxNewSizePercent.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -113,7 +113,7 @@ JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
     JVMFlag::printError(verbose,
                         "G1MaxNewSizePercent (%u) must be "
                         "greater than or equal to G1NewSizePercent (%u)\n",
-                        value, G1NewSizePercent);
+                        value, G1NewSizePercent.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -125,7 +125,7 @@ JVMFlag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MaxGCPauseMillis (%zu) must be "
                         "less than GCPauseIntervalMillis (%zu)\n",
-                        value, GCPauseIntervalMillis);
+                        value, GCPauseIntervalMillis.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -154,7 +154,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
         JVMFlag::printError(verbose,
                             "GCPauseIntervalMillis (%zu) must be "
                             "greater than MaxGCPauseMillis (%zu)\n",
-                            value, MaxGCPauseMillis);
+                            value, MaxGCPauseMillis.value());
         return JVMFlag::VIOLATES_CONSTRAINT;
       }
     }

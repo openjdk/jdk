@@ -314,7 +314,7 @@ public:
   template <typename T>
   static unsigned int hash_for_shared_dictionary_quick(T* ptr) {
     assert(AOTMetaspace::in_aot_cache(ptr), "must be");
-    assert(ptr > (T*)SharedBaseAddress, "must be");
+    assert(ptr > (T*)SharedBaseAddress.value(), "must be");
     uintx offset = uintx(ptr) - uintx(SharedBaseAddress);
     return primitive_hash<uintx>(offset);
   }

@@ -1931,7 +1931,7 @@ void AlignmentSolver::trace_start_solve() const {
     _vpointer.print_on(tty);
     tty->print_cr("  vector_width = %d", _vector_width);
     tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
-                  _vector_width, ObjectAlignmentInBytes, _aw);
+                  _vector_width, ObjectAlignmentInBytes.value(), _aw);
 
     if (!_init_node->is_ConI()) {
       tty->print("  init:");

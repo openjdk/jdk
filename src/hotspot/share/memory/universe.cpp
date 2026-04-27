@@ -1017,7 +1017,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment, siz
   // We are good.
 
   if (AllocateHeapAt != nullptr) {
-    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt.value());
   }
 
   if (UseCompressedOops) {

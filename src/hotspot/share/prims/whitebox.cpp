@@ -297,9 +297,9 @@ WB_END
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
   tty->print_cr("Minimum heap %zu Initial heap %zu "
                 "Maximum heap %zu Space alignment %zu Heap alignment %zu",
-                MinHeapSize,
-                InitialHeapSize,
-                MaxHeapSize,
+                MinHeapSize.value(),
+                InitialHeapSize.value(),
+                MaxHeapSize.value(),
                 SpaceAlignment,
                 HeapAlignment);
 }
@@ -318,7 +318,7 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   "\trhs.base() is " PTR_FORMAT "\n"
                   "\tCompressedOops::base() is " PTR_FORMAT "\n"
                   "\tCompressedOops::use_implicit_null_checks() is %d",
-                  UseCompressedOops,
+                  UseCompressedOops.value(),
                   p2i(rhs.base()),
                   p2i(CompressedOops::base()),
                   CompressedOops::use_implicit_null_checks());

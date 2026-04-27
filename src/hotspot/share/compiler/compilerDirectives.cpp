@@ -727,7 +727,7 @@ void DirectivesStack::pop_inner() {
 
 bool DirectivesStack::check_capacity(int request_size, outputStream* st) {
   if ((request_size + _depth) > CompilerDirectivesLimit) {
-    st->print_cr("Could not add %i more directives. Currently %i/%i directives.", request_size, _depth, CompilerDirectivesLimit);
+    st->print_cr("Could not add %i more directives. Currently %i/%i directives.", request_size, _depth, CompilerDirectivesLimit.value());
     return false;
   }
   return true;

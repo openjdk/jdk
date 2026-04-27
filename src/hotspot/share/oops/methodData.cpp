@@ -678,7 +678,7 @@ int ParametersTypeData::compute_cell_count(Method* m) {
   if (!MethodData::profile_parameters_for_method(methodHandle(Thread::current(), m))) {
     return 0;
   }
-  int max = TypeProfileParmsLimit == -1 ? INT_MAX : TypeProfileParmsLimit;
+  int max = TypeProfileParmsLimit == -1 ? INT_MAX : TypeProfileParmsLimit.value();
   int obj_args = TypeStackSlotEntries::compute_cell_count(m->signature(), !m->is_static(), max);
   if (obj_args > 0) {
     return obj_args + 1; // 1 cell for array len
@@ -961,7 +961,7 @@ int MethodData::compute_extra_data_count(int data_size, int empty_bc_count, bool
     // the SpeculativeTrapData entries doesn't directly depend on the
     // size of the method. Because it's hard to estimate, we reserve
     // space for an arbitrary number of entries.
-    int spec_data_count = (needs_speculative_traps ? SpecTrapLimitExtraEntries : 0) *
+    int spec_data_count = (needs_speculative_traps ? SpecTrapLimitExtraEntries.value() : 0) *
       (SpeculativeTrapData::static_cell_count() + DataLayout::header_size_in_cells());
 
     return MAX2(extra_data_count, spec_data_count);

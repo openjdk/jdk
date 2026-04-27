@@ -35,10 +35,10 @@ void EpsilonInitLogger::print_gc_specific() {
     size_t max_tlab = EpsilonHeap::heap()->max_tlab_size() * HeapWordSize;
     log_info(gc, init)("TLAB Size Max: " EXACTFMT, EXACTFMTARGS(max_tlab));
     if (EpsilonElasticTLAB) {
-      log_info(gc, init)("TLAB Size Elasticity: %.2fx", EpsilonTLABElasticity);
+      log_info(gc, init)("TLAB Size Elasticity: %.2fx", EpsilonTLABElasticity.value());
     }
     if (EpsilonElasticTLABDecay) {
-      log_info(gc, init)("TLAB Size Decay Time: %zums", EpsilonTLABDecayTime);
+      log_info(gc, init)("TLAB Size Decay Time: %zums", EpsilonTLABDecayTime.value());
     }
   } else {
     log_info(gc, init)("TLAB: Disabled");

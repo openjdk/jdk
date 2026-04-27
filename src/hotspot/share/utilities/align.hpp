@@ -48,6 +48,14 @@ static constexpr auto alignment_mask(T alignment) {
   return alignment_mask(static_cast<std::underlying_type_t<T>>(alignment));
 }
 
+template <typename T> class JVMFlagImpl;
+
+template<typename T>
+static constexpr auto alignment_mask(JVMFlagImpl<T> alignment) {
+  return alignment_mask(static_cast<std::underlying_type_t<T>>(alignment.value()));
+}
+
+
 // Align integers and check for alignment.
 // The is_integral filtering here is not for disambiguation with the T*
 // overloads; if those match then they are a better match.  Rather, the
@@ -106,6 +114,31 @@ inline T* align_up(T* ptr, A alignment) {
 template <typename T, typename A>
 inline T* align_down(T* ptr, A alignment) {
   return (T*)align_down((uintptr_t)ptr, alignment);
+}
+
+template<typename T, typename A>
+constexpr bool is_aligned(JVMFlagImpl<T> size, A alignment) {
+  return is_aligned(size.value(), alignment);
+}
+
+template <typename T, typename A>
+inline T align_up(JVMFlagImpl<T> size, A alignment) {
+  return align_up(size.value(), alignment);
+}
+
+template <typename T, typename A>
+inline T align_up(T size, JVMFlagImpl<A> alignment) {
+  return align_up(size, alignment.value());
+}
+
+template <typename T, typename A>
+inline T align_down(JVMFlagImpl<T> size, A alignment) {
+  return align_down(size.value(), alignment);
+}
+
+template <typename T, typename A>
+inline T align_down(T size, JVMFlagImpl<A> alignment) {
+  return align_down(size, alignment.value());
 }
 
 template <typename T, typename A>

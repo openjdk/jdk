@@ -548,6 +548,11 @@ bool check_config(T saved, T current, const char* name) {
   }
 }
 
+template <typename T>
+bool check_config(T saved, JVMFlagImpl<T> current, const char* name) {
+  return check_config(saved, current.value(), name);
+}
+
 bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // check CPU features before checking flags that may be
   // auto-configured in response to them

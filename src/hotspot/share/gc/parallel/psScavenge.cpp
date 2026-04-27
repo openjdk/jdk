@@ -440,7 +440,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
         _tenuring_threshold = size_policy->compute_tenuring_threshold(_survivor_overflow,
                                                                       _tenuring_threshold);
 
-        log_debug(gc, age)("New threshold %u (max threshold %u)", _tenuring_threshold, MaxTenuringThreshold);
+        log_debug(gc, age)("New threshold %u (max threshold %u)", _tenuring_threshold, MaxTenuringThreshold.value());
 
         if (young_gen->is_from_to_layout()) {
           size_policy->print_stats(_survivor_overflow);

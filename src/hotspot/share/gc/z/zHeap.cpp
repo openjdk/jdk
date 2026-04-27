@@ -82,7 +82,7 @@ ZHeap::ZHeap()
   }
 
   if (UseDynamicNumberOfGCThreads) {
-    log_info_p(gc, init)("GC Workers Max: %u (dynamic)", ConcGCThreads);
+    log_info_p(gc, init)("GC Workers Max: %u (dynamic)", ConcGCThreads.value());
   }
 
   // Update statistics

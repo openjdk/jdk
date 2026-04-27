@@ -206,7 +206,7 @@ size_t MetaspacePool::used_in_bytes() {
 }
 
 size_t MetaspacePool::calculate_max_size() const {
-  return !FLAG_IS_DEFAULT(MaxMetaspaceSize) ? MaxMetaspaceSize :
+  return !FLAG_IS_DEFAULT(MaxMetaspaceSize) ? MaxMetaspaceSize.value() :
                                               MemoryUsage::undefined_size();
 }
 

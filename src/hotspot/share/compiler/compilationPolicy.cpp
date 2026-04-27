@@ -687,7 +687,7 @@ CompLevel CompilationPolicy::highest_compile_level() {
   }
   // Clamp the maximum level with TieredStopAtLevel.
   if (TieredCompilation) {
-    level = MIN2(level, (CompLevel) TieredStopAtLevel);
+    level = MIN2(level, (CompLevel) TieredStopAtLevel.value());
   }
 
   // Fix it up if after the clamping it has become invalid.

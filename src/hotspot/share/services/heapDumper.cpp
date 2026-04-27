@@ -2757,7 +2757,7 @@ void HeapDumper::dump_heap(bool oome) {
   // dump file name or a directory where dump file is created.
   if (dump_file_seq == 0) { // first time in, we initialize base_path
     // Set base path (name or directory, default or custom, without seq no), doing %p substitution.
-    const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
+    const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath.value() : dump_file_name;
     if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN - max_digit_chars)) {
       warning("Cannot create heap dump file.  HeapDumpPath is too long.");
       return;

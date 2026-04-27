@@ -1122,7 +1122,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     // If the unroll factor is not too large, and if conditional moves are
     // ok, then use this case
-    if( trip_count <= 5 && ConditionalMoveLimit != 0 ) {
+    if( trip_count <= 5 && ConditionalMoveLimit.value() != 0 ) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 
@@ -1420,7 +1420,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     // If the unroll factor is not too large, and if conditional moves are
     // ok, then use this case
-    if( trip_count <= 5 && ConditionalMoveLimit != 0 ) {
+    if( trip_count <= 5 && ConditionalMoveLimit.value() != 0 ) {
       Node *x = in(1);            // Value being mod'd
       Node *divisor = in(2);      // Also is mask
 

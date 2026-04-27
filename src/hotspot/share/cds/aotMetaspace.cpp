@@ -248,7 +248,7 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 }
 
 static char* compute_shared_base(size_t cds_max) {
-  char* specified_base = (char*)SharedBaseAddress;
+  char* specified_base = (char*)SharedBaseAddress.value();
   size_t alignment = AOTMetaspace::core_region_alignment();
 #if INCLUDE_CLASS_SPACE
   alignment = MAX2(alignment, Metaspace::reserve_alignment());
@@ -283,7 +283,7 @@ static char* compute_shared_base(size_t cds_max) {
   // picked that (a) the align_up() below will always return a valid value; (b) none of
   // the following asserts will fail.
   aot_log_warning(aot)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
-                   p2i((void*)SharedBaseAddress), err,
+                   p2i((void*)SharedBaseAddress.value()), err,
                    p2i((void*)Arguments::default_SharedBaseAddress()));
 
   specified_base = (char*)Arguments::default_SharedBaseAddress();
@@ -989,9 +989,9 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
       // run the main class, which is not what we want.
       struct stat st;
       if (os::stat(AOTCache, &st) != 0) {
-        tty->print_cr("AOTCache creation failed: %s", AOTCache);
+        tty->print_cr("AOTCache creation failed: %s", AOTCache.value());
       } else {
-        tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
+        tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache.value(), (int64_t)(st.st_size));
       }
       vm_direct_exit(0);
     }
@@ -1092,8 +1092,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     load_classes(CHECK);
 
     if (SharedArchiveConfigFile) {
-      log_info(aot)("Reading extra data from %s ...", SharedArchiveConfigFile);
-      read_extra_data(THREAD, SharedArchiveConfigFile);
+      log_info(aot)("Reading extra data from %s ...", SharedArchiveConfigFile.value());
+      read_extra_data(THREAD, SharedArchiveConfigFile.value());
       log_info(aot)("Reading extra data: done.");
     }
   }
@@ -1128,8 +1128,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
   if (CDSConfig::is_dumping_final_static_archive()) {
     if (ExtraSharedClassListFile) {
-      log_info(aot)("Loading extra classes from %s ...", ExtraSharedClassListFile);
-      ClassListParser::parse_classlist(ExtraSharedClassListFile,
+      log_info(aot)("Loading extra classes from %s ...", ExtraSharedClassListFile.value());
+      ClassListParser::parse_classlist(ExtraSharedClassListFile.value(),
                                        ClassListParser::_parse_all, CHECK);
     }
   }
@@ -1206,7 +1206,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   _output_mapinfo = nullptr;
   if (status && CDSConfig::is_dumping_preimage_static_archive()) {
     tty->print_cr("%s AOTConfiguration recorded: %s",
-                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
+                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration.value());
     if (CDSConfig::is_single_command_training()) {
       fork_and_dump_final_static_archive(CHECK);
     }
@@ -1340,7 +1340,7 @@ void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
   stringStream ss;
   print_java_launcher(&ss);
   const char* cmd = ss.freeze();
-  tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput, AOTConfiguration);
+  tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput.value(), AOTConfiguration.value());
   int status = exec_jvm_with_java_tool_options(cmd, CHECK);
   if (status != 0) {
     log_error(aot)("Child process failed; status = %d", status);
@@ -1509,7 +1509,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
     aot_log_info(aot)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
-    aot_log_info(aot)("ArchiveRelocationMode: %d", ArchiveRelocationMode);
+    aot_log_info(aot)("ArchiveRelocationMode: %d", ArchiveRelocationMode.value());
 
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);
@@ -1948,7 +1948,7 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
-         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
+         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize.value());
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
@@ -1959,7 +1959,7 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
     class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
     log_info(metaspace)("CDS initialization: reducing class space size from %zu to %zu",
-        CompressedClassSpaceSize, class_space_size);
+        CompressedClassSpaceSize.value(), class_space_size);
     FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
   }
 
@@ -2146,7 +2146,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
-  ReadClosure rc(&array, (address)SharedBaseAddress);
+  ReadClosure rc(&array, (address)SharedBaseAddress.value());
   serialize(&rc);
 
   // Finish initializing the heap dump mode used in the archive
@@ -2158,7 +2158,7 @@ void AOTMetaspace::initialize_shared_spaces() {
 
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
-    ReadClosure rc(&buffer, (address)SharedBaseAddress);
+    ReadClosure rc(&buffer, (address)SharedBaseAddress.value());
     DynamicArchive::serialize(&rc);
   }
 
@@ -2248,7 +2248,7 @@ void AOTMetaspace::print_on(outputStream* st) {
     address top = (address)MetaspaceObj::aot_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
     st->print("size %zu, ", top - base);
-    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
+    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress.value(), ArchiveRelocationMode.value());
   } else {
     st->print("CDS archive(s) not mapped");
   }

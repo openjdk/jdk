@@ -62,7 +62,7 @@ void VMOperationTimeoutTask::task() {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
       fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: %zd ms)",
-            _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
+            _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay.value());
     }
   }
 }
@@ -89,7 +89,7 @@ void VMOperationTimeoutTask::disarm() {
   // the scheduling.
   if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
     fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: %zd ms)",
-          _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
+          _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay.value());
   }
   _vm_op_name = nullptr;
 }
@@ -167,7 +167,7 @@ void VMThread::run() {
 
   int prio = (VMThreadPriority == -1)
     ? os::java_to_os_priority[NearMaxPriority]
-    : VMThreadPriority;
+    : VMThreadPriority.value();
   // Note that I cannot call os::set_priority because it expects Java
   // priorities and I am *explicitly* using OS priorities so that it's
   // possible to set the VM thread priority higher than any Java thread.
@@ -313,7 +313,7 @@ bool VMThread::handshake_or_safepoint_alot() {
   // If HandshakeALot or SafepointALot are set, but GuaranteedSafepointInterval is explicitly
   // set to 0 on the command line, we emit the operation if it's been more than a second
   // since the last one.
-  jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
+  jlong interval = GuaranteedSafepointInterval.value() != 0 ? GuaranteedSafepointInterval.value() : 1000;
   jlong deadline_ms = interval + last_alot_ms;
   if (now_ms > deadline_ms) {
     last_alot_ms = now_ms;

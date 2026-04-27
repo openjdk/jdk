@@ -258,7 +258,7 @@ void CDSConfig::ergo_init_classic_archive_paths() {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
               AutoCreateSharedArchive = false;
             }
-            aot_log_error(aot)("Not a valid %s (%s)", type_of_archive_being_loaded(), SharedArchiveFile);
+            aot_log_error(aot)("Not a valid %s (%s)", type_of_archive_being_loaded(), SharedArchiveFile.value());
             Arguments::no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == nullptr) {
@@ -482,7 +482,7 @@ void CDSConfig::check_aotmode_off() {
 void CDSConfig::check_aotmode_auto_or_on() {
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
     vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)",
-                                          FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
+                                          FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode.value()));
   }
 
   UseSharedSpaces = true;

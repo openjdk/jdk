@@ -100,7 +100,7 @@ JVMFlag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MinHeapFreeRatio (%zu) must be "
                         "less than or equal to MaxHeapFreeRatio (%zu)\n",
-                        value, MaxHeapFreeRatio);
+                        value, MaxHeapFreeRatio.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -112,7 +112,7 @@ JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MaxHeapFreeRatio (%zu) must be "
                         "greater than or equal to MinHeapFreeRatio (%zu)\n",
-                        value, MinHeapFreeRatio);
+                        value, MinHeapFreeRatio.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -142,7 +142,7 @@ JVMFlag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MarkStackSize (%zu) must be "
                         "less than or equal to MarkStackSizeMax (%zu)\n",
-                        value, MarkStackSizeMax);
+                        value, MarkStackSizeMax.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -154,7 +154,7 @@ JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MinMetaspaceFreeRatio (%u) must be "
                         "less than or equal to MaxMetaspaceFreeRatio (%u)\n",
-                        value, MaxMetaspaceFreeRatio);
+                        value, MaxMetaspaceFreeRatio.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -166,7 +166,7 @@ JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MaxMetaspaceFreeRatio (%u) must be "
                         "greater than or equal to MinMetaspaceFreeRatio (%u)\n",
-                        value, MinMetaspaceFreeRatio);
+                        value, MinMetaspaceFreeRatio.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -289,7 +289,7 @@ JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
     JVMFlag::printError(verbose,
                         "HeapBaseMinAddress (%zu) or MaxHeapSize (%zu) is too large. "
                         "Sum of them must be less than or equal to maximum of size_t (%zu)\n",
-                        value, MaxHeapSize, max_uintx);
+                        value, MaxHeapSize.value(), max_uintx);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -333,7 +333,7 @@ JVMFlag::Error TLABSizeConstraintFunc(size_t value, bool verbose) {
       JVMFlag::printError(verbose,
                           "TLABSize (%zu) must be "
                           "greater than or equal to MinTLABSize (%zu)\n",
-                          value, MinTLABSize);
+                          value, MinTLABSize.value());
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
     if (value > (ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
@@ -384,7 +384,7 @@ JVMFlag::Error MetaspaceSizeConstraintFunc(size_t value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MetaspaceSize (%zu) must be "
                         "less than or equal to MaxMetaspaceSize (%zu)\n",
-                        value, MaxMetaspaceSize);
+                        value, MaxMetaspaceSize.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -396,7 +396,7 @@ JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
     JVMFlag::printError(verbose,
                         "MaxMetaspaceSize (%zu) must be "
                         "greater than or equal to MetaspaceSize (%zu)\n",
-                        value, MaxMetaspaceSize);
+                        value, MaxMetaspaceSize.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
@@ -420,7 +420,7 @@ JVMFlag::Error ArrayMarkingMinStrideConstraintFunc(uintx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "ArrayMarkingMinStride (%zu) must be "
                         "less than or equal to ObjArrayMarkingStride (%zu)\n",
-                        value, ObjArrayMarkingStride);
+                        value, ObjArrayMarkingStride.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;

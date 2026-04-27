@@ -873,7 +873,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
     // Check if it's time to adjust the in_use_list_ceiling up, due
     // to too many async deflation attempts without any progress.
-    if (NoAsyncDeflationProgressMax != 0 &&
+    if (NoAsyncDeflationProgressMax.value() != 0 &&
         _no_progress_cnt >= NoAsyncDeflationProgressMax) {
       double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
       size_t delta = (size_t)(ceiling * remainder) + 1;
@@ -894,7 +894,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
     }
     log_info(monitorinflation)("monitors_used=%zu, ceiling=%zu"
                                ", monitor_usage=%zu, threshold=%d",
-                               monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
+                               monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold.value());
     return is_above_threshold;
   }
 
@@ -914,11 +914,11 @@ size_t ObjectSynchronizer::in_use_list_ceiling() {
 }
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
-  AtomicAccess::sub(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+  AtomicAccess::sub(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate.value());
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
-  AtomicAccess::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+  AtomicAccess::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate.value());
 }
 
 void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
@@ -953,7 +953,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // touched many monitors.
     log_info(monitorinflation)("Async deflation needed: guaranteed interval (%zd ms) "
                                "is greater than time since last deflation (" JLONG_FORMAT " ms)",
-                               GuaranteedAsyncDeflationInterval, time_since_last);
+                               GuaranteedAsyncDeflationInterval.value(), time_since_last);
 
     // If this deflation has no progress, then it should not affect the no-progress
     // tracking, otherwise threshold heuristics would think it was triggered, experienced
@@ -1714,7 +1714,7 @@ inline bool ObjectSynchronizer::fast_lock_try_enter(oop obj, LockStack& lock_sta
 bool ObjectSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation) {
   assert(UseObjectMonitorTable, "must be");
   // Will spin with exponential backoff with an accumulative O(2^spin_limit) spins.
-  const int log_spin_limit = os::is_MP() ? FastLockingSpins : 1;
+  const int log_spin_limit = os::is_MP() ? FastLockingSpins.value() : 1;
   const int log_min_safepoint_check_interval = 10;
 
   markWord mark = obj->mark();

@@ -88,7 +88,7 @@ size_t PSAdaptiveSizePolicy::compute_desired_eden_size(bool is_survivor_overflow
   double min_gc_distance = MinGCDistanceSecond;
 
   // Get a local copy and use it inside gc-pause in case the global var gets updated externally.
-  const uint local_GCTimeRatio = AtomicAccess::load(&GCTimeRatio);
+  const uint local_GCTimeRatio = AtomicAccess::load(&GCTimeRatio.value_ref());
   const double throughput_goal = calculate_throughput_goal(local_GCTimeRatio);
 
   if (mutator_time_percent() < throughput_goal) {

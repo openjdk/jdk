@@ -1278,7 +1278,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
   ResourceMark rm;
 
   // Turn off dependency tracing while actually testing dependencies.
-  FlagSetting fs(Dependencies::_verify_in_progress, true);
+  AutoModifyRestore<bool> amr(Dependencies::_verify_in_progress, true);
 
   typedef HashTable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,

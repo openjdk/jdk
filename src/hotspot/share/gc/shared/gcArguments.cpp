@@ -81,7 +81,7 @@ void GCArguments::assert_size_info() {
 
 void GCArguments::initialize_size_info() {
   log_debug(gc, heap)("Minimum heap %zu  Initial heap %zu  Maximum heap %zu",
-                      MinHeapSize, InitialHeapSize, MaxHeapSize);
+                      MinHeapSize.value(), InitialHeapSize.value(), MaxHeapSize.value());
 
   DEBUG_ONLY(assert_size_info();)
 }
@@ -150,7 +150,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
 
   if (checked_cast<uint>(ObjectAlignmentInBytes) > GCCardSizeInBytes) {
     err_msg message("ObjectAlignmentInBytes %u is larger than GCCardSizeInBytes %u",
-                    ObjectAlignmentInBytes, GCCardSizeInBytes);
+                    ObjectAlignmentInBytes.value(), GCCardSizeInBytes.value());
     vm_exit_during_initialization("Invalid combination of GCCardSizeInBytes and ObjectAlignmentInBytes",
                                   message);
   }

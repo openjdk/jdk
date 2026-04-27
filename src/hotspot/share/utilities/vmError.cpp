@@ -693,19 +693,19 @@ void VMError::report(outputStream* st, bool _verbose) {
   // error handler after a secondary crash works.
   STEP_IF("test secondary crash 1", _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
-      TestCrashInErrorHandler);
+      TestCrashInErrorHandler.value());
     controlled_crash(TestCrashInErrorHandler);
 
   STEP_IF("test secondary crash 2", _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
-      TestCrashInErrorHandler);
+      TestCrashInErrorHandler.value());
     controlled_crash(TestCrashInErrorHandler);
 
   // See corresponding test in test/runtime/ErrorHandling/ReattemptErrorTest.java
   STEP_IF("test reattempt secondary crash",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
-      TestCrashInErrorHandler);
+      TestCrashInErrorHandler.value());
     controlled_crash(14);
 
   REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 2",
@@ -2023,7 +2023,7 @@ void VM_ReportJavaOutOfMemory::doit() {
 
   tty->print_cr("#");
   tty->print_cr("# java.lang.OutOfMemoryError: %s", _message);
-  tty->print_cr("# -XX:OnOutOfMemoryError=\"%s\"", OnOutOfMemoryError);
+  tty->print_cr("# -XX:OnOutOfMemoryError=\"%s\"", OnOutOfMemoryError.value());
 
   // make heap parsability
   Universe::heap()->ensure_parsability(false);  // no need to retire TLABs

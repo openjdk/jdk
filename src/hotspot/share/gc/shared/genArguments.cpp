@@ -183,7 +183,7 @@ void GenArguments::initialize_size_info() {
     // yield a size that is too small) and bound it by MaxNewSize above.
     // Ergonomics plays here by previously calculating the desired
     // NewSize and MaxNewSize.
-    max_young_size = clamp(max_young_size, NewSize, MaxNewSize);
+    max_young_size = clamp(max_young_size, NewSize.value(), MaxNewSize.value());
   }
 
   // Given the maximum young size, determine the initial and
@@ -194,7 +194,7 @@ void GenArguments::initialize_size_info() {
     // The maximum and initial heap sizes are the same so the generation's
     // initial size must be the same as it maximum size. Use NewSize as the
     // size if set on command line.
-    max_young_size = FLAG_IS_CMDLINE(NewSize) ? NewSize : max_young_size;
+    max_young_size = FLAG_IS_CMDLINE(NewSize) ? NewSize.value() : max_young_size;
     initial_young_size = max_young_size;
 
     // Also update the minimum size if min == initial == max.
@@ -214,7 +214,7 @@ void GenArguments::initialize_size_info() {
       // NewSize as the floor, because if NewRatio is overly large, the resulting
       // size can be too small.
       initial_young_size =
-        clamp(scale_by_NewRatio_aligned(InitialHeapSize, SpaceAlignment), NewSize, max_young_size);
+        clamp(scale_by_NewRatio_aligned(InitialHeapSize.value(), SpaceAlignment), NewSize.value(), max_young_size);
 
       // Derive MinNewSize from MinHeapSize
       MinNewSize = MIN2(scale_by_NewRatio_aligned(MinHeapSize, SpaceAlignment), initial_young_size);

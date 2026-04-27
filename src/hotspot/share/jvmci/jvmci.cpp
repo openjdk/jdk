@@ -104,7 +104,7 @@ bool JVMCI::get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_
       if (!fail_is_fatal) {
         return false;
       }
-      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
+      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath.value());
     }
   } else {
     if (!os::dll_locate_lib(pathbuf, pathlen, Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {

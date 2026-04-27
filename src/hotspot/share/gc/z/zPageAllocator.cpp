@@ -1278,7 +1278,7 @@ size_t ZPageAllocator::max_capacity() const {
 
 size_t ZPageAllocator::soft_max_capacity() const {
   const size_t current_max_capacity = ZPageAllocator::current_max_capacity();
-  const size_t soft_max_heapsize = AtomicAccess::load(&SoftMaxHeapSize);
+  const size_t soft_max_heapsize = AtomicAccess::load(&SoftMaxHeapSize.value_ref());
   return MIN2(soft_max_heapsize, current_max_capacity);
 }
 

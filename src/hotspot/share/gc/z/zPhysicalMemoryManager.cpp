@@ -120,7 +120,7 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   }
 
   log_info_p(gc, init)("Uncommit: Enabled");
-  log_info_p(gc, init)("Uncommit Delay: %zus", ZUncommitDelay);
+  log_info_p(gc, init)("Uncommit Delay: %zus", ZUncommitDelay.value());
 }
 
 void ZPhysicalMemoryManager::alloc(const ZVirtualMemory& vmem, uint32_t numa_id) {

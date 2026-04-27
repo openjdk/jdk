@@ -164,7 +164,7 @@ void G1Arguments::initialize_card_set_configuration() {
     FLAG_SET_ERGO(G1RemSetHowlMaxNumBuckets, MAX2(G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets));
   } else if (G1RemSetHowlMaxNumBuckets < G1RemSetHowlNumBuckets) {
     FormatBuffer<> buf("Maximum Howl card set container bucket size %u smaller than requested bucket size %u",
-                       G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets);
+                       G1RemSetHowlMaxNumBuckets.value(), G1RemSetHowlNumBuckets.value());
     vm_exit_during_initialization(buf);
   }
 }

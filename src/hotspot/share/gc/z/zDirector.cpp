@@ -92,7 +92,7 @@ static bool rule_minor_timer(const ZDirectorStats& stats) {
   const double time_until_gc = ZCollectionIntervalMinor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Minor: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
-                          ZCollectionIntervalMinor, time_until_gc);
+                          ZCollectionIntervalMinor.value(), time_until_gc);
 
   return time_until_gc <= 0;
 }
@@ -393,7 +393,7 @@ static bool rule_major_timer(const ZDirectorStats& stats) {
   const double time_until_gc = ZCollectionIntervalMajor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Major: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
-                          ZCollectionIntervalMajor, time_until_gc);
+                          ZCollectionIntervalMajor.value(), time_until_gc);
 
   return time_until_gc <= 0;
 }
@@ -700,21 +700,21 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
   }
 
   const double young_to_old_ratio = calculate_young_to_old_worker_ratio(stats);
-  uint old_workers = clamp(uint(young_workers * young_to_old_ratio), 1u, ZOldGCThreads);
+  uint old_workers = clamp(uint(young_workers * young_to_old_ratio), 1u, ZOldGCThreads.value());
 
   if (type != ZWorkerSelectionType::normal && old_workers + young_workers > ConcGCThreads) {
     // We need to somehow clamp the GC threads so the two generations don't exceed ConcGCThreads
     const double old_ratio = (young_to_old_ratio / (1.0 + young_to_old_ratio));
     const double young_ratio = 1.0 - old_ratio;
-    const uint young_workers_clamped = clamp(uint(ConcGCThreads * young_ratio), 1u, ZYoungGCThreads);
-    const uint old_workers_clamped = clamp(ConcGCThreads - young_workers_clamped, 1u, ZOldGCThreads);
+    const uint young_workers_clamped = clamp(uint(ConcGCThreads * young_ratio), 1u, ZYoungGCThreads.value());
+    const uint old_workers_clamped = clamp(ConcGCThreads - young_workers_clamped, 1u, ZOldGCThreads.value());
 
     if (type == ZWorkerSelectionType::start_major) {
       // Adjust down the old workers so the next minor during major will be less sad
       old_workers = old_workers_clamped;
       // Since collecting the old generation depends on the initial young collection
       // finishing, we ideally don't want it to have fewer workers than the old generation.
-      young_workers = clamp(MAX2(old_workers, young_workers), 1u, ZYoungGCThreads);
+      young_workers = clamp(MAX2(old_workers, young_workers), 1u, ZYoungGCThreads.value());
     } else if (type == ZWorkerSelectionType::minor_during_old) {
       // Adjust young and old workers for minor during old to fit within ConcGCThreads
       young_workers = young_workers_clamped;

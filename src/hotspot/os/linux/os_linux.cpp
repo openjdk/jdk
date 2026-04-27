@@ -2515,7 +2515,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported) {
     assert(cpus > 0, "must be");
     if (ActiveProcessorCount > 0) {
-      OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
+      OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount.value(), "(from -XX:ActiveProcessorCount)");
     } else {
       OSContainer::print_container_metric(st, "active_processor_count", cpus);
     }
@@ -3902,7 +3902,7 @@ struct LargePageInitializationLoggerMark {
     if (lt.is_enabled()) {
       LogStream ls(lt);
       if (UseLargePages) {
-        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d", UseTransparentHugePages);
+        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d", UseTransparentHugePages.value());
         ls.print("Large page support enabled. Usable page sizes: ");
         os::page_sizes().print_on(&ls);
         ls.print_cr(". Default large page size: " EXACTFMT ".", EXACTFMTARGS(os::large_page_size()));
@@ -4806,7 +4806,7 @@ int os::active_processor_count() {
   if (ActiveProcessorCount > 0) {
     log_trace(os)("active_processor_count: "
                   "active processor count set by user : %d",
-                  ActiveProcessorCount);
+                  ActiveProcessorCount.value());
     return ActiveProcessorCount;
   }
 

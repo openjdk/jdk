@@ -919,7 +919,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // Classic -Xshare:dump, aka "old workflow"
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
-    tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
+    tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration.value(), AOTCache.value());
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   }
 

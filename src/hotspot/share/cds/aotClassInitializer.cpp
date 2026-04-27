@@ -345,7 +345,7 @@ void AOTClassInitializer::init_test_class(TRAPS) {
   // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
   // the AOT cache. Therefore, this option is NOT available in product JVM.
   if (AOTInitTestClass != nullptr && CDSConfig::is_dumping_aot_linked_classes()) {
-    log_info(aot)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
+    log_info(aot)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass.value());
     TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
     Handle app_loader(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(class_name, app_loader, CHECK);

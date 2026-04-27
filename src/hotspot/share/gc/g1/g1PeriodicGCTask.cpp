@@ -49,7 +49,7 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   uintx time_since_last_gc = (uintx)g1h->time_since_last_collection().milliseconds();
   if ((time_since_last_gc < G1PeriodicGCInterval)) {
     log_debug(gc, periodic)("Last GC occurred %zums before which is below threshold %zums. Skipping.",
-                            time_since_last_gc, G1PeriodicGCInterval);
+                            time_since_last_gc, G1PeriodicGCInterval.value());
     return false;
   }
 
@@ -63,7 +63,7 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
       // Fall through and start the periodic GC.
     } else if (recent_load > G1PeriodicGCSystemLoadThreshold) {
       log_debug(gc, periodic)("Load %1.2f is higher than threshold %1.2f. Skipping.",
-                              recent_load, G1PeriodicGCSystemLoadThreshold);
+                              recent_load, G1PeriodicGCSystemLoadThreshold.value());
       return false;
     }
   }
@@ -100,5 +100,5 @@ void G1PeriodicGCTask::execute() {
   // during runtime. If no value is set, wait a second and run it
   // again to see if the value has been updated. Otherwise use the
   // real value provided.
-  schedule(G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval);
+  schedule(G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval.value());
 }

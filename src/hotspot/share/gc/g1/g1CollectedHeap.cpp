@@ -1107,7 +1107,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   }
 
   if (gc_overhead_limit_exceeded()) {
-    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold);
+    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold.value());
   }
 
   // What else?  We might try synchronous finalization later.  If the total
@@ -2857,7 +2857,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
   log_debug(gc)("Allocated %u survivor %u old percent total %1.2f%% (%u%%)",
                 _survivor_evac_stats.regions_filled(), _old_evac_stats.regions_filled(),
                 percent_of(total_allocated, num_committed_regions() - total_allocated),
-                G1ReservePercent);
+                G1ReservePercent.value());
 
   policy()->old_gen_alloc_tracker()->
     add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);

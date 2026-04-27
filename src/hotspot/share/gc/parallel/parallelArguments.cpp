@@ -62,7 +62,7 @@ void ParallelArguments::initialize_alignments() {
 
     if (page_size == os::vm_page_size()) {
       log_warning(gc, heap)("MaxHeapSize (%zu) must be large enough for %zu * page-size; Disabling UseLargePages for heap",
-                            MaxHeapSize, total_spaces);
+                            MaxHeapSize.value(), total_spaces);
     }
 
     if (page_size > SpaceAlignment) {

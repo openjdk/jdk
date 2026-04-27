@@ -651,7 +651,7 @@ HeapBlock* CodeHeap::search_freelist(size_t length) {
   FreeBlock* prev = nullptr;
   FreeBlock* cur  = _freelist;
 
-  length = length < CodeCacheMinBlockLength ? CodeCacheMinBlockLength : length;
+  length = length < CodeCacheMinBlockLength ? CodeCacheMinBlockLength.value() : length;
 
   // Search for best-fitting block
   while(cur != nullptr) {

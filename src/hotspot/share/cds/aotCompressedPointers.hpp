@@ -79,7 +79,7 @@ public:
   static narrowPtr encode_address_in_cache(T ptr) {
     assert(Metaspace::in_aot_cache(ptr), "must be");
     address p = reinterpret_cast<address>(ptr);
-    address base = reinterpret_cast<address>(SharedBaseAddress);
+    address base = reinterpret_cast<address>(SharedBaseAddress.value());
     return encode_byte_offset(pointer_delta(p, base, 1));
   }
 
@@ -99,7 +99,7 @@ public:
   static T decode_not_null(narrowPtr narrowp, address base_address = nullptr) {
     assert(narrowp != null(), "sanity");
     if (base_address == nullptr) {
-      T p = reinterpret_cast<T>(reinterpret_cast<address>(SharedBaseAddress) + get_byte_offset(narrowp));
+      T p = reinterpret_cast<T>(reinterpret_cast<address>(SharedBaseAddress.value()) + get_byte_offset(narrowp));
       assert(Metaspace::in_aot_cache(p), "must be");
       return p;
     } else {

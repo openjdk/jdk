@@ -82,7 +82,7 @@ void AOTMapLogger::ergo_initialize() {
     if (FLAG_IS_DEFAULT(ArchiveRelocationMode)) {
       FLAG_SET_ERGO(ArchiveRelocationMode, 0);
     } else if (ArchiveRelocationMode != 0) {
-      log_warning(aot, map)("Addresses in the AOT map may be incorrect for -XX:ArchiveRelocationMode=%d.", ArchiveRelocationMode);
+      log_warning(aot, map)("Addresses in the AOT map may be incorrect for -XX:ArchiveRelocationMode=%d.", ArchiveRelocationMode.value());
     }
   }
 }

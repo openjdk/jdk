@@ -61,7 +61,7 @@ void MemTracker::initialize() {
   NMT_TrackingLevel level = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   // Should have been validated before in arguments.cpp
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
-         "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
+         "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking.value());
 
   // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.

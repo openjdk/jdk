@@ -534,7 +534,7 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
     vmSymbols::symbols_do(&dumper);
 
     st->flush();
-    tty->print_cr("Dumped JVMCI shared library JNI configuration to %s", JVMCILibDumpJNIConfig);
+    tty->print_cr("Dumped JVMCI shared library JNI configuration to %s", JVMCILibDumpJNIConfig.value());
     vm_exit(0);
   }
 

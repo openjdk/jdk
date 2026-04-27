@@ -672,7 +672,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
       }
     }
     fatal("Safepoint sync time longer than %.6f ms detected when executing %s.",
-          SafepointTimeoutDelay, VMThread::vm_operation()->name());
+          SafepointTimeoutDelay.value(), VMThread::vm_operation()->name());
   }
 }
 

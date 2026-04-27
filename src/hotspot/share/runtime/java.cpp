@@ -185,7 +185,7 @@ static void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = %zd):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = %zd):", MethodHistogramCutoff.value());
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   uint64_t total        = 0,

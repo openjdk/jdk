@@ -64,7 +64,7 @@ static uintx calc_array_stride(uint array_len, uint num_threads) {
   precond(num_threads > 0);
 
   const size_t stride = (array_len + num_threads - 1) / num_threads;
-  return clamp(stride, ArrayMarkingMinStride, ObjArrayMarkingStride);
+  return clamp(stride, ArrayMarkingMinStride.value(), ObjArrayMarkingStride.value());
 }
 
 void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {

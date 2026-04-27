@@ -33,7 +33,7 @@ JVMFlag::Error InitialTenuringThresholdConstraintFuncParallel(uint value, bool v
       JVMFlag::printError(verbose,
                           "InitialTenuringThreshold (%u) must be "
                           "less than or equal to MaxTenuringThreshold (%u)\n",
-                          value, MaxTenuringThreshold);
+                          value, MaxTenuringThreshold.value());
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -46,7 +46,7 @@ JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uint value, bool verbo
     JVMFlag::printError(verbose,
                         "MaxTenuringThreshold (%u) must be "
                         "greater than or equal to InitialTenuringThreshold (%u)\n",
-                        value, InitialTenuringThreshold);
+                        value, InitialTenuringThreshold.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

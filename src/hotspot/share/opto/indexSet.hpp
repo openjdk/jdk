@@ -376,15 +376,15 @@ class IndexSet : public ResourceObj {
   // Check to see if the serial number of the current set is the one we're tracing.
   // If it is, print a message.
   void check_watch(const char *operation, uint operand) const {
-    if (IndexSetWatch != 0) {
+    if (IndexSetWatch.value() != 0) {
       if (IndexSetWatch == -1 || (uintx)_serial_number == (uintx)IndexSetWatch) {
         tty->print_cr("IndexSet %u : %s ( %d )", _serial_number, operation, operand);
       }
     }
   }
   void check_watch(const char *operation) const {
-    if (IndexSetWatch != 0) {
-      if (IndexSetWatch == -1 || (uintx)_serial_number == (uintx)IndexSetWatch) {
+    if (IndexSetWatch.value() != 0) {
+      if (IndexSetWatch.value() == -1 || (uintx)_serial_number == (uintx)IndexSetWatch.value()) {
         tty->print_cr("IndexSet %u : %s", _serial_number, operation);
       }
     }

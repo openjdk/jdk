@@ -97,7 +97,7 @@ void PerfMemory::initialize() {
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
                           " os::vm_allocation_granularity = %zu"
                           ", adjusted size = %zu",
-                          PerfDataMemorySize,
+                          PerfDataMemorySize.value(),
                           os::vm_allocation_granularity(),
                           capacity);
 

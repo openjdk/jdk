@@ -991,7 +991,7 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseSSE)) {
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
   } else if (UseSSE > use_sse_limit) {
-    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE, use_sse_limit);
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE.value(), use_sse_limit);
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
   }
 
@@ -1022,9 +1022,9 @@ void VM_Version::get_processor_features() {
 
   if (UseAVX > use_avx_limit) {
     if (UseSSE < 4) {
-      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
+      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX.value());
     } else {
-      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX, use_avx_limit);
+      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX.value(), use_avx_limit);
     }
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
   }
@@ -1414,7 +1414,7 @@ void VM_Version::get_processor_features() {
       warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
       FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
     }
-    if (!is_power_of_2(MaxVectorSize)) {
+    if (!is_power_of_2(MaxVectorSize.value())) {
       warning("MaxVectorSize must be a power of 2, setting to default: %i", max_vector_size);
       FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
     }
@@ -1670,10 +1670,10 @@ void VM_Version::get_processor_features() {
   if (UseAVX > 2) {
     if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
         (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
-         ArrayOperationPartialInlineSize != 0 &&
-         ArrayOperationPartialInlineSize != 16 &&
-         ArrayOperationPartialInlineSize != 32 &&
-         ArrayOperationPartialInlineSize != 64)) {
+         ArrayOperationPartialInlineSize.value() != 0 &&
+         ArrayOperationPartialInlineSize.value() != 16 &&
+         ArrayOperationPartialInlineSize.value() != 32 &&
+         ArrayOperationPartialInlineSize.value() != 64)) {
       int inline_size = 0;
       if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
         inline_size = 64;
@@ -1689,11 +1689,11 @@ void VM_Version::get_processor_features() {
     }
 
     if (ArrayOperationPartialInlineSize > MaxVectorSize) {
-      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize.value() : 0;
       if (ArrayOperationPartialInlineSize) {
-        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
+        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize.value());
       } else {
-        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
+        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize.value());
       }
     }
   }
@@ -1876,16 +1876,16 @@ void VM_Version::get_processor_features() {
     log->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    log->print("UseSSE=%d", UseSSE);
+    log->print("UseSSE=%d", UseSSE.value());
     if (UseAVX > 0) {
-      log->print("  UseAVX=%d", UseAVX);
+      log->print("  UseAVX=%d", UseAVX.value());
     }
     if (UseAES) {
       log->print("  UseAES=1");
     }
 #ifdef COMPILER2
     if (MaxVectorSize > 0) {
-      log->print("  MaxVectorSize=%d", (int) MaxVectorSize);
+      log->print("  MaxVectorSize=%d", (int) MaxVectorSize.value());
     }
 #endif
     log->cr();
@@ -1904,9 +1904,9 @@ void VM_Version::get_processor_features() {
         log->print("PREFETCHW");
       }
       if (AllocatePrefetchLines > 1) {
-        log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance.value(), AllocatePrefetchLines.value(), AllocatePrefetchStepSize.value());
       } else {
-        log->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance.value(), AllocatePrefetchStepSize.value());
       }
     }
 

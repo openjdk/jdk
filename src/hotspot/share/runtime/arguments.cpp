@@ -1415,7 +1415,7 @@ void Arguments::no_shared_spaces(const char* message) {
 
 static void set_object_alignment() {
   // Object alignment.
-  assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
+  assert(is_power_of_2(ObjectAlignmentInBytes.value()), "ObjectAlignmentInBytes must be power of 2");
   MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
   assert(MinObjAlignmentInBytes >= HeapWordsPerLong * HeapWordSize, "ObjectAlignmentInBytes value is too small");
   MinObjAlignment            = MinObjAlignmentInBytes / HeapWordSize;
@@ -1530,7 +1530,7 @@ void Arguments::set_heap_size() {
       reasonable_max = MAX2(reasonable_max, MaxHeapSize);
     }
 
-    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
+    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit.value() != 0) {
       // Limit the heap size to ErgoHeapSizeLimit
       reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
     }
@@ -1557,7 +1557,7 @@ void Arguments::set_heap_size() {
                                      "(%zuG) which is greater than value given %zu",
                                      DefaultHeapBaseMinAddress,
                                      DefaultHeapBaseMinAddress/G,
-                                     HeapBaseMinAddress);
+                                     HeapBaseMinAddress.value());
           FLAG_SET_ERGO(HeapBaseMinAddress, DefaultHeapBaseMinAddress);
         }
       }
@@ -1580,7 +1580,7 @@ void Arguments::set_heap_size() {
           log_debug(gc, heap, coops)("UseCompressedOops disabled due to "
                                      "max heap %zu > compressed oop heap %zu. "
                                      "Please check the setting of MaxRAMPercentage %5.2f.",
-                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
+                                     reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage.value());
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = max_coop_heap;
@@ -1605,18 +1605,18 @@ void Arguments::set_heap_size() {
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
-      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
+      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize.value());
       reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
 
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
-      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
+      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize.value());
     }
 
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
       FLAG_SET_ERGO(MinHeapSize, MIN2(reasonable_minimum, InitialHeapSize));
-      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
+      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize.value());
     }
   }
 }
@@ -3575,7 +3575,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
 
 #ifndef PRODUCT
-  if (TraceBytecodesAt != 0) {
+  if (TraceBytecodesAt.value() != 0) {
     TraceBytecodes = true;
   }
 #endif // PRODUCT

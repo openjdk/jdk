@@ -1220,7 +1220,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
 #ifndef PRODUCT
   if (osr_bci != -1 && !FLAG_IS_DEFAULT(OSROnlyBCI)) {
-    if ((OSROnlyBCI > 0) ? (OSROnlyBCI != osr_bci) : (-OSROnlyBCI == osr_bci)) {
+    if ((OSROnlyBCI.value() > 0) ? (OSROnlyBCI.value() != osr_bci) : (-OSROnlyBCI.value() == osr_bci)) {
       // Positive OSROnlyBCI means only compile that bci.  Negative means don't compile that BCI.
       return;
     }

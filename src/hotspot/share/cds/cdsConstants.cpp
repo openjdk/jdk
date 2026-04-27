@@ -78,7 +78,8 @@ extern "C" {
 
 JVMFlagReadTracer _flag_tracer = nullptr;
 
-
 int foo() {
+  bool x = is_aligned(SomeFlag, 128);
   return (int)SomeFlag;
 }
+

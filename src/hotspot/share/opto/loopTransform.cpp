@@ -579,7 +579,7 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
-  if (LoopPeeling != 1) {
+  if (LoopPeeling.value() != 1) {
     return 0;
   }
 
@@ -833,7 +833,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
-  assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
+  assert(LoopPeeling.value() != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the

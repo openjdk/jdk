@@ -565,10 +565,10 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   STATIC_ASSERT(INCLUDE_CLASS_SPACE == 1);
   assert(rs.size() >= CompressedClassSpaceSize,
-         "%zu != %zu", rs.size(), CompressedClassSpaceSize);
+         "%zu != %zu", rs.size(), CompressedClassSpaceSize.value());
 
   assert(rs.size() == CompressedClassSpaceSize, "%zu != %zu",
-         rs.size(), CompressedClassSpaceSize);
+         rs.size(), CompressedClassSpaceSize.value());
   assert(is_aligned(rs.base(), Metaspace::reserve_alignment()) &&
          is_aligned(rs.size(), Metaspace::reserve_alignment()),
          "wrong alignment");
@@ -670,7 +670,7 @@ void Metaspace::ergo_initialize() {
          "Klass range (%zu) must cover at least a full root chunk (%zu)",
          max_klass_range, reserve_alignment());
 
-  size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize, max_ccs_size, max_klass_range);
+  size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize.value(), max_ccs_size, max_klass_range);
 
   // CCS must be aligned to root chunk size, and be at least the size of one
   //  root chunk.
@@ -680,7 +680,7 @@ void Metaspace::ergo_initialize() {
   // Print a warning if the adjusted size differs from the users input
   if (CompressedClassSpaceSize != adjusted_ccs_size) {
     #define X "CompressedClassSpaceSize adjusted from user input " \
-              "%zu bytes to %zu bytes", CompressedClassSpaceSize, adjusted_ccs_size
+              "%zu bytes to %zu bytes", CompressedClassSpaceSize.value(), adjusted_ccs_size
     if (FLAG_IS_CMDLINE(CompressedClassSpaceSize)) {
       log_warning(metaspace)(X);
     } else {
@@ -695,7 +695,7 @@ void Metaspace::ergo_initialize() {
   if (adjusted_ccs_size != CompressedClassSpaceSize) {
     FLAG_SET_ERGO(CompressedClassSpaceSize, adjusted_ccs_size);
     log_info(metaspace)("Setting CompressedClassSpaceSize to %zu.",
-                        CompressedClassSpaceSize);
+                        CompressedClassSpaceSize.value());
   }
 
 #endif // INCLUDE_CLASS_SPACE
@@ -758,13 +758,13 @@ void Metaspace::global_initialize() {
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
-    if (CompressedClassSpaceBaseAddress != 0) {
-      const address base = (address)CompressedClassSpaceBaseAddress;
+    if (CompressedClassSpaceBaseAddress.value() != 0) {
+      const address base = (address)CompressedClassSpaceBaseAddress.value();
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
                     "(must be aligned to 0x%zx).",
-                    CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
+                    CompressedClassSpaceBaseAddress.value(), Metaspace::reserve_alignment()));
       }
 
       rs = MemoryReserver::reserve((char*)base,
@@ -783,7 +783,7 @@ void Metaspace::global_initialize() {
         }
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",
-                CompressedClassSpaceBaseAddress));
+                CompressedClassSpaceBaseAddress.value()));
       }
     }
 
@@ -797,7 +797,7 @@ void Metaspace::global_initialize() {
     if (!rs.is_reserved()) {
       vm_exit_during_initialization(
           err_msg("Could not allocate compressed class space: %zu bytes",
-                   CompressedClassSpaceSize));
+                   CompressedClassSpaceSize.value()));
     }
 
     // Mark class space as such

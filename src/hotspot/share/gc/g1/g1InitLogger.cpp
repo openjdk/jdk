@@ -36,15 +36,15 @@ void G1InitLogger::print_heap() {
 void G1InitLogger::print_workers() {
   GCInitLogger::print_workers();
   if (G1ConcRefinementThreads > 0) {
-    log_info_p(gc, init)("Concurrent Refinement Workers: %u", G1ConcRefinementThreads);
+    log_info_p(gc, init)("Concurrent Refinement Workers: %u", G1ConcRefinementThreads.value());
   }
 }
 
 void G1InitLogger::print_gc_specific() {
   // Print a message about periodic GC configuration.
-  if (G1PeriodicGCInterval != 0) {
+  if (G1PeriodicGCInterval.value() != 0) {
     log_info_p(gc, init)("Periodic GC: Enabled");
-    log_info_p(gc, init)("Periodic GC Interval: %zums", G1PeriodicGCInterval);
+    log_info_p(gc, init)("Periodic GC Interval: %zums", G1PeriodicGCInterval.value());
   } else {
     log_info_p(gc, init)("Periodic GC: Disabled");
   }

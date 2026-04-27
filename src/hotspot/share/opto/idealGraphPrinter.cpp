@@ -1243,7 +1243,7 @@ void IdealGraphPrinter::init_network_stream() {
     // It would be nice if we could shut down cleanly but it should
     // be an error if we can't connect to the visualizer.
     fatal("Couldn't connect to visualizer at %s:%zd",
-          PrintIdealGraphAddress, PrintIdealGraphPort);
+          PrintIdealGraphAddress.value(), PrintIdealGraphPort.value());
   }
 }
 

@@ -59,7 +59,7 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
 }
 
 size_t ThreadLocalAllocBuffer::initial_refill_waste_limit() {
-  assert(TLABRefillWasteFraction != 0, "inv");
+  assert(TLABRefillWasteFraction.value() != 0, "inv");
   return desired_size() / TLABRefillWasteFraction;
 }
 

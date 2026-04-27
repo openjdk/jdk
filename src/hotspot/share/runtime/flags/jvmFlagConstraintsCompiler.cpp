@@ -124,7 +124,7 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
       JVMFlag::printError(verbose,
                           "OnStackReplacePercentage (%zd) must be "
                           "larger than InterpreterProfilePercentage (%zd)\n",
-                          value, InterpreterProfilePercentage);
+                          value, InterpreterProfilePercentage.value());
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
 
@@ -159,7 +159,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize (%zu) must be "
-                        "a power of two\n", CodeCacheSegmentSize);
+                        "a power of two\n", CodeCacheSegmentSize.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -168,7 +168,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to CodeEntryAlignment (%u) "
                         "to align entry points\n",
-                        CodeCacheSegmentSize, CodeEntryAlignment);
+                        CodeCacheSegmentSize.value(), CodeEntryAlignment.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -176,7 +176,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
                         "at least %zu to align constants\n",
-                        CodeCacheSegmentSize, sizeof(jdouble));
+                        CodeCacheSegmentSize.value(), sizeof(jdouble));
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -186,7 +186,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
                         "CodeCacheSegmentSize  (%zu) must be "
                         "larger than or equal to OptoLoopAlignment (%zd) "
                         "to align inner loops\n",
-                        CodeCacheSegmentSize, OptoLoopAlignment);
+                        CodeCacheSegmentSize.value(), OptoLoopAlignment.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 #endif
@@ -198,7 +198,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
                         "CodeEntryAlignment (%u) must be "
-                        "a power of two\n", CodeEntryAlignment);
+                        "a power of two\n", CodeEntryAlignment.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -206,7 +206,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(uint value, bool verbose) {
       JVMFlag::printError(verbose,
                           "CodeEntryAlignment (%u) must be "
                           "greater than or equal to %d\n",
-                          CodeEntryAlignment, 16);
+                          CodeEntryAlignment.value(), 16);
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -215,7 +215,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(uint value, bool verbose) {
                         "CodeEntryAlignment (%u) must be "
                         "less than or equal to CodeCacheSegmentSize (%zu) "
                         "to align entry points\n",
-                        CodeEntryAlignment, CodeCacheSegmentSize);
+                        CodeEntryAlignment.value(), CodeCacheSegmentSize.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -245,7 +245,7 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "OptoLoopAlignment (%zd) must be "
                         "less or equal to CodeEntryAlignment (%u)\n",
-                        value, CodeEntryAlignment);
+                        value, CodeEntryAlignment.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -354,14 +354,14 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
     JVMFlag::printError(verbose,
                        "InteriorEntryAlignment (%zd) must be "
                        "less than or equal to CodeEntryAlignment (%u)\n",
-                       InteriorEntryAlignment, CodeEntryAlignment);
+                       InteriorEntryAlignment.value(), CodeEntryAlignment.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
   if (!is_power_of_2(value)) {
      JVMFlag::printError(verbose,
                          "InteriorEntryAlignment (%zd) must be "
-                         "a power of two\n", InteriorEntryAlignment);
+                         "a power of two\n", InteriorEntryAlignment.value());
      return JVMFlag::VIOLATES_CONSTRAINT;
    }
 
@@ -374,7 +374,7 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "InteriorEntryAlignment (%zd) must be "
                         "greater than or equal to %d\n",
-                        InteriorEntryAlignment, minimum_alignment);
+                        InteriorEntryAlignment.value(), minimum_alignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
@@ -386,7 +386,7 @@ JVMFlag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
     JVMFlag::printError(verbose,
                         "NodeLimitFudgeFactor must be between 2%% and 40%% "
                         "of MaxNodeLimit (%zd)\n",
-                        MaxNodeLimit);
+                        MaxNodeLimit.value());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

@@ -236,7 +236,7 @@ void NativeHeapTrimmer::initialize() {
       return;
     }
     g_trimmer_thread = new NativeHeapTrimmerThread();
-    log_info(trimnative)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
+    log_info(trimnative)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval.value());
   }
 }
 
@@ -260,7 +260,7 @@ void NativeHeapTrimmer::resume_periodic_trim(const char* reason) {
 
 void NativeHeapTrimmer::print_state(outputStream* st) {
   if (g_trimmer_thread != nullptr) {
-    st->print_cr("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
+    st->print_cr("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval.value());
     g_trimmer_thread->print_state(st);
   } else {
     st->print_cr("Periodic native trim disabled");

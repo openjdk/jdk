@@ -1076,7 +1076,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // of the peeled iteration to insert Parse Predicates. If no well
   // positioned safepoint peel to guarantee a safepoint in the outer
   // loop.  When loop peeling is disabled, skip the peeling step altogether.
-  if (LoopPeeling != 0 && (safepoint != nullptr || !loop->_has_call)) {
+  if (LoopPeeling.value() != 0 && (safepoint != nullptr || !loop->_has_call)) {
     old_new.clear();
     do_peeling(loop, old_new);
   } else {
@@ -2538,7 +2538,7 @@ SafePointNode* CountedLoopConverter::find_safepoint(Node* iftrue) {
 
 bool CountedLoopConverter::is_safepoint_invalid(SafePointNode* sfpt) const {
   if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
-    if (((_iv_bt == T_INT && LoopStripMiningIter != 0) ||
+    if (((_iv_bt == T_INT && LoopStripMiningIter.value() != 0) ||
         _iv_bt == T_LONG) &&
         sfpt == nullptr) {
       // Leaving the safepoint on the backedge and creating a

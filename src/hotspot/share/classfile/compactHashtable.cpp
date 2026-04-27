@@ -163,7 +163,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   dump_table(&summary);
 
   int table_bytes = _stats->bucket_bytes + _stats->hashentry_bytes;
-  address base_address = address(SharedBaseAddress);
+  address base_address = address(SharedBaseAddress.value());
   cht->init(base_address,  _num_entries_written, _num_buckets,
             _compact_buckets, _compact_entries);
 
@@ -207,7 +207,7 @@ void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   soc->do_ptr(&_buckets);
   soc->do_ptr(&_entries);
   if (soc->reading()) {
-    _base_address = (address)SharedBaseAddress;
+    _base_address = (address)SharedBaseAddress.value();
   }
 }
 #endif // INCLUDE_CDS

@@ -45,7 +45,7 @@ void CompilerThreadTimeoutLinux::compiler_signal_handler(int signo, siginfo_t* i
       char method_name_buf[SIZE];
       task->method()->name_and_sig_as_C_string(method_name_buf, SIZE);
       assert(false, "compile task %d (%s) timed out after %zd ms",
-             task->compile_id(), method_name_buf, CompileTaskTimeout);
+             task->compile_id(), method_name_buf, CompileTaskTimeout.value());
     }
     default: {
       assert(false, "unexpected signal %d", signo);

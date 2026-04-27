@@ -62,7 +62,7 @@ void ZNUMA::pd_initialize() {
   _count = UseNUMA
       ? configured_nodes
       : !FLAG_IS_DEFAULT(ZFakeNUMA)
-            ? ZFakeNUMA
+            ? ZFakeNUMA.value()
             : 1;  // No NUMA nodes
 }
 

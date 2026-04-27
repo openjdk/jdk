@@ -203,7 +203,7 @@ private:
 };
 
 void SymbolTable::create_table ()  {
-  size_t start_size_log_2 = log2i_ceil(SymbolTableSize);
+  size_t start_size_log_2 = log2i_ceil(SymbolTableSize.value());
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(symboltable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);

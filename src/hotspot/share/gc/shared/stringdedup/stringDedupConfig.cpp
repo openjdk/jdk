@@ -59,7 +59,7 @@ uint64_t StringDedup::Config::hash_seed() {
 }
 
 static uint64_t initial_hash_seed() {
-  if (StringDeduplicationHashSeed != 0) {
+  if (StringDeduplicationHashSeed.value() != 0) {
     return StringDeduplicationHashSeed;
   } else {
     return AltHashing::compute_seed();
@@ -138,16 +138,16 @@ bool StringDedup::Config::ergo_initialize() {
     JVMFlag::printError(true,
                         "StringDeduplicationShrinkTableLoad (%f) must not exceed "
                         "StringDeduplicationTargetTableLoad (%f)",
-                        StringDeduplicationShrinkTableLoad,
-                        StringDeduplicationTargetTableLoad);
+                        StringDeduplicationShrinkTableLoad.value(),
+                        StringDeduplicationTargetTableLoad.value());
     result = false;
   }
   if (StringDeduplicationTargetTableLoad > StringDeduplicationGrowTableLoad) {
     JVMFlag::printError(true,
                         "StringDeduplicationTargetTableLoad (%f) must not exceed "
                         "StringDeduplicationGrowTableLoad (%f)",
-                        StringDeduplicationTargetTableLoad,
-                        StringDeduplicationGrowTableLoad);
+                        StringDeduplicationTargetTableLoad.value(),
+                        StringDeduplicationGrowTableLoad.value());
     result = false;
   }
 

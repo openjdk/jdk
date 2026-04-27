@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
 #define SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
 
+#include "runtime/globals_shared.hpp"
 #include "utilities/autoRestore.hpp"
 
 // Legacy use of FlagSetting and UIntFlagSetting to temporarily change a debug
@@ -38,9 +39,9 @@
 //
 // The previous/original value is restored when leaving the scope.
 
-typedef AutoModifyRestore<bool> FlagSetting;
-typedef AutoModifyRestore<uint> UIntFlagSetting;
-typedef AutoModifyRestore<int>  IntFlagSetting;
+typedef AutoModifyRestore<JVMFlagImpl<bool>> FlagSetting;
+typedef AutoModifyRestore<JVMFlagImpl<uint>> UIntFlagSetting;
+typedef AutoModifyRestore<JVMFlagImpl<int>>  IntFlagSetting;
 
 // Legacy use of FLAG_GUARD. Retained in the code to help identify use-cases
 // that should be addressed when this file is removed.
