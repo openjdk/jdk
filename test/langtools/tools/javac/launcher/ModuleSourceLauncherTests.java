@@ -25,7 +25,11 @@
  * @test
  * @bug 8304400 8332226 8346778 8377010
  * @summary Test source launcher running Java programs contained in one module
- * @modules jdk.compiler/com.sun.tools.javac.launcher
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.launcher
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.JavaTask toolbox.JavacTask toolbox.ToolBox
  * @run junit ModuleSourceLauncherTests
  */
 
@@ -40,7 +44,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 
+import toolbox.JavaTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
 class ModuleSourceLauncherTests {
+    private final ToolBox tb = new ToolBox();
+
     @Test
     void testHelloModularWorld(@TempDir Path base) throws Exception {
         var packageFolder = Files.createDirectories(base.resolve("com/greetings"));
@@ -266,6 +277,42 @@ class ModuleSourceLauncherTests {
     }
 
     @Test
+    void testInheritedStaticMainFromOtherPackage(@TempDir Path base) throws Exception {
+        var appPackageDir = Files.createDirectories(base.resolve("app"));
+        var mainFile = Files.writeString(appPackageDir.resolve("Main.java"),
+                """
+                package app;
+                import lib.Base;
+                public class Main extends Base {}
+                """);
+        var libPackageDir = Files.createDirectories(base.resolve("lib"));
+        Files.writeString(libPackageDir.resolve("Base.java"),
+                """
+                package lib;
+                public class Base {
+                    protected static void main() {
+                        System.out.println("static same module separate packages");
+                    }
+                }
+                """);
+        Files.writeString(base.resolve("module-info.java"),
+                """
+                module app {}
+                """);
+
+        var run = Run.of(mainFile);
+        assertAll("Run -> " + run,
+                () -> assertTrue(run.stdErr().isEmpty()),
+                () -> assertLinesMatch(
+                        """
+                        static same module separate packages
+                        """.lines(),
+                        run.stdOut().lines()),
+                () -> assertNull(run.exception())
+        );
+    }
+
+    @Test
     void testInheritedMainFromOtherModule(@TempDir Path base) throws Exception {
         var sourceRoot = base.resolve("src");
         var dependencyModuleDir = Files.createDirectories(sourceRoot.resolve("lib"));
@@ -286,11 +333,11 @@ class ModuleSourceLauncherTests {
                 }
                 """);
         var compiledModule = Files.createDirectories(base.resolve("mods"));
-        var javac = ToolProvider.findFirst("javac").orElseThrow();
-        javac.run(System.out, System.err,
-                "--module-source-path", sourceRoot.toString(),
-                "--module", "lib",
-                "-d", compiledModule.toString());
+        new JavacTask(tb)
+                .options("--module-source-path", sourceRoot.toString(),
+                         "--module", "lib")
+                .outdir(compiledModule)
+                .run();
 
 
         var appModuleDir = Files.createDirectories(sourceRoot.resolve("app"));
@@ -308,29 +355,78 @@ class ModuleSourceLauncherTests {
                 }
                 """);
 
-        var command = List.of(
-                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "--module-path", compiledModule.toString(),
-                "--add-modules", "lib",
-                mainFile.toString());
-        var redirectedOut = base.resolve("out.redirected");
-        var redirectedErr = base.resolve("err.redirected");
-        var process = new ProcessBuilder(command)
-                .directory(base.toFile())
-                .redirectOutput(redirectedOut.toFile())
-                .redirectError(redirectedErr.toFile())
-                .start();
-        var code = process.waitFor();
-        var out = Files.readAllLines(redirectedOut);
-        var err = Files.readAllLines(redirectedErr);
+        var run = new JavaTask(tb)
+                .vmOptions("--module-path", compiledModule.toString(),
+                           "--add-modules", "lib")
+                .className(mainFile.toString())
+                .run();
 
         assertAll(
-                () -> assertEquals(0, code, err.toString()),
                 () -> assertLinesMatch(
                         """
                         main from across modules
-                        """.lines(), out.stream()),
-                () -> assertTrue(err.isEmpty(), err.toString())
+                        """.lines(), run.getOutputLines(Task.OutputKind.STDOUT).stream()),
+                () -> assertTrue(run.getOutput(Task.OutputKind.STDERR).isEmpty(),
+                                 run.getOutput(Task.OutputKind.STDERR))
+        );
+    }
+
+    @Test
+    void testInheritedStaticMainFromOtherModule(@TempDir Path base) throws Exception {
+        var sourceRoot = base.resolve("src");
+        var dependencyModuleDir = Files.createDirectories(sourceRoot.resolve("lib"));
+        Files.writeString(dependencyModuleDir.resolve("module-info.java"),
+                """
+                module lib {
+                    exports lib;
+                }
+                """);
+        var libPackageDir = Files.createDirectories(dependencyModuleDir.resolve("lib"));
+        Files.writeString(libPackageDir.resolve("Base.java"),
+                """
+                package lib;
+                public class Base {
+                    protected static void main() {
+                        System.out.println("static main from across modules");
+                    }
+                }
+                """);
+        var compiledModule = Files.createDirectories(base.resolve("mods"));
+        new JavacTask(tb)
+                .options("--module-source-path", sourceRoot.toString(),
+                         "--module", "lib")
+                .outdir(compiledModule)
+                .run();
+
+
+        var appModuleDir = Files.createDirectories(sourceRoot.resolve("app"));
+        var appPackageDir = Files.createDirectories(appModuleDir.resolve("app"));
+        var mainFile = Files.writeString(appPackageDir.resolve("Main.java"),
+                """
+                package app;
+                import lib.Base;
+                public class Main extends Base {}
+                """);
+        Files.writeString(appModuleDir.resolve("module-info.java"),
+                """
+                module app {
+                    requires lib;
+                }
+                """);
+
+        var run = new JavaTask(tb)
+                .vmOptions("--module-path", compiledModule.toString(),
+                           "--add-modules", "lib")
+                .className(mainFile.toString())
+                .run();
+
+        assertAll(
+                () -> assertLinesMatch(
+                        """
+                        static main from across modules
+                        """.lines(), run.getOutputLines(Task.OutputKind.STDOUT).stream()),
+                () -> assertTrue(run.getOutput(Task.OutputKind.STDERR).isEmpty(),
+                                 run.getOutput(Task.OutputKind.STDERR))
         );
     }
 
