@@ -644,8 +644,8 @@ bool MacroAssembler::target_needs_far_branch(address addr) {
   if (!far_branches()) {
     return false;
   }
-  if (CodeCache::is_non_nmethod(addr)
-      && CodeCache::max_distance_to_non_nmethod() <= branch_range) {
+  if (CodeCache::is_non_nmethod(addr) &&
+      CodeCache::max_distance_to_non_nmethod() <= branch_range) {
     return false;
   }
   return true;
