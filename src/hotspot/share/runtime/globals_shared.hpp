@@ -76,8 +76,8 @@ template <typename T>
 class JVMFlagImpl {
   T _value;
 public:
-  JVMFlagImpl(T v) : _value{v} {}
-  JVMFlagImpl() : _value{} {}
+  constexpr JVMFlagImpl(T v) : _value{v} {}
+  constexpr JVMFlagImpl() : _value{} {}
   operator T() const {
     if (_flag_tracer != nullptr) {
       _flag_tracer(&_value);
@@ -102,6 +102,19 @@ public:
   }
 };
 
+template <typename T>
+class ConstExprJVMFlagImpl {
+  const T _value;
+public:
+  constexpr ConstExprJVMFlagImpl(T v) : _value{v} {}
+  operator T() const {
+    return _value;
+  }
+  T value() const {
+    return _value;
+  }
+};
+
 extern "C" JVMFlagImpl<int> SomeFlag;
 
 template<typename T> constexpr T MAX2(JVMFlagImpl<T> a, T b)   { return MAX2(a.value(), b); }
@@ -116,8 +129,8 @@ template<typename T> constexpr T MIN2(JVMFlagImpl<T> a, JVMFlagImpl<T> b)  { ret
 #define DECLARE_PRODUCT_FLAG(type, name, value, ...)      extern "C" JVMFlagImpl<type> name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, ...)          extern "C" JVMFlagImpl<type> name;
 #ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    const JVMFlagImpl<type> name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        const JVMFlagImpl<type> name = pd_##name;
+#define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    constexpr ConstExprJVMFlagImpl<type> name = value;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        constexpr ConstExprJVMFlagImpl<type> name = pd_##name;
 #else
 #define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    extern "C" JVMFlagImpl<type> name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        extern "C" JVMFlagImpl<type> name;

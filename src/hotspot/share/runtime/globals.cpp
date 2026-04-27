@@ -26,13 +26,13 @@
 
 // Implementation macros
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, ...)      JVMFlagImpl<type> name = value;
-#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, ...)          JVMFlagImpl<type> name = pd_##name;
+#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, ...)          JVMFlagImpl<type> name(pd_##name);
 #ifdef PRODUCT
 #define MATERIALIZE_DEVELOPER_FLAG(type, name, value, ...)
 #define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, ...)
 #else
 #define MATERIALIZE_DEVELOPER_FLAG(type, name, value, ...)    JVMFlagImpl<type> name = value;
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, ...)        JVMFlagImpl<type> name = pd_##name;
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, ...)        JVMFlagImpl<type> name(pd_##name);
 #endif // PRODUCT
 
 ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,
