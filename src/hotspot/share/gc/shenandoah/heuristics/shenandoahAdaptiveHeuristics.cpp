@@ -428,9 +428,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double predicted_future_gc_time = 0;
   double future_planned_gc_time = 0;
   bool future_planned_gc_time_is_average = false;
-  double avg_time_to_deplete_available = 0.0;
   bool is_spiking = false;
-  double spike_time_to_deplete_available = 0.0;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
@@ -650,9 +648,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 _space_info->name(), avg_cycle_time * 1000, predicted_future_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   size_t allocatable_bytes = allocatable_words * HeapWordSize;
-  avg_time_to_deplete_available = allocatable_bytes / avg_alloc_rate;
 
-  if (future_planned_gc_time > avg_time_to_deplete_available) {
+  if (future_planned_gc_time * avg_alloc_rate > allocatable_bytes) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
@@ -675,8 +672,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  spike_time_to_deplete_available = (rate == 0)? 0: allocatable_bytes / rate;
-  if (is_spiking && (rate != 0) && (future_planned_gc_time > spike_time_to_deplete_available)) {
+  if (is_spiking && (future_planned_gc_time * rate > allocatable_bytes)) {
     log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,

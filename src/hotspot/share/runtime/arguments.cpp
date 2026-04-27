@@ -1703,14 +1703,6 @@ bool Arguments::check_vm_args_consistency() {
   // Note: Needs platform-dependent factoring.
   bool status = true;
 
-  if (TLABRefillWasteFraction == 0) {
-    jio_fprintf(defaultStream::error_stream(),
-                "TLABRefillWasteFraction should be a denominator, "
-                "not %zu\n",
-                TLABRefillWasteFraction);
-    status = false;
-  }
-
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
