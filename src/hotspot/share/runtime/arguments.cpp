@@ -1725,7 +1725,7 @@ bool Arguments::check_vm_args_consistency() {
 #endif
 
 #ifndef SUPPORT_RESERVED_STACK_AREA
-  if (StackReservedPages != 0) {
+  if (StackReservedPages.value() != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
   }
