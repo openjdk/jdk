@@ -266,6 +266,10 @@ public:
   address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
+  void stub_epilog(StubId stub_id);
+#ifdef ASSERT
+  void check_stored(StubId stub_id);
+#endif
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
 
