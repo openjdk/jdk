@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * @return {@code true} if {@code object} is equivalent to this
      *         two-dimensional size attribute, {@code false} otherwise
      */
+    @Override
     public boolean equals(Object object) {
         return object instanceof Size2DSyntax size2DSyntax &&
                 this.x == size2DSyntax.x &&
@@ -272,6 +273,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
     /**
      * Returns a hash code value for this two-dimensional size attribute.
      */
+    @Override
     public int hashCode() {
         return (((x & 0x0000FFFF)      ) |
                 ((y & 0x0000FFFF) << 16));
@@ -283,6 +285,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * is the {@code X} dimension and <i>Y</i> is the {@code Y} dimension. The
      * values are reported in the internal units of micrometers.
      */
+    @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append(x);

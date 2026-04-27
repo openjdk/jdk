@@ -704,6 +704,9 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       new_true = ifpx;
     }
   }
+  assert(new_false != nullptr, "iff is malformed");
+  assert(new_true != nullptr, "iff is malformed");
+
   _igvn.remove_dead_node(new_iff, PhaseIterGVN::NodeOrigin::Speculative);
   // Lazy replace IDOM info with the region's dominator
   replace_node_and_forward_ctrl(iff, region_dom);

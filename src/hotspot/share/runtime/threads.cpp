@@ -1062,7 +1062,7 @@ void Threads::destroy_vm() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, JavaThread::_jvmci_old_thread_counters);
+    FREE_C_HEAP_ARRAY(JavaThread::_jvmci_old_thread_counters);
   }
 #endif
 

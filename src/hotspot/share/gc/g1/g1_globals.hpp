@@ -316,7 +316,7 @@
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
                                                                             \
-  develop(bool, G1VerifyBitmaps, false,                                     \
+  product(bool, G1VerifyBitmaps, false, DIAGNOSTIC,                         \
           "Verifies the consistency of the marking bitmaps")                \
                                                                             \
   product(uintx, G1PeriodicGCInterval, 0, MANAGEABLE,                       \
