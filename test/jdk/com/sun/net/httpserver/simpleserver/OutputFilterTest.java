@@ -118,7 +118,7 @@ public class OutputFilterTest {
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
         var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, filter);
         server.start();
-        final String serverIP = server.getAddress().getAddress().getHostAddress();
+        final String serverIPPattern = Pattern.quote(server.getAddress().getAddress().getHostAddress());
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
@@ -131,7 +131,7 @@ public class OutputFilterTest {
             baos.flush();
             var filterOutput = baos.toString(UTF_8);
             System.err.println("server output:\n" + filterOutput);
-            var pattern = Pattern.compile(serverIP + " " + """
+            var pattern = Pattern.compile(serverIPPattern + " " + """
                     - - \\[[\\s\\S]+] "GET / HTTP/1\\.1" 200 -
                     Resource requested: /foo/bar
                     (>[\\s\\S]+:[\\s\\S]+)+
@@ -172,7 +172,7 @@ public class OutputFilterTest {
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
         var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, filter);
         server.start();
-        final String serverIP = server.getAddress().getAddress().getHostAddress();
+        final String serverIPPattern = Pattern.quote(server.getAddress().getAddress().getHostAddress());
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
@@ -185,7 +185,7 @@ public class OutputFilterTest {
             baos.flush();
             var filterOutput = baos.toString(UTF_8);
             System.err.println("server output:\n" + filterOutput);
-            var pattern = Pattern.compile(serverIP + " " + """
+            var pattern = Pattern.compile(serverIPPattern + " " + """
                     - - \\[[\\s\\S]+] "GET / HTTP/1\\.1" 200 -
                     (>[\\s\\S]+:[\\s\\S]+)+
                     >
@@ -266,7 +266,7 @@ public class OutputFilterTest {
         var filter = SimpleFileServer.createOutputFilter(baos, VERBOSE);
         var server = HttpServer.create(LOOPBACK_ADDR, 0, "/", handler, filter);
         server.start();
-        final String serverIP = server.getAddress().getAddress().getHostAddress();
+        final String serverIPPattern = Pattern.quote(server.getAddress().getAddress().getHostAddress());
         try (baos) {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile\u0000.txt")).build();
@@ -278,7 +278,7 @@ public class OutputFilterTest {
             baos.flush();
             var filterOutput = baos.toString(UTF_8);
             System.err.println("server output:\n" + filterOutput);
-            var pattern = Pattern.compile(serverIP + " " + """
+            var pattern = Pattern.compile(serverIPPattern + " " + """
                     - - \\[[\\s\\S]+] "GET /aFile%00\\.txt HTTP/1\\.1" 404 -
                     Resource requested: could not resolve request URI path
                     (>[\\s\\S]+:[\\s\\S]+)+
