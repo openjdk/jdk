@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1392,28 +1392,15 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 
 
 void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
-                                                     Register mdp,
-                                                     bool receiver_can_be_null) {
+                                                     Register mdp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    Label skip_receiver_profile;
-    if (receiver_can_be_null) {
-      Label not_null;
-      testptr(receiver, receiver);
-      jccb(Assembler::notZero, not_null);
-      // We are making a call.  Increment the count for null receiver.
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-      jmp(skip_receiver_profile);
-      bind(not_null);
-    }
-
     // Record the receiver type.
     profile_receiver_type(receiver, mdp, 0);
-    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));

@@ -261,7 +261,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
+  FREE_C_HEAP_ARRAY(worker_slices);
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
@@ -688,7 +688,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     }
   }
 
-  FREE_C_HEAP_ARRAY(size_t, live);
+  FREE_C_HEAP_ARRAY(live);
 
 #ifdef ASSERT
   ResourceBitMap map(n_regions);
@@ -878,8 +878,11 @@ public:
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
-      ContinuationGCSupport::relativize_stack_chunk(new_obj);
+      // Restore the mark word before relativizing the stack chunk. The copy's
+      // mark word contains the full GC forwarding encoding, which would cause
+      // is_stackChunk() to read garbage (especially with compact headers).
       new_obj->init_mark();
+      ContinuationGCSupport::relativize_stack_chunk(new_obj);
     }
   }
 };

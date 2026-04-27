@@ -140,6 +140,11 @@ public final class JPackageOutputValidator {
         return this;
     }
 
+    public JPackageOutputValidator mutate(Consumer<JPackageOutputValidator> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public void applyTo(JPackageCommand cmd) {
         toResultConsumer(cmd).ifPresent(cmd::validateResult);
     }

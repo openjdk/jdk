@@ -1092,20 +1092,17 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // Standard Mode:
+  //    We use 32 bits for narrowKlass, which should cover a full 4G Klass range. Shift can be 0.
   // CompactObjectHeader Mode:
   //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
   //    Klass encoding range.
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {
@@ -1174,7 +1171,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
-  FREE_C_HEAP_ARRAY(char, bitmap);
+  FREE_C_HEAP_ARRAY(bitmap);
 }
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
