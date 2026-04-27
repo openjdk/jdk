@@ -43,7 +43,7 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahFinalMarkStartEvac;
   friend class VM_ShenandoahInitUpdateRefs;
   friend class VM_ShenandoahFinalUpdateRefs;
-  friend class VM_ShenandoahFinalRoots;
+  friend class VM_ShenandoahFinalVerify;
 
 protected:
   ShenandoahConcurrentMark    _mark;
@@ -59,8 +59,6 @@ public:
   bool collect(GCCause::Cause cause) override;
   ShenandoahDegenPoint degen_point() const;
 
-  void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
-
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
@@ -71,7 +69,7 @@ protected:
   void vmop_entry_final_mark();
   void vmop_entry_init_update_refs();
   void vmop_entry_final_update_refs();
-  void vmop_entry_verify_final_roots();
+  void vmop_entry_final_verify();
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for next VM operation
@@ -79,7 +77,7 @@ protected:
   void entry_final_mark();
   void entry_init_update_refs();
   void entry_final_update_refs();
-  void entry_verify_final_roots();
+  void entry_final_verify();
 
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
@@ -95,6 +93,8 @@ protected:
   void entry_cleanup_early();
   void entry_evacuate();
   void entry_update_thread_roots();
+  void entry_update_card_table();
+  void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
   void entry_update_refs();
   void entry_cleanup_complete();
 
@@ -122,7 +122,7 @@ protected:
   void op_update_thread_roots();
   void op_final_update_refs();
 
-  void op_verify_final_roots();
+  void op_verify_final();
   void op_cleanup_complete();
   void op_reset_after_collect();
 
@@ -143,7 +143,7 @@ private:
   // passing around the logging/tracing systems
   const char* init_mark_event_message() const;
   const char* final_mark_event_message() const;
-  const char* verify_final_roots_event_message() const;
+  const char* verify_final_event_message() const;
   const char* conc_final_roots_event_message() const;
   const char* conc_mark_event_message() const;
   const char* conc_reset_event_message() const;
