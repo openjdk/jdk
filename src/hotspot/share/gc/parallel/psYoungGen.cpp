@@ -368,9 +368,8 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 
   _young_gen_state = PSYoungGenState::balanced;
 
-  const size_t new_gen_size = eden_size + 2 * survivor_size;
-  if (max_gen_size() < new_gen_size) {
-    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
+  if (max_gen_size() < eden_size + 2 * survivor_size) {
+    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu", (eden_size + 2 * survivor_size)/K, max_gen_size()/K);
     // Must reduce eden/survivor to satisfy the max_gen_size constraint. Prioritize survivor_space to reduce promotion.
     // Check if survivor is actually using its requested size.
     if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {

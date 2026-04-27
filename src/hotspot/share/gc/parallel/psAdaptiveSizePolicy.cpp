@@ -232,10 +232,10 @@ static const char* young_gen_state_to_string(PSYoungGenState young_gen_state) {
       return "constrained";
     case PSYoungGenState::surplus:
       return "surplus";
+    default:
+      ShouldNotReachHere();
+      return "unknown";
   }
-
-  ShouldNotReachHere();
-  return "unknown";
 }
 
 uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_state,
@@ -248,23 +248,30 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_
   constexpr uint min_tenuring_threshold = 1;
   constexpr uint tenuring_threshold_gc_limit = 5;
 
-  if (young_gen_state == PSYoungGenState::constrained) {
-    _tenuring_threshold_gc_count = 0;
-    if (tenuring_threshold > min_tenuring_threshold) {
-      tenuring_threshold--;
-    }
-  } else if (young_gen_state == PSYoungGenState::surplus) {
-    if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
-      _tenuring_threshold_gc_count++;
-    }
-
-    if (_tenuring_threshold_gc_count >= tenuring_threshold_gc_limit &&
-        tenuring_threshold < MaxTenuringThreshold) {
-      tenuring_threshold++;
+  switch (young_gen_state) {
+    case PSYoungGenState::constrained:
       _tenuring_threshold_gc_count = 0;
-    }
-  } else {
-    _tenuring_threshold_gc_count = 0;
+      if (tenuring_threshold > min_tenuring_threshold) {
+        tenuring_threshold--;
+      }
+      break;
+    case PSYoungGenState::surplus:
+      if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
+        _tenuring_threshold_gc_count++;
+      }
+
+      if (_tenuring_threshold_gc_count >= tenuring_threshold_gc_limit &&
+          tenuring_threshold < MaxTenuringThreshold) {
+        tenuring_threshold++;
+        _tenuring_threshold_gc_count = 0;
+      }
+      break;
+    case PSYoungGenState::balanced:
+      _tenuring_threshold_gc_count = 0;
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
   }
 
   log_debug(gc, age)("Adaptive tenuring threshold %u -> %u (max %u, young gen state: %s, increase count: %u/%u)",
