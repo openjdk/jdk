@@ -35,8 +35,8 @@ import jdk.jfr.internal.RemoveFields;
 
 @Category("Java Application")
 @Label("Final Field Mutation Sample")
-@Description("One event per field, per chunk, is recorded." +
-        "There might be more mutations, possibly with different stack traces")
+@Description("The event only represents a sample." +
+        "There might be more mutations of the same field, possibly with different stack traces.")
 @Name(Type.EVENT_NAME_PREFIX + "FinalFieldMutation")
 @RemoveFields("duration")
 @StackFilter({
