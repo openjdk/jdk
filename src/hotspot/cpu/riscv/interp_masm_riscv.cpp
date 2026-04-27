@@ -1523,7 +1523,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       push_reg(pushed_registers, sp);
 
       mv(off_to_args, in_bytes(TypeEntriesAtCall::args_data_offset()));
-      mv(t0, TypeProfileArgsLimit);
+      mv(t0, TypeProfileArgsLimit.value());
       beqz(t0, loopEnd);
 
       mv(index, zr); // index < TypeProfileArgsLimit
@@ -1572,7 +1572,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       // increment index by 1
       addi(index, index, 1);
-      mv(t1, TypeProfileArgsLimit);
+      mv(t1, TypeProfileArgsLimit.value());
       blt(index, t1, loop);
       bind(loopEnd);
 

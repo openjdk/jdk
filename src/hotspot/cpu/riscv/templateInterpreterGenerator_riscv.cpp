@@ -1901,7 +1901,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ push_reg(t0);
   __ mv(t0, (address) &BytecodeCounter::_counter_value);
   __ ld(t0, Address(t0));
-  __ mv(t1, StopInterpreterAt);
+  __ mv(t1, StopInterpreterAt.value());
   __ bne(t0, t1, L);
   __ ebreak();
   __ bind(L);

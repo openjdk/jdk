@@ -104,13 +104,13 @@ void VM_Version::common_initialize() {
   }
 
   if (UseZic64b) {
-    if (CacheLineSize != 64) {
+    if (CacheLineSize.value() != 64) {
       assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
       warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
       FLAG_SET_DEFAULT(CacheLineSize, 64);
     }
   } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize.value())) {
       warning("CacheLineSize must be a power of 2");
       FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
     }
@@ -225,7 +225,7 @@ void VM_Version::c2_initialize() {
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
   } else {
-    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
+    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize.value() != _initial_vector_length) {
       warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
                (int)MaxVectorSize, _initial_vector_length);
     }
@@ -276,21 +276,21 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3 * (int)CacheLineSize);
     }
 
-    if (PrefetchCopyIntervalInBytes != -1 &&
+    if (PrefetchCopyIntervalInBytes.value() != -1 &&
         ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
       warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
-      PrefetchCopyIntervalInBytes &= ~7;
+      PrefetchCopyIntervalInBytes = PrefetchCopyIntervalInBytes & ~7;
       if (PrefetchCopyIntervalInBytes >= 32768) {
         PrefetchCopyIntervalInBytes = 32760;
       }
     }
     if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
       warning("AllocatePrefetchDistance must be multiple of 8");
-      AllocatePrefetchDistance &= ~7;
+      AllocatePrefetchDistance = AllocatePrefetchDistance & ~7;
     }
     if (AllocatePrefetchStepSize & 7) {
       warning("AllocatePrefetchStepSize must be multiple of 8");
-      AllocatePrefetchStepSize &= ~7;
+      AllocatePrefetchStepSize = AllocatePrefetchStepSize & ~7;
     }
   }
 
