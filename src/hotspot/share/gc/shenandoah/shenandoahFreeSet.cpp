@@ -223,7 +223,9 @@ ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
-  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
+  const auto state = r->state();
+  return ShenandoahHeapRegion::is_empty_state(state)
+      || (ShenandoahHeapRegion::is_trash(state) && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
@@ -665,8 +667,9 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   for (idx_t idx = low_idx; idx <= high_idx; idx++) {
 #ifdef ASSERT
     ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
+    const auto state = r->state(); // read once to avoid harmless races in assert
     assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
-    assert(r->is_empty() || r->is_trash(), "Region must be empty or trash");
+    assert(ShenandoahHeapRegion::is_empty_state(state) || ShenandoahHeapRegion::is_trash(state), "Region must be empty or trash");
 #endif
     _membership[int(partition)].clear_bit(idx);
   }
