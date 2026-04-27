@@ -1179,13 +1179,14 @@ public:
   OopHandle _carrier_thread;
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
+  DEBUG_ONLY(bool _processed;)
 
   GetThreadSnapshotHandshakeClosure(Handle thread_h):
     HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(nullptr),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
     _thread_status(JavaThreadStatus::TERMINATED), _thread_name(nullptr),
-    _locks(nullptr), _blocker() {
+    _locks(nullptr), _blocker() DEBUG_ONLY(COMMA _processed(false)) {
   }
   virtual ~GetThreadSnapshotHandshakeClosure() {
     delete _methods;
@@ -1274,6 +1275,7 @@ public:
   void do_thread(Thread* th) override {
     Thread* current = Thread::current();
     _java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+    DEBUG_ONLY(_processed = true;)
 
     bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
     if (_java_thread != nullptr) {
@@ -1473,6 +1475,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     Handshake::execute(&cl, &tlh, java_thread);
   }
 
+  assert(cl._processed || (!is_virtual && java_thread->is_terminated()), "should have executed handshake closure");
   assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
   if (cl._thread_status == JavaThreadStatus::TERMINATED) {
     return nullptr; // thread terminated
