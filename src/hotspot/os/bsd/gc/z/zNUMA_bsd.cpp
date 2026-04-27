@@ -29,7 +29,7 @@
 void ZNUMA::pd_initialize() {
   _enabled = false;
   _count = !FLAG_IS_DEFAULT(ZFakeNUMA)
-      ? ZFakeNUMA
+      ? ZFakeNUMA.value()
       : 1;
 }
 

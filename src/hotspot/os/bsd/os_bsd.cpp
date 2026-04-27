@@ -2201,7 +2201,7 @@ int os::active_processor_count() {
   if (ActiveProcessorCount > 0) {
     log_trace(os)("active_processor_count: "
                   "active processor count set by user : %d",
-                  ActiveProcessorCount);
+                  ActiveProcessorCount.value());
     return ActiveProcessorCount;
   }
 
