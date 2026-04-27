@@ -2719,7 +2719,6 @@ encode %{
     // Push new nodes.
     nodes->push(loadConLNodes._last);
 
-
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
@@ -6018,7 +6017,6 @@ instruct loadConD(regD dst, immD src, iRegLdst toc, iRegLdst tmp) %{
   size(8);
   ins_encode %{
     bool is_short = ra_->C->output()->toc_is_short();
-
     if (ra_->C->output()->in_scratch_emit_size()) {
       if (is_short) {
         __ lfd($dst$$FloatRegister, 0, $toc$$Register);
