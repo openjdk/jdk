@@ -2351,7 +2351,7 @@ Java HotSpot VM.
 
 [`-XX:G1AdaptiveIHOPNumInitialSamples=`]{#-XX_G1AdaptiveIHOPNumInitialSamples}*number*
 :   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number
-    of completed marking cycles used to gather samples until G1
+    of completed concurrent cycles used to gather samples until G1
     adaptively determines the optimum value of `-XX:G1IHOP`. Before,
     G1 uses the value of `-XX:G1IHOP` directly for this purpose. The
     default value is 3.
