@@ -1136,7 +1136,6 @@ public:
   bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
   bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
-  void inline_vector_fallback(PhaseIterGVN& igvn);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);

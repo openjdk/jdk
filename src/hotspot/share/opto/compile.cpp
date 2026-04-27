@@ -2019,32 +2019,6 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
   igvn.optimize();
 }
 
-void Compile::inline_vector_fallback(PhaseIterGVN& igvn) {
-  while (_vector_late_inlines.length() > 0) {
-    CallGenerator* cg = _vector_late_inlines.pop();
-    assert(cg->is_vector_late_inline(), "");
-    if (cg->inline_fallback()) {
-      cg->enable_fallback_generation();
-      cg->do_late_inline();
-    }
-    if (failing())  return;
-  }
-  _vector_late_inlines.trunc_to(0);
-
-  inline_incrementally_cleanup(igvn);
-
-  while (_late_inlines.length() > 0) {
-    igvn_worklist()->ensure_empty(); // should be done with igvn
-
-    while (inline_incrementally_one()) {
-      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
-    }
-    if (failing())  return;
-
-    inline_incrementally_cleanup(igvn);
-  }
-}
-
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2125,9 +2099,6 @@ bool Compile::inline_incrementally_one() {
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
-        if (cg->is_vector_late_inline()) {
-          C->vector_late_inlines()->remove_if_existing(cg);
-        }
         break; // process one call site at a time
       } else {
         bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
@@ -2138,9 +2109,6 @@ bool Compile::inline_incrementally_one() {
           // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
           assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
           cg->call_node()->set_generator(cg);
-          if (cg->is_vector_late_inline()) {
-            C->vector_late_inlines()->append_if_missing(cg);
-          }
         }
       }
     } else {
@@ -2265,13 +2233,23 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   }
 
   if (_vector_late_inlines.length() > 0) {
-    inline_vector_fallback(igvn);
-
-    if (failing()) {
-      return;
+    while (_vector_late_inlines.length() > 0) {
+      CallGenerator* cg = _vector_late_inlines.pop();
+      CallGenerator* fallback = CallGenerator::for_late_inline(cg->method(), cg->fallback_inline_cg());
+      fallback = fallback->with_call_node(cg->call_node());
+      add_late_inline(fallback);
     }
 
-    inline_incrementally_cleanup(igvn);
+    while (_late_inlines.length() > 0) {
+      igvn_worklist()->ensure_empty();
+
+      while (inline_incrementally_one()) {
+        assert(!failing_internal() || failure_is_artificial(), "inconsistent");
+      }
+      if (failing())  return;
+
+      inline_incrementally_cleanup(igvn);
+    }
   }
 
   set_inlining_incrementally(false);

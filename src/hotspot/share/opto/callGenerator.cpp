@@ -438,61 +438,24 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
 }
 
 class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
- protected:
- bool _use_fallback_generator;
- CallGenerator* _inline_cg2;
+ private:
+  CallGenerator* _fallback_cg;
 
  public:
-  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) :
-    LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg2(inline_cg) {
-    _use_fallback_generator = false;
-  }
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) :
+    LateInlineCallGenerator(method, intrinsic_cg), _fallback_cg(fallback_cg) {}
 
-  virtual CallGenerator* inline_cg() const {
-    return _use_fallback_generator ? _inline_cg2 : _inline_cg;
-  }
-  virtual bool inline_fallback() const;
   virtual bool is_vector_late_inline() const { return true; }
-  virtual void enable_fallback_generation() {
-     _use_fallback_generator = true;
+  virtual CallGenerator* fallback_inline_cg() const { return _fallback_cg; }
+
+  virtual JVMState* generate(JVMState* jvms) {
+    Compile::current()->vector_late_inlines()->append(this);
+    return LateInlineCallGenerator::generate(jvms);
   }
 };
 
-bool LateInlineVectorCallGenerator::inline_fallback() const {
-  switch (method()->intrinsic_id()) {
-    case vmIntrinsics::_VectorUnaryOp:
-    case vmIntrinsics::_VectorBinaryOp:
-    case vmIntrinsics::_VectorUnaryLibOp:
-    case vmIntrinsics::_VectorBinaryLibOp:
-    case vmIntrinsics::_VectorTernaryOp:
-    case vmIntrinsics::_VectorSelectFromTwoVectorOp:
-    case vmIntrinsics::_VectorFromBitsCoerced:
-    case vmIntrinsics::_VectorLoadOp:
-    case vmIntrinsics::_VectorLoadMaskedOp:
-    case vmIntrinsics::_VectorStoreOp:
-    case vmIntrinsics::_VectorStoreMaskedOp:
-    case vmIntrinsics::_VectorGatherOp:
-    case vmIntrinsics::_VectorScatterOp:
-    case vmIntrinsics::_VectorReductionCoerced:
-    case vmIntrinsics::_VectorTest:
-    case vmIntrinsics::_VectorBlend:
-    case vmIntrinsics::_VectorCompare:
-    case vmIntrinsics::_VectorRearrange:
-    case vmIntrinsics::_VectorSelectFrom:
-    case vmIntrinsics::_VectorExtract:
-    case vmIntrinsics::_VectorInsert:
-    case vmIntrinsics::_VectorBroadcastInt:
-    case vmIntrinsics::_VectorConvert:
-    case vmIntrinsics::_VectorMaskOp:
-    case vmIntrinsics::_VectorCompressExpand:
-      return true;
-    default:
-      return false;
-  }
-}
-
-CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) {
-  return new LateInlineVectorCallGenerator(m, intrinsic_cg, inline_cg);
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg, fallback_cg);
 }
 
 
