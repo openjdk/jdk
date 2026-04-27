@@ -1504,9 +1504,9 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   oop member_name_oop = cast_to_oop(member_name);
 
 #ifdef ASSERT
-  assert(member_name_oop != nullptr, "");
-  assert(oopDesc::is_oop(member_name_oop), "");
-  assert(java_lang_invoke_MemberName::is_instance(member_name_oop) || java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop), "");
+  assert(member_name_oop != nullptr, "member_name_oop should not be nullptr");
+  assert(oopDesc::is_oop(member_name_oop), "member_name_oop should be an oop");
+  assert(java_lang_invoke_MemberName::is_instance(member_name_oop) || java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop), "member_name_oop is not MemberName or DMH");
 #endif
 
   if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
