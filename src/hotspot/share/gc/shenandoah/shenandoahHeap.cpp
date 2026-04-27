@@ -62,6 +62,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
@@ -1073,6 +1074,11 @@ HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
   return allocate_memory(req);
 }
 
+oop ShenandoahHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
+  ShenandoahObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  return allocator.allocate();
+}
+
 MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                              size_t size,
                                                              Metaspace::MetadataType mdtype) {
@@ -1144,11 +1150,9 @@ public:
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj;
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     }
   }
@@ -1159,7 +1163,10 @@ private:
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != nullptr) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _sh->marked_object_iterate(r, &cl);
+      {
+         ShenandoahEvacOOMScope oom_evac_scope;
+        _sh->marked_object_iterate(r, &cl);
+      }
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
@@ -1650,7 +1657,8 @@ void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   _active_generation = generation;
 }
 
-void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
+void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                    bool is_degenerated, bool is_out_of_cycle) {
   shenandoah_policy()->record_collection_cause(cause);
 
   const GCCause::Cause current = gc_cause();
@@ -1659,7 +1667,11 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
 
   set_gc_cause(cause);
 
-  generation->heuristics()->record_cycle_start();
+  if (is_degenerated) {
+    generation->heuristics()->record_degenerated_cycle_start(is_out_of_cycle);
+  } else {
+    generation->heuristics()->record_cycle_start();
+  }
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
@@ -1955,6 +1967,26 @@ void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const
   }
 }
 
+class ShenandoahHeapRegionIteratorTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+  ShenandoahHeapRegionClosure* _closure;
+
+public:
+  ShenandoahHeapRegionIteratorTask(ShenandoahHeapRegionClosure* closure)
+    : WorkerTask("Shenandoah Heap Region Iterator")
+    , _closure(closure) {}
+
+  void work(uint worker_id) override {
+    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahHeapRegion* region = _regions.next();
+    while (region != nullptr) {
+      _closure->heap_region_do(region);
+      region = _regions.next();
+    }
+  }
+};
+
 class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
@@ -2009,6 +2041,11 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   } else {
     heap_region_iterate(blk);
   }
+}
+
+void ShenandoahHeap::heap_region_iterator(ShenandoahHeapRegionClosure* closure) const {
+  ShenandoahHeapRegionIteratorTask task(closure);
+  workers()->run_task(&task);
 }
 
 class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {
@@ -2249,6 +2286,11 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
+
+  if (mode()->is_generational()) {
+    old_generation()->set_parsable(false);
+  }
+
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
@@ -2315,24 +2357,23 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
-  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
-  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
-  // allocation rate computations.  This effect is considered to be be negligible.
-
-  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
-  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
-  // bytes are allocated after the start of subsequent gc.
-  size_t unaccounted_bytes;
-  ShenandoahFreeSet* _free_set = free_set();
-  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
-  if (mode()->is_generational()) {
-    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-  } else {
-    // Single-gen Shenandoah uses global heuristics.
-    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+  // Note that we obtain heap lock to prevent additional allocations between sampling bytes_allocated_since_gc_start()
+  // and reset_bytes_allocated_since_gc_start()
+  {
+    ShenandoahHeapLocker locker(lock());
+    // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+    // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+    // bytes are allocated after the start of subsequent gc.
+    size_t unaccounted_bytes;
+    size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
+    if (mode()->is_generational()) {
+      unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+    } else {
+      // Single-gen Shenandoah uses global heuristics.
+      unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+    }
+    _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
   }
-  ShenandoahHeapLocker locker(lock());
-  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

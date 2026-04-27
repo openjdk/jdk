@@ -280,6 +280,10 @@ void AOTLinkedClassBulkLoader::init_non_javabase_classes_impl(TRAPS) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
   }
+  LogStreamHandle(Info, aot, training, data) log;
+  if (log.is_enabled()) {
+    TrainingData::print_archived_training_data_on(&log);
+  }
 }
 
 // For the AOT cache to function properly, all classes in the AOTLinkedClassTable

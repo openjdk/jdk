@@ -1256,7 +1256,7 @@ void Universe::initialize_verify_flags() {
     }
     token = strtok_r(nullptr, delimiter, &save_ptr);
   }
-  FREE_C_HEAP_ARRAY(char, subset_list);
+  FREE_C_HEAP_ARRAY(subset_list);
 }
 
 bool Universe::should_verify_subset(uint subset) {

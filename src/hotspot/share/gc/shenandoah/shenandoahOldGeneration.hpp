@@ -172,8 +172,8 @@ public:
   void handle_failed_promotion(Thread* thread, size_t size) const;
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
-  // A successful evacuation re-dirties the cards and registers the object with the remembered set
-  void handle_evacuation(HeapWord* obj, size_t words) const;
+  // Iterate over recently promoted objects to update card table and object registrations
+  void update_card_table();
 
   // Clear the flag after it is consumed by the control thread
   bool clear_failed_evacuation() {
@@ -199,11 +199,36 @@ public:
   // Mark card for this location as dirty
   void mark_card_as_dirty(void* location);
 
+  template<typename T>
+  class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
+    T _region_lambda;
+  public:
+    explicit ShenandoahHeapRegionLambda(T region_lambda) : _region_lambda(region_lambda) {}
+
+    void heap_region_do(ShenandoahHeapRegion* r) override {
+      _region_lambda(r);
+    }
+
+    bool is_thread_safe() override {
+      return true;
+    }
+
+    size_t parallel_region_stride() override {
+      // Temporarily override to force parallelism when updating card table
+      return 8;
+    }
+  };
+
+  template<typename LambdaT>
+  void for_each_region(LambdaT lambda) {
+    ShenandoahHeapRegionLambda l(lambda);
+    heap_region_iterator(&l);
+  }
+
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
-
   void parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
-
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
+  void heap_region_iterator(ShenandoahHeapRegionClosure* cl);
 
   bool contains(ShenandoahAffiliation affiliation) const override;
   bool contains(ShenandoahHeapRegion* region) const override;
@@ -212,8 +237,17 @@ public:
   void set_concurrent_mark_in_progress(bool in_progress) override;
   bool is_concurrent_mark_in_progress() override;
 
+  // For old regions, objects between top at evac start and top represent promoted objects.
+  // These objects will need to have their cards dirtied and their offsets within the cards registered.
+  void record_tops_at_evac_start();
+
   bool entry_coalesce_and_fill();
-  void prepare_for_mixed_collections_after_global_gc();
+
+  // Global collections touch old regions, so the old generation needs to be informed of this.
+  // The old generation may decide to schedule additional mixed collections, or may decide to
+  // immediately coalesce-and-fill old objects in regions that were not collected.
+  void transition_old_generation_after_global_gc();
+
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   void record_success_concurrent(bool abbreviated) override;
@@ -256,11 +290,7 @@ public:
   }
 
   bool is_idle() const {
-    return state() == WAITING_FOR_BOOTSTRAP;
-  }
-
-  bool is_bootstrapping() const {
-    return state() == BOOTSTRAPPING;
+    return state() == IDLE;
   }
 
   // Amount of live memory (bytes) in regions waiting for mixed collections
@@ -271,11 +301,11 @@ public:
 
 public:
   enum State {
-    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
+    FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
 
 #ifdef ASSERT
-  bool validate_waiting_for_bootstrap();
+  bool validate_idle();
 #endif
 
 private:
@@ -318,7 +348,7 @@ public:
   size_t usage_trigger_threshold() const;
 
   bool can_start_gc() {
-    return _state == WAITING_FOR_BOOTSTRAP;
+    return _state == IDLE;
   }
 
   static const char* state_name(State state);

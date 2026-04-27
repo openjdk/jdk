@@ -1751,7 +1751,7 @@ public:
   virtual bool is_ArgInfoData() const { return true; }
 
 
-  int number_of_args() const {
+  int size_of_args() const {
     return array_len();
   }
 

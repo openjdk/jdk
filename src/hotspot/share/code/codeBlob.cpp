@@ -326,6 +326,11 @@ RuntimeBlob::RuntimeBlob(
   : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
              align_up(cb->total_relocation_size(), oopSize))
 {
+  if (code_size() == 0) {
+    // Nothing to copy
+    return;
+  }
+
   cb->copy_code_and_locs_to(this);
 
   // Flush generated code
@@ -352,9 +357,12 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   if (stub != nullptr && (PrintStubCode ||
                        Forte::is_enabled() ||
                        JvmtiExport::should_post_dynamic_code_generated())) {
-    char stub_id[256];
-    assert(strlen(name1) + strlen(name2) < sizeof(stub_id), "");
-    jio_snprintf(stub_id, sizeof(stub_id), "%s%s", name1, name2);
+    ResourceMark rm;
+    const size_t name1_len = strlen(name1);
+    const size_t name2_len = strlen(name2);
+    const size_t stub_id_size = name1_len + name2_len + 1;
+    char* stub_id = NEW_RESOURCE_ARRAY(char, stub_id_size);
+    jio_snprintf(stub_id, stub_id_size, "%s%s", name1, name2);
     if (PrintStubCode) {
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");

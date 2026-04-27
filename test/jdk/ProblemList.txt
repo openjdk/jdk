@@ -151,16 +151,11 @@ java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/List/NoEvents/ProgrammaticChange.java 8201307 linux-all
+java/awt/List/ListSelection/SelectInvalidTest.java 8369455 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
-java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
-java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
 java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-all
-java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
-java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/JPopupMenuOverlapping.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8357360 windows-all,linux-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8357360 linux-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
@@ -222,7 +217,6 @@ sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
-sun/java2d/OpenGL/MultiWindowFillTest.java 8378506 macosx-all
 sun/java2d/OpenGL/OpaqueDest.java#id1 8367574 macosx-all
 sun/java2d/OpenGL/ScaleParamsOOB.java#id0 8377908 linux-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
@@ -349,32 +343,29 @@ java/awt/Modal/ModalExclusionTests/ToolkitExcludeFramePageSetupTest.java 8196431
 java/awt/Modal/ModalExclusionTests/ToolkitExcludeFramePrintSetupTest.java 8196431 linux-all,macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal2Test.java 8058813 windows-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless2Test.java 8196191 windows-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFDocModalTest.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFModelessTest.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFNonModalTest.java 8196432 linux-all,macosx-all
+
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFDocModalTest.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFModelessTest.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFNonModalTest.java 8196432 macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsModelessTest.java 8196432 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsNonModalTest.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWDocModalTest.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWModelessTest.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWNonModalTest.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal1Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal2Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal3Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal4Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal1Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal2Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal3Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal4Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless1Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless2Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless3Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless4Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal1Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal2Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal3Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal4Test.java 8196432 linux-all,macosx-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal2Test.java 8196432 linux-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal2Test.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal1Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal2Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal3Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal4Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal1Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal2Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal3Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal4Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless1Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless2Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless3Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless4Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal1Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal2Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal3Test.java 8196432 macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal4Test.java 8196432 macosx-all
+
 java/awt/Modal/MultipleDialogs/MultipleDialogs1Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
@@ -386,36 +377,32 @@ java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407,8302787  macosx-all,windows-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
 java/awt/Modal/ToFront/DialogToFrontNonModalTest.java 8221899 linux-all
-java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackAppModal3Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackAppModal4Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackAppModal5Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackAppModal3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackAppModal4Test.java 8196441 linux-all
 java/awt/Modal/ToBack/ToBackAppModal6Test.java 8196441 linux-all
-java/awt/Modal/ToBack/ToBackModal1Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackModal2Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackModal3Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackModal4Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackTKModal1Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackTKModal2Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackTKModal3Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackTKModal4Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackTKModal5Test.java 8196441 macosx-all
-java/awt/Modal/ToBack/ToBackDocModal1Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackDocModal2Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackDocModal3Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackDocModal4Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackDocModal5Test.java 8196441 linux-all,macosx-all
-java/awt/Modal/ToBack/ToBackModeless1Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackModeless2Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackModeless3Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackModeless4Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackModeless5Test.java 8196441 macosx-all
-java/awt/Modal/ToBack/ToBackNonModal1Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackNonModal2Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 macosx-all,linux-all
-java/awt/Modal/ToBack/ToBackNonModal5Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModal1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModal2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModal3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModal4Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackTKModal1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackTKModal2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackTKModal3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackTKModal4Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackDocModal1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackDocModal2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackDocModal3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackDocModal4Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackDocModal5Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModeless1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModeless2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModeless3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackModeless4Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackNonModal1Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackNonModal2Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 linux-all
+java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 linux-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 java/awt/font/Rotate/RotatedTextTest.java 8219641 linux-all
 java/awt/font/TextLayout/LigatureCaretTest.java 8266312  generic-all
@@ -735,6 +722,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8371630 generic-all
+jdk/jfr/event/oldobject/TestZ.java                              8375615 generic-all
 
 ############################################################################
 
@@ -747,8 +735,6 @@ jdk/jfr/jvm/TestWaste.java                                      8371630 generic-
 ############################################################################
 
 # jdk_foreign
-
-java/foreign/TestBufferStackStress.java                         8350455 macosx-all
 
 ############################################################################
 # Client manual tests
@@ -804,10 +790,14 @@ tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 83
 # Preview project specific failures go here at the end of the file.
 #
 # These are NOT failures that occur with the '--enable-preview' option
-# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# specified in the task definition; those go in the appropriate
+# ProblemList-enable-preview.txt file.
+#
 # These are failures that occur WITHOUT the '--enable-preview' option
-# specified AND occur because of some issue with preview project code,
-# in either implementation or test code.
+# specified in the task definition OR the '--enable-preview' option
+# MAY BE specified in the test itself. In either case, the failure
+# occurs because of some issue with preview project code, in either
+# implementation or test code.
 
 #############################################################################
 

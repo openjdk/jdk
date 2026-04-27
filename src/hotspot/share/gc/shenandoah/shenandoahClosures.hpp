@@ -180,9 +180,6 @@ public:
 };
 
 class ShenandoahNMethodAndDisarmClosure : public NMethodToOopClosure {
-private:
-  BarrierSetNMethod* const _bs;
-
 public:
   inline ShenandoahNMethodAndDisarmClosure(OopClosure* cl);
   inline void do_nmethod(nmethod* nm);
