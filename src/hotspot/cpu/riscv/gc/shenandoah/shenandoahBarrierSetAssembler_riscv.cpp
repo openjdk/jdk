@@ -60,6 +60,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       Address gc_state(xthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
       assert_different_registers(src, dst, count, t0);
 
+      assert(!saved_regs.contains(t0), "Sanity: about to clobber t0");
+
       __ lbu(t0, gc_state);
       if (ShenandoahSATBBarrier && dest_uninitialized) {
         __ test_bit(t0, t0, ShenandoahHeap::HAS_FORWARDED_BITPOS);

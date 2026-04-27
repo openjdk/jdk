@@ -57,6 +57,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ cbz(count, done);
 
       // Is GC active?
+      assert(!saved_regs.contains(rscratch1), "Sanity: about to clobber rscratch1");
+      assert(!saved_regs.contains(rscratch2), "Sanity: about to clobber rscratch2");
       Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
       __ ldrb(rscratch1, gc_state);
       if (ShenandoahSATBBarrier && dest_uninitialized) {
