@@ -306,25 +306,27 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ movptr(c_rarg0, dst);
   }
 
-  // Calling with super_call_VM_leaf with c_rarg0/1 bypasses interpreter checks and avoids any moves.
+  address target = nullptr;
   if (is_strong) {
     if (is_narrow) {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0, c_rarg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow);
     } else {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong);
     }
   } else if (is_weak) {
     if (is_narrow) {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), c_rarg0, c_rarg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow);
     } else {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
     }
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), c_rarg0, c_rarg1);
+    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
 
+  // Calling with super_call_VM_leaf with c_rarg0/1 bypasses interpreter checks and avoids any moves.
+  __ super_call_VM_leaf(target, c_rarg0, c_rarg1);
   __ pop_call_clobbered_registers_except(rax, /* restore_fpu = */ true);
   if (dst != rax) {
     __ movptr(dst, rax);
