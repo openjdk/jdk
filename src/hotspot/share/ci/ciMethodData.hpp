@@ -141,6 +141,28 @@ public:
 #endif
 };
 
+class ciMegamorphicTypeData : public MegamorphicTypeData {
+public:
+  bool translate_type_data_from(const MegamorphicTypeData* ret);
+
+  void set_receiver(uint row, ciKlass* recv) {
+    assert((uint)row < row_limit(), "oob");
+    set_intptr_at(receiver_cell_index(row), (intptr_t) recv);
+  }
+
+  ciKlass* receiver(uint row) const {
+    assert((uint)row < row_limit(), "oob");
+    ciKlass* recv = (ciKlass*)intptr_at(receiver_cell_index(row));
+    assert(recv == nullptr || recv->is_klass(), "wrong type");
+    return recv;
+  }
+
+#ifndef PRODUCT
+  void print_receiver_data_on(outputStream* st, int total) const;
+#endif
+};
+
+
 class ciCallTypeData : public CallTypeData {
 public:
   ciCallTypeData(DataLayout* layout) : CallTypeData(layout) {}
@@ -193,6 +215,7 @@ public:
 class ciReceiverTypeData : public ReceiverTypeData {
 public:
   ciReceiverTypeData(DataLayout* layout) : ReceiverTypeData(layout) {};
+  ciMegamorphicTypeData* megamorphic_type_data() const { return (ciMegamorphicTypeData*)ReceiverTypeData::megamorphic_type_data(); }
 
   void set_receiver(uint row, ciKlass* recv) {
     assert((uint)row < row_limit(), "oob");
@@ -200,17 +223,18 @@ public:
   }
 
   ciKlass* receiver(uint row) const {
-    assert((uint)row < row_limit(), "oob");
-    ciKlass* recv = (ciKlass*)intptr_at(_megamorphic_type_data.receiver_cell_index(row));
-    assert(recv == nullptr || recv->is_klass(), "wrong type");
-    return recv;
+    return megamorphic_type_data()->receiver(row);
   }
 
   // Copy & translate from oop based ReceiverTypeData
   virtual void translate_from(const ProfileData* data) {
     translate_receiver_data_from(data);
   }
-  void translate_receiver_data_from(const ProfileData* data);
+  void translate_receiver_data_from(const ProfileData* data) {
+    if (megamorphic_type_data()->translate_type_data_from(data->as_ReceiverTypeData()->megamorphic_type_data())) {
+      set_count(0);
+    }
+  }
 #ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
   void print_receiver_data_on(outputStream* st) const;
@@ -384,25 +408,28 @@ public:
 };
 
 class ciArrayLoadData : public ArrayLoadData {
-  // Fake multiple inheritance...  It's a ciReceiverTypeData also.
-  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
 
 public:
   ciArrayLoadData(DataLayout* layout) : ArrayLoadData(layout) {}
 
   // ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayLoadData::array(); }
   ciSingleTypeEntry* element() const { return (ciSingleTypeEntry*)ArrayLoadData::element(); }
+  ciMegamorphicTypeData* megamorphic_type_data() const { return (ciMegamorphicTypeData*)ArrayLoadData::megamorphic_type_data(); }
 
   virtual void translate_from(const ProfileData* data) {
-    rtd_super()->translate_receiver_data_from(data);
+    if (megamorphic_type_data()->translate_type_data_from(data->as_ArrayLoadData()->megamorphic_type_data())) {
+      set_flat_nullable_count(0);
+      set_flat_nullfree_atomic_count(0);
+      set_flat_nullfree_not_atomic_count(0);
+    }
     element()->translate_type_data_from(data->as_ArrayLoadData()->element());
   }
 
   ciKlass* receiver(uint row) {
-    return rtd_super()->receiver(row);
+    return megamorphic_type_data()->receiver(row);
   }
 
-  #ifndef PRODUCT
+#ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
 #endif
 };

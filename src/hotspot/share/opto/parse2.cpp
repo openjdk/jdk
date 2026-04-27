@@ -254,6 +254,12 @@ public:
     float this_prob = clamp(p, PROB_MIN, PROB_MAX);
     Node* casted_array = nullptr;
     Node* next_ctrl = _parse.type_check_receiver(_array, klass, this_prob, &casted_array);
+    if (_parse.stopped()) {
+      _parse.set_control(next_ctrl);
+      _parse.set_all_memory(_mem);
+      _parse.set_i_o(_io);
+      return;
+    }
     // TODO: pin load
     InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(
       &_parse, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, _array_index);

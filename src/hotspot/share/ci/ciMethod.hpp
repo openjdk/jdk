@@ -37,6 +37,7 @@
 #include "utilities/vmEnums.hpp"
 
 class ciMethodBlocks;
+class ciMegamorphicTypeData;
 class MethodLiveness;
 class Arena;
 class BCEscapeAnalyzer;
@@ -135,7 +136,7 @@ class ciMethod : public ciMetadata {
   // Check and update the profile counter in case of overflow
   static int check_overflow(int c, Bytecodes::Code code);
 
- public:
+public:
   void check_is_loaded() const                   { assert(is_loaded(), "not loaded"); }
 
   // Basic method information.
@@ -266,6 +267,7 @@ class ciMethod : public ciMetadata {
   ciTypeFlow*   get_flow_analysis();
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
   ciCallProfile call_profile_at_bci(int bci);
+  ciCallProfile megamorphic_profile_at_bci(int bci, int count, ciMegamorphicTypeData* megamorphic_type_data);
 
   // Does type profiling provide any useful information at this point?
   bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);

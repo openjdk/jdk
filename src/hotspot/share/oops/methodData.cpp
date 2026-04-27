@@ -750,10 +750,14 @@ void ArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArrayLoad", extra);
   st->print("not flat %u (null free = %u, nullable = %u)", not_flat_count(), not_flat_null_free_count(), not_flat_nullable_count());
   st->cr();
+  tab(st);
+  st->print("flat %u (null free atomic =  %u, null free not atomic =  %u, nullable = %u)", flat_count(), flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count(), flat_nullable_count());
+  st->cr();
   tab(st, true);
   st->print("array");
   tab(st);
-  print_receiver_data_on(st);
+  _megamorphic_type_data.print_receiver_data_on(st, 0);
+  st->cr();
   tab(st, true);
   st->print("element");
   _element.print_data_on(st);

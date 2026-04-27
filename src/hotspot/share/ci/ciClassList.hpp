@@ -100,6 +100,7 @@ friend class ciExceptionHandlerStream; \
 friend class ciObject;                 \
 friend class ciNullObject;             \
 friend class ciInstance;               \
+friend class ciMegamorphicTypeData;    \
 friend class ciMemberName;             \
 friend class ciMethod;                 \
 friend class ciMethodData;             \

@@ -4964,12 +4964,12 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // avoids grossly misrepresenting the profiles under concurrent updates. For speed,
 // counter updates are not atomic.
 //
-void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
-  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
-  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
-  int poly_count_offset      = in_bytes(CounterData::count_offset());
-  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
-  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+template <class ReceiverProfileData> void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+  int base_receiver_offset   = in_bytes(ReceiverProfileData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverProfileData::receiver_offset(ReceiverProfileData::row_limit()));
+  int poly_count_offset      = in_bytes(ReceiverProfileData::count_offset());
+  int receiver_step          = in_bytes(ReceiverProfileData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverProfileData::receiver_count_offset(0)) - base_receiver_offset;
 
   // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
   assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
@@ -4992,20 +4992,20 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
   // Check that our math hits all the right spots.
-  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
-    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
-    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+  for (uint c = 0; c < ReceiverProfileData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverProfileData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverProfileData::receiver_count_offset(c));
     int offset = base_receiver_offset + receiver_step*c;
     int count_offset = offset + receiver_to_count_step;
     assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
     assert((count_offset << LogBytesPerWord) == real_count_offset, "receiver count math");
   }
-  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  int real_poly_count_offset = mdp_offset + in_bytes(ReceiverProfileData::count_offset());
   assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
 #endif
 
   // Corner case: no profile table. Increment poly counter and exit.
-  if (ReceiverTypeData::row_limit() == 0) {
+  if (ReceiverProfileData::row_limit() == 0) {
     addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
     return;
   }
@@ -5138,6 +5138,14 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   jmpb(L_restart);
 
+  // Counter updates:
+
+  // Increment polymorphic counter instead of receiver slot.
+  bind(L_polymorphic);
+  profile_receiver_type_prolog<ReceiverProfileData>(recv);
+  // movptr(offset, poly_count_offset);
+  jmpb(L_count_update);
+
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   addptr(offset, receiver_to_count_step);
@@ -5146,6 +5154,46 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   bind(L_count_update);
   addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
 }
+
+template<> void MacroAssembler::profile_receiver_type_prolog<ReceiverTypeData>(Register recv) {
+  int poly_count_offset      = in_bytes(ReceiverTypeData::count_offset());
+  Register offset = rscratch1;
+  movptr(offset, poly_count_offset);
+}
+
+template<> void MacroAssembler::profile_receiver_type_prolog<ArrayLoadData>(Register recv) {
+  int flat_nullable_count_offset            = in_bytes(ArrayLoadData::flat_nullable_count_offset());
+  int flat_nullfree_atomic_count_offset     = in_bytes(ArrayLoadData::flat_nullfree_atomic_count_offset());
+  int flat_nullfree_not_atomic_count_offset = in_bytes(ArrayLoadData::flat_nullfree_not_atomic_count_offset());
+
+  int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
+  Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, done, failure;
+  Register offset = rscratch1;
+  cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_ATOMIC_FLAT);
+  jccb(Assembler::notEqual, null_free_non_atomic);
+  movptr(offset, flat_nullfree_atomic_count_offset);
+
+  jmpb(done);
+  bind(null_free_non_atomic);
+  cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
+  jccb(Assembler::notEqual, nullable_atomic_flat);
+  movptr(offset, flat_nullfree_not_atomic_count_offset);
+
+  jmpb(done);
+  bind(nullable_atomic_flat);
+  cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULLABLE_ATOMIC_FLAT);
+  jccb(Assembler::notEqual, failure);
+  movptr(offset, flat_nullable_count_offset);
+
+  jmpb(done);
+  bind(failure);
+  stop("unexpected flat array");
+  bind(done);
+}
+
+
+template void MacroAssembler::profile_receiver_type<ReceiverTypeData>(Register recv, Register mdp, int mdp_offset);
+template void MacroAssembler::profile_receiver_type<ArrayLoadData>(Register recv, Register mdp, int mdp_offset);
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops || VerifyAdapterSharing) {

@@ -459,6 +459,68 @@ int ciMethod::check_overflow(int c, Bytecodes::Code code) {
 }
 
 
+ciCallProfile ciMethod::megamorphic_profile_at_bci(int bci, int count, ciMegamorphicTypeData* megamorphic_type_data) {
+  ciCallProfile result;
+
+  // In addition, virtual call sites have receiver type information
+  int receivers_count_total = 0;
+  int morphism = 0;
+  // Precompute morphism for the possible fixup
+  for (uint i = 0; i < megamorphic_type_data->row_limit(); i++) {
+    ciKlass* receiver = megamorphic_type_data->receiver(i);
+    if (receiver == nullptr)  continue;
+    morphism++;
+  }
+  int epsilon = 0;
+  // For a call, it is assumed that either the type of the receiver(s)
+  // is recorded or an associated counter is incremented, but not both. With
+  // tiered compilation, however, both can happen due to the interpreter and
+  // C1 profiling invocations differently. Address that inconsistency here.
+  if (morphism == 1 && count > 0) {
+    epsilon = count;
+    count = 0;
+  }
+  for (uint i = 0; i < megamorphic_type_data->row_limit(); i++) {
+    ciKlass* receiver = megamorphic_type_data->receiver(i);
+    if (receiver == nullptr)  continue;
+    int rcount = saturated_add(megamorphic_type_data->receiver_count(i), epsilon);
+    if (rcount == 0) rcount = 1; // Should be valid value
+    receivers_count_total = saturated_add(receivers_count_total, rcount);
+    // Add the receiver to result data.
+    result.add_receiver(receiver, rcount);
+    // If we extend profiling to record methods,
+    // we will set result._method also.
+  }
+  // Determine call site's morphism.
+  // The call site count is 0 with known morphism (only 1 or 2 receivers)
+  // or < 0 in the case of a type check failure for checkcast, aastore, instanceof.
+  // The call site count is > 0 in the case of a polymorphic virtual call.
+  if (morphism > 0 && morphism == result._limit) {
+    // The morphism <= MorphismLimit.
+    if ((morphism <  ciCallProfile::MorphismLimit) ||
+        (morphism == ciCallProfile::MorphismLimit && count == 0)) {
+#ifdef ASSERT
+      if (count > 0) {
+        this->print_short_name(tty);
+        tty->print_cr(" @ bci:%d", bci);
+        this->print_codes();
+        assert(false, "this call site should not be polymorphic");
+      }
+#endif
+      result._morphism = morphism;
+    }
+  }
+  // Make the count consistent if this is a call profile. If count is
+  // zero or less, presume that this is a typecheck profile and
+  // do nothing.  Otherwise, increase count to be the sum of all
+  // receiver's counts.
+  if (count >= 0) {
+    count = saturated_add(count, receivers_count_total);
+  }
+  result._count = count;
+  return result;
+}
+
 // ------------------------------------------------------------------
 // ciMethod::call_profile_at_bci
 //
@@ -469,71 +531,25 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
   ciCallProfile result;
   if (method_data() != nullptr && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
-    if (data != nullptr && data->is_CounterData()) {
-      // Every profiled call site has a counter.
-      int count = check_overflow(data->as_CounterData()->count(), java_code_at_bci(bci));
+    if (data != nullptr) {
+      if (data->is_CounterData()) {
+        // Every profiled call site has a counter.
+        int count = check_overflow(data->as_CounterData()->count(), java_code_at_bci(bci));
 
-      if (!data->is_ReceiverTypeData()) {
-        result._receiver_count[0] = 0;  // that's a definite zero
-      } else { // ReceiverTypeData is a subclass of CounterData
-        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-        // In addition, virtual call sites have receiver type information
-        int receivers_count_total = 0;
-        int morphism = 0;
-        // Precompute morphism for the possible fixup
-        for (uint i = 0; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver == nullptr)  continue;
-          morphism++;
+        if (!data->is_ReceiverTypeData()) {
+          result._receiver_count[0] = 0;  // that's a definite zero
+        } else { // ReceiverTypeData is a subclass of CounterData
+          ciReceiverTypeData* call = (ciReceiverTypeData*) data->as_ReceiverTypeData();
+          ciMegamorphicTypeData* megamorphic_type_data = call->megamorphic_type_data();
+          return megamorphic_profile_at_bci(bci, count, megamorphic_type_data);
         }
-        int epsilon = 0;
-        // For a call, it is assumed that either the type of the receiver(s)
-        // is recorded or an associated counter is incremented, but not both. With
-        // tiered compilation, however, both can happen due to the interpreter and
-        // C1 profiling invocations differently. Address that inconsistency here.
-        if (morphism == 1 && count > 0) {
-          epsilon = count;
-          count = 0;
-        }
-        for (uint i = 0; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver == nullptr)  continue;
-          int rcount = saturated_add(call->receiver_count(i), epsilon);
-          if (rcount == 0) rcount = 1; // Should be valid value
-          receivers_count_total = saturated_add(receivers_count_total, rcount);
-          // Add the receiver to result data.
-          result.add_receiver(receiver, rcount);
-          // If we extend profiling to record methods,
-          // we will set result._method also.
-        }
-        // Determine call site's morphism.
-        // The call site count is 0 with known morphism (only 1 or 2 receivers)
-        // or < 0 in the case of a type check failure for checkcast, aastore, instanceof.
-        // The call site count is > 0 in the case of a polymorphic virtual call.
-        if (morphism > 0 && morphism == result._limit) {
-           // The morphism <= MorphismLimit.
-           if ((morphism <  ciCallProfile::MorphismLimit) ||
-               (morphism == ciCallProfile::MorphismLimit && count == 0)) {
-#ifdef ASSERT
-             if (count > 0) {
-               this->print_short_name(tty);
-               tty->print_cr(" @ bci:%d", bci);
-               this->print_codes();
-               assert(false, "this call site should not be polymorphic");
-             }
-#endif
-             result._morphism = morphism;
-           }
-        }
-        // Make the count consistent if this is a call profile. If count is
-        // zero or less, presume that this is a typecheck profile and
-        // do nothing.  Otherwise, increase count to be the sum of all
-        // receiver's counts.
-        if (count >= 0) {
-          count = saturated_add(count, receivers_count_total);
-        }
+        result._count = count;
+      } else if (data->is_ArrayLoadData()) {
+        ciArrayLoadData* load = (ciArrayLoadData*) data->as_ArrayLoadData();
+        int count = saturated_add(load->flat_nullable_count(), load->flat_nullfree_atomic_count()) + load->flat_nullfree_not_atomic_count();
+        ciMegamorphicTypeData* megamorphic_type_data = load->megamorphic_type_data();
+        return megamorphic_profile_at_bci(bci, count, megamorphic_type_data);
       }
-      result._count = count;
     }
   }
   return result;
