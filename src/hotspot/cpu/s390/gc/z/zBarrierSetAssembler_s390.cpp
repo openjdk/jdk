@@ -189,6 +189,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     scratch = Z_R5;
   }
 
+  assert_different_registers(dst, scratch);
+  assert_different_registers(Z_R2, scratch);
+
   __ z_ldgr(Z_F0, scratch);
 
   Label done;
@@ -235,8 +238,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
     __ lgr_if_needed(Z_ARG1, dst);
 
-    __ load_const_optimized(Z_ARG2, (uintptr_t)&load_slow_pre_fubar);
-    __ z_agsi(0, Z_ARG2, 1);
+    //__ load_const_optimized(Z_ARG2, (uintptr_t)&load_slow_pre_fubar);
+    //__ z_agsi(0, Z_ARG2, 1);
 
     __ z_lgr(Z_ARG2, scratch);
 
