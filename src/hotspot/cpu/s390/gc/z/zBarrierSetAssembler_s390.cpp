@@ -436,7 +436,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // did happen go to slow_path else store the mask in it
     __ z_csg(temp2, temp1, ref_addr);
 
-    __ branch_optimized(Assembler::bcondNotZero, slow_path);
+    __ branch_optimized(Assembler::bcondNotEqual, slow_path);
 
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);

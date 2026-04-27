@@ -44,6 +44,7 @@
 #include "vmreg_s390.inline.hpp"
 
 long leal_fubar = 0;
+long fubar = 0;
 
 #define __ _masm->
 
@@ -908,6 +909,11 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
 
   PatchingStub* patch = nullptr;
   if (needs_patching) {
+    __ z_ldgr(Z_F0, Z_R1);
+    __ load_const_optimized(Z_R1, (uintptr_t)&fubar);
+    __ z_agsi(0, Z_R1, 1);
+    __ z_lgdr(Z_R1, Z_F0);
+
     patch = new PatchingStub(_masm, PatchingStub::access_field_id);
     assert(!to_reg->is_double_cpu() ||
            patch_code == lir_patch_none ||
@@ -2894,19 +2900,15 @@ void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_cod
 
   if (addr->index()->is_illegal()) {
     if (patch_code != lir_patch_none) {
+      __ z_ldgr(Z_F0, Z_R1);
+      __ load_const_optimized(Z_R1, (uintptr_t)&leal_fubar);
+      __ z_agsi(0, Z_R1, 1);
+      __ z_lgdr(Z_R1, Z_F0);
+
       PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
- //
-      //__ stop("leal patching");
-//
-      //__ z_ldgr(Z_F1, Z_R1);
-      //__ load_const_optimized(Z_R1, (uintptr_t)&leal_fubar);
-      //__ z_agsi(0, Z_R1, 1);
-      //__ z_lgdr(Z_R1, Z_F1);
-     //int zero = 0;
-      //__ load_const_optimized(Z_R0_scratch, zero);
-      //__ z_lay(reg, as_Address(addr));
-      __ load_const(Z_R0_scratch, (int)0);
-      __ z_ark(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
+
+      __ load_const(Z_R0_scratch, (intptr_t)0);
+      __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
       patching_epilog(patch, patch_code, addr->base()->as_register(), info);
     } else {
       __ load_address(reg, as_Address(addr));
