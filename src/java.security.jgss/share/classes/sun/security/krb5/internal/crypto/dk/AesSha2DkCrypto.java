@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,14 +122,7 @@ public class AesSha2DkCrypto extends DkCrypto {
     private byte[] stringToKey(char[] secret, byte[] salt, byte[] params)
         throws GeneralSecurityException {
 
-        int iter_count = DEFAULT_ITERATION_COUNT;
-        if (params != null) {
-            if (params.length != 4) {
-                throw new RuntimeException("Invalid parameter to stringToKey");
-            }
-            iter_count = readBigEndian(params, 0, 4);
-        }
-
+        int iter_count = DkCrypto.iterationCount(params, DEFAULT_ITERATION_COUNT);
         byte[] saltp = new byte[26 + 1 + salt.length];
         if (keyLength == 128) {
             System.arraycopy(ETYPE_NAME_128, 0, saltp, 0, 26);
@@ -525,17 +518,4 @@ public class AesSha2DkCrypto extends DkCrypto {
 
         return result;
     }
-
-    public static final int readBigEndian(byte[] data, int pos, int size) {
-        int retVal = 0;
-        int shifter = (size-1)*8;
-        while (size > 0) {
-            retVal += (data[pos] & 0xff) << shifter;
-            shifter -= 8;
-            pos++;
-            size--;
-        }
-        return retVal;
-    }
-
 }

@@ -555,7 +555,7 @@ public:
                       is_weakly_marked_object_after_2nd_clear, is_strongly_marked_object_after_2nd_clear,
                       all_marked_objects_after_2nd_clear, my_heap_memory, end_of_my_heap);
 
-    FREE_C_HEAP_ARRAY(HeapWord, my_bitmap_memory);
+    FREE_C_HEAP_ARRAY(my_bitmap_memory);
     _success = true;
     return true;
   }

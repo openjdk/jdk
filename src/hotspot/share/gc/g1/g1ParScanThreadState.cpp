@@ -131,9 +131,9 @@ size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
   delete _closures;
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_base);
   delete[] _oops_into_optional_regions;
-  FREE_C_HEAP_ARRAY(size_t, _obj_alloc_stat);
+  FREE_C_HEAP_ARRAY(_obj_alloc_stat);
 }
 
 size_t G1ParScanThreadState::lab_waste_words() const {
@@ -730,8 +730,8 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
-  FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+  FREE_C_HEAP_ARRAY(_states);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_total);
 }
 
 #if TASKQUEUE_STATS

@@ -417,7 +417,7 @@ void CodeSection::expand_locs(int new_capacity) {
       new_capacity = old_capacity * 2;
     relocInfo* locs_start;
     if (_locs_own) {
-      locs_start = REALLOC_RESOURCE_ARRAY(relocInfo, _locs_start, old_capacity, new_capacity);
+      locs_start = REALLOC_RESOURCE_ARRAY(_locs_start, old_capacity, new_capacity);
     } else {
       locs_start = NEW_RESOURCE_ARRAY(relocInfo, new_capacity);
       Copy::conjoint_jbytes(_locs_start, locs_start, old_capacity * sizeof(relocInfo));
