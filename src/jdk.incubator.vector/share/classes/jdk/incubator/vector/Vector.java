@@ -952,7 +952,7 @@ import java.util.Arrays;
  * <li> Conversion {@code long[2]:128 -> byte[16]:128}:
  * contracting lane size ({@code ML=1/8}),
  * shape-invariant ({@code MP=1}).
- * We must insert the logical resut {@code byte[2]:16} into
+ * We must insert the logical result {@code byte[2]:16} into
  * one of {@code MO=MP/ML=8} parts of the output,
  * with {@code part} in range {@code [-7..0]}.
  *
