@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,11 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "utilities/accessFlags.hpp"
+package compiler.lib.ir_framework.driver.network.testvm;
 
-void accessFlags_init() {
-  assert(sizeof(AccessFlags) == sizeof(u2), "just checking size of flags");
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessage;
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+
+/**
+ * We currently have only one type of Test VM message sent to the {@link TestFrameworkSocket}:
+ * - {@link JavaMessage}: A message sent from Java code.
+ *
+ * <p>
+ * Later, we will add C2 messages as well as second type with JDK-8375270.
+ * Both kinds of messages are parsed differently by classes implementing this interface.
+ */
+public interface TestVmMessageParser<Output> {
+    /**
+     * Parse a single line of a received Test VM message.
+     *
+     * @param line A single message line forwarded by {@link TestVmMessageReader}.
+     */
+    void parseLine(String line);
+
+    /**
+     * Once parsing is done, this method returns the final output.
+     */
+    Output output();
 }
