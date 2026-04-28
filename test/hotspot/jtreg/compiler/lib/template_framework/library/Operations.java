@@ -717,7 +717,7 @@ public final class Operations {
 
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, " & " + (type.length-1) + ")"));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
-            ops.add(Expression.make(type, "", type, ".unslice(", INTS, " & " + (type.length-1) + ", ", type, ", ", INTS, " & 2)"));
+            ops.add(Expression.make(type, "", type, ".unslice(", INTS, " & " + (type.length-1) + ", ", type, ", ", INTS, " & 1)"));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, ", ", type, ", 0)", WITH_OUT_OF_BOUNDS_EXCEPTION));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, ", ", type, ", ", INTS, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));
             ops.add(Expression.make(type, "", type, ".unslice(", INTS, ", ", type, ", 0, ", type.maskType, ")", WITH_OUT_OF_BOUNDS_EXCEPTION));

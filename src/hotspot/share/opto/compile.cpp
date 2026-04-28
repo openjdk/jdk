@@ -3234,6 +3234,12 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
       assert(mb->trailing_membar()->leading_membar() == mb, "bad membar pair");
     }
   }
+  if (n->is_CallLeafPure()) {
+    // A pure call whose result projection is unused should have been
+    // eliminated by CallLeafPureNode::Ideal during IGVN.
+    assert(n->as_CallLeafPure()->proj_out_or_null(TypeFunc::Parms) != nullptr,
+           "unused CallLeafPureNode should have been removed before final graph reshaping");
+  }
 #endif
   // Count FPU ops and common calls, implements item (3)
   bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);

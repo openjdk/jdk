@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,29 @@
  * questions.
  */
 
-/*
- * @test TestAlwaysAtomicAccesses
- * @bug 8285301
- * @summary Test memory accesses from compiled code with AlwaysAtomicAccesses.
- * @run main/othervm -Xcomp -XX:+UnlockExperimentalVMOptions -XX:+AlwaysAtomicAccesses
- *                   compiler.membars.TestAlwaysAtomicAccesses
+package compiler.lib.ir_framework.driver.network.testvm;
+
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessage;
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+
+/**
+ * We currently have only one type of Test VM message sent to the {@link TestFrameworkSocket}:
+ * - {@link JavaMessage}: A message sent from Java code.
+ *
+ * <p>
+ * Later, we will add C2 messages as well as second type with JDK-8375270.
+ * Both kinds of messages are parsed differently by classes implementing this interface.
  */
+public interface TestVmMessageParser<Output> {
+    /**
+     * Parse a single line of a received Test VM message.
+     *
+     * @param line A single message line forwarded by {@link TestVmMessageReader}.
+     */
+    void parseLine(String line);
 
-package compiler.membars;
-
-public class TestAlwaysAtomicAccesses {
-
-    public static void main(String[] args) {
-        // Nothing to do here. Compilations are triggered by -Xcomp.
-        System.out.println("Test passed");
-    }
+    /**
+     * Once parsing is done, this method returns the final output.
+     */
+    Output output();
 }
