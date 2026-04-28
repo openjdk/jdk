@@ -39,7 +39,7 @@ public abstract class BMICommandLineOptionTestBase
               extends CPUSpecificCommandLineOptionTest {
 
     public static final String LZCNT_WARNING =
-        "lzcnt instruction is not available on this CPU";
+        "LZCNT instruction is not available on this CPU";
     public static final String TZCNT_WARNING =
         "tzcnt instruction is not available on this CPU";
     public static final String BMI1_WARNING =
