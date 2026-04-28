@@ -56,7 +56,7 @@ final class TestSegmentOffset {
                 out.format("testOffset s1:%s, s2:%s, offset:%d, i:%s\n", s1, s2, offset, i);
                 byte expected = s2.segment.get(JAVA_BYTE, i);
                 byte found = s1.segment.get(JAVA_BYTE, i + offset);
-                assertEquals(found, expected);
+                assertEquals(expected, found);
             }
         } else if (!s2.contains(s1)) {
             // disjoint segments - check that offset is out of bounds

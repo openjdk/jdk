@@ -1032,7 +1032,7 @@ public:
   // Returns how much memory there is assigned to non-young heap that can not be
   // allocated into any more without garbage collection after a hypothetical
   // allocation of allocation_word_size.
-  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size) const;
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.

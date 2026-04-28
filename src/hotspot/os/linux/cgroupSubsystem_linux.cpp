@@ -649,7 +649,7 @@ bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& va
     return true;
   }
 
-  int cpu_count = cpu_bound_func();
+  double cpu_count = static_cast<double>(cpu_bound_func());
   double result = -1;
   if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
     return false;

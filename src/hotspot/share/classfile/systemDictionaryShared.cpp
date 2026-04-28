@@ -1277,7 +1277,7 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
-        if (MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr)) {
+        if (AOTMetaspace::in_aot_cache(ptr)) {
           assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
