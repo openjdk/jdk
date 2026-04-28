@@ -33,20 +33,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestIncrementalComp {
 
@@ -58,23 +54,59 @@ class TestIncrementalComp {
             .orElseThrow();
 
     @Test
-    public void testIncrementalComp() throws Throwable {
+    public void testSingleModule() throws Throwable {
+        Path workDir = Path.of("testSingleModule");
         // set up test sources
-        Path localTestModules = Path.of("test_modules");
+        Path localTestModules = workDir.resolve("test_modules");
+        Path outDir = workDir.resolve("mods");
         Files.createDirectories(localTestModules);
-        FileUtils.copyDirectory(TEST_MODULES_DIR, localTestModules);
+        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("single"), localTestModules);
 
         Files.copy(ALTS_DIR.resolve("Lib_int.java"),
                 localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"));
 
         // compile both modules
         compile(
-            "-d", "mods",
+                "-d", outDir.toString(),
+                "--module-source-path=" + localTestModules,
+                "--module=org.moda");
+
+        invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
+
+        // modify sources. Dep is not modified
+        Files.copy(ALTS_DIR.resolve("Lib_long.java"),
+                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"),
+                REPLACE_EXISTING);
+
+        // recompile moda. Dep should be recompiled as well
+        compile(
+                "-d", outDir.toString(),
+                "--module-source-path=" + localTestModules,
+                "--module=org.moda");
+
+        // should work
+        invokeMainMethod(outDir, "org.moda", "org.moda.app.Main");
+    }
+
+    @Test
+    public void testMultiModule() throws Throwable {
+        Path workDir = Path.of("testMultiModule");
+        // set up test sources
+        Path localTestModules = workDir.resolve("test_modules");
+        Path outDir = workDir.resolve("mods");
+        Files.createDirectories(localTestModules);
+        FileUtils.copyDirectory(TEST_MODULES_DIR.resolve("multi"), localTestModules);
+
+        Files.copy(ALTS_DIR.resolve("Lib_int.java"),
+                localTestModules.resolve("org.moda", "org", "moda", "lib", "Lib.java"));
+
+        // compile both modules
+        compile(
+            "-d", outDir.toString(),
             "--module-source-path=" + localTestModules,
             "--module=org.moda,org.modb");
-        Path mods = Path.of("mods");
 
-        invokeMainMethod(mods, "org.modb", "org.modb.app.Main");
+        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
 
         // modify sources
         Files.copy(ALTS_DIR.resolve("Lib_long.java"),
@@ -83,12 +115,12 @@ class TestIncrementalComp {
 
         // compile only moda, modb should be compiled automatically
         compile(
-            "-d", "mods",
+            "-d", outDir.toString(),
             "--module-source-path=" + localTestModules,
             "--module=org.moda");
 
         // should work
-        invokeMainMethod(mods, "org.modb", "org.modb.app.Main");
+        invokeMainMethod(outDir, "org.modb", "org.modb.app.Main");
     }
 
     private static void invokeMainMethod(Path modulePath, String moduleName, String mainClassName, String... args)
