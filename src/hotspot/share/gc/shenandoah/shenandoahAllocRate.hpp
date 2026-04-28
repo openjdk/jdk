@@ -61,7 +61,7 @@ public:
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(Clock::elapsed_counter())
     , _sample_period_seconds(sample_period_millis / 1000.0)
-    , _baseline(baseline_window_millis / sample_period_millis)
+    , _baseline(baseline_window_millis / sample_period_millis, 0.1)
     , _recent(recent_window_millis / sample_period_millis)
     , _momentary(momentary_window_millis / sample_period_millis)
   {

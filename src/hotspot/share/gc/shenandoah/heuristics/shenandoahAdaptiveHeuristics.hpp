@@ -89,8 +89,7 @@ public:
 
   bool trigger_average_allocation_rate(size_t allocatable_words, double avg_alloc_rate);
 
-  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, size_t allocatable_words,
-                                            double avg_alloc_rate);
+  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, size_t allocatable_words);
 
   bool should_start_gc() override;
 

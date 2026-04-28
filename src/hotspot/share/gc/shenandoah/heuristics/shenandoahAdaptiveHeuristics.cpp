@@ -46,8 +46,8 @@
 // These constants are used to adjust the margin of error for the moving
 // average of the allocation rate and cycle time. The units are standard
 // deviations.
-const double ShenandoahAdaptiveHeuristics::FULL_PENALTY_SD = 0.2;
-const double ShenandoahAdaptiveHeuristics::DEGENERATE_PENALTY_SD = 0.1;
+const double ShenandoahAdaptiveHeuristics::FULL_PENALTY_SD = 0.0;
+const double ShenandoahAdaptiveHeuristics::DEGENERATE_PENALTY_SD = 0.0;
 
 // These are used to decide if we want to make any adjustments at all
 // at the end of a successful concurrent cycle.
@@ -368,8 +368,8 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const size_t 
   // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
-  log_debug(gc)("%s: predicted GC time: %.2f ms, allocation rate: " PROPERFMT_F "/s",
-                _space_info->name(), anticipated_gc_duration * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
+  log_debug(gc, sampling)("%s: predicted GC time: %.2f ms, allocation rate: " PROPERFMT_F "/s",
+                          _space_info->name(), anticipated_gc_duration * 1000, PROPERFMT_F_ARGS(avg_alloc_rate));
 
   const size_t allocatable_bytes = allocatable_words * HeapWordSize;
   if (anticipated_gc_duration * avg_alloc_rate > allocatable_bytes) {
@@ -465,20 +465,20 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const size_t 
 // Though larger sample size may improve quality of predictor, it also delays trigger response.  Smaller sample sizes
 // are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 8 and
 // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
-bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, const size_t allocatable_words, const double avg_alloc_rate) {
+bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, const size_t allocatable_words) {
   double acceleration = 0.0;
   double current_rate_by_acceleration = 0.0;
 
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   const size_t anticipated_consumption = new_rate.accelerated_consumption(acceleration, current_rate_by_acceleration, anticipated_gc_duration);
-
-  if (anticipated_consumption > allocatable_words) {
+  const size_t allocatable_bytes = allocatable_words * HeapWordSize;
+  if (anticipated_consumption > allocatable_bytes) {
     if (acceleration > 0) {
       log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                   "current rate (" PROPERFMT_F "/s) with acceleration (" PROPERFMT_F "/s/s) for anticipated GC duration (%.2f ms)",
                   PROPERFMTARGS(anticipated_consumption * HeapWordSize),
-                  PROPERFMTARGS(allocatable_words * HeapWordSize),
+                  PROPERFMTARGS(allocatable_bytes),
                   PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
                   PROPERFMT_F_ARGS(acceleration * HeapWordSize),
                   anticipated_gc_duration * 1000);
@@ -486,7 +486,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
       log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                   "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms) (spike threshold = %.2f)",
                   PROPERFMTARGS(anticipated_consumption * HeapWordSize),
-                  PROPERFMTARGS(allocatable_words * HeapWordSize),
+                  PROPERFMTARGS(allocatable_bytes),
                   PROPERFMT_F_ARGS(current_rate_by_acceleration * HeapWordSize),
                   anticipated_gc_duration * 1000,
                   _spike_threshold_sd);
@@ -561,7 +561,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  if (trigger_accelerating_allocation_rate(new_rate, allocatable_words, avg_alloc_rate)) {
+  if (trigger_accelerating_allocation_rate(new_rate, allocatable_words)) {
     return true;
   }
 
