@@ -85,11 +85,6 @@ public:
 
   void record_success_concurrent() override;
   void record_degenerated() override;
-  void record_success_full() override;
-
-  bool trigger_average_allocation_rate(size_t allocatable_words, double avg_alloc_rate);
-
-  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &new_rate, size_t allocatable_words);
 
   bool should_start_gc() override;
 
@@ -97,26 +92,22 @@ public:
   bool is_diagnostic() override   { return false; }
   bool is_experimental() override { return false; }
 
- private:
-  // These are used to adjust the margin of error and the spike threshold
-  // in response to GC cycle outcomes. These values are shared, but the
-  // margin of error and spike threshold trend in opposite directions.
-  const static double FULL_PENALTY_SD;
-  const static double DEGENERATE_PENALTY_SD;
+  // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
+  // detect when GC needs to trigger.
+  void compute_headroom_adjustment() override;
 
+ private:
   const static double MINIMUM_CONFIDENCE;
   const static double MAXIMUM_CONFIDENCE;
 
   const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
   const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
 
-  void adjust_last_trigger_parameters(double amount);
   void adjust_margin_of_error(double amount);
-  void adjust_spike_threshold(double amount);
 
   // Returns number of words that can be allocated before we need to trigger next GC, given available in bytes.
   size_t allocatable(size_t available) const {
-    return (available > _headroom_adjustment)? (available - _headroom_adjustment) / HeapWordSize: 0;
+    return available > _headroom_adjustment ? available - _headroom_adjustment : 0;
   }
 
 protected:
@@ -129,11 +120,10 @@ protected:
   ShenandoahCycleDuration _cycles;
 
   // Used to record the last trigger that signaled to start a GC.
-  // This itself is used to decide whether or not to adjust the margin of
-  // error for the average cycle time and allocation rate or the allocation
-  // spike detection threshold.
+  // This itself is used to decide whether to adjust the margin of
+  // error for the average cycle time.
   enum Trigger {
-    SPIKE, RATE, OTHER
+    RATE, OTHER
   };
 
   // The margin of error expressed in standard deviations to add to our
@@ -143,18 +133,9 @@ protected:
   // concurrent GCs.
   double _margin_of_error_sd;
 
-  // The allocation spike threshold is expressed in standard deviations.
-  // If the standard deviation of the most recent sample of the allocation
-  // rate exceeds this threshold, a GC cycle is started. As this value
-  // decreases the sensitivity to allocation spikes increases. In other
-  // words, lowering the spike threshold will tend to increase the number
-  // of concurrent GCs.
-  double _spike_threshold_sd;
-
   // Remember which trigger is responsible for the last GC cycle. When the
   // outcome of the cycle is evaluated we will adjust the parameters for the
-  // corresponding triggers. Note that successful outcomes will raise
-  // the spike threshold and lower the margin of error.
+  // corresponding triggers.
   Trigger _last_trigger;
 
   // Keep track of the available memory at the end of a GC cycle. This
@@ -164,10 +145,6 @@ protected:
 
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
-
-  // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
-  // detect when GC needs to trigger.
-  void compute_headroom_adjustment() override;
 
   void add_degenerated_gc_time(double timestamp_at_start, double duration);
 
@@ -184,6 +161,8 @@ protected:
 
   bool trigger_min_free_threshold(size_t available);
   bool trigger_learning(size_t available, size_t capacity);
+  bool trigger_average_allocation_rate(ShenandoahAllocRate<>& rate, size_t allocatable_bytes);
+  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<>& rate, size_t allocatable_bytes);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

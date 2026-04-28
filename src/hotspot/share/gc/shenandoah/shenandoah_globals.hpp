@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uint, ShenandoahMomentaryAllocRateSampleWindowMs, 100, EXPERIMENTAL,       \
+  product(uint, ShenandoahMomentaryAllocRateSampleWindowMs, 100, EXPERIMENTAL, \
           "When at least this much time (measured in ms) has passed "       \
           "since the acceleration allocation rate was most recently "       \
           "sampled, capture another allocation rate sample for the purpose "\
@@ -44,7 +44,7 @@
           "more monitoring effort.")                                        \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRecentAllocRateSampleWindowMs, 500, EXPERIMENTAL,     \
+  product(uint, ShenandoahRecentAllocRateSampleWindowMs, 500, EXPERIMENTAL, \
           "In selected ShenandoahControlIntervals "                         \
           "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
           "since previous allocation rate sample), "                        \
@@ -63,29 +63,8 @@
           "larger than the other samples, the best fit line through all "   \
           "sampled values will have an upward slope, manifesting as "       \
           "acceleration.")                                                  \
-          range(1,5000)                                                      \
+          range(1,5000)                                                     \
                                                                             \
-  product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
-          4, EXPERIMENTAL,                                                 \
-          "In selected ShenandoahControlIntervals "                         \
-          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
-          "since previous allocation rate sample), we compute "             \
-          "the allocation rate since the previous rate was sampled. "       \
-          "The weighted average of this "                                   \
-          "many most recent momentary allocation rate samples is compared " \
-          "against current allocation runway and anticipated GC time to "   \
-          "determine whether a spike in momentary allocation rate "         \
-          "justifies an early GC trigger.  Momentary allocation spike "     \
-          "detection is in addition to previously implemented "             \
-          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
-          "is more effective at detecting slower spikes.  The latter "      \
-          "spike detection samples at the rate specifieid by "              \
-          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
-          "parameter must be less than the value of "                       \
-          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
-          "momentary spike detection less sensitive.  A smaller value "     \
-          "may result in excessive GC triggers.")                           \
-          range(1,128)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
@@ -314,16 +293,9 @@
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
                                                                             \
-  product(double, ShenandoahAdaptiveInitialSpikeThreshold, 1.8, EXPERIMENTAL, \
-          "If the most recently sampled allocation rate is more than "      \
-          "this many standard deviations away from the moving average, "    \
-          "then a cycle is initiated. This value controls how sensitive "   \
-          "the heuristic is to allocation spikes. Decreasing this number "  \
-          "increases the sensitivity. ")                                    \
-                                                                            \
-  product(double, ShenandoahAdaptiveDecayFactor, 0.5, EXPERIMENTAL,         \
+  product(double, ShenandoahAdaptiveDecayFactor, 0.1, EXPERIMENTAL,         \
           "The decay factor (alpha) used for values in the weighted "       \
-          "moving average of cycle time and allocation rate. "              \
+          "moving average of the allocation rate. "                         \
           "Larger values give more weight to recent values.")               \
           range(0,1.0)                                                      \
                                                                             \
