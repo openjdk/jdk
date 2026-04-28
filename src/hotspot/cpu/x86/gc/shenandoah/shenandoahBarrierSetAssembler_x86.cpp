@@ -90,17 +90,16 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ jcc(Assembler::zero, L_done);
 
       __ push_call_clobbered_registers(/* save_fpu = */ false);
-
-      if (c_rarg0 != src) {
-        assert_different_registers(c_rarg0, dst, count);
-        __ movptr(c_rarg0, src);
-      }
-      if (c_rarg1 != dst) {
-        assert_different_registers(c_rarg1, count);
-        __ movptr(c_rarg1, dst);
-      }
-      if (c_rarg2 != count) {
-        __ movptr(c_rarg2, count);
+      // If arguments are not in proper places, shuffle them.
+      // Doing this via the stack is the most straight-forward way to avoid
+      // accidentally smashing any register.
+      if (c_rarg0 != src || c_rarg1 != dst || c_rarg2 != count) {
+        __ push(src);
+        __ push(dst);
+        __ push(count);
+        __ pop(c_rarg2);
+        __ pop(c_rarg1);
+        __ pop(c_rarg0);
       }
       if (UseCompressedOops) {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop), 3);
