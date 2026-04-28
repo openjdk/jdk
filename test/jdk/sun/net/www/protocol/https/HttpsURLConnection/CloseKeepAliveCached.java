@@ -99,15 +99,12 @@ public class CloseKeepAliveCached {
     /*
      * Is the server ready to serve?
      */
-    volatile static CountDownLatch serverReady = new CountDownLatch(1);
+    final static CountDownLatch serverReady = new CountDownLatch(1);
 
-    private SSLServerSocket sslServerSocket = null;
+    volatile private SSLServerSocket sslServerSocket = null;
 
     /*
      * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslSsf =
