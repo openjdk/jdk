@@ -25,6 +25,7 @@
 #ifdef COMPILER2
 
 #include "opto/addnode.hpp"
+#include "opto/compile.hpp"
 #include "peephole_x86_64.hpp"
 #include "adfiles/ad_x86.hpp"
 
@@ -339,33 +340,16 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
 
   // We now have verified that the decode is redundant and can be removed with a peephole.
 
-  // Before rewiring, check that the new base won't create a register conflict.
-  // The new base (lea_address) might share a register with a dependant_lea.
-  // If the dependant_lea overwrites that register and the base is still live
-  // (used in successor blocks), this creates a conflict detected by verify_good_schedule.
-  Node* new_base = lea_derived_oop->in(AddPNode::Address);
-  OptoReg::Name new_base_reg = ra_->get_reg_first(new_base);
-  if (OptoReg::is_valid(new_base_reg)) {
-    for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
-      Node* dependant_lea = decode->fast_out(i);
-      if (dependant_lea->is_Mach() && dependant_lea->as_Mach()->ideal_Opcode() == Op_AddP) {
-        OptoReg::Name lea_reg = ra_->get_reg_first(dependant_lea);
-        OptoReg::Name lea_reg2 = ra_->get_reg_second(dependant_lea);
-        // If the new base register overlaps with any register slot of
-        // the dependant lea's output, the rewiring would create a conflict
-        // when the lea overwrites the base pointer's register.
-        if (new_base_reg == lea_reg || new_base_reg == lea_reg2) {
-          return false;
-        }
-      }
-    }
-  }
-
   // Remove the projection
   block->find_remove(proj);
   cfg_->map_node_to_block(proj, nullptr);
 
   // Rewire the base of all leas currently depending on the decode we are removing.
+  // Use top() rather than a real value: leaP* emission does not consult Base, and the
+  // unused MachProj of decode confirms the derived oops produced by these leaP*s are
+  // not consumed by any OopMap. Avoiding a real input here also avoids creating a
+  // register conflict that would later be flagged by verify_good_schedule.
+  Node* new_base = Compile::current()->top();
   for (DUIterator_Fast imax, i = decode->fast_outs(imax); i < imax; i++) {
     Node* dependant_lea = decode->fast_out(i);
     if (dependant_lea->is_Mach() && dependant_lea->as_Mach()->ideal_Opcode() == Op_AddP) {
