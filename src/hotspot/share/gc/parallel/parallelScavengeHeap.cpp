@@ -854,12 +854,12 @@ size_t ParallelScavengeHeap::calculate_desired_old_gen_capacity(size_t old_gen_l
   free_size += largest_live_size - old_gen_live_size;
 
   // Respect free percent
-  if (MinHeapFreeRatio.value() != 0) {
+  if (MinHeapFreeRatio != 0) {
     size_t min_free = calculate_free_from_free_ratio_flag(old_gen_live_size, MinHeapFreeRatio.value());
     free_size = MAX2(free_size, min_free);
   }
 
-  if (MaxHeapFreeRatio.value() != 100) {
+  if (MaxHeapFreeRatio != 100) {
     size_t max_free = calculate_free_from_free_ratio_flag(old_gen_live_size, MaxHeapFreeRatio.value());
     free_size = MIN2(max_free, free_size);
   }
@@ -908,7 +908,7 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
     assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
 
     if (shrink_bytes != 0) {
-      if (MinHeapFreeRatio.value() != 0) {
+      if (MinHeapFreeRatio != 0) {
         size_t new_capacity = old_gen()->capacity_in_bytes() - shrink_bytes;
         size_t new_free_size = old_gen()->free_in_bytes() - shrink_bytes;
         if ((double)new_free_size / new_capacity * 100 < MinHeapFreeRatio) {

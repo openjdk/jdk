@@ -59,7 +59,7 @@ uint64_t StringDedup::Config::hash_seed() {
 }
 
 static uint64_t initial_hash_seed() {
-  if (StringDeduplicationHashSeed.value() != 0) {
+  if (StringDeduplicationHashSeed != 0) {
     return StringDeduplicationHashSeed;
   } else {
     return AltHashing::compute_seed();

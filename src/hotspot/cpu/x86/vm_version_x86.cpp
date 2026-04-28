@@ -1670,10 +1670,10 @@ void VM_Version::get_processor_features() {
   if (UseAVX > 2) {
     if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
         (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
-         ArrayOperationPartialInlineSize.value() != 0 &&
-         ArrayOperationPartialInlineSize.value() != 16 &&
-         ArrayOperationPartialInlineSize.value() != 32 &&
-         ArrayOperationPartialInlineSize.value() != 64)) {
+         ArrayOperationPartialInlineSize != 0 &&
+         ArrayOperationPartialInlineSize != 16 &&
+         ArrayOperationPartialInlineSize != 32 &&
+         ArrayOperationPartialInlineSize != 64)) {
       int inline_size = 0;
       if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
         inline_size = 64;

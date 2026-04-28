@@ -3661,7 +3661,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
-    if (ErrorHandlerTest.value() != 0) {
+    if (ErrorHandlerTest != 0) {
       VMError::controlled_crash(ErrorHandlerTest);
     }
 #endif

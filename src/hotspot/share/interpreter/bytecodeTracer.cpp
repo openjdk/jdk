@@ -152,7 +152,7 @@ class BytecodePrinter {
       set_method(nullptr);
     }
 
-    if (TraceBytecodesStopAt.value() != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
+    if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
       TraceBytecodes = false;
     }
   }

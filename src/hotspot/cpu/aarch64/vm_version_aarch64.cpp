@@ -78,7 +78,7 @@ static SpinWait get_spin_wait_desc() {
       vm_exit_during_initialization("The CPU does not support the SB instruction required by the -XX:OnSpinWaitInst=wfet implementation");
     }
 
-    if (OnSpinWaitInstCount.value() != 1) {
+    if (OnSpinWaitInstCount != 1) {
       vm_exit_during_initialization("OnSpinWaitInstCount for OnSpinWaitInst 'wfet' must be 1");
     }
   } else {
@@ -137,7 +137,7 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance))
     FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, 3*dcache_line);
 
-  if (PrefetchCopyIntervalInBytes.value() != -1 &&
+  if (PrefetchCopyIntervalInBytes != -1 &&
        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
     warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
     PrefetchCopyIntervalInBytes = PrefetchCopyIntervalInBytes & ~7;
@@ -145,7 +145,7 @@ void VM_Version::initialize() {
       PrefetchCopyIntervalInBytes = 32760;
   }
 
-  if (AllocatePrefetchDistance.value() != -1 && (AllocatePrefetchDistance & 7)) {
+  if (AllocatePrefetchDistance != -1 && (AllocatePrefetchDistance & 7)) {
     warning("AllocatePrefetchDistance must be multiple of 8");
     AllocatePrefetchDistance = AllocatePrefetchDistance & ~7;
   }
@@ -606,7 +606,7 @@ void VM_Version::initialize() {
       // Acquire the largest supported vector length of this machine
       _max_supported_sve_vector_length = set_and_get_current_sve_vector_length(FloatRegister::sve_vl_max);
 
-      if (MaxVectorSize.value() != _max_supported_sve_vector_length) {
+      if (MaxVectorSize != _max_supported_sve_vector_length) {
         int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
         if (new_vl < 0) {
           vm_exit_during_initialization(
@@ -643,7 +643,7 @@ void VM_Version::initialize() {
   int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize.value() : 0;
   if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
     FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
-  } else if (ArrayOperationPartialInlineSize.value() != 0 && ArrayOperationPartialInlineSize.value() != inline_size) {
+  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
     warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
     ArrayOperationPartialInlineSize = inline_size;
   }

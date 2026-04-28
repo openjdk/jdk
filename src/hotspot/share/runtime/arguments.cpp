@@ -1530,7 +1530,7 @@ void Arguments::set_heap_size() {
       reasonable_max = MAX2(reasonable_max, MaxHeapSize);
     }
 
-    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit.value() != 0) {
+    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
       // Limit the heap size to ErgoHeapSizeLimit
       reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
     }
@@ -1725,7 +1725,7 @@ bool Arguments::check_vm_args_consistency() {
 #endif
 
 #ifndef SUPPORT_RESERVED_STACK_AREA
-  if (StackReservedPages.value() != 0) {
+  if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
   }
@@ -3575,7 +3575,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
 
 #ifndef PRODUCT
-  if (TraceBytecodesAt.value() != 0) {
+  if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
   }
 #endif // PRODUCT

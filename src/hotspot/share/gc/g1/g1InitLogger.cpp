@@ -42,7 +42,7 @@ void G1InitLogger::print_workers() {
 
 void G1InitLogger::print_gc_specific() {
   // Print a message about periodic GC configuration.
-  if (G1PeriodicGCInterval.value() != 0) {
+  if (G1PeriodicGCInterval != 0) {
     log_info_p(gc, init)("Periodic GC: Enabled");
     log_info_p(gc, init)("Periodic GC Interval: %zums", G1PeriodicGCInterval.value());
   } else {

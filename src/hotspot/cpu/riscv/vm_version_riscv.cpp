@@ -104,7 +104,7 @@ void VM_Version::common_initialize() {
   }
 
   if (UseZic64b) {
-    if (CacheLineSize.value() != 64) {
+    if (CacheLineSize != 64) {
       assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
       warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
       FLAG_SET_DEFAULT(CacheLineSize, 64);
@@ -225,7 +225,7 @@ void VM_Version::c2_initialize() {
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
   } else {
-    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize.value() != _initial_vector_length) {
+    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
       warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
                (int)MaxVectorSize, _initial_vector_length);
     }
@@ -276,7 +276,7 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3 * (int)CacheLineSize);
     }
 
-    if (PrefetchCopyIntervalInBytes.value() != -1 &&
+    if (PrefetchCopyIntervalInBytes != -1 &&
         ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
       warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
       PrefetchCopyIntervalInBytes = PrefetchCopyIntervalInBytes & ~7;

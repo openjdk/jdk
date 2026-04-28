@@ -873,7 +873,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
     // Check if it's time to adjust the in_use_list_ceiling up, due
     // to too many async deflation attempts without any progress.
-    if (NoAsyncDeflationProgressMax.value() != 0 &&
+    if (NoAsyncDeflationProgressMax != 0 &&
         _no_progress_cnt >= NoAsyncDeflationProgressMax) {
       double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
       size_t delta = (size_t)(ceiling * remainder) + 1;
