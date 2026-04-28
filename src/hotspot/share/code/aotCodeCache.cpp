@@ -2601,10 +2601,6 @@ address AOTStubData::load_archive_data(StubId stub_id, address& end, GrowableArr
   StubAddrRange &range = _ranges[idx];
   int base = range.start_index();
   if (base < 0) {
-#ifdef ASSERT
-    // reset index so we can idenitfy which ones we failed to find
-    range.init_entry(-2, 0);
-#endif
     return nullptr;
   }
   int count = range.count();
