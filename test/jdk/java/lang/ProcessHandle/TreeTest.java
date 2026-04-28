@@ -474,10 +474,17 @@ public class TreeTest extends ProcessUtil {
         }
     }
 
-    private static Stream<Arguments> pidSource() {
-        return Stream.of(
-                Arguments.of(ProcessHandle.of(1)),
-                Arguments.of(Optional.of(ProcessHandle.current())));
+    private static List<Arguments> pidSource() {
+        List<Arguments> args = new ArrayList<>();
+        args.add(Arguments.of(Optional.of(ProcessHandle.current())));
+        if (OS.LINUX.isCurrentOs()) {
+            args.add(Arguments.of(ProcessHandle.of(1)));
+        }
+        if (OS.MAC.isCurrentOs()) {
+            args.add(Arguments.of(ProcessHandle.of(0)));
+            args.add(Arguments.of(ProcessHandle.of(1)));
+        }
+        return args;
     }
 
     // Verify that process hierarchy is not unexpectedly large
