@@ -47,6 +47,12 @@
 
 #endif
 
+#ifdef WINDOWS_AARCH64
+// Forward declaration of a funciton defined in javaThread_windows_aarch64.cpp.
+// Sets `_jvm_thr_current_tls_offset` to the offset of `Thread::_thr_current`
+// within the TLS block.
+void initialize_thr_current_tls_offset();
+#endif
 
 // definitions of various symbolic names for machine registers
 
@@ -4318,6 +4324,7 @@ public:
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
     MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+    WINDOWS_AARCH64_ONLY(initialize_thr_current_tls_offset());
   }
 
   // Stack overflow checking

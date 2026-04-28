@@ -26,13 +26,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 
-#include <windows.h>
-
 // CRT-provided TLS slot for this module (jvm.dll), set by the OS loader.
 extern "C" unsigned long _tls_index;
 
 // TLS offset read by the assembly code in `aarch64_get_thread_helper()`.  This
-// offset is initialized by `cache_global_variables()` before any JIT code.
+// offset is initialized by `initialize_thr_current_tls_offset()`.
 extern "C" int64_t _jvm_thr_current_tls_offset = 0;
 
 frame JavaThread::pd_last_frame() {
@@ -95,7 +93,13 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   return false;
 }
 
-void JavaThread::cache_global_variables() {
+void JavaThread::cache_global_variables() { }
+
+void initialize_thr_current_tls_offset() {
+  JavaThread::initialize_thr_current_tls_offset();
+}
+
+void JavaThread::initialize_thr_current_tls_offset() {
   static bool init_thr_tls_offset = []() {
     char* tebPointer = (char*)NtCurrentTeb();
 
