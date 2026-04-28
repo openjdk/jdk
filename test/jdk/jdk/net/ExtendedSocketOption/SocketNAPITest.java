@@ -97,7 +97,7 @@ public class SocketNAPITest {
     @Test
     public void testSocket() throws Exception {
         int cID, sID;
-        int temp_sID = 0, temp_cID = 0;
+        int original_sID = 0, original_cID = 0;
         boolean initialRun = true;
         // server socket
         try (var ss = new ServerSocket()) {
@@ -134,12 +134,12 @@ public class SocketNAPITest {
                             assertTrue(sID >= 0, "Socket: Server");
                             assertTrue(cID >= 0, "Socket: Client");
                             initialRun = false;
+                            original_sID = sID;
+                            original_cID = cID;
                         } else {
-                            assertEquals(temp_cID, cID);
-                            assertEquals(temp_sID, sID);
+                            assertEquals(original_cID, cID);
+                            assertEquals(original_sID, sID);
                         }
-                        temp_sID = sID;
-                        temp_cID = cID;
                     }
                 }
             }

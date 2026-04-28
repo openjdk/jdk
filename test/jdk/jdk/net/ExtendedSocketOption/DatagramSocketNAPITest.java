@@ -79,7 +79,7 @@ public class DatagramSocketNAPITest {
 
     @Test
     public void testDatagramSocket() throws Exception {
-        int senderID, receiverID, tempID = 0;
+        int senderID, receiverID, originalID = 0;
         boolean initialRun = true;
         try (var r = new DatagramSocket(new InetSocketAddress(hostAddr, 0))) {
             var port = r.getLocalPort();
@@ -100,10 +100,10 @@ public class DatagramSocketNAPITest {
                     if (initialRun) {
                         assertTrue(receiverID >= 0, "DatagramSocket: Receiver");
                         initialRun = false;
+                        originalID = receiverID;
                     } else {
-                        assertEquals(receiverID, tempID);
+                        assertEquals(originalID, receiverID);
                     }
-                    tempID = receiverID;
                 }
             }
         }

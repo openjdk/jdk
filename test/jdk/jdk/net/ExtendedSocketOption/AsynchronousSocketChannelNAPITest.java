@@ -120,7 +120,7 @@ public class AsynchronousSocketChannelNAPITest {
                             initialRun = false;
                             originalClientID = clientID;
                         } else {
-                            assertEquals(clientID, originalClientID);
+                            assertEquals(originalClientID, clientID);
                         }
                     }
                 }

@@ -94,7 +94,7 @@ public class SocketChannelNAPITest {
 
     @Test
     public void testSocketChannel() throws Exception {
-        int sID, cID, tempID = 0;
+        int sID, cID, originalID = 0;
         boolean initialRun = true;
         try (var ss = ServerSocketChannel.open()) {
             ss.bind(new InetSocketAddress(hostAddr, 0));
@@ -117,10 +117,10 @@ public class SocketChannelNAPITest {
                         if (initialRun) {
                             assertTrue(cID >= 0, "SocketChannel: Receiver");
                             initialRun = false;
+                            originalID = cID;
                         } else {
-                            assertEquals(cID, tempID);
+                            assertEquals(originalID, cID);
                         }
-                        tempID = cID;
                     }
                 }
             }

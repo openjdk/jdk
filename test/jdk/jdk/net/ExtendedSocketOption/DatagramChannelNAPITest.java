@@ -79,7 +79,7 @@ public class DatagramChannelNAPITest {
 
     @Test
     public void testDatagramChannel() throws Exception {
-        int senderID, receiverID, tempID = 0;
+        int senderID, receiverID, originalID = 0;
         boolean initialRun = true;
         try (var r = DatagramChannel.open()) {
             r.bind(new InetSocketAddress(hostAddr, 0));
@@ -100,10 +100,10 @@ public class DatagramChannelNAPITest {
                     if (initialRun) {
                         assertTrue(receiverID >= 0, "DatagramChannel: Receiver");
                         initialRun = false;
+                        originalID = receiverID;
                     } else {
-                        assertEquals(receiverID, tempID);
+                        assertEquals(originalID, receiverID);
                     }
-                    tempID = receiverID;
                 }
             }
         }
