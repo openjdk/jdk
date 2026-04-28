@@ -632,7 +632,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   // if the second if is split thru Phi, the result is:
   //
   // if (some_condition) {
-  //     uncommon_trap(); // reexecutes the if (v == 0) that was removed { above, captures v = 0 as stack argument to ifeq bytecode
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed above, captures v = 0 as stack argument to ifeq bytecode
   // }
   // if (some_other_condition) {
   //     uncommon_trap(); // reexecutes the if (some_other_condition) {
