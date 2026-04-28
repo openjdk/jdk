@@ -128,7 +128,7 @@ public class ConcatTest {
                                               s2.mapToLong(Integer::longValue));
         assertEquals(result.isParallel(), parallel);
         assertConcatContent(result.spliterator(), ordered,
-                            expected.stream().mapToLong(Integer::longValue).spliterator(),  scenario);
+                            expected.stream().mapToLong(Integer::longValue).spliterator(), scenario);
     }
 
     private void assertDoubleConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
