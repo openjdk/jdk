@@ -218,12 +218,12 @@ public class DataBufferGetSetElemTest {
             db.getElemDouble(index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
-	}
-	try {
-	    db.setElemDouble(index, val);
-	    failed = true;
-	} catch (ArrayIndexOutOfBoundsException e) {
-	}
+        }
+        try {
+            db.setElemDouble(index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
         try {
             db.getElemDouble(0, index);
             failed = true;
