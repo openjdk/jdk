@@ -27,7 +27,7 @@
  * @summary C2: folding ifs may cause incorrect execution when trap is taken
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:-OptimizeUnstableIf ${test.main.class}
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:-OptimizeUnstableIf ${test.main.class}
  * @run main ${test.main.class}
  *
  */
