@@ -42,6 +42,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -471,6 +474,26 @@ public class TreeTest extends ProcessUtil {
         }
     }
 
+    private static Stream<Arguments> pidSource() {
+        return Stream.of(
+                Arguments.of(ProcessHandle.of(1)),
+                Arguments.of(Optional.of(ProcessHandle.current())));
+    }
+
+    // Verify that process hierarchy is not unexpectedly large
+    @ParameterizedTest
+    @MethodSource("pidSource")
+    void alwaysEmptyAtTheTop(Optional<ProcessHandle> current) {
+        final int MAX_DEPTH = 100; // The hierarchy should not be anywhere close to this deep
+        for (int depth = 0; depth < MAX_DEPTH; depth++) {
+            current = current.get().parent();
+            if (current.isEmpty()) {
+                return; // Last/top parent, normal exit
+            }
+        }
+        Assertions.fail("Traversal from process to root of process hierarchy exceeded 100");
+    }
+
     @Test
     @EnabledOnOs(OS.MAC)
     void pidZeroTest() {
@@ -485,5 +508,9 @@ public class TreeTest extends ProcessUtil {
         Stream<ProcessHandle> allProcesses = ProcessHandle.allProcesses();
         long pZeroCount = allProcesses.filter(p -> p.equals(pZero)).count();
         Assertions.assertEquals(1, pZeroCount, "pid 0 should appear exactly once in a list of all processes");
+
+        ProcessHandle pOne = ProcessHandle.of(1).orElseThrow();
+        Assertions.assertEquals(Optional.empty(), pZero.parent(), "Parent of pid zero should be Optional.empty");
+        Assertions.assertEquals(pZero, pOne.parent().orElseThrow(), "Parent of pid 1 should be pid 0");
     }
 }

@@ -313,8 +313,11 @@ final class ProcessHandleImpl implements ProcessHandle {
      *         if the child process does not have a parent
      */
     public Optional<ProcessHandle> parent() {
+        // Return empty parent if the pid can't be found or it is at the top of the hierarchy.
+        // A pid that is its own parent is at the top of the hierarchy.
+        // For example, on MacOSX, pid 0 is such a process.
         long ppid = parent0(pid, startTime);
-        if (ppid <= 0) {
+        if (ppid < 0 || (ppid == pid)) {
             return Optional.empty();
         }
         return get(ppid);
