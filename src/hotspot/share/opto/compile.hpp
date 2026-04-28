@@ -510,8 +510,8 @@ private:
 
 public:
 
-  GrowableArray<CallGenerator*>* vector_late_inlines() {
-    return &_vector_late_inlines;
+  void add_vector_late_inline(CallGenerator* cg) {
+    _vector_late_inlines.push(cg);
   }
 
   void* barrier_set_state() const { return _barrier_set_state; }

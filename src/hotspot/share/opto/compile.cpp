@@ -2218,6 +2218,12 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
+
+    if (_late_inlines.length() == 0 && _vector_late_inlines.length() > 0) {
+      while (_vector_late_inlines.length() > 0) {
+        add_late_inline(_vector_late_inlines.pop());
+      }
+    }
   }
 
   igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -2230,26 +2236,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     inline_incrementally_cleanup(igvn);
-  }
-
-  if (_vector_late_inlines.length() > 0) {
-    while (_vector_late_inlines.length() > 0) {
-      CallGenerator* cg = _vector_late_inlines.pop();
-      CallGenerator* fallback = CallGenerator::for_late_inline(cg->method(), cg->fallback_inline_cg());
-      fallback = fallback->with_call_node(cg->call_node());
-      add_late_inline(fallback);
-    }
-
-    while (_late_inlines.length() > 0) {
-      igvn_worklist()->ensure_empty();
-
-      while (inline_incrementally_one()) {
-        assert(!failing_internal() || failure_is_artificial(), "inconsistent");
-      }
-      if (failing())  return;
-
-      inline_incrementally_cleanup(igvn);
-    }
   }
 
   set_inlining_incrementally(false);

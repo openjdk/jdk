@@ -446,11 +446,15 @@ class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
     LateInlineCallGenerator(method, intrinsic_cg), _fallback_cg(fallback_cg) {}
 
   virtual bool is_vector_late_inline() const { return true; }
-  virtual CallGenerator* fallback_inline_cg() const { return _fallback_cg; }
 
   virtual JVMState* generate(JVMState* jvms) {
-    Compile::current()->vector_late_inlines()->append(this);
-    return LateInlineCallGenerator::generate(jvms);
+    JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
+    if (InlineVectorFallback) {
+      CallGenerator* fallback = CallGenerator::for_late_inline(method(), _fallback_cg);
+      fallback = fallback->with_call_node(call_node());
+      Compile::current()->add_vector_late_inline(fallback);
+    }
+    return new_jvms;
   }
 };
 
