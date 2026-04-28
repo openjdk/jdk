@@ -37,6 +37,7 @@
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
+// and basic type.
 int VectorNode::opcode(int sopc, BasicType bt) {
   switch (sopc) {
   case Op_AddI:
@@ -1124,6 +1125,7 @@ static Node* ideal_partial_operations(PhaseGVN* phase, Node* node, const TypeVec
   }
 }
 
+// Check if the vector operation is commutative (assuming that it is not predicated/masked).
 static bool is_commutative_vector_operation(int opcode) {
   switch(opcode) {
     case Op_AddVB:
@@ -1183,7 +1185,7 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
 
 // Check whether we can push this vector op through replicate (all inputs are Replicate).
 bool VectorNode::can_push_through_replicate(BasicType bt) {
-  if (!scalar_opcode(Opcode(), bt)) {
+  if (scalar_opcode(Opcode(), bt) == 0) {
     return false;
   }
 
@@ -1276,9 +1278,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
   }
 }
 
+// Re-wires and creates a new ideal graph pallet with following connectivity
+//   parent(child(cinput1, cinput2), pinput2)
 Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
                                            Node* pinput2, PhaseGVN* phase) {
-  // Transformation: parent(child(cinput1, cinput2), pinput2) with child's inputs set to cinput1, cinput2.
   Node* cloned_child = child->clone();
   cloned_child->set_req(1, cinput1);
   cloned_child->set_req(2, cinput2);
@@ -1289,9 +1292,9 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
   return cloned_parent;
 }
 
-// Try to reassociate commutative vector operations using following ideal transformation,
-// this will facilitate strength reducing vector operation with all replicated inputs to
-// scalar operation.
+// Try to reassociate commutative vector operations using the following ideal transformation,
+// this will facilitate strength reducing a vector operation with all replicated inputs to
+// a scalar operation.
 //
 // VectorOp (Replicate INP1) (VectorOp (Replicate INP2) INP3) =>
 //    VectorOp (VectorOp (Replicate INP1) (Replicate INP2)) INP3
