@@ -638,12 +638,19 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
   // }
   //
-  // If next, some_condition and some_other_condition are folded into
+  // some_condition and some_other_condition could be folded into
   // a single new condition that is narrower than some_condition
-  // (IfNode::fold_compares() for instance) and that new condition is
-  // true for some input value for which some_condition is false, then
-  // the trap is taken which causes if (v == 0) { to be reexecuted
-  // with v = 0, causing a branch that should not be taken to execute.
+  // (done by IfNode::fold_compares(), for instance):
+  //
+  // if (combined_narrower_condition) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  //
+  // Then combined_narrower_condition is true for some input value for 
+  // which some_condition is false. When such an input value is used
+  // at runtime, the trap is taken which causes "if (v == 0) {" to be 
+  // reexecuted with v = 0 even though some_condition is wrong, causing
+  // the wrong branch to be executed. 
   //
   // Mark the uncommon trap nodes to prevent such a transformation
   // from happening.
