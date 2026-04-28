@@ -162,7 +162,6 @@ public:
     decl(SVE,           sve           )    \
     decl(SB,            sb            )    \
     decl(PACA,          paca          )    \
-    /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm    )    \
     decl(SVE2,          sve2          )    \
     decl(A53MAC,        a53mac        )    \
