@@ -182,6 +182,15 @@ final class LazyListTest {
         assertEquals(-1, lazy.lastIndexOf(SIZE + 1));
     }
 
+    @ParameterizedTest
+    @MethodSource("lazyLists")
+    void bounds(List list) {
+        IntStream.range(0, list.size())
+                .forEach(i -> assertEquals(IDENTITY.apply(i), list.get(i)));
+        assertThrows(IndexOutOfBoundsException.class, () -> list.get(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> list.get(list.size()));
+    }
+
     @Test
     void toStringTest() {
         assertEquals("[]", newEmptyLazyList().toString());
@@ -590,6 +599,11 @@ final class LazyListTest {
                 new Operation("listIter().add",    l -> l.listIterator().add(1)),
                 new Operation("listIter().set",    l -> l.listIterator().set(1))
         );
+    }
+
+    static Stream<List> lazyLists() {
+        return IntStream.rangeClosed(0, SIZE)
+                .mapToObj(i -> List.ofLazy(i, IDENTITY));
     }
 
     static List<Integer> newLazyList() {

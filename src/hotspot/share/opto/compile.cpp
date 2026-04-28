@@ -2584,14 +2584,13 @@ void Compile::Optimize() {
 
   assert(igvn._worklist.size() == 0, "not empty");
 
-  assert(_late_inlines.length() == 0 || IncrementalInlineMH || IncrementalInlineVirtual, "not empty");
-
   if (_late_inlines.length() > 0) {
     // More opportunities to optimize virtual and MH calls.
     // Though it's maybe too late to perform inlining, strength-reducing them to direct calls is still an option.
     process_late_inline_calls_no_inline(igvn);
     if (failing())  return;
   }
+  assert(_late_inlines.length() == 0, "late inline queue must be drained");
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
@@ -3234,6 +3233,12 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     } else if (mb->leading()) {
       assert(mb->trailing_membar()->leading_membar() == mb, "bad membar pair");
     }
+  }
+  if (n->is_CallLeafPure()) {
+    // A pure call whose result projection is unused should have been
+    // eliminated by CallLeafPureNode::Ideal during IGVN.
+    assert(n->as_CallLeafPure()->proj_out_or_null(TypeFunc::Parms) != nullptr,
+           "unused CallLeafPureNode should have been removed before final graph reshaping");
   }
 #endif
   // Count FPU ops and common calls, implements item (3)
