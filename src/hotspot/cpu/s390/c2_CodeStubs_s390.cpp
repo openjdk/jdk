@@ -33,7 +33,7 @@ int C2SafepointPollStub::max_size() const {
   return 30;
 }
 
-void C2SafePointPollStub::emit(C2_MacroAssembler& masm) {
+void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   __ bind(entry());
