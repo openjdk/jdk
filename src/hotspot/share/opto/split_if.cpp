@@ -623,7 +623,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   //     v = 1;
   // } // v is Phi(0, 1)
   // if (v == 0) {
-  //     uncommon_trap(); // reexecutes the if (v == 0) { above, captures v as stack argument to ifeq bytecode
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" above, captures v as stack argument to ifeq bytecode
   // }
   // if (some_other_condition) {
   //     uncommon_trap(); // reexecutes the if (some_other_condition) {
