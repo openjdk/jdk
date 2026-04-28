@@ -980,17 +980,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // array
   fnptrs[ae] = start;
 
-#if 0
-  // Normally the stub entries are registered in the AOT address table
-  // as a side-effect of an AOT laod or store -- irrespective of
-  // whether we are loading or saving stubs. For now we need to register
-  // the addresses by hand.
-
-  if (AOTCodeCache::is_on()) {
-    AOTCodeCache::cache()->add_stub_entries(stub_id, fnptrs[ae]);
-  }
-#endif
-
   return;
 }
 
