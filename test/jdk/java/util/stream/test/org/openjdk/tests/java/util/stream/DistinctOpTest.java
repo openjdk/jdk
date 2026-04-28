@@ -203,8 +203,8 @@ public class DistinctOpTest extends OpTestCase {
                     // The single result element should be equal in identity to
                     // the first input element
                     assertEquals(1, l.size());
-                    assertEquals(System.identityHashCode(l.get(0)),
-                                 System.identityHashCode(expectedElement));
+                    assertEquals(System.identityHashCode(expectedElement),
+                                 System.identityHashCode(l.get(0)));
 
                 })
                 .exercise();

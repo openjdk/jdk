@@ -100,7 +100,7 @@ public class CollectionAndMapModifyStreamTest {
         Stream<Integer> s = c.stream();
         assertTrue(c.remove(2));
         Object[] result = s.toArray();
-        assertEquals(result.length, c.size());
+        assertEquals(c.size(), result.length);
     }
 
     public static Stream<Arguments> createMaps() {
@@ -165,6 +165,6 @@ public class CollectionAndMapModifyStreamTest {
         Map.Entry<Integer, Integer> second = c.iterator().next();
         assertTrue(c.remove(second));
         Object[] result = s.toArray();
-        assertEquals(result.length, c.size());
+        assertEquals(c.size(), result.length);
     }
 }

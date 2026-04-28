@@ -539,7 +539,7 @@ public abstract class OpTestCase extends LoggingTestCase {
         }
 
         public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> equalator(BiConsumer<R, R> equalityAsserter) {
-            resultAsserter = (act, exp, ord, par) -> equalityAsserter.accept(act, exp);
+            resultAsserter = (act, exp, ord, par) -> equalityAsserter.accept(exp, act);
             return this;
         }
 

@@ -66,10 +66,10 @@ public class LongNodeTest extends OpTestCase {
         return params.stream();
     }
 
-    private static void assertEqualsListLongArray(List<Long> list, long[] array) {
-        assertEquals(list.size(), array.length);
-        for (int i = 0; i < array.length; i++)
-            assertEquals(array[i], (long) list.get(i));
+    private static void assertEqualsListLongArray(long[] expected, List<Long> actual) {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(expected[i], (long) actual.get(i));
     }
 
     private static List<Long> toList(long[] a) {
@@ -154,7 +154,7 @@ public class LongNodeTest extends OpTestCase {
             l.add(e);
         });
 
-        assertEqualsListLongArray(l, array);
+        assertEqualsListLongArray(array, l);
     }
 
     @ParameterizedTest

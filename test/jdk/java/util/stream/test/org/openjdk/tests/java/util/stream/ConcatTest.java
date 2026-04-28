@@ -95,30 +95,30 @@ public class ConcatTest {
         // concat stream cannot guarantee sorted
         assertFalse(sp.hasCharacteristics(Spliterator.SORTED), scenario);
         // concat stream is ordered if both are ordered
-        assertEquals(sp.hasCharacteristics(Spliterator.ORDERED), ordered, scenario);
+        assertEquals(ordered, sp.hasCharacteristics(Spliterator.ORDERED), scenario);
 
         // Verify elements
         if (ordered) {
-            assertEquals(toBoxedList(sp),
-                         toBoxedList(expected),
+            assertEquals(toBoxedList(expected),
+                         toBoxedList(sp),
                          scenario);
         } else {
-            assertEquals(toBoxedMultiset(sp),
-                         toBoxedMultiset(expected),
+            assertEquals(toBoxedMultiset(expected),
+                         toBoxedMultiset(sp),
                          scenario);
         }
     }
 
     private void assertRefConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         Stream<Integer> result = Stream.concat(s1, s2);
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered, expected.spliterator(), scenario);
     }
 
     private void assertIntConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         IntStream result = IntStream.concat(s1.mapToInt(Integer::intValue),
                                             s2.mapToInt(Integer::intValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
                             expected.stream().mapToInt(Integer::intValue).spliterator(), scenario);
     }
@@ -126,7 +126,7 @@ public class ConcatTest {
     private void assertLongConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         LongStream result = LongStream.concat(s1.mapToLong(Integer::longValue),
                                               s2.mapToLong(Integer::longValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
                             expected.stream().mapToLong(Integer::longValue).spliterator(), scenario);
     }
@@ -134,7 +134,7 @@ public class ConcatTest {
     private void assertDoubleConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         DoubleStream result = DoubleStream.concat(s1.mapToDouble(Integer::doubleValue),
                                                   s2.mapToDouble(Integer::doubleValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
                             expected.stream().mapToDouble(Integer::doubleValue).spliterator(), scenario);
     }

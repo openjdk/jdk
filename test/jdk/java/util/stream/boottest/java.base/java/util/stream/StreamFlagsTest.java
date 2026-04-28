@@ -88,7 +88,7 @@ public class StreamFlagsTest {
             int filteredFlags = OpTestCase.getStreamFlags(s.filter((Object e) -> true));
             int expectedFlags = baseFlags & ~SIZED.set();
 
-            assertEquals(filteredFlags, expectedFlags);
+            assertEquals(expectedFlags, filteredFlags);
         }
     }
 }

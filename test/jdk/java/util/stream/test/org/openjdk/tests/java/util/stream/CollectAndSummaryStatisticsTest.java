@@ -112,8 +112,8 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
 
         for (IntSummaryStatistics stats : instances) {
             assertEquals(1000, stats.getCount());
-            assertEquals(stats.getSum(), countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), (double) stats.getSum() / stats.getCount());
+            assertEquals(countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals((double) stats.getSum() / stats.getCount(), stats.getAverage());
             assertEquals(1000, stats.getMax());
             assertEquals(1, stats.getMin());
         }
@@ -146,8 +146,8 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
 
         for (LongSummaryStatistics stats : instances) {
             assertEquals(1000, stats.getCount());
-            assertEquals(stats.getSum(), (long) countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), (double) stats.getSum() / stats.getCount());
+            assertEquals((long) countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals((double) stats.getSum() / stats.getCount(), stats.getAverage());
             assertEquals(1000L, stats.getMax());
             assertEquals(1L, stats.getMin());
         }
@@ -180,8 +180,8 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
 
         for (DoubleSummaryStatistics stats : instances) {
             assertEquals(1000, stats.getCount());
-            assertEquals(stats.getSum(), (double) countTo(1000).stream().mapToInt(i -> i).sum());
-            assertEquals(stats.getAverage(), stats.getSum() / stats.getCount());
+            assertEquals((double) countTo(1000).stream().mapToInt(i -> i).sum(), stats.getSum());
+            assertEquals(stats.getSum() / stats.getCount(), stats.getAverage());
             assertEquals(1000.0, stats.getMax());
             assertEquals(1.0, stats.getMin());
         }

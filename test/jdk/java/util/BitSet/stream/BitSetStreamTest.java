@@ -121,7 +121,7 @@ public class BitSetStreamTest extends SpliteratorTestHelper {
         PrimitiveIterator.OfInt it = bs.stream().iterator();
         for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
             assertTrue(it.hasNext());
-            assertEquals(it.nextInt(), i);
+            assertEquals(i, it.nextInt());
             if (i == Integer.MAX_VALUE)
                 break; // or (i + 1) would overflow
         }

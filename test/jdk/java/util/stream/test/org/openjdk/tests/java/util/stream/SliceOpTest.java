@@ -293,7 +293,7 @@ public class SliceOpTest extends OpTestCase {
                 List<Integer> actual = new ArrayList<>();
                 act.forEach(actual::add);
 
-                assertEquals(actual.size(), expectedSize);
+                assertEquals(expectedSize, actual.size());
                 assertTrue(expected.containsAll(actual));
             }
             else {
@@ -329,7 +329,7 @@ public class SliceOpTest extends OpTestCase {
                     .stream(m)
                     .resultAsserter(sliceResultAsserter(data, expectedSize))
                     .exercise();
-            assertEquals(sr.size(), expectedSize);
+            assertEquals(expectedSize, sr.size());
         }
     }
 
@@ -350,7 +350,7 @@ public class SliceOpTest extends OpTestCase {
                     .peek(i -> ai.getAndIncrement())
                     .limit(l).toArray();
             // For the case of a zero limit, one element will get pushed through the sink chain
-            assertEquals(ai.get(), l, "tee block was called too many times");
+            assertEquals(l, ai.get(), "tee block was called too many times");
         }
     }
 

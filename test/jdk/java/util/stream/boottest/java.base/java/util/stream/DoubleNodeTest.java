@@ -66,10 +66,10 @@ public class DoubleNodeTest extends OpTestCase {
         return params.stream();
     }
 
-    private static void assertEqualsListDoubleArray(List<Double> list, double[] array) {
-        assertEquals(list.size(), array.length);
-        for (int i = 0; i < array.length; i++)
-            assertEquals(array[i], (double) list.get(i));
+    private static void assertEqualsListDoubleArray(double[] expected, List<Double> actual) {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(expected[i], (double) actual.get(i));
     }
 
     private static List<Double> toList(double[] a) {
@@ -154,7 +154,7 @@ public class DoubleNodeTest extends OpTestCase {
             l.add(e);
         });
 
-        assertEqualsListDoubleArray(l, array);
+        assertEqualsListDoubleArray(array, l);
     }
 
     @ParameterizedTest

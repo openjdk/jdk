@@ -109,7 +109,7 @@ public class SplittableRandomTest extends OpTestCase {
                 values.add(t);
                 count++;
             }
-            assertEquals(count, size);
+            assertEquals(size, count);
             // Assert that at least one different result is produced
             // For the size of the data it is highly improbable that this
             // will cause a false negative (i.e. a false failure)

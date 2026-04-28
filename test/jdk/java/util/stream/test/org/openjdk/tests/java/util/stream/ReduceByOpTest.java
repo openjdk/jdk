@@ -50,20 +50,20 @@ public class ReduceByOpTest extends OpTestCase {
     public void testOps(String name, TestData.OfRef<Integer> data) {
         Map<Boolean,List<Integer>> gbResult = data.stream().collect(groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false)));
         Map<Boolean, Integer> result = data.stream().collect(groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false), reducing(0, rPlus)));
-        assertEquals(result.size(), gbResult.size());
+        assertEquals(gbResult.size(), result.size());
         for (Map.Entry<Boolean, Integer> entry : result.entrySet()) {
             setContext("entry", entry);
             Boolean key = entry.getKey();
-            assertEquals(entry.getValue(), data.stream().filter(e -> pEven.test(e) == key).reduce(0, rPlus));
+            assertEquals(data.stream().filter(e -> pEven.test(e) == key).reduce(0, rPlus), entry.getValue());
         }
 
         int uniqueSize = data.into(new HashSet<Integer>()).size();
         Map<Integer, List<Integer>> mgResult = exerciseTerminalOps(data, s -> s.collect(groupingBy(mId)));
         Map<Integer, Integer> miResult = exerciseTerminalOps(data, s -> s.collect(groupingBy(mId, reducing(0, e -> 1, Integer::sum))));
-        assertEquals(miResult.keySet().size(), uniqueSize);
+        assertEquals(uniqueSize, miResult.keySet().size());
         for (Map.Entry<Integer, Integer> entry : miResult.entrySet()) {
             setContext("entry", entry);
-            assertEquals((int) entry.getValue(), mgResult.get(entry.getKey()).size());
+            assertEquals(mgResult.get(entry.getKey()).size(), (int) entry.getValue());
         }
     }
 }

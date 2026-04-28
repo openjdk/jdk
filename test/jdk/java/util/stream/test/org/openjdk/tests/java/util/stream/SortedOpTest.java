@@ -158,10 +158,10 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeStream(l).sorted(), Stream::peek, i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), Optional.of(1));
-        assertEquals(knownSize.apply(1).findAny(), Optional.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), Optional.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), Optional.of(1));
+        assertEquals(Optional.of(1), knownSize.apply(1).findFirst());
+        assertEquals(Optional.of(1), knownSize.apply(1).findAny());
+        assertEquals(Optional.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(Optional.of(1), unknownSize.apply(1).findAny());
 
         // Match
         assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
@@ -238,10 +238,10 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeIntStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalInt.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalInt.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalInt.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalInt.of(1));
+        assertEquals(OptionalInt.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalInt.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalInt.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalInt.of(1), unknownSize.apply(1).findAny());
 
         // Match
         assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
@@ -289,10 +289,10 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeLongStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalLong.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalLong.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalLong.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalLong.of(1));
+        assertEquals(OptionalLong.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalLong.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalLong.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalLong.of(1), unknownSize.apply(1).findAny());
 
         // Match
         assertTrue(knownSize.apply(2).anyMatch(i -> i == 2));
@@ -340,10 +340,10 @@ public class SortedOpTest extends OpTestCase {
                 (unknownSizeDoubleStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
 
         // Find
-        assertEquals(knownSize.apply(1).findFirst(), OptionalDouble.of(1));
-        assertEquals(knownSize.apply(1).findAny(), OptionalDouble.of(1));
-        assertEquals(unknownSize.apply(1).findFirst(), OptionalDouble.of(1));
-        assertEquals(unknownSize.apply(1).findAny(), OptionalDouble.of(1));
+        assertEquals(OptionalDouble.of(1), knownSize.apply(1).findFirst());
+        assertEquals(OptionalDouble.of(1), knownSize.apply(1).findAny());
+        assertEquals(OptionalDouble.of(1), unknownSize.apply(1).findFirst());
+        assertEquals(OptionalDouble.of(1), unknownSize.apply(1).findAny());
 
         // Match
         assertTrue(knownSize.apply(2).anyMatch(i -> i == 2.0));

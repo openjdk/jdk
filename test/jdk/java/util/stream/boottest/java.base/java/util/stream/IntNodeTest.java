@@ -66,10 +66,10 @@ public class IntNodeTest extends OpTestCase {
         return params.stream();
     }
 
-    private static void assertEqualsListIntArray(List<Integer> list, int[] array) {
-        assertEquals(list.size(), array.length);
-        for (int i = 0; i < array.length; i++)
-            assertEquals(array[i], (int) list.get(i));
+    private static void assertEqualsListIntArray(int[] expected, List<Integer> actual) {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(expected[i], (int) actual.get(i));
     }
 
     private static List<Integer> toList(int[] a) {
@@ -154,7 +154,7 @@ public class IntNodeTest extends OpTestCase {
             l.add(e);
         });
 
-        assertEqualsListIntArray(l, array);
+        assertEqualsListIntArray(array, l);
     }
 
     @ParameterizedTest

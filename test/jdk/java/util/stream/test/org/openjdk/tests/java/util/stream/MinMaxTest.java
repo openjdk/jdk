@@ -59,8 +59,8 @@ public class MinMaxTest extends OpTestCase {
 
     @Test
     public void testIntMinMax() {
-        assertEquals(IntStream.empty().min(), OptionalInt.empty());
-        assertEquals(IntStream.empty().max(), OptionalInt.empty());
+        assertEquals(OptionalInt.empty(), IntStream.empty().min());
+        assertEquals(OptionalInt.empty(), IntStream.empty().max());
         assertEquals(1, IntStream.range(1, 1001).min().getAsInt());
         assertEquals(1000, IntStream.range(1, 1001).max().getAsInt());
     }
@@ -74,8 +74,8 @@ public class MinMaxTest extends OpTestCase {
 
     @Test
     public void testLongMinMax() {
-        assertEquals(LongStream.empty().min(), OptionalLong.empty());
-        assertEquals(LongStream.empty().max(), OptionalLong.empty());
+        assertEquals(OptionalLong.empty(), LongStream.empty().min());
+        assertEquals(OptionalLong.empty(), LongStream.empty().max());
         assertEquals(1, LongStream.range(1, 1001).min().getAsLong());
         assertEquals(1000, LongStream.range(1, 1001).max().getAsLong());
     }
@@ -89,8 +89,8 @@ public class MinMaxTest extends OpTestCase {
 
     @Test
     public void testDoubleMinMax() {
-        assertEquals(DoubleStream.empty().min(), OptionalDouble.empty());
-        assertEquals(DoubleStream.empty().max(), OptionalDouble.empty());
+        assertEquals(OptionalDouble.empty(), DoubleStream.empty().min());
+        assertEquals(OptionalDouble.empty(), DoubleStream.empty().max());
         assertEquals(1.0, LongStream.range(1, 1001).asDoubleStream().min().getAsDouble());
         assertEquals(1000.0, LongStream.range(1, 1001).asDoubleStream().max().getAsDouble());
     }

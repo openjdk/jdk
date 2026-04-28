@@ -80,7 +80,7 @@ public class FindFirstOpTest extends OpTestCase {
                               assertContains(act, fs.apply(data.stream()).iterator());
                           }
                           else {
-                              assertEquals(act, exp);
+                              assertEquals(exp, act);
                           }
                       })
                       .exercise();
@@ -100,7 +100,7 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfInt i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextInt(), r.getAsInt());
+            assertEquals(r.getAsInt(), i.nextInt());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());
@@ -121,7 +121,7 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfLong i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextLong(), r.getAsLong());
+            assertEquals(r.getAsLong(), i.nextLong());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());
@@ -142,7 +142,7 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfDouble i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextDouble(), r.getAsDouble());
+            assertEquals(r.getAsDouble(), i.nextDouble());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());

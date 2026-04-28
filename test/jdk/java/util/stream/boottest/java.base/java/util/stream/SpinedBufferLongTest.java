@@ -53,7 +53,7 @@ public class SpinedBufferLongTest extends AbstractSpinedBufferTest {
     @ParameterizedTest
     @MethodSource("createLongSpinedBuffer")
     public void testLongSpliterator(long[] array, SpinedBuffer.OfLong sb) {
-        assertEquals(sb.count(), array.length);
+        assertEquals(array.length, sb.count());
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
 
         SpliteratorTestHelper.testLongSpliterator(sb::spliterator);
@@ -69,18 +69,18 @@ public class SpinedBufferLongTest extends AbstractSpinedBufferTest {
         long lastSplitSize = spliterator.getExactSizeIfKnown();
         splitSizes += lastSplitSize;
 
-        assertEquals(splitSizes, array.length);
+        assertEquals(array.length, splitSizes);
 
         List<Long> contentOfLastSplit = new ArrayList<>();
         spliterator.forEachRemaining((LongConsumer) contentOfLastSplit::add);
 
-        assertEquals(contentOfLastSplit.size(), lastSplitSize);
+        assertEquals(lastSplitSize, contentOfLastSplit.size());
 
         List<Long> end = Arrays.stream(array)
                 .boxed()
                 .skip(array.length - lastSplitSize)
                 .collect(Collectors.toList());
-        assertEquals(contentOfLastSplit, end);
+        assertEquals(end, contentOfLastSplit);
     }
 
     @Test
@@ -98,20 +98,20 @@ public class SpinedBufferLongTest extends AbstractSpinedBufferTest {
             list2.add(it.nextLong());
         }
         assertFalse(it.hasNext());
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
 
         for (int i = 0; i < TEST_SIZE; i++) {
-            assertEquals(sb.get(i), i, Long.toString(i));
+            assertEquals(i, sb.get(i), Long.toString(i));
         }
 
         list2.clear();
         sb.forEach((long i) -> list2.add(i));
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
         long[] array = sb.asPrimitiveArray();
         list2.clear();
         for (long i : array) {
             list2.add(i);
         }
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
     }
 }

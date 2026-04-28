@@ -286,24 +286,24 @@ public class FlatMapOpTest extends OpTestCase {
         var refResult = Stream.generate(() -> "")
               .flatMap(c -> Stream.generate(() -> c).flatMap(x -> Stream.generate(() -> x)))
               .limit(5).toList();
-        assertEquals(refResult, refExpected);
+        assertEquals(refExpected, refResult);
 
         var intExpected = IntStream.generate(() -> 1).limit(5).sum();
         var intResult = IntStream.generate(() -> 1)
                 .flatMap(c -> IntStream.generate(() -> c).flatMap(x -> IntStream.generate(() -> x)))
                 .limit(5).sum();
-        assertEquals(intResult, intExpected);
+        assertEquals(intExpected, intResult);
 
         var longExpected = LongStream.generate(() -> 1L).limit(5).sum();
         var longResult = LongStream.generate(() -> 1L)
                 .flatMap(c -> LongStream.generate(() -> c).flatMap(x -> LongStream.generate(() -> x)))
                 .limit(5).sum();
-        assertEquals(longResult, longExpected);
+        assertEquals(longExpected, longResult);
 
         var doubleExpected = DoubleStream.generate(() -> 0d).limit(5).sum();
         var doubleResult = DoubleStream.generate(() -> 0d)
                 .flatMap(c -> DoubleStream.generate(() -> c).flatMap(x -> DoubleStream.generate(() -> x)))
                 .limit(5).sum();
-        assertEquals(doubleResult, doubleExpected);
+        assertEquals(doubleExpected, doubleResult);
     }
 }

@@ -89,7 +89,7 @@ public class MapTest {
     public void testReplaceAll() {
         map.replaceAll((k, v) -> {return v.toUpperCase();});
         for (final Map.Entry<Integer, String> entry : map.entrySet()) {
-            assertEquals(entry.getValue(), EXPECTED.get(entry.getKey()).toUpperCase());
+            assertEquals(EXPECTED.get(entry.getKey()).toUpperCase(), entry.getValue());
         }
     }
 }

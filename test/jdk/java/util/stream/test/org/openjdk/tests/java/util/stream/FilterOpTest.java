@@ -61,7 +61,7 @@ public class FilterOpTest extends OpTestCase {
     @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         Collection<Integer> result = exerciseOps(data, s -> s.filter(pTrue));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(pFalse));
         assertEquals(0, result.size());
@@ -73,17 +73,17 @@ public class FilterOpTest extends OpTestCase {
         assertEquals(0, result.size());
 
         result = exerciseOps(data, s -> s.filter(pOdd.or(pEven)));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
     }
 
     @ParameterizedTest
     @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOps(String name, TestData.OfInt data) {
         Collection<Integer> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
-        assertEquals(result.size(), 0);
+        assertEquals(0, result.size());
 
         exerciseOps(data, s -> s.filter(i -> 0 == i % 2));
         exerciseOps(data, s -> s.filter(i -> 1 == i % 2));
@@ -93,7 +93,7 @@ public class FilterOpTest extends OpTestCase {
     @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testOps(String name, TestData.OfLong data) {
         Collection<Long> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
         assertEquals(0, result.size());
@@ -106,7 +106,7 @@ public class FilterOpTest extends OpTestCase {
     @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testOps(String name, TestData.OfDouble data) {
         Collection<Double> result = exerciseOps(data, s -> s.filter(i -> true));
-        assertEquals(result.size(), data.size());
+        assertEquals(data.size(), result.size());
 
         result = exerciseOps(data, s -> s.filter(i -> false));
         assertEquals(0, result.size());

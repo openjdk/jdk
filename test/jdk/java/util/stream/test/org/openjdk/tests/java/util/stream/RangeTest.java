@@ -73,7 +73,7 @@ public class RangeTest extends OpTestCase {
                 }
 
                 int[] inc = IntStream.range(start, end).toArray();
-                assertEquals(inc.length, size);
+                assertEquals(size, inc.length);
                 assertTrue(Arrays.equals(exp, inc));
 
                 withData(intRangeData(start, end)).stream(s -> s).
@@ -93,7 +93,7 @@ public class RangeTest extends OpTestCase {
                 }
 
                 int[] inc = IntStream.rangeClosed(start, end).toArray();
-                assertEquals(inc.length, size);
+                assertEquals(size, inc.length);
                 assertTrue(Arrays.equals(exp, inc));
 
                 withData(intRangeClosedData(start, end)).stream(s -> s).
@@ -120,7 +120,7 @@ public class RangeTest extends OpTestCase {
         {
             Spliterator.OfInt s = IntStream.rangeClosed(Integer.MIN_VALUE, Integer.MAX_VALUE).
                     spliterator();
-            assertEquals(s.estimateSize(), 1L << 32);
+            assertEquals(1L << 32, s.estimateSize());
         }
     }
 
@@ -167,7 +167,7 @@ public class RangeTest extends OpTestCase {
                 }
 
                 long[] inc = LongStream.range(start, end).toArray();
-                assertEquals(inc.length, size);
+                assertEquals(size, inc.length);
                 assertTrue(Arrays.equals(exp, inc));
 
                 withData(longRangeData(start, end)).stream(s -> s).
@@ -187,7 +187,7 @@ public class RangeTest extends OpTestCase {
                 }
 
                 long[] inc = LongStream.rangeClosed(start, end).toArray();
-                assertEquals(inc.length, size);
+                assertEquals(size, inc.length);
                 assertTrue(Arrays.equals(exp, inc));
 
                 withData(longRangeClosedData(start, end)).stream(s -> s).
@@ -255,7 +255,7 @@ public class RangeTest extends OpTestCase {
         {
             Spliterator.OfLong s = LongStream.range(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
 
-            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertEquals(Long.MAX_VALUE, s.estimateSize());
             assertNotSizedAndSubSized(s);
 
             Spliterator.OfLong s1 = s.trySplit();
@@ -270,8 +270,8 @@ public class RangeTest extends OpTestCase {
             assertTrue(s1.estimateSize() < Long.MAX_VALUE);
             assertTrue(s2.estimateSize() < Long.MAX_VALUE);
 
-            assertEquals(s.estimateSize() + s1.estimateSize() + s2.estimateSize(),
-                         Long.MAX_VALUE - Long.MIN_VALUE);
+            assertEquals(Long.MAX_VALUE - Long.MIN_VALUE,
+                    s.estimateSize() + s1.estimateSize() + s2.estimateSize());
         }
 
         long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
@@ -281,7 +281,7 @@ public class RangeTest extends OpTestCase {
 
             Spliterator.OfLong s = LongStream.range(start, end).spliterator();
 
-            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertEquals(Long.MAX_VALUE, s.estimateSize());
             assertNotSizedAndSubSized(s);
 
             Spliterator.OfLong s1 = s.trySplit();
@@ -291,7 +291,7 @@ public class RangeTest extends OpTestCase {
             assertTrue(s.estimateSize() < Long.MAX_VALUE);
             assertTrue(s1.estimateSize() < Long.MAX_VALUE);
 
-            assertEquals(s.estimateSize() + s1.estimateSize(), end - start);
+            assertEquals(end - start, s.estimateSize() + s1.estimateSize());
         }
     }
 
@@ -347,7 +347,7 @@ public class RangeTest extends OpTestCase {
             assertTrue(s.estimateSize() < Long.MAX_VALUE);
             assertTrue(s1.estimateSize() < Long.MAX_VALUE);
 
-            assertEquals(s.estimateSize() + s1.estimateSize(), end - start + 1);
+            assertEquals(end - start + 1, s.estimateSize() + s1.estimateSize());
         }
     }
 }

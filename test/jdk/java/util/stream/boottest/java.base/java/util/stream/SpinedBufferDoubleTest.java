@@ -54,7 +54,7 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
     @ParameterizedTest
     @MethodSource("createDoubleSpinedBuffer")
     public void testDoubleSpliterator(double[] array, SpinedBuffer.OfDouble sb) {
-        assertEquals(sb.count(), array.length);
+        assertEquals(array.length, sb.count());
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
 
         SpliteratorTestHelper.testDoubleSpliterator(sb::spliterator);
@@ -70,18 +70,18 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
         long lastSplitSize = spliterator.getExactSizeIfKnown();
         splitSizes += lastSplitSize;
 
-        assertEquals(splitSizes, array.length);
+        assertEquals(array.length, splitSizes);
 
         List<Double> contentOfLastSplit = new ArrayList<>();
         spliterator.forEachRemaining((DoubleConsumer) contentOfLastSplit::add);
 
-        assertEquals(contentOfLastSplit.size(), lastSplitSize);
+        assertEquals(lastSplitSize, contentOfLastSplit.size());
 
         List<Double> end = Arrays.stream(array)
                 .boxed()
                 .skip(array.length - lastSplitSize)
                 .collect(Collectors.toList());
-        assertEquals(contentOfLastSplit, end);
+        assertEquals(end, contentOfLastSplit);
     }
 
     @Test
@@ -99,20 +99,20 @@ public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
             list2.add(it.nextDouble());
         }
         assertFalse(it.hasNext());
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
 
         for (int i = 0; i < TEST_SIZE; i++) {
-            assertEquals(sb.get(i), (double) i, Double.toString(i));
+            assertEquals((double) i, sb.get(i), Double.toString(i));
         }
 
         list2.clear();
         sb.forEach((double i) -> list2.add(i));
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
         double[] array = sb.asPrimitiveArray();
         list2.clear();
         for (double i : array) {
             list2.add(i);
         }
-        assertEquals(list1, list2);
+        assertEquals(list2, list1);
     }
 }

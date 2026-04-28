@@ -59,7 +59,7 @@ public class StreamOpFlagsTest {
             }
 
             int opsFlags = combineOpFlags(sourceFlags, StreamOpFlag.INITIAL_OPS_VALUE);
-            assertEquals(opsFlags, (~(sourceFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE);
+            assertEquals((~(sourceFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE, opsFlags);
         }
     }
 
@@ -219,7 +219,7 @@ public class StreamOpFlagsTest {
     }
 
     private void assertSpliteratorMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.SPLITERATOR_CHARACTERISTICS_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.SPLITERATOR_CHARACTERISTICS_MASK);
     }
 
     @Test
@@ -241,7 +241,7 @@ public class StreamOpFlagsTest {
     }
 
     private void assertStreamMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.STREAM_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.STREAM_MASK);
     }
 
     @Test

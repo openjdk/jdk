@@ -271,12 +271,12 @@ public class SpliteratorTestHelper {
 
         // assert that size, tryAdvance, and forEach are consistent
         if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, exp.size());
+            assertEquals(exp.size(), sizeIfKnown);
         }
         if (exp.contains(null)) {
             assertTrue(fromForEach.contains(null));
         }
-        assertEquals(fromForEach.size(), exp.size());
+        assertEquals(exp.size(), fromForEach.size());
 
         asserter.assertContents(fromForEach, exp, isOrdered);
     }
@@ -304,9 +304,9 @@ public class SpliteratorTestHelper {
 
         // assert that size, tryAdvance, and forEach are consistent
         if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, exp.size());
+            assertEquals(exp.size(), sizeIfKnown);
         }
-        assertEquals(fromTryAdvance.size(), exp.size());
+        assertEquals(exp.size(), fromTryAdvance.size());
 
         asserter.assertContents(fromTryAdvance, exp, isOrdered);
     }
@@ -337,7 +337,7 @@ public class SpliteratorTestHelper {
         if (sizeIfKnown >= 0) {
             assertEquals(sizeIfKnown, dest.size());
         }
-        assertEquals(dest.size(), exp.size());
+        assertEquals(exp.size(), dest.size());
 
         asserter.assertContents(dest, exp, isOrdered);
     }
@@ -381,7 +381,7 @@ public class SpliteratorTestHelper {
         if (sizeIfKnown >= 0) {
             assertEquals(sizeIfKnown, dest.size());
         }
-        assertEquals(dest.size(), exp.size());
+        assertEquals(exp.size(), dest.size());
 
         asserter.assertContents(dest, exp, isOrdered);
     }

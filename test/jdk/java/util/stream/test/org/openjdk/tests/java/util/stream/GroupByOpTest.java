@@ -148,7 +148,7 @@ public class GroupByOpTest extends OpTestCase {
                         }
                     })
                     .exercise();
-            assertEquals(result.keySet().size(), md.expectedSize);
+            assertEquals(md.expectedSize, result.keySet().size());
         }
     }
 

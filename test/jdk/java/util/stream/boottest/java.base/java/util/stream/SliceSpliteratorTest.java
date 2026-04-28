@@ -55,7 +55,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                 assertEquals(expected, actual);
             }
             else {
-                assertEquals(actual.size(), expected.size());
+                assertEquals(expected.size(), actual.size());
                 assertTrue(source.containsAll(actual));
             }
         }

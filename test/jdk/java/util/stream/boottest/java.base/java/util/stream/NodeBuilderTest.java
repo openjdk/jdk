@@ -79,7 +79,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node<Integer> n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Integer> _l = new ArrayList<>();
@@ -125,7 +125,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfInt n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Integer> _l = new ArrayList<>();
@@ -174,7 +174,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfLong n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Long> _l = new ArrayList<>();
@@ -224,7 +224,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfDouble n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Double> _l = new ArrayList<>();

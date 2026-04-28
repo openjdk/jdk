@@ -693,7 +693,7 @@ public class CollectorsTest extends OpTestCase {
 
     @ParameterizedTest
     @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
-    public void testGroupubgByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    public void testGroupingByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
         // Single-level simple reduce

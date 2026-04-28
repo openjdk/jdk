@@ -152,7 +152,7 @@ public class PatternStreamTest extends OpTestCase {
         // Derive expected result from Matcher.replaceFirst(String )
         String expected = pattern.matcher(input).replaceFirst("R");
         String actual = pattern.matcher(input).replaceFirst(r -> "R");
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
     }
 
     @ParameterizedTest
@@ -161,7 +161,7 @@ public class PatternStreamTest extends OpTestCase {
         // Derive expected result from Matcher.replaceAll(String )
         String expected = pattern.matcher(input).replaceAll("R");
         String actual = pattern.matcher(input).replaceAll(r -> "R");
-        assertEquals(actual, expected);
+        assertEquals(expected, actual);
 
         // Derive expected result from Matcher.find
         Matcher m = pattern.matcher(input);

@@ -136,10 +136,10 @@ public class IntSliceOpTest extends OpTestCase {
         for (int s : skips) {
             setContext("skip", s);
             Collection<Integer> sr = exerciseOps(data, st -> st.skip(s));
-            assertEquals(sr.size(), sliceSize(data.size(), s));
+            assertEquals(sliceSize(data.size(), s), sr.size());
 
             sr = exerciseOps(data, st -> st.skip(s).skip(s / 2));
-            assertEquals(sr.size(), sliceSize(sliceSize(data.size(), s), s / 2));
+            assertEquals(sliceSize(sliceSize(data.size(), s), s / 2), sr.size());
         }
     }
 
@@ -154,10 +154,10 @@ public class IntSliceOpTest extends OpTestCase {
             for (int limit : limits) {
                 setContext("limit", limit);
                 Collection<Integer> sr = exerciseOps(data, st -> st.skip(s).limit(limit));
-                assertEquals(sr.size(), sliceSize(sliceSize(data.size(), s), 0, limit));
+                assertEquals(sliceSize(sliceSize(data.size(), s), 0, limit), sr.size());
 
                 sr = exerciseOps(data, st -> st.skip(s).limit(limit));
-                assertEquals(sr.size(), sliceSize(data.size(), s, limit));
+                assertEquals(sliceSize(data.size(), s, limit), sr.size());
             }
         }
     }
@@ -170,10 +170,10 @@ public class IntSliceOpTest extends OpTestCase {
         for (int limit : limits) {
             setContext("limit", limit);
             Collection<Integer> sr = exerciseOps(data, st -> st.limit(limit));
-            assertEquals(sr.size(), sliceSize(data.size(), 0, limit));
+            assertEquals(sliceSize(data.size(), 0, limit), sr.size());
 
             sr = exerciseOps(data, st -> st.limit(limit).limit(limit / 2));
-            assertEquals(sr.size(), sliceSize(sliceSize(data.size(), 0, limit), 0, limit / 2));
+            assertEquals(sliceSize(sliceSize(data.size(), 0, limit), 0, limit / 2), sr.size());
         }
     }
 
@@ -192,7 +192,7 @@ public class IntSliceOpTest extends OpTestCase {
                     .peek(i -> ai.getAndIncrement())
                     .limit(l).toArray();
             // For the case of a zero limit, one element will get pushed through the sink chain
-            assertEquals(ai.get(), l, "tee block was called too many times");
+            assertEquals(l, ai.get(), "tee block was called too many times");
         }
     }
 

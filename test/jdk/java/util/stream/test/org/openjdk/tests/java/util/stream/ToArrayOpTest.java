@@ -126,10 +126,10 @@ public class ToArrayOpTest extends OpTestCase {
             exerciseTerminalOps(data, f, s -> s.toArray());
 
             Integer[] is = exerciseTerminalOps(data, f, s -> s.toArray(Integer[]::new));
-            assertEquals(is.getClass(), Integer[].class);
+            assertEquals(Integer[].class, is.getClass());
 
             Number[] ns = exerciseTerminalOps(data, f, s -> s.toArray(Number[]::new));
-            assertEquals(ns.getClass(), Number[].class);
+            assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
                 Exception caught = null;
@@ -139,7 +139,7 @@ public class ToArrayOpTest extends OpTestCase {
                     caught = e;
                 }
                 assertTrue(caught != null);
-                assertEquals(caught.getClass(), ArrayStoreException.class);
+                assertEquals(ArrayStoreException.class, caught.getClass());
             }
         }
     }
@@ -193,12 +193,12 @@ public class ToArrayOpTest extends OpTestCase {
             Integer[] is = withData(data).terminal(f, s -> s.toArray(Integer[]::new))
                     .resultAsserter(statefulOpResultAsserter(data))
                     .exercise();
-            assertEquals(is.getClass(), Integer[].class);
+            assertEquals(Integer[].class, is.getClass());
 
             Number[] ns = withData(data).terminal(f, s -> s.toArray(Number[]::new))
                     .resultAsserter(statefulOpResultAsserter(data))
                     .exercise();
-            assertEquals(ns.getClass(), Number[].class);
+            assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
                 Exception caught = null;
@@ -208,7 +208,7 @@ public class ToArrayOpTest extends OpTestCase {
                     caught = e;
                 }
                 assertTrue(caught != null);
-                assertEquals(caught.getClass(), ArrayStoreException.class);
+                assertEquals(ArrayStoreException.class, caught.getClass());
             }
         }
     }

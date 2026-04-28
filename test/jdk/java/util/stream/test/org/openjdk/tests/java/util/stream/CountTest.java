@@ -196,37 +196,37 @@ public class CountTest extends OpTestCase {
 
     private void checkStreamDoesNotConsumeElements(Supplier<Stream<?>> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
         assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
         assertEquals(0, ai.get());
     }
 
     private void checkIntStreamDoesNotConsumeElements(Supplier<IntStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
         assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
         assertEquals(0, ai.get());
     }
 
     private void checkLongStreamDoesNotConsumeElements(Supplier<LongStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
         assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
         assertEquals(0, ai.get());
     }
 
     private void checkDoubleStreamDoesNotConsumeElements(Supplier<DoubleStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
         assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
         assertEquals(0, ai.get());
     }
 }
