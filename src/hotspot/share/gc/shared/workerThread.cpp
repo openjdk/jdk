@@ -40,6 +40,7 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
   guarantee(num_workers > 0, "must use at least one worker, deadlocks otherwise");
+
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
   _not_finished.store_relaxed(num_workers);
