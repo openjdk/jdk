@@ -21,7 +21,6 @@
  * questions.
  */
 
-import jdk.test.lib.jvmti.DebugeeClass;
 import jvmti.JVMTIUtils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -56,7 +55,6 @@ public class SuspendWithObjectMonitorTimedWait {
     }
 
     public static void main(String[] args) throws RuntimeException {
-        int status = DebugeeClass.TEST_PASSED;
         long failureCounter = 0;
         System.out.println("Timeout = " + timeout + " msc.");
 
