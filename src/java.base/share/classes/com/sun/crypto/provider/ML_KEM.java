@@ -527,6 +527,8 @@ public final class ML_KEM {
         } catch (DigestException e) {
             // This should never happen.
             throw new RuntimeException(e);
+        } finally {
+            mlKemH.reset();
         }
         // The 2nd 32-byte `z` is copied into decapsKey
         System.arraycopy(kem_d_z, 32, decapsKey,
@@ -562,7 +564,6 @@ public final class ML_KEM {
         var randomCoins = Arrays.copyOfRange(kHatAndRandomCoins, 32, 64);
         var cipherText = kPkeEncrypt(new K_PKE_EncryptionKey(encapsulationKey.keyBytes),
                 randomMessage, randomCoins);
-        Arrays.fill(randomCoins, (byte) 0);
         byte[] sharedSecret = Arrays.copyOfRange(kHatAndRandomCoins, 0, 32);
         Arrays.fill(kHatAndRandomCoins, (byte) 0);
 
@@ -733,6 +734,7 @@ public final class ML_KEM {
         int encryptN = 0;
         byte[] prfSeed = new byte[sigma.length + 1];
         System.arraycopy(sigma, 0, prfSeed, 0, sigma.length);
+        Arrays.fill(sigma, (byte)0);
 
         int cbdInput1Len = 64 * mlKem_eta1;
         var kPkePRFeta1 = new SHAKE256(cbdInput1Len);
@@ -754,12 +756,17 @@ public final class ML_KEM {
                 encryptE1[i] = centeredBinomialDistribution(mlKem_eta2, cbdInput2);
             }
             prfSeed[sigma.length] = (byte) encryptN;
-            kPkePRFeta2.reset();
             kPkePRFeta2.update(prfSeed);
             kPkePRFeta2.digest(cbdInput2, 0, cbdInput2Len);
             encryptE2 = centeredBinomialDistribution(mlKem_eta2, cbdInput2);
         } catch  (DigestException e) {
             throw new ProviderException("Internal error", e);
+        } finally {
+            kPkePRFeta1.reset();
+            kPkePRFeta2.reset();
+            Arrays.fill(prfSeed, (byte)0);
+            Arrays.fill(cbdInput1, (byte)0);
+            Arrays.fill(cbdInput2, (byte)0);
         }
 
         var encryptRHat = mlKemVectorNTT(encryptR);
@@ -776,6 +783,7 @@ public final class ML_KEM {
         encryptV = mlKemAddPoly(encryptV, encryptE2, decompressDecode(message));
         var encryptC1 = encodeVector(mlKem_du, compressVector10_11(encryptU, mlKem_du));
         var encryptC2 = encodePoly(mlKem_dv, compressPoly4_5(encryptV, mlKem_dv));
+        Arrays.fill(encryptE2, (short)0);
         Arrays.fill(encryptV, (short)0);
 
         byte[] result = new byte[encryptC1.length + encryptC2.length];
