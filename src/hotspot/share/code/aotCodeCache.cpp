@@ -63,6 +63,7 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #endif
 #if INCLUDE_ZGC
@@ -2476,6 +2477,7 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   BarrierSet* bs = BarrierSet::barrier_set();
   address card_table_base = nullptr;
   uint grain_shift = 0;
+  address cset_base = nullptr;
 #if INCLUDE_G1GC
   if (bs->is_a(BarrierSet::G1BarrierSet)) {
     grain_shift = G1HeapRegion::LogOfHRGrainBytes;
@@ -2483,7 +2485,8 @@ void AOTRuntimeConstants::initialize_from_runtime() {
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
-    grain_shift = 0;
+    grain_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+    cset_base = ShenandoahHeap::in_cset_fast_test_addr();
   } else
 #endif
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
@@ -2495,11 +2498,13 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   }
   _aot_runtime_constants._card_table_base = card_table_base;
   _aot_runtime_constants._grain_shift = grain_shift;
+  _aot_runtime_constants._cset_base = cset_base;
 }
 
 address AOTRuntimeConstants::_field_addresses_list[] = {
   ((address)&_aot_runtime_constants._card_table_base),
   ((address)&_aot_runtime_constants._grain_shift),
+  ((address)&_aot_runtime_constants._cset_base),
   nullptr
 };
 
