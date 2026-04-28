@@ -280,7 +280,7 @@ public class Status {
 
     private AttributedString getBorderString(int columns) {
         if (borderString == null || borderString.length() != columns) {
-            char borderChar = '\u2700';
+            char borderChar = '\u2500';
             AttributedStringBuilder bb = new AttributedStringBuilder();
             for (int i = 0; i < columns; i++) {
                 bb.append(borderChar);
