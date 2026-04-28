@@ -81,6 +81,7 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
     private static final String CLIENT_SIG_SCHEME =
             "ecdsa_secp256r1_sha256";
     private static final String SIG_SCHEME_CURVE = "secp256r1";
+    private static Instant NOW;
 
     private final String protocol;
     private final String[] namedGroups;
@@ -97,6 +98,7 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        NOW = Instant.now();
 
         // TLSv1.2 with a curve mismatch should run fine.
         new TLSCurveMismatch("TLSv1.2",
@@ -187,6 +189,7 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
                 "O=Server-Org, L=Some-City, ST=Some-State, C=US",
                 serverKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
+                .addKeyUsageExt(new boolean[]{true})
                 .build(trustedCert, caKeys.getPrivate(),
                         CERT_SIG_ALG);
     }
@@ -197,6 +200,8 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
                 "O=CA-Org, L=Some-City, ST=Some-State, C=US",
                 caKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(true, true, 1)
+                .addKeyUsageExt(new boolean[]{
+                        false, false, false, false, false, true, true})
                 .build(null, caKeys.getPrivate(), CERT_SIG_ALG);
     }
 
@@ -207,13 +212,11 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
                 .setNotBefore(
-                        Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
-                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                        Date.from(NOW.minus(1, ChronoUnit.HOURS)))
+                .setNotAfter(Date.from(NOW.plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(BigInteger.valueOf(
                         new SecureRandom().nextLong(1000000) + 1))
                 .addSubjectKeyIdExt(publicKey)
-                .addAuthorityKeyIdExt(caKey)
-                .addKeyUsageExt(new boolean[]{
-                        true, true, true, true, true, true, true});
+                .addAuthorityKeyIdExt(caKey);
     }
 }
