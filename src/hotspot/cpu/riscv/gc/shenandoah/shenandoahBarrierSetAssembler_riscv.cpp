@@ -108,8 +108,7 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
                                                  Register pre_val,
                                                  Register thread,
                                                  Register tmp1,
-                                                 Register tmp2,
-                                                 bool expand_call) {
+                                                 Register tmp2) {
   assert(ShenandoahSATBBarrier, "Should be checked by caller");
 
   // If expand_call is true then we expand the call_VM_leaf macro
@@ -160,17 +159,17 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
   __ sd(pre_val, Address(tmp1, 0));
   __ j(done);
 
+  // Slow-path call.
   __ bind(runtime);
+  __ enter();
   __ push_call_clobbered_registers();
   if (c_rarg0 != pre_val) {
     __ mv(c_rarg0, pre_val);
   }
-  if (expand_call) {
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), 1);
-  }
+  // Calling with super_call_VM_leaf with c_rarg0 bypasses interpreter checks and avoids any moves.
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), c_rarg0);
   __ pop_call_clobbered_registers();
+  __ leave();
 
   __ bind(done);
 }
@@ -237,7 +236,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   bool is_narrow  = UseCompressedOops && !is_native;
 
   Label heap_stable, not_cset;
-  __ enter();
   Address gc_state(xthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ lbu(t1, gc_state);
 
@@ -277,6 +275,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ beqz(t0, not_cset);
   }
 
+  // Slow-path call
+  __ enter();
   __ push_call_clobbered_registers();
   address target = nullptr;
   if (is_strong) {
@@ -301,12 +301,13 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ mv(t0, x10);
   __ pop_call_clobbered_registers();
   __ mv(x10, t0);
+  __ leave();
+
   __ bind(not_cset);
   __ mv(result_dst, x10);
   __ pop_reg(saved_regs, sp);
 
   __ bind(heap_stable);
-  __ leave();
 }
 
 //
@@ -368,15 +369,12 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    __ enter();
     satb_barrier(masm /* masm */,
                  noreg /* obj */,
                  dst /* pre_val */,
                  xthread /* thread */,
                  tmp1 /* tmp1 */,
-                 tmp2 /* tmp2 */,
-                 true /* expand_call */);
-    __ leave();
+                 tmp2 /* tmp2 */);
   }
 }
 
@@ -426,8 +424,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                  tmp2 /* pre_val */,
                  xthread /* thread */,
                  tmp1 /* tmp */,
-                 t0 /* tmp2 */,
-                 false /* expand_call */);
+                 t0 /* tmp2 */);
   }
 
   // Store!

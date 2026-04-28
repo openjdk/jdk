@@ -45,8 +45,7 @@ private:
   void satb_barrier(MacroAssembler* masm,
                     Register obj,
                     Register pre_val,
-                    Register tmp,
-                    bool expand_call);
+                    Register tmp);
 
   void card_barrier(MacroAssembler* masm, Register obj);
 
