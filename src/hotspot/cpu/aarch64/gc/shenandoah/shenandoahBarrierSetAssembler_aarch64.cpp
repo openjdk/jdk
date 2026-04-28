@@ -108,11 +108,6 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
                                                  Register tmp1,
                                                  Register tmp2) {
   assert(ShenandoahSATBBarrier, "Should be checked by caller");
-
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
   assert(thread == rthread, "must be");
 
   Label done;
