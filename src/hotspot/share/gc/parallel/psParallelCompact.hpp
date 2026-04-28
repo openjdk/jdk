@@ -395,9 +395,6 @@ public:
 #endif  // #ifdef ASSERT
 
 private:
-  bool initialize_region_data(size_t heap_size);
-  PSVirtualSpace* create_vspace(size_t count, size_t element_size);
-
   HeapWord*       _heap_start;
 #ifdef  ASSERT
   HeapWord*       _heap_end;

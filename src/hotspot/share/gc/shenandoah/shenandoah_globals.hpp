@@ -196,14 +196,6 @@
           "of regions that would be used, within min/max region size "      \
           "limits.")                                                        \
                                                                             \
-  product(size_t, ShenandoahMinRegionSize, 256 * K, EXPERIMENTAL,           \
-          "With automatic region sizing, the regions would be at least "    \
-          "this large.")                                                    \
-                                                                            \
-  product(size_t, ShenandoahMaxRegionSize, 32 * M, EXPERIMENTAL,            \
-          "With automatic region sizing, the regions would be at most "     \
-          "this large.")                                                    \
-                                                                            \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
@@ -559,9 +551,6 @@
                                                                             \
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
-          "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \

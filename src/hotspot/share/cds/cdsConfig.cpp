@@ -520,7 +520,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {
@@ -891,10 +891,6 @@ const char* CDSConfig::type_of_archive_being_written() {
 // If an incompatible VM options is found, return a text message that explains why
 static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
-  if (!UseCompressedClassPointers) {
-    return "UseCompressedClassPointers must be true";
-  }
-
   return nullptr;
 #else
   return "JVM not configured for writing Java heap objects";

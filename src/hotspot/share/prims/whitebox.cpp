@@ -107,6 +107,7 @@
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
@@ -333,7 +334,6 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(void, WB_DecodeNKlassAndAccessKlass(JNIEnv* env, jobject o, jint nKlass))
-  assert(UseCompressedClassPointers, "Should only call for UseCompressedClassPointers");
   const narrowKlass nk = (narrowKlass)nKlass;
   const Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nKlass);
   printf("WB_DecodeNKlassAndAccessKlass: nk %u k " PTR_FORMAT "\n", nk, p2i(k));
@@ -1280,8 +1280,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   if (mdo != nullptr) {
     mdo->init();
     ResourceMark rm(THREAD);
-    int arg_count = mdo->method()->size_of_parameters();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = mdo->method()->size_of_parameters();
+    for (int i = 0; i < arg_size; i++) {
       mdo->set_arg_modified(i, 0);
     }
     mdo->clean_method_data(/*always_clean*/true);

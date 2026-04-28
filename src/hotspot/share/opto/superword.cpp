@@ -2500,7 +2500,9 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   switch (opc) {
   case Op_AbsI:
   case Op_DivI:
+  case Op_UDivI:
   case Op_ModI:
+  case Op_UModI:
   case Op_MinI:
   case Op_MaxI:
   case Op_CMoveI:

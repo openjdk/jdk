@@ -184,3 +184,7 @@ void ShenandoahEvacOOMHandler::clear() {
     _threads_in_evac[i].clear();
   }
 }
+
+bool ShenandoahEvacOOMHandler::is_active() {
+  return ShenandoahThreadLocalData::evac_oom_scope_level(Thread::current()) > 0;
+}

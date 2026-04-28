@@ -210,12 +210,4 @@ void ShenandoahPLAB::retire() {
   // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
   // It adds the size of this unused memory, in words, to plab->waste().
   _plab->retire();
-  if (top != nullptr && _plab->waste() > original_waste && _heap->is_in_old(top)) {
-    // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
-    // safely walk the region backing the plab.
-    log_debug(gc, plab)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
-                        (_plab->waste() - original_waste) * HeapWordSize, p2i(top));
-    // No lock is necessary because the PLAB memory is aligned on card boundaries.
-    _heap->old_generation()->card_scan()->register_object_without_lock(top);
-  }
 }
