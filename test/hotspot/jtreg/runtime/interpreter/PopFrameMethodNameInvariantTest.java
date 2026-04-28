@@ -49,6 +49,7 @@ import java.util.Map;
  * @test
  * @bug 8380080
  * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ * @requires vm.flavor != "zero"
  * @library ../../compiler/jsr292/patches /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  *          jdk.jdi
@@ -113,7 +114,7 @@ public class PopFrameMethodNameInvariantTest {
         String options = String.join(" ", Utils.getTestJavaOpts());
         String patchPath = System.getProperty("test.patch.path");
         if (patchPath != null) {
-            options += " --patch-module=java.base=" + Path.of(patchPath, "java.base");
+            options += " --patch-module=java.base=\"" + Path.of(patchPath, "java.base") + "\"";
         }
         argumentMap.get("options").setValue((options + " -Xint").trim());
         return connector.launch(argumentMap);
