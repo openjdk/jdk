@@ -635,7 +635,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed above, captures v = 0 as stack argument to ifeq bytecode
   // }
   // if (some_other_condition) {
-  //     uncommon_trap(); // reexecutes the if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
   // }
   //
   // If next, some_condition and some_other_condition are folded into
