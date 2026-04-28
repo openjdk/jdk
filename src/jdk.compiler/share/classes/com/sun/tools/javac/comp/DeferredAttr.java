@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,7 @@ public class DeferredAttr extends JCTree.Visitor {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         stats.addAll(that.params);
         if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
-            stats.add(make.Return((JCExpression)that.body));
+            stats.add(make.at(that.pos).Return((JCExpression)that.body));
         } else {
             stats.add((JCBlock)that.body);
         }
@@ -444,7 +444,7 @@ public class DeferredAttr extends JCTree.Visitor {
             if (lambdaBody.hasTag(Tag.RETURN)) {
                 lambdaBody = ((JCReturn)lambdaBody).expr;
             }
-            JCLambda speculativeLambda = make.Lambda(args, lambdaBody);
+            JCLambda speculativeLambda = make.at(that.pos).Lambda(args, lambdaBody);
             attr.preFlow(speculativeLambda);
             flow.analyzeLambda(env, speculativeLambda, make, false);
             return speculativeLambda;
@@ -845,7 +845,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
                     if (descriptorType.getParameterTypes().length() != tree.params.length()) {
                         checkContext.report(tree,
-                                diags.fragment(Fragments.IncompatibleArgTypesInLambda));
+                                diags.fragment(Fragments.WrongNumberArgsInLambda(pt.tsym)));
                     }
 
                     Type currentReturnType = descriptorType.getReturnType();
