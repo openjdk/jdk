@@ -4048,7 +4048,7 @@ class FusedPatternMatcher {
 };
 
 static bool is_bmi_pattern(Node* n, Node* m) {
-  assert(UseBMI1Instructions, "sanity");
+  assert(VM_Version::supports_bmi1() && VM_Version::supports_avx(), "sanity");
   if (n != nullptr && m != nullptr) {
     if (m->Opcode() == Op_LoadI) {
       FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
@@ -4068,7 +4068,7 @@ static bool is_bmi_pattern(Node* n, Node* m) {
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // If 'n' and 'm' are part of a graph for BMI instruction, clone the input 'm'.
-  if (UseBMI1Instructions && is_bmi_pattern(n, m)) {
+  if (VM_Version::supports_bmi1() && VM_Version::supports_avx() && is_bmi_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -13165,7 +13165,7 @@ instruct andI_mem_imm(memory dst, immI src, rFlagsReg cr)
 // BMI1 instructions
 instruct andnI_rReg_rReg_mem(rRegI dst, rRegI src1, memory src2, immI_M1 minus_1, rFlagsReg cr) %{
   match(Set dst (AndI (XorI src1 minus_1) (LoadI src2)));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
@@ -13180,7 +13180,7 @@ instruct andnI_rReg_rReg_mem(rRegI dst, rRegI src1, memory src2, immI_M1 minus_1
 
 instruct andnI_rReg_rReg_rReg(rRegI dst, rRegI src1, rRegI src2, immI_M1 minus_1, rFlagsReg cr) %{
   match(Set dst (AndI (XorI src1 minus_1) src2));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
@@ -13194,7 +13194,7 @@ instruct andnI_rReg_rReg_rReg(rRegI dst, rRegI src1, rRegI src2, immI_M1 minus_1
 
 instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI_0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero src) src));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13208,7 +13208,7 @@ instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI_0 imm_zero, rFlagsReg cr) %{
 
 instruct blsiI_rReg_mem(rRegI dst, memory src, immI_0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero (LoadI src) ) (LoadI src) ));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13224,7 +13224,7 @@ instruct blsiI_rReg_mem(rRegI dst, memory src, immI_0 imm_zero, rFlagsReg cr) %{
 instruct blsmskI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (XorI (AddI (LoadI src) minus_1) (LoadI src) ) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_clears_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13240,7 +13240,7 @@ instruct blsmskI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, rFlagsReg cr)
 instruct blsmskI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (XorI (AddI src minus_1) src));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_clears_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13256,7 +13256,7 @@ instruct blsmskI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
 instruct blsrI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (AndI (AddI src minus_1) src) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13272,7 +13272,7 @@ instruct blsrI_rReg_rReg(rRegI dst, rRegI src, immI_M1 minus_1, rFlagsReg cr)
 instruct blsrI_rReg_mem(rRegI dst, memory src, immI_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (AndI (AddI (LoadI src) minus_1) (LoadI src) ) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13813,7 +13813,7 @@ instruct btrL_mem_imm(memory dst, immL_NotPow2 con, rFlagsReg cr)
 // BMI1 instructions
 instruct andnL_rReg_rReg_mem(rRegL dst, rRegL src1, memory src2, immL_M1 minus_1, rFlagsReg cr) %{
   match(Set dst (AndL (XorL src1 minus_1) (LoadL src2)));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
@@ -13828,7 +13828,7 @@ instruct andnL_rReg_rReg_mem(rRegL dst, rRegL src1, memory src2, immL_M1 minus_1
 
 instruct andnL_rReg_rReg_rReg(rRegL dst, rRegL src1, rRegL src2, immL_M1 minus_1, rFlagsReg cr) %{
   match(Set dst (AndL (XorL src1 minus_1) src2));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
 
@@ -13842,7 +13842,7 @@ instruct andnL_rReg_rReg_rReg(rRegL dst, rRegL src1, rRegL src2, immL_M1 minus_1
 
 instruct blsiL_rReg_rReg(rRegL dst, rRegL src, immL0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndL (SubL imm_zero src) src));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13856,7 +13856,7 @@ instruct blsiL_rReg_rReg(rRegL dst, rRegL src, immL0 imm_zero, rFlagsReg cr) %{
 
 instruct blsiL_rReg_mem(rRegL dst, memory src, immL0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndL (SubL imm_zero (LoadL src) ) (LoadL src) ));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13872,7 +13872,7 @@ instruct blsiL_rReg_mem(rRegL dst, memory src, immL0 imm_zero, rFlagsReg cr) %{
 instruct blsmskL_rReg_mem(rRegL dst, memory src, immL_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (XorL (AddL (LoadL src) minus_1) (LoadL src) ) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_clears_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13888,7 +13888,7 @@ instruct blsmskL_rReg_mem(rRegL dst, memory src, immL_M1 minus_1, rFlagsReg cr)
 instruct blsmskL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (XorL (AddL src minus_1) src));
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_clears_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13904,7 +13904,7 @@ instruct blsmskL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
 instruct blsrL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (AndL (AddL src minus_1) src) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -13920,7 +13920,7 @@ instruct blsrL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
 instruct blsrL_rReg_mem(rRegL dst, memory src, immL_M1 minus_1, rFlagsReg cr)
 %{
   match(Set dst (AndL (AddL (LoadL src) minus_1) (LoadL src)) );
-  predicate(UseBMI1Instructions);
+  predicate(VM_Version::supports_bmi1() && VM_Version::supports_avx());
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
 
@@ -24924,11 +24924,11 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp) %{
+instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2) %{
   predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) <= 8);
   match(Set dst (VectorLongToMask src));
-  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp);
-  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2);
+  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2" %}
   ins_encode %{
     int mask_len = Matcher::vector_length(this);
     int vec_enc  = vector_length_encoding(mask_len);
