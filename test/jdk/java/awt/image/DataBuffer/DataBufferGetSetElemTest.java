@@ -43,59 +43,88 @@ public class DataBufferGetSetElemTest {
 
         {
             byte[] buf = new byte[size*2];
-            DataBuffer db = new DataBufferByte(buf, size);
-            test(db, size);
-            test(db, -1);
-            db = new DataBufferByte(buf, size-1, 1);
-            test(db, size);
+            DataBufferByte dbb = new DataBufferByte(buf, size);
+            try {
+                dbb.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+            test(dbb, size);
+            test(dbb, -1);
+            dbb = new DataBufferByte(buf, size-1, 1);
+            test(dbb, size);
         }
 
         {
             short[] buf = new short[size*2];
-
-            DataBuffer dbs = new DataBufferShort(buf, size);
+            DataBufferShort dbs = new DataBufferShort(buf, size);
+            try {
+                dbs.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
             test(dbs, size);
             test(dbs, -1);
             dbs = new DataBufferShort(buf, size-1, 1);
             test(dbs, size);
             test(dbs, -2);
 
-            DataBuffer dbu = new DataBufferUShort(buf, size);
+            DataBufferUShort dbu = new DataBufferUShort(buf, size);
+            try {
+                dbu.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
             test(dbu, size);
             test(dbu, -1);
-            dbu = new DataBufferShort(buf, size-1, 1);
+            dbu = new DataBufferUShort(buf, size-1, 1);
             test(dbu, size);
             test(dbu, -2);
         }
 
         {
             int[] buf = new int[size*2];
-            DataBuffer db = new DataBufferInt(buf, size);
-            test(db, size);
-            test(db, -1);
-            db = new DataBufferInt(buf, size-1, 1);
-            test(db, size);
-            test(db, -2);
+            DataBufferInt dbi = new DataBufferInt(buf, size);
+            try {
+                dbi.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+            test(dbi, size);
+            test(dbi, -1);
+            dbi = new DataBufferInt(buf, size-1, 1);
+            test(dbi, size);
+            test(dbi, -2);
         }
 
         {
             float[] buf = new float[size*2];
-            DataBuffer db = new DataBufferFloat(buf, size);
-            test(db, size);
-            test(db, -1);
-            db = new DataBufferFloat(buf, size-1, 1);
-            test(db, size);
-            test(db, -2);
+            DataBufferFloat dbf = new DataBufferFloat(buf, size);
+            try {
+                dbf.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+            test(dbf, size);
+            test(dbf, -1);
+            dbf = new DataBufferFloat(buf, size-1, 1);
+            test(dbf, size);
+            test(dbf, -2);
         }
 
         {
             double[] buf = new double[size*2];
-            DataBuffer db = new DataBufferDouble(buf, size);
-            test(db, size);
-            test(db, -1);
-            db = new DataBufferDouble(buf, size-1, 1);
-            test(db, size);
-            test(db, -2);
+            DataBufferDouble dbd = new DataBufferDouble(buf, size);
+            try {
+                dbd.getData(1);
+                throw new RuntimeException("No exception for invalid data bank index");
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
+            test(dbd, size);
+            test(dbd, -1);
+            dbd = new DataBufferDouble(buf, size-1, 1);
+            test(dbd, size);
+            test(dbd, -2);
         }
     }
 
@@ -110,6 +139,26 @@ public class DataBufferGetSetElemTest {
         }
         try {
             db.setElem(index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElem(0, index);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.setElem(0, index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElem(1, 0);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.setElem(1, 0, val);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
         }
@@ -130,6 +179,31 @@ public class DataBufferGetSetElemTest {
         } catch (ArrayIndexOutOfBoundsException e) {
         }
         try {
+            db.setElemFloat(index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElemFloat(0, index);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.setElemFloat(0, index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElemFloat(1, 0);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.setElemFloat(1, 0, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
             db.getElemFloat(1, index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -144,14 +218,34 @@ public class DataBufferGetSetElemTest {
             db.getElemDouble(index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
-        }
+	}
+	try {
+	    db.setElemDouble(index, val);
+	    failed = true;
+	} catch (ArrayIndexOutOfBoundsException e) {
+	}
         try {
-            db.getElemDouble(1, index);
+            db.getElemDouble(0, index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
         }
         try {
-            db.setElemDouble(index, val);
+            db.setElemDouble(0, index, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElemDouble(1, 0);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.setElemDouble(1, 0, val);
+            failed = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        try {
+            db.getElemDouble(1, index);
             failed = true;
         } catch (ArrayIndexOutOfBoundsException e) {
         }

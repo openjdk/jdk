@@ -366,7 +366,7 @@ public final class DataBufferFloat extends DataBuffer {
      *
      * @return The data entry as a {@code float}.
      * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
-     *         or {@code (i + getOffsets(bank))} is not a valid index into the bank.
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
