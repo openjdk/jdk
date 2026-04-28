@@ -28,8 +28,8 @@
  * @modules jdk.net
  * @summary Check ExtendedSocketOption NAPI_ID support for Socket and
  *          ServerSocket
- * @run junit SocketNAPITest
- * @run junit/othervm -Djava.net.preferIPv4Stack=true SocketNAPITest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import java.io.BufferedReader;
