@@ -120,7 +120,7 @@ public class ConcatTest {
                                             s2.mapToInt(Integer::intValue));
         assertEquals(result.isParallel(), parallel);
         assertConcatContent(result.spliterator(), ordered,
-                            expected.stream().mapToInt(Integer::intValue).spliterator(),  scenario);
+                            expected.stream().mapToInt(Integer::intValue).spliterator(), scenario);
     }
 
     private void assertLongConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
