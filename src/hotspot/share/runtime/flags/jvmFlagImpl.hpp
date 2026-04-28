@@ -46,12 +46,6 @@ public:
     _value = v;
     return *this;
   }
-  //bool operator!=(const T& other) const {
-  //  return _value != other._value;
-  //}
-  bool operator!=(T other) const {
-    return _value != other;
-  }
   T value() const {
     return _value;
   }
