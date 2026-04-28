@@ -239,7 +239,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
      * The test assumes the provider impl for OSAKA locale does NOT
      * provide generic names.
      */
-    final String PT = "MST"; // SHORT generic name for "America/Los_Angeles"
+    final String PT = "PT"; // SHORT generic name for "America/Los_Angeles"
     void genericFallbackTest() {
         String generic =
             TimeZone.getTimeZone(LATIME)
