@@ -422,7 +422,9 @@ final class LazyCollections {
         // -1 is used as a sentinel value for zero so we can get
         // stable access for all `size` values.
         private int size;
-        private int hash;
+        // We are using a `long` here to get stable access even in the case
+        // that the 32-bit hash code is zero.
+        private long hash;
 
         public LazySet(Set<? extends E> elementCandidates,
                        Predicate<? super E> computingFunction) {
@@ -437,11 +439,13 @@ final class LazyCollections {
         @Override
         public int hashCode() {
             // Racy computation
-            int h = hash;
+            long h = hash;
             if (h == 0) {
-                hash = h = hashCode0();
+                // Set a bit in the upper 32-bit region of the `long` to
+                // cater for the case the lower 32-bit hash is zero.
+                hash = h = hashCode0() | 0x0000_0001_0000_0000L;
             }
-            return h;
+            return (int) h;
         }
 
         public int hashCode0() {
@@ -707,9 +711,7 @@ final class LazyCollections {
         final String isolatedToString = LazyConstantImpl.isolateToString(input);
         var message = "Unable to access the lazy collection because " + throwableName +
                 " was thrown at initial computation for input '" + isolatedToString + "'";
-        return (cause == null)
-                ? new NoSuchElementException(message)
-                : new NoSuchElementException(message, cause);
+        return new NoSuchElementException(message, cause);
     }
 
     static InternalError cannotReachHere(FunctionHolder<?> functionHolder, Object input) {

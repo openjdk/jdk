@@ -1802,12 +1802,12 @@ public interface Map<K, V> {
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
      * <p>
-     * If the provided Set of {@code keys} is subsequently modified, the returned Map will
-     * not reflect such modifications.
+     * If the provided {@code Set} of {@code keys} is subsequently modified, the returned
+     * {@code Map} will not reflect such modifications.
      * <p>
-     * The Set of {@code keys} must use {@linkplain Set#equals(Object) equals()} as its
-     * equivalence relation, or its comparison method must be consistent with equals,
-     * otherwise the behavior is unspecified.
+     * The {@code Set} of {@code keys} must use {@linkplain Set#equals(Object) equals()}
+     * as its equivalence relation, or its comparison method must be consistent with
+     * equals, otherwise the behavior is unspecified.
      * <p>
      * The returned {@code Map<K, V>} can be thought of as a map backed by a
      * {@code Map<K, LazyConstant<V>>} field and where the {@linkplain Map#get(Object)}

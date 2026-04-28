@@ -156,8 +156,9 @@ import java.util.function.Supplier;
  * the constant {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * the initialized constant's content is read. Hence, the initialized constant's content,
  * including any {@code final} fields of any newly created objects, is safely published.
- * As reading of the content might be elided, there are no other memory ordering or
- * visibility guarantees provided as a consequence of calling {@linkplain #get()}.
+ * As subsequent reading of the content might be elided, there are no other memory
+ * ordering or visibility guarantees provided as a consequence of calling
+ * {@linkplain #get()} again.
  * <p>
  * Thread interruption does not cancel the initialization of a lazy constant. In other
  * words, if the computing thread is interrupted, {@code LazyConstant::get} doesn't clear
@@ -177,7 +178,7 @@ import java.util.function.Supplier;
  * {@linkplain Record record} fields, or final instance fields in hidden classes) --
  * to a lazy constant.
  *
- * @apiNote Once a lazy constant is initialized, its content cannot ever be removed.
+ * @apiNote Once a lazy constant is initialized, its content can't be removed.
  *          This can be a source of an unintended memory leak. More specifically,
  *          a lazy constant {@linkplain java.lang.ref##reachability strongly references}
  *          its content. Hence, the content of a lazy constant will be reachable as long
@@ -225,10 +226,11 @@ public sealed interface LazyConstant<T>
      * After this method returns successfully, the constant is guaranteed to be
      * initialized.
      * <p>
-     * If an unchecked exception is thrown when evaluating the computing function, this
-     * lazy constant is not initialized but transitions to an error state whereafter a
-     * {@linkplain NoSuchElementException} is thrown as described in the
-     * {@linkplain ##exception-handling Exception handling} section.
+     * If an unchecked exception is thrown when evaluating the computing function or if
+     * the computing function returns {@code null}, this lazy constant is not initialized
+     * but transitions to an error state whereafter a {@linkplain NoSuchElementException}
+     * is thrown as described in the {@linkplain ##exception-handling Exception handling}
+     * section.
      *
      * @throws NoSuchElementException if this lazy constant is in an error state
      */

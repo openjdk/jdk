@@ -745,14 +745,17 @@ public interface Set<E> extends Collection<E> {
      *          element candidate in the set of {@code elementCandidates} is
      *          computed via the provided {@code computingFunction} on demand}
      * <p>
-     * In the following, the term <em>membership status</em> means whether an element is a
-     * logical member or a non-member. The returned set is an
-     * {@linkplain Collection##unmodifiable unmodifiable} set whose element candidates are
-     * known at construction. The set's element membership statuses are lazily computed
-     * via the provided {@code computingFunction} when first accessed (e.g., via
-     * {@linkplain Set#contains(Object) Set::contains}). Once the membership status has
-     * been successfully computed for an element candidate, the associated membership
-     * status is initialized (i.e., either as <em>a logical member</em> or as
+     * In the following, the term <em>membership status</em> is used to indicate whether
+     * an element belongs to the returned set or not. That is, if the membership status
+     * for element {@code E} is {@code true}, then {@code E} <em>is</em> a member of the
+     * returned set. Conversely, if the membership status for element {@code E} is
+     * {@code false}, then {@code E} <em>is not</em> a member of the returned set. The
+     * returned set is an {@linkplain Collection##unmodifiable unmodifiable} set whose
+     * element candidates are known at construction. The set's element membership statuses
+     * are lazily computed via the provided {@code computingFunction} when first accessed
+     * (e.g., via {@linkplain Set#contains(Object) Set::contains}). Once the membership
+     * status has been successfully computed for an element candidate, the associated
+     * membership status is initialized (i.e., either as <em>a logical member</em> or as
      * <em>a logical non-member</em>).
      * <p>
      * The provided computing function is guaranteed to be invoked
@@ -799,7 +802,7 @@ public interface Set<E> extends Collection<E> {
      * {@snippet lang = java:
      * class Application {
      *
-     *     enum Option{VERBOSE, DRY_RUN, STRICT}
+     *     enum Option {VERBOSE, DRY_RUN, STRICT}
      *
      *     // Lazily initialized Set of Options
      *     static final Set<Option> OPTIONS =
@@ -822,10 +825,10 @@ public interface Set<E> extends Collection<E> {
      * }
      * }
      * <p>
-     * If the provided Set of {@code elementCandidates} is subsequently modified, the
-     * returned Set will not reflect such modifications.
+     * If the provided {@code Set} of {@code elementCandidates} is subsequently modified,
+     * the returned {@code Set} will not reflect such modifications.
      * <p>
-     * The Set of {@code elementCandidates} must use
+     * The {@code Set} of {@code elementCandidates} must use
      * {@linkplain Set#equals(Object) equals()} as its equivalence relation, or its
      * comparison method must be consistent with {@code equals()}, otherwise the behavior
      * is unspecified.
