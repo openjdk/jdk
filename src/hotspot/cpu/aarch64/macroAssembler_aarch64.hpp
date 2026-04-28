@@ -33,6 +33,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
@@ -719,6 +720,9 @@ public:
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
 
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
+
   // Load and store values by size and signed-ness
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
@@ -889,10 +893,6 @@ public:
 
   // thread in the default location (rthread)
   void reset_last_Java_frame(bool clear_fp);
-
-  // Stores
-  void store_check(Register obj);                // store check for obj - register is destroyed afterwards
-  void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);

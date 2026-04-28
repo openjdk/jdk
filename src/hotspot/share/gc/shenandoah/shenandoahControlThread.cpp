@@ -346,7 +346,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), true,
+                              point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
 
   heap->increment_total_collections(false);
 
