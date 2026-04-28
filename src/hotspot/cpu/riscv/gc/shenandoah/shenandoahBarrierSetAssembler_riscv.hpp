@@ -47,7 +47,8 @@ private:
                     Register pre_val,
                     Register thread,
                     Register tmp1,
-                    Register tmp2);
+                    Register tmp2,
+                    bool expand_call);
 
   void card_barrier(MacroAssembler* masm, Register obj);
 

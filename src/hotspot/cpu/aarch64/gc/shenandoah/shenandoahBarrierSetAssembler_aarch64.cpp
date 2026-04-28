@@ -87,7 +87,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       } else {
         target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop);
       }
-      __ rt_call(target);
+      __ call_VM_leaf(target, 3);
       __ pop_call_clobbered_registers();
       __ bind(done);
     }
@@ -106,7 +106,8 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
                                                  Register pre_val,
                                                  Register thread,
                                                  Register tmp1,
-                                                 Register tmp2) {
+                                                 Register tmp2,
+                                                 bool expand_call) {
   assert(ShenandoahSATBBarrier, "Should be checked by caller");
 
   // If expand_call is true then we expand the call_VM_leaf macro
@@ -164,7 +165,11 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
   if (c_rarg0 != pre_val) {
     __ mov(c_rarg0, pre_val);
   }
-  __ rt_call(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre));
+  if (expand_call) {
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), pre_val);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), 1);
+  }
   __ pop_call_clobbered_registers();
 
   __ bind(done);
@@ -283,7 +288,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     assert(!is_narrow, "phantom access cannot be narrow");
     target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
-  __ rt_call(target);
+  // Calling with super_call_VM_leaf with c_rarg0/1 bypasses interpreter checks and avoids any moves.
+  __ super_call_VM_leaf(target, c_rarg0, c_rarg1);
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();
   __ mov(r0, rscratch1);
@@ -350,7 +356,8 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
                  dst /* pre_val */,
                  rthread /* thread */,
                  tmp1 /* tmp1 */,
-                 tmp2 /* tmp2 */);
+                 tmp2 /* tmp2 */,
+                 true /* expand_call */);
     __ leave();
   }
 }
@@ -400,7 +407,8 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                  tmp2 /* pre_val */,
                  rthread /* thread */,
                  tmp1 /* tmp */,
-                 rscratch1 /* tmp2 */);
+                 rscratch1 /* tmp2 */,
+                 false /* expand_call */);
   }
 
   // Store!
