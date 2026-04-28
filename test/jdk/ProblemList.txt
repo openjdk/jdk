@@ -321,11 +321,6 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal3Test.java 819643
 java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal4Test.java 8196432 linux-all,macosx-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal2Test.java 8196432 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal2Test.java 8196432 linux-all
-# java/awt/Modal/MultipleDialogs/MultipleDialogs1Test.java 8198665 macosx-all
-# java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
-# java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
-# java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
-# java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
