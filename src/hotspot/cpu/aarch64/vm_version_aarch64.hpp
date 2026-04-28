@@ -181,7 +181,7 @@ public:
   static const char* _features_names[MAX_CPU_FEATURES];
 
   // Feature identification
-#define CPU_FEATURE_DETECTION(id, name, bit) \
+#define CPU_FEATURE_DETECTION(id, name) \
   static bool supports_##name() { return supports_feature(CPU_##id); }
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION
