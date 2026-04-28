@@ -29,7 +29,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
- * @run junit/othervm -Djdk.internal.httpclient.debug=true HandshakeUrlEncodingTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpHandler;

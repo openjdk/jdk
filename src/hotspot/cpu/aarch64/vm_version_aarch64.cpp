@@ -24,6 +24,7 @@
  *
  */
 
+#include "logging/log.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
@@ -51,6 +52,10 @@ bool VM_Version::_rop_protection;
 uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
+
+bool VM_Version::_cache_dic_enabled;
+bool VM_Version::_cache_idc_enabled;
+bool VM_Version::_ic_ivau_trapped;
 
 const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
 
@@ -85,6 +90,19 @@ static SpinWait get_spin_wait_desc() {
   return spin_wait;
 }
 
+static bool has_neoverse_n1_errata_1542419() {
+  const int major_rev_num = VM_Version::cpu_variant();
+  const int minor_rev_num = VM_Version::cpu_revision();
+  // Neoverse N1: 0xd0c
+  // Erratum 1542419 affects r3p0, r3p1 and r4p0.
+  // It is fixed in r4p1 and later revisions, which are not affected.
+  return (VM_Version::cpu_family() == VM_Version::CPU_ARM &&
+          VM_Version::model_is(0xd0c) &&
+          ((major_rev_num == 3 && minor_rev_num == 0) ||
+           (major_rev_num == 3 && minor_rev_num == 1) ||
+           (major_rev_num == 4 && minor_rev_num == 0)));
+}
+
 void VM_Version::initialize() {
 #define SET_CPU_FEATURE_NAME(id, name, bit) \
   _features_names[bit] = XSTR(name);
@@ -95,6 +113,10 @@ void VM_Version::initialize() {
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
+
+  _cache_dic_enabled = false;
+  _cache_idc_enabled = false;
+  _ic_ivau_trapped = false;
 
   get_os_cpu_info();
   _cpu_features = _features;
@@ -283,9 +305,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  CHECK_CPU_FEATURE(supports_crc32, CRC32);
-  CHECK_CPU_FEATURE(supports_lse, LSE);
-  CHECK_CPU_FEATURE(supports_aes, AES);
+  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -413,10 +435,6 @@ void VM_Version::initialize() {
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   if (supports_pmull()) {
@@ -676,6 +694,43 @@ void VM_Version::initialize() {
     clear_feature(CPU_SVE);
   }
 
+  if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation) && is_cache_idc_enabled() && is_cache_dic_enabled()) {
+    FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
+  }
+
+  if (FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && has_neoverse_n1_errata_1542419()
+      && is_cache_idc_enabled() && !is_cache_dic_enabled()) {
+    if (_ic_ivau_trapped) {
+      FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, true);
+    } else {
+      log_info(os)("IC IVAU is not trapped; disabling NeoverseN1ICacheErratumMitigation");
+      FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, false);
+    }
+  }
+
+  if (NeoverseN1ICacheErratumMitigation) {
+    if (!has_neoverse_n1_errata_1542419()) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set for the CPU not having Neoverse N1 errata 1542419");
+    }
+    // If the user explicitly set the flag, verify the trap is active.
+    if (!FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && !_ic_ivau_trapped) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but IC IVAU is not trapped. "
+                                    "The optimization is not safe on this system.");
+    }
+    if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation)) {
+      FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
+    }
+
+    if (!UseSingleICacheInvalidation) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but UseSingleICacheInvalidation is not enabled");
+    }
+  }
+
+  if (UseSingleICacheInvalidation
+      && (!is_cache_idc_enabled() || (!is_cache_dic_enabled() && !NeoverseN1ICacheErratumMitigation))) {
+    vm_exit_during_initialization("UseSingleICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1ICacheErratumMitigation is enabled");
+  }
+
   // Construct the "features" string
   stringStream ss(512);
   ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
@@ -734,9 +789,9 @@ void VM_Version::store_cpu_features(void* buf) {
   *(uint64_t*)buf = _features;
 }
 
-bool VM_Version::supports_features(void* features_buffer) {
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
   uint64_t features_to_test = *(uint64_t*)features_buffer;
-  return (_features & features_to_test) == features_to_test;
+  return (_features == features_to_test);
 }
 
 #if defined(LINUX)

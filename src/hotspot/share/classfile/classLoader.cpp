@@ -251,7 +251,7 @@ const char* ClassPathEntry::copy_path(const char* path) {
 }
 
 ClassPathDirEntry::~ClassPathDirEntry() {
-  FREE_C_HEAP_ARRAY(char, _dir);
+  FREE_C_HEAP_ARRAY(_dir);
 }
 
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
@@ -280,7 +280,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
 #ifdef ASSERT
         // Freeing path is a no-op here as buffer prevents it from being reclaimed. But we keep it for
         // debug builds so that we guard against use-after-free bugs.
-        FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
+        FREE_RESOURCE_ARRAY_IN_THREAD(current, path, path_len);
 #endif
         // We don't verify the length of the classfile stream fits in an int, but this is the
         // bootloader so we have control of this.
@@ -291,7 +291,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
       }
     }
   }
-  FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
+  FREE_RESOURCE_ARRAY_IN_THREAD(current, path, path_len);
   return nullptr;
 }
 
@@ -302,7 +302,7 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassP
 
 ClassPathZipEntry::~ClassPathZipEntry() {
   ZipLibrary::close(_zip);
-  FREE_C_HEAP_ARRAY(char, _zip_name);
+  FREE_C_HEAP_ARRAY(_zip_name);
 }
 
 bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name) {
@@ -707,6 +707,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     if (zip != nullptr && error_msg == nullptr) {
       new_entry = new ClassPathZipEntry(zip, path);
     } else {
+      log_info(class, path)("failed: %s, err: %s", path, error_msg);
       return nullptr;
     }
     log_info(class, path)("opened: %s", path);
@@ -1438,7 +1439,7 @@ bool ClassLoader::is_module_observable(const char* module_name) {
     struct stat st;
     const char *path = get_exploded_module_path(module_name, true);
     bool res = os::stat(path, &st) == 0;
-    FREE_C_HEAP_ARRAY(char, path);
+    FREE_C_HEAP_ARRAY(path);
     return res;
   }
   jlong size;
