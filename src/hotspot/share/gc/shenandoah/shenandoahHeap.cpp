@@ -1033,7 +1033,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   // Record the plab configuration for this result and register the object.
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
-      _alloc_rate.allocated(req.actual_size() * HeapWordSize);
+      _alloc_rate.allocated((req.actual_size() + req.waste()) * HeapWordSize);
     }
 
     if (req.is_old()) {
