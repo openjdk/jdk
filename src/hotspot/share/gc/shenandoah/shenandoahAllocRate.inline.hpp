@@ -34,32 +34,25 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::maybe_record_sample() {
-  if (!_sample_lock.try_lock()) {
-    // Another thread has the lock and will take the sample
-    return;
-  }
-
+void ShenandoahAllocRate<Clock>::record_sample() {
+  const size_t unsampled = _allocated_bytes_since_last_sample.load_relaxed();
   const jlong now = Clock::elapsed_counter();
   const double elapsed = static_cast<double>(now - _last_sample_time) / Clock::elapsed_frequency();
 
-  if (elapsed > _sample_period_seconds) {
-    _last_sample_time = now;
-    const size_t unsampled = _allocated_bytes_since_last_sample.load_relaxed();
+  _last_sample_time = now;
 
-    // We are recording this sample, deduct it from the counter. It may be increased
-    // concurrently by other threads outside the lock, so we still use an atomic access.
-    _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
+  // We are recording this sample, deduct it from the counter. It may be increased
+  // concurrently by other threads, so use an atomic access.
+  _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
 
-    auto rate_seconds = static_cast<double>(unsampled) / elapsed;
-    record_rate_sample(rate_seconds);
-  }
-
-  _sample_lock.unlock();
+  auto rate_seconds = static_cast<double>(unsampled) / elapsed;
+  record_rate_sample(rate_seconds);
 }
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::record_rate_sample(double rate) {
+  MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
+
   _baseline.add(rate);
   _recent.add(rate);
   _momentary.add(rate);
@@ -91,6 +84,10 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
 
   // How much do we expect to consume at the current rate and predicted acceleration
   return static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+}
+
+inline void ShenandoahAllocationRateThread::stop_service() {
+  log_debug(gc, thread)("%s: Stop requested.", name());
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP

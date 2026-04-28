@@ -391,7 +391,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return ShenandoahHeuristics::should_start_gc();
   }
 
-  ShenandoahAllocRate<>& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
   const size_t allocatable_bytes = allocatable(available);
   if (trigger_average_allocation_rate(alloc_rate, allocatable_bytes)) {
     return true;
@@ -429,7 +429,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t cap
   return false;
 }
 
-bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(ShenandoahAllocRate<> &rate, size_t allocatable_bytes) {
+bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(ShenandoahAllocationRate& rate, size_t allocatable_bytes) {
   // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
   const double avg_alloc_rate = rate.upper_bound(_margin_of_error_sd);
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
@@ -530,7 +530,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(ShenandoahAll
 // Though larger sample size may improve quality of predictor, it also delays trigger response.  Smaller sample sizes
 // are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 8 and
 // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
-bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(ShenandoahAllocRate<> &rate, const size_t allocatable_bytes) {
+bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(ShenandoahAllocationRate& rate, const size_t allocatable_bytes) {
   double acceleration = 0.0;
   double current_rate_by_acceleration = 0.0;
 

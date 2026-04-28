@@ -161,8 +161,8 @@ protected:
 
   bool trigger_min_free_threshold(size_t available);
   bool trigger_learning(size_t available, size_t capacity);
-  bool trigger_average_allocation_rate(ShenandoahAllocRate<>& rate, size_t allocatable_bytes);
-  bool trigger_accelerating_allocation_rate(ShenandoahAllocRate<>& rate, size_t allocatable_bytes);
+  bool trigger_average_allocation_rate(ShenandoahAllocationRate& rate, size_t allocatable_bytes);
+  bool trigger_accelerating_allocation_rate(ShenandoahAllocationRate& rate, size_t allocatable_bytes);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

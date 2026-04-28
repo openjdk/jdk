@@ -230,7 +230,8 @@ private:
   Atomic<size_t> _committed;
   shenandoah_padding(1);
 
-  ShenandoahAllocRate<> _alloc_rate;
+  ShenandoahAllocationRate _alloc_rate;
+  ShenandoahAllocationRateThread* _alloc_rate_thread;
 
 public:
   void increase_committed(size_t bytes);
@@ -246,7 +247,7 @@ public:
 
   void set_soft_max_capacity(size_t v);
 
-  ShenandoahAllocRate<>& alloc_rate() {
+  ShenandoahAllocationRate& alloc_rate() {
     return _alloc_rate;
   }
 

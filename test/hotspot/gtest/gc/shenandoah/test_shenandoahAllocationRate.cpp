@@ -52,7 +52,7 @@ protected:
   template<typename Clock>
   static void allocate(ShenandoahAllocRate<Clock>& rate, size_t quantity) {
     rate.allocated(quantity);
-    rate.maybe_record_sample();
+    rate.record_sample();
   }
 };
 
@@ -65,13 +65,16 @@ constexpr uint BASELINE_SAMPLES = BASELINE_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS;
 constexpr uint RECENT_SAMPLES = RECENT_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS;      // 8
 constexpr uint MOMENTARY_SAMPLES = MOMENTARY_WINDOW_MILLIS / SAMPLE_PERIOD_MILLIS; // 2
 
-
+/**
+ * Samples are just driven by a simple thread that knows the sample frequency so we don't need to worry about elapsed time (that much)
+ *
 TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, 2000);
   allocate(rate, 2048);
   allocate(rate, 2048);
   EXPECT_EQ(rate.average(), 0);
 }
+*/
 
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(BASELINE_WINDOW_MILLIS, RECENT_WINDOW_MILLIS, MOMENTARY_WINDOW_MILLIS, SAMPLE_PERIOD_MILLIS);

@@ -117,8 +117,6 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
   // back off exponentially.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  heap->alloc_rate().maybe_record_sample();
-
   double before_sleep_time = _most_recent_wake_time;
   if (heap->has_changed()) {
     _sleep = ShenandoahControlIntervalMin;
