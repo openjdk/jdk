@@ -517,13 +517,20 @@ protected:
       return (_features_bitmap[idx] & bit_mask(feature)) != 0;
     }
 
-    bool supports_features(VM_Features* features_to_test) {
+    bool verify_aot_code_cache_features(VM_Features* features_to_test) {
       for (int i = 0; i < features_bitmap_element_count(); i++) {
-        if ((_features_bitmap[i] & features_to_test->_features_bitmap[i]) != features_to_test->_features_bitmap[i]) {
+        if (_features_bitmap[i] != features_to_test->_features_bitmap[i]) {
           return false;
-       }
+        }
       }
       return true;
+    }
+
+    VM_Features aot_code_cache_features() {
+      VM_Features copy = *this;
+      // HT does not result in incompatibility of aot code cache
+      copy.clear_feature(CPU_HT);
+      return copy;
     }
   };
 
@@ -1134,7 +1141,7 @@ public:
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf);
 
-  static bool supports_features(void* features_to_test);
+  static bool verify_aot_code_cache_features(void* features_buffer);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP
