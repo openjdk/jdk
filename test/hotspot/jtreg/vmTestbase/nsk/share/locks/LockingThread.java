@@ -302,9 +302,26 @@ public class LockingThread extends Thread {
 
     private Wicket waitStateWicket = new Wicket();
 
+    private final Object relinquishWaitLock = new Object();
+    private Wicket relinquishWaitWicket = new Wicket();
+    private boolean canEnterRelinquishWait;
+
     private Thread.State requiredState;
 
     public void waitState() {
+
+        if (requiredState == State.WAITING && relinquishMonitor) {
+            int relinquishResult = relinquishWaitWicket.waitFor(60000);
+            if (relinquishResult != 0) {
+                throw new RuntimeException("LockingThread cannot reach transition point");
+            }
+
+            synchronized(relinquishWaitLock) {
+                canEnterRelinquishWait = true;
+                relinquishWaitLock.notifyAll();
+            }
+        }
+
         // try wait with timeout to avoid possible hanging (if LockingThread have finished execution because of uncaught exception)
         int result = waitStateWicket.waitFor(60000);
 
@@ -362,6 +379,8 @@ public class LockingThread extends Thread {
 
         requiredState = Thread.State.WAITING;
         waitStateWicket = new Wicket();
+        relinquishWaitWicket = new Wicket();
+        canEnterRelinquishWait = false;
         relinquishMonitor = true;
         relinquishedMonitorIndex = index;
 
@@ -431,6 +450,18 @@ public class LockingThread extends Thread {
                     relinquishedMonitor = monitorInfo.monitor;
 
                     log("Relinquish monitor: " + relinquishedMonitor);
+
+                    synchronized (relinquishWaitLock) {
+                        relinquishWaitWicket.unlockAll();
+
+                        while (!canEnterRelinquishWait) {
+                            try {
+                                relinquishWaitLock.wait(0);
+                            } catch (InterruptedException ex) {
+
+                            }
+                        }
+                    }
 
                     // monitor is relinquished
                     ready();
