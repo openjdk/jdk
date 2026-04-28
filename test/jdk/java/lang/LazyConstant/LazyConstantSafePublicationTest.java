@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
-    private static final int THREADS = Runtime.getRuntime().availableProcessors();
+    private static final int THREADS = Math.max(8, Runtime.getRuntime().availableProcessors());
 
     static final class Holder {
         // These are non-final fields but should be seen
@@ -104,7 +104,7 @@ final class LazyConstantSafePublicationTest {
             for (int i = 0; i < SIZE; i++) {
                 s = constants[i];
                 s.get();
-                deadlineNs += 1000;
+                deadlineNs += Utils.adjustTimeout(1000L);
                 while (System.nanoTime() < deadlineNs) {
                     Thread.onSpinWait();
                 }
