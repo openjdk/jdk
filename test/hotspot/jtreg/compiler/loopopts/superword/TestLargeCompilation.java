@@ -26,9 +26,9 @@ package compiler.loopopts.superword;
 /*
  * @test
  * @key randomness
- * @library /test/lib
  * @bug 8327978
  * @summary Test compile time for large compilation, where SuperWord takes especially much time.
+ * @library /test/lib
  * @run main/othervm/timeout=30 -Xbatch
  *                              -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestLargeCompilation::test*
  *                              -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=1000

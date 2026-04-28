@@ -24,9 +24,9 @@
 /*
  * @test id=Xbatch
  * @key randomness
- * @library /test/lib
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
@@ -35,9 +35,9 @@
 /*
  * @test id=Xcomp-run-inline
  * @key randomness
- * @library /test/lib
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::run*,*TestPartialPeel*::test*
  *                   -XX:CompileCommand=inline,*TestPartialPeelAtUnsignedTestsNegativeLimit::test*
@@ -48,9 +48,9 @@
 /*
  * @test id=Xcomp-compile-test
  * @key randomness
- * @library /test/lib
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
+ * @library /test/lib
  * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
@@ -58,11 +58,11 @@
 /*
  * @test id=vanilla
  * @key randomness
- * @library /test/lib
  * @bug 8332920
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
  *          Only run this test with C2 since it is time-consuming and only tests a C2 issue.
+ * @library /test/lib
  * @run main/timeout=480 compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
