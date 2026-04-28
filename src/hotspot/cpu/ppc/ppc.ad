@@ -1177,18 +1177,7 @@ int MachCallStaticJavaNode::ret_addr_offset() {
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
-  // Offset is 4 with postalloc expanded calls (bl is one instruction). We use
-  // postalloc expanded calls if we use inline caches and do not update method data.
-  if (UseInlineCaches) return 4;
-
-  int vtable_index = this->_vtable_index;
-  if (vtable_index < 0) {
-    // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-    assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
-    return 12;
-  } else {
-    return 20 + MacroAssembler::instr_size_for_load_klass();
-  }
+  return 12;
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
@@ -1311,9 +1300,6 @@ class CallStubImpl {
 
  public:
 
-  // Emit call stub, compiled java to interpreter.
-  static void emit_trampoline_stub(C2_MacroAssembler *masm, int destination_toc_offset, int insts_call_instruction_offset);
-
   // Size of call trampoline stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
@@ -1331,81 +1317,6 @@ class CallStubImpl {
 %} // end source_hpp
 
 source %{
-
-// Emit a trampoline stub for a call to a target which is too far away.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call-site in the stub section:
-//   load the call target from the constant pool
-//   branch via CTR (LR/link still points to the call-site above)
-
-void CallStubImpl::emit_trampoline_stub(C2_MacroAssembler *masm, int destination_toc_offset, int insts_call_instruction_offset) {
-  address stub = __ emit_trampoline_stub(destination_toc_offset, insts_call_instruction_offset);
-  if (stub == nullptr) {
-    ciEnv::current()->record_out_of_memory_failure();
-  }
-}
-
-//=============================================================================
-
-// Emit an inline branch-and-link call and a related trampoline stub.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call-site in the stub section:
-//   load the call target from the constant pool
-//   branch via CTR (LR/link still points to the call-site above)
-//
-
-typedef struct {
-  int insts_call_instruction_offset;
-  int ret_addr_offset;
-} EmitCallOffsets;
-
-// Emit a branch-and-link instruction that branches to a trampoline.
-// - Remember the offset of the branch-and-link instruction.
-// - Add a relocation at the branch-and-link instruction.
-// - Emit a branch-and-link.
-// - Remember the return pc offset.
-EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler *masm, address entry_point, relocInfo::relocType rtype) {
-  EmitCallOffsets offsets = { -1, -1 };
-  const int start_offset = __ offset();
-  offsets.insts_call_instruction_offset = __ offset();
-
-  // No entry point given, use the current pc.
-  if (entry_point == nullptr) entry_point = __ pc();
-
-  // Put the entry point as a constant into the constant pool.
-  const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-  if (entry_point_toc_addr == nullptr) {
-    ciEnv::current()->record_out_of_memory_failure();
-    return offsets;
-  }
-  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-  // Emit the trampoline stub which will be related to the branch-and-link below.
-  CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
-  if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
-  __ relocate(rtype);
-
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ bl((address) __ pc());
-
-  offsets.ret_addr_offset = __ offset() - start_offset;
-
-  return offsets;
-}
-
-//=============================================================================
 
 // Factory for creating loadConL* nodes for large/small constant pool.
 
@@ -3321,45 +3232,27 @@ encode %{
   // Usage of r1 and r2 in the stubs allows to distinguish them.
   enc_class enc_java_static_call(method meth) %{
     address entry_point = (address)$meth$$method;
+    address call_pc;
 
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      emit_call_with_trampoline_stub(masm, entry_point, relocInfo::runtime_call_type);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-    } else {
-      // Remember the offset not the address.
-      const int start_offset = __ offset();
-
-      // The trampoline stub.
-      // No entry point given, use the current pc.
-      // Make sure branch fits into
-      if (entry_point == nullptr) entry_point = __ pc();
-
-      // Put the entry point as a constant into the constant pool.
-      const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_toc_addr == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
+      call_pc = __ trampoline_call(AddressLiteral(entry_point, relocInfo::runtime_call_type));
+      if (call_pc == nullptr) {
+        ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      const int entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-      // Emit the trampoline stub which will be related to the branch-and-link below.
-      CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, start_offset);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
+    } else {
       int method_index = resolved_method_index(masm);
-      __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
-                  : static_call_Relocation::spec(method_index));
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      call_pc = __ trampoline_call(AddressLiteral(entry_point, rspec));
+      if (call_pc == nullptr) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        return;
+      }
 
-      // The real call.
-      // Note: At this point we do not have the address of the trampoline
-      // stub, and the entry point might be too far away for bl, so __ pc()
-      // serves as dummy and the bl will be patched later.
-      __ set_inst_mark();
-      __ bl(__ pc());  // Emits a relocation.
-
-      // The stub for call to interpreter.
-      address stub = CompiledDirectCall::emit_to_interp_stub(masm);
-      __ clear_inst_mark();
+      // Emit stub for static call
+      address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3368,157 +3261,21 @@ encode %{
     __ post_call_nop();
   %}
 
-  // Second node of expanded dynamic call - the call.
-  enc_class enc_java_dynamic_call_sched(method meth) %{
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-      // Create a call trampoline stub for the given method.
-      const address entry_point = !($meth$$method) ? nullptr : (address)$meth$$method;
-      const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_const == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
-      CallStubImpl::emit_trampoline_stub(masm, entry_point_const_toc_offset, __ offset());
-      if (ra_->C->env()->failing()) { return; } // Code cache may be full.
-
-      // Build relocation at call site with ic position as data.
-      assert((_load_ic_hi_node != nullptr && _load_ic_node == nullptr) ||
-             (_load_ic_hi_node == nullptr && _load_ic_node != nullptr),
-             "must have one, but can't have both");
-      assert((_load_ic_hi_node != nullptr && _load_ic_hi_node->_cbuf_insts_offset != -1) ||
-             (_load_ic_node != nullptr    && _load_ic_node->_cbuf_insts_offset != -1),
-             "must contain instruction offset");
-      const int virtual_call_oop_addr_offset = _load_ic_hi_node != nullptr
-        ? _load_ic_hi_node->_cbuf_insts_offset
-        : _load_ic_node->_cbuf_insts_offset;
-      const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
-      assert(MacroAssembler::is_load_const_from_method_toc_at(virtual_call_oop_addr),
-             "should be load from TOC");
-      int method_index = resolved_method_index(masm);
-      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
-    }
-
-    // At this point I do not have the address of the trampoline stub,
-    // and the entry point might be too far away for bl. Pc() serves
-    // as dummy and bl will be patched later.
-    __ bl((address) __ pc());
-    __ post_call_nop();
-  %}
-
-  // postalloc expand emitter for virtual calls.
-  enc_class postalloc_expand_java_dynamic_call_sched(method meth, iRegLdst toc) %{
-
-    // Create the nodes for loading the IC from the TOC.
-    loadConLNodesTuple loadConLNodes_IC =
-      loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) Universe::non_oop_word()),
-                                OptoReg::Name(R19_H_num), OptoReg::Name(R19_num));
-
-    // Create the call node.
-    CallDynamicJavaDirectSchedNode *call = new CallDynamicJavaDirectSchedNode();
-    call->_vtable_index      = _vtable_index;
-    call->_method            = _method;
-    call->_optimized_virtual = _optimized_virtual;
-    call->_tf                = _tf;
-    call->_entry_point       = _entry_point;
-    call->_cnt               = _cnt;
-    call->_guaranteed_safepoint = true;
-    call->_oop_map           = _oop_map;
-    call->_jvms              = _jvms;
-    call->_jvmadj            = _jvmadj;
-    call->_has_ea_local_in_scope = _has_ea_local_in_scope;
-    call->_in_rms            = _in_rms;
-    call->_nesting           = _nesting;
-    call->_override_symbolic_info = _override_symbolic_info;
-    call->_arg_escape        = _arg_escape;
-
-    // New call needs all inputs of old call.
-    // Req...
-    for (uint i = 0; i < req(); ++i) {
-      // The expanded node does not need toc any more.
-      // Add the inline cache constant here instead. This expresses the
-      // register of the inline cache must be live at the call.
-      // Else we would have to adapt JVMState by -1.
-      if (i == mach_constant_base_node_input()) {
-        call->add_req(loadConLNodes_IC._last);
-      } else {
-        call->add_req(in(i));
-      }
-    }
-    // ...as well as prec
-    for (uint i = req(); i < len(); ++i) {
-      call->add_prec(in(i));
-    }
-
-    // Remember nodes loading the inline cache into r19.
-    call->_load_ic_hi_node = loadConLNodes_IC._large_hi;
-    call->_load_ic_node    = loadConLNodes_IC._small;
-
-    // Operands for new nodes.
-    call->_opnds[0] = _opnds[0];
-    call->_opnds[1] = _opnds[1];
-
-    // Only the inline cache is associated with a register.
-    assert(Matcher::inline_cache_reg() == OptoReg::Name(R19_num), "ic reg should be R19");
-
-    // Push new nodes.
-    if (loadConLNodes_IC._large_hi) nodes->push(loadConLNodes_IC._large_hi);
-    if (loadConLNodes_IC._last)     nodes->push(loadConLNodes_IC._last);
-    nodes->push(call);
-  %}
-
   // Compound version of call dynamic
   // Toc is only passed so that it can be used in ins_encode statement.
   // In the code we have to use $constanttablebase.
   enc_class enc_java_dynamic_call(method meth, iRegLdst toc) %{
     int start_offset = __ offset();
-
-    Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
-
-    int vtable_index = this->_vtable_index;
-    if (vtable_index < 0) {
-      // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-      assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
-      Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
-
-      // Virtual call relocation will point to ic load.
-      address virtual_call_meta_addr = __ pc();
-      // Load a clear inline cache.
-      AddressLiteral empty_ic((address) Universe::non_oop_word());
-      bool success = __ load_const_from_method_toc(ic_reg, empty_ic, Rtoc, /*fixed_size*/ true);
-      if (!success) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      // CALL to fixup routine.  Fixup routine uses ScopeDesc info
-      // to determine who we intended to call.
-      __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
-      emit_call_with_trampoline_stub(masm, (address)$meth$$method, relocInfo::none);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-      assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
-    } else {
-      assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-      // Go thru the vtable. Get receiver klass. Receiver already
-      // checked for non-null. If we'll go thru a C2I adapter, the
-      // interpreter expects method in R19_method.
-
-      __ load_klass(R11_scratch1, R3);
-
-      int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
-      __ li(R19_method, v_off);
-      __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
-      // NOTE: for vtable dispatches, the vtable entry will never be
-      // null. However it may very well end up in handle_wrong_method
-      // if the method is abstract for the particular class.
-      __ ld(R11_scratch1, in_bytes(Method::from_compiled_offset()), R19_method);
-      // Call target. Either compiled code or C2I adapter.
-      __ mtctr(R11_scratch1);
-      __ bctrl();
-      assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
+    int method_index = resolved_method_index(masm);
+    bool scratch_emit = ra_ == nullptr;
+    Register Rtoc = scratch_emit ? R2_TOC : $constanttablebase;
+    bool success = __ ic_call(Rtoc, (address)$meth$$method, method_index, scratch_emit, true /*fixed_size*/);
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
     }
+    assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
+           "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     __ post_call_nop();
   %}
 
@@ -14028,15 +13785,14 @@ instruct safePoint_poll(iRegPdst poll) %{
 // ============================================================================
 // Call Instructions
 
-// Call Java Static Instruction
-
 source %{
 
 #include "runtime/continuation.hpp"
 
 %}
 
-// Schedulable version of call static node.
+// Call Java Static Instruction
+
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
   effect(USE meth);
@@ -14052,51 +13808,9 @@ instruct CallStaticJavaDirect(method meth) %{
 
 // Call Java Dynamic Instruction
 
-// Used by postalloc expand of CallDynamicJavaDirectSchedEx (actual call).
-// Loading of IC was postalloc expanded. The nodes loading the IC are reachable
-// via fields ins_field_load_ic_hi_node and ins_field_load_ic_node.
-// The call destination must still be placed in the constant pool.
-instruct CallDynamicJavaDirectSched(method meth) %{
-  match(CallDynamicJava); // To get all the data fields we need ...
-  effect(USE meth);
-  predicate(false);       // ... but never match.
-
-  ins_field_load_ic_hi_node(loadConL_hiNode*);
-  ins_field_load_ic_node(loadConLNode*);
-  ins_num_consts(1 /* 1 patchable constant: call destination */);
-
-  format %{ "BL        \t// dynamic $meth ==> " %}
-  size((Continuations::enabled() ? 8 : 4));
-  ins_encode( enc_java_dynamic_call_sched(meth) );
-  ins_pipe(pipe_class_call);
-%}
-
-// Schedulable (i.e. postalloc expanded) version of call dynamic java.
-// We use postalloc expanded calls if we use inline caches
-// and do not update method data.
-//
-// This instruction has two constants: inline cache (IC) and call destination.
-// Loading the inline cache will be postalloc expanded, thus leaving a call with
-// one constant.
-instruct CallDynamicJavaDirectSched_Ex(method meth) %{
-  match(CallDynamicJava);
-  effect(USE meth);
-  predicate(UseInlineCaches);
-  ins_cost(CALL_COST);
-
-  ins_num_consts(2 /* 2 patchable constants: inline cache, call destination. */);
-
-  format %{ "CALL,dynamic $meth \t// postalloc expanded" %}
-  postalloc_expand( postalloc_expand_java_dynamic_call_sched(meth, constanttablebase) );
-%}
-
-// Compound version of call dynamic java
-// We use postalloc expanded calls if we use inline caches
-// and do not update method data.
 instruct CallDynamicJavaDirect(method meth) %{
   match(CallDynamicJava);
   effect(USE meth);
-  predicate(!UseInlineCaches);
   ins_cost(CALL_COST);
 
   // Enc_java_to_runtime_call needs up to 4 constants (method data oop).

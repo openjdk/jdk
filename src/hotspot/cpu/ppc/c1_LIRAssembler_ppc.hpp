@@ -26,6 +26,9 @@
 #ifndef CPU_PPC_C1_LIRASSEMBLER_PPC_HPP
 #define CPU_PPC_C1_LIRASSEMBLER_PPC_HPP
 
+// ArrayCopyStub needs access to bailout
+friend class ArrayCopyStub;
+
  private:
 
   //////////////////////////////////////////////////////////////////////////////
@@ -55,9 +58,6 @@
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
  public:
   static const ConditionRegister BOOL_RESULT;
-
-  // Emit trampoline stub for call. Call bailout() if failed. Return true on success.
-  bool emit_trampoline_stub_for_call(address target, Register Rtoc = noreg);
 
 enum {
   _static_call_stub_size = 4 * BytesPerInstWord + MacroAssembler::b64_patchable_size, // or smaller

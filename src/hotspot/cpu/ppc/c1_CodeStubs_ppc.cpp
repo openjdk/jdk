@@ -443,15 +443,13 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
     return; // CodeCache is full
   }
 
-  bool success = ce->emit_trampoline_stub_for_call(SharedRuntime::get_resolve_static_call_stub());
-  if (!success) { return; }
-
-  __ relocate(relocInfo::static_call_type);
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ code()->set_insts_mark();
-  __ bl(__ pc());
+  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
+                         relocInfo::static_call_type);
+  address call_pc = __ trampoline_call(resolve);
+  if (call_pc == nullptr) {
+    ce->bailout("const/stub overflow in call w/ trampoline");
+    return;
+  }
   ce->add_call_info_here(info());
   ce->verify_oop_map(info());
 
