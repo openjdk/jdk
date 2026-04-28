@@ -30,7 +30,6 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
@@ -88,9 +87,7 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
 
     private X509Certificate trustedCert;
     private X509Certificate serverCert;
-    private X509Certificate clientCert;
     private KeyPair serverKeys;
-    private KeyPair clientKeys;
 
     TLSCurveMismatch(String protocol, String[] namedGroups) throws Exception {
         super();
@@ -140,47 +137,39 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
     }
 
     @Override
-    protected SSLContext createServerSSLContext() throws Exception {
-        return getSSLContext(
-                trustedCert, serverCert, serverKeys.getPrivate(), protocol);
+    protected SSLContext createClientSSLContext() throws Exception {
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, null);
+        ks.setCertificateEntry("Trusted Cert", trustedCert);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        tmf.init(ks);
+        SSLContext ctx = SSLContext.getInstance(protocol);
+        ctx.init(null, tmf.getTrustManagers(), null);
+        return ctx;
     }
 
     @Override
-    protected SSLContext createClientSSLContext() throws Exception {
-        return getSSLContext(
-                trustedCert, clientCert, clientKeys.getPrivate(), protocol);
-    }
-
-    private static SSLContext getSSLContext(
-            X509Certificate trustedCertificate, X509Certificate keyCertificate,
-            PrivateKey privateKey, String protocol)
-            throws Exception {
-
+    protected SSLContext createServerSSLContext() throws Exception {
         // Create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // Import the trusted cert
-        ks.setCertificateEntry("TLS Signer", trustedCertificate);
-
-        // Generate certificate chain
-        Certificate[] chain = new Certificate[2];
-        chain[0] = keyCertificate;
-        chain[1] = trustedCertificate;
+        ks.setCertificateEntry("TLS Signer", trustedCert);
 
         // Import the key entry.
         final char[] passphrase = "passphrase".toCharArray();
-        ks.setKeyEntry("Whatever", privateKey, passphrase, chain);
+        ks.setKeyEntry("Whatever", serverKeys.getPrivate(), passphrase,
+                new Certificate[]{serverCert});
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(ks);
 
-        // Create SSL context
-        SSLContext ctx = SSLContext.getInstance(protocol);
-
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
+        // Create SSL context
+        SSLContext ctx = SSLContext.getInstance(protocol);
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         return ctx;
     }
@@ -191,7 +180,6 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
         kpg.initialize(new ECGenParameterSpec(SIGNING_KEY_CURVE));
         var caKeys = kpg.generateKeyPair();
         serverKeys = kpg.generateKeyPair();
-        clientKeys = kpg.generateKeyPair();
 
         trustedCert = createTrustedCert(caKeys);
 
@@ -201,16 +189,10 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
                 .addBasicConstraintsExt(false, false, -1)
                 .build(trustedCert, caKeys.getPrivate(),
                         CERT_SIG_ALG);
-
-        clientCert = customCertificateBuilder(
-                "O=Client-Org, L=Some-City, ST=Some-State, C=US",
-                clientKeys.getPublic(), caKeys.getPublic())
-                .addBasicConstraintsExt(false, false, -1)
-                .build(trustedCert, caKeys.getPrivate(), CERT_SIG_ALG);
     }
 
     private static X509Certificate createTrustedCert(KeyPair caKeys)
-            throws Exception {
+            throws CertificateException, IOException {
         return customCertificateBuilder(
                 "O=CA-Org, L=Some-City, ST=Some-State, C=US",
                 caKeys.getPublic(), caKeys.getPublic())
@@ -220,7 +202,7 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
 
     private static CertificateBuilder customCertificateBuilder(
             String subjectName, PublicKey publicKey, PublicKey caKey)
-            throws CertificateException, IOException, CertificateException {
+            throws CertificateException, IOException {
         return new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
