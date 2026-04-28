@@ -37,19 +37,22 @@ public:
   constexpr JVMFlagImpl(T v) : _value{v} {}
   constexpr JVMFlagImpl() : _value{} {}
   operator T() const {
-    if (_flag_tracer != nullptr) {
-      _flag_tracer(&_value);
-    }
-    return _value;
+    return value();
   }
   JVMFlagImpl& operator=(const T& v) {
     _value = v;
     return *this;
   }
   T value() const {
+    if (_flag_tracer != nullptr) {
+      _flag_tracer(&_value);
+    }
     return _value;
   }
   T& value_ref() {
+    if (_flag_tracer != nullptr) {
+      _flag_tracer(&_value);
+    }
     return _value; // used by gcConfig.cpp ??FIXME??
   }
 };
