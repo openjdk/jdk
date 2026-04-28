@@ -700,8 +700,7 @@ public class ExhaustivenessComputer {
                 return true;
             }
 
-            if (componentType.tsym.isSealed()) {
-                List<Type> permitted = ((ClassSymbol) componentType.tsym).getPermittedSubclasses();
+            if (componentType.tsym.isSealed() && componentType.tsym.isAbstract()) {
                 boolean allDirectPermittedSubtypesPermitted =
                         directPermittedSubTypes(componentType)
                                  .map(csym -> instantiatePatternType(componentType, csym))
