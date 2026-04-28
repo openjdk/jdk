@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,7 +28,6 @@
 
 package jdk.internal.foreign.abi.riscv64.linux;
 
-import jdk.internal.ValueBased;
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
@@ -40,7 +39,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
-@ValueBased
 public final class LinuxRISCV64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =

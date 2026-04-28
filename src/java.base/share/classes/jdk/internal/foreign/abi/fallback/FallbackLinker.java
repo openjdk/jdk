@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.internal.foreign.abi.fallback;
 
-import jdk.internal.ValueBased;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.abi.AbstractLinker;
@@ -53,7 +52,6 @@ import java.util.Map;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.invoke.MethodHandles.foldArguments;
 
-@ValueBased
 public final class FallbackLinker extends AbstractLinker {
 
     private static final MethodHandle MH_DO_DOWNCALL;

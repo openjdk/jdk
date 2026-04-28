@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
  */
 package jdk.internal.foreign.abi.ppc64.aix;
 
-import jdk.internal.ValueBased;
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
@@ -39,7 +38,6 @@ import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 import java.util.Map;
 
-@ValueBased
 public final class AixPPC64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =

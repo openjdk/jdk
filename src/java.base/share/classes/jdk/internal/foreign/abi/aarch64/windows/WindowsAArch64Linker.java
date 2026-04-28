@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * Copyright (c) 2021, 2022, Microsoft. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,7 +27,6 @@
 
 package jdk.internal.foreign.abi.aarch64.windows;
 
-import jdk.internal.ValueBased;
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
@@ -44,7 +43,6 @@ import java.util.Map;
  * ABI implementation for Windows/AArch64. Based on AAPCS with
  * changes to va_list.
  */
-@ValueBased
 public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
