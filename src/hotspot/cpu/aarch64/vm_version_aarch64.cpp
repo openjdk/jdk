@@ -104,7 +104,7 @@ static bool has_neoverse_n1_errata_1542419() {
 }
 
 void VM_Version::initialize() {
-#define SET_CPU_FEATURE_NAME(id, name, bit) \
+#define SET_CPU_FEATURE_NAME(id, name) \
   _features_names[bit] = XSTR(name);
   CPU_FEATURE_FLAGS(SET_CPU_FEATURE_NAME)
 #undef SET_CPU_FEATURE_NAME
