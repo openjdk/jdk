@@ -49,6 +49,7 @@ import java.util.Map;
  * @test
  * @bug 8380080
  * @summary MemberName in local0 must be preserved when PopFrame re-executes direct MethodHandles.linkToStatic
+ * @requires vm.jvmti
  * @requires vm.flavor != "zero"
  * @library ../../compiler/jsr292/patches /test/lib
  * @modules java.base/jdk.internal.vm.annotation
