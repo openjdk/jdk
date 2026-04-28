@@ -34,6 +34,8 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
+long zLoadP_fubar = 0;
+
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   __ stop(".ad  color");
   assert_different_registers(src, dst);
@@ -44,7 +46,6 @@ static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Re
 }
 
 static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
-  __ stop(".ad z uncolor");
   __ z_srlg(ref, ref, ZPointerLoadShift);
 }
 
@@ -64,29 +65,29 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
 
 // Purpose: Check is pointer is good if it is just uncolor it else call the runtime
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
-  __ stop("z load barrier");
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
       ((node->barrier_data() & ZBarrierPhantom) != 0);
 
   if (on_non_strong) {
+    __ stop("load_barrier on_non_strong");
     z_keep_alive_load_barrier(masm, node, ref_addr, ref);
     return;
   }
 
   if (node->barrier_data() == ZBarrierElided) {
+    __ stop("load_barrier ZBarrierElided");
     z_uncolor(masm, node, ref);
     return;
   }
+
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  // TODO: Check what is the correct way here, all architecture have different implementations and here i am following aarch64
-  Label good;
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-  __ z_cghi(ref, barrier_Relocation::unpatched);
-  __ branch_optimized(Assembler::bcondEqual, good);
-  __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-  __ bind(good);
+  // TODO: Check what is the correct way here, all architecture have different implementations and here i am following ppc
+  __ z_lgr(Z_R0_scratch, ref);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
+  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
 
   z_uncolor(masm, node, ref);
   __ bind(*stub->continuation());
@@ -121,7 +122,10 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   format %{ "LG      $dst,$mem\t # ptr" %}
 
   ins_encode %{
-    __ stop("zLoadP");
+    __ z_ldgr(Z_F0, Z_R1);
+    __ load_const_optimized(Z_R1, (uintptr_t)&zLoadP_fubar);
+    __ z_agsi(0, Z_R1, 1);
+    __ z_lgdr(Z_R1, Z_F0);
     __ z_lg($dst$$Register, $mem$$Address);
     z_load_barrier(masm, this, $mem$$Address, $dst$$Register);
   %}
