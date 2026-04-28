@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ final class AltSvcProcessor {
     // whether or not alt service can be created from "localhost" origin host
     private static final boolean allowLocalHostOrigin = ALTSVC_ALLOW_LOCAL_HOST_ORIGIN;
 
+    @SuppressWarnings("deprecation")
     private static final SNIHostName LOCALHOST_SNI = new SNIHostName("localhost");
 
     private record ParsedHeaderValue(String rawValue, String alpnName, String host, int port,

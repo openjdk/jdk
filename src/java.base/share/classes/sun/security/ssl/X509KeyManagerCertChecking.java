@@ -390,8 +390,9 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                             StandardConstants.SNI_HOST_NAME) {
                         if (!(serverName instanceof SNIHostName)) {
                             try {
-                                serverName = new SNIHostName(
-                                        serverName.getEncoded());
+                                @SuppressWarnings("deprecation")
+                                var sni = new SNIHostName(serverName.getEncoded());
+                                serverName = sni;
                             } catch (IllegalArgumentException iae) {
                                 // unlikely to happen, just in case ...
                                 if (SSLLogger.isOn() &&

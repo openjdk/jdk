@@ -363,7 +363,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         if (b.length == 0) {
             serverNameIndication = null;
         } else {
-            serverNameIndication = new SNIHostName(b);
+            @SuppressWarnings("deprecation")
+            var hostName = new SNIHostName(b);
+            serverNameIndication = hostName;
         }
 
         // List of SNIServerName
@@ -374,7 +376,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
                 b = Record.getBytes8(buf);
-                requestedServerNames.add(new SNIHostName(new String(b)));
+                @SuppressWarnings("deprecation")
+                var hostName = new SNIHostName(new String(b));
+                requestedServerNames.add(hostName);
                 len--;
             }
         }
