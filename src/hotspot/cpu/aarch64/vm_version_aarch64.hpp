@@ -178,7 +178,7 @@ public:
 
   STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
 
-  static const char* _features_names[MAX_CPU_FEATURES];
+  static const char* _features_names[];
 
   // Feature identification
 #define CPU_FEATURE_DETECTION(id, name) \
