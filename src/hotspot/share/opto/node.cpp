@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,7 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/reachability.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
@@ -503,6 +504,9 @@ Node *Node::clone() const {
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
+  if (is_ReachabilityFence()) {
+    C->add_reachability_fence(n->as_ReachabilityFence());
+  }
   if (for_post_loop_opts_igvn()) {
     // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
@@ -621,6 +625,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (is_expensive()) {
     compile->remove_expensive_node(this);
+  }
+  if (is_ReachabilityFence()) {
+    compile->remove_reachability_fence(as_ReachabilityFence());
   }
   if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
@@ -999,18 +1006,22 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
+  // If we end up traversing more nodes than we actually have,
+  // it is definitely an infinite loop.
+  uint max_depth = Compile::current()->unique();
   uint depth_count = 0;
   const Node* orig_p = p;
 #endif
 
   while (true) {
 #ifdef ASSERT
-    if (depth_count >= K) {
+    if (depth_count++ >= max_depth) {
       orig_p->dump(4);
-      if (p != orig_p)
+      if (p != orig_p) {
         p->dump(1);
+      }
+      fatal("infinite loop in Node::uncast_helper");
     }
-    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
 #endif
     if (p == nullptr || p->req() != 2) {
       break;
@@ -1147,15 +1158,19 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
-// these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
+// these Ideal calls need to hold. Some of the flag bits for '-XX:VerifyIterativeGVN'
+// can help with validating these invariants, although they are too slow to have on by default:
+//    - '-XX:VerifyIterativeGVN=1' checks the def-use info
+//    - '-XX:VerifyIterativeGVN=100000' checks the return value
+// If you are hacking an Ideal call, be sure to use these.
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
 // graph - even if the root is the same Node.  Example: swapping the inputs
 // to an AddINode gives the same answer and same root, but you still have to
-// return the 'this' pointer instead of null.
+// return the 'this' pointer instead of null. If the node was already dead
+// before the Ideal call, this rule does not apply, and it is fine to return
+// nullptr even if modifications were made.
 //
 // You cannot return an OLD Node, except for the 'this' pointer.  Use the
 // Identity call to return an old Node; basically if Identity can find
@@ -1209,7 +1224,7 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi()) && n->Opcode() == Op_MemBarAcquire) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
     return true;
   } else if (this->is_Load() && n->is_Move()) {
@@ -2875,21 +2890,24 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req()) {
-          uint j;
-          for (j = 0; j < use->req(); j++) {
-            if (use->in(j) != in(j)) {
-              break;
-            }
-          }
-          if (j == use->req()) {
-            return use;
-          }
+            use->req() == req() &&
+            has_same_inputs_as(use)) {
+          return use;
         }
       }
     }
   }
   return nullptr;
+}
+
+bool Node::has_same_inputs_as(const Node* other) const {
+  assert(req() == other->req(), "should have same number of inputs");
+  for (uint j = 0; j < other->req(); j++) {
+    if (in(j) != other->in(j)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Node* Node::unique_multiple_edges_out_or_null() const {
@@ -2983,6 +3001,25 @@ bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const 
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
 }
 
+//--------------------------has_non_debug_uses------------------------------
+// Checks whether the node has any non-debug uses or not.
+bool Node::has_non_debug_uses() const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* u = fast_out(i);
+    if (u->is_SafePoint()) {
+      if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      // Non-call safepoints have only debug uses.
+    } else if (u->is_ReachabilityFence()) {
+      // Reachability fence is treated as debug use.
+    } else {
+      return true; // everything else is conservatively treated as non-debug use
+    }
+  }
+  return false; // no non-debug uses found
+}
+
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove
@@ -3058,7 +3095,7 @@ void Node_Stack::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
-  _inodes = REALLOC_ARENA_ARRAY(_a, INode, _inodes, old_max, max);
+  _inodes = REALLOC_ARENA_ARRAY(_a, _inodes, old_max, max);
   _inode_max = _inodes + max;
   _inode_top = _inodes + old_top;        // restore _top
 }
@@ -3176,4 +3213,3 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   return Node::Ideal(phase, can_reshape);
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,11 @@ const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
 
+// Default value for PrintAssemblyOptions, set via --with-print-assembly-options.
+#ifndef DEFAULT_PRINT_ASSEMBLY_OPTIONS
+#define DEFAULT_PRINT_ASSEMBLY_OPTIONS nullptr
+#endif
+
 #define RUNTIME_FLAGS(develop,                                              \
                       develop_pd,                                           \
                       product,                                              \
@@ -198,19 +203,6 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, NUMAInterleaveGranularity, 2*M,                           \
           "Granularity to use for NUMA interleaving on Windows OS")         \
           constraint(NUMAInterleaveGranularityConstraintFunc, AtParse)      \
-                                                                            \
-  product(uintx, NUMAChunkResizeWeight, 20,                                 \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponentially decaying average for "                   \
-          "AdaptiveNUMAChunkSizing")                                        \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
-          "Do not reallocate more than this amount per collection")         \
-          range(0, max_uintx)                                               \
-                                                                            \
-  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
-          "Enable adaptive chunk sizing for NUMA")                          \
                                                                             \
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
@@ -624,7 +616,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintAssembly, false, DIAGNOSTIC,                           \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  product(ccstr, PrintAssemblyOptions, nullptr, DIAGNOSTIC,                 \
+  product(ccstr, PrintAssemblyOptions, DEFAULT_PRINT_ASSEMBLY_OPTIONS,      \
+          DIAGNOSTIC,                                                       \
           "Print options string passed to disassembler.so")                 \
                                                                             \
   develop(bool, PrintNMethodStatistics, false,                              \
@@ -809,9 +802,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
-                                                                            \
-  product(bool, UseXMMForArrayCopy, false,                                  \
-          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+          range(0, 1024)                                                    \
                                                                             \
   develop(bool, PrintFieldLayout, false,                                    \
           "Print field layout for each class")                              \
@@ -883,20 +874,11 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
-  develop(bool, TraceNewOopMapGeneration, false,                            \
-          "Trace OopMapGeneration")                                         \
-                                                                            \
-  develop(bool, TraceNewOopMapGenerationDetailed, false,                    \
-          "Trace OopMapGeneration: print detailed cell states")             \
-                                                                            \
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
                                                                             \
-  develop(bool, TimeOopMap2, false,                                         \
-          "Time calls to GenerateOopMap::compute_map() individually")       \
-                                                                            \
-  develop(bool, TraceOopMapRewrites, false,                                 \
-          "Trace rewriting of methods during oop map generation")           \
+  develop(bool, GenerateOopMapALot, false,                                  \
+          "Generate interpreter oopmaps at all safepoints")                 \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
@@ -1369,6 +1351,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
+          range(0, 100)                                                     \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
           "Ratio of call site execution to caller method invocation")       \
@@ -1393,9 +1376,6 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
           constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
-                                                                            \
-  product(bool, UseCompressedClassPointers, true,                           \
-          "(Deprecated) Use 32-bit class pointers.")                        \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
@@ -1506,8 +1486,9 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 1024)                                                    \
           constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
-  product_pd(intx, CodeEntryAlignment, EXPERIMENTAL,                        \
-          "Code entry alignment for generated code (in bytes)")             \
+  product_pd(uint, CodeEntryAlignment, EXPERIMENTAL,                        \
+          "Code entry alignment for generated code"                         \
+          " (in bytes, power of two)")                                      \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
@@ -1541,6 +1522,10 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
+                                                                            \
+  product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
+          "Size of code heap with predicted hot methods (in bytes)")        \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
@@ -1867,9 +1852,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
-          "Accesses to all variables should always be atomic")              \
-                                                                            \
   product(bool, UseUnalignedAccesses, false, DIAGNOSTIC,                    \
           "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
@@ -1954,7 +1936,7 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
+  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
           "Use a table to record inflated monitors rather than the first "  \
           "word of the object.")                                            \
                                                                             \

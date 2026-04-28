@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,33 +30,56 @@ import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_DEB;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.Result;
 
 public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
 
     public LinuxBundlingEnvironment() {
-        super(build()
-                .defaultOperation(() -> {
-                    return LazyLoad.SYS_ENV.value().map(LinuxSystemEnvironment::nativePackageType).map(DESCRIPTORS::get);
-                })
-                .bundler(CREATE_LINUX_APP_IMAGE, LinuxBundlingEnvironment::createAppImage)
-                .bundler(CREATE_LINUX_DEB, LazyLoad::debSysEnv, LinuxBundlingEnvironment::createDebPackage)
-                .bundler(CREATE_LINUX_RPM, LazyLoad::rpmSysEnv, LinuxBundlingEnvironment::createRpmPackage));
+        super(build().mutate(builder -> {
+
+            // Wrap the generic Linux system environment supplier in the run-once wrapper
+            // as this supplier is called from both RPM and DEB Linux system environment suppliers.
+            var sysEnv = runOnce(() -> {
+                return LinuxSystemEnvironment.create();
+            });
+
+            Supplier<Result<LinuxDebSystemEnvironment>> debSysEnv = () -> {
+                return LinuxDebSystemEnvironment.create(sysEnv.get().flatMap(v -> {
+                    return adjustPackageArch(v, StandardPackageType.LINUX_DEB);
+                }));
+            };
+
+            Supplier<Result<LinuxRpmSystemEnvironment>> rpmSysEnv = () -> {
+                return LinuxRpmSystemEnvironment.create(sysEnv.get().flatMap(v -> {
+                    return adjustPackageArch(v, StandardPackageType.LINUX_RPM);
+                }));
+            };
+
+            builder.defaultOperation(() -> {
+                return sysEnv.get().value().map(LinuxSystemEnvironment::nativePackageType).map(DESCRIPTORS::get);
+            })
+            .bundler(CREATE_LINUX_DEB, debSysEnv, LinuxBundlingEnvironment::createDebPackage)
+            .bundler(CREATE_LINUX_RPM, rpmSysEnv, LinuxBundlingEnvironment::createRpmPackage);
+        }).bundler(CREATE_LINUX_APP_IMAGE, LinuxBundlingEnvironment::createAppImage));
     }
 
     private static void createDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions::createLinuxDebPackage,
+                LinuxFromOptions.createLinuxDebPackage(options, sysEnv),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -67,7 +90,7 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                LinuxFromOptions::createLinuxRpmPackage,
+                LinuxFromOptions.createLinuxRpmPackage(options, sysEnv),
                 buildEnv()::create,
                 LinuxBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
@@ -90,21 +113,18 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
         return new BuildEnvFromOptions().predefinedAppImageLayout(APPLICATION_LAYOUT);
     }
 
-    private static final class LazyLoad {
-
-        static Result<LinuxDebSystemEnvironment> debSysEnv() {
-            return DEB_SYS_ENV;
+    private static Result<LinuxSystemEnvironment> adjustPackageArch(LinuxSystemEnvironment sysEnv, StandardPackageType type) {
+        Objects.requireNonNull(sysEnv);
+        Objects.requireNonNull(type);
+        if (sysEnv.nativePackageType().equals(type)) {
+            return Result.of(() -> {
+                return sysEnv;
+            });
+        } else {
+            return LinuxPackageArch.create(type).map(arch -> {
+                return new LinuxSystemEnvironment.Stub(sysEnv.soLookupAvailable(), sysEnv.nativePackageType(), arch);
+            });
         }
-
-        static Result<LinuxRpmSystemEnvironment> rpmSysEnv() {
-            return RPM_SYS_ENV;
-        }
-
-        private static final Result<LinuxSystemEnvironment> SYS_ENV = LinuxSystemEnvironment.create();
-
-        private static final Result<LinuxDebSystemEnvironment> DEB_SYS_ENV = LinuxDebSystemEnvironment.create(SYS_ENV);
-
-        private static final Result<LinuxRpmSystemEnvironment> RPM_SYS_ENV = LinuxRpmSystemEnvironment.create(SYS_ENV);
     }
 
     private static final Map<PackageType, BundlingOperationDescriptor> DESCRIPTORS = Stream.of(

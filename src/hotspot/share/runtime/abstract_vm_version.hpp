@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,26 @@ typedef enum {
 } VirtualizationType;
 
 class outputStream;
+class stringStream;
 enum class vmIntrinsicID;
+
+#define SINGLE_INST_WARNING_MSG " instruction is not available on this CPU"
+#define MULTI_INST_WARNING_MSG " instructions are not available on this CPU"
+
+// Helper macro to test and set VM flag and corresponding cpu feature
+#define CHECK_CPU_FEATURE(vmflag, feature_id, predicate, warning_msg) \
+  if (predicate) { \
+    if (FLAG_IS_DEFAULT(vmflag)) { \
+      FLAG_SET_DEFAULT(vmflag, true); \
+    } else if (!vmflag) { \
+      clear_feature(CPU_##feature_id); \
+    } \
+  } else if (vmflag) { \
+    if (!FLAG_IS_DEFAULT(vmflag)) { \
+      warning(#feature_id warning_msg); \
+    } \
+    FLAG_SET_DEFAULT(vmflag, false); \
+  }
 
 // Abstract_VM_Version provides information about the VM.
 
@@ -226,6 +245,21 @@ class Abstract_VM_Version: AllStatic {
 
   static const char* cpu_name(void);
   static const char* cpu_description(void);
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss) { return; }
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) { return; }
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size() { return 0; }
+
+  // Stores arch dependent cpu features representation in the provided buffer.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf) { return; }
+
+  // features_buffer is an opaque object that stores arch specific representation of cpu features
+  static bool verify_aot_code_cache_features(void* features_buffer) { return false; };
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

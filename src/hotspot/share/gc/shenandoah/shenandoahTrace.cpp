@@ -27,9 +27,7 @@
 #include "jfr/jfrEvents.hpp"
 
 void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cset,
-    size_t free_regions, size_t regions_promoted_humongous, size_t regions_promoted_regular,
-    size_t regular_promoted_garbage, size_t regular_promoted_free, size_t regions_immediate,
-    size_t immediate_size) {
+    size_t free_regions, size_t regions_immediate, size_t immediate_size) {
 
   EventShenandoahEvacuationInformation e;
   if (e.should_commit()) {
@@ -37,16 +35,30 @@ void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cse
     e.set_cSetRegions(cset->count());
     e.set_cSetUsedBefore(cset->used());
     e.set_cSetUsedAfter(cset->live());
+    e.set_freeRegions(free_regions);
+    e.set_regionsImmediate(regions_immediate);
+    e.set_immediateBytes(immediate_size);
+
+    e.commit();
+  }
+}
+
+void ShenandoahTracer::report_promotion_info(const ShenandoahCollectionSet* cset,
+    size_t regions_promoted_humongous, size_t humongous_promoted_garbage, size_t humongous_promoted_free,
+    size_t regions_promoted_regular, size_t regular_promoted_garbage, size_t regular_promoted_free) {
+
+  EventShenandoahPromotionInformation e;
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current());
     e.set_collectedOld(cset->get_live_bytes_in_old_regions());
     e.set_collectedPromoted(cset->get_live_bytes_in_tenurable_regions());
     e.set_collectedYoung(cset->get_live_bytes_in_untenurable_regions());
     e.set_regionsPromotedHumongous(regions_promoted_humongous);
+    e.set_humongousPromotedGarbage(humongous_promoted_garbage);
+    e.set_humongousPromotedFree(humongous_promoted_free);
     e.set_regionsPromotedRegular(regions_promoted_regular);
     e.set_regularPromotedGarbage(regular_promoted_garbage);
     e.set_regularPromotedFree(regular_promoted_free);
-    e.set_freeRegions(free_regions);
-    e.set_regionsImmediate(regions_immediate);
-    e.set_immediateBytes(immediate_size);
 
     e.commit();
   }

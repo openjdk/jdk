@@ -25,18 +25,17 @@
 #ifndef SHARE_RUNTIME_ARGUMENTS_HPP
 #define SHARE_RUNTIME_ARGUMENTS_HPP
 
-#include "logging/logLevel.hpp"
-#include "logging/logTag.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/globals.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/vmEnums.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Arguments parses the command line and recognizes options
 
+template <typename E>
+class GrowableArray;
 class JVMFlag;
 
 // Invocation API hook typedefs (these should really be defined in jni.h)
@@ -274,12 +273,6 @@ class Arguments : AllStatic {
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
   static void set_compact_headers_flags();
-  // Limits the given heap size by the maximum amount of virtual
-  // memory this process is currently allowed to use. It also takes
-  // the virtual-to-physical ratio of the current GC into account.
-  static size_t limit_heap_by_allocatable_memory(size_t size);
-  // Setup heap size
-  static void set_heap_size();
 
   // Bytecode rewriting
   static void set_bytecode_flags();
@@ -303,8 +296,6 @@ class Arguments : AllStatic {
 
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
-
-  static jint set_aggressive_heap_flags();
 
   // Argument parsing
   static bool parse_argument(const char* arg, JVMFlagOrigin origin);
@@ -412,12 +403,8 @@ class Arguments : AllStatic {
 
   // convenient methods to get and set jvm_flags_file
   static const char* get_jvm_flags_file()  { return _jvm_flags_file; }
-  static void set_jvm_flags_file(const char *value) {
-    if (_jvm_flags_file != nullptr) {
-      os::free(_jvm_flags_file);
-    }
-    _jvm_flags_file = os::strdup_check_oom(value);
-  }
+  static void set_jvm_flags_file(const char *value);
+
   // convenient methods to obtain / print jvm_flags and jvm_args
   static const char* jvm_flags()           { return build_resource_string(_jvm_flags_array, _num_jvm_flags); }
   static const char* jvm_args()            { return build_resource_string(_jvm_args_array, _num_jvm_args); }
@@ -479,7 +466,7 @@ class Arguments : AllStatic {
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
   static void set_java_home(const char *value) { _java_home->set_value(value); }
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
-  static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
+  static void set_ext_dirs(char *value);
 
   // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path);

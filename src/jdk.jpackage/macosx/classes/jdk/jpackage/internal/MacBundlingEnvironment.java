@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_APP
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_DMG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.cli.StandardOption.EXIT_AFTER_CONFIGURATION_PHASE;
 
 import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.util.Result;
 
 public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
 
@@ -45,30 +45,26 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
                 .defaultOperation(CREATE_MAC_DMG)
                 .bundler(SIGN_MAC_APP_IMAGE, MacBundlingEnvironment::signAppImage)
                 .bundler(CREATE_MAC_APP_IMAGE, MacBundlingEnvironment::createAppImage)
-                .bundler(CREATE_MAC_DMG, LazyLoad::dmgSysEnv, MacBundlingEnvironment::createDmdPackage)
+                .bundler(CREATE_MAC_DMG, MacDmgSystemEnvironment::create, MacBundlingEnvironment::createDmdPackage)
                 .bundler(CREATE_MAC_PKG, MacBundlingEnvironment::createPkgPackage));
     }
 
     private static void createDmdPackage(Options options, MacDmgSystemEnvironment sysEnv) {
         createNativePackage(options,
-                MacFromOptions::createMacDmgPackage,
+                MacFromOptions.createMacDmgPackage(options),
                 buildEnv()::create,
                 MacBundlingEnvironment::buildPipeline,
                 (env, pkg, outputDir) -> {
-                    Log.verbose(I18N.format("message.building-dmg", pkg.app().name()));
                     return new MacDmgPackager(env, pkg, outputDir, sysEnv);
                 });
     }
 
     private static void createPkgPackage(Options options) {
         createNativePackage(options,
-                MacFromOptions::createMacPkgPackage,
+                MacFromOptions.createMacPkgPackage(options),
                 buildEnv()::create,
                 MacBundlingEnvironment::buildPipeline,
-                (env, pkg, outputDir) -> {
-                    Log.verbose(I18N.format("message.building-pkg", pkg.app().name()));
-                    return new MacPkgPackager(env, pkg, outputDir);
-                });
+                MacPkgPackager::new);
     }
 
     private static void signAppImage(Options options) {
@@ -78,6 +74,10 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
         final var env = buildEnv().create(options, app);
 
         final var pkg = createSignAppImagePackage(app, env);
+
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
 
         buildPipeline(pkg).create().execute(env, pkg, env.appImageDir());
     }
@@ -97,14 +97,5 @@ public class MacBundlingEnvironment extends DefaultBundlingEnvironment {
         return new BuildEnvFromOptions()
                 .predefinedAppImageLayout(APPLICATION_LAYOUT)
                 .predefinedRuntimeImageLayout(MacPackage::guessRuntimeLayout);
-    }
-
-    private static final class LazyLoad {
-
-        static Result<MacDmgSystemEnvironment> dmgSysEnv() {
-            return DMG_SYS_ENV;
-        }
-
-        private static final Result<MacDmgSystemEnvironment> DMG_SYS_ENV = MacDmgSystemEnvironment.create();
     }
 }

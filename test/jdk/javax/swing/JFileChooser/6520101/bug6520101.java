@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 6520101
  * @summary JFileChooser throws OOM in 1.4.2, 5.0u4 and 1.6.0
  * @author Praveen Gupta
- * @run main/othervm/timeout=600 -Xmx8m -verify bug6520101
+ * @run main/othervm/timeout=600 -Xmx8m -Xverify:all bug6520101
 */
 
 import javax.swing.*;

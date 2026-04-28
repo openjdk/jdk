@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
@@ -68,16 +66,18 @@ import java.io.DataOutputStream;
 import java.time.OffsetTime;
 import java.time.ZoneOffset;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
  * Test OffsetTime serialization.
  */
-@Test
 public class TCKOffsetTimeSerialization extends AbstractTCKTest {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
     private OffsetTime TEST_11_30_59_500_PONE;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         TEST_11_30_59_500_PONE = OffsetTime.of(11, 30, 59, 500, OFFSET_PONE);
     }

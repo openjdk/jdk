@@ -198,8 +198,8 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 
 **Note:** To be able to run the Gtest suite, you need to configure your build
 to be able to find a proper version of the gtest source. For details, see the
-section ["Running Tests" in the build
-documentation](building.html#running-tests).
+section **"Running Tests" in the build
+documentation** ([html](building.html#running-tests), [markdown](building.md#running-tests)).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor
@@ -639,6 +639,32 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
+
+
+### SCTP Tests
+
+The SCTP tests require the SCTP runtime library, which is often not installed
+by default in popular Linux distributions. Without this library, the SCTP tests
+will be skipped. If you want to enable the SCTP tests, you should install the
+SCTP library before running the tests.
+
+For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:
+
+```
+sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp
+```
+
+For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:
+
+```
+sudo dnf install -y lksctp-tools
+sudo modprobe sctp
+lsmod | grep sctp
+```
 
 ### Testing Ahead-of-time Optimizations
 

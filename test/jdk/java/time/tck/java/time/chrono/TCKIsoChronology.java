@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@
  */
 package tck.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -81,13 +81,16 @@ import java.time.temporal.TemporalQuery;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKIsoChronology {
     // Can only work with IsoChronology here
     // others may be in separate module
@@ -96,12 +99,12 @@ public class TCKIsoChronology {
 
     @Test
     public void factory_from_TemporalAccessor_dateWithChronlogy() {
-        assertEquals(Chronology.from(LocalDate.of(2012, 6, 30)), IsoChronology.INSTANCE);
+        assertEquals(IsoChronology.INSTANCE, Chronology.from(LocalDate.of(2012, 6, 30)));
     }
 
     @Test
     public void factory_from_TemporalAccessor_chronology() {
-        assertEquals(Chronology.from(new TemporalAccessor() {
+        assertEquals(IsoChronology.INSTANCE, Chronology.from(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 throw new UnsupportedOperationException();
@@ -120,12 +123,12 @@ public class TCKIsoChronology {
                 }
                 throw new UnsupportedOperationException();
             }
-        }), IsoChronology.INSTANCE);
+        }));
     }
 
     @Test
     public void factory_from_TemporalAccessor_noChronology() {
-        assertEquals(Chronology.from(new TemporalAccessor() {
+        assertEquals(IsoChronology.INSTANCE, Chronology.from(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 throw new UnsupportedOperationException();
@@ -143,18 +146,18 @@ public class TCKIsoChronology {
                 }
                 throw new UnsupportedOperationException();
             }
-        }), IsoChronology.INSTANCE);
+        }));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void factory_from_TemporalAccessor_null() {
-        Chronology.from(null);
+        Assertions.assertThrows(NullPointerException.class, () -> Chronology.from(null));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_date_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.date(new TemporalAccessor() {
+        assertEquals(LocalDate.of(2012, 6, 30), IsoChronology.INSTANCE.date(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 if (field == ChronoField.EPOCH_DAY) {
@@ -179,18 +182,18 @@ public class TCKIsoChronology {
                 }
                 throw new UnsupportedOperationException();
             }
-        }), LocalDate.of(2012, 6, 30));
+        }));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_date_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.date(null);
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.date(null));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_localDateTime_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.localDateTime(new TemporalAccessor() {
+        assertEquals(LocalDateTime.of(2012, 6, 30, 12, 30, 40), IsoChronology.INSTANCE.localDateTime(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 if (field == ChronoField.EPOCH_DAY || field == ChronoField.NANO_OF_DAY) {
@@ -221,18 +224,18 @@ public class TCKIsoChronology {
                 }
                 throw new UnsupportedOperationException();
             }
-        }), LocalDateTime.of(2012, 6, 30, 12, 30, 40));
+        }));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_localDateTime_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.localDateTime(null);
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.localDateTime(null));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_zonedDateTime_TemporalAccessor() {
-        assertEquals(IsoChronology.INSTANCE.zonedDateTime(new TemporalAccessor() {
+        assertEquals(ZonedDateTime.of(2012, 6, 30, 12, 30, 40, 0, ZoneId.of("Europe/London")), IsoChronology.INSTANCE.zonedDateTime(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 if (field == ChronoField.EPOCH_DAY || field == ChronoField.NANO_OF_DAY ||
@@ -273,17 +276,16 @@ public class TCKIsoChronology {
                 }
                 throw new UnsupportedOperationException();
             }
-        }), ZonedDateTime.of(2012, 6, 30, 12, 30, 40, 0, ZoneId.of("Europe/London")));
+        }));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     public void test_zonedDateTime_TemporalAccessor_null() {
-        IsoChronology.INSTANCE.zonedDateTime(null);
+        Assertions.assertThrows(NullPointerException.class, () -> IsoChronology.INSTANCE.zonedDateTime(null));
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yearOfEra")
     Object[][] data_resolve_yearOfEra() {
         return new Object[][] {
                 // era only
@@ -348,7 +350,8 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yearOfEra")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yearOfEra")
     public void test_resolve_yearOfEra(ResolverStyle style, Integer e, Integer yoe, Integer y, ChronoField field, Integer expected) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         if (e != null) {
@@ -362,9 +365,9 @@ public class TCKIsoChronology {
         }
         if (field != null) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, style);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(field), (Long) expected.longValue());
-            assertEquals(fieldValues.size(), 1);
+            assertEquals(null, date);
+            assertEquals((Long) expected.longValue(), fieldValues.get(field));
+            assertEquals(1, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, style);
@@ -377,7 +380,6 @@ public class TCKIsoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymd")
     Object[][] data_resolve_ymd() {
         return new Object[][] {
                 {2012, 1, -365, date(2010, 12, 31), false, false},
@@ -436,18 +438,20 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_lenient(int y, int m, int d, LocalDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_smart(int y, int m, int d, LocalDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -455,11 +459,11 @@ public class TCKIsoChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (Boolean.TRUE.equals(smart)) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else if (smart instanceof LocalDate) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, smart);
+            assertEquals(smart, date);
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -470,7 +474,8 @@ public class TCKIsoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymd")
     public void test_resolve_ymd_strict(int y, int m, int d, LocalDate expected, Object smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -478,8 +483,8 @@ public class TCKIsoChronology {
         fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
         if (strict) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -492,7 +497,6 @@ public class TCKIsoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_yd")
     Object[][] data_resolve_yd() {
         return new Object[][] {
                 {2012, -365, date(2010, 12, 31), false, false},
@@ -520,25 +524,27 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_lenient(int y, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_smart(int y, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (smart) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -549,15 +555,16 @@ public class TCKIsoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_yd")
+    @ParameterizedTest
+    @MethodSource("data_resolve_yd")
     public void test_resolve_yd_strict(int y, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
         fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
         if (strict) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -570,7 +577,6 @@ public class TCKIsoChronology {
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @DataProvider(name = "resolve_ymaa")
     Object[][] data_resolve_ymaa() {
         return new Object[][] {
                 {2012, 1, 1, -365, date(2010, 12, 31), false, false},
@@ -627,7 +633,8 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_lenient(int y, int m, int w, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -635,11 +642,12 @@ public class TCKIsoChronology {
         fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-        assertEquals(date, expected);
-        assertEquals(fieldValues.size(), 0);
+        assertEquals(expected, date);
+        assertEquals(0, fieldValues.size());
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_smart(int y, int m, int w, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -648,8 +656,8 @@ public class TCKIsoChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (smart) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
@@ -660,7 +668,8 @@ public class TCKIsoChronology {
         }
     }
 
-    @Test(dataProvider = "resolve_ymaa")
+    @ParameterizedTest
+    @MethodSource("data_resolve_ymaa")
     public void test_resolve_ymaa_strict(int y, int m, int w, int d, LocalDate expected, boolean smart, boolean strict) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         fieldValues.put(ChronoField.YEAR, (long) y);
@@ -669,8 +678,8 @@ public class TCKIsoChronology {
         fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
         if (strict) {
             LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, expected);
-            assertEquals(fieldValues.size(), 0);
+            assertEquals(expected, date);
+            assertEquals(0, fieldValues.size());
         } else {
             try {
                 IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
@@ -681,7 +690,6 @@ public class TCKIsoChronology {
         }
     }
 
-    @DataProvider(name = "epochSecond_dataProvider")
     Object[][] data_epochSecond() {
         return new Object[][] {
                 {2008, 3, 3, 1, 2, 2, OFFSET_P0100},
@@ -703,33 +711,28 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "epochSecond_dataProvider")
+    @ParameterizedTest
+    @MethodSource("data_epochSecond")
     public void test_epochSecond_1(int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset),
-                     OffsetDateTime.of(y, m, d, h, min, s, 0, offset).toEpochSecond());
+        assertEquals(OffsetDateTime.of(y, m, d, h, min, s, 0, offset).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset));
     }
 
     @Test
     public void test_epochSecond_2() {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(2008, 3, 3, 1, 2, 2, OFFSET_P0100),
-                     ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
-        assertEquals(IsoChronology.INSTANCE.epochSecond(1969, 3, 3, 1, 2, 2, OFFSET_P0100),
-                     ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+        assertEquals(ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(2008, 3, 3, 1, 2, 2, OFFSET_P0100));
+        assertEquals(ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(1969, 3, 3, 1, 2, 2, OFFSET_P0100));
     }
 
     @Test
     public void test_epochSecond_max() {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(Year.MAX_VALUE, 12, 31, 23, 59, 59, ZoneOffset.MIN),
-                     OffsetDateTime.of(Year.MAX_VALUE, 12, 31, 23, 59, 59, 0, ZoneOffset.MIN).toEpochSecond());
+        assertEquals(OffsetDateTime.of(Year.MAX_VALUE, 12, 31, 23, 59, 59, 0, ZoneOffset.MIN).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(Year.MAX_VALUE, 12, 31, 23, 59, 59, ZoneOffset.MIN));
     }
 
     @Test
     public void test_epochSecond_min() {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(Year.MIN_VALUE, 1, 1, 0, 0, 0, ZoneOffset.MAX),
-                     OffsetDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0, 0, 0, ZoneOffset.MAX).toEpochSecond());
+        assertEquals(OffsetDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0, 0, 0, ZoneOffset.MAX).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(Year.MIN_VALUE, 1, 1, 0, 0, 0, ZoneOffset.MAX));
     }
 
-    @DataProvider(name = "bad_epochSecond_dataProvider")
     Object[][]  bad_data_epochSecond() {
         return new Object[][] {
             {2009, 13, 1, 1, 1, 1, OFFSET_P0100},
@@ -739,12 +742,12 @@ public class TCKIsoChronology {
             {2009, 1, 1, 1, 1, -11, OFFSET_P0100},
         };
     }
-    @Test(dataProvider = "bad_epochSecond_dataProvider", expectedExceptions = DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("bad_data_epochSecond")
     public void test_epochSecond_bad(int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
-        IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset);
+        Assertions.assertThrows(DateTimeException.class, () -> IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset));
     }
 
-    @DataProvider(name = "era_epochSecond_dataProvider")
     Object[][] data_era_epochSecond() {
         return new Object[][] {
                 {IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_P0100},
@@ -766,24 +769,22 @@ public class TCKIsoChronology {
         };
     }
 
-    @Test(dataProvider = "era_epochSecond_dataProvider")
+    @ParameterizedTest
+    @MethodSource("data_era_epochSecond")
     public void test_era_epochSecond_1(Era era, int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(era, y, m, d, h, min, s, offset),
-                     OffsetDateTime.of(IsoChronology.INSTANCE.date(era, y, m, d), LocalTime.of(h, min, s), offset)
-                                   .toEpochSecond());
+        assertEquals(OffsetDateTime.of(IsoChronology.INSTANCE.date(era, y, m, d), LocalTime.of(h, min, s), offset)
+                                   .toEpochSecond(), IsoChronology.INSTANCE.epochSecond(era, y, m, d, h, min, s, offset));
     }
 
     @Test
     public void test_era_epochSecond_2() {
-        assertEquals(IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_P0100),
-                     ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
-        assertEquals(IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 1969, 3, 3, 1, 2, 2, OFFSET_P0100),
-                     ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+        assertEquals(ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_P0100));
+        assertEquals(ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond(), IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 1969, 3, 3, 1, 2, 2, OFFSET_P0100));
     }
 
-    @Test(expectedExceptions = ClassCastException.class)
+    @Test
     public void test_era_epochSecond_bad() {
-        IsoChronology.INSTANCE.epochSecond(HijrahEra.AH, 2009, 2, 29, 1, 2, 2, OFFSET_P0100);
+        Assertions.assertThrows(ClassCastException.class, () -> IsoChronology.INSTANCE.epochSecond(HijrahEra.AH, 2009, 2, 29, 1, 2, 2, OFFSET_P0100));
     }
 
 

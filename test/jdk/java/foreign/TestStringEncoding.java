@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -99,6 +100,140 @@ public class TestStringEncoding {
             } else {
                 assertThrows(IllegalArgumentException.class, () -> Arena.global().allocateFrom(testString, charset));
             }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testStringsLength(String testString) {
+        if (!testString.isEmpty()) {
+            for (Charset charset : Charset.availableCharsets().values()) {
+                if (charset.canEncode()) {
+                    for (Arena arena : arenas()) {
+                        try (arena) {
+                            MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
+                            long length = text.byteSize();
+                            assertEquals(length, testString.getBytes(charset).length);
+                            String roundTrip = text.getString(0, charset, length);
+                            if (charset.newEncoder().canEncode(testString)) {
+                                assertEquals(roundTrip, testString);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testStringsCopy(String testString) {
+        if (!testString.isEmpty()) {
+            for (Charset charset : Charset.availableCharsets().values()) {
+                if (charset.canEncode()) {
+                    for (Arena arena : arenas()) {
+                        try (arena) {
+                            byte[] bytes = testString.getBytes(charset);
+                            MemorySegment text = arena.allocate(JAVA_BYTE, bytes.length);
+                            MemorySegment.copy(testString, charset, 0, text, 0, testString.length());
+                            String roundTrip = text.getString(0, charset, bytes.length);
+                            if (charset.newEncoder().canEncode(testString)) {
+                                assertEquals(roundTrip, testString);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testStringsLengthNegative() {
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocateFrom("abc");
+            assertThrows(IllegalArgumentException.class, () -> segment.getString(1, StandardCharsets.UTF_8, -1));
+        }
+    }
+
+    @Test
+    public void testCopyThrows() {
+        try (Arena arena = Arena.ofConfined()) {
+            String testString = "abc";
+            String testString_notBytesCompatible = "snowman \u26C4";
+            MemorySegment text = arena.allocate(JAVA_BYTE, 3);
+            MemorySegment text_notBytesCompatible = arena.allocate(JAVA_BYTE,
+                    testString_notBytesCompatible.getBytes(StandardCharsets.UTF_8).length);
+            MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 0, testString.length());
+            MemorySegment.copy(testString_notBytesCompatible, StandardCharsets.UTF_8, 0,
+                    text_notBytesCompatible, 0,
+                    testString_notBytesCompatible.length());
+            // srcIndex < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, -1, text, 0, testString.length()));
+            // dstOffset < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, -1, testString.length()));
+            // numChars < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 0, -1));
+            // srcIndex + numChars > length
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, 1, text, 0, testString.length()));
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 0, testString.length() + 1));
+            // dstOffset > byteSize() - B
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 1, testString.length()));
+            // srcIndex + numChars overflows
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, Integer.MAX_VALUE, text, 0, Integer.MAX_VALUE + 3));
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString_notBytesCompatible, StandardCharsets.UTF_8, Integer.MAX_VALUE, text, 0, Integer.MAX_VALUE + 3));
+        }
+    }
+
+    @Test
+    public void testAllocateFromThrows() {
+        try (Arena arena = Arena.ofConfined()) {
+            String testString = "abc";
+            String testString_notBytesCompatible = "snowman \u26C4";
+            arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, testString.length());
+            arena.allocateFrom(testString, StandardCharsets.UTF_8, 2, 1);
+            // srcIndex < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, -1, testString.length()));
+            // numChars < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, -1));
+            // srcIndex + numChars > length
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, testString.length() + 1));
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, 1, testString.length()));
+            // srcIndex + numChars overflows
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, 3, Integer.MAX_VALUE));
+            assertThrows(IndexOutOfBoundsException.class, () -> arena.allocateFrom(
+                    testString_notBytesCompatible, StandardCharsets.UTF_8, 3, Integer.MAX_VALUE));
+        }
+    }
+
+    @Test
+    public void testGetStringThrows() {
+        try (Arena arena = Arena.ofConfined()) {
+            String testString = "abc";
+            MemorySegment text = arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, testString.length());
+            text.getString(0, StandardCharsets.UTF_8, 3);
+            // unsupported string size
+            assertThrows(IllegalArgumentException.class, () ->
+                    text.getString(0, StandardCharsets.UTF_8, Integer.MAX_VALUE + 1L));
+            // offset < 0
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    text.getString(-1, StandardCharsets.UTF_8, 3));
+            // offset > byteSize() - length
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    text.getString(1, StandardCharsets.UTF_8, 3));
+            // length < 0
+            assertThrows(IllegalArgumentException.class, () ->
+                    text.getString(0, StandardCharsets.UTF_8, -1));
         }
     }
 
@@ -215,6 +350,74 @@ public class TestStringEncoding {
                         String expected = testString.substring(i);
                         String actual = inSegment.getString(i, charset);
                         assertEquals(actual, expected);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testSubstringGetString(String testString) {
+        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
+            return;
+        }
+        for (var charset : singleByteCharsets()) {
+            for (var arena: arenas()) {
+                try (arena) {
+                    MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
+                    for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
+                        for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
+                            // this test assumes single-byte charsets
+                            String roundTrip = text.getString(srcIndex, charset, numChars);
+                            String substring = testString.substring(srcIndex, srcIndex + numChars);
+                            assertEquals(roundTrip, substring);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testSubstringAllocate(String testString) {
+        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
+            return;
+        }
+        for (var charset : singleByteCharsets()) {
+            for (var arena: arenas()) {
+                try (arena) {
+                    for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
+                        for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
+                            MemorySegment text = arena.allocateFrom(testString, charset, srcIndex, numChars);
+                            String substring = testString.substring(srcIndex, srcIndex + numChars);
+                            assertEquals(text.byteSize(), substring.getBytes(charset).length);
+                            String roundTrip = text.getString(0, charset, text.byteSize());
+                            assertEquals(roundTrip, substring);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testSubstringCopy(String testString) {
+        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
+            return;
+        }
+        for (var charset : singleByteCharsets()) {
+            for (var arena: arenas()) {
+                try (arena) {
+                    for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
+                        for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
+                            String substring = testString.substring(srcIndex, srcIndex + numChars);
+                            long length = substring.getBytes(charset).length;
+                            MemorySegment text = arena.allocate(JAVA_BYTE, length);
+                            long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
+                            String roundTrip = text.getString(0, charset, length);
+                            assertEquals(roundTrip, substring);
+                            assertEquals(copied, length);
+                        }
                     }
                 }
             }
@@ -402,7 +605,7 @@ public class TestStringEncoding {
                 {""},
                 {"X"},
                 {"12345"},
-                {"yen \u00A5"},
+                {"section \u00A7"},
                 {"snowman \u26C4"},
                 {"rainbow \uD83C\uDF08"},
                 {"0"},

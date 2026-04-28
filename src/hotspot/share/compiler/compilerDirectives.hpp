@@ -44,6 +44,7 @@
     cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
+    cflags(PrintCompilation2,       bool, PrintCompilation2, PrintCompilation2) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
@@ -142,6 +143,7 @@ public:
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
+  bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == nullptr; }
@@ -282,7 +284,7 @@ class ControlIntrinsicValidator {
 
   ~ControlIntrinsicValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 

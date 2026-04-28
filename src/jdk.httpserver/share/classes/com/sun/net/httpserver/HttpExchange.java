@@ -48,7 +48,7 @@ import java.net.URI;
  *     should be closed.
  *     <li>{@link #getResponseHeaders()} to set any response headers, except
  *     content-length.
- *     <li>{@link #sendResponseHeaders(int,long)} to send the response headers.
+ *     <li>{@link #sendResponseHeaders(int, long)} to send the response headers.
  *     Must be called before next step.
  *     <li>{@link #getResponseBody()} to get a {@link OutputStream} to
  *     send the response body. When the response body has been written, the
@@ -73,7 +73,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
 
     /*
      * Symbolic values for the responseLength parameter of
-     * sendResponseHeaders(int,long)
+     * sendResponseHeaders(int, long)
      */
 
     /**
@@ -163,7 +163,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
 
     /**
      * Returns a stream to which the response body must be
-     * written. {@link #sendResponseHeaders(int,long)}) must be called prior to
+     * written. {@link #sendResponseHeaders(int, long)}) must be called prior to
      * calling this method. Multiple calls to this method (for the same exchange)
      * will return the same stream. In order to correctly terminate each exchange,
      * the output stream must be closed, even if no response body is being sent.

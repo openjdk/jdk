@@ -61,6 +61,7 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
 
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
+import static jdk.internal.net.http.common.Utils.readStatusCode;
 
 /**
  * Http/2 Stream handling.
@@ -615,18 +616,14 @@ class Stream<T> extends ExchangeImpl<T> {
         return null;
     }
 
-    protected void handleResponse(HeaderFrame hf) throws IOException {
+    protected void handleResponse(HeaderFrame hf) {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
         if (!finalResponseCodeReceived) {
             try {
-                responseCode = (int) responseHeaders
-                        .firstValueAsLong(":status")
-                        .orElseThrow(() -> new ProtocolException(String.format(
-                                "Stream %s PROTOCOL_ERROR: no status code in response",
-                                streamid)));
-            } catch (ProtocolException cause) {
-                cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+                responseCode = readStatusCode(responseHeaders, "Stream %s PROTOCOL_ERROR: ".formatted(streamid));
+            } catch (ProtocolException pe) {
+                cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                 rspHeadersConsumer.reset();
                 return;
             }
@@ -1730,21 +1727,18 @@ class Stream<T> extends ExchangeImpl<T> {
             HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
             if (!finalPushResponseCodeReceived) {
-                responseCode = (int)responseHeaders
-                    .firstValueAsLong(":status")
-                    .orElse(-1);
-
-                if (responseCode == -1) {
-                    cancelImpl(new ProtocolException("No status code"), ResetFrame.PROTOCOL_ERROR);
+                try {
+                    responseCode = readStatusCode(responseHeaders, "");
+                    if (responseCode >= 100 && responseCode < 200) {
+                        String protocolErrorMsg = checkInterimResponseCountExceeded();
+                        if (protocolErrorMsg != null) {
+                            throw new ProtocolException(protocolErrorMsg);
+                        }
+                    }
+                } catch (ProtocolException pe) {
+                    cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                     rspHeadersConsumer.reset();
                     return;
-                } else if (responseCode >= 100 && responseCode < 200) {
-                    String protocolErrorMsg = checkInterimResponseCountExceeded();
-                    if (protocolErrorMsg != null) {
-                        cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
-                        rspHeadersConsumer.reset();
-                        return;
-                    }
                 }
 
                 this.finalPushResponseCodeReceived = true;

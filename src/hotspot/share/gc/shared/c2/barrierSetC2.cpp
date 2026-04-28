@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,16 +393,10 @@ MemNode::MemOrd C2Access::mem_node_mo() const {
 
 void C2Access::fixup_decorators() {
   bool default_mo = (_decorators & MO_DECORATOR_MASK) == 0;
-  bool is_unordered = (_decorators & MO_UNORDERED) != 0 || default_mo;
   bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
 
   bool is_read = (_decorators & C2_READ_ACCESS) != 0;
   bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
-
-  if (AlwaysAtomicAccesses && is_unordered) {
-    _decorators &= ~MO_DECORATOR_MASK; // clear the MO bits
-    _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
-  }
 
   _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
@@ -701,7 +695,6 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(UseCompressedClassPointers, "");
     assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
@@ -751,8 +744,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //
@@ -764,14 +757,14 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node* tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* tlab_end = macro->make_load_raw(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // Load the TLAB top.
   Node* old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);
   macro->transform_later(old_tlab_top);
 
   // Add to heap top to get a new TLAB top
-  Node* new_tlab_top = new AddPNode(macro->top(), old_tlab_top, size_in_bytes);
+  Node* new_tlab_top = AddPNode::make_off_heap(old_tlab_top, size_in_bytes);
   macro->transform_later(new_tlab_top);
 
   // Check against TLAB end
@@ -806,7 +799,10 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
-static const TypeFunc* clone_type() {
+const TypeFunc* BarrierSetC2::_clone_type_Type = nullptr;
+
+void BarrierSetC2::make_clone_type() {
+  assert(BarrierSetC2::_clone_type_Type == nullptr, "should be");
   // Create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** const domain_fields = TypeTuple::fields(argcnt);
@@ -822,7 +818,12 @@ static const TypeFunc* clone_type() {
   const Type** const range_fields = TypeTuple::fields(0);
   const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
 
-  return TypeFunc::make(domain, range);
+  BarrierSetC2::_clone_type_Type = TypeFunc::make(domain, range);
+}
+
+inline const TypeFunc* BarrierSetC2::clone_type() {
+  assert(BarrierSetC2::_clone_type_Type != nullptr, "should be initialized");
+  return BarrierSetC2::_clone_type_Type;
 }
 
 #define XTOP LP64_ONLY(COMMA phase->top())

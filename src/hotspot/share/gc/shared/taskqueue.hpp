@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@ protected:
     _age.store_relaxed(new_age);
   }
 
-  Age cmpxchg_age(Age old_age, Age new_age) {
-    return _age.compare_exchange(old_age, new_age);
+  bool par_set_age(Age old_age, Age new_age) {
+    return _age.compare_set(old_age, new_age);
   }
 
   idx_t age_top_relaxed() const {
@@ -345,7 +345,7 @@ protected:
 
   using TaskQueueSuper<N, MT>::age_relaxed;
   using TaskQueueSuper<N, MT>::set_age_relaxed;
-  using TaskQueueSuper<N, MT>::cmpxchg_age;
+  using TaskQueueSuper<N, MT>::par_set_age;
   using TaskQueueSuper<N, MT>::age_top_relaxed;
 
   using TaskQueueSuper<N, MT>::increment_index;
@@ -639,6 +639,10 @@ public:
 
   bool is_partial_array_state() const {
     return (raw_value() & PartialArrayTag) != 0;
+  }
+
+  bool is_null() const {
+    return _p == nullptr;
   }
 
   oop* to_oop_ptr() const {
