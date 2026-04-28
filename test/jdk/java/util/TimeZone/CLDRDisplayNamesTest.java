@@ -48,23 +48,23 @@ public class CLDRDisplayNamesTest {
         {
             "ja-JP",
             "米国太平洋標準時",
-            "PST",
+            "MST",
             "米国太平洋夏時間",
-            "PDT",
+            "MST",
         },
         {
             "zh-CN",
             "北美太平洋标准时间",
-            "PST",
+            "MST",
             "北美太平洋夏令时间",
-            "PDT",
+            "MST",
         },
         {
             "de-DE",
             "Nordamerikanische Westküsten-Normalzeit",
-            "PST",
+            "MST",
             "Nordamerikanische Westküsten-Sommerzeit",
-            "PDT",
+            "MST",
         },
     };
 
