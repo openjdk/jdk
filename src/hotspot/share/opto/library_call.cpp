@@ -2999,7 +2999,7 @@ bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, cons
   IdealKit ideal(this);
 
   Node* _notify_jvmti_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::notify_jvmti_events_address()));
-  Node* _notify_jvmti = ideal.load(ideal.ctrl(), _notify_jvmti_addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+  Node* _notify_jvmti = ideal.load(ideal.ctrl(), _notify_jvmti_addr, TypeInt::BOOL, T_BOOLEAN);
 
   ideal.if_then(_notify_jvmti, BoolTest::eq, ideal.ConI(1)); {
     sync_kit(ideal);
