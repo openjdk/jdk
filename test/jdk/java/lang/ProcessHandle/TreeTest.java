@@ -47,6 +47,7 @@ import org.junit.jupiter.api.condition.OS;
  * @test
  * @summary Test counting and JavaChild.spawning and counting of Processes.
  * @requires vm.flagless
+ * @bug 8381567
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
@@ -477,6 +478,8 @@ public class TreeTest extends ProcessUtil {
         ProcessHandle pZero = ProcessHandle.of(0).orElseThrow();
         Assertions.assertFalse(pZero.children().toList().contains(pZero),
                     "pid 0 should not be a child of pid 0");
+
+        Assertions.assertDoesNotThrow(() -> pZero.descendants().toList());
 
         Assertions.assertFalse(pZero.descendants().toList().contains(pZero),
                     "pid 0 should not be a descendant of pid 0");

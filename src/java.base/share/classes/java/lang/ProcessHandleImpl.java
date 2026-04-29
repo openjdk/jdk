@@ -528,6 +528,9 @@ final class ProcessHandleImpl implements ProcessHandle {
         if (this == obj) {
             return true;
         }
+        //ProcessHandleImpl that = (ProcessHandleImpl)obj;
+        //System.out.printf("this.pid: %d that.pid: %d this.startTime: %d that.startTime: %d\n",
+                //this.pid, that.pid, this.startTime, that.startTime);
         return (obj instanceof ProcessHandleImpl other)
                 && (pid == other.pid)
                 && (startTime == other.startTime || startTime == 0 || other.startTime == 0);
