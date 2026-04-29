@@ -225,13 +225,19 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits an {@code NoteTree} node.
+     *
+     * @implSpec Visits the provided {@code NoteTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
      *
      * @since 27
      */
-    R visitNote(NoteTree node, P p);
+    default R visitNote(NoteTree node, P p) {
+        return visitOther(node, p);
+    }
 
     /**
      * Visits a {@code ParamTree} node.
