@@ -76,12 +76,12 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       // Doing this via the stack is the most straight-forward way to avoid
       // accidentally smashing any register.
       if (c_rarg0 != src || c_rarg1 != dst || c_rarg2 != count) {
-        __ push_reg(src);
-        __ push_reg(dst);
-        __ push_reg(count);
-        __ pop_reg(c_rarg2);
-        __ pop_reg(c_rarg1);
-        __ pop_reg(c_rarg0);
+        __ push_reg(RegSet::of(src), sp);
+        __ push_reg(RegSet::of(dst), sp);
+        __ push_reg(RegSet::of(count), sp);
+        __ pop_reg(RegSet::of(c_rarg2), sp);
+        __ pop_reg(RegSet::of(c_rarg1), sp);
+        __ pop_reg(RegSet::of(c_rarg0), sp);
       }
       address target = nullptr;
       if (UseCompressedOops) {
