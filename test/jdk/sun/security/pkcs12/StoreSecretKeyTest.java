@@ -25,10 +25,8 @@
  * @test
  * @bug 8005408 8079129 8048830
  * @summary KeyStore API enhancements
- * @library /test/lib/
  */
 
-import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,12 +64,6 @@ public class StoreSecretKeyTest {
     }
     public static void main(String[] args) throws Exception {
         boolean isSecretkeyAlgSupported = false;
-        // Skip test if AES is unavailable
-        try {
-            SecretKeyFactory.getInstance("AES");
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new SkippedException("AES is unavailable");
-        }
 
         for (ALGORITHM alg : ALGORITHM.values()) {
             isSecretkeyAlgSupported |= testSecretKeyAlgorithm(alg);

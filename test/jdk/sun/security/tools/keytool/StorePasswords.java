@@ -158,8 +158,10 @@ public class StorePasswords {
                         count++;
 
                     } else if (inner2 instanceof InvalidKeyException) {
-                        throw new SkippedException(inner2.getMessage());
+                        System.out.println("...skipping due to: " +
+                            inner2.getMessage());
                         // Unsupported crypto keysize
+                        continue;
                     }
                 } else {
                     throw e;
