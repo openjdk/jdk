@@ -34,7 +34,8 @@ import javax.swing.text.html.HTMLDocument;
  * @bug 8380790
  * @summary make sure getAccessibleText() doesn't add DocumentListeners
  * @run main GetAccessibleTextAddsDocumentListeners testOriginalComplaint
- * @run main GetAccessibleTextAddsDocumentListeners testSetDocument
+ * @run main GetAccessibleTextAddsDocumentListeners testSetNewHTMLDocument
+ * @run main GetAccessibleTextAddsDocumentListeners testSetExistingHTMLDocument
  * @run main GetAccessibleTextAddsDocumentListeners testDocumentListeners
  */
 
@@ -62,7 +63,7 @@ public class GetAccessibleTextAddsDocumentListeners {
      *
      * see https://github.com/openjdk/jdk/pull/30401#issuecomment-4144874584
      */
-    public static void testSetDocument() throws Exception {
+    public static void testSetNewHTMLDocument() throws Exception {
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
 
@@ -71,6 +72,18 @@ public class GetAccessibleTextAddsDocumentListeners {
         // now change the document
         textPane.setDocument(new HTMLDocument());
 
+        testLinkCount(textPane);
+    }
+
+    /**
+     * Test hyperlink count after calling `p.setDocument(p.getDocument());`
+     */
+    public static void testSetExistingHTMLDocument() throws Exception {
+        JTextPane textPane = new JTextPane();
+        textPane.setContentType("text/html");
+        testLinkCount(textPane);
+
+        textPane.setDocument(textPane.getDocument());
         testLinkCount(textPane);
     }
 
