@@ -1486,9 +1486,7 @@ public class Exhaustiveness extends TestRunner {
                        }
                    }
                }
-               """,
-               "Test.java:11:9: compiler.err.not.exhaustive.statement",
-               "1 error");
+               """);
     }
 
     @Test
@@ -2554,6 +2552,23 @@ public class Exhaustiveness extends TestRunner {
                    static void f(II<Long> i) {
                        switch (i) {
                            case J j -> {}
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J1 {}
+                   interface J2 {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<Long>, J1 {}
+                   static final class B2 implements II<Long>, J2 {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J1 j -> {}
+                           case J2 j -> {}
                        }
                    }
                }

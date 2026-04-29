@@ -223,12 +223,28 @@ public class ExhaustivenessComputer {
 
     private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
         for (Type seltypeComponent : components(seltype)) {
-            for (PatternDescription pd : patterns) {
-                if(isBpCovered(seltypeComponent, pd)) {
-                    return true;
-                }
+            if (isCoveredBy(seltypeComponent, patterns)) {
+                return true;
             }
         }
+        return false;
+    }
+
+    private boolean isCoveredBy(Type seltype, Iterable<PatternDescription> patterns) {
+        for (PatternDescription pd : patterns) {
+            if(isBpCovered(seltype, pd)) {
+                return true;
+            }
+            if (seltype.tsym.isSealed() && seltype.tsym.isAbstract()) {
+                boolean allDirectPermittedSubtypesPermitted =
+                        directPermittedSubTypes(seltype)
+                                 .map(csym -> instantiatePatternType(seltype, csym))
+                                 .allMatch(currentPermitted -> isCoveredBy(currentPermitted, patterns));
+
+                return allDirectPermittedSubtypesPermitted;
+            }
+        }
+
         return false;
     }
 
@@ -694,20 +710,9 @@ public class ExhaustivenessComputer {
             Type seltype = types.erasure(componentType);
             Type pattype = types.erasure(bp.type);
 
-            if (seltype.isPrimitive() ?
-                types.isUnconditionallyExactTypeBased(seltype, pattype) :
-                (bp.type.isPrimitive() && types.isUnconditionallyExactTypeBased(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype)) {
-                return true;
-            }
-
-            if (componentType.tsym.isSealed() && componentType.tsym.isAbstract()) {
-                boolean allDirectPermittedSubtypesPermitted =
-                        directPermittedSubTypes(componentType)
-                                 .map(csym -> instantiatePatternType(componentType, csym))
-                                 .allMatch(currentPermitted -> isBpCovered(currentPermitted, newNested));
-
-                return allDirectPermittedSubtypesPermitted;
-            }
+            return seltype.isPrimitive() ?
+                    types.isUnconditionallyExactTypeBased(seltype, pattype) :
+                    (bp.type.isPrimitive() && types.isUnconditionallyExactTypeBased(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
         }
         return false;
     }
