@@ -354,19 +354,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
         Register spill_addr = R0;
         int spill_offset = offset - reg_save_index * BytesPerWord;
         if (action == ACTION_SAVE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->stxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->stxvd2x(vs_reg, spill_addr);
-          }
+          _masm->stxv(vs_reg, spill_offset, R1_SP);
         } else if (action == ACTION_RESTORE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->lxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->lxvd2x(vs_reg, spill_addr);
-          }
+          _masm->lxv(vs_reg, spill_offset, R1_SP);
         } else {
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }

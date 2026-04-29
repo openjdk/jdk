@@ -478,6 +478,8 @@ private:
 
   bool set_write_position(uint pos);
   bool align_write();
+  bool align_write_int();
+  bool align_write_bytes(uint alignment);
   address reserve_bytes(uint nbytes);
   uint write_bytes(const void* buffer, uint nbytes);
   const char* addr(uint offset) const { return _load_buffer + offset; }
@@ -643,6 +645,7 @@ private:
   uint  _read_position;              // Position in _load_buffer
   uint  read_position() const { return _read_position; }
   void  set_read_position(uint pos);
+  uint  align_read_int();
   const char* addr(uint offset) const { return _load_buffer + offset; }
 
   bool _lookup_failed;       // Failed to lookup for info (skip only this code load)
@@ -685,6 +688,7 @@ class AOTRuntimeConstants {
  private:
   address _card_table_base;
   uint    _grain_shift;
+  address _cset_base;
   static address _field_addresses_list[];
   static AOTRuntimeConstants _aot_runtime_constants;
   // private constructor for unique singleton
@@ -700,6 +704,7 @@ class AOTRuntimeConstants {
   }
   static address card_table_base_address();
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
+  static address cset_base_address() { return (address)&_aot_runtime_constants._cset_base; }
   static address* field_addresses_list() {
     return _field_addresses_list;
   }
@@ -707,6 +712,7 @@ class AOTRuntimeConstants {
   static bool contains(address adr)        { return false; }
   static address card_table_base_address() { return nullptr; }
   static address grain_shift_address()     { return nullptr; }
+  static address cset_base_address()       { return nullptr; }
   static address* field_addresses_list()   { return nullptr; }
 #endif
 };
