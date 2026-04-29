@@ -57,13 +57,15 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     final private String defaultHeader;
     final private String defaultKind;
 
-    final static String NOTE_HEADER = "Note:";
+    final static String CSS_CLASS_PREFIX = "note-tag-";
 
     private final Map<String, Set<String>> idMap = new HashMap<>();
 
     NoteTaglet(HtmlConfiguration config) {
-        super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE, NOTE_HEADER, true, EnumSet.allOf(Taglet.Location.class), true);
-        this.defaultHeader = NOTE_HEADER;
+        super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
+                config.docResources.getText("doclet.Note_Tag_Default_Header"),
+                true, EnumSet.allOf(Taglet.Location.class), true);
+        this.defaultHeader = this.header;
         this.defaultKind = null;
     }
 
@@ -112,7 +114,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                                 .setId(id != null
                                         ? HtmlId.of(id)
                                         : config.htmlIds.forNote(holder, defaultKind, false, getExistingIds()))
-                                .addStyle(HtmlStyles.noteTag.cssName() + "-" + kind)
+                                .addStyle(CSS_CLASS_PREFIX + kind)
                                 .add(HtmlTree.DT(RawHtml.of(hdr)))
                                 .add(body);
                     } else {
@@ -153,7 +155,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
         var kind = attr.getOrDefault("kind", defaultKind);
         if (kind != null) {
-            result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
+            result.addStyle(CSS_CLASS_PREFIX + kind.trim());
         }
 
         for (var entry : attr.entrySet()) {

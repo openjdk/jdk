@@ -144,7 +144,7 @@ public class CheckStylesheetClasses {
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
 
         // used for note tags
-        removeAll(styleSheetNames, "note-tag-important", "note-tag-critical");
+        styleSheetNames.removeIf(s -> s.startsWith("note-tag-"));
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
