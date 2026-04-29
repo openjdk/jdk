@@ -1852,9 +1852,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
-          "Accesses to all variables should always be atomic")              \
-                                                                            \
   product(bool, UseUnalignedAccesses, false, DIAGNOSTIC,                    \
           "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
