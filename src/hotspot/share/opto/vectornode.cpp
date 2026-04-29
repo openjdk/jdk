@@ -1374,19 +1374,6 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
 
   sop = phase->transform(sop);
 
-  // For subword types, ADD/SUB/MUL scalar operations compute at int width and may
-  // produce values outside the subword range. Insert explicit truncation logic
-  // before feeding the result of computation to Replicate.
-  // This prevents non-truncated int values from leaking into downstream IR if the
-  // Replicate is later disconnected by other transformations.
-  int sopc = scalar_opcode(Opcode(), bt);
-  if (is_subword_type(bt) && (sopc == Op_AddI || sopc == Op_SubI || sopc == Op_MulI)) {
-    int shift_count = (BitsPerInt - BitsPerByte * type2aelembytes(bt));
-    Node* con_shift = phase->intcon(shift_count);
-    sop = phase->transform(new LShiftINode(sop, con_shift));
-    sop = phase->transform(new RShiftINode(sop, con_shift));
-  }
-
   return new ReplicateNode(sop, vect_type());
 }
 
