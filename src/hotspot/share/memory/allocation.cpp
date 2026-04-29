@@ -67,9 +67,11 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
-#if INCLUDE_CDS
+// These are used by the Serviceability Agent even if CDS is disabled
 void* MetaspaceObj::_aot_metaspace_base = nullptr;
 void* MetaspaceObj::_aot_metaspace_top  = nullptr;
+
+#if INCLUDE_CDS
 volatile bool MetaspaceObj::_aot_metaspace_range_initialized = false;
 
 void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {

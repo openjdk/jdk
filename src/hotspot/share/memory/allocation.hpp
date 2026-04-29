@@ -260,6 +260,11 @@ class MetaspaceObj {
   //   void deallocate_contents(ClassLoaderData* loader_data);
 
   friend class VMStructs;
+
+  // These are used by the Serviceability Agent even if CDS is disabled
+  static void* _aot_metaspace_base;  // (inclusive) low address
+  static void* _aot_metaspace_top;   // (exclusive) high address
+
  public:
 
   // Returns true if the pointer points to a valid MetaspaceObj. A valid
@@ -277,8 +282,6 @@ private:
   // two pointers to quickly determine if a MetaspaceObj is in the
   // AOT cache.
   // When AOT/CDS is not enabled, both pointers are set to null.
-  static void* _aot_metaspace_base;  // (inclusive) low address
-  static void* _aot_metaspace_top;   // (exclusive) high address
   static volatile bool _aot_metaspace_range_initialized;
   static bool aot_metaspace_range_initialized();
 
