@@ -52,6 +52,7 @@ public final class ML_KEM {
     // toMont((ML_KEM_N / 2)^-1 mod ML_KEM_Q) using R = 2^MONT_R_BITS
     private static final int MONT_DIM_HALF_INVERSE = 1534;
     private static final int BARRETT_MULTIPLIER = 20159;
+    private static final int BARRETT_ADDEND = 1500;
     private static final int BARRETT_SHIFT = 26;
     private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
             1188, 914, -969, 585, -551, 1263, -97, 593,
@@ -1142,18 +1143,38 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
-        for (int m = 0; m < ML_KEM_N / 2; m++) {
+    private static final int[] zetasForNttMult = new int[]{
+            17, 3312, 2761, 568, 583, 2746, 2649, 680,
+            1637, 1692, 723, 2606, 2288, 1041, 1100, 2229,
+            1409, 1920, 2662, 667, 3281, 48, 233, 3096,
+            756, 2573, 2156, 1173, 3015, 314, 3050, 279,
+            1703, 1626, 1651, 1678, 2789, 540, 1789, 1540,
+            1847, 1482, 952, 2377, 1461, 1868, 2687, 642,
+            939, 2390, 2308, 1021, 2437, 892, 2388, 941,
+            733, 2596, 2337, 992, 268, 3061, 641, 2688,
+            1584, 1745, 2298, 1031, 2037, 1292, 3220, 109,
+            375, 2954, 2549, 780, 2090, 1239, 1645, 1684,
+            1063, 2266, 319, 3010, 2773, 556, 757, 2572,
+            2099, 1230, 561, 2768, 2466, 863, 2594, 735,
+            2804, 525, 1092, 2237, 403, 2926, 1026, 2303,
+            1143, 2186, 2150, 1179, 2775, 554, 886, 2443,
+            1722, 1607, 1212, 2117, 1874, 1455, 1029, 2300,
+            2110, 1219, 2935, 394, 885, 2444, 2154, 1175
+    };
 
-            int a0 = ntta[2 * m];
-            int a1 = ntta[2 * m + 1];
-            int b0 = nttb[2 * m];
-            int b1 = nttb[2 * m + 1];
-            int r = montMul(a0, b0) +
-                    montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
-            result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
-            result[2 * m + 1] = (short) montMul(
-                    (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+    static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
+        for (int m = 0; m < ML_KEM_N; m += 2) {
+            int a0 = ntta[m];
+            int a1 = ntta[m + 1];
+            int b0 = nttb[m];
+            int b1 = nttb[m + 1];
+            long r = a1 * b1;
+            r = r - ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q;
+            r *= zetasForNttMult[m >> 1];
+            r += a0 * b0 + BARRETT_ADDEND;
+            result[m] = (short) ((r - ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q) - BARRETT_ADDEND);
+            long r1 = a0 * b1 + a1 * b0 + BARRETT_ADDEND;
+            result[m + 1] = (short) ((r1 - ((r1 * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q) - BARRETT_ADDEND);
         }
     }
 
