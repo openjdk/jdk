@@ -100,6 +100,7 @@
   }
 
 #define NUMBER_OF_CASES StubRoutines::x86::STRING_INDEXOF_NUMBER_OF_CASES
+#define TABLE_COUNT StubRoutines::x86::STRING_INDEXOF_TABLE_COUNT
 
 #undef STACK_SPACE
 #undef MAX_NEEDLE_LEN_TO_EXPAND
@@ -187,9 +188,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 ////////////////////////////////////////////////////////////////////////////////////////
 
 void StubGenerator::generate_string_indexof(address *fnptrs) {
-  assert((int) StrIntrinsicNode::LL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UU < 4, "Enum out of range");
+  assert((int) StrIntrinsicNode::LL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UU < TABLE_COUNT, "Enum out of range");
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::LL, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UU, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UL, _masm);
@@ -212,8 +213,10 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   address *big_jump_table = StubRoutines::x86::big_jump_table_base(ae);
   address *small_jump_table = StubRoutines::x86::big_jump_table_base(ae);
 
-  // TODO - attempt to load the stub from the AOT cache
-  // n.b. this requires handling (re-)load time jump_table relocations
+  // If the stub has been cached we can retrieve the stub entry.  The
+  // target addresses we need to install into the jump tables will
+  // also have been cached, as extra addresses rather than secondary
+  // entries because they are only used internally to this stub.
 
   assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
   GrowableArray<address> extras;
@@ -964,10 +967,11 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     }
   }
 
-  // TODO - attempt to save the stub to the AOT cache
-  // n.b. this requires handling save time jump_table relocations
+  // Record and possibly cache the entry address. In the latter case
+  // the target addresses installed into the jump tables also need to
+  // be cached, as extra addresses rather than secondary entries
+  // because they are only used internally to this stub.
 
-  // record the stub entry and end
   for (int i = 0; i < NUMBER_OF_CASES; i++) {
     extras.append(big_jump_table[i]);
   }
