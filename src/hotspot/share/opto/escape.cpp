@@ -4815,10 +4815,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       continue;
     }
     if (n->is_Phi()) {
-      if ((uint) _compile->get_alias_index(n->as_Phi()->adr_type()) < new_index_start) {
+      if ((uint) _compile->get_alias_index(n->adr_type()) < new_index_start) {
         // Push memory phis on the orig_phis worklist to update
         // during Phase 4 if needed.
-        orig_phis.append_if_missing(n->as_Phi());
+        orig_phis.push(n);
       }
     } else if (n->is_ClearArray()) {
      // we don't need to do anything, but the users must be pushed
