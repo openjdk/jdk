@@ -69,6 +69,8 @@ public abstract class DateTimeFormatterPatternProvider extends LocaleServiceProv
      *     calendar type, such as "japanese", "iso8601".
      * @throws IllegalArgumentException if both {@code dateStyle} and
      *     {@code timeStyle} are {@code null}.
+     * @throws DateTimeException if no formatting pattern is available for the
+     *     specified arguments.
      * @throws NullPointerException if {@code calType} or {@code locale} is
      *     {@code null}.
      * @see Chronology#getCalendarType()
@@ -92,8 +94,8 @@ public abstract class DateTimeFormatterPatternProvider extends LocaleServiceProv
      *     the regular expression syntax described in
      *     {@link DateTimeFormatterBuilder#appendLocalized(String)
      *     appendLocalized(String)}.
-     * @throws DateTimeException if a match for the formatting pattern for
-     *     {@code requestedTemplate} is not available
+     * @throws DateTimeException if no formatting pattern is available for the
+     *     specified arguments.
      * @throws NullPointerException if {@code requestedTemplate}, {@code calType},
      *     or {@code locale} is {@code null}.
      * @see DateTimeFormatterBuilder#appendLocalized(String)

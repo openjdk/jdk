@@ -88,10 +88,12 @@ public final class LocaleServiceProviderPool {
         java.text.spi.DateFormatSymbolsProvider.class,
         java.text.spi.DecimalFormatSymbolsProvider.class,
         java.text.spi.NumberFormatProvider.class,
+        java.time.format.DateTimeFormatterPatternProvider.class,
+        java.util.spi.CalendarDataProvider.class,
+        java.util.spi.CalendarNameProvider.class,
         java.util.spi.CurrencyNameProvider.class,
         java.util.spi.LocaleNameProvider.class,
         java.util.spi.TimeZoneNameProvider.class,
-        java.util.spi.CalendarDataProvider.class
     };
 
     /**

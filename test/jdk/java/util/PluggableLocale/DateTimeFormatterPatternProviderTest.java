@@ -32,6 +32,7 @@
 
 import java.time.ZonedDateTime;
 import java.time.chrono.Chronology;
+import java.time.chrono.MinguoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
@@ -139,5 +140,18 @@ public class DateTimeFormatterPatternProviderTest {
             .format(ZonedDateTime.now());
         assertEquals("date style: " + dateStyle + ", timeStyle: " + timeStyle + ", calType: " + calType + ", loc: " + loc,
             formatted);
+    }
+
+    @Test
+    public void testGetLocalizedDateTimePattern_3args() {
+        assertEquals("'requestedTemplate: yMMMEd, calType: roc, loc: zh_TW'",
+            new DateTimeFormatterBuilder().getLocalizedDateTimePattern("yMMMEd", MinguoChronology.INSTANCE, Locale.TAIWAN));
+    }
+
+    @ParameterizedTest
+    @MethodSource("dateAndTime")
+    public void testGetLocalizedDateTimePattern_4args(FormatStyle dateStyle, FormatStyle timeStyle, String calType, Locale loc) {
+        assertEquals("'date style: " + dateStyle + ", timeStyle: " + timeStyle + ", calType: " + calType + ", loc: " + loc + "'",
+            new DateTimeFormatterBuilder().getLocalizedDateTimePattern(dateStyle, timeStyle, Chronology.of(calType), loc));
     }
 }

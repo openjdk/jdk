@@ -107,7 +107,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         } else if (c == DateTimeFormatterPatternProvider.class) {
             return c.cast(getDateTimeFormatterPatternProvider());
         } else {
-            throw new InternalError("should not come down here");
+            throw new InternalError("Unknown LocaleServiceProvider class");
         }
     }
 

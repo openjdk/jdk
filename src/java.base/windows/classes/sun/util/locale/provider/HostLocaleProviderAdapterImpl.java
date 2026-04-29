@@ -25,6 +25,7 @@
 package sun.util.locale.provider;
 
 import java.lang.ref.SoftReference;
+import java.time.DateTimeException;
 import java.time.format.DateTimeFormatterPatternProvider;
 import java.time.format.FormatStyle;
 import java.text.DateFormat;
@@ -568,8 +569,9 @@ public class HostLocaleProviderAdapterImpl {
 
             @Override
             public String getDateTimeFormatterPattern(String requestedTemplate, String calType, Locale locale) {
-                // Not supported. Return the requestedTemplate as is.
-                return requestedTemplate;
+                throw new DateTimeException("""
+                    Formatting pattern is not available for the requested template: "%s", calType: "%s", locale: "%s".
+                    """.formatted(requestedTemplate, calType, locale));
             }
 
             private AtomicReferenceArray<String> getDateTimePatterns(Locale locale) {
