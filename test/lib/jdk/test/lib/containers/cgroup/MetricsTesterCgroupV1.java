@@ -42,6 +42,7 @@ import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupV1Metrics;
 import jdk.internal.platform.Metrics;
 import jdk.test.lib.Asserts;
+import jtreg.SkippedException;
 
 public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
@@ -169,6 +170,9 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
     private static long getLongValueFromFile(Controller subSystem, String metric, String subMetric) {
         String stats = getFileContents(subSystem, metric);
+        if (stats == null) {
+            throw new SkippedException("Failed to get file contents for " + subSystem + " " + metric);
+        }
         String[] tokens = stats.split("[\\r\\n]+");
         for (int i = 0; i < tokens.length; i++) {
             if (tokens[i].startsWith(subMetric)) {
