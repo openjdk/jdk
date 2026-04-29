@@ -47,7 +47,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -734,24 +733,6 @@ public final class AppContext {
             return new PropertyChangeListener[0];
         }
         return changeSupport.getPropertyChangeListeners(propertyName);
-    }
-
-    public static <T> T getSoftReferenceValue(Object key,
-            Supplier<T> supplier) {
-
-        final AppContext appContext = AppContext.getAppContext();
-        @SuppressWarnings("unchecked")
-        SoftReference<T> ref = (SoftReference<T>) appContext.get(key);
-        if (ref != null) {
-            final T object = ref.get();
-            if (object != null) {
-                return object;
-            }
-        }
-        final T object = supplier.get();
-        ref = new SoftReference<>(object);
-        appContext.put(key, ref);
-        return object;
     }
 }
 

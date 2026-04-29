@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,8 +248,8 @@ public class JlinkTask {
      * Read the release.txt from the module.
      */
     private static Optional<String> getReleaseInfo(ModuleReference mref) {
-        try {
-            Optional<InputStream> release = mref.open().open(JDK_RELEASE_RESOURCE);
+        try (var moduleReader = mref.open()) {
+            Optional<InputStream> release = moduleReader.open(JDK_RELEASE_RESOURCE);
 
             if (release.isEmpty()) {
                 return Optional.empty();

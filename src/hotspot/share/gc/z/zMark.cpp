@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -152,13 +152,14 @@ void ZMark::prepare_work() {
   _terminate.reset(_nworkers);
 
   // Reset flush counters
-  _work_nproactiveflush = _work_nterminateflush = 0;
+  _work_nproactiveflush.store_relaxed(0u);
+  _work_nterminateflush.store_relaxed(0u);
 }
 
 void ZMark::finish_work() {
   // Accumulate proactive/terminate flush counters
-  _nproactiveflush += _work_nproactiveflush;
-  _nterminateflush += _work_nterminateflush;
+  _nproactiveflush += _work_nproactiveflush.load_relaxed();
+  _nterminateflush += _work_nterminateflush.load_relaxed();
 }
 
 void ZMark::follow_work_complete() {
@@ -594,7 +595,7 @@ bool ZMark::flush() {
 }
 
 bool ZMark::try_terminate_flush() {
-  AtomicAccess::inc(&_work_nterminateflush);
+  _work_nterminateflush.add_then_fetch(1u);
   _terminate.set_resurrected(false);
 
   if (ZVerifyMarking) {
@@ -610,12 +611,12 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  if (AtomicAccess::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
+  if (_work_nproactiveflush.load_relaxed() == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  AtomicAccess::inc(&_work_nproactiveflush);
+  _work_nproactiveflush.add_then_fetch(1u);
 
   SuspendibleThreadSetLeaver sts_leaver;
   return flush();
@@ -718,12 +719,15 @@ public:
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
     if (_bs_nm->is_armed(nm)) {
-      // Heal barriers
-      ZNMethod::nmethod_patch_barriers(nm);
+      {
+         ICacheInvalidationContext icic;
+         // Heal barriers
+         ZNMethod::nmethod_patch_barriers(nm, &icic);
 
-      // Heal oops
-      ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
+         // Heal oops
+         ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
+         ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
+      }
 
       // CodeCache unloading support
       nm->mark_as_maybe_on_stack();
@@ -753,10 +757,6 @@ public:
     if (_bs_nm->is_armed(nm)) {
       const uintptr_t prev_color = ZNMethod::color(nm);
 
-      // Heal oops
-      ZUncoloredRootMarkYoungOopClosure cl(prev_color);
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
-
       // Disarm only the young marking, not any potential old marking cycle
 
       const uintptr_t old_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedYoung0 | ZPointerMarkedYoung1);
@@ -767,9 +767,16 @@ public:
       // Check if disarming for young mark, completely disarms the nmethod entry barrier
       const bool complete_disarm = ZPointer::is_store_good(new_disarm_value_ptr);
 
-      if (complete_disarm) {
-        // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
-        ZNMethod::nmethod_patch_barriers(nm);
+      {
+        ICacheInvalidationContext icic;
+        if (complete_disarm) {
+          // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
+          ZNMethod::nmethod_patch_barriers(nm, &icic);
+        }
+
+        // Heal oops
+        ZUncoloredRootMarkYoungOopClosure cl(prev_color);
+        ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
       }
 
       _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));

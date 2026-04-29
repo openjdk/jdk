@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,16 +305,13 @@ static void istream_test_driver(const bool VERBOSE,
 }
 
 TEST_VM(istream, basic) {
-  const bool VERBOSE = false;
-  istream_test_driver(VERBOSE, false, false, false);
-}
-
-TEST_VM(istream, coverage) {
-  const bool VERBOSE = false;
+  const bool VERBOSE_TEST = false;
+  const bool VERBOSE_COVERAGE = false;
+  istream_test_driver(VERBOSE_TEST, false, false, false);
 #ifdef ASSERT
   istream_coverage_mode(0, cases, total, zeroes);
   if (cases == 0)  return;
-  if (VERBOSE || zeroes != 0)
+  if (VERBOSE_COVERAGE || zeroes != 0)
     istream_coverage_mode(-1, cases, total, zeroes);
   EXPECT_EQ(zeroes, 0) << "zeroes: " << zeroes << "/" << cases;
 #endif //ASSERT

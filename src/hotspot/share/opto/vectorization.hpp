@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -504,6 +504,8 @@ private:
 //
 class VLoopMemorySlices : public StackObj {
 private:
+  static constexpr char const* FAILURE_DIFFERENT_MEMORY_INPUT = "Load only slice has multiple memory inputs";
+
   const VLoop& _vloop;
   const VLoopBody& _body;
 
@@ -521,7 +523,7 @@ public:
   const GrowableArray<Node*>& inputs() const { return _inputs; }
   const GrowableArray<PhiNode*>& heads() const { return _heads; }
 
-  void find_memory_slices();
+  VStatus find_memory_slices();
   void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
