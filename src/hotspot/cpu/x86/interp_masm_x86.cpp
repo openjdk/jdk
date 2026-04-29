@@ -1470,7 +1470,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     test_method_data_pointer(mdp, profile_continue);
 
     // Record the receiver type.
-    profile_receiver_type<ReceiverTypeData>(receiver, mdp, 0);
+    profile_receiver_type(receiver, mdp, 0);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
@@ -1550,7 +1550,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass) 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      profile_receiver_type<ReceiverTypeData>(klass, mdp, 0);
+      profile_receiver_type(klass, mdp, 0);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -1653,7 +1653,7 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
     test_non_flat_array_oop(array, tmp, not_flat);
 
     load_klass(tmp, array, rscratch1);
-    profile_receiver_type<ArrayLoadData>(tmp, mdp, 0);
+    profile_array_type_at_load(tmp, mdp, 0);
 
     jmp(profile_continue);
     bind(not_flat);
@@ -1690,7 +1690,7 @@ void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Reg
     load_klass(tmp, element, rscratch1);
 
     // Record the object type.
-    profile_receiver_type<ReceiverTypeData>(tmp, mdp, 0);
+    profile_receiver_type(tmp, mdp, 0);
 
     bind(done);
 

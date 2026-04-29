@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHODDATA_HPP
 #define SHARE_OOPS_METHODDATA_HPP
 
-#include "methodData.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
@@ -1249,11 +1248,11 @@ public:
   }
 
   // Code generation support
-  static ByteSize receiver_offset(int base, uint row) {
-    return ProfileData::cell_offset(base + static_receiver_cell_index(row));
+  static ByteSize receiver_offset(uint row) {
+    return ProfileData::cell_offset(static_receiver_cell_index(row));
   }
-  static ByteSize receiver_count_offset(int base, uint row) {
-    return ProfileData::cell_offset(base + static_receiver_count_cell_index(row));
+  static ByteSize receiver_count_offset(uint row) {
+    return ProfileData::cell_offset(static_receiver_count_cell_index(row));
   }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());
@@ -1354,10 +1353,10 @@ public:
 
   // Code generation support
   static ByteSize receiver_offset(uint row) {
-    return MegamorphicTypeData::receiver_offset(counter_cell_count, row);
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + counter_cell_count);
   }
   static ByteSize receiver_count_offset(uint row) {
-    return MegamorphicTypeData::receiver_count_offset(counter_cell_count, row);
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + counter_cell_count);
   }
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
@@ -2228,10 +2227,10 @@ public:
   }
 
   static ByteSize receiver_offset(uint row) {
-    return MegamorphicTypeData::receiver_offset(SingleTypeEntry::static_cell_count(), row);
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + SingleTypeEntry::static_cell_count());
   }
   static ByteSize receiver_count_offset(uint row) {
-    return MegamorphicTypeData::receiver_count_offset(SingleTypeEntry::static_cell_count(), row);
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + SingleTypeEntry::static_cell_count());
   }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());

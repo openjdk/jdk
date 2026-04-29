@@ -1334,7 +1334,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
-  __ profile_receiver_type<ReceiverTypeData>(recv, mdo, mdp_offset);
+  __ profile_receiver_type(recv, mdo, mdp_offset);
 }
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
@@ -3189,7 +3189,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   __ mov_metadata(mdo, md->constant_encoding());
 
   int mdp_offset = md->byte_offset_of_slot(op->load(), in_ByteSize(0));
-  __ profile_receiver_type<ArrayLoadData>(tmp1, mdo, mdp_offset);
+  __ profile_array_type_at_load(tmp1, mdo, mdp_offset);
 
   __ jmp(done);
   __ bind(not_flat);
