@@ -1212,7 +1212,7 @@ public class ForkJoinPool extends AbstractExecutorService
         volatile int parking;      // next phase if parked in awaitWork
         @jdk.internal.vm.annotation.Contended("w")
         int prevSteals;            // to track steals across phases
-        
+
         // Support for atomic operations
         private static final Unsafe U;
         private static final long PHASE;
@@ -2056,39 +2056,44 @@ public class ForkJoinPool extends AbstractExecutorService
         w.phase = phase | IDLE;
         if (!U.compareAndSetLong(this, CTL, pc, qc))
             return w.phase = phase;          // back out on contention
-        long qac = qc & RC_MASK, e; WorkQueue[] qs; int n;
-        if (((e = runState) & STOP) != 0L ||
-            ((e & SHUTDOWN) != 0L && qac == 0L && quiescent() > 0) ||
-            (qs = queues) == null || (n = qs.length) <= 0)
-            return IDLE;                     // terminating
-        int prechecks = Math.min((short)(qac >>> RC_SHIFT), 2);
-        for (int k = n + (n << 1), i = activePhase; k-- > 0 ; ++i) {
-            WorkQueue q; int cap; ForkJoinTask<?>[] a;
-            if ((q = qs[i & (n - 1)]) != null) {
-                if (w.phase == activePhase)
-                    return activePhase;
-                if ((a = q.array) != null && (cap = a.length) > 0 &&
-                    a[q.base & (cap - 1)] != null) {
-                    WorkQueue v; int sp, j; long c;
-                    if (prechecks > 0)
-                        --prechecks;
-                    else if (((c = ctl) & RC_MASK) <= qac && (sp = (int)c) != 0 &&
-                             (j = sp & SMASK) < n && (v = qs[j]) != null) {
-                        long nc = (v.stackPred & LMASK) | ((c + RC_UNIT) & UMASK);
-                        if (sp != activePhase && w.phase == activePhase)
-                            return activePhase;
-                        if ((sp == activePhase || k < n) &&
-                            U.compareAndSetLong(this, CTL, c, nc)) {
-                            v.phase = sp;
-                            if (sp == activePhase)
+        long qac; WorkQueue[] qs; int n;
+        if ((qac = qc & RC_MASK) == 0) {
+            if ((runState & SHUTDOWN) != 0L && quiescent() > 0)
+                return IDLE;                 // quiescent termination
+            if (w.phase == activePhase)
+                return activePhase;
+        }
+        Thread.yield();                      // for transient producer stalls
+        if ((qs = queues) != null && (n = qs.length) > 0) {
+            int prechecks = Math.min((short)(qac >>> RC_SHIFT), 2);
+            for (int k = n + (n << 1), i = activePhase; k-- > 0 ; ++i) {
+                WorkQueue q; int cap; ForkJoinTask<?>[] a;
+                if ((q = qs[i & (n - 1)]) != null) {
+                    if (w.phase == activePhase)
+                        return activePhase;
+                    if ((a = q.array) != null && (cap = a.length) > 0 &&
+                        a[q.base & (cap - 1)] != null) {
+                        WorkQueue v; int sp, j; long c;
+                        if (prechecks > 0)
+                            --prechecks;
+                        else if (((c = ctl) & RC_MASK) <= qac && (sp = (int)c) != 0 &&
+                                 (j = sp & SMASK) < n && (v = qs[j]) != null) {
+                            long nc = (v.stackPred & LMASK) | ((c + RC_UNIT) & UMASK);
+                            if (sp != activePhase && w.phase == activePhase)
                                 return activePhase;
-                            if (v.parking == sp)
-                                U.unpark(v.owner);
-                            break;
+                            if ((sp == activePhase || k < n) &&
+                                U.compareAndSetLong(this, CTL, c, nc)) {
+                                v.phase = sp;
+                                if (sp == activePhase)
+                                    return activePhase;
+                                if (v.parking == sp)
+                                    U.unpark(v.owner);
+                                break;
+                            }
                         }
+                        if (k < n)
+                            k = n;           // ensure re-encounter
                     }
-                    if (k < n)
-                        k = n;               // ensure re-encounter
                 }
             }
         }
@@ -2134,8 +2139,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     trim = false;
                     trimmable = true;
                 }
+                int tc = ((short)(c >>> TC_SHIFT) | 1) & SMASK;
                 int spins = (parkEnabled != 0 || (nstolen == 0 && !head)) ? 1 :
-                    SPIN_WAITS + (((short)(c >>> TC_SHIFT)) & SMASK);
+                    tc + (tc << 1);          // approx one scan cost
                 while ((phase = w.phase) != activePhase && --spins != 0)
                     Thread.onSpinWait();     // spin if ran or at head
                 if (phase == activePhase)
