@@ -4145,9 +4145,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::Control,   head->init_control());
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
-  Node* ret = new ParmNode(C->start(), TypeFunc::ReturnAdr);
-  _igvn.register_new_node_with_optimizer(ret);
-  call->init_req(TypeFunc::ReturnAdr, ret);
+  call->init_req(TypeFunc::ReturnAdr, C->top());
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   _igvn.register_new_node_with_optimizer(frame);
   call->init_req(TypeFunc::FramePtr,  frame);

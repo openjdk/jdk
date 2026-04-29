@@ -646,7 +646,12 @@ void CallGenerator::do_late_inline_helper() {
     for (uint i1 = 0; i1 < size; i1++) {
       map->init_req(i1, call->in(i1));
     }
-
+    // Call node has in[ReturnAdr] set to top() node.
+    // Replace it with corresponding node if it exists.
+    Node* ret_adr = C->start()->proj_out_or_null(TypeFunc::ReturnAdr);
+    if (ret_adr != nullptr) {
+      map->set_req(TypeFunc::ReturnAdr, ret_adr);
+    }
     // Make sure the state is a MergeMem for parsing.
     if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
       Node* mem = MergeMemNode::make(map->in(TypeFunc::Memory));
