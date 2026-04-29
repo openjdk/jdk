@@ -43,7 +43,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _to_space(nullptr),
   _min_gen_size(min_size),
   _max_gen_size(max_size),
-  _young_gen_state(PSYoungGenState::balanced),
+  _sizing_state(SizingState::balanced),
   _gen_counters(nullptr),
   _eden_counters(nullptr),
   _from_counters(nullptr),
@@ -366,7 +366,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 
   log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K", eden_size/K, survivor_size/K);
 
-  _young_gen_state = PSYoungGenState::balanced;
+  _sizing_state = SizingState::balanced;
 
   if (max_gen_size() < eden_size + 2 * survivor_size) {
     log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu", (eden_size + 2 * survivor_size)/K, max_gen_size()/K);
@@ -401,7 +401,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
       // Respect survivor size and reduce eden
       eden_size = max_gen_size() - 2 * survivor_size;
 
-      _young_gen_state = PSYoungGenState::constrained;
+      _sizing_state = SizingState::constrained;
     }
   }
 
@@ -409,13 +409,13 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
     // Keep survivor and adjust eden to meet min-gen-size.
     eden_size = min_gen_size() - 2 * survivor_size;
 
-    _young_gen_state = PSYoungGenState::surplus;
+    _sizing_state = SizingState::surplus;
   }
 
   const size_t final_gen_size = eden_size + 2 * survivor_size;
-  if (_young_gen_state == PSYoungGenState::balanced) {
+  if (_sizing_state == SizingState::balanced) {
     if (final_gen_size < max_gen_size()) {
-      _young_gen_state = PSYoungGenState::surplus;
+      _sizing_state = SizingState::surplus;
     }
   }
 
@@ -430,7 +430,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
     assert(final_gen_size >= min_gen_size(), "inv");
     assert(final_gen_size <= max_gen_size(), "inv");
     if (final_gen_size < max_gen_size()) {
-      assert(_young_gen_state == PSYoungGenState::surplus, "inv");
+      assert(_sizing_state == SizingState::surplus, "inv");
     }
   }
 #endif

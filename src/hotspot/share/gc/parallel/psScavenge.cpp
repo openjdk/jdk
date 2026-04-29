@@ -437,7 +437,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
         if (young_gen->is_from_to_layout()) {
           size_policy->print_stats(_survivor_overflow);
           heap->resize_after_young_gc(_survivor_overflow);
-          _tenuring_threshold = size_policy->compute_tenuring_threshold(young_gen->young_gen_state(),
+          _tenuring_threshold = size_policy->compute_tenuring_threshold(young_gen->sizing_state(),
                                                                         _tenuring_threshold);
         }
 

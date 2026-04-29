@@ -224,13 +224,13 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-static const char* young_gen_state_to_string(PSYoungGenState young_gen_state) {
-  switch (young_gen_state) {
-    case PSYoungGenState::balanced:
+static const char* sizing_state_to_string(PSYoungGen::SizingState sizing_state) {
+  switch (sizing_state) {
+    case PSYoungGen::SizingState::balanced:
       return "balanced";
-    case PSYoungGenState::constrained:
+    case PSYoungGen::SizingState::constrained:
       return "constrained";
-    case PSYoungGenState::surplus:
+    case PSYoungGen::SizingState::surplus:
       return "surplus";
     default:
       ShouldNotReachHere();
@@ -238,7 +238,7 @@ static const char* young_gen_state_to_string(PSYoungGenState young_gen_state) {
   }
 }
 
-uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_state,
+uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGen::SizingState sizing_state,
                                                       uint tenuring_threshold) {
   if (AlwaysTenure || NeverTenure) {
     return tenuring_threshold;
@@ -248,14 +248,14 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_
   constexpr uint min_tenuring_threshold = 1;
   constexpr uint tenuring_threshold_gc_limit = 5;
 
-  switch (young_gen_state) {
-    case PSYoungGenState::constrained:
+  switch (sizing_state) {
+    case PSYoungGen::SizingState::constrained:
       _tenuring_threshold_gc_count = 0;
       if (tenuring_threshold > min_tenuring_threshold) {
         tenuring_threshold--;
       }
       break;
-    case PSYoungGenState::surplus:
+    case PSYoungGen::SizingState::surplus:
       if (_tenuring_threshold_gc_count < tenuring_threshold_gc_limit) {
         _tenuring_threshold_gc_count++;
       }
@@ -266,7 +266,7 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_
         _tenuring_threshold_gc_count = 0;
       }
       break;
-    case PSYoungGenState::balanced:
+    case PSYoungGen::SizingState::balanced:
       _tenuring_threshold_gc_count = 0;
       break;
     default:
@@ -278,7 +278,7 @@ uint PSAdaptiveSizePolicy::compute_tenuring_threshold(PSYoungGenState young_gen_
                      original_threshold,
                      tenuring_threshold,
                      MaxTenuringThreshold,
-                     young_gen_state_to_string(young_gen_state),
+                     sizing_state_to_string(sizing_state),
                      _tenuring_threshold_gc_count,
                      tenuring_threshold_gc_limit);
 
