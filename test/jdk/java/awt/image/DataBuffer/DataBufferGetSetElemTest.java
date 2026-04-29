@@ -53,6 +53,8 @@ public class DataBufferGetSetElemTest {
             test(dbb, -1);
             dbb = new DataBufferByte(buf, size-1, 1);
             test(dbb, size);
+            dbb = new DataBufferByte(buf, size, size);
+            testpass(dbb);
         }
 
         {
@@ -68,6 +70,8 @@ public class DataBufferGetSetElemTest {
             dbs = new DataBufferShort(buf, size-1, 1);
             test(dbs, size);
             test(dbs, -2);
+            dbs = new DataBufferShort(buf, size, size);
+            testpass(dbs);
 
             DataBufferUShort dbu = new DataBufferUShort(buf, size);
             try {
@@ -80,6 +84,8 @@ public class DataBufferGetSetElemTest {
             dbu = new DataBufferUShort(buf, size-1, 1);
             test(dbu, size);
             test(dbu, -2);
+            dbu = new DataBufferUShort(buf, size, size);
+            testpass(dbu);
         }
 
         {
@@ -95,6 +101,8 @@ public class DataBufferGetSetElemTest {
             dbi = new DataBufferInt(buf, size-1, 1);
             test(dbi, size);
             test(dbi, -2);
+            dbi = new DataBufferInt(buf, size, size);
+            testpass(dbi);
         }
 
         {
@@ -110,6 +118,8 @@ public class DataBufferGetSetElemTest {
             dbf = new DataBufferFloat(buf, size-1, 1);
             test(dbf, size);
             test(dbf, -2);
+            dbf = new DataBufferFloat(buf, size, size);
+            testpass(dbf);
         }
 
         {
@@ -125,7 +135,28 @@ public class DataBufferGetSetElemTest {
             dbd = new DataBufferDouble(buf, size-1, 1);
             test(dbd, size);
             test(dbd, -2);
+            dbd = new DataBufferDouble(buf, size, size);
+            testpass(dbd);
         }
+    }
+
+    static void testpass(DataBuffer db) {
+        int i = db.getSize() - 1;
+
+        db.getElem(i);
+        db.setElem(i, 0);
+        db.getElem(0, i);
+        db.setElem(0, i, 0);
+
+        db.getElemFloat(i);
+        db.setElemFloat(i, 0);
+        db.getElemFloat(0, i);
+        db.setElemFloat(0, i, 0);
+
+        db.getElemDouble(i);
+        db.setElemDouble(i, 0);
+        db.getElemDouble(0, i);
+        db.setElemDouble(0, i, 0);
     }
 
     static void test(DataBuffer db, int index) {

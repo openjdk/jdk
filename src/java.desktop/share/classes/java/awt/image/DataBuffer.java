@@ -610,9 +610,9 @@ public abstract class DataBuffer {
             throw new ArrayIndexOutOfBoundsException("(offset+i) cannot be negative : " +
                 "(" + offset + " + " + i + ") = " + (offset + i));
         }
-        if ((offset + i) >= size) {
-            throw new ArrayIndexOutOfBoundsException("Invalid index (offset+i) is " +
-                "(" + offset + " + " + i + ") which is too large for size : " + size);
+        if (i >= size) {
+            throw new ArrayIndexOutOfBoundsException("Invalid index " + i +
+                                                     " is too large for size : " + size);
         }
     }
 
@@ -627,9 +627,9 @@ public abstract class DataBuffer {
         }
         // Don't need to include bank offset here since all constructors validated
         // the offset for each bank against the size.
-        if ((offsets[bank] + i) >= size) {
-            throw new ArrayIndexOutOfBoundsException("Invalid index (offsets[" + bank + "]+i) is " +
-                "(" + offsets[bank] + " + " + i + ") which is too large for size : " + size);
+        if (i >= size) {
+            throw new ArrayIndexOutOfBoundsException("Invalid index " + i +
+                                                     " is too large for size : " + size);
         }
     }
 
