@@ -361,13 +361,6 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
-
-        /*
-         * Accessor for InputEvent.canAccessSystemClipboard field
-         */
-        boolean canAccessSystemClipboard(InputEvent event);
-        void setCanAccessSystemClipboard(InputEvent event,
-                boolean canAccessSystemClipboard);
     }
 
     /**
@@ -552,6 +545,11 @@ public final class AWTAccessor {
          * Returns whether the file dialog allows the multiple file selection.
          */
         boolean isMultipleMode(FileDialog fileDialog);
+
+        /*
+         * Returns whether dispose is being run
+         */
+        boolean isBeingDisposed(FileDialog fileDialog);
     }
 
     /*
@@ -762,8 +760,6 @@ public final class AWTAccessor {
      * An accessor object for the AccessibleContext class
      */
     public interface AccessibleContextAccessor {
-        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
-        AppContext getAppContext(AccessibleContext accessibleContext);
         Object getNativeAXResource(AccessibleContext accessibleContext);
         void setNativeAXResource(AccessibleContext accessibleContext, Object value);
     }

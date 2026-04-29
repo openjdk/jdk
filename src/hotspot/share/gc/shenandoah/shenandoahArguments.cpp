@@ -200,13 +200,15 @@ void ShenandoahArguments::initialize() {
       && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
     log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
       " supports adaptive heuristics", ShenandoahGCHeuristics);
+    FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
-  size_t align = next_power_of_2(ShenandoahMaxRegionSize);
+  static_assert(is_power_of_2(ShenandoahHeapRegion::MAX_REGION_SIZE), "Max region size must be a power of 2.");
+  size_t align = ShenandoahHeapRegion::MAX_REGION_SIZE;
   if (UseLargePages) {
     align = MAX2(align, os::large_page_size());
   }

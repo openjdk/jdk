@@ -458,6 +458,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
  -runtime/cds/appcds/TestParallelGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithAOTHeap.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
@@ -586,7 +587,8 @@ hotspot_metaspace = \
 tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
-  runtime/cds/appcds/HelloTest.java
+  runtime/cds/appcds/HelloTest.java \
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
