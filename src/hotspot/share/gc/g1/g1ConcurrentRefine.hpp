@@ -147,7 +147,7 @@ class G1ConcurrentRefineSweepState {
 
   void enter_state(State state, Ticks timestamp);
   Tickspan get_duration(State start, State end) const;
-  Tickspan get_total_duration(Ticks completion_time) const;
+  Tickspan time_since_start(Ticks completion_time) const;
 
   G1ConcurrentRefineStats _stats;
 
