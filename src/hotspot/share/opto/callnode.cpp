@@ -44,8 +44,8 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/debug.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
