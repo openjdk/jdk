@@ -90,9 +90,17 @@ public class HiDPIRobotMouseClick {
 
         if (x != mouseX || y != mouseY) {
             throw new RuntimeException(
-                "Wrong mouse click point at scale " + scale +
-                "! Expected: (" + x + "," + y +
-                ") Got: (" + mouseX + "," + mouseY + ")");
+                "Wrong mouse click point at scale "
+                + scale 
+                +"! Expected: (" 
+                + x 
+                + "," 
+                + y 
+                +") Got: (" 
+                + mouseX 
+                + "," 
+                + mouseY 
+                + ")");
         }
 
         System.out.println("PASS at scale: " + scale);
