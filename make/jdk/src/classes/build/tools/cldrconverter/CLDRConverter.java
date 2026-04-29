@@ -183,7 +183,6 @@ public class CLDRConverter {
         }
     }
 
-    static boolean USE_UTF8 = false;
     private static boolean verbose;
 
     private CLDRConverter() {
@@ -230,10 +229,6 @@ public class CLDRConverter {
                     case "-o":
                         // output directory
                         DESTINATION_DIR = args[++i];
-                        break;
-
-                    case "-utf8":
-                        USE_UTF8 = true;
                         break;
 
                     case "-verbose":
@@ -336,7 +331,6 @@ public class CLDRConverter {
                 + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
-                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n"
                 + "\t-jdk-header-template <file>%n"
                 + "\t\t       override default GPL header with contents of file%n");
     }
@@ -612,31 +606,31 @@ public class CLDRConverter {
             if (bundleTypes.contains(Bundle.Type.LOCALENAMES)) {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, id);
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "LocaleNames", id, true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", id, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, id, bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CurrencyNames", id, true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", id, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, id);
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, id);
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CalendarData", id, true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", id, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, id);
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("text", "FormatData", id, true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", id, formatDataMap, BundleType.PLAIN);
                 }
             }
 
@@ -1053,27 +1047,14 @@ public class CLDRConverter {
         }
     }
 
-    // --- code below here is adapted from java.util.Properties ---
-    private static final String specialSaveCharsJava = "\"";
-    private static final String specialSaveCharsProperties = "=: \t\r\n\f#!";
-
     /*
-     * Converts unicodes to encoded &#92;uxxxx
-     * and writes out any of the characters in specialSaveChars
-     * with a preceding slash
+     * Escapes control codes to ASCII escapes or encoded &#92;uxxxx
+     * and writes out ASCII quotation marks with a preceding slash
      */
-    static String saveConvert(String theString, boolean useJava) {
+    static String escape(String theString) {
         if (theString == null) {
             return "";
         }
-
-        String specialSaveChars;
-        if (useJava) {
-            specialSaveChars = specialSaveCharsJava;
-        } else {
-            specialSaveChars = specialSaveCharsProperties;
-        }
-        boolean escapeSpace = false;
 
         int len = theString.length();
         StringBuilder outBuffer = new StringBuilder(len * 2);
@@ -1083,14 +1064,14 @@ public class CLDRConverter {
             char aChar = theString.charAt(x);
             switch (aChar) {
             case ' ':
-                if (x == 0 || escapeSpace) {
+                if (x == 0) {
                     outBuffer.append('\\');
                 }
                 outBuffer.append(' ');
                 break;
-            case '\\':
+            case '\\', '"':
                 outBuffer.append('\\');
-                outBuffer.append('\\');
+                outBuffer.append(aChar);
                 break;
             case '\t':
                 outBuffer.append('\\');
@@ -1109,12 +1090,9 @@ public class CLDRConverter {
                 outBuffer.append('f');
                 break;
             default:
-                if (aChar < 0x0020 || (!USE_UTF8 && aChar > 0x007e)) {
+                if (aChar < 0x0020) {
                     formatter.format("\\u%04x", (int)aChar);
                 } else {
-                    if (specialSaveChars.indexOf(aChar) != -1) {
-                        outBuffer.append('\\');
-                    }
                     outBuffer.append(aChar);
                 }
             }
