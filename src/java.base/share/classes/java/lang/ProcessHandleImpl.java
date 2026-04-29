@@ -224,6 +224,26 @@ final class ProcessHandleImpl implements ProcessHandle {
     /* The start time of a Process that does not exist. */
     private static final long STARTTIME_PROCESS_UNKNOWN = -1;
 
+    /* Sentinel pid to return all processes. */
+    private static final long ALL_CHILDREN_PID = -1L;
+
+    /**
+     * Returns a snapshot of all processes visible to the current process.
+     * <p>
+     * <em>Note that processes are created and terminate asynchronously. There
+     * is no guarantee that a process in the stream is alive or that no other
+     * processes may have been created since the inception of the snapshot.
+     * </em>
+     *
+     * @return a Stream of ProcessHandles for all processes
+     * @throws UnsupportedOperationException if the implementation
+     *         does not support this operation
+     */
+    static Stream<ProcessHandle> allProcesses() {
+
+        return children(ProcessHandleImpl.ALL_CHILDREN_PID);
+    }
+
     /**
      * Private constructor.  Instances are created by the {@code get(long)} factory.
      * @param pid the pid for this instance
@@ -311,7 +331,7 @@ final class ProcessHandleImpl implements ProcessHandle {
 
     /**
      * Returns the number of pids filled in to the array.
-     * @param pid if {@code pid} equals zero, then all known processes are returned;
+     * @param pid if {@code pid} equals ALL_CHILDREN_PID, then all known processes are returned;
      *      otherwise only direct child process pids are returned
      * @param pids an allocated long array to receive the pids
      * @param ppids an allocated long array to receive the parent pids; may be null
@@ -431,17 +451,22 @@ final class ProcessHandleImpl implements ProcessHandle {
             pids = new long[size];
             ppids = new long[size];
             starttimes = new long[size];
-            size = getProcessPids0(0, pids, ppids, starttimes);
+            size = getProcessPids0(ALL_CHILDREN_PID, pids, ppids, starttimes);
         }
 
         int next = 0;       // index of next process to check
-        int count = -1;     // count of subprocesses scanned
+        int count = 0;     // count of subprocesses scanned
         long ppid = pid;    // start looking for this parent
         long ppStart = 0;
         // Find the start time of the parent
         for (int i = 0; i < size; i++) {
             if (pids[i] == ppid) {
+                // Found the parent, swap it to the end and do not look at it again
                 ppStart = starttimes[i];
+                swap(pids, i, size - 1);
+                swap(ppids, i, size - 1);
+                swap(starttimes, i, size - 1);
+                size--;
                 break;
             }
         }
@@ -458,9 +483,13 @@ final class ProcessHandleImpl implements ProcessHandle {
                     next++;
                 }
             }
-            ppid = pids[++count];   // pick up the next pid to scan for
+            if (count >= next) {
+                break;
+            }
+            ppid = pids[count];   // pick up the next pid to scan for
             ppStart = starttimes[count];    // and its start time
-        } while (count < next);
+            count++;
+        } while (true);
 
         final long[] cpids = pids;
         final long[] stimes = starttimes;

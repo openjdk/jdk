@@ -64,7 +64,7 @@ void os_initNative(JNIEnv *env, jclass clazz) {
  * Return pids of active processes, and optionally parent pids and
  * start times for each process.
  * For a specific non-zero pid, only the direct children are returned.
- * If the pid is zero, all active processes are returned.
+ * If the pid is ALL_CHILDREN_PID, all active processes are returned.
  * Reads /proc and accumulates any process following the rules above.
  * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
@@ -153,7 +153,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
             // Get the parent pid, and start time
             ppid = os_getParentPidAndTimings(env, childpid, &totalTime, &startTime);
-            if (ppid >= 0 && (pid == 0 || ppid == pid)) {
+            if (ppid >= 0 && (pid == java_lang_ProcessHandleImpl_ALL_CHILDREN_PID || ppid == pid)) {
                 if (count < arraySize) {
                     // Only store if it fits
                     pids[count] = (jlong) childpid;

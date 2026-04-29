@@ -50,7 +50,7 @@ void os_initNative(JNIEnv *env, jclass clazz) {}
  * Return pids of active processes, and optionally parent pids and
  * start times for each process.
  * For a specific non-zero pid jpid, only the direct children are returned.
- * If the pid jpid is zero, all active processes are returned.
+ * If the pid jpid is ALL_CHILDREN_PID, all active processes are returned.
  * Uses sysctl to accumulates any process following the rules above.
  * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
@@ -153,8 +153,10 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         }
 
         // Process each entry in the buffer
+        // Pid 0 has itself as a parent, return only the other children
         for (i = nentries; --i >= 0; ++kp) {
-            if (pid == 0 || kp->kp_eproc.e_ppid == pid) {
+            if (pid == java_lang_ProcessHandleImpl_ALL_CHILDREN_PID ||
+                    (kp->kp_eproc.e_ppid == pid && kp->kp_eproc.e_ppid != (jlong) kp->kp_proc.p_pid)) {
                 if (count < arraySize) {
                     // Only store if it fits
                     pids[count] = (jlong) kp->kp_proc.p_pid;
@@ -202,11 +204,6 @@ pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t jpid,
     pid_t ppid = -1;
     struct kinfo_proc kp;
     size_t bufSize = sizeof kp;
-
-    if (jpid == 0) {
-        // macos would return a process 0.  It's not a real process
-        return -1;
-    }
 
     // Read the process info for the specific pid
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
