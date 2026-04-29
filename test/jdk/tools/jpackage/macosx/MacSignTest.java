@@ -35,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
@@ -392,25 +391,20 @@ public class MacSignTest {
         Objects.requireNonNull(keychain);
 
         String cmdlinePatternFormat;
-        String signIdentity;
-
-        switch (option.optionName().orElseThrow()) {
+        String signIdentity = switch (option.optionName().orElseThrow()) {
             case KEY_IDENTITY_APP_IMAGE, KEY_USER_NAME -> {
                 cmdlinePatternFormat = "^/usr/bin/codesign -s %s -vvvv --timestamp --options runtime --prefix \\S+ --keychain %s";
                 if (option.passThrough().orElse(false)) {
-                    signIdentity = String.format("'%s'", option.asCmdlineArgs().getLast());
+                    yield String.format("'%s'", option.asCmdlineArgs().getLast());
                 } else {
-                    signIdentity = MacSign.CertificateHash.of(option.certRequest().cert()).toString();
+                    yield MacSign.CertificateHash.of(option.certRequest().cert()).toString();
                 }
             }
             case KEY_IDENTITY_INSTALLER -> {
                 cmdlinePatternFormat = "^/usr/bin/productbuild --resources \\S+ --sign %s --keychain %s";
-                signIdentity = String.format("'%s'", option.asCmdlineArgs().getLast());
+                yield String.format("'%s'", option.asCmdlineArgs().getLast());
             }
-            default -> {
-                throw ExceptionBox.reachedUnreachable();
-            }
-        }
+        };
 
         return new FailedCommandErrorValidator(Pattern.compile(String.format(
                 cmdlinePatternFormat,
