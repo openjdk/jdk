@@ -60,12 +60,17 @@ public class TestArrayLoadProfiling {
     static MyValue3[] array10 = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 1, new MyValue3(42));
     static MyValue3[] array11 = (MyValue3[])ValueClass.newNullRestrictedAtomicArray(MyValue3.class, 1, new MyValue3(42));
     static MyValue3[] array12 = (MyValue3[])ValueClass.newReferenceArray(MyValue3.class, 1);
+    static MyValue4[] array13 = (MyValue4[])ValueClass.newNullRestrictedNonAtomicArray(MyValue4.class, 1, new MyValue4(42));
+    static MyValue4[] array14 = (MyValue4[])ValueClass.newNullRestrictedAtomicArray(MyValue4.class, 1, new MyValue4(42));
+    static MyValue4[] array15 = (MyValue4[])ValueClass.newNullableAtomicArray(MyValue4.class, 1);
+    static MyValue4[] array16 = { new MyValue4((byte)42) };
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
         array8[0] = new MyValue1((byte)42);
         array9[0] = new MyValue1((byte)42);
         array12[0] = new MyValue3((byte)42);
+        array15[0] = new MyValue4((byte)42);
     }
     
     @Test
@@ -494,6 +499,25 @@ public class TestArrayLoadProfiling {
         test25(array12, 0, 0, 0);
     }
     
+    @Test
+    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
+    // @IR(failOn = IRNode.ALLOC)
+    public static I test26(I[] array) {
+        return array[0];
+    }
+
+    @Run(test = "test26")
+    public static void test26Runner() {
+        // for (int i = 0; i < 10; i++) {
+        //     test26(array1);
+        //     test26(array2);
+        // }
+        test26(array13);
+        test26(array14);
+        // test26(array15);
+        // test26(array16);
+    }
+
     // @Test
     // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "9" })
     // @IR(failOn = IRNode.ALLOC)
@@ -549,6 +573,17 @@ public class TestArrayLoadProfiling {
             this.intField2 = intField;
             this.intField3 = intField;
             this.intField4 = intField;
+        }
+
+        public void m() {
+        }
+    }
+
+    static value class MyValue4 implements I {
+        int intField;
+
+        MyValue4(int intField) {
+            this.intField = intField;
         }
 
         public void m() {

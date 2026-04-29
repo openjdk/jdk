@@ -4953,11 +4953,11 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
-bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, Label &L_found_recv, int mdp_offset, uint row_limit) {
-  int base_receiver_offset   = in_bytes(MegamorphicTypeData::receiver_offset(0));
-  int end_receiver_offset    = in_bytes(MegamorphicTypeData::receiver_offset(row_limit));
-  int receiver_step          = in_bytes(MegamorphicTypeData::receiver_offset(1)) - base_receiver_offset;
-  int receiver_to_count_step = in_bytes(MegamorphicTypeData::receiver_count_offset(0)) - base_receiver_offset;
+bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, Label &L_found_recv, int mdp_offset, int base, uint row_limit) {
+  int base_receiver_offset   = in_bytes(MegamorphicTypeData::receiver_offset(base, 0));
+  int end_receiver_offset    = in_bytes(MegamorphicTypeData::receiver_offset(base, row_limit));
+  int receiver_step          = in_bytes(MegamorphicTypeData::receiver_offset(base, 1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(MegamorphicTypeData::receiver_count_offset(base, 0)) - base_receiver_offset;
 
   assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
   base_receiver_offset += mdp_offset;
@@ -4976,8 +4976,8 @@ bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   // We are about to walk the MDO slots without asking for offsets.
   // Check that our math hits all the right spots.
   for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
-    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
-    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int real_recv_offset  = mdp_offset + in_bytes(MegamorphicTypeData::receiver_offset(base, c));
+    int real_count_offset = mdp_offset + in_bytes(MegamorphicTypeData::receiver_count_offset(base, c));
     int offset = base_receiver_offset + receiver_step*c;
     int count_offset = offset + receiver_to_count_step;
     assert((offset << LogBytesPerWord) == real_recv_offset, "receiver slot math");
@@ -5043,7 +5043,7 @@ bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   movptr(offset, base_receiver_offset);
   bind(L_loop_search_receiver);
   cmpptr(recv, Address(mdp, offset, Address::times_ptr));
-  jccb(Assembler::equal, L_found_recv);
+  jcc(Assembler::equal, L_found_recv);
   addptr(offset, receiver_step);
   cmpptr(offset, end_receiver_offset);
   jccb(Assembler::notEqual, L_loop_search_receiver);
@@ -5129,19 +5129,19 @@ bool MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
 // counter updates are not atomic.
 //
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
-  int poly_count_offset      = in_bytes(ReceiverTypeData::count_offset());
-  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
-  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+  int poly_count_offset       = in_bytes(ReceiverTypeData::count_offset());
+  int base_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int receiver_to_count_step  = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
 
   // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
   assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
-  poly_count_offset    += mdp_offset;
+  poly_count_offset       += mdp_offset;
 
   // Scale down to optimize encoding. Slots are pointer-sized.
-  assert(is_aligned(poly_count_offset,      BytesPerWord), "sanity");
-  assert(is_aligned(receiver_to_count_step, BytesPerWord), "sanity");
-  poly_count_offset      >>= LogBytesPerWord;
-  receiver_to_count_step >>= LogBytesPerWord;
+  assert(is_aligned(poly_count_offset,       BytesPerWord), "sanity");
+  assert(is_aligned(receiver_to_count_step,  BytesPerWord), "sanity");
+  poly_count_offset       >>= LogBytesPerWord;
+  receiver_to_count_step  >>= LogBytesPerWord;
 
 #ifdef ASSERT
   int real_poly_count_offset = mdp_offset + in_bytes(ReceiverTypeData::count_offset());
@@ -5155,7 +5155,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   }
 
   Label L_found_recv;
-  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset + ReceiverTypeData::base_of_megamorphic_type_data(), ReceiverTypeData::row_limit());
+  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ReceiverTypeData::base_of_megamorphic_type_data(), ReceiverTypeData::row_limit());
   Register offset = rscratch1;
   movptr(offset, poly_count_offset);
   Label L_count_update;
@@ -5191,7 +5191,7 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   flat_nullable_count_offset            >>= LogBytesPerWord;
   flat_nullfree_atomic_count_offset     >>= LogBytesPerWord;
   flat_nullfree_not_atomic_count_offset >>= LogBytesPerWord;
-  receiver_to_count_step >>= LogBytesPerWord;
+  receiver_to_count_step                >>= LogBytesPerWord;
 
 #ifdef ASSERT
   int real_flat_nullable_count_offset = mdp_offset + in_bytes(ArrayLoadData::flat_nullable_count_offset());
@@ -5209,7 +5209,7 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   }
 
   Label L_found_recv;
-  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset + ReceiverTypeData::base_of_megamorphic_type_data(), ReceiverTypeData::row_limit());
+  profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
   Register offset = rscratch1;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
   Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, done, failure;

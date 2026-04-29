@@ -1205,17 +1205,17 @@ public:
   uint row_limit() const {
     return (uint)_type_width;
   }
-  static int static_receiver_cell_index(uint row) {
-    return receiver0_offset + row * receiver_type_row_cell_count;
+  static int static_receiver_cell_index(int base, uint row) {
+    return base + receiver0_offset + row * receiver_type_row_cell_count;
   }
-  static int static_receiver_count_cell_index(uint row) {
-    return count0_offset + row * receiver_type_row_cell_count;
+  static int static_receiver_count_cell_index(int base, uint row) {
+    return base + count0_offset + row * receiver_type_row_cell_count;
   }
   int receiver_cell_index(uint row) const {
-    return _base_off + receiver0_offset + row * receiver_type_row_cell_count;
+    return static_receiver_cell_index(_base_off, row);
   }
   int receiver_count_cell_index(uint row) const {
-    return _base_off + count0_offset + row * receiver_type_row_cell_count;
+    return static_receiver_count_cell_index(_base_off, row);
   }
 
   Klass* receiver(uint row) const {
@@ -1248,11 +1248,11 @@ public:
   }
 
   // Code generation support
-  static ByteSize receiver_offset(uint row) {
-    return ProfileData::cell_offset(static_receiver_cell_index(row));
+  static ByteSize receiver_offset(int base, uint row) {
+    return ProfileData::cell_offset(static_receiver_cell_index(base, row));
   }
-  static ByteSize receiver_count_offset(uint row) {
-    return ProfileData::cell_offset(static_receiver_count_cell_index(row));
+  static ByteSize receiver_count_offset(int base, uint row) {
+    return ProfileData::cell_offset(static_receiver_count_cell_index(base, row));
   }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());
@@ -1278,7 +1278,7 @@ protected:
 
 public:
   ReceiverTypeData(DataLayout* layout) : CounterData(layout),
-                                         _megamorphic_type_data(this, counter_cell_count, TypeProfileWidth) {
+                                         _megamorphic_type_data(this, base_of_megamorphic_type_data(), TypeProfileWidth) {
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
            layout->tag() == DataLayout::virtual_call_data_tag ||
            layout->tag() == DataLayout::virtual_call_type_data_tag ||
@@ -1353,10 +1353,10 @@ public:
 
   // Code generation support
   static ByteSize receiver_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + counter_cell_count);
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(base_of_megamorphic_type_data(), row));
   }
   static ByteSize receiver_count_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + counter_cell_count);
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(base_of_megamorphic_type_data(), row));
   }
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
@@ -2125,7 +2125,7 @@ public:
   ArrayLoadData(DataLayout* layout) :
     ProfileData(layout),
     _element(0),
-    _megamorphic_type_data(this, SingleTypeEntry::static_cell_count(), TypeProfileWidth) {
+    _megamorphic_type_data(this, base_of_megamorphic_type_data(), TypeProfileWidth) {
     assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
     _element.set_profile_data(this);
   }
@@ -2197,7 +2197,6 @@ public:
   }
 
   // Code generation support
-
   static ByteSize element_offset() {
     return cell_offset(0);
   }
@@ -2227,10 +2226,10 @@ public:
   }
 
   static ByteSize receiver_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + SingleTypeEntry::static_cell_count());
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(base_of_megamorphic_type_data(), row));
   }
   static ByteSize receiver_count_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + SingleTypeEntry::static_cell_count());
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(base_of_megamorphic_type_data(), row));
   }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());
