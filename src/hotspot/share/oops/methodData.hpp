@@ -1248,13 +1248,13 @@ public:
     set_receiver_count(row, 0);
   }
 
-  // // Code generation support
-  // static ByteSize receiver_offset(uint row) {
-  //   return cell_offset(receiver_cell_index(row));
-  // }
-  // static ByteSize receiver_count_offset(uint row) {
-  //   return cell_offset(receiver_count_cell_index(row));
-  // }
+  // Code generation support
+  static ByteSize receiver_offset(int base, uint row) {
+    return ProfileData::cell_offset(base + static_receiver_cell_index(row));
+  }
+  static ByteSize receiver_count_offset(int base, uint row) {
+    return ProfileData::cell_offset(base + static_receiver_count_cell_index(row));
+  }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());
   // }
@@ -1285,6 +1285,10 @@ public:
            layout->tag() == DataLayout::virtual_call_type_data_tag ||
            layout->tag() == DataLayout::array_store_data_tag ||
            layout->tag() == DataLayout::array_load_data_tag, "wrong type");
+  }
+
+  static int base_of_megamorphic_type_data() {
+    return counter_cell_count;
   }
 
   const MegamorphicTypeData* megamorphic_type_data() const {
@@ -1350,10 +1354,10 @@ public:
 
   // Code generation support
   static ByteSize receiver_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + counter_cell_count);
+    return MegamorphicTypeData::receiver_offset(counter_cell_count, row);
   }
   static ByteSize receiver_count_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + counter_cell_count);
+    return MegamorphicTypeData::receiver_count_offset(counter_cell_count, row);
   }
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
@@ -2127,6 +2131,10 @@ public:
     _element.set_profile_data(this);
   }
 
+  static int base_of_megamorphic_type_data() {
+    return SingleTypeEntry::static_cell_count();
+  }
+
   const SingleTypeEntry* element() const {
     return &_element;
   }
@@ -2220,10 +2228,10 @@ public:
   }
 
   static ByteSize receiver_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(row) + SingleTypeEntry::static_cell_count());
+    return MegamorphicTypeData::receiver_offset(SingleTypeEntry::static_cell_count(), row);
   }
   static ByteSize receiver_count_offset(uint row) {
-    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(row) + SingleTypeEntry::static_cell_count());
+    return MegamorphicTypeData::receiver_count_offset(SingleTypeEntry::static_cell_count(), row);
   }
   // static ByteSize receiver_type_data_size() {
   //   return cell_offset(static_cell_count());

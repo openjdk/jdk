@@ -709,6 +709,9 @@ public:
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  bool profile_receiver_type_helper(Register recv, Register mdp,
+                                    Register &offset, Label &L_found_recv, int base, uint row_limit);
+
   template <class ReceiverProfileData> void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
   template <class ReceiverProfileData> void profile_receiver_type_prolog(Register recv);
 
