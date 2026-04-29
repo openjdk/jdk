@@ -338,8 +338,8 @@ public class ASN1Formatter implements HexPrinter.Formatter {
                 case TAG_IA5String:
                 case TAG_GeneralString: {
                     // Check if the contents are too long or not printable
-                    byte[] buf = new byte[Math.min(32, len)];
-                    int l = in.read(buf, 0, buf.length);
+                    byte[] buf = in.readNBytes(Math.min(32, len));
+                    int l = buf.length;
                     if (countPrintable(buf, l) > l / 2) {
                         // If more than 1/2 are printable, show the string
                         out.append("'");
