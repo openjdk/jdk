@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,7 @@ public:
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
 
+  const char*  failure_reason() const { return _failure_reason; }
   void         set_failure_reason(const char* reason, bool on_C_heap = false) {
     _failure_reason = reason;
     _failure_reason_on_C_heap = on_C_heap;

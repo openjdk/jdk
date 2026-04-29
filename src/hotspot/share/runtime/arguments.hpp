@@ -273,12 +273,6 @@ class Arguments : AllStatic {
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
   static void set_compact_headers_flags();
-  // Limits the given heap size by the maximum amount of virtual
-  // memory this process is currently allowed to use. It also takes
-  // the virtual-to-physical ratio of the current GC into account.
-  static size_t limit_heap_by_allocatable_memory(size_t size);
-  // Setup heap size
-  static void set_heap_size();
 
   // Bytecode rewriting
   static void set_bytecode_flags();

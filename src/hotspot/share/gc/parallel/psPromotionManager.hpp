@@ -165,7 +165,7 @@ class PSPromotionManager {
 
   template <class T> inline void claim_or_forward_depth(T* p);
 
-  void push_contents(oop obj);
+  void push_contents(oop obj, Klass* klass);
   void push_contents_bounded(oop obj, HeapWord* left, HeapWord* right);
 };
 
