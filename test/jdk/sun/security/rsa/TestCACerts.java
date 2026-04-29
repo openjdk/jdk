@@ -72,7 +72,8 @@ public class TestCACerts {
                     System.out.println("Signature algorithm: " + cert.getSigAlgName());
                     cert.verify(key, PROVIDER);
                 } else {
-                    System.out.println("Skipping cert with key: " + alg);
+                    System.out.println("Skipping cert with non-RSA key: " +
+                                       alg);
                 }
             } else {
                 skippedCases.add(String.format("[alias: %s]",

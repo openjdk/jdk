@@ -180,13 +180,14 @@ public class SignatureTest2 {
             int digestLen = MessageDigest.getInstance(digestAlg).getDigestLength();
             PSSParameterSpec params = genPSSParameter(digestAlg, digestLen, keySize);
             if (params == null) {
-                skippedAlgs.add(
+                final String algDescription =
                         String.format("[digestAlg: %s, digestLen: %d, " +
                                       "keysize: %d]",
                                 digestAlg,
                                 digestLen,
-                                keySize));
-                System.out.println("Skip test due to short key size");
+                                keySize);
+                skippedAlgs.add(algDescription);
+                System.out.println("Skip test due to short key size: " + algDescription);
                 return;
             }
             sig.setParameter(params);
