@@ -291,17 +291,17 @@ public class DisambiguatePatterns {
         MethodTree method = (MethodTree) clazz.getMembers().get(0);
         StatementTree st = method.getBody().getStatements().get(0);
         switch (varDeclType) {
-            case ENHANCED_LOCAL_VARIABLE_DECL -> {
-                if (!(st instanceof JCEnhancedVariableDecl)) {
+            case ENHANCED_LOCAL_VARIABLE_DECLARATION -> {
+                if (!(st instanceof JCEnhancedVariableDeclaration)) {
                     throw new AssertionError("Expected JCEnhancedVariableDecl, got: " + st.getClass() +
                             ", for: " + code + ", parsed: " + result);
                 }
-                if (st.getKind() != Kind.ENHANCED_VARIABLE_DECL) {
+                if (st.getKind() != Kind.ENHANCED_VARIABLE_DECLARATION) {
                     throw new AssertionError("Expected kind ENHANCED_VARIABLE_DECL, got: " + st.getKind() +
                             ", for: " + code + ", parsed: " + result);
                 }
             }
-            case LOCAL_VARIABLE_DECL -> {
+            case LOCAL_VARIABLE_DECLARATION -> {
                 if (!(st instanceof JCVariableDecl)) {
                     throw new AssertionError("Expected JCVariableDecl, got: " + st.getClass() +
                             ", for: " + code + ", parsed: " + result);
@@ -326,7 +326,7 @@ public class DisambiguatePatterns {
     }
 
     enum LocalVariableDeclType {
-        LOCAL_VARIABLE_DECL,
-        ENHANCED_LOCAL_VARIABLE_DECL;
+        LOCAL_VARIABLE_DECLARATION,
+        ENHANCED_LOCAL_VARIABLE_DECLARATION;
     }
 }

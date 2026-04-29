@@ -1159,7 +1159,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitEnhancedVariableDecl(JCTree.JCEnhancedVariableDecl tree) {
+    public void visitEnhancedVariableDeclaration(JCTree.JCEnhancedVariableDeclaration tree) {
         /**
          * A statement of the form
          *

@@ -841,7 +841,7 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+    public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
         try {
             printExpr(tree.pattern);
             if (tree.expr != null) {

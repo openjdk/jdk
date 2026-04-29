@@ -25,7 +25,12 @@
 
 package jdk.jshell;
 
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.ArrayList;
 import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -290,7 +295,7 @@ class ExpressionToTypeInfo {
                     return null;
                 }
                 Tree firstStatement = TreeDissector.createByFirstClass(at).firstStatement();
-                if (firstStatement instanceof JCTree.JCEnhancedVariableDecl enhancedVariableDecl) {
+                if (firstStatement instanceof JCTree.JCEnhancedVariableDeclaration enhancedVariableDecl) {
                     java.util.List<BindingInfo> ret = new ArrayList<BindingInfo>();
                     Eval.gatherBindings(enhancedVariableDecl.pattern, jcBindingPattern -> {
                         BindingInfo bindingInfo =

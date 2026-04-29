@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -347,9 +348,11 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     * @since 27
      */
     @Override
-    public R visitEnhancedVariableDecl(EnhancedVariableDeclTree node, P p) {
+    @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
+    public R visitEnhancedVariableDeclaration(EnhancedVariableDeclarationTree node, P p) {
         R r = scan(node.getPattern(), p);
         r = scanAndReduce(node.getExpression(), p, r);
         return r;

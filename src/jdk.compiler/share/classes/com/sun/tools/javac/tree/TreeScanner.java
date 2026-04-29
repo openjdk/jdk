@@ -248,7 +248,7 @@ public class TreeScanner extends Visitor {
         scan(tree.detail);
     }
 
-    public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
+    public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
         scan(tree.pattern);
         scan(tree.expr);
     }

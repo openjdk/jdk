@@ -661,10 +661,7 @@ public class Flow {
                 tree.cond != null && !tree.cond.type.isTrue());
         }
 
-        public void visitEnhancedVariableDecl(JCEnhancedVariableDecl tree) {
-            ListBuffer<PendingExit> prevPendingExits = pendingExits;
-            pendingExits = new ListBuffer<>();
-
+        public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
             if (tree.pattern instanceof JCRecordPattern rp) {
                 visitRecordPattern(rp);
             }
@@ -674,8 +671,6 @@ public class Flow {
             }
 
             scan(tree.expr);
-
-            alive = alive.or(resolveBreaks(tree, prevPendingExits));
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {

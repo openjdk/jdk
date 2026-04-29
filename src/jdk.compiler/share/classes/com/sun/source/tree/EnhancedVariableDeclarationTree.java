@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ import jdk.internal.javac.PreviewFeature;
  *   <em>record pattern</em> = <em>expression</em>;
  * </pre>
  *
- * @jls 14.23.1 Enhanced Local Variable Declaration Statements
+ * @jls 14.4.2 Local Variable Declaration Statements
  *
  * @author Angelos Bimpoudis
  * @since 27
  */
 @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
-public interface EnhancedVariableDeclTree extends StatementTree {
+public interface EnhancedVariableDeclarationTree extends StatementTree {
     /**
      * Returns the pattern for the enhanced local variable declaration statement.
      * @return pattern

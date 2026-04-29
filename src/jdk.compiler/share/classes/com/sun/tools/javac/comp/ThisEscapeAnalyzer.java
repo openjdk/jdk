@@ -813,7 +813,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
                 } else                                      // what is it???
                     refs.discardExprs(depth);
             } else {
-                // TODO: what does this mean for record pattern variables????
+                // Follows the same comment as above: "Currently we don't attempt to explicitly track references stored in fields (for future study)."
             }
             // Scan loop body
             scan(foreach.body);

@@ -231,7 +231,7 @@ class Eval {
                     -> processImport(userSource, compileSourceInt);
                 case VARIABLE
                     -> processVariables(userSource, units, compileSourceInt, pt);
-                case ENHANCED_VARIABLE_DECL
+                case ENHANCED_VARIABLE_DECLARATION
                     -> processEnhancedVarDecl(userSource, unitTree, compileSourceInt, pt);
                 case EXPRESSION_STATEMENT
                     -> processExpression(userSource, unitTree, compileSourceInt, pt);
@@ -254,7 +254,7 @@ class Eval {
     }
 
     private List<Snippet> processEnhancedVarDecl(String userSource, Tree unitTree, String compileSource, ParseTask pt) {
-        JCTree.JCEnhancedVariableDecl tree = (JCTree.JCEnhancedVariableDecl) unitTree;
+        JCTree.JCEnhancedVariableDeclaration tree = (JCTree.JCEnhancedVariableDeclaration) unitTree;
 
         List<JCTree.JCBindingPattern> patternBindings = new ArrayList<>();
         gatherBindings((JCTree) tree.getPattern(), patternBindings::add);

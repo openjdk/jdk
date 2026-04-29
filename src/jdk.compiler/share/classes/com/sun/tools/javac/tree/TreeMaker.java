@@ -290,8 +290,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCEnhancedVariableDecl EnhancedVarDef(JCPattern pattern, JCExpression expr) {
-        JCEnhancedVariableDecl tree = new JCEnhancedVariableDecl(pattern, expr);
+    public JCEnhancedVariableDeclaration EnhancedVarDef(JCPattern pattern, JCExpression expr) {
+        JCEnhancedVariableDeclaration tree = new JCEnhancedVariableDeclaration(pattern, expr);
         tree.pos = pos;
         return tree;
     }

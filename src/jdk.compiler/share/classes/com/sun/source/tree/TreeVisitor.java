@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
@@ -90,14 +92,14 @@ public interface TreeVisitor<R,P> {
     R visitAssert(AssertTree node, P p);
 
     /**
-     * Visits an {@code EnhancedVariableDeclTree} node.
+     * Visits an {@code EnhancedVariableDeclarationTree} node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     *
      * @since 27
      */
-    R visitEnhancedVariableDecl(EnhancedVariableDeclTree node, P p);
+    @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
+    R visitEnhancedVariableDeclaration(EnhancedVariableDeclarationTree node, P p);
 
     /**
      * Visits an {@code AssignmentTree} node.

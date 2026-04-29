@@ -1884,26 +1884,26 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * The enhanced local variable declaration statement
      */
-    public static class JCEnhancedVariableDecl extends JCStatement implements EnhancedVariableDeclTree {
+    public static class JCEnhancedVariableDeclaration extends JCStatement implements EnhancedVariableDeclarationTree {
         public JCPattern pattern;
         public JCExpression expr;
 
-        protected JCEnhancedVariableDecl(JCPattern recordPattern, JCExpression expr) {
+        protected JCEnhancedVariableDeclaration(JCPattern recordPattern, JCExpression expr) {
             this.pattern = recordPattern;
             this.expr = expr;
         }
         @Override
-        public void accept(Visitor v) { v.visitEnhancedVariableDecl(this); }
+        public void accept(Visitor v) { v.visitEnhancedVariableDeclaration(this); }
 
         @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() { return Kind.ENHANCED_VARIABLE_DECL; }
+        public Kind getKind() { return Kind.ENHANCED_VARIABLE_DECLARATION; }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Tree getPattern() { return pattern; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitEnhancedVariableDecl(this, d);
+            return v.visitEnhancedVariableDeclaration(this, d);
         }
         @Override
         public Tag getTag() {
@@ -3574,7 +3574,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCReturn Return(JCExpression expr);
         JCThrow Throw(JCExpression expr);
         JCAssert Assert(JCExpression cond, JCExpression detail);
-        JCEnhancedVariableDecl EnhancedVarDef(JCPattern recordPattern, JCExpression expr);
+        JCEnhancedVariableDeclaration EnhancedVarDef(JCPattern recordPattern, JCExpression expr);
         JCMethodInvocation Apply(List<JCExpression> typeargs,
                     JCExpression fn,
                     List<JCExpression> args);
@@ -3648,7 +3648,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitReturn(JCReturn that)               { visitTree(that); }
         public void visitThrow(JCThrow that)                 { visitTree(that); }
         public void visitAssert(JCAssert that)               { visitTree(that); }
-        public void visitEnhancedVariableDecl(JCEnhancedVariableDecl that)                 { visitTree(that); }
+        public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration that)                 { visitTree(that); }
         public void visitApply(JCMethodInvocation that)      { visitTree(that); }
         public void visitNewClass(JCNewClass that)           { visitTree(that); }
         public void visitNewArray(JCNewArray that)           { visitTree(that); }

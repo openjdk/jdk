@@ -231,8 +231,8 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitEnhancedVariableDecl(EnhancedVariableDeclTree node, P p) {
-        JCEnhancedVariableDecl t = (JCEnhancedVariableDecl) node;
+    public JCTree visitEnhancedVariableDeclaration(EnhancedVariableDeclarationTree node, P p) {
+        JCEnhancedVariableDeclaration t = (JCEnhancedVariableDeclaration) node;
         JCPattern recordPattern = copy(t.pattern, p);
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).EnhancedVarDef(recordPattern, expr);
