@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -542,7 +542,8 @@ enum SignatureScheme {
                     ECParameterSpec params =
                             x509Possession.getECParameterSpec();
                     if (params != null &&
-                            ss.namedGroup == NamedGroup.valueOf(params)) {
+                            (!version.useTLS13PlusSpec() || 
+                            ss.namedGroup == NamedGroup.valueOf(params))) {
                         Signature signer = ss.getSigner(signingKey);
                         if (signer != null) {
                             return new SimpleImmutableEntry<>(ss, signer);
