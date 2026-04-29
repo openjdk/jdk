@@ -292,7 +292,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
   __ rt_call(target);
   __ mv(t0, x10);
