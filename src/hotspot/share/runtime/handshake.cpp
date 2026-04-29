@@ -378,7 +378,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, oop vthread) {
     execute(hs_cl, &tlh, target);
     assert(target->threadObj() == java_lang_VirtualThread::carrier_thread(vth()), "");
   } else {
-    // unmounted vthread, execute closure with the current thread
+    // unmounted vthread, execute closure with the continuation
     hs_cl->do_thread(nullptr);
   }
 }
