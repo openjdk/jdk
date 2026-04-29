@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,10 @@
 /* @test
  * @summary Test MethodHandle::invokeExact and MethodHandle::invoke throws
  *          UnsupportedOperationException when called via Method::invoke
- * @run testng test.java.lang.invoke.MethodHandleInvokeUOE
+ * @run junit test.java.lang.invoke.MethodHandleInvokeUOE
  */
 
 package test.java.lang.invoke;
-
-import org.testng.*;
-import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -38,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static java.lang.invoke.MethodType.*;
+import org.junit.jupiter.api.Test;
 
 public class MethodHandleInvokeUOE {
     @Test

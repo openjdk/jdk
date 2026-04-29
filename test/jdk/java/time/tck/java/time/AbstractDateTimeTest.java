@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,11 @@
  */
 package tck.java.time;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.DateTimeException;
 import java.time.temporal.TemporalAccessor;
@@ -68,8 +71,8 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import test.java.time.temporal.MockFieldNoValue;
 
@@ -99,183 +102,137 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // isSupported(TemporalField)
     //-----------------------------------------------------------------------
-    @Test()
-    public void basicTest_isSupported_TemporalField_supported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : validFields()) {
-                assertEquals(true, sample.isSupported(field), "Failed on " + sample + " " + field);
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_isSupported_TemporalField_supported(TemporalAccessor sample) {
+        for (TemporalField field : validFields()) {
+            assertTrue(sample.isSupported(field), "Failed on " + sample + " " + field);
         }
     }
 
-    @Test()
-    public void basicTest_isSupported_TemporalField_unsupported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : invalidFields()) {
-                assertEquals(false, sample.isSupported(field), "Failed on " + sample + " " + field);
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_isSupported_TemporalField_unsupported(TemporalAccessor sample) {
+        for (TemporalField field : invalidFields()) {
+            assertFalse(sample.isSupported(field), "Failed on " + sample + " " + field);
         }
     }
 
-    @Test()
-    public void basicTest_isSupported_TemporalField_null() {
-        for (TemporalAccessor sample : samples()) {
-            assertEquals(false, sample.isSupported(null), "Failed on " + sample);
-        }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_isSupported_TemporalField_null(TemporalAccessor sample) {
+        assertFalse(sample.isSupported(null), "Failed on " + sample);
     }
 
     //-----------------------------------------------------------------------
     // range(TemporalField)
     //-----------------------------------------------------------------------
-    @Test()
-    public void basicTest_range_TemporalField_supported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : validFields()) {
-                sample.range(field);  // no exception
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_range_TemporalField_supported(TemporalAccessor sample) {
+        for (TemporalField field : validFields()) {
+            assertDoesNotThrow(() -> sample.range(field));
         }
     }
 
-    @Test()
-    public void basicTest_range_TemporalField_unsupported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : invalidFields()) {
-                try {
-                    sample.range(field);
-                    fail("Failed on " + sample + " " + field);
-                } catch (DateTimeException ex) {
-                    // expected
-                }
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_range_TemporalField_unsupported(TemporalAccessor sample) {
+        for (TemporalField field : invalidFields()) {
+            assertThrows(DateTimeException.class,
+                    () -> sample.range(field), "Failed on " + sample + " " + field);
         }
     }
 
-    @Test()
-    public void basicTest_range_TemporalField_null() {
-        for (TemporalAccessor sample : samples()) {
-            try {
-                sample.range(null);
-                fail("Failed on " + sample);
-            } catch (NullPointerException ex) {
-                // expected
-            }
-        }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_range_TemporalField_null(TemporalAccessor sample) {
+        assertThrows(NullPointerException.class,
+                () -> sample.range(null), "Failed on " + sample);
     }
 
     //-----------------------------------------------------------------------
     // get(TemporalField)
     //-----------------------------------------------------------------------
-    @Test()
-    public void basicTest_get_TemporalField_supported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : validFields()) {
-                if (sample.range(field).isIntValue()) {
-                    sample.get(field);  // no exception
-                } else {
-                    try {
-                        sample.get(field);
-                        fail("Failed on " + sample + " " + field);
-                    } catch (DateTimeException ex) {
-                        // expected
-                    }
-                }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_get_TemporalField_supported(TemporalAccessor sample) {
+        for (TemporalField field : validFields()) {
+            if (sample.range(field).isIntValue()) {
+                assertDoesNotThrow(() -> sample.get(field));
+            } else {
+                assertThrows(DateTimeException.class,
+                        () -> sample.get(field), "Failed on " + sample + " " + field);
             }
         }
     }
 
-    @Test()
-    public void basicTest_get_TemporalField_unsupported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : invalidFields()) {
-                try {
-                    sample.get(field);
-                    fail("Failed on " + sample + " " + field);
-                } catch (DateTimeException ex) {
-                    // expected
-                }
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_get_TemporalField_unsupported(TemporalAccessor sample) {
+        for (TemporalField field : invalidFields()) {
+            assertThrows(DateTimeException.class,
+                    () -> sample.get(field), "Failed on " + sample + " " + field);
         }
     }
 
-    @Test
-    public void test_get_TemporalField_invalidField() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            for (TemporalAccessor sample : samples()) {
-                sample.get(MockFieldNoValue.INSTANCE);
-            }
-        });
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void test_get_TemporalField_invalidField(TemporalAccessor sample) {
+        assertThrows(DateTimeException.class,
+                () -> sample.get(MockFieldNoValue.INSTANCE));
     }
 
-    @Test()
-    public void basicTest_get_TemporalField_null() {
-        for (TemporalAccessor sample : samples()) {
-            try {
-                sample.get(null);
-                fail("Failed on " + sample);
-            } catch (NullPointerException ex) {
-                // expected
-            }
-        }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_get_TemporalField_null(TemporalAccessor sample) {
+        assertThrows(NullPointerException.class,
+                () -> sample.get(null), "Failed on " + sample);
     }
 
     //-----------------------------------------------------------------------
     // getLong(TemporalField)
     //-----------------------------------------------------------------------
-    @Test()
-    public void basicTest_getLong_TemporalField_supported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : validFields()) {
-                sample.getLong(field);  // no exception
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_getLong_TemporalField_supported(TemporalAccessor sample) {
+        for (TemporalField field : validFields()) {
+            sample.getLong(field);
         }
     }
 
-    @Test()
-    public void basicTest_getLong_TemporalField_unsupported() {
-        for (TemporalAccessor sample : samples()) {
-            for (TemporalField field : invalidFields()) {
-                try {
-                    sample.getLong(field);
-                    fail("Failed on " + sample + " " + field);
-                } catch (DateTimeException ex) {
-                    // expected
-                }
-            }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_getLong_TemporalField_unsupported(TemporalAccessor sample) {
+        for (TemporalField field : invalidFields()) {
+            assertThrows(DateTimeException.class,
+                    () -> sample.getLong(field), "Failed on " + sample + " " + field);
         }
     }
 
-    @Test
-    public void test_getLong_TemporalField_invalidField() {
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            for (TemporalAccessor sample : samples()) {
-                sample.getLong(MockFieldNoValue.INSTANCE);
-            }
-        });
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void test_getLong_TemporalField_invalidField(TemporalAccessor sample) {
+        assertThrows(DateTimeException.class,
+                () -> sample.getLong(MockFieldNoValue.INSTANCE));
     }
 
-    @Test()
-    public void basicTest_getLong_TemporalField_null() {
-        for (TemporalAccessor sample : samples()) {
-            try {
-                sample.getLong(null);
-                fail("Failed on " + sample);
-            } catch (NullPointerException ex) {
-                // expected
-            }
-        }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_getLong_TemporalField_null(TemporalAccessor sample) {
+        assertThrows(NullPointerException.class,
+                () -> sample.getLong(null), "Failed on " + sample);
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void basicTest_query() {
-        for (TemporalAccessor sample : samples()) {
-            assertEquals("foo", sample.query(new TemporalQuery<String>() {
-                @Override
-                public String queryFrom(TemporalAccessor temporal) {
-                    return "foo";
-                }
-            }));
-        }
+    @ParameterizedTest
+    @MethodSource("samples")
+    public void basicTest_query(TemporalAccessor sample) {
+        assertEquals("foo", sample.query(new TemporalQuery<String>() {
+            @Override
+            public String queryFrom(TemporalAccessor temporal) {
+                return "foo";
+            }
+        }));
     }
-
 }

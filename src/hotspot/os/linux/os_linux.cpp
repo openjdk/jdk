@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -82,6 +83,7 @@
 #endif
 
 # include <ctype.h>
+# include <dirent.h>
 # include <dlfcn.h>
 # include <endian.h>
 # include <errno.h>
@@ -96,7 +98,6 @@
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/ipc.h>
@@ -113,6 +114,7 @@
 # include <sys/types.h>
 # include <sys/utsname.h>
 # include <syscall.h>
+# include <time.h>
 # include <unistd.h>
 #ifdef __GLIBC__
 # include <malloc.h>
@@ -211,13 +213,56 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
+bool os::is_containerized() {
+  return OSContainer::is_containerized();
+}
+
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_soft_limit_in_bytes(result) && result != 0 && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  physical_memory_size_type result = 0;
+  if (OSContainer::memory_throttle_limit_in_bytes(result) && result != value_unlimited) {
+    value = result;
+    return true;
+  }
+  return false;
+}
+
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  return OSContainer::memory_usage_in_bytes(value);
+}
+
 bool os::available_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::available_memory(value);
+}
+
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Linux::available_memory(value);
+}
+
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  return OSContainer::available_memory_in_bytes(value);
 }
 
 bool os::Linux::available_memory(physical_memory_size_type& value) {
@@ -251,11 +296,15 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
+  return Machine::free_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Linux::free_memory(value);
 }
 
@@ -274,19 +323,28 @@ bool os::Linux::free_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
-  if (OSContainer::is_containerized()) {
-    physical_memory_size_type mem_swap_limit = value_unlimited;
-    physical_memory_size_type memory_limit = value_unlimited;
-    if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
-        OSContainer::memory_limit_in_bytes(memory_limit)) {
-      if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
-          mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
-        value = mem_swap_limit - memory_limit;
-        return true;
-      }
-    }
-  } // fallback to the host swap space if the container returned unlimited
+  if (is_containerized() && Container::total_swap_space(value)) {
+    return true;
+  } // fallback to the host swap space if the container value fails
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   return Linux::host_swap(value);
+}
+
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  physical_memory_size_type mem_swap_limit = value_unlimited;
+  physical_memory_size_type memory_limit = value_unlimited;
+  if (OSContainer::memory_and_swap_limit_in_bytes(mem_swap_limit) &&
+      OSContainer::memory_limit_in_bytes(memory_limit)) {
+    if (memory_limit != value_unlimited && mem_swap_limit != value_unlimited &&
+        mem_swap_limit >= memory_limit /* ensure swap is >= 0 */) {
+      value = mem_swap_limit - memory_limit;
+      return true;
+    }
+  }
+  return false;
 }
 
 static bool host_free_swap_f(physical_memory_size_type& value) {
@@ -309,30 +367,43 @@ bool os::free_swap_space(physical_memory_size_type& value) {
     return false;
   }
   physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
-  if (OSContainer::is_containerized()) {
-    if (OSContainer::available_swap_in_bytes(host_free_swap_val, value)) {
+  if (is_containerized()) {
+    if (Container::free_swap_space(value)) {
       return true;
     }
     // Fall through to use host value
     log_trace(os,container)("os::free_swap_space: containerized value unavailable"
                             " returning host value: " PHYS_MEM_TYPE_FORMAT, host_free_swap_val);
   }
+
   value = host_free_swap_val;
   return true;
 }
 
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
+  return host_free_swap_f(value);
+}
+
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  return OSContainer::available_swap_in_bytes(value);
+}
+
 physical_memory_size_type os::physical_memory() {
-  if (OSContainer::is_containerized()) {
+  if (is_containerized()) {
     physical_memory_size_type mem_limit = value_unlimited;
-    if (OSContainer::memory_limit_in_bytes(mem_limit) && mem_limit != value_unlimited) {
+    if (Container::memory_limit(mem_limit) && mem_limit != value_unlimited) {
       log_trace(os)("total container memory: " PHYS_MEM_TYPE_FORMAT, mem_limit);
       return mem_limit;
     }
   }
 
-  physical_memory_size_type phys_mem = Linux::physical_memory();
+  physical_memory_size_type phys_mem = Machine::physical_memory();
   log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
+  return Linux::physical_memory();
 }
 
 // Returns the resident set size (RSS) of the process.
@@ -1242,7 +1313,7 @@ bool os::is_primordial_thread(void) {
 // Find the virtual memory area that contains addr
 static bool find_vma(address addr, address* vma_low, address* vma_high) {
   FILE *fp = os::fopen("/proc/self/maps", "r");
-  if (fp) {
+  if (fp != nullptr) {
     address low, high;
     while (!feof(fp)) {
       if (fscanf(fp, "%p-%p", &low, &high) == 2) {
@@ -1255,7 +1326,7 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
       }
       for (;;) {
         int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
+        if (ch == EOF || ch == '\n') break;
       }
     }
     fclose(fp);
@@ -2439,20 +2510,21 @@ bool os::Linux::print_container_info(outputStream* st) {
   OSContainer::print_container_metric(st, "cpu_memory_nodes", p != nullptr ? p : "not supported");
   free(p);
 
-  int i = -1;
-  bool supported = OSContainer::active_processor_count(i);
+  double cpus = -1;
+  bool supported = OSContainer::active_processor_count(cpus);
   if (supported) {
-    assert(i > 0, "must be");
+    assert(cpus > 0, "must be");
     if (ActiveProcessorCount > 0) {
       OSContainer::print_container_metric(st, "active_processor_count", ActiveProcessorCount, "(from -XX:ActiveProcessorCount)");
     } else {
-      OSContainer::print_container_metric(st, "active_processor_count", i);
+      OSContainer::print_container_metric(st, "active_processor_count", cpus);
     }
   } else {
     OSContainer::print_container_metric(st, "active_processor_count", "not supported");
   }
 
 
+  int i = -1;
   supported = OSContainer::cpu_quota(i);
   if (supported && i > 0) {
     OSContainer::print_container_metric(st, "cpu_quota", i);
@@ -3453,6 +3525,9 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
+    if (ep.saved_errno() == ENOMEM) {
+      fatal("Failed to uncommit " RANGEFMT ". It is possible that the process's maximum number of mappings would have been exceeded. Try increasing the limit.", RANGEFMTARGS(addr, size));
+    }
     return false;
   }
   return true;
@@ -3563,14 +3638,16 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // It's safe to always unmap guard pages for primordial thread because we
 // always place it right after end of the mapped region.
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  uintptr_t stack_extent, stack_base;
+void os::remove_stack_guard_pages(char* addr, size_t size) {
 
   if (os::is_primordial_thread()) {
-    return ::munmap(addr, size) == 0;
+    if (::munmap(addr, size) != 0) {
+      fatal("Failed to munmap " RANGEFMT, RANGEFMTARGS(addr, size));
+    }
+    return;
   }
 
-  return os::uncommit_memory(addr, size);
+  os::uncommit_memory(addr, size);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -3739,8 +3816,8 @@ static int hugetlbfs_page_size_flag(size_t page_size) {
 }
 
 static bool hugetlbfs_sanity_check(size_t page_size) {
-  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
-  assert(page_sizes.contains(page_size), "Invalid page sizes passed");
+  const os::PageSizes os_supported = HugePages::explicit_hugepage_info().os_supported();
+  assert(os_supported.contains(page_size), "Invalid page sizes passed (%zu)", page_size);
 
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
@@ -3754,16 +3831,16 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
       log_info(pagesize)("Large page size (" EXACTFMT ") failed sanity check, "
                          "checking if smaller large page sizes are usable",
                          EXACTFMTARGS(page_size));
-      for (size_t page_size_ = page_sizes.next_smaller(page_size);
-          page_size_ > os::vm_page_size();
-          page_size_ = page_sizes.next_smaller(page_size_)) {
-        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
-        p = mmap(nullptr, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
+      for (size_t size = os_supported.next_smaller(page_size);
+          size > os::vm_page_size();
+          size = os_supported.next_smaller(size)) {
+        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(size);
+        p = mmap(nullptr, size, PROT_READ|PROT_WRITE, flags, -1, 0);
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
-          munmap(p, page_size_);
+          munmap(p, size);
           log_info(pagesize)("Large page size (" EXACTFMT ") passed sanity check",
-                             EXACTFMTARGS(page_size_));
+                             EXACTFMTARGS(size));
           return true;
         }
       }
@@ -3945,7 +4022,7 @@ void os::Linux::large_page_init() {
     // - os::large_page_size() is the default explicit hugepage size (/proc/meminfo "Hugepagesize")
     // - os::pagesizes() contains all hugepage sizes the kernel supports, regardless whether there
     //   are pages configured in the pool or not (from /sys/kernel/hugepages/hugepage-xxxx ...)
-    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().pagesizes();
+    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().os_supported();
     const size_t default_large_page_size = HugePages::default_explicit_hugepage_size();
 
     // 3) Consistency check and post-processing
@@ -3987,10 +4064,10 @@ void os::Linux::large_page_init() {
 
     _large_page_size = large_page_size;
 
-    // Populate _page_sizes with large page sizes less than or equal to
-    // _large_page_size.
-    for (size_t page_size = _large_page_size; page_size != 0;
-           page_size = all_large_pages.next_smaller(page_size)) {
+    // Populate _page_sizes with _large_page_size (default large page size) even if not pre-allocated.
+    // Then, populate _page_sizes with all smaller large page sizes that have been pre-allocated.
+    os::PageSizes pre_allocated = HugePages::explicit_hugepage_info().pre_allocated();
+    for (size_t page_size = _large_page_size; page_size != 0; page_size = pre_allocated.next_smaller(page_size)) {
       _page_sizes.add(page_size);
     }
   }
@@ -4054,12 +4131,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
                                                size_t page_size,
                                                char* req_addr,
                                                bool exec) {
-  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
+  const os::PageSizes os_supported = HugePages::explicit_hugepage_info().os_supported();
   assert(UseLargePages, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(page_sizes.contains(page_size), "Must be a valid page size");
+  assert(os_supported.contains(page_size), "Must be a valid page size");
   assert(page_size > os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -4131,12 +4208,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   }
 
   return addr;
-}
-
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(UseLargePages, "only for large pages");
-  // Plain munmap is sufficient
-  return pd_release_memory(base, bytes);
 }
 
 size_t os::large_page_size() {
@@ -4311,7 +4382,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   os::snprintf_checked(fname, sizeof(fname), "/proc/%d/status", vmid);
   FILE *fp = os::fopen(fname, "r");
 
-  if (fp) {
+  if (fp != nullptr) {
     int pid, nspid;
     int ret;
     while (!feof(fp) && !ferror(fp)) {
@@ -4325,7 +4396,7 @@ int os::Linux::get_namespace_pid(int vmid) {
       }
       for (;;) {
         int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
+        if (ch == EOF || ch == '\n') break;
       }
     }
     fclose(fp);
@@ -4480,6 +4551,7 @@ void os::Linux::numa_init() {
     FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
+#if INCLUDE_PARALLELGC
   if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
     // With static large pages we cannot uncommit a page, so there's no way
     // we can make the adaptive lgrp chunk resizing work. If the user specified both
@@ -4491,6 +4563,7 @@ void os::Linux::numa_init() {
       UseAdaptiveNUMAChunkSizing = false;
     }
   }
+#endif
 }
 
 void os::Linux::disable_numa(const char* reason, bool warning) {
@@ -4737,15 +4810,26 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  int active_cpus = -1;
-  if (OSContainer::is_containerized() && OSContainer::active_processor_count(active_cpus)) {
-    log_trace(os)("active_processor_count: determined by OSContainer: %d",
-                   active_cpus);
-  } else {
-    active_cpus = os::Linux::active_processor_count();
+  if (is_containerized()) {
+    double cpu_quota;
+    if (Container::processor_count(cpu_quota)) {
+      int active_cpus = ceilf(cpu_quota); // Round fractional CPU quota up.
+      assert(active_cpus <= Machine::active_processor_count(), "must be");
+      log_trace(os)("active_processor_count: determined by OSContainer: %d",
+                     active_cpus);
+      return active_cpus;
+    }
   }
 
-  return active_cpus;
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
+  return os::Linux::active_processor_count();
+}
+
+bool os::Container::processor_count(double& value) {
+  return OSContainer::active_processor_count(value);
 }
 
 static bool should_warn_invalid_processor_id() {
@@ -4878,36 +4962,18 @@ int os::open(const char *path, int oflag, int mode) {
   // All file descriptors that are opened in the Java process and not
   // specifically destined for a subprocess should have the close-on-exec
   // flag set.  If we don't set it, then careless 3rd party native code
-  // might fork and exec without closing all appropriate file descriptors,
-  // and this in turn might:
-  //
-  // - cause end-of-file to fail to be detected on some file
-  //   descriptors, resulting in mysterious hangs, or
-  //
-  // - might cause an fopen in the subprocess to fail on a system
-  //   suffering from bug 1085341.
-  //
-  // (Yes, the default setting of the close-on-exec flag is a Unix
-  // design flaw)
-  //
-  // See:
-  // 1085341: 32-bit stdio routines should support file descriptors >255
-  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-  //
-  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
-  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
-  // because it saves a system call and removes a small window where the flag
-  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
-  // and we fall back to using FD_CLOEXEC (see below).
-#ifdef O_CLOEXEC
+  // might fork and exec without closing all appropriate file descriptors.
   oflag |= O_CLOEXEC;
-#endif
 
   int fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
+  // No further checking is needed if open() returned an error or
+  // access mode is not read only.
+  if (fd == -1 || (oflag & O_ACCMODE) != O_RDONLY) {
+    return fd;
+  }
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded and is read only, the file might be a directory
+  // which the JVM doesn't allow to be read.
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);
@@ -4924,21 +4990,6 @@ int os::open(const char *path, int oflag, int mode) {
       return -1;
     }
   }
-
-#ifdef FD_CLOEXEC
-  // Validate that the use of the O_CLOEXEC flag on open above worked.
-  // With recent kernels, we will perform this check exactly once.
-  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
-  if (!O_CLOEXEC_is_known_to_work) {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      if ((flags & FD_CLOEXEC) != 0)
-        O_CLOEXEC_is_known_to_work = 1;
-      else
-        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-    }
-  }
-#endif
 
   return fd;
 }
@@ -5380,3 +5431,31 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+void os::print_open_file_descriptors(outputStream* st) {
+  DIR* dirp = opendir("/proc/self/fd");
+  int fds = 0;
+  struct dirent* dentp;
+  const jlong TIMEOUT_NS = 50000000L;  // 50 ms in nanoseconds
+  bool timed_out = false;
+
+  // limit proc file read to 50ms
+  jlong start = os::javaTimeNanos();
+  assert(dirp != nullptr, "No proc fs?");
+  while ((dentp = readdir(dirp)) != nullptr && !timed_out) {
+    if (isdigit(dentp->d_name[0])) fds++;
+    if (fds % 100 == 0) {
+      jlong now = os::javaTimeNanos();
+      if ((now - start) > TIMEOUT_NS) {
+        timed_out = true;
+      }
+    }
+  }
+
+  closedir(dirp);
+  if (timed_out) {
+    st->print_cr("Open File Descriptors: > %d", fds);
+  } else {
+    st->print_cr("Open File Descriptors: %d", fds);
+  }
+}
