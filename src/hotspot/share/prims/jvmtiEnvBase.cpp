@@ -1363,9 +1363,7 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   if (ets->is_frame_pop(frame_number)) {
     return JVMTI_ERROR_DUPLICATE;
   }
-  ets->set_frame_pop(frame_number);
-
-  JavaThread* thread =  state->get_thread();
+  JavaThread* thread = state->get_thread();
   frame fr = jvf->fr();
 
   if (jvf->is_compiled_frame()) {
@@ -1383,6 +1381,7 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
       Deoptimization::deoptimize(thread, fr);
     }
   }
+  ets->set_frame_pop(frame_number);
   return JVMTI_ERROR_NONE;
 }
 

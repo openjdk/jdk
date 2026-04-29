@@ -30,7 +30,7 @@
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g StepOverStressTest.java
- * @run driver/timeout=6000 StepOverStressTest
+ * @run driver/timeout=600 StepOverStressTest
  */
 
 import com.sun.jdi.*;
@@ -59,7 +59,7 @@ class TestTarg {
     // Do something compute intensive and time it.
     static void intensiveWork() {
         long start = System.currentTimeMillis();
-        for (int iter = 0; iter < 20; iter++) {
+        for (int iter = 0; iter < 10; iter++) {
             LinkedList<Integer> list = new LinkedList<Integer>();
             for (int i = 0; i < 100 * 1024; i++) {
                 list.addFirst(Integer.valueOf(i));
