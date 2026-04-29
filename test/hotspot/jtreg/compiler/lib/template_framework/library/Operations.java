@@ -650,16 +650,7 @@ public final class Operations {
                             ops.addAll(binaryOps(vop, type, vopInfo));
                         }
                         case VOPType.BINARY -> ops.addAll(binaryOps(vop, type, vopInfo));
-                        case VOPType.TERNARY -> {
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ", ", type.maskType, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ", ", type.maskType, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ", ", type.maskType, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ")", vopInfo));
-                            ops.add(Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ", ", type.maskType, ")", vopInfo));
-                        }
+                        case VOPType.TERNARY -> ops.addAll(ternaryOps(vop, type, vopInfo));
                     }
                 }
             }
@@ -817,8 +808,21 @@ public final class Operations {
         );
     }
 
+    private static List<Expression> ternaryOps(Operations.VOP vop, VectorType.Vector type, Expression.Info vopInfo) {
+        return List.of(
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ", ", type.maskType, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ", ", type.maskType, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ", ", type.maskType, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ")", vopInfo),
+                Expression.make(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ", ", type.maskType, ")", vopInfo)
+        );
+    }
+
     /**
-     * Provides a lits of operations on {@link PrimitiveType}s, such as arithmetic, logical,
+     * Provides a list of operations on {@link PrimitiveType}s, such as arithmetic, logical,
      * and cast operations.
      */
     public static final List<Expression> PRIMITIVE_OPERATIONS = generatePrimitiveOperations();
