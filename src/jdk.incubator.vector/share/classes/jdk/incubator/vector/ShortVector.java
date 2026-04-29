@@ -2370,6 +2370,9 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         ShortVector that = (ShortVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
         ShortVector filter = broadcast((short)origin);
         VectorMask<Short> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

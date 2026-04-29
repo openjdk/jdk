@@ -261,8 +261,16 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
-    __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
-    __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    if (AOTCodeCache::is_on_for_dump()) {
+      __ lea(rscratch2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ ldr(rscratch2, Address(rscratch2));
+      __ lea(rscratch1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ ldrw(rscratch1, Address(rscratch1));
+      __ lsrv(rscratch1, r0, rscratch1);
+    } else {
+      __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
+      __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
     __ ldrb(rscratch2, Address(rscratch2, rscratch1));
     __ tbz(rscratch2, 0, not_cset);
   }
@@ -270,15 +278,15 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ push_call_clobbered_registers();
   if (is_strong) {
     if (is_narrow) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow)));
     } else {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong)));
     }
   } else if (is_weak) {
     if (is_narrow) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow)));
     } else {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak)));
     }
   } else {
     assert(is_phantom, "only remaining strength");
@@ -709,8 +717,16 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
 
   if (is_strong) {
     // Check for object in cset.
-    __ mov(tmp2, ShenandoahHeap::in_cset_fast_test_addr());
-    __ lsr(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    if (AOTCodeCache::is_on_for_dump()) {
+      __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ ldr(tmp2, Address(tmp2));
+      __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ ldrw(tmp1, Address(tmp1));
+      __ lsrv(tmp1, res, tmp1);
+    } else {
+      __ mov(tmp2, ShenandoahHeap::in_cset_fast_test_addr());
+      __ lsr(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
     __ ldrb(tmp2, Address(tmp2, tmp1));
     __ cbz(tmp2, *stub->continuation());
   }
@@ -795,25 +811,25 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
   if (is_strong) {
     if (is_native) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong)));
     } else {
       if (UseCompressedOops) {
-        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow));
+        __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow)));
       } else {
-        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong));
+        __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong)));
       }
     }
   } else if (is_weak) {
     assert(!is_native, "weak must not be called off-heap");
     if (UseCompressedOops) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow)));
     } else {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak)));
     }
   } else {
     assert(is_phantom, "only remaining strength");
     assert(is_native, "phantom must only be called off-heap");
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
+    __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom)));
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
