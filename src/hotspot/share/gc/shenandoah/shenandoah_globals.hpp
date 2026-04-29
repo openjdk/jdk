@@ -278,7 +278,7 @@
           "to 100 effectively disables the shortcut.")                      \
           range(0,100)                                                      \
                                                                             \
-  product(uint, ShenandoahAllocRateSamplePeriodMs, 5, EXPERIMENTAL,     \
+  product(uint, ShenandoahAllocRateSamplePeriodMs, 10, EXPERIMENTAL,        \
           "The number of times per second to update the allocation rate "   \
           "moving average.")                                                \
                                                                             \

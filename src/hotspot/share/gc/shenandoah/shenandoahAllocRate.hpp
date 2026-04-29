@@ -96,12 +96,7 @@ public:
 
 protected:
   void stop_service() override;
-  void run_service() override {
-    while (!should_terminate()) {
-      _rate->record_sample();
-      os::naked_short_sleep(ShenandoahAllocRateSamplePeriodMs);
-    }
-  }
+  void run_service() override;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
