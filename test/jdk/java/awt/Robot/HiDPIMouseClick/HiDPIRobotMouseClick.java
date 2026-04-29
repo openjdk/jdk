@@ -91,15 +91,15 @@ public class HiDPIRobotMouseClick {
         if (x != mouseX || y != mouseY) {
             throw new RuntimeException(
                 "Wrong mouse click point at scale "
-                + scale 
-                +"! Expected: (" 
-                + x 
-                + "," 
-                + y 
-                +") Got: (" 
-                + mouseX 
-                + "," 
-                + mouseY 
+                + scale
+                +"! Expected: ("
+                + x
+                + ","
+                + y
+                +") Got: ("
+                + mouseX
+                + ","
+                + mouseY
                 + ")");
         }
 
