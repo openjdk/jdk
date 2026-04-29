@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
+
 #include "logging/log.hpp"
 
 template<typename Clock>
