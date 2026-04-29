@@ -48,7 +48,7 @@
 #endif
 
 #ifdef WINDOWS_AARCH64
-// Forward declaration of a funciton defined in javaThread_windows_aarch64.cpp.
+// Forward declaration of a function defined in javaThread_windows_aarch64.cpp.
 // Sets `_jvm_thr_current_tls_offset` to the offset of `Thread::_thr_current`
 // within the TLS block.
 void initialize_thr_current_tls_offset();
