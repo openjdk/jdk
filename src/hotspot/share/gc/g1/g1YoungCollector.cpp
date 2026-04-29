@@ -244,19 +244,11 @@ G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injecto
   return _g1h->allocation_failure_injector();
 }
 
-
-void G1YoungCollector::wait_for_root_region_scanning() {
+void G1YoungCollector::complete_root_region_scan() {
   Ticks start = Ticks::now();
-  // We have to wait until the CM threads finish scanning the
-  // root regions as it's the only way to ensure that all the
-  // objects on them have been correctly scanned before we start
-  // moving them during the GC.
-  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
-  Tickspan wait_time;
-  if (waited) {
-    wait_time = (Ticks::now() - start);
+  if (concurrent_mark()->complete_root_regions_scan_in_safepoint()) {
+    phase_times()->record_root_region_scan_time((Ticks::now() - start).seconds() * MILLIUNITS);
   }
-  phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
 }
 
 class G1PrintCollectionSetClosure : public G1HeapRegionClosure {
@@ -1144,10 +1136,8 @@ void G1YoungCollector::collect() {
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
-  // Wait for root region scan here to make sure that it is done before any
-  // use of the STW workers to maximize cpu use (i.e. all cores are available
-  // just to do that).
-  wait_for_root_region_scanning();
+  // Complete root region scan before moving any objects to preserve the SATB invariant.
+  complete_root_region_scan();
 
   G1YoungGCVerifierMark vm(this);
   {

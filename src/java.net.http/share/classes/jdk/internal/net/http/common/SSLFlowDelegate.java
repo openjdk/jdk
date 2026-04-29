@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ public class SSLFlowDelegate {
 
         final SequentialScheduler scheduler;
         volatile ByteBuffer readBuf;
-        volatile boolean completing;
+        boolean completing;
         final ReentrantLock readBufferLock = new ReentrantLock();
         final Logger debugr = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
@@ -299,6 +299,11 @@ public class SSLFlowDelegate {
 
         protected SchedulingAction enterScheduling() {
             return enterReadScheduling();
+        }
+
+        @Override
+        public boolean closing() {
+            return closeNotifyReceived();
         }
 
         public final String dbgString() {
@@ -505,7 +510,7 @@ public class SSLFlowDelegate {
                         if (result.handshaking()) {
                             handshaking = true;
                             if (debugr.on()) debugr.log("handshaking");
-                            if (doHandshake(result, READER)) continue; // need unwrap
+                            if (doHandshake(result.handshakeStatus(), READER)) continue; // need unwrap
                             else break; // doHandshake will have triggered the write scheduler if necessary
                         } else {
                             if (trySetALPN()) {
@@ -550,6 +555,7 @@ public class SSLFlowDelegate {
 
         private volatile Status lastUnwrapStatus;
         EngineResult unwrapBuffer(ByteBuffer src) throws IOException {
+            assert readBufferLock.isHeldByCurrentThread();
             ByteBuffer dst = getAppBuffer();
             int len = src.remaining();
             while (true) {
@@ -573,6 +579,8 @@ public class SSLFlowDelegate {
                         break;
                     case CLOSED:
                         assert dst.position() == 0;
+                        src.position(src.limit());
+                        completing = true;
                         return doClosure(new EngineResult(sslResult));
                     case BUFFER_UNDERFLOW:
                         // handled implicitly by compaction/reallocation of readBuf
@@ -834,7 +842,7 @@ public class SSLFlowDelegate {
                     boolean handshaking = false;
                     if (result.handshaking()) {
                         if (debugw.on()) debugw.log("handshaking");
-                        doHandshake(result, WRITER);  // ok to ignore return
+                        doHandshake(result.handshakeStatus(), WRITER);  // ok to ignore return
                         handshaking = true;
                     } else {
                         if (trySetALPN()) {
@@ -1090,14 +1098,14 @@ public class SSLFlowDelegate {
         return (current & HANDSHAKING);
     };
 
-    private boolean doHandshake(EngineResult r, int caller) {
+    private boolean doHandshake(HandshakeStatus handshakeStatus, int caller) {
         // unconditionally sets the HANDSHAKING bit, while preserving task bits
         handshakeState.getAndAccumulate(0, (current, unused) -> HANDSHAKING | (current & TASK_BITS));
         if (stateList != null && debug.on()) {
-            stateList.add(r.handshakeStatus().toString());
+            stateList.add(handshakeStatus.toString());
             stateList.add(Integer.toString(caller));
         }
-        switch (r.handshakeStatus()) {
+        switch (handshakeStatus) {
             case NEED_TASK:
                 int s = handshakeState.accumulateAndGet(0, REQUEST_OR_DO_TASKS);
                 if ((s & REQUESTING_TASKS) > 0) { // someone else is or will do tasks
@@ -1125,7 +1133,7 @@ public class SSLFlowDelegate {
                 break;
             default:
                 throw new InternalError("Unexpected handshake status:"
-                                        + r.handshakeStatus());
+                                        + handshakeStatus);
         }
         return true;
     }
@@ -1182,34 +1190,20 @@ public class SSLFlowDelegate {
         return false;
     }
 
-    // FIXME: acknowledge a received CLOSE request from peer
     EngineResult doClosure(EngineResult r) throws IOException {
         if (debug.on())
             debug.log("doClosure(%s): %s [isOutboundDone: %s, isInboundDone: %s]",
                       r.result, engine.getHandshakeStatus(),
                       engine.isOutboundDone(), engine.isInboundDone());
+        if (debug.on()) debug.log("doClosure: close_notify received");
+        close_notify_received = true;
+        engine.closeOutbound();
         if (engine.getHandshakeStatus() == HandshakeStatus.NEED_WRAP) {
             // we have received TLS close_notify and need to send
             // an acknowledgement back. We're calling doHandshake
             // to finish the close handshake.
-            if (engine.isInboundDone() && !engine.isOutboundDone()) {
-                if (debug.on()) debug.log("doClosure: close_notify received");
-                close_notify_received = true;
-                if (!writer.scheduler.isStopped()) {
-                    doHandshake(r, READER);
-                } else {
-                    // We have received closed notify, but we
-                    // won't be able to send the acknowledgement.
-                    // Nothing more will come from the socket either,
-                    // so mark the reader as completed.
-                    var readerLock = reader.readBufferLock;
-                    readerLock.lock();
-                    try {
-                        reader.completing = true;
-                    } finally {
-                        readerLock.unlock();
-                    }
-                }
+            if (!writer.scheduler.isStopped()) {
+                doHandshake(HandshakeStatus.NEED_WRAP, READER);
             }
         }
         return r;

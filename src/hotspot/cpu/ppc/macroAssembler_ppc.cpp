@@ -799,13 +799,7 @@ void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool i
       }
     } else {
       for (int i = 20; i < 32; i++) {
-        if (PowerArchitecturePPC64 >= 9) {
-          stxv(as_VectorRegister(i)->to_vsr(), offset, dst);
-        } else {
-          Register spill_addr = R0;
-          addi(spill_addr, dst, offset);
-          stxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-        }
+        stxv(as_VectorRegister(i)->to_vsr(), offset, dst);
         offset += 16;
       }
     }
@@ -838,13 +832,7 @@ void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, boo
       }
     } else {
       for (int i = 20; i < 32; i++) {
-        if (PowerArchitecturePPC64 >= 9) {
-          lxv(as_VectorRegister(i)->to_vsr(), offset, src);
-        } else {
-          Register spill_addr = R0;
-          addi(spill_addr, src, offset);
-          lxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-        }
+        lxv(as_VectorRegister(i)->to_vsr(), offset, src);
         offset += 16;
       }
     }
@@ -3214,7 +3202,7 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
   stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
 }
 
-int MacroAssembler::instr_size_for_decode_klass_not_null() {
+int MacroAssembler::instr_size_for_load_klass() {
   static int computed_size = -1;
 
   // Not yet computed?
@@ -3222,10 +3210,10 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
 
     // Determine by scratch emit.
     ResourceMark rm;
-    int code_size = 8 * BytesPerInstWord;
-    CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
+    int code_size = 16 * BytesPerInstWord;
+    CodeBuffer cb("load_klass scratch buffer", code_size, 0);
     MacroAssembler* a = new MacroAssembler(&cb);
-    a->decode_klass_not_null(R11_scratch1);
+    a->load_klass(R11_scratch1, R11_scratch1);
     computed_size = a->offset();
   }
 

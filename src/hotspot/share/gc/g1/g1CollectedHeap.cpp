@@ -944,10 +944,6 @@ void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
 }
 
 void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-  // Currently, there is no facility in the do_full_collection(bool) API to notify
-  // the caller that the collection did not succeed (e.g., because it was locked
-  // out by the GC locker). So, right now, we'll ignore the return value.
-
   do_full_collection(size_t(0) /* allocation_word_size */,
                      clear_all_soft_refs,
                      false /* do_maximal_compaction */);
@@ -1652,6 +1648,7 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
+  assert_not_at_safepoint();
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
@@ -2959,7 +2956,7 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->abandon();
 }
 
-size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
   const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
@@ -3218,7 +3215,7 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
   G1HeapRegionPrinter::retire(alloc_region);
 }
 
-void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
   _cm->raw_mark_in_bitmap(obj);

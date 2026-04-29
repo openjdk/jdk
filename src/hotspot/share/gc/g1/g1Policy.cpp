@@ -690,11 +690,6 @@ void G1Policy::record_young_collection_start() {
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
-void G1Policy::record_concurrent_mark_init_end() {
-  assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
-  collector_state()->set_in_normal_young_gc();
-}
-
 void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double start_time_sec = cur_pause_start_sec();
@@ -733,7 +728,7 @@ bool G1Policy::about_to_start_mixed_phase() const {
   return collector_state()->is_in_concurrent_cycle() || collector_state()->is_in_prepare_mixed_gc();
 }
 
-bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
+bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) const {
   if (about_to_start_mixed_phase()) {
     return false;
   }
@@ -795,7 +790,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   bool is_young_only_pause = G1CollectorState::is_young_only_pause(this_pause);
 
   if (G1CollectorState::is_concurrent_start_pause(this_pause)) {
-    record_concurrent_mark_init_end();
+    assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
+    collector_state()->set_in_normal_young_gc();
   } else {
     maybe_start_marking(allocation_word_size);
   }
@@ -966,12 +962,12 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
+  _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
     update_young_length_bounds();
 
-    _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
     if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
@@ -1245,10 +1241,6 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   }
 }
 
-void G1Policy::initiate_conc_mark() {
-  collector_state()->set_in_concurrent_start_gc();
-}
-
 static const char* requester_for_mixed_abort(GCCause::Cause cause) {
   if (cause == GCCause::_wb_breakpoint) {
     return "run_to breakpoint";
@@ -1264,7 +1256,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
 
-  // First, collector_state()->in_concurrent_start_gc() should not be already set. We
+  // First, collector_state()->is_in_concurrent_start_gc() should not already be set. We
   // will set it here if we have to. However, it should be cleared by
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
@@ -1283,22 +1275,19 @@ void G1Policy::decide_on_concurrent_start_pause() {
       log_debug(gc, ergo)("Do not initiate concurrent cycle (whitebox controlled)");
     } else if (!about_to_start_mixed_phase() && collector_state()->is_in_young_only_phase()) {
       // Initiate a new concurrent start if there is no marking or reclamation going on.
-      initiate_conc_mark();
+      collector_state()->set_in_concurrent_start_gc();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
     } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
                GCCause::is_codecache_requested_gc(cause) ||
                (cause == GCCause::_wb_breakpoint)) {
-      // Initiate a concurrent start.  A concurrent start must be a young only
-      // GC, so the collector state must be updated to reflect this.
-      collector_state()->set_in_normal_young_gc();
-
+      // Force concurrent start.
+      collector_state()->set_in_concurrent_start_gc();
       // We might have ended up coming here about to start a mixed phase with a collection set
       // active. The following remark might change the change the "evacuation efficiency" of
       // the regions in this set, leading to failing asserts later.
       // Since the concurrent cycle will recreate the collection set anyway, simply drop it here.
       abandon_collection_set_candidates();
       abort_time_to_mixed_tracking();
-      initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
                           requester_for_mixed_abort(cause));
     } else {

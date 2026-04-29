@@ -178,9 +178,9 @@ static void destroy(MultiCounterQueryP query) {
     for (int i = 0; i < query->noOfCounters; ++i) {
       close_query(nullptr, &query->counters[i]);
     }
-    FREE_C_HEAP_ARRAY(char, query->counters);
+    FREE_C_HEAP_ARRAY(query->counters);
     close_query(&query->query.pdh_query_handle, nullptr);
-    FREE_C_HEAP_ARRAY(MultiCounterQueryS, query);
+    FREE_C_HEAP_ARRAY(query);
   }
 }
 
@@ -189,15 +189,15 @@ static void destroy_query_set(MultiCounterQuerySetP query_set) {
     for (int j = 0; j < query_set->queries[i].noOfCounters; ++j) {
       close_query(nullptr, &query_set->queries[i].counters[j]);
     }
-    FREE_C_HEAP_ARRAY(char, query_set->queries[i].counters);
+    FREE_C_HEAP_ARRAY(query_set->queries[i].counters);
     close_query(&query_set->queries[i].query.pdh_query_handle, nullptr);
   }
-  FREE_C_HEAP_ARRAY(MultiCounterQueryS, query_set->queries);
+  FREE_C_HEAP_ARRAY(query_set->queries);
 }
 
 static void destroy(MultiCounterQuerySetP query) {
   destroy_query_set(query);
-  FREE_C_HEAP_ARRAY(MultiCounterQuerySetS, query);
+  FREE_C_HEAP_ARRAY(query);
 }
 
 static void destroy(ProcessQueryP query) {
@@ -229,7 +229,7 @@ static void allocate_counters(ProcessQueryP query, size_t nofCounters) {
 }
 
 static void deallocate_counters(MultiCounterQueryP query) {
-  FREE_C_HEAP_ARRAY(char, query->counters);
+  FREE_C_HEAP_ARRAY(query->counters);
   query->counters = nullptr;
   query->noOfCounters = 0;
 }
@@ -710,11 +710,11 @@ static const char* pdh_process_image_name() {
 }
 
 static void deallocate_pdh_constants() {
-  FREE_C_HEAP_ARRAY(char, process_image_name);
+  FREE_C_HEAP_ARRAY(process_image_name);
   process_image_name = nullptr;
-  FREE_C_HEAP_ARRAY(char, pdh_process_instance_IDProcess_counter_fmt);
+  FREE_C_HEAP_ARRAY(pdh_process_instance_IDProcess_counter_fmt);
   pdh_process_instance_IDProcess_counter_fmt = nullptr;
-  FREE_C_HEAP_ARRAY(char, pdh_process_instance_wildcard_IDProcess_counter);
+  FREE_C_HEAP_ARRAY(pdh_process_instance_wildcard_IDProcess_counter);
   pdh_process_instance_wildcard_IDProcess_counter = nullptr;
 }
 
@@ -1445,9 +1445,9 @@ bool CPUInformationInterface::initialize() {
 
 CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_name());
+    FREE_C_HEAP_ARRAY(_cpu_info->cpu_name());
     _cpu_info->set_cpu_name(nullptr);
-    FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_description());
+    FREE_C_HEAP_ARRAY(_cpu_info->cpu_description());
     _cpu_info->set_cpu_description(nullptr);
     delete _cpu_info;
   }
