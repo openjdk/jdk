@@ -171,7 +171,7 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
     private static long getLongValueFromFile(Controller subSystem, String metric, String subMetric) {
         String stats = getFileContents(subSystem, metric);
         if (stats == null) {
-            throw new SkippedException("Failed to get file contents for " + subSystem + " " + metric);
+            return RETVAL_UNAVAILABLE;
         }
         String[] tokens = stats.split("[\\r\\n]+");
         for (int i = 0; i < tokens.length; i++) {
