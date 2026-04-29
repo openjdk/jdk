@@ -138,7 +138,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             // There could be a race here
             if (cf != null) {
                 return (cf instanceof Supplier<?> supplier)
-                        ? "computing function=" + supplier
+                        ? "computing function=" + isolateToString(supplier)
                         : "failed with=" + ((Class<?>) cf).getName();
             }
             // As we know `computingFunction` is `null` or via a volatile read, we

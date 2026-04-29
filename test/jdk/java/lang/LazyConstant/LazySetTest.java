@@ -203,6 +203,40 @@ final class LazySetTest {
 
     @ParameterizedTest
     @MethodSource("allSets")
+    void zeroHashCodeTest() {
+        specificHashCodeTest(0);
+    }
+
+    @ParameterizedTest
+    @MethodSource("allSets")
+    void negativeHashCodeTest() {
+        specificHashCodeTest(-1);
+        specificHashCodeTest(-42);
+        specificHashCodeTest(Integer.MIN_VALUE);
+    }
+
+    @ParameterizedTest
+    @MethodSource("allSets")
+    void positiveHashCodeTest() {
+        specificHashCodeTest(1);
+        specificHashCodeTest(42);
+        specificHashCodeTest(Integer.MAX_VALUE);
+    }
+
+    void specificHashCodeTest(int hc) {
+        final class ZeroHashCode {
+            @Override
+            public int hashCode() {
+                return hc;
+            }
+        }
+
+        var lazy = Set.ofLazy(Set.of(new ZeroHashCode()), e -> true);
+        assertEquals(hc, lazy.hashCode());
+    }
+
+    @ParameterizedTest
+    @MethodSource("allSets")
     void equality(Set<Value> set) {
         var lazy = newLazySet(set);
         var regular = newRegularSet(set);

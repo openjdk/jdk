@@ -306,7 +306,8 @@ final class LazyMapTest {
         Map<NaughtyKey, Map<Value, Object>> lazy = Map.ofLazy(set, k -> (Map<Value, Object>) ref.get().get(k));
         ref.set(lazy);
         var x = assertThrows(NoSuchElementException.class, () -> lazy.get(key));
-        assertTrue(cnt.get() > 0);
+        // We recurse here so `NaughtyKey.toString` is called twice before reentry is prevented
+        assertEquals(2, cnt.get());
         assertTrue(x.getCause().getMessage().contains(NaughtyKey.class.getName()));
     }
 
@@ -492,7 +493,7 @@ final class LazyMapTest {
     @Test
     void nullResult() {
         var lazy = Map.ofLazy(Set.of(0), _ -> null);
-        var x = assertThrows(NoSuchElementException.class, () -> lazy.getOrDefault(0, 1));;
+        var x = assertThrows(NoSuchElementException.class, () -> lazy.getOrDefault(0, 1));
         assertEquals(LazyConstantTestUtil.expectedMessage(NullPointerException.class, 0), x.getMessage());
         assertEquals(NullPointerException.class, x.getCause().getClass());
         assertTrue(lazy.containsKey(0));

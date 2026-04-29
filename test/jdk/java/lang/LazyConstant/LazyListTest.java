@@ -618,25 +618,4 @@ final class LazyListTest {
         return IntStream.range(0, SIZE).boxed().toList();
     }
 
-    // Javadoc equivalent
-    class LazyList<E> extends AbstractList<E> {
-
-        private final List<LazyConstant<E>> backingList;
-
-        public LazyList(int size, IntFunction<E> computingFunction) {
-            this.backingList = IntStream.range(0, size)
-                    .mapToObj(i -> LazyConstant.of(() -> computingFunction.apply(i)))
-                    .toList();
-        }
-
-        @Override
-        public E get(int index) {
-            return backingList.get(index).get();
-        }
-
-        @Override
-        public int size() {
-            return backingList.size();
-        }
-    }
 }

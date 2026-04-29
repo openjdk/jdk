@@ -421,14 +421,16 @@ final class LazyCollections {
 
         // -1 is used as a sentinel value for zero so we can get
         // stable access for all `size` values.
+        @Stable
         private int size;
         // We are using a `long` here to get stable access even in the case
         // that the 32-bit hash code is zero.
+        @Stable
         private long hash;
 
         public LazySet(Set<? extends E> elementCandidates,
                        Predicate<? super E> computingFunction) {
-            this.map = Map.ofLazy(elementCandidates, e -> computingFunction.test(e));
+            this.map = Map.ofLazy(elementCandidates, computingFunction::test);
         }
 
         @Override
@@ -443,7 +445,7 @@ final class LazyCollections {
             if (h == 0) {
                 // Set a bit in the upper 32-bit region of the `long` to
                 // cater for the case the lower 32-bit hash is zero.
-                hash = h = hashCode0() | 0x0000_0001_0000_0000L;
+                hash = h = (hashCode0() + (1L << 33));
             }
             return (int) h;
         }

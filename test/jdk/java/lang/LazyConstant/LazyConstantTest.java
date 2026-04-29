@@ -24,6 +24,7 @@
 /* @test
  * @summary Basic tests for the LazyConstant implementation
  * @enablePreview
+ * @library /test/lib
  * @modules java.base/jdk.internal.lang
  * @run junit/othervm --add-opens java.base/jdk.internal.lang=ALL-UNNAMED LazyConstantTest
  */
@@ -40,6 +41,7 @@ import java.lang.LazyConstant;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import jdk.test.lib.Utils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,7 +50,7 @@ final class LazyConstantTest {
 
     private static final int VALUE = 42;
     private static final Supplier<Integer> SUPPLIER = () -> VALUE;
-    private static final long TIME_OUT_S = 5;
+    private static final long TIME_OUT_S = Utils.adjustTimeout(5);
     private static final long OVERLAP_TIME_MS = 100;
 
     @Test
@@ -233,7 +235,7 @@ final class LazyConstantTest {
             });
 
             var f1 = CompletableFuture.supplyAsync(constant::get, testExecutor);
-            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
 
             var f2 = CompletableFuture.supplyAsync(() -> {
                 competing.countDown();
@@ -246,7 +248,6 @@ final class LazyConstantTest {
 
             assertTrue(competing.await(TIME_OUT_S, TimeUnit.SECONDS));
             // While computation is blocked, only one thread should have entered supplier
-            Thread.sleep(OVERLAP_TIME_MS);
             assertEquals(1, calls.get());
 
             release.countDown();

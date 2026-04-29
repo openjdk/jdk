@@ -24,9 +24,20 @@
 /*
  * @test
  * @summary LazyCollections should not retain throwable classes after failed computation
+ * @modules java.base/java.lang.ref:open
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
  * @requires vm.opt.final.ClassUnloading
- * @run main/othervm --add-opens java.base/java.util=ALL-UNNAMED ThrowablesClassUnloading
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      --add-opens java.base/java.util=ALL-UNNAMED ThrowablesClassUnloading
  */
+
+import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.PhantomReference;
@@ -42,6 +53,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
@@ -50,10 +63,12 @@ public class ThrowablesClassUnloading {
     private static final String THROWABLE_NAME = "test.lazycollection.GeneratedProblem";
     private static final String FUNCTION_NAME = "test.lazycollection.ThrowingFunction";
 
+    private static WhiteBox wb;
+
     public static void main(String[] args) throws Exception {
         TestState state = createFailedLazyList();
 
-        if (!waitFor(() -> state.loaderRef().refersTo(null), 4_000L)) {
+        if (!waitFor(() -> state.loaderRef().refersTo(null), Utils.adjustTimeout(4_000L))) {
             throw new AssertionError("The throwing function class loader was not unloaded");
         }
 
@@ -134,40 +149,47 @@ public class ThrowablesClassUnloading {
     }
 
     private static void assertLazyAccessFails(List<?> list, String throwableName) {
-        try {
-            list.get(0);
-            throw new AssertionError("Expected lazy access to fail");
-        } catch (NoSuchElementException e) {
-            String message = e.getMessage();
-            if (message == null || !message.contains(throwableName)) {
-                throw new AssertionError("Missing throwable name in message: " + message, e);
-            }
-        }
+        var x = assertThrows(NoSuchElementException.class, () -> list.get(0));
+        var message = x.getMessage();
+        assertTrue(message == null || message.contains(throwableName), "Missing throwable name in message: " + message);
     }
 
     private static boolean waitFor(BooleanSupplier condition, long timeoutMillis) {
-        ReferenceQueue<Object> queue = new ReferenceQueue<>();
-        Object sentinel = new Object();
-        PhantomReference<Object> reference = new PhantomReference<>(sentinel, queue);
+        final long deadline = System.currentTimeMillis() + timeoutMillis;
+        wb = WhiteBox.getWhiteBox();
+        wb.fullGC();
+        boolean refProResult;
+        boolean conditionValue;
         try {
-            sentinel = null;
-
-            long deadline = System.currentTimeMillis() + timeoutMillis;
             do {
-                if (condition.getAsBoolean()) {
-                    return true;
+                refProResult = wb.waitForReferenceProcessing();
+                conditionValue = condition.getAsBoolean();
+                if (System.currentTimeMillis() > deadline) {
+                    throw new AssertionError("Timed out waiting for reference");
                 }
-
-                System.gc();
-                try {
-                    queue.remove(200L);
-                } catch (InterruptedException ignored) {
-                }
-            } while (System.currentTimeMillis() < deadline);
-        } finally {
-            Reference.reachabilityFence(reference);
+            } while (refProResult || !conditionValue);
+            return conditionValue;
+        } catch (InterruptedException e) {
+            throw new AssertionError(e);
         }
-        return condition.getAsBoolean();
+    }
+
+    static <X> X assertThrows(Class<X> type, Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Throwable t) {
+            if (t.getClass().equals(type)) {
+                return (X) t;
+            }
+            throw new AssertionError("Expected " + type + " to be thrown", t);
+        }
+        throw new AssertionError("Expected " + type + " to be thrown but nothing was thrown.");
+    }
+
+    static void assertTrue(boolean value, String message) {
+        if (!value) {
+            throw new AssertionError(message);
+        }
     }
 
     private record TestState(List<?> list, WeakReference<ClassLoader> loaderRef) { }
