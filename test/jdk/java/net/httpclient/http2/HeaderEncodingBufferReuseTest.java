@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Verifies that Http2Connection.cachedHeaderBuffer is reused
- *          across multiple requests on the same connection.
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run main/othervm
- *      --add-opens java.net.http/jdk.internal.net.http=ALL-UNNAMED
- *      HeaderEncodingBufferReuseTest
- */
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -42,42 +31,81 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
-import jdk.httpclient.test.lib.http2.Http2Handler;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.test.lib.Asserts;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.test.lib.net.URIBuilder;
 
-public class HeaderEncodingBufferReuseTest {
-    public static void main(String[] args) throws Exception {
-        Http2TestServer server = new Http2TestServer("localhost", false, 0);
-        server.addHandler(new OkHandler(), "/test");
-        server.start();
-        String uri = "http://localhost:" + server.getAddress().getPort() + "/test";
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
+/*
+ * @test
+ * @summary Verifies that Http2Connection.cachedHeaderBuffer is reused
+ *          across multiple requests on the same connection.
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @run junit/othervm
+ *      --add-opens java.net.http/jdk.internal.net.http=ALL-UNNAMED
+ *      ${test.main.class}
+ */
+
+public class HeaderEncodingBufferReuseTest implements HttpServerAdapters {
+
+    static String httpUri;
+    static HttpTestServer testServer;
+
+    @BeforeAll
+    static void init() throws Exception {
+        testServer = HttpTestServer.create(HTTP_2);
+        testServer.addHandler(new OkHandler(), "/test");
+        testServer.start();
+        httpUri = URIBuilder.newBuilder()
+                            .scheme("http")
+                            .host("localhost")
+                            .port(testServer.getAddress().getPort())
+                            .path("/test")
+                            .build()
+                            .toString();
+    }
+
+    @AfterAll
+    static void teardown() {
+        testServer.stop();
+    }
+
+    @Test
+    void test() throws Exception {
         try (HttpClient client = HttpClient.newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .version(HttpClient.Version.HTTP_2)
                 .build()) {
 
-            HttpResponse<Void> warmup = send(client, uri, 2);
-            Asserts.assertEquals(warmup.version(), HttpClient.Version.HTTP_2);
+            // Force a large cached header buffer by sending 300 headers.
+            assertEquals(200, send(client, httpUri, 300).statusCode());
 
             Object conn = getHttp2Connection(client);
-            Asserts.assertEquals(send(client, uri, 2).statusCode(), 200);
+            assertEquals(200, send(client, httpUri, 2).statusCode());
             ByteBuffer cached = (ByteBuffer) getField(conn, "cachedHeaderBuffer");
-            Asserts.assertNotNull(cached);
+            assertNotNull(cached);
+            assertSame(conn, getHttp2Connection(client));
 
-            Asserts.assertEquals(send(client, uri, 2).statusCode(), 200);
-            Asserts.assertEquals(cached, getField(conn, "cachedHeaderBuffer"));
+            assertEquals(200, send(client, httpUri, 2).statusCode());
+            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
+            assertSame(conn, getHttp2Connection(client));
 
-            Asserts.assertEquals(send(client, uri, 300).statusCode(), 200);
-            Asserts.assertEquals(cached, getField(conn, "cachedHeaderBuffer"));
+            assertEquals(200, send(client, httpUri, 300).statusCode());
+            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
+            assertSame(conn, getHttp2Connection(client));
 
-            Asserts.assertEquals(send(client, uri, 2).statusCode(), 200);
-            Asserts.assertEquals(cached, getField(conn, "cachedHeaderBuffer"));
-        } finally {
-            server.stop();
+            assertEquals(200, send(client, httpUri, 2).statusCode());
+            assertSame(cached, getField(conn, "cachedHeaderBuffer"));
+            assertSame(conn, getHttp2Connection(client));
         }
     }
 
@@ -96,7 +124,7 @@ public class HeaderEncodingBufferReuseTest {
 
         Object conns = getField(client2, "connections");
         Map<String, ?> connections = (Map<String, ?>) conns;
-        Asserts.assertEquals(1, connections.size());
+        assertEquals(1, connections.size());
         return connections.values().iterator().next();
     }
 
@@ -109,9 +137,9 @@ public class HeaderEncodingBufferReuseTest {
         return client.send(builder.build(), BodyHandlers.discarding());
     }
 
-    static class OkHandler implements Http2Handler {
+    static class OkHandler implements HttpTestHandler {
         @Override
-        public void handle(Http2TestExchange exchange) throws IOException {
+        public void handle(HttpTestExchange exchange) throws IOException {
             exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().close();
         }
