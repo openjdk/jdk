@@ -78,6 +78,10 @@ static NSMutableDictionary * _Nullable rowRolesMapForParent;
 NSString *const IgnoreClassName = @"IgnoreAccessibility";
 static jobject sAccessibilityClass = NULL;
 
+#ifndef NSAccessibilityHeadingRole
+#define NSAccessibilityHeadingRole @"AXHeading";
+#endif?
+
 /*
  * Common ancestor for all the accessibility peers that implements the new method-based accessibility API
  */
@@ -850,7 +854,7 @@ static jobject sAccessibilityClass = NULL;
              ![[parent javaRole] isEqualToString:@"combobox"] ) {
              fNSRole = NSAccessibilityMenuRole;
         } else if ( [javaRole isEqualToString:@"header"]) {
-            if (@available(macOS 26, *)) {
+            if (@available(macOS 10.13, *)) {
                 fNSRole = NSAccessibilityHeadingRole;
             }
         }
