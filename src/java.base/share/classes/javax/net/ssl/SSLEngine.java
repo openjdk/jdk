@@ -1171,6 +1171,8 @@ public abstract class SSLEngine {
      *
      * @return  true if the engine should do handshaking
      *          in "client" mode
+     * @throws  IllegalStateException if the client/server mode
+     *          has not yet been set.
      * @see     #setUseClientMode(boolean)
      */
     public abstract boolean getUseClientMode();
