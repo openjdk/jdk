@@ -31,13 +31,16 @@
  * @run main/othervm/timeout=480 DisabledAlgorithms empty
  */
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.security.Security;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -285,37 +288,42 @@ public class DisabledAlgorithms {
         public void run() {
             System.out.println("Server: started");
             running = true;
-            try {
-                while (!stopped) {
-                    try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
-                        System.out.println("Server: accepted client connection from "
-                                + socket.getRemoteSocketAddress());
-                        socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-                        socket.startHandshake();
-                        System.out.println("Server: negotiated cipher suite: " +
-                                socket.getSession().getCipherSuite());
-                    } catch (SSLException e) {
+            while (!stopped) {
+                try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
+                    System.out.println("Server: accepted client connection from "
+                        + socket.getRemoteSocketAddress());
+                    socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+                    socket.startHandshake();
+                    InputStream in = socket.getInputStream();
+                    OutputStream out = socket.getOutputStream();
+                    int b = in.read();
+                    if (b < 0) {
+                        throw new IOException("Unexpected EOF");
+                    }
+                    System.out.println("Server: send data: " + b);
+                    out.write(b);
+                    out.flush();
+                    socket.getSession().invalidate();
+                } catch (SSLHandshakeException e) {
+                    System.out.println("Server: run: " + e);
+                    sslError = true;
+                } catch (IOException e) {
+                    if (!stopped) {
+                        System.out.println("Server: run: unexpected exception: "
+                                + e);
+                        e.printStackTrace();
+                        otherError = true;
+                    } else {
                         System.out.println("Server: run: " + e);
-                        sslError = true;
+                        System.out.println("The exception above occurred "
+                                + "because socket was closed, "
+                                + "please ignore it");
                     }
                 }
-            } catch (IOException e) {
-                if (!stopped) {
-                    System.out.println("Server: run: unexpected exception: "
-                            + e);
-                    e.printStackTrace();
-                    otherError = true;
-                } else {
-                    System.out.println("Server: run: " + e);
-                    System.out.println("The exception above occurred "
-                            + "because socket was closed, "
-                            + "please ignore it");
-                }
-            } finally {
-                running = false;
             }
 
             System.out.println("Server: finished");
+            running = false;
         }
 
         int getPort() {
@@ -365,7 +373,7 @@ public class DisabledAlgorithms {
                     null, getClientContextParameters());
             SSLSocketFactory ssf = context.getSocketFactory();
             SSLSocket socket = (SSLSocket) ssf.createSocket(
-                    InetAddress.getLoopbackAddress(), port);
+                InetAddress.getLoopbackAddress(), port);
             socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (ciphersuite != null) {
@@ -379,6 +387,20 @@ public class DisabledAlgorithms {
         void connect() throws IOException {
             System.out.println("Client: connect to server");
             socket.startHandshake();
+            try (
+                    BufferedInputStream bis = new BufferedInputStream(
+                            socket.getInputStream());
+                    BufferedOutputStream bos = new BufferedOutputStream(
+                            socket.getOutputStream())) {
+                bos.write('x');
+                bos.flush();
+
+                int read = bis.read();
+                if (read < 0) {
+                    throw new IOException("Client: couldn't read a response");
+                }
+                socket.getSession().invalidate();
+            }
         }
 
         String[] getEnabledCiperSuites() {
