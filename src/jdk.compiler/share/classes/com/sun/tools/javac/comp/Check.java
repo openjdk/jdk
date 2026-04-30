@@ -3694,8 +3694,8 @@ public class Check {
         // Note: @Deprecated has no effect on local variables, parameters and package decls.
         if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation() &&
             (s.flags() & RECORD) == 0 &&
-            !syms.deprecatedType.isErroneous()
-            && s.attribute(syms.deprecatedType.tsym) != null) {
+            !syms.deprecatedType.isErroneous() &&
+            s.attribute(syms.deprecatedType.tsym) != null) {
             log.warning(pos, LintWarnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
         }
     }
