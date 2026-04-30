@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class SkeletonRaceTest {
     @Test
-    void testSkeletonRace() throws InterruptedException, ExecutionException {
+    void testSkeletonRace() {
         // Without the fix, LocaleResources throws an NPE
         assertDoesNotThrow(this::doRaceTest);
     }
