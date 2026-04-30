@@ -94,8 +94,7 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Creates a new input stream with the specified buffer size. The given {@code in}
-     * stream is treated as containing {@linkplain ##gzip_file_format GZIP format data}.
+     * Creates a new input stream with the specified buffer size.
      *
      * @param in the input stream
      * @param size the input buffer size
@@ -134,8 +133,7 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Creates a new input stream with a default buffer size. The given {@code in}
-     * stream is treated as containing {@linkplain ##gzip_file_format GZIP format data}.
+     * Creates a new input stream with a default buffer size.
      *
      * @param in the input stream
      *
