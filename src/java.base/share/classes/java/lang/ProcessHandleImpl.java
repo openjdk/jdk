@@ -309,12 +309,12 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Returns a ProcessHandle for the parent process.
      *
-     * @return a ProcessHandle of the parent process; {@code null} is returned
-     *         if the child process does not have a parent
+     * @return a ProcessHandle of the parent process; an empty Optional
+     *         is returned if the child process does not have a parent
      */
     public Optional<ProcessHandle> parent() {
         long ppid = parent0(pid, startTime);
-        if (ppid <= 0) {
+        if (ppid <= 0 || ppid == pid) {
             return Optional.empty();
         }
         return get(ppid);
