@@ -312,9 +312,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   if (is_strong) {
     // Test for object in cset
     // Allocate temporary registers
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < Register::available_gp_registers(); i++) {
       Register r = as_Register(i);
-      if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
+      if (r != rsp && r != rbp && r != rcx && r != dst && r != src.base() && r != src.index() ) {
         if (tmp1 == noreg) {
           tmp1 = r;
         } else {
@@ -333,8 +333,19 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
-    __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    if (AOTCodeCache::is_on_for_dump()) {
+      assert_different_registers(tmp1, tmp2, rcx);
+      __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ push(rcx);
+      __ movb(rcx, Address(tmp2));
+      __ shrptr(tmp1);
+      __ pop(rcx);
+      __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ movptr(tmp2, Address(tmp2));
+    } else {
+      __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+      __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    }
     __ movbool(tmp1, Address(tmp1, tmp2, Address::times_1));
     __ testbool(tmp1);
     __ jcc(Assembler::zero, not_cset);
@@ -886,8 +897,27 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   if (is_strong) {
     // Check for object being in the collection set.
     __ mov(tmp1, res);
-    __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    if (AOTCodeCache::is_on_for_dump()) {
+      __ push(rcx);
+      __ lea(rcx, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ movl(rcx, Address(rcx));
+      if (tmp1 != rcx) {
+        __ mov(tmp1, res);
+        __ shrptr(tmp1);
+        __ pop(rcx);
+      } else {
+        assert_different_registers(tmp2, rcx);
+        __ mov(tmp2, res);
+        __ shrptr(tmp2);
+        __ pop(rcx);
+        __ movptr(tmp1, tmp2);
+      }
+      __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ movptr(tmp2, Address(tmp2));
+    } else {
+      __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+      __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    }
     __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
     __ testbool(tmp2);
     __ jcc(Assembler::zero, *stub->continuation());
