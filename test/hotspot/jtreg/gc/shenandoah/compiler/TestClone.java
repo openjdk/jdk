@@ -22,12 +22,11 @@
  * questions.
  */
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /*
  * @test id=default
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -53,7 +52,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=default-verify
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -84,7 +85,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=passive
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -115,7 +118,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=passive-verify
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -151,7 +156,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=aggressive
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -177,7 +184,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=aggressive-verify
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -207,8 +216,10 @@ import jdk.test.lib.Utils;
  */
 
 /*
+ * @key randomness
  * @test id=no-coops
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
  *
@@ -239,8 +250,10 @@ import jdk.test.lib.Utils;
  */
 
 /*
+ * @key randomness
  * @test id=no-coops-verify
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
  *
@@ -277,7 +290,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=no-coops-aggressive
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
  *
@@ -309,7 +324,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=generational
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -335,7 +352,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=generational-small-card-size
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -361,7 +380,9 @@ import jdk.test.lib.Utils;
 
 /*
  * @test id=generational-verify
+ * @key randomness
  * @summary Test clone barriers work correctly
+ * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
@@ -392,7 +413,9 @@ import jdk.test.lib.Utils;
 
  /*
   * @test id=generational-no-coops
+  * @key randomness
   * @summary Test clone barriers work correctly
+  * @library /test/lib
   * @requires vm.gc.Shenandoah
   * @requires vm.bits == "64"
   *
@@ -424,7 +447,9 @@ import jdk.test.lib.Utils;
 
  /*
   * @test id=generational-no-coops-verify
+  * @key randomness
   * @summary Test clone barriers work correctly
+  * @library /test/lib
   * @requires vm.gc.Shenandoah
   * @requires vm.bits == "64"
   *
@@ -458,6 +483,9 @@ import jdk.test.lib.Utils;
   *                   -XX:TieredStopAtLevel=4
   *                   TestClone
   */
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestClone {
 
@@ -530,7 +558,7 @@ public class TestClone {
     }
 
     static void verify(Ref[] src, int id) {
-        int expectedLen = id % 1000;
+        int expectedLen = id % ARRAY_MAX_SIZE;
         int srcLen = src.length;
         if (srcLen != expectedLen) {
             throw new IllegalStateException("Lengths do not match: " + srcLen + " vs " + expectedLen);
