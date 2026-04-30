@@ -513,6 +513,18 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test26")
     public static void test26Runner() {
+        // if (ValueClass.isAtomicArray(array13)) {
+        //     throw new RuntimeException("atomic");
+        // }
+        if (!ValueClass.isAtomicArray(array14)) {
+            throw new RuntimeException("not atomic");
+        }
+        // if (ValueClass.isAtomicArray(array17)) {
+        //     throw new RuntimeException("atomic");
+        // }
+        if (!ValueClass.isAtomicArray(array18)) {
+            throw new RuntimeException("not atomic");
+        }
         for (int i = 0; i < 10; i++) {
             test26(array1);
             test26(array2);
