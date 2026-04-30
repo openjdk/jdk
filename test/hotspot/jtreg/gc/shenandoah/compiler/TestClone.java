@@ -507,18 +507,14 @@ public class TestClone {
         Random rand = Utils.getRandomInstance();
         for (int i = 0; i < ITERS; i++) {
             int r = rand.nextInt(ENTRIES);
+            small[r] = (SmallObject) small[r].clone();
+            large[r] = (LargeObject) large[r].clone();
+            array[r] = array[r].clone();
 
-            SmallObject s = small[r];
-            small[r] = (SmallObject) s.clone();
-            verify(s, r); // verify *after* clone to avoid LRB healing from-space refs
-
-            LargeObject l = large[r];
-            large[r] = (LargeObject) l.clone();
-            verify(l, r);
-
-            Ref[] a = array[r];
-            array[r] = a.clone();
-            verify(a, r);
+            r = rand.nextInt(ENTRIES);
+            verify(small[r], r);
+            verify(large[r], r);
+            verify(array[r], r);
         }
     }
 
@@ -530,31 +526,35 @@ public class TestClone {
     }
 
     static void verify(SmallObject src, int id) {
-        int expected = id;
-        if (src.x1.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x1.x);
-        if (src.x2.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x2.x);
-        if (src.x3.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x3.x);
-        if (src.x4.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x4.x);
+        assertEquals(src.x1.x, id++);
+        assertEquals(src.x2.x, id++);
+        assertEquals(src.x3.x, id++);
+        assertEquals(src.x4.x, id++);
     }
 
     static void verify(LargeObject src, int id) {
-        int expected = id;
-        if (src.x01.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x01.x);
-        if (src.x02.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x02.x);
-        if (src.x03.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x03.x);
-        if (src.x04.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x04.x);
-        if (src.x05.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x05.x);
-        if (src.x06.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x06.x);
-        if (src.x07.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x07.x);
-        if (src.x08.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x08.x);
-        if (src.x09.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x09.x);
-        if (src.x10.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x10.x);
-        if (src.x11.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x11.x);
-        if (src.x12.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x12.x);
-        if (src.x13.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x13.x);
-        if (src.x14.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x14.x);
-        if (src.x15.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x15.x);
-        if (src.x16.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x16.x);
+        assertEquals(src.x01.x, id++);
+        assertEquals(src.x02.x, id++);
+        assertEquals(src.x03.x, id++);
+        assertEquals(src.x04.x, id++);
+        assertEquals(src.x05.x, id++);
+        assertEquals(src.x06.x, id++);
+        assertEquals(src.x07.x, id++);
+        assertEquals(src.x08.x, id++);
+        assertEquals(src.x09.x, id++);
+        assertEquals(src.x10.x, id++);
+        assertEquals(src.x11.x, id++);
+        assertEquals(src.x12.x, id++);
+        assertEquals(src.x13.x, id++);
+        assertEquals(src.x14.x, id++);
+        assertEquals(src.x15.x, id++);
+        assertEquals(src.x16.x, id++);
+    }
+
+    static void assertEquals(int actual, int expected) {
+        if (actual != expected) {
+            throw new IllegalStateException("Mismatch: expected=" + expected + ", actual=" + actual);
+        }
     }
 
     static void verify(Ref[] src, int id) {
