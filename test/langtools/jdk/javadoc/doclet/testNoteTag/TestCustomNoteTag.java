@@ -61,7 +61,8 @@ public class TestCustomNoteTag extends JavadocTester {
         testWithTagOption(src, base.resolve("out-all"), "custom:t:Custom Note:", "",
                 """
                         <div class="block">First sentence.\s
-                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note-header">Custom Note:</span>
+                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note\
+                        -header">Custom Note:</span>
                         inline note</div>
                         </div>
                         <dl class="notes">
@@ -72,15 +73,16 @@ public class TestCustomNoteTag extends JavadocTester {
                         </dl>
                         </div>""");
         testWithTagOption(src, base.resolve("out-inline"), "custom:ti:Custom Note:",
-                "warning: Tag custom is used as a block tag. It only be used as an inline tag.",
+                "warning: Tag custom is used as a block tag. It can only be used as an inline tag.",
                 """
                         <div class="block">First sentence.\s
-                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note-header">Custom Note:</span>
+                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note\
+                        -header">Custom Note:</span>
                         inline note</div>
                         </div>
                         </div>""");
         testWithTagOption(src, base.resolve("out-block"), "custom:tb:Custom Note:",
-                "warning: Tag custom is used as an inline tag. It only be used as a block tag.",
+                "warning: Tag custom is used as an inline tag. It can only be used as a block tag.",
                 """
                         <div class="block">First sentence. </div>
                         <dl class="notes">
