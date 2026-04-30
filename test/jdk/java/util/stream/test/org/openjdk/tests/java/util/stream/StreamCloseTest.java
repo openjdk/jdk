@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.ThrowableHelper.checkNPE;
 import static java.util.stream.ThrowableHelper.checkISE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -175,10 +176,12 @@ public class StreamCloseTest extends OpTestCase {
     }
 
     private void assertCascaded(RuntimeException e, int n) {
-        assertTrue(e.getMessage().equals("1"));
-        assertTrue(e.getSuppressed().length == n - 1);
-        for (int i=0; i<n-1; i++)
-        assertTrue(e.getSuppressed()[i].getMessage().equals(String.valueOf(i + 2)));
+        assertEquals("1", e.getMessage());
+        assertEquals(n - 1, e.getSuppressed().length);
+
+        for (int i=0; i<n-1; i++) {
+            assertEquals(String.valueOf(i + 2), e.getSuppressed()[i].getMessage());
+        }
     }
 
     @Test

@@ -46,8 +46,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * SerializedLambdaTest
@@ -69,16 +70,9 @@ public class SerializedLambdaTest {
         }
     }
 
-    private void assertNotSerial(Predicate<String> p, Consumer<Predicate<String>> asserter)
-            throws IOException, ClassNotFoundException {
+    private void assertNotSerial(Predicate<String> p, Consumer<Predicate<String>> asserter) {
         asserter.accept(p);
-        try {
-            byte[] bytes = serialize(p);
-            fail("Expected serialization failure");
-        }
-        catch (NotSerializableException e) {
-            // success
-        }
+        assertThrows(NotSerializableException.class, () -> serialize(p));
     }
 
     private byte[] serialize(Object o) throws IOException {
@@ -102,8 +96,8 @@ public class SerializedLambdaTest {
         Predicate<String> pred = (Predicate<String> & Serializable) s -> true;
         assertSerial(pred,
                      p -> {
-                         assertTrue(p instanceof Predicate);
-                         assertTrue(p instanceof Serializable);
+                         assertInstanceOf(Predicate.class, p);
+                         assertInstanceOf(Serializable.class, p);
                          assertTrue(p.test(""));
                      });
     }
@@ -116,9 +110,9 @@ public class SerializedLambdaTest {
         SerPredicate<String> serPred = (SerPredicate<String>) s -> true;
         assertSerial(serPred,
                      p -> {
-                         assertTrue(p instanceof Predicate);
-                         assertTrue(p instanceof Serializable);
-                         assertTrue(p instanceof SerPredicate);
+                         assertInstanceOf(Predicate.class, p);
+                         assertInstanceOf(Serializable.class, p);
+                         assertInstanceOf(SerPredicate.class, p);
                          assertTrue(p.test(""));
                      });
     }
@@ -130,7 +124,7 @@ public class SerializedLambdaTest {
         Predicate<String> pred = (Predicate<String>) s -> true;
         assertNotSerial(pred,
                         p -> {
-                            assertTrue(p instanceof Predicate);
+                            assertInstanceOf(Predicate.class, p);
                             assertFalse(p instanceof Serializable);
                             assertTrue(p.test(""));
                         });
@@ -201,7 +195,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) SerializedLambdaTest::startsWithA;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("arf"));
             assertFalse(p.test("barf"));
         };
@@ -220,7 +214,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         BiPredicate<Moo, String> mh1 = (BiPredicate<Moo, String> & Serializable) Moo::startsWithB;
         Consumer<BiPredicate<Moo, String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test(new Moo(), "barf"));
             assertFalse(p.test(new Moo(), "arf"));
         };
@@ -241,7 +235,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) moo::startsWithB;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("barf"));
             assertFalse(p.test("arf"));
         };
@@ -265,7 +259,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) moo::startsWithB;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("barf"));
             assertFalse(p.test("arf"));
         };
@@ -284,7 +278,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Supplier<ForCtorRef> ctor = (Supplier<ForCtorRef> & Serializable) ForCtorRef::new;
         Consumer<Supplier<ForCtorRef>> b = s -> {
-            assertTrue(s instanceof Serializable);
+            assertInstanceOf(Serializable.class, s);
             ForCtorRef m = s.get();
             assertTrue(m.startsWithB("barf"));
             assertFalse(m.startsWithB("arf"));
@@ -297,7 +291,7 @@ public class SerializedLambdaTest {
     public void testDiscardReturnBound() throws IOException, ClassNotFoundException {
         List<String> list = new ArrayList<>();
         Consumer<String> c = (Consumer<String> & Serializable) list::add;
-        assertSerial(c, cc -> { assertTrue(cc instanceof Consumer); });
+        assertSerial(c, cc -> assertInstanceOf(Consumer.class, cc));
 
         AtomicLong a = new AtomicLong();
         LongConsumer lc = (LongConsumer & Serializable) a::addAndGet;

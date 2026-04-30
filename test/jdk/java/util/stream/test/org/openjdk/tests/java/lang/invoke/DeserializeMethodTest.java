@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -38,15 +39,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("serialization-hostile")
 public class DeserializeMethodTest {
     private void assertDeserializeMethod(Class<?> clazz, boolean expectedPresent) {
+        boolean hasMethod;
+
         try {
-            Method m = clazz.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
-            if (!expectedPresent)
-                fail("Unexpected $deserializeLambda$ in " + clazz);
+            clazz.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
+            hasMethod = true;
+        } catch (NoSuchMethodException e) {
+            hasMethod = false;
         }
-        catch (NoSuchMethodException e) {
-            if (expectedPresent)
-                fail("Expected to find $deserializeLambda$ in " + clazz);
-        }
+
+        assertEquals(expectedPresent, hasMethod);
     }
 
     static class Empty {}
@@ -86,7 +88,7 @@ public class DeserializeMethodTest {
     }
 
     @Test
-    public void testCapturingNonserIntersectionLambda() {
+    public void testCapturingNonSerIntersectionLambda() {
         assertDeserializeMethod(Cap3.class, false);
     }
 }

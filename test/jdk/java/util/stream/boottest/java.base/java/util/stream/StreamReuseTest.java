@@ -20,6 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ */
 package java.util.stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -42,41 +47,13 @@ public class StreamReuseTest {
             Function<S, U> second,
             Class<? extends Throwable> exception,
             String text) {
-        S stream = data.stream();
-        T fr = first.apply(stream);
-        try {
-            U sr = second.apply(stream);
-            fail(text + " (seq)");
-        }
-        catch (Throwable e) {
-            if (exception.isAssignableFrom(e.getClass())) {
-                // Expected
-            }
-            else if (e instanceof Error)
-                throw (Error) e;
-            else if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
-            else
-                throw new AssertionError("Unexpected exception " + e.getClass(), e);
-        }
+        final S stream = data.stream();
+        first.apply(stream);
+        assertThrows(exception, () -> second.apply(stream), text + " (seq)");
 
-        stream = data.parallelStream();
-        fr = first.apply(stream);
-        try {
-            U sr = second.apply(stream);
-            fail(text + " (par)");
-        }
-        catch (Throwable e) {
-            if (exception.isAssignableFrom(e.getClass())) {
-                // Expected
-            }
-            else if (e instanceof Error)
-                throw (Error) e;
-            else if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
-            else
-                throw new AssertionError("Unexpected exception " + e.getClass(), e);
-        }
+        final S parallelStream = data.parallelStream();
+        first.apply(parallelStream);
+        assertThrows(exception, () -> second.apply(parallelStream), text + " (par)");
     }
 
     // Stream

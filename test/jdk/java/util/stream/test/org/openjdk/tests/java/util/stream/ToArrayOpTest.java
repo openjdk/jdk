@@ -39,6 +39,7 @@ import java.util.stream.*;
 import static java.util.stream.LambdaTestHelpers.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -177,7 +178,7 @@ public class ToArrayOpTest extends OpTestCase {
                     return;
                 }
             }
-            assertArrayEquals(act, exp);
+            assertArrayEquals(exp, act);
         };
     }
 
@@ -207,7 +208,7 @@ public class ToArrayOpTest extends OpTestCase {
                 } catch (Exception e) {
                     caught = e;
                 }
-                assertTrue(caught != null);
+                assertNotNull(caught);
                 assertEquals(ArrayStoreException.class, caught.getClass());
             }
         }
@@ -228,7 +229,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         int[] ints = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(ints.length == data.size());
+        assertEquals(data.size(), ints.length);
     }
 
     @ParameterizedTest
@@ -238,7 +239,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         int[] ints = exerciseTerminalOps(data, s -> s.sorted(), (IntStream s) -> s.toArray());
-        assertTrue(ints.length == data.size());
+        assertEquals(data.size(), ints.length);
     }
 
     @ParameterizedTest
@@ -250,7 +251,7 @@ public class ToArrayOpTest extends OpTestCase {
         int[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new int[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
     @ParameterizedTest
@@ -308,7 +309,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         long[] longs = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(longs.length == data.size());
+        assertEquals(data.size(), longs.length);
     }
 
     @ParameterizedTest
@@ -318,7 +319,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         long[] longs = exerciseTerminalOps(data, s -> s.sorted(), (LongStream s) -> s.toArray());
-        assertTrue(longs.length == data.size());
+        assertEquals(data.size(), longs.length);
     }
 
     @ParameterizedTest
@@ -330,7 +331,7 @@ public class ToArrayOpTest extends OpTestCase {
         long[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new long[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
     @ParameterizedTest
@@ -388,7 +389,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         double[] doubles = exerciseTerminalOps(data, s -> s.map(i -> i + i), s -> s.toArray());
-        assertTrue(doubles.length == data.size());
+        assertEquals(data.size(), doubles.length);
     }
 
     @ParameterizedTest
@@ -398,7 +399,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         double[] doubles = exerciseTerminalOps(data, s -> s.sorted(), (DoubleStream s) -> s.toArray());
-        assertTrue(doubles.length == data.size());
+        assertEquals(data.size(), doubles.length);
     }
 
     @ParameterizedTest
@@ -410,7 +411,7 @@ public class ToArrayOpTest extends OpTestCase {
         double[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new double[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
     @ParameterizedTest

@@ -47,6 +47,7 @@ import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -203,8 +204,7 @@ public class DistinctOpTest extends OpTestCase {
                     // The single result element should be equal in identity to
                     // the first input element
                     assertEquals(1, l.size());
-                    assertEquals(System.identityHashCode(expectedElement),
-                                 System.identityHashCode(l.get(0)));
+                    assertSame(expectedElement, l.getFirst());
 
                 })
                 .exercise();

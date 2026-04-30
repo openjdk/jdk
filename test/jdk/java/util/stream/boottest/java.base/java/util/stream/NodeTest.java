@@ -104,14 +104,14 @@ public class NodeTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("nodes")
     public void testAsArray(Integer[] array, Node<Integer> n) {
-        assertArrayEquals(n.asArray(LambdaTestHelpers.integerArrayGenerator), array);
+        assertArrayEquals(array, n.asArray(LambdaTestHelpers.integerArrayGenerator));
     }
 
     @ParameterizedTest
     @MethodSource("nodes")
     public void testFlattenAsArray(Integer[] array, Node<Integer> n) {
-        assertArrayEquals(Nodes.flatten(n, LambdaTestHelpers.integerArrayGenerator)
-                          .asArray(LambdaTestHelpers.integerArrayGenerator), array);
+        assertArrayEquals(array, Nodes.flatten(n, LambdaTestHelpers.integerArrayGenerator)
+                          .asArray(LambdaTestHelpers.integerArrayGenerator));
     }
 
     @ParameterizedTest
@@ -120,7 +120,7 @@ public class NodeTest extends OpTestCase {
         Integer[] copy = new Integer[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertArrayEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
     @ParameterizedTest
@@ -130,7 +130,7 @@ public class NodeTest extends OpTestCase {
         List<Integer> l = new ArrayList<>((int) n.count());
         n.forEach(e -> l.add(e));
 
-        assertArrayEquals(l.toArray(), array);
+        assertArrayEquals(array, l.toArray());
     }
 
     @ParameterizedTest

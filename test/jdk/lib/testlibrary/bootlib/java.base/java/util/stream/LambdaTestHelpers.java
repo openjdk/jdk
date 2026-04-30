@@ -273,7 +273,7 @@ public class LambdaTestHelpers {
         Set<T> uniq = new HashSet<>();
         while(iter.hasNext()) {
             T each = iter.next();
-            assertTrue(!uniq.contains(each), "Not unique");
+            assertFalse(uniq.contains(each), "Not unique");
             uniq.add(each);
         }
     }

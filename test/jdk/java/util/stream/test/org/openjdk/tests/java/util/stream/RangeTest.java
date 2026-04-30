@@ -34,6 +34,7 @@ import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,7 +75,7 @@ public class RangeTest extends OpTestCase {
 
                 int[] inc = IntStream.range(start, end).toArray();
                 assertEquals(size, inc.length);
-                assertTrue(Arrays.equals(exp, inc));
+                assertArrayEquals(exp, inc);
 
                 withData(intRangeData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
@@ -94,7 +95,7 @@ public class RangeTest extends OpTestCase {
 
                 int[] inc = IntStream.rangeClosed(start, end).toArray();
                 assertEquals(size, inc.length);
-                assertTrue(Arrays.equals(exp, inc));
+                assertArrayEquals(exp, inc);
 
                 withData(intRangeClosedData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
@@ -168,7 +169,7 @@ public class RangeTest extends OpTestCase {
 
                 long[] inc = LongStream.range(start, end).toArray();
                 assertEquals(size, inc.length);
-                assertTrue(Arrays.equals(exp, inc));
+                assertArrayEquals(exp, inc);
 
                 withData(longRangeData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
@@ -188,7 +189,7 @@ public class RangeTest extends OpTestCase {
 
                 long[] inc = LongStream.rangeClosed(start, end).toArray();
                 assertEquals(size, inc.length);
-                assertTrue(Arrays.equals(exp, inc));
+                assertArrayEquals(exp, inc);
 
                 withData(longRangeClosedData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
@@ -266,7 +267,7 @@ public class RangeTest extends OpTestCase {
             assertSizedAndSubSized(s1);
             assertSizedAndSubSized(s2);
 
-            assertTrue(s.estimateSize() == Long.MAX_VALUE);
+            assertEquals(Long.MAX_VALUE, s.estimateSize());
             assertTrue(s1.estimateSize() < Long.MAX_VALUE);
             assertTrue(s2.estimateSize() < Long.MAX_VALUE);
 

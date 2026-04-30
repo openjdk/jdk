@@ -127,13 +127,13 @@ public class LongNodeTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("nodes")
     public void testAsArray(long[] array, Node.OfLong n) {
-        assertArrayEquals(n.asPrimitiveArray(), array);
+        assertArrayEquals(array, n.asPrimitiveArray());
     }
 
     @ParameterizedTest
     @MethodSource("nodes")
     public void testFlattenAsArray(long[] array, Node.OfLong n) {
-        assertArrayEquals(Nodes.flattenLong(n).asPrimitiveArray(), array);
+        assertArrayEquals(array, Nodes.flattenLong(n).asPrimitiveArray());
     }
 
     @ParameterizedTest
@@ -142,7 +142,7 @@ public class LongNodeTest extends OpTestCase {
         long[] copy = new long[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertArrayEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
     @ParameterizedTest

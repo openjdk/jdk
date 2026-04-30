@@ -101,7 +101,7 @@ public class SpinedBufferIntTest extends AbstractSpinedBufferTest {
         assertEquals(list2, list1);
 
         for (int i = 0; i < TEST_SIZE; i++) {
-            assertEquals(i, sb.get(i), Integer.toString(i));
+            assertEquals(i, sb.get(i));
         }
 
         list2.clear();

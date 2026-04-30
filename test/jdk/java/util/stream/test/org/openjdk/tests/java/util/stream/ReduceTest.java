@@ -53,7 +53,7 @@ public class ReduceTest extends OpTestCase {
         assertEquals(1, (int) list.stream().reduce(rMin).get());
 
         assertEquals(0, (int) countTo(0).stream().reduce(0, rPlus));
-        assertTrue(!countTo(0).stream().reduce(rPlus).isPresent());
+        assertTrue(countTo(0).stream().reduce(rPlus).isEmpty());
 
         assertEquals(110, (int) list.stream().map(mDoubler).reduce(rPlus).get());
         assertEquals(20, (int) list.stream().map(mDoubler).reduce(rMax).get());

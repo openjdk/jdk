@@ -28,6 +28,7 @@ import java.util.*;
 
 import static java.util.stream.StreamOpFlag.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -49,7 +50,7 @@ public class StreamFlagsTest {
         for (StreamOpFlag flag : setFlags)
             assertTrue(flag.isKnown(value));
         for (StreamOpFlag flag : clearFlags)
-            assertTrue(!flag.isKnown(value));
+            assertFalse(flag.isKnown(value));
     }
 
     @Test

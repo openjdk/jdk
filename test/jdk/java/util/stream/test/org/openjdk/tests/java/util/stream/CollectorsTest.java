@@ -75,8 +75,10 @@ import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.assertContentsUnordered;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -159,8 +161,7 @@ public class CollectorsTest extends OpTestCase {
         void assertValue(M map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in GroupingByAssertion: %s, %s", clazz, map.getClass()));
+            assertInstanceOf(clazz, map, String.format("Class mismatch in GroupingByAssertion: %s, %s", clazz, map.getClass()));
             assertContentsUnordered(map.keySet(), source.get().map(classifier).collect(toSet()));
             for (Map.Entry<K, ? extends V> entry : map.entrySet()) {
                 K key = entry.getKey();
@@ -189,8 +190,7 @@ public class CollectorsTest extends OpTestCase {
 
         @Override
         void assertValue(M map, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in ToMapAssertion: %s, %s", clazz, map.getClass()));
+            assertInstanceOf(clazz, map, String.format("Class mismatch in ToMapAssertion: %s, %s", clazz, map.getClass()));
             Set<K> uniqueKeys = source.get().map(keyFn).collect(toSet());
             assertEquals(uniqueKeys, map.keySet());
             source.get().forEach(t -> {
@@ -218,8 +218,7 @@ public class CollectorsTest extends OpTestCase {
         void assertValue(Map<Boolean, D> map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
-            if (!Map.class.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in PartitioningByAssertion: %s", map.getClass()));
+            assertInstanceOf(Map.class, map, String.format("Class mismatch in PartitioningByAssertion: %s", map.getClass()));
             assertEquals(2, map.size());
             downstream.assertValue(map.get(true), () -> source.get().filter(predicate), ordered);
             downstream.assertValue(map.get(false), () -> source.get().filter(predicate.negate()), ordered);
@@ -230,8 +229,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(List<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
-            if (!List.class.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in ToListAssertion: %s", value.getClass()));
+            assertInstanceOf(List.class, value, String.format("Class mismatch in ToListAssertion: %s", value.getClass()));
             Stream<T> stream = source.get();
             List<T> result = new ArrayList<>();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -255,8 +253,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(Collection<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in ToCollectionAssertion: %s, %s", clazz, value.getClass()));
+            assertInstanceOf(clazz, value, String.format("Class mismatch in ToCollectionAssertion: %s, %s", clazz, value.getClass()));
             Stream<T> stream = source.get();
             Collection<T> result = clazz.newInstance();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -284,8 +281,8 @@ public class CollectorsTest extends OpTestCase {
                 throws ReflectiveOperationException {
             Optional<U> reduced = source.get().map(mapper).reduce(reducer);
             if (value == null)
-                assertTrue(!reduced.isPresent());
-            else if (!reduced.isPresent()) {
+                assertFalse(reduced.isPresent());
+            else if (reduced.isEmpty()) {
                 assertEquals(value, identity);
             }
             else {
@@ -496,12 +493,10 @@ public class CollectorsTest extends OpTestCase {
             try {
                 exerciseMapCollection(data, toMap(keyFn, valueFn),
                                       new ToMapAssertion<>(keyFn, valueFn, op, HashMap.class));
-                if (dataAsList.size() != dataAsSet.size())
-                    fail("Expected ISE on input with duplicates");
+                assertEquals(dataAsList.size(), dataAsSet.size(), "Expected ISE on input with duplicates");
             }
             catch (IllegalStateException e) {
-                if (dataAsList.size() == dataAsSet.size())
-                    fail("Expected no ISE on input without duplicates");
+                assertNotEquals(dataAsList.size(), dataAsSet.size(), "Expected no ISE on input without duplicates");
             }
 
             exerciseMapCollection(data, toMap(keyFn, valueFn, op),
@@ -515,12 +510,10 @@ public class CollectorsTest extends OpTestCase {
         try {
             exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn),
                                   new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentHashMap.class));
-            if (dataAsList.size() != dataAsSet.size())
-                fail("Expected ISE on input with duplicates");
+            assertEquals(dataAsList.size(), dataAsSet.size(), "Expected ISE on input with duplicates");
         }
         catch (IllegalStateException e) {
-            if (dataAsList.size() == dataAsSet.size())
-                fail("Expected no ISE on input without duplicates");
+            assertNotEquals(dataAsList.size(), dataAsSet.size(), "Expected no ISE on input without duplicates");
         }
 
         exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn, sum),
@@ -780,11 +773,7 @@ public class CollectorsTest extends OpTestCase {
         List<Integer> asList = exerciseTerminalOps(data, s -> s.collect(toList()));
         List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::unmodifiableList)));
         assertEquals(asList, asImmutableList);
-        try {
-            asImmutableList.add(0);
-            fail("Expecting immutable result");
-        }
-        catch (UnsupportedOperationException ignored) { }
+        assertThrows(UnsupportedOperationException.class, () -> asImmutableList.add(0), "Expecting immutable result");
     }
 
     @ParameterizedTest

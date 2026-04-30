@@ -44,8 +44,8 @@ public class MinMaxTest extends OpTestCase {
 
     @Test
     public void testMinMax() {
-        assertTrue(!countTo(0).stream().min(Integer::compare).isPresent());
-        assertTrue(!countTo(0).stream().max(Integer::compare).isPresent());
+        assertTrue(countTo(0).stream().min(Integer::compare).isEmpty());
+        assertTrue(countTo(0).stream().max(Integer::compare).isEmpty());
         assertEquals(1, (int) countTo(1000).stream().min(Integer::compare).get());
         assertEquals(1000, (int) countTo(1000).stream().max(Integer::compare).get());
     }

@@ -81,12 +81,12 @@ public class DoublePrimitiveOpsTests {
 
         {
             double[] array =  Arrays.stream(content).sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             double[] array =  Arrays.stream(content).parallel().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -95,15 +95,15 @@ public class DoublePrimitiveOpsTests {
         {
             double[] range = LongStream.range(0, 10).asDoubleStream().toArray();
 
-            assertArrayEquals(LongStream.range(0, 10).asDoubleStream().sorted().distinct().toArray(), range);
-            assertArrayEquals(LongStream.range(0, 10).asDoubleStream().parallel().sorted().distinct().toArray(), range);
+            assertArrayEquals(range, LongStream.range(0, 10).asDoubleStream().sorted().distinct().toArray());
+            assertArrayEquals(range, LongStream.range(0, 10).asDoubleStream().parallel().sorted().distinct().toArray());
 
             double[] data = {5, 3, 1, 1, 5, Double.NaN, 3, 9, Double.POSITIVE_INFINITY,
                              Double.NEGATIVE_INFINITY, 2, 9, 1, 0, 8, Double.NaN, -0.0};
             double[] expected = {Double.NEGATIVE_INFINITY, -0.0, 0, 1, 2, 3, 5, 8, 9,
                                  Double.POSITIVE_INFINITY, Double.NaN};
-            assertArrayEquals(DoubleStream.of(data).sorted().distinct().toArray(), expected);
-            assertArrayEquals(DoubleStream.of(data).parallel().sorted().distinct().toArray(), expected);
+            assertArrayEquals(expected, DoubleStream.of(data).sorted().distinct().toArray());
+            assertArrayEquals(expected, DoubleStream.of(data).parallel().sorted().distinct().toArray());
         }
     }
 
@@ -117,12 +117,12 @@ public class DoublePrimitiveOpsTests {
 
         {
             double[] array =  Arrays.stream(content).sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             double[] array =  Arrays.stream(content).parallel().sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -132,12 +132,12 @@ public class DoublePrimitiveOpsTests {
 
         {
             double[] actual = DoubleStream.iterate(1.0, i -> i + 1.0).limit(9).toArray();
-            assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
 
         {
             double[] actual = LongStream.range(1, 100).parallel().asDoubleStream().limit(9).toArray();
-             assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
     }
 }

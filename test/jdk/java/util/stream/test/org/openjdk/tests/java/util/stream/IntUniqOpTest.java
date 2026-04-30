@@ -31,6 +31,7 @@ import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.assertCountSum;
 import static java.util.stream.LambdaTestHelpers.assertUnique;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,9 +55,9 @@ public class IntUniqOpTest extends OpTestCase {
 
         assertUnique(result);
         if (data.size() > 0)
-            assertTrue(result.size() > 0);
+            assertFalse(result.isEmpty());
         else
-            assertTrue(result.size() == 0);
+            assertTrue(result.isEmpty());
         assertTrue(result.size() <= data.size());
     }
 
@@ -69,9 +70,9 @@ public class IntUniqOpTest extends OpTestCase {
 
         assertUnique(result);
         if (data.size() > 0)
-            assertTrue(result.size() > 0);
+            assertFalse(result.isEmpty());
         else
-            assertTrue(result.size() == 0);
+            assertTrue(result.isEmpty());
         assertTrue(result.size() <= data.size());
     }
 }

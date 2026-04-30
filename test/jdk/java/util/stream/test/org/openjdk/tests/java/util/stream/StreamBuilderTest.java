@@ -42,6 +42,7 @@ import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.ThrowableHelper.checkISE;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StreamBuilderTest extends OpTestCase {
@@ -119,7 +120,7 @@ public class StreamBuilderTest extends OpTestCase {
             Stream.Builder<Integer> sb = Stream.builder();
             IntStream.range(0, s).boxed().forEach(i -> {
                 Stream.Builder<Integer> _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -184,7 +185,7 @@ public class StreamBuilderTest extends OpTestCase {
             IntStream.Builder sb = IntStream.builder();
             IntStream.range(0, s).forEach(i -> {
                 IntStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -249,7 +250,7 @@ public class StreamBuilderTest extends OpTestCase {
             LongStream.Builder sb = LongStream.builder();
             LongStream.range(0, s).forEach(i -> {
                 LongStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -313,7 +314,7 @@ public class StreamBuilderTest extends OpTestCase {
             DoubleStream.Builder sb = DoubleStream.builder();
             IntStream.range(0, s).asDoubleStream().forEach(i -> {
                 DoubleStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });

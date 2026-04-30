@@ -127,13 +127,13 @@ public class IntNodeTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("nodes")
     public void testAsArray(int[] array, Node.OfInt n) {
-        assertArrayEquals(n.asPrimitiveArray(), array);
+        assertArrayEquals(array, n.asPrimitiveArray());
     }
 
     @ParameterizedTest
     @MethodSource("nodes")
     public void testFlattenAsArray(int[] array, Node.OfInt n) {
-        assertArrayEquals(Nodes.flattenInt(n).asPrimitiveArray(), array);
+        assertArrayEquals(array, Nodes.flattenInt(n).asPrimitiveArray());
     }
 
     @ParameterizedTest
@@ -142,7 +142,7 @@ public class IntNodeTest extends OpTestCase {
         int[] copy = new int[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertArrayEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
     @ParameterizedTest

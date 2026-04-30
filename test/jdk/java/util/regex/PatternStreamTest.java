@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PatternStreamTest extends OpTestCase {
@@ -218,20 +219,10 @@ public class PatternStreamTest extends OpTestCase {
         // Fail fast without short-circuit
         // Exercises Iterator.forEachRemaining
         m.reset();
-        try {
-            m.results().peek(mr -> m.reset()).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.reset()).count());
 
         m.reset();
-        try {
-            m.results().peek(mr -> m.find()).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.find()).count());
 
         // Fail fast with short-circuit
         // Exercises Iterator.hasNext/next

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FlagOpTest extends OpTestCase {
@@ -74,7 +75,7 @@ public class FlagOpTest extends OpTestCase {
             this.wrapFlags = flags;
 
             if (downstream != null) {
-                assertTrue(flags == downstream.wrapFlags);
+                assertEquals(flags, downstream.wrapFlags);
             }
 
             return sink;
@@ -274,16 +275,9 @@ public class FlagOpTest extends OpTestCase {
         }
 
         protected void assertFlags(int flags, boolean parallel) {
-            if (parallel) {
-                for (StreamOpFlag f : parKnown) {
-                    assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
-                }
-
-            } else {
-                for (StreamOpFlag f : serKnown) {
-                    assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f.toString()));
-                }
-
+            EnumSet<StreamOpFlag> known = parallel ? parKnown : serKnown;
+            for (StreamOpFlag f : known) {
+                assertTrue(f.isKnown(flags), String.format("Flag %s is not known, but should be known.", f));
             }
         }
     }

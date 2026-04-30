@@ -144,16 +144,12 @@ public class GroupByOpTest extends OpTestCase {
                             GroupByOpTest.assertMultiMapEquals(act, exp);
                         }
                         else {
-                            GroupByOpTest.assertObjectEquals(act, exp);
+                            assertEquals(exp, act);
                         }
                     })
                     .exercise();
             assertEquals(md.expectedSize, result.keySet().size());
         }
-    }
-
-    static void assertObjectEquals(Object a, Object b) {
-        assertTrue(Objects.equals(a, b));
     }
 
     static <K, V> void assertMultiMapEquals(Map<K, ? extends Collection<V>> a, Map<K, ? extends Collection<V>> b) {

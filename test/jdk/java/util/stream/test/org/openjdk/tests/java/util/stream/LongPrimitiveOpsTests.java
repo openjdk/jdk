@@ -141,12 +141,12 @@ public class LongPrimitiveOpsTests {
 
         {
             long[] array =  Arrays.stream(content).sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             long[] array =  Arrays.stream(content).parallel().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -155,13 +155,13 @@ public class LongPrimitiveOpsTests {
         {
             long[] range = LongStream.range(0, 10).toArray();
 
-            assertArrayEquals(LongStream.range(0, 10).sorted().distinct().toArray(), range);
-            assertArrayEquals(LongStream.range(0, 10).parallel().sorted().distinct().toArray(), range);
+            assertArrayEquals(range, LongStream.range(0, 10).sorted().distinct().toArray());
+            assertArrayEquals(range, LongStream.range(0, 10).parallel().sorted().distinct().toArray());
 
             long[] data = {5, 3, 1, 1, 5, 3, 9, 2, 9, 1, 0, 8};
             long[] expected = {0, 1, 2, 3, 5, 8, 9};
-            assertArrayEquals(LongStream.of(data).sorted().distinct().toArray(), expected);
-            assertArrayEquals(LongStream.of(data).parallel().sorted().distinct().toArray(), expected);
+            assertArrayEquals(expected, LongStream.of(data).sorted().distinct().toArray());
+            assertArrayEquals(expected, LongStream.of(data).parallel().sorted().distinct().toArray());
         }
 
         {
@@ -170,8 +170,8 @@ public class LongPrimitiveOpsTests {
             TreeSet<Double> doubles = new TreeSet<>();
             for(long i : input) doubles.add((double)i);
             double[] expectedDoubles = doubles.stream().mapToDouble(Double::doubleValue).toArray();
-            assertArrayEquals(LongStream.of(input).sorted().distinct().asDoubleStream()
-                         .sorted().distinct().toArray(), expectedDoubles);
+            assertArrayEquals(expectedDoubles, LongStream.of(input).sorted().distinct().asDoubleStream()
+                         .sorted().distinct().toArray());
         }
     }
 
@@ -185,12 +185,12 @@ public class LongPrimitiveOpsTests {
 
         {
             long[] array =  Arrays.stream(content).sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             long[] array =  Arrays.stream(content).parallel().sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -234,12 +234,12 @@ public class LongPrimitiveOpsTests {
 
         {
             long[] actual = LongStream.iterate(1, i -> i + 1).limit(9).toArray();
-            assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
 
         {
             long[] actual = LongStream.range(1, 100).parallel().limit(9).toArray();
-            assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
     }
 

@@ -127,13 +127,13 @@ public class DoubleNodeTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("nodes")
     public void testAsArray(double[] array, Node.OfDouble n) {
-        assertArrayEquals(n.asPrimitiveArray(), array);
+        assertArrayEquals(array, n.asPrimitiveArray());
     }
 
     @ParameterizedTest
     @MethodSource("nodes")
     public void testFlattenAsArray(double[] array, Node.OfDouble n) {
-        assertArrayEquals(Nodes.flattenDouble(n).asPrimitiveArray(), array);
+        assertArrayEquals(array, Nodes.flattenDouble(n).asPrimitiveArray());
     }
 
     @ParameterizedTest
@@ -142,7 +142,7 @@ public class DoubleNodeTest extends OpTestCase {
         double[] copy = new double[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertArrayEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
     @ParameterizedTest

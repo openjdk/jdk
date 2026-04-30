@@ -129,12 +129,12 @@ public class IntPrimitiveOpsTests {
     public void testToArray() {
         {
             int[] array =  IntStream.range(1, 10).map(i -> i * 2).toArray();
-            assertArrayEquals(array, new int[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
+            assertArrayEquals(new int[]{2, 4, 6, 8, 10, 12, 14, 16, 18}, array);
         }
 
         {
             int[] array =  IntStream.range(1, 10).parallel().map(i -> i * 2).toArray();
-            assertArrayEquals(array, new int[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
+            assertArrayEquals(new int[]{2, 4, 6, 8, 10, 12, 14, 16, 18}, array);
         }
     }
 
@@ -148,12 +148,12 @@ public class IntPrimitiveOpsTests {
 
         {
             int[] array =  Arrays.stream(content).sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             int[] array =  Arrays.stream(content).parallel().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -162,13 +162,13 @@ public class IntPrimitiveOpsTests {
         {
             int[] range = IntStream.range(0, 10).toArray();
 
-            assertArrayEquals(IntStream.range(0, 10).sorted().distinct().toArray(), range);
-            assertArrayEquals(IntStream.range(0, 10).parallel().sorted().distinct().toArray(), range);
+            assertArrayEquals(range, IntStream.range(0, 10).sorted().distinct().toArray());
+            assertArrayEquals(range, IntStream.range(0, 10).parallel().sorted().distinct().toArray());
 
             int[] data = {5, 3, 1, 1, 5, 3, 9, 2, 9, 1, 0, 8};
             int[] expected = {0, 1, 2, 3, 5, 8, 9};
-            assertArrayEquals(IntStream.of(data).sorted().distinct().toArray(), expected);
-            assertArrayEquals(IntStream.of(data).parallel().sorted().distinct().toArray(), expected);
+            assertArrayEquals(expected, IntStream.of(data).sorted().distinct().toArray());
+            assertArrayEquals(expected, IntStream.of(data).parallel().sorted().distinct().toArray());
         }
 
         {
@@ -176,14 +176,14 @@ public class IntPrimitiveOpsTests {
             TreeSet<Long> longs = new TreeSet<>();
             for(int i : input) longs.add((long)i);
             long[] expectedLongs = longs.stream().mapToLong(Long::longValue).toArray();
-            assertArrayEquals(IntStream.of(input).sorted().asLongStream().sorted().distinct().toArray(),
-                         expectedLongs);
+            assertArrayEquals(expectedLongs,
+                    IntStream.of(input).sorted().asLongStream().sorted().distinct().toArray());
 
             TreeSet<Double> doubles = new TreeSet<>();
             for(int i : input) doubles.add((double)i);
             double[] expectedDoubles = doubles.stream().mapToDouble(Double::doubleValue).toArray();
-            assertArrayEquals(IntStream.of(input).sorted().distinct().asDoubleStream()
-                         .sorted().distinct().toArray(), expectedDoubles);
+            assertArrayEquals(expectedDoubles,
+                    IntStream.of(input).sorted().distinct().asDoubleStream().sorted().distinct().toArray());
         }
     }
 
@@ -197,12 +197,12 @@ public class IntPrimitiveOpsTests {
 
         {
             int[] array =  Arrays.stream(content).sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             int[] array =  Arrays.stream(content).parallel().sorted().sorted().toArray();
-            assertArrayEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
@@ -246,12 +246,12 @@ public class IntPrimitiveOpsTests {
 
         {
             int[] actual = IntStream.iterate(1, i -> i + 1).limit(9).toArray();
-            assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
 
         {
             int[] actual = IntStream.range(1, 100).parallel().limit(9).toArray();
-            assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
     }
 
