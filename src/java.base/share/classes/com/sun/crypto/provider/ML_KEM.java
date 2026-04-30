@@ -46,14 +46,14 @@ public final class ML_KEM {
     private static final int XOF_PAD = 24;
     private static final int MONT_R_BITS = 20;
     private static final int MONT_Q = 3329;
-    private static final int MONT_R_SQUARE_MOD_Q = 152;
     private static final int MONT_Q_INV_MOD_R = 586497;
 
     // toMont((ML_KEM_N / 2)^-1 mod ML_KEM_Q) using R = 2^MONT_R_BITS
     private static final int MONT_DIM_HALF_INVERSE = 1534;
     private static final int BARRETT_MULTIPLIER = 20159;
-    private static final int BARRETT_ADDEND = 1500;
+    private static final int BARRETT_ADDEND = 1665;
     private static final int BARRETT_SHIFT = 26;
+
     private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
             1188, 914, -969, 585, -551, 1263, -97, 593,
             -35, -1400, -417, -1253, 742, -281, 185, -819,
@@ -194,6 +194,7 @@ public final class ML_KEM {
             -108, -108, -308, -308, 996, 996, 991, 991,
             958, 958, -1460, -1460, 1522, 1522, 1628, 1628
     };
+
     private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
             584, -1049, 57, 1317, 789, 709, 1599, -1601,
             -990, 604, 348, 857, 612, 474, 1177, -1014,
@@ -335,24 +336,25 @@ public final class ML_KEM {
             758, 758, 758, 758, 758, 758, 758, 758
     };
 
-    private static final int[] MONT_ZETAS_FOR_NTT_MULT = new int[]{
-            -1003, 1003, 222, -222, -1107, 1107, 172, -172,
-            -42, 42, 620, -620, 1497, -1497, -1649, 1649,
-            94, -94, -595, 595, -497, 497, -431, 431,
-            -1327, 1327, -702, 702, -1448, 1448, -184, 184,
-            -607, 607, -868, 868, -1430, 1430, 977, -977,
-            884, -884, 425, -425, 355, -355, 1259, -1259,
-            1192, -1192, 317, -317, -636, 636, -1074, 1074,
-            30, -30, -1394, 1394, 833, -833, -1200, 1200,
-            -244, 244, 907, -907, -339, 339, -227, 227,
-            1178, -1178, -586, 586, -137, 137, -514, 514,
-            534, -534, 1153, -1153, -486, 486, -1386, 1386,
-            -668, 668, 191, -191, 982, -982, 88, -88,
-            1014, -1014, -1177, 1177, -474, 474, -612, 612,
-            -857, 857, -348, 348, -604, 604, 990, -990,
-            1601, -1601, -1599, 1599, -709, 709, -789, 789,
-            -1317, 1317, -57, 57, 1049, -1049, -584, 584
+    private static final int[] ZETAS_FOR_NTT_MULT = new int[]{
+            17, 3312, 2761, 568, 583, 2746, 2649, 680,
+            1637, 1692, 723, 2606, 2288, 1041, 1100, 2229,
+            1409, 1920, 2662, 667, 3281, 48, 233, 3096,
+            756, 2573, 2156, 1173, 3015, 314, 3050, 279,
+            1703, 1626, 1651, 1678, 2789, 540, 1789, 1540,
+            1847, 1482, 952, 2377, 1461, 1868, 2687, 642,
+            939, 2390, 2308, 1021, 2437, 892, 2388, 941,
+            733, 2596, 2337, 992, 268, 3061, 641, 2688,
+            1584, 1745, 2298, 1031, 2037, 1292, 3220, 109,
+            375, 2954, 2549, 780, 2090, 1239, 1645, 1684,
+            1063, 2266, 319, 3010, 2773, 556, 757, 2572,
+            2099, 1230, 561, 2768, 2466, 863, 2594, 735,
+            2804, 525, 1092, 2237, 403, 2926, 1026, 2303,
+            1143, 2186, 2150, 1179, 2775, 554, 886, 2443,
+            1722, 1607, 1212, 2117, 1874, 1455, 1029, 2300,
+            2110, 1219, 2935, 394, 885, 2444, 2154, 1175
     };
+
     private static final short[] montZetasForVectorNttMultArr = new short[]{
             -1103, 1103, 430, -430, 555, -555, 843, -843,
             -1251, 1251, 871, -871, 1550, -1550, 105, -105,
@@ -1143,25 +1145,6 @@ public final class ML_KEM {
         return 1;
     }
 
-    private static final int[] zetasForNttMult = new int[]{
-            17, 3312, 2761, 568, 583, 2746, 2649, 680,
-            1637, 1692, 723, 2606, 2288, 1041, 1100, 2229,
-            1409, 1920, 2662, 667, 3281, 48, 233, 3096,
-            756, 2573, 2156, 1173, 3015, 314, 3050, 279,
-            1703, 1626, 1651, 1678, 2789, 540, 1789, 1540,
-            1847, 1482, 952, 2377, 1461, 1868, 2687, 642,
-            939, 2390, 2308, 1021, 2437, 892, 2388, 941,
-            733, 2596, 2337, 992, 268, 3061, 641, 2688,
-            1584, 1745, 2298, 1031, 2037, 1292, 3220, 109,
-            375, 2954, 2549, 780, 2090, 1239, 1645, 1684,
-            1063, 2266, 319, 3010, 2773, 556, 757, 2572,
-            2099, 1230, 561, 2768, 2466, 863, 2594, 735,
-            2804, 525, 1092, 2237, 403, 2926, 1026, 2303,
-            1143, 2186, 2150, 1179, 2775, 554, 886, 2443,
-            1722, 1607, 1212, 2117, 1874, 1455, 1029, 2300,
-            2110, 1219, 2935, 394, 885, 2444, 2154, 1175
-    };
-
     static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
         for (int m = 0; m < ML_KEM_N; m += 2) {
             int a0 = ntta[m];
@@ -1170,11 +1153,13 @@ public final class ML_KEM {
             int b1 = nttb[m + 1];
             long r = a1 * b1;
             r = r - ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q;
-            r *= zetasForNttMult[m >> 1];
-            r += a0 * b0 + BARRETT_ADDEND;
-            result[m] = (short) ((r - ((r * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q) - BARRETT_ADDEND);
-            long r1 = a0 * b1 + a1 * b0 + BARRETT_ADDEND;
-            result[m + 1] = (short) ((r1 - ((r1 * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q) - BARRETT_ADDEND);
+            r *= ZETAS_FOR_NTT_MULT[m >> 1];
+            r += a0 * b0;
+            result[m] = (short) (r - (((r + BARRETT_ADDEND) *
+                    BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
+            long r1 = a0 * b1 + a1 * b0;
+            result[m + 1] = (short) (r1 - (((r1 + BARRETT_ADDEND) *
+                    BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
         }
     }
 
@@ -1542,9 +1527,10 @@ public final class ML_KEM {
     }
 
     static void implKyberBarrettReduceJava(short[] poly) {
+        int tmp = 0;
         for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
-            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
+            tmp = poly[m];
+            poly[m] = (short) (tmp - ((tmp * BARRETT_MULTIPLIER) >> BARRETT_SHIFT) * ML_KEM_Q);
         }
     }
 
