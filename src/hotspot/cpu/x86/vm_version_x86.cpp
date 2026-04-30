@@ -1141,7 +1141,7 @@ void VM_Version::get_processor_features() {
   }
 
   CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), "popcnt" SINGLE_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "BMI2" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "SHA" MULTI_INST_WARNING_MSG);
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
