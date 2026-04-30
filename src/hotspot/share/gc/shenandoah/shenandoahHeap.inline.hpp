@@ -258,6 +258,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   if (sts_active && !cancelled_gc()) {
+    assert(!ShenandoahEvacOOMHandler::is_active(), "Potential deadlock: cannot yield while OOM evac handler is active");
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -344,6 +345,8 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
+  } else {
+    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
