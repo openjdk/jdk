@@ -783,6 +783,8 @@ static OSReturn allocate_pdh_constants() {
 // registry.  See KB Q287159: Using PDH APIs Correctly in a Localized Language
 // for details.
 static DWORD lookup_perfindex_by_english_name(const char* english_name) {
+  ResourceMark rm;
+
   DWORD type = 0;
   DWORD size = 0;
 
