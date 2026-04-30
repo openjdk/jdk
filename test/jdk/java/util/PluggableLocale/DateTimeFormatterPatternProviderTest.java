@@ -145,13 +145,13 @@ public class DateTimeFormatterPatternProviderTest {
     @Test
     public void testGetLocalizedDateTimePattern_3args() {
         assertEquals("'requestedTemplate: yMMMEd, calType: roc, loc: zh_TW'",
-            new DateTimeFormatterBuilder().getLocalizedDateTimePattern("yMMMEd", MinguoChronology.INSTANCE, Locale.TAIWAN));
+            DateTimeFormatterBuilder.getLocalizedDateTimePattern("yMMMEd", MinguoChronology.INSTANCE, Locale.TAIWAN));
     }
 
     @ParameterizedTest
     @MethodSource("dateAndTime")
     public void testGetLocalizedDateTimePattern_4args(FormatStyle dateStyle, FormatStyle timeStyle, String calType, Locale loc) {
         assertEquals("'date style: " + dateStyle + ", timeStyle: " + timeStyle + ", calType: " + calType + ", loc: " + loc + "'",
-            new DateTimeFormatterBuilder().getLocalizedDateTimePattern(dateStyle, timeStyle, Chronology.of(calType), loc));
+            DateTimeFormatterBuilder.getLocalizedDateTimePattern(dateStyle, timeStyle, Chronology.of(calType), loc));
     }
 }
