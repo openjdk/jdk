@@ -1753,8 +1753,7 @@ public class Socket implements java.io.Closeable {
      * The read-half, write-half and the closed state of the socket are tracked
      * independent of each other. Irrespective of whether or not the socket
      * is {@linkplain #close() closed}, this method will return {@code true} only
-     * if a prior call to {@linkplain  #shutdownInput() shutdownInput()}
-     * completed successfully.
+     * if a prior call to {@link #shutdownInput()} completed successfully.
      *
      * @return true if the input of the socket has been shutdown
      * @since 1.4
@@ -1769,8 +1768,7 @@ public class Socket implements java.io.Closeable {
      * The read-half, write-half and the closed state of the socket are tracked
      * independent of each other. Irrespective of whether or not the socket
      * is {@linkplain #close() closed}, this method will return {@code true} only
-     * if a prior call to {@linkplain  #shutdownOutput() shutdownOutput()}
-     * completed successfully.
+     * if a prior call to {@link #shutdownOutput()} completed successfully.
      *
      * @return true if the output of the socket has been shutdown
      * @since 1.4
