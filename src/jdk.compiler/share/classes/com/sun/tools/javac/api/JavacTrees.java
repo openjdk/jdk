@@ -1137,16 +1137,6 @@ public class JavacTrees extends DocTrees {
         return new DocTreePath(treePath, docCommentTree);
     }
 
-    @Override
-    public Set<String> getCustomTags() {
-        return customTags;
-    }
-
-    @Override
-    public void setCustomTags(Set<String> customTags) {
-        this.customTags = Collections.unmodifiableSet(customTags);
-    }
-
     @Override @DefinedBy(Api.COMPILER_TREE)
     public void setBreakIterator(BreakIterator breakiterator) {
         this.breakIterator = breakiterator;
@@ -1252,6 +1242,18 @@ public class JavacTrees extends DocTrees {
      */
     public ParserFactory getParserFactory() {
         return parserFactory;
+    }
+
+    /**
+     * Sets the tag names of known custom tags. Known custom tags are represented
+     * as instances of {@code NoteTree} when returned by methods in this class,
+     * instead of {@code UnknownBlockTagTree} or {@code UnknownInlineTagTree}.
+     *
+     * @param customTags a set of tag names of known custom tags
+     * @since 27
+     */
+    public void setCustomTags(Set<String> customTags) {
+        this.customTags = Collections.unmodifiableSet(customTags);
     }
 
     /**

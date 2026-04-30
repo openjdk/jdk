@@ -54,6 +54,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.tools.javac.api.JavacTrees;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -506,7 +507,10 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         initTagletManager(options.customTagStrs());
-        docEnv.getDocTrees().setCustomTags(tagletManager.getCustomTags());
+
+        if (docEnv.getDocTrees() instanceof JavacTrees javacTrees) {
+            javacTrees.setCustomTags(tagletManager.getCustomTags());
+        }
 
         return super.finishOptionSettings0();
     }
