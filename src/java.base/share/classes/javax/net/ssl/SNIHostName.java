@@ -120,9 +120,10 @@ public final class SNIHostName extends SNIServerName {
      * @spec https://www.rfc-editor.org/info/rfc6066
      * RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      *
-     * @deprecated Users are advised to migrate to the static factory method
-     * {@link #ofHostName(String) SNIHostName.of()}, which performs stricter checks
-     * on the provided hostname.
+     * @deprecated This constructor is not fully aligned with RFC 6066 and does
+     * not reject a hostname that is an IP literal address. Use
+     * {@link #ofHostName(String) SNIHostName.ofHostName()} instead, which
+     * performs stricter checks on the provided hostname.
      */
     @Deprecated(since = "27")
     public SNIHostName(String hostname) {
@@ -144,7 +145,8 @@ public final class SNIHostName extends SNIServerName {
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
-     * <li>is an {@linkplain java.net.InetAddress#ofLiteral(String) IP literal},
+     * <li>is an {@linkplain java.net.InetAddress#ofLiteral(String) IP literal
+     * address},
      * <li>or isn't a valid DNS hostname.
      * </ul>
      * <p>
@@ -243,9 +245,9 @@ public final class SNIHostName extends SNIServerName {
      *
      * @apiNote
      *
-     * This method is intended for parsing the encoded name value in a
+     * This constructor is intended for parsing the encoded name value in a
      * requested SNI extension. If you already have the hostname in string form,
-     * use {@link #ofHostName(String) SNIHostName.of(String)} instead.
+     * use {@link #ofHostName(String) SNIHostName.ofHostName(String)} instead.
      *
      * @implNote
      *
@@ -269,9 +271,10 @@ public final class SNIHostName extends SNIServerName {
      * @spec https://www.rfc-editor.org/info/rfc6066
      *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      *
-     * @deprecated Users are advised to migrate to the static factory method
-     * {@link #ofEncoded(byte[]) SNIHostName.ofEncoded()}, which performs
-     * stricter checks on the provided hostname.
+     * @deprecated This constructor is not fully aligned with RFC 6066 and does
+     * not reject a hostname that is an IP literal address. Use
+     * {@link #ofEncoded(byte[]) SNIHostName.ofEncoded()} instead, which
+     * performs stricter checks on the provided hostname.
      */
     @Deprecated(since = "27")
     public SNIHostName(byte[] encoded) {
@@ -317,7 +320,8 @@ public final class SNIHostName extends SNIServerName {
      * <ul>
      * <li>is empty,
      * <li>ends with a trailing dot,
-     * <li>is an {@linkplain java.net.InetAddress#ofLiteral(String) IP literal},
+     * <li>is an {@linkplain java.net.InetAddress#ofLiteral(String) IP literal
+     * address},
      * <li>or isn't a valid DNS hostname.
      * </ul>
      * <p>
@@ -559,10 +563,10 @@ public final class SNIHostName extends SNIServerName {
             return;
         }
 
-        // Is it an IP literal?
+        // Is it an IP literal address?
         if (isIPv4LiteralAddress(hostname) || isIPv6LiteralAddress(hostname)) {
             throw new IllegalArgumentException(
-                    "Server name value of host_name cannot be an IP literal");
+                    "Server name value of host_name cannot be an IP literal address");
         }
 
     }

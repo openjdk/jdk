@@ -99,7 +99,7 @@ class SNIHostNameNegativeTest {
                 // punycode("\u00ebxample.com") = "xn--xample-ova.com"
                 new Arg<>(false, "xn--xample-ova" + illegalPunycodeChar + ".com"),
                 new Arg<>(false, "xn--xample-ova.com" + illegalPunycodeChar),
-                // IP literals
+                // IP literal addresses
                 new Arg<>(true, "127.0.0.1"),
                 new Arg<>(false, "::1"),            // Fails also on non-strict check, because `:` is not LDH
                 new Arg<>(false, "::1%eth0"));      // Fails also on non-strict check, because `:` is not LDH
