@@ -233,7 +233,7 @@ void CodeCache::initialize_heaps() {
   COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
   COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
   if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
-    err_msg msg("CICompilerCount is too large (%d): compiler buffer size exceeds the CodeCache size limit", (int)CICompilerCount);
+    err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
     vm_exit_during_initialization(msg);
   }
   size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
