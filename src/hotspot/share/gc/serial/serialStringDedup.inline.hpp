@@ -31,11 +31,9 @@
 
 bool SerialStringDedup::is_candidate_from_evacuation(oop obj,
                                                      bool obj_is_tenured) {
-  return StringDedup::is_enabled() &&
-         java_lang_String::is_instance(obj) &&
-         (obj_is_tenured ?
-          StringDedup::is_below_threshold_age(obj->age()) :
-          StringDedup::is_threshold_age(obj->age()));
+  return obj_is_tenured ?
+         StringDedup::is_below_threshold_age(obj->age()) :
+         StringDedup::is_threshold_age(obj->age());
 }
 
 #endif // SHARE_GC_SERIAL_STRINGDEDUP_INLINE_HPP
