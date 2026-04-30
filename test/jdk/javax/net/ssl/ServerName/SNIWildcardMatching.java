@@ -77,6 +77,7 @@ public final class SNIWildcardMatching extends SSLSocketTemplate {
             {"secret.foo.com", "*.foo.com"},
             {"secret.foo.com", "s*.foo.com"},
             {"secret.foo.com", "*t.foo.com"},
+            {"secret.foo.com", "s**.foo.com"},
             {"secret.foo.com", "s*t.foo.com"},
             {"secret.foo.com", "test.foo.com,*.foo.com"},
             {"公司.江利子.net", "secret.foo.com,*.江利子.net"}
