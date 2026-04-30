@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util;
 
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
@@ -153,7 +154,10 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
         return base.removeAll(c);
     }
 
-    // copied from AbstractCollection
+    public boolean removeIf(Predicate<? super E> filter) {
+        return base.removeIf(filter);
+    }
+
     public boolean retainAll(Collection<?> c) {
         return base.retainAll(c);
     }

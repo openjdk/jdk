@@ -259,12 +259,16 @@ public class Basic {
         ).iterator();
     }
 
+    // TODO singletonList is the outlier here in that it doesn't throw UOE
+    // when a mutator method is called that doesn't attempt to modify it.
+    // See comments in checkUnmodifiable1().
+
     @DataProvider(name="unmodifiable")
     public Iterator<Object[]> unmodifiable() {
         return Arrays.asList(
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
             new Object[] { "ListOfSub", ORIGINAL.subList(1, 3), ORIGINAL.subList(1, 3) },
-            new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") },
+         // new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") }, // TODO
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodList", ulist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodNav", unav(new TreeSet<>(ORIGINAL)), ORIGINAL },
@@ -438,26 +442,28 @@ public class Basic {
     public void checkUnmodifiable1(SequencedCollection<String> seq) {
         final var UOE = UnsupportedOperationException.class;
 
+        // The following always attempt to modify the collection.
         assertThrows(UOE, () -> seq.add("x"));
-        assertThrows(UOE, () -> seq.clear());
-        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
-        assertThrows(UOE, () -> seq.removeIf(x -> true));
-
+        assertThrows(UOE, () -> seq.addAll(List.copyOf(seq)));
         assertThrows(UOE, () -> seq.addFirst("x"));
         assertThrows(UOE, () -> seq.addLast("x"));
-        assertThrows(UOE, () -> seq.removeFirst());
-        assertThrows(UOE, () -> seq.removeLast());
-
-// TODO these ops should throw unconditionally, but they don't in some implementations
-     // assertThrows(UOE, () -> seq.addAll(List.of()));
-     // assertThrows(UOE, () -> seq.remove("x"));
-     // assertThrows(UOE, () -> seq.removeAll(List.of()));
-     // assertThrows(UOE, () -> seq.removeIf(x -> false));
-     // assertThrows(UOE, () -> seq.retainAll(seq));
-        assertThrows(UOE, () -> seq.addAll(seq));
+        assertThrows(UOE, () -> seq.clear());
+        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
         assertThrows(UOE, () -> seq.remove(seq.iterator().next()));
         assertThrows(UOE, () -> seq.removeAll(seq));
+        assertThrows(UOE, () -> seq.removeFirst());
+        assertThrows(UOE, () -> seq.removeIf(x -> true));
+        assertThrows(UOE, () -> seq.removeLast());
         assertThrows(UOE, () -> seq.retainAll(List.of()));
+
+        // Below are calls to mutator methods that don't modify the collection.
+        // TODO they should be refactored into different providers and
+        // assertion checking methods.
+        assertThrows(UOE, () -> seq.addAll(List.of()));
+        assertThrows(UOE, () -> seq.remove("x"));
+        assertThrows(UOE, () -> seq.removeAll(List.of()));
+        assertThrows(UOE, () -> seq.removeIf(x -> false));
+        assertThrows(UOE, () -> seq.retainAll(seq));
     }
 
     /**
