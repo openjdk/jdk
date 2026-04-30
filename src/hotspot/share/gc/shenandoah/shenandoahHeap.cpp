@@ -504,8 +504,6 @@ jint ShenandoahHeap::initialize() {
   print_init_logger();
   FullGCForwarding::initialize(_heap_region);
 
-  _alloc_rate_thread = new ShenandoahAllocationRateThread(&_alloc_rate);
-
   return JNI_OK;
 }
 
@@ -699,6 +697,7 @@ void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
   check_soft_max_changed();
+  _alloc_rate.set_minimum_sample_size(soft_max_capacity() / 128);
 
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
@@ -770,6 +769,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
          min_capacity(), v, max_capacity());
   _soft_max_size.store_relaxed(v);
   heuristics()->compute_headroom_adjustment();
+  _alloc_rate.set_minimum_sample_size(v / 128);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
@@ -2249,9 +2249,6 @@ void ShenandoahHeap::stop() {
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
-
-  // Step 5: Shutdown allocation rate sampling thread.
-  _alloc_rate_thread->stop();
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {

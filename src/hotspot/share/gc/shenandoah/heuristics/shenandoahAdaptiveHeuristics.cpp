@@ -385,19 +385,19 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   // triggered GC.  Under heavy steady state workload, this delay condition generally has no effect: if the allocation
   // runway is divided "equally" between the current GC and the next GC, then at any potential trigger point (which cannot
   // happen any sooner than completion of the first GC), it is already the case that roughly A > R/2.
-  if (3 * allocated <= available) {
-    // Even though we will not issue an adaptive trigger unless a minimum threshold of memory has been allocated,
-    // we still allow more generic triggers, such as guaranteed GC intervals, to act.
-    return ShenandoahHeuristics::should_start_gc();
-  }
+  // if (3 * allocated <= available) {
+  //   // Even though we will not issue an adaptive trigger unless a minimum threshold of memory has been allocated,
+  //   // we still allow more generic triggers, such as guaranteed GC intervals, to act.
+  //   return ShenandoahHeuristics::should_start_gc();
+  // }
 
   ShenandoahAllocationRate& alloc_rate = ShenandoahHeap::heap()->alloc_rate();
   const size_t allocatable_bytes = allocatable(available);
-  if (trigger_average_allocation_rate(alloc_rate, allocatable_bytes)) {
+  if (trigger_accelerating_allocation_rate(alloc_rate, allocatable_bytes)) {
     return true;
   }
 
-  if (trigger_accelerating_allocation_rate(alloc_rate, allocatable_bytes)) {
+  if (trigger_average_allocation_rate(alloc_rate, allocatable_bytes)) {
     return true;
   }
 
@@ -537,6 +537,8 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(Shenando
   const double anticipated_gc_start_time = get_most_recent_wake_time() + get_planned_sleep_interval();
   const double anticipated_gc_duration = _cycles.predict_duration(anticipated_gc_start_time, _margin_of_error_sd);
   const size_t anticipated_consumption = rate.accelerated_consumption(acceleration, current_rate_by_acceleration, anticipated_gc_duration);
+  log_debug(gc, sampling)("anticipated consumption: %zu, acceleration: %.3f, allocatable_bytes: %zu",
+    anticipated_consumption, acceleration, allocatable_bytes);
   if (anticipated_consumption > allocatable_bytes) {
     if (acceleration > 0) {
       log_trigger("Accelerated consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
