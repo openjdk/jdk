@@ -1,6 +1,4 @@
 package-info.java:3:9: compiler.warn.pkg-info.already.seen: test
 package-info.java:2:1: compiler.err.already.annotated: kindname.package, test
-package-info.java:3:9: compiler.warn.deprecated.annotation.has.no.effect: kindname.package
-package-info.java:3:9: compiler.warn.deprecated.annotation.has.no.effect: kindname.package
 1 error
-3 warnings
+1 warning

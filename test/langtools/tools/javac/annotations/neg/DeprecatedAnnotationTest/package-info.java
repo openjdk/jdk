@@ -3,7 +3,7 @@
  * @bug 8068626
  * @summary Add javac lint warning when the Deprecated annotation is used where it is a no-op
  *
- * @compile/fail/ref=DeprecatedAnnotationTest.out -Werror -XDrawDiagnostics package-info.java
+ * @compile/fail/ref=DeprecatedAnnotationTest.out -Werror -Xlint:deprecation -XDrawDiagnostics package-info.java
  */
 
 @Deprecated
@@ -24,7 +24,7 @@ class DeprecatedAnnotationTest implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        @SuppressWarnings("dep-ann")  // verify that we are able to suppress.
+        @SuppressWarnings("deprecation")  // verify that we are able to suppress.
         @Deprecated int x;
     }
 }

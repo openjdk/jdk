@@ -1,5 +1,3 @@
-DiamondFields.java:21:34: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable
-DiamondFields.java:27:34: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable
 DiamondFields.java:12:49: compiler.warn.diamond.redundant.args
 DiamondFields.java:13:49: compiler.warn.diamond.redundant.args
 DiamondFields.java:14:49: compiler.warn.diamond.redundant.args
@@ -11,4 +9,4 @@ DiamondFields.java:21:53: compiler.warn.diamond.redundant.args
 DiamondFields.java:25:41: compiler.warn.diamond.redundant.args
 DiamondFields.java:26:47: compiler.warn.diamond.redundant.args
 DiamondFields.java:27:53: compiler.warn.diamond.redundant.args
-13 warnings
+11 warnings

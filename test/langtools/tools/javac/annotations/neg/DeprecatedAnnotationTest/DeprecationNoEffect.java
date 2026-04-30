@@ -78,7 +78,7 @@ public class DeprecationNoEffect {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
         List<String> out = new JavacTask(tb)
-                .options("-d", classes.toString(), "-XDrawDiagnostics")
+                .options("-d", classes.toString(), "-XDrawDiagnostics", "-Xlint:deprecation")
                 .sources("""
                          record R(int x) {
                              static void op () {
@@ -99,7 +99,7 @@ public class DeprecationNoEffect {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
         List<String> out = new JavacTask(tb)
-                .options("-d", classes.toString(), "-XDrawDiagnostics")
+                .options("-d", classes.toString(), "-XDrawDiagnostics", "-Xlint:deprecation")
                 .sources("""
                          record R(int x) {
                              R (@Deprecated String s) {
@@ -113,32 +113,6 @@ public class DeprecationNoEffect {
         tb.checkEqual(out, List.of(
                 "R.java:2:27: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
                 "1 warning"));
-    }
-
-    @Test
-    void testNotAutoSuppressed() throws Exception {
-        Path classes = base.resolve("classes");
-        Files.createDirectories(classes);
-        List<String> out = new JavacTask(tb)
-                .options("-d", classes.toString(), "-XDrawDiagnostics")
-                .sources("""
-                         class Test {
-                             void m1() {
-                                 @Deprecated int x;
-                             }
-                             @Deprecated
-                             void m2() {
-                                 @Deprecated int y;
-                             }
-                         }
-                         """)
-                .run()
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-        tb.checkEqual(out, List.of(
-                "Test.java:3:25: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
-                "Test.java:7:25: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable",
-                "2 warnings"));
     }
 
     @BeforeEach

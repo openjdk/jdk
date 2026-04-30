@@ -211,9 +211,7 @@ public class Lint {
 
         /**
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
-         * comment, but which do not have {@code @Deprecated} annotation, or about
-         * items which have {@code @Deprecated} annotation, but the annotation has
-         * no effect there.
+         * comment, but which do not have {@code @Deprecated} annotation.
          */
         DEP_ANN("dep-ann", true, true),
 
