@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,24 @@
  * questions.
  */
 
-import java.awt.Dialog;
+package jdk.jfr.jvm;
 
-/*
- * @test
- * @key headful
- * @bug 8054359
- * @summary Check whether a modeless FileDialog behaves as expected.
- *
- * @library ../helpers /lib/client/
+import jdk.test.lib.process.ProcessTools;
+/**
+ * @test TestAfterShutdown
+ * @requires vm.flagless
+ * @summary Checks that API interactions with JFR after shutdown works as expected
+ * @requires vm.hasJFR
  * @library /test/lib
- * @build ExtendedRobot
- * @build jdk.test.lib.Asserts
- * @build Flag
- * @build TestDialog
- * @build TestFrame
- * @build TestWindow
- * @requires (os.family != "mac")
- * @run main FileDialogNonModal7Test
+ * @build jdk.jfr.jvm.AfterShutdown
+ * @run main/othervm jdk.jfr.jvm.TestAfterShutdown
  */
-
-public class FileDialogNonModal7Test {
-
-    public static void main(String[] args) throws Exception {
-        (new FileDialogModalityTest(Dialog.ModalityType.MODELESS)).doTest();
+public class TestAfterShutdown {
+    public static void main(String... args) throws Exception {
+        var pb = ProcessTools.createTestJavaProcessBuilder(AfterShutdown.class.getName());
+        var result = ProcessTools.executeProcess(pb);
+        result.shouldHaveExitValue(0);
+        result.shouldNotContain("FAIL");
+        result.shouldContain("PASS");
     }
 }
