@@ -236,9 +236,10 @@ private:
   // whether we are loading or storing stubs or have encountered any
   // invalid stubs.
   enum Flags {
-    USING   = 1 << 0,            // open and loading stubs
-    DUMPING = 1 << 1,            // open and storing stubs
-    INVALID = 1 << 2,            // found invalid stub when loading
+    OPEN    = 1 << 0,            // cache is open
+    USING   = 1 << 1,            // open and loading stubs
+    DUMPING = 1 << 2,            // open and storing stubs
+    INVALID = 1 << 3,            // found invalid stub when loading
   };
 
   uint32_t _flags;
@@ -251,8 +252,9 @@ private:
 public:
   AOTStubData(BlobId blob_id) NOT_CDS({});
 
-  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
+  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(_ranges);}) NOT_CDS({})
 
+  bool is_open()    CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
   bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
   bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
@@ -264,6 +266,10 @@ public:
   address load_archive_data(StubId stub_id, address &end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN_(nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
+  void stub_epilog(StubId stub_id);
+#ifdef ASSERT
+  void check_stored(StubId stub_id);
+#endif
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
 
@@ -476,6 +482,8 @@ private:
 
   bool set_write_position(uint pos);
   bool align_write();
+  bool align_write_int();
+  bool align_write_bytes(uint alignment);
   address reserve_bytes(uint nbytes);
   uint write_bytes(const void* buffer, uint nbytes);
   const char* addr(uint offset) const { return _load_buffer + offset; }
@@ -641,6 +649,7 @@ private:
   uint  _read_position;              // Position in _load_buffer
   uint  read_position() const { return _read_position; }
   void  set_read_position(uint pos);
+  uint  align_read_int();
   const char* addr(uint offset) const { return _load_buffer + offset; }
 
   bool _lookup_failed;       // Failed to lookup for info (skip only this code load)
@@ -683,6 +692,7 @@ class AOTRuntimeConstants {
  private:
   address _card_table_base;
   uint    _grain_shift;
+  address _cset_base;
   static address _field_addresses_list[];
   static AOTRuntimeConstants _aot_runtime_constants;
   // private constructor for unique singleton
@@ -698,6 +708,7 @@ class AOTRuntimeConstants {
   }
   static address card_table_base_address();
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
+  static address cset_base_address() { return (address)&_aot_runtime_constants._cset_base; }
   static address* field_addresses_list() {
     return _field_addresses_list;
   }
@@ -705,6 +716,7 @@ class AOTRuntimeConstants {
   static bool contains(address adr)        { return false; }
   static address card_table_base_address() { return nullptr; }
   static address grain_shift_address()     { return nullptr; }
+  static address cset_base_address()       { return nullptr; }
   static address* field_addresses_list()   { return nullptr; }
 #endif
 };

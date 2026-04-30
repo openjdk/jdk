@@ -104,6 +104,10 @@ private:
   static const TypePtr* get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n);
 
   Node* try_clone_instance(PhaseGVN *phase, bool can_reshape, int count);
+
+  Node* make_and_transform_addp(PhaseGVN* phase, Node* base, Node* offset);
+  Node* make_and_transform_addp(PhaseGVN* phase, Node* base, Node* ptr, Node* offset);
+
   bool prepare_array_copy(PhaseGVN *phase, bool can_reshape,
                           Node*& adr_src, Node*& base_src, Node*& adr_dest, Node*& base_dest,
                           BasicType& copy_type, const Type*& value_type, bool& disjoint_bases);
