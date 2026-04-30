@@ -91,17 +91,9 @@ class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   }
 
   void do_thread(Thread* thr) {
-    assert(thr != nullptr, "must be");
-
     PRAGMA_DIAG_PUSH
     PRAGMA_NONNULL_IGNORED
-    // Suppress GCC warning for nonnull.
-    // GCC (16.0.1 at least) reports "thr" might be nullptr, and it could be
-    // a potential bug to access class member. But it should be happened because
-    // we've already checked it with assert() in above.
-    //
-    // Assert for nullptr and PRAGMA is set before JavaThread::cast() because
-    // cast() would pass thr->is_Java_thread() to assert().
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
