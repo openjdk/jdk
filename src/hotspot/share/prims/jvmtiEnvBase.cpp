@@ -1372,11 +1372,14 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
     }
 
     if (state->is_virtual() && (thread == nullptr || !thread->is_vthread_mounted())) { // unmounted virtual thread
-      // set pending frame deoptimization to process at mount transition
-      state->vthread_pending_deopts()->append(frame_number);
+      assert(fr.is_heap_frame(), "sanity check");
+      fr = jvf->stack_chunk()->derelativize(fr);
+      jvf->stack_chunk()->force_slow_path();
+      fr.deoptimize(nullptr);
     } else { // platform thread or mounted virtual thread
       if (fr.is_heap_frame()) {
         fr = jvf->stack_chunk()->derelativize(fr);
+        jvf->stack_chunk()->force_slow_path();
       }
       Deoptimization::deoptimize(thread, fr);
     }
@@ -2502,7 +2505,6 @@ SetOrClearFramePopClosure::do_thread(Thread *target) {
     return;
   }
   if (!_set) { // ClearAllFramePops
-    _state->clear_vthread_pending_deopts();
     _result = _env->clear_all_frame_pops(_state);
     return;
   }
@@ -2530,7 +2532,6 @@ SetOrClearFramePopClosure::do_vthread(Handle target_h) {
     return;
   }
   if (!_set) { // ClearAllFramePops
-    _state->clear_vthread_pending_deopts();
     _result = _env->clear_all_frame_pops(_state);
     return;
   }

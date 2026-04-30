@@ -74,7 +74,6 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _scratch_class_for_redefinition_verification = nullptr;
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
   _saved_interp_only_mode = false;
-  _vthread_pending_deopts = nullptr;
 
   // JVMTI ForceEarlyReturn support
   _pending_step_for_earlyret = false;
@@ -140,8 +139,6 @@ JvmtiThreadState::~JvmtiThreadState()   {
   assert(get_thread()->jvmti_thread_state() == this, "sanity check");
   get_thread()->set_jvmti_thread_state(nullptr);
   get_thread()->set_interp_only_mode(false);
-
-  delete _vthread_pending_deopts;
 
   // zap our env thread states
   {
@@ -212,30 +209,6 @@ JvmtiThreadState::periodic_clean_up() {
         delete defunct_ets;
       }
     }
-  }
-}
-
-void
-JvmtiThreadState::process_vthread_pending_deopts() {
-  if (!has_vthread_pending_deopts()) {
-    return;
-  }
-  JavaThread* thread = get_thread();
-  ResourceMark rm;
-  GrowableArray<int>* deopts = vthread_pending_deopts();
-  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(thread->vthread());
-  int frame_count = (int)JvmtiEnvBase::get_frame_count(jvf);
-
-  for (int idx = deopts->length() - 1; idx >= 0; idx--) {
-    int frame_number = deopts->at(idx);
-    deopts->remove_at(idx);
-    int depth = frame_count - frame_number;
-    jvf = JvmtiEnvBase::jvf_for_thread_and_depth(thread, depth);
-    frame fr = jvf->fr();
-    if (fr.is_heap_frame()) {
-      fr = jvf->stack_chunk()->derelativize(fr);
-    }
-    Deoptimization::deoptimize(thread, fr);
   }
 }
 
