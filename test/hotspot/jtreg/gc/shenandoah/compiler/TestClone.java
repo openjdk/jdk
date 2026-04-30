@@ -511,6 +511,9 @@ public class TestClone {
             large[r] = (LargeObject) large[r].clone();
             array[r] = array[r].clone();
 
+            // Verify will trigger LRB.
+            // We don't want LRB to heal refs in the clone source or target,
+            // so we verify a different random location.
             r = rand.nextInt(ENTRIES);
             verify(small[r], r);
             verify(large[r], r);
@@ -522,7 +525,7 @@ public class TestClone {
         int size = id % ARRAY_MAX_SIZE;
         Ref[] arr = new Ref[size];
         for (int i = 0; i < size; i++) {
-          arr[i] = new Ref(id * 1_000 + i);
+          arr[i] = new Ref(arrayElementValue(id, i));
         }
         return arr;
     }
@@ -566,12 +569,17 @@ public class TestClone {
             throw new IllegalStateException("Lengths do not match: " + srcLen + " vs " + expectedLen);
         }
         for (int i = 0; i < src.length; i++) {
-            int expectedVal = id * 1_000 + i;
+            int expectedVal = arrayElementValue(id, i);
             int val = src[i].x;
             if (val != expectedVal) {
                 throw new IllegalStateException("Elements do not match at " + i + ": " + val + " vs " + expectedVal + ", len = " + srcLen);
             }
         }
+    }
+
+    static int arrayElementValue(int id, int offset) {
+        // Globally unique.
+        return ARRAY_MAX_SIZE * id + offset;
     }
 
     static class Ref {
