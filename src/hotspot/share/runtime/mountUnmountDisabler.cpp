@@ -112,10 +112,8 @@ class JVMTIEndTransition : public StackObj {
           JvmtiExport::post_vthread_start((jthread)_vthread.raw_value());
         }
       }
-      if (_is_mount) {
-        if (JvmtiExport::should_post_vthread_mount()) {
-          JvmtiExport::post_vthread_mount((jthread)_vthread.raw_value());
-        }
+      if (_is_mount && JvmtiExport::should_post_vthread_mount()) {
+        JvmtiExport::post_vthread_mount((jthread)_vthread.raw_value());
       }
     }
   }
