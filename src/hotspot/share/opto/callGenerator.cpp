@@ -646,12 +646,13 @@ void CallGenerator::do_late_inline_helper() {
     for (uint i1 = 0; i1 < size; i1++) {
       map->init_req(i1, call->in(i1));
     }
-    // Call node has in[ReturnAdr] set to top() node.
-    // Replace it with corresponding node if it exists.
+    // Call node has in(ReturnAdr) set to top() node.
+    // We have to set map->in(ReturnAdr) to correct value
+    // because it is used by uncommon traps.
     Node* ret_adr = C->start()->proj_out_or_null(TypeFunc::ReturnAdr);
-    if (ret_adr != nullptr) {
-      map->set_req(TypeFunc::ReturnAdr, ret_adr);
-    }
+    precond(ret_adr != nullptr);
+    map->set_req(TypeFunc::ReturnAdr, ret_adr);
+
     // Make sure the state is a MergeMem for parsing.
     if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
       Node* mem = MergeMemNode::make(map->in(TypeFunc::Memory));
@@ -666,6 +667,7 @@ void CallGenerator::do_late_inline_helper() {
       map->set_req(TypeFunc::Parms + i1, top);
     }
     jvms->set_map(map);
+    precond(ret_adr == jvms->map()->returnadr());
 
     // Make enough space in the expression stack to transfer
     // the incoming arguments and return value.
