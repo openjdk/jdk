@@ -328,9 +328,9 @@ import java.util.function.BiFunction;
  * Each SSL/TLS/DTLS connection must have one client and one server, thus
  * each endpoint must decide which role to assume.  This choice determines
  * who begins the handshaking process as well as which type of messages
- * should be sent by each party.  The method {@link
- * #setUseClientMode(boolean)} configures the mode.  Note that the
- * default mode for a new {@code SSLEngine} is provider-specific.
+ * should be sent by each party.  The method {@link #setUseClientMode(boolean)}
+ * configures the mode.  It is provider-specific if the {@code SSLEngine} uses
+ * client or server mode by default, or requires the mode to be set.
  * Applications should set the mode explicitly before invoking other
  * methods of the {@code SSLEngine}.  Once the initial handshaking has
  * started, an {@code SSLEngine} can not switch between client and server
@@ -1139,7 +1139,7 @@ public abstract class SSLEngine {
      * Configures the engine to use client (or server) mode when
      * handshaking.
      * <P>
-     * This method must be called before any handshaking occurs.
+     * This method should be called before any handshaking occurs.
      * Once handshaking has begun, the mode can not be reset for the
      * life of this engine.
      * <P>

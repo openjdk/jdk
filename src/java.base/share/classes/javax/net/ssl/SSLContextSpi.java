@@ -95,7 +95,7 @@ public abstract class SSLContextSpi {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case this factory method should not be used.
      * <P>
-     * It is provider-specific if the returned SSLEngine uses client or
+     * It is provider-specific if the returned {@code SSLEngine} uses client or
      * server mode by default for the (D)TLS connection, or requires the
      * mode to be set.
      *
@@ -103,7 +103,7 @@ public abstract class SSLContextSpi {
      * The JDK SunJSSE provider implementation requires that the desired mode
      * be set explicitly by calling
      * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
-     * before invoking other methods of the SSLEngine.
+     * before invoking other methods of the {@code SSLEngine}.
      *
      * @return  the {@code SSLEngine} Object
      * @throws IllegalStateException if the SSLContextImpl requires
@@ -125,7 +125,7 @@ public abstract class SSLContextSpi {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case peerHost needs to be specified.
      * <P>
-     * It is provider-specific if the returned SSLEngine uses client or
+     * It is provider-specific if the returned {@code SSLEngine} uses client or
      * server mode by default for the (D)TLS connection, or requires the
      * mode to be set.
      *
@@ -133,7 +133,7 @@ public abstract class SSLContextSpi {
      * The JDK SunJSSE provider implementation requires that the desired mode
      * be set explicitly by calling
      * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
-     * before invoking other methods of the SSLEngine.
+     * before invoking other methods of the {@code SSLEngine}.
      *
      * @param host the non-authoritative name of the host
      * @param port the non-authoritative port

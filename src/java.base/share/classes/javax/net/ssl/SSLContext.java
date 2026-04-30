@@ -350,7 +350,7 @@ public class SSLContext {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case this factory method should not be used.
      * <P>
-     * It is provider-specific if the returned SSLEngine uses client or
+     * It is provider-specific if the returned {@code SSLEngine} uses client or
      * server mode by default for the (D)TLS connection, or requires the
      * mode to be set.
      *
@@ -358,7 +358,7 @@ public class SSLContext {
      * The JDK SunJSSE provider implementation requires that the desired mode
      * be set explicitly by calling
      * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
-     * before invoking other methods of the SSLEngine.
+     * before invoking other methods of the {@code SSLEngine}.
      *
      * @return  the {@code SSLEngine} object
      * @throws  UnsupportedOperationException if the underlying provider
@@ -387,7 +387,7 @@ public class SSLContext {
      * Some cipher suites (such as Kerberos) require remote hostname
      * information, in which case peerHost needs to be specified.
      * <P>
-     * It is provider-specific if the returned SSLEngine uses client or
+     * It is provider-specific if the returned {@code SSLEngine} uses client or
      * server mode by default for the (D)TLS connection, or requires the
      * mode to be set.
      *
@@ -395,7 +395,7 @@ public class SSLContext {
      * The JDK SunJSSE provider implementation requires that the desired mode
      * be set explicitly by calling
      * {@link SSLEngine#setUseClientMode(boolean) SSLEngine.setUseClientMode()}
-     * before invoking other methods of the SSLEngine.
+     * before invoking other methods of the {@code SSLEngine}.
      *
      * @param   peerHost the non-authoritative name of the host
      * @param   peerPort the non-authoritative port
