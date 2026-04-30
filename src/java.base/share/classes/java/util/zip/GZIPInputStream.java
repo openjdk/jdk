@@ -37,12 +37,12 @@ import java.util.Objects;
  * This class implements a stream filter for decompressing GZIP file format data.
  *
  * <h2><a id="gzip_file_format">GZIP file format</a></h2>
- * GZIP file consists of a series of "members" (compressed data sets). Each member consists of
- * a header, followed by data that is compressed using the {@code deflate} algorithm, and then
- * a trailer. The members simply appear one after another in the file, with no additional
- * information before, between, or after them. An input stream consisting of more than one member
- * is commonly referred to as concatenated GZIP stream.
+ * Section 2.2 of RFC-1952 specifies GZIP file format as consisting of a series of "members"
+ * (compressed data sets). Each member consists of a header, followed by data that is compressed
+ * using the {@code deflate} algorithm, and then a trailer. The members simply appear one after
+ * another in the file, with no additional information before, between, or after them.
  * <p>
+ * A stream consisting of more than one member is commonly referred to as concatenated GZIP stream.
  * This class is capable of reading a concatenated GZIP stream.
  *
  * @apiNote
