@@ -197,11 +197,13 @@ public:
   bool is_regular()                const { return state() == _regular; }
   bool is_humongous_continuation() const { return state() == _humongous_cont; }
   bool is_regular_pinned()         const { return state() == _pinned; }
-  bool is_trash()                  const { return state() == _trash; }
+  bool is_trash()                  const { return is_trash(state()); }
 
   // Derived state predicates (boolean combinations of individual states)
+  bool static is_trash(RegionState state) { return state == _trash; }
   bool static is_empty_state(RegionState state) { return state == _empty_committed || state == _empty_uncommitted; }
   bool static is_humongous_start_state(RegionState state) { return state == _humongous_start || state == _pinned_humongous_start; }
+  bool is_empty_or_trash()         const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _trash; }
   bool is_empty()                  const { return is_empty_state(this->state()); }
   bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
   bool is_humongous_start()        const { return is_humongous_start_state(state()); }
