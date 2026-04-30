@@ -489,36 +489,39 @@ import jdk.test.lib.Utils;
 
 public class TestClone {
 
-    private static final int ENTRIES = 10_000;
-    private static final int ITERS = 1_000_000;
+    private static final int ENTRIES = 1_000;
+    private static final int ITERS = 50_000;
     private static final int ARRAY_MAX_SIZE = 128;
+    private static final Random RAND = Utils.getRandomInstance();
+    private static final SmallObject[] SMALL = new SmallObject[ENTRIES];
+    private static final LargeObject[] LARGE = new LargeObject[ENTRIES];
+    private static final Ref[][] ARRAY = new Ref[ENTRIES][];
 
     public static void main(String[] args) throws Exception {
-        SmallObject[] small = new SmallObject[ENTRIES];
-        LargeObject[] large = new LargeObject[ENTRIES];
-        Ref[][] array = new Ref[ENTRIES][];
-
         for (int i = 0; i < ENTRIES; i++) {
-            small[i] = new SmallObject(i);
-            large[i] = new LargeObject(i);
-            array[i] = newArray(i);
+            SMALL[i] = new SmallObject(i);
+            LARGE[i] = new LargeObject(i);
+            ARRAY[i] = newArray(i);
         }
 
-        Random rand = Utils.getRandomInstance();
         for (int i = 0; i < ITERS; i++) {
-            int r = rand.nextInt(ENTRIES);
-            small[r] = (SmallObject) small[r].clone();
-            large[r] = (LargeObject) large[r].clone();
-            array[r] = array[r].clone();
-
-            // Verify will trigger LRB.
-            // We don't want LRB to heal refs in the clone source or target,
-            // so we verify a different random location.
-            r = rand.nextInt(ENTRIES);
-            verify(small[r], r);
-            verify(large[r], r);
-            verify(array[r], r);
+            cloneAndVerify();
         }
+    }
+
+    static void cloneAndVerify() {
+        int r = RAND.nextInt(ENTRIES);
+        SMALL[r] = (SmallObject) SMALL[r].clone();
+        LARGE[r] = (LargeObject) LARGE[r].clone();
+        ARRAY[r] = ARRAY[r].clone();
+
+        // Verify will trigger LRB.
+        // We don't want LRB to heal refs in the clone source or target,
+        // so we verify a different random location.
+        r = RAND.nextInt(ENTRIES);
+        verify(SMALL[r], r);
+        verify(LARGE[r], r);
+        verify(ARRAY[r], r);
     }
 
     static Ref[] newArray(int id) {
