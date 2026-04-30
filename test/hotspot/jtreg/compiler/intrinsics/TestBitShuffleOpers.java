@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
  * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
- *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
+ *            (vm.cpu.features ~= ".*fast_bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
  *             vm.cpu.features ~= ".*sse2.*")) |
  *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /

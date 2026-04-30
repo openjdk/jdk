@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,8 @@ public class AMD64 extends Architecture {
         AVX512_FP16,
         AVX10_1,
         AVX10_2,
-        HYBRID
+        HYBRID,
+        FAST_BMI2
     }
 
     private final EnumSet<CPUFeature> features;
