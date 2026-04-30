@@ -301,6 +301,12 @@ source %{
           return false;
         }
         break;
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        if (length_in_bytes > 16) {
+          return false; // NEON only, since SLI/USHR are not available in SVE
+        }
+        break;
       default:
         break;
     }
@@ -359,6 +365,11 @@ source %{
       case Op_MinVHF:
       case Op_SqrtVHF:
       case Op_FmaVHF:
+        return false;
+      // There's no SLI instruction in SVE, so we can't have an optimal vector
+      // rotate with masking when emitting code for SVE.
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
         return false;
       default:
         break;
@@ -1961,6 +1972,25 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
       assert(type2aelembytes(bt) == 4 || type2aelembytes(bt) == 8, "unsupported type");
       __ usra($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister, con);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector rotate with constant shift count (NEON only)
+// Uses USHR+SLI 2-instruction sequence instead of SHL+USHR+ORR 3-instruction decomposition.
+
+instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst);
+  format %{ "vrotateconstant $dst, $src, $shift" %}
+  ins_encode %{
+    int opc = this->ideal_Opcode();
+    int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
+                                      $shift$$constant : -$shift$$constant);
+    __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
+                          $src$$FloatRegister, raw_shift);
   %}
   ins_pipe(pipe_slow);
 %}

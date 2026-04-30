@@ -101,8 +101,6 @@ void G1ConcurrentRefineThreadControl::activate() {
 }
 
 void G1ConcurrentRefineThreadControl::run_task(WorkerTask* task, uint num_workers) {
-  assert(num_workers >= 1, "must be");
-
   WithActiveWorkers w(_workers, num_workers);
   _workers->run_task(task);
 }
