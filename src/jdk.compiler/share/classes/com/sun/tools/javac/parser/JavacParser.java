@@ -3434,7 +3434,7 @@ public class JavacParser implements Parser {
                 case GT:
                     typeDepth--;
                     if (typeDepth == 0 && !peekToken(lookahead, DOT)) {
-                         if(peekToken(lookahead, LAX_IDENTIFIER) ||
+                         if (peekToken(lookahead, LAX_IDENTIFIER) ||
                             peekToken(lookahead, tk -> tk == LPAREN)) {
                              return PatternResult.PATTERN;
                          }
