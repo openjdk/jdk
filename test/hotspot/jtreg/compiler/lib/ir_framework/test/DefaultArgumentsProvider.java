@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,14 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.shared;
+package compiler.lib.ir_framework.test;
 
 /**
- * Exception threw when {@link ComparisonConstraintParser} parses an invalid comparator.
+ * Default: when no @Arguments annotation is provided (including for custom run tests).
  */
-@SuppressWarnings("serial")
-public class InvalidComparatorException extends Exception {
-    private final String comparator;
-
-    public InvalidComparatorException(String comparator) {
-        this.comparator = comparator;
-    }
-
-    public String getComparator() {
-        return comparator;
+final class DefaultArgumentsProvider implements ArgumentsProvider {
+    @Override
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return new Object[]{};
     }
 }

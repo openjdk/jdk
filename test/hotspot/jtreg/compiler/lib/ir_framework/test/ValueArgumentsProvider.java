@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,22 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.shared;
+package compiler.lib.ir_framework.test;
+
+import java.util.Arrays;
 
 /**
- * Exception threw when {@link ComparisonConstraintParser} parses an invalid comparator.
+ * Used for @Arguments(values = {...}) to specify individual arguments directly.
  */
-@SuppressWarnings("serial")
-public class InvalidComparatorException extends Exception {
-    private final String comparator;
+final class ValueArgumentsProvider implements ArgumentsProvider {
+    ArgumentValue[] argumentValues;
 
-    public InvalidComparatorException(String comparator) {
-        this.comparator = comparator;
+    ValueArgumentsProvider(ArgumentValue[] argumentValues) {
+        this.argumentValues = argumentValues;
     }
 
-    public String getComparator() {
-        return comparator;
+    @Override
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return Arrays.stream(argumentValues).map(v -> v.getValue()).toArray();
     }
 }
