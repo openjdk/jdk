@@ -35,6 +35,9 @@ class Metadata : public MetaspaceObj {
   NOT_PRODUCT(int _valid;)
  public:
   // Keep the vtable alive under LTGC dead-section removal / LTO
+#if defined(__GNUC__) || defined(__clang__)
+  [[gnu::retain]]
+#endif
   NOINLINE Metadata();
 
   NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
