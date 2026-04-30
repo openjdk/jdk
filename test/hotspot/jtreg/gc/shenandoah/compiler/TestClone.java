@@ -521,7 +521,9 @@ public class TestClone {
     static Ref[] newArray(int id) {
         int size = id % ARRAY_MAX_SIZE;
         Ref[] arr = new Ref[size];
-        for (int i = 0; i < size; i++) arr[i] = new Ref(id * 1_000 + i);
+        for (int i = 0; i < size; i++) {
+          arr[i] = new Ref(id * 1_000 + i);
+        }
         return arr;
     }
 
@@ -593,7 +595,7 @@ public class TestClone {
     }
 
     static class SmallObject extends DefaultClone {
-        Ref x1,x2,x3,x4;
+        Ref x1, x2, x3, x4;
 
         SmallObject(int x) {
             x1 = new Ref(x++);
@@ -604,8 +606,8 @@ public class TestClone {
     }
 
     static class LargeObject extends DefaultClone {
-        Ref x01,x02,x03,x04,x05,x06,x07,x08;
-        Ref x09,x10,x11,x12,x13,x14,x15,x16;
+        Ref x01, x02, x03, x04, x05, x06, x07, x08;
+        Ref x09, x10, x11, x12, x13, x14, x15, x16;
 
         LargeObject(int x) {
             x01 = new Ref(x++);
