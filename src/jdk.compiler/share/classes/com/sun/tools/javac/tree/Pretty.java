@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ public class Pretty extends JCTree.Visitor {
         print(';');
         println();
         for (List<JCTree> l = stats; l.nonEmpty(); l = l.tail) {
-            if (!isEnumerator(l.head)) {
+            if (!isEnumerator(l.head) && (!sourceOutput || !isGeneratedDefaultConstructor(l.head))) {
                 align();
                 printStat(l.head);
                 println();
@@ -361,6 +361,11 @@ public class Pretty extends JCTree.Visitor {
     /** Is the given tree an enumerator definition? */
     boolean isEnumerator(JCTree t) {
         return t.hasTag(VARDEF) && (((JCVariableDecl) t).mods.flags & ENUM) != 0;
+    }
+
+    /** Is the given tree a generated default constructor? */
+    boolean isGeneratedDefaultConstructor(JCTree t) {
+        return t.hasTag(METHODDEF) && (((JCMethodDecl) t).mods.flags & GENERATEDCONSTR) != 0;
     }
 
     /** Print unit consisting of package clause and import statements in toplevel,
@@ -662,6 +667,7 @@ public class Pretty extends JCTree.Visitor {
             }
             printDocComment(tree);
             if ((tree.mods.flags & ENUM) != 0) {
+                printAnnotations(tree.mods.annotations);
                 print("/*public static final*/ ");
                 print(tree.name);
                 if (tree.init != null) {
@@ -676,7 +682,13 @@ public class Pretty extends JCTree.Visitor {
                             }
                             if (init.def != null && init.def.defs != null) {
                                 print(' ');
-                                printBlock(init.def.defs);
+                                ListBuffer<JCTree> buf = new ListBuffer<>();
+                                for (List<JCTree> l = init.def.defs; l.nonEmpty(); l = l.tail) {
+                                    if (!isGeneratedDefaultConstructor(l.head)) {
+                                        buf.append(l.head);
+                                    }
+                                }
+                                printBlock(buf.toList());
                             }
                             return;
                         }else {
