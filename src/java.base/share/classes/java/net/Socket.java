@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1710,10 +1710,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the connection state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its connection state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its connection state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully connected prior
-     * to being closed.
+     * if it was successfully connected prior to being closed.
      *
      * @return true if the socket was successfully connected to a server
      * @since 1.4
@@ -1725,10 +1724,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the binding state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its binding state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its binding state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully bound prior
-     * to being closed.
+     * if it was successfully bound prior to being closed.
      *
      * @return true if the socket was successfully bound to an address
      * @since 1.4
@@ -1751,10 +1749,14 @@ public class Socket implements java.io.Closeable {
 
     /**
      * Returns whether the read-half of the socket connection is closed.
+     * <p>
+     * {@linkplain #close() Closing} a socket doesn't clear its read-half
+     * shutdown state, which means this method will return {@code true}
+     * for a closed socket if {@linkplain  #shutdownInput() shutdownInput()}
+     * completed successfully prior to the socket being closed.
      *
      * @return true if the input of the socket has been shutdown
      * @since 1.4
-     * @see #shutdownInput
      */
     public boolean isInputShutdown() {
         return isInputShutdown(state);
@@ -1762,10 +1764,14 @@ public class Socket implements java.io.Closeable {
 
     /**
      * Returns whether the write-half of the socket connection is closed.
+     * <p>
+     * {@linkplain #close() Closing} a socket doesn't clear its write-half
+     * shutdown state, which means this method will return {@code true}
+     * for a closed socket if {@linkplain #shutdownOutput() shutdownOutput()}
+     * completed successfully prior to the socket being closed.
      *
      * @return true if the output of the socket has been shutdown
      * @since 1.4
-     * @see #shutdownOutput
      */
     public boolean isOutputShutdown() {
         return isOutputShutdown(state);
