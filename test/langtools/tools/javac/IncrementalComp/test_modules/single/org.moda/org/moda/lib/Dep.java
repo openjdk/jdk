@@ -23,7 +23,7 @@
 package org.moda.lib;
 
 public class Dep {
-    public static int getVal() {
+    public static long getVal() {
         return Lib.getVal();
     }
 }

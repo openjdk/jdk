@@ -29,15 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,12 +50,16 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
@@ -196,7 +192,7 @@ public class Arguments {
         errorMode = ErrorMode.LOG;
         files = new LinkedHashSet<>();
         deferredFileManagerOptions = new LinkedHashMap<>();
-        fileObjects = null;
+        fileObjects = new LinkedHashSet<>();
         classNames = new LinkedHashSet<>();
         processArgs(args, Option.getJavaCompilerOptions(), cmdLineHelper, true, false);
         if (errors) {
@@ -277,14 +273,6 @@ public class Arguments {
      * @return the files to be compiled
      */
     public Set<JavaFileObject> getFileObjects() {
-        if (fileObjects == null) {
-            fileObjects = new LinkedHashSet<>();
-        }
-        if (files != null) {
-            JavacFileManager jfm = (JavacFileManager) getFileManager();
-            for (JavaFileObject fo: jfm.getJavaFileObjectsFromPaths(files))
-                fileObjects.add(fo);
-        }
         return fileObjects;
     }
 
@@ -433,18 +421,11 @@ public class Arguments {
                         Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
                         if (sourceLoc == null) {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
-                        } else {
-                            Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
-
-                            for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
-                                String className = fm.inferBinaryName(sourceLoc, file);
-                                JavaFileObject classFile = fm.getJavaFileForInput(classLoc, className, Kind.CLASS);
-
-                                if (classFile == null || classFile.getLastModified() < file.getLastModified()) {
-                                    if (fileObjects == null)
-                                        fileObjects = new HashSet<>();
-                                    fileObjects.add(file);
-                                }
+                            return false;
+                        }
+                        if (isModuleOutOfDate(fm, module, sourceLoc)) {
+                            for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
+                                fileObjects.add(file);
                             }
                         }
                     }
@@ -453,6 +434,12 @@ public class Arguments {
                     ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
                     return false;
                 }
+            }
+        }
+        if (files != null) {
+            JavacFileManager jfm = (JavacFileManager) getFileManager();
+            for (JavaFileObject fo : jfm.getJavaFileObjectsFromPaths(files)){
+                fileObjects.add(fo);
             }
         }
 
@@ -645,6 +632,21 @@ public class Arguments {
         }
 
         return !errors && (log.nerrors == 0);
+    }
+
+    private static boolean isModuleOutOfDate(JavaFileManager fm, String module, Location sourceLoc) throws IOException {
+        // if any class file for the module is out of date, or a source file doesn't have a corresponding
+        // class file, this module is considered out of date.
+        Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
+        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
+            String className = fm.inferBinaryName(sourceLoc, file);
+            JavaFileObject classFile = fm.getJavaFileForInput(classLoc, className, Kind.CLASS);
+
+            if (classFile == null || classFile.getLastModified() < file.getLastModified()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Fragment releaseNote(Source source, String targetString) {
