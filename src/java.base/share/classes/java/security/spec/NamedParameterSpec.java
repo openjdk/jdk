@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,14 +116,6 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
      */
     public static final NamedParameterSpec ML_KEM_1024
             = new NamedParameterSpec("ML-KEM-1024");
-
-    /**
-     * The LMS parameters
-     *
-     * @since 27
-     */
-    public static final NamedParameterSpec LMS
-        = new NamedParameterSpec("LMS");
 
     private final String name;
 

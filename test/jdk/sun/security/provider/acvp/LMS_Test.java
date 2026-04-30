@@ -24,7 +24,12 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import sun.security.util.RawKeySpec;
 
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 
 import static jdk.test.lib.Utils.toByteArray;
 
@@ -45,29 +50,24 @@ public class LMS_Test {
         var s = p == null
                 ? Signature.getInstance("HSS/LMS")
                 : Signature.getInstance("HSS/LMS", p);
-        for (var t : kat.get("testGroups").elements()) {
-            String pname = "HSS/LMS";
-            var pk = new PublicKey() {
-                public String getAlgorithm() { return pname; }
-                public String getFormat() { return "RAW"; }
-                // Convert to HSS key by prepending height of tree
-                // to the LMS public key.
-                public byte[] getEncoded() { return toByteArray(
-                        "00000001" + t.get("publicKey").asString()); }
-                };
-            System.out.println(">> " + pname + " verify");
+        for (JSONValue t : kat.get("testGroups").elements()) {
 
-            for (var c : t.get("tests").elements()) {
+            System.out.println(">> " + t.get("lmsMode").asString()
+                    + " " + t.get("lmOtsMode").asString() + " verify");
+
+            //for (var c : t.get("tests").elements()) {
+            for (JSONValue c : t.get("tests").elements()) {
                 System.out.print(c.get("tcId").asInt() + " ");
                 var expected = c.get("testPassed").asBoolean();
                 var actual = true;
 
-                // build public key
-                PublicKey pk1;
-                RawKeySpec rks = new RawKeySpec(pk.getEncoded());
+                // Convert to HSS key by prepending height of tree (1)
+                // to the LMS public key.
+                RawKeySpec rks = new RawKeySpec(toByteArray(
+                        "00000001" + t.get("publicKey").asString()));
                 KeyFactory kf = p == null ? KeyFactory.getInstance("HSS/LMS") :
                         KeyFactory.getInstance("HSS/LMS", p);
-                pk1 = kf.generatePublic(rks);
+                PublicKey pk1 = kf.generatePublic(rks);
 
                 try {
                     s.initVerify(pk1);

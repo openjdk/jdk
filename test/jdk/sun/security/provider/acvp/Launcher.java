@@ -36,7 +36,7 @@ import java.util.zip.ZipFile;
 
 /*
  * @test
- * @bug 8342442 8345057
+ * @bug 8342442 8345057 8378443
  * @summary Test default implementation. Use othervm because
  *      ML_DSA_Impls.version might be modified
  * @library /test/lib
@@ -48,7 +48,7 @@ import java.util.zip.ZipFile;
 
 /*
  * @test
- * @bug 8342442 8345057
+ * @bug 8342442 8345057 8378443
  * @summary Test verifying the intrinsic implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
