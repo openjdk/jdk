@@ -546,7 +546,7 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
         result._count = count;
       } else if (data->is_ArrayLoadData()) {
         ciArrayLoadData* load = (ciArrayLoadData*) data->as_ArrayLoadData();
-        int count = saturated_add(load->flat_nullable_count(), load->flat_nullfree_atomic_count()) + load->flat_nullfree_not_atomic_count();
+        int count = load->flat_count();
         ciMegamorphicTypeData* megamorphic_type_data = load->megamorphic_type_data();
         return megamorphic_profile_at_bci(bci, count, megamorphic_type_data);
       }

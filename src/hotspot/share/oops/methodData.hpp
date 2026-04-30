@@ -2209,10 +2209,6 @@ public:
     return cell_offset(not_flat_nullable_count_off());
   }
 
-  static ByteSize count_offset() {
-    return cell_offset(flat_nullable_count_off());
-  }
-
   static ByteSize flat_nullable_count_offset() {
     return cell_offset(flat_nullable_count_off());
   }

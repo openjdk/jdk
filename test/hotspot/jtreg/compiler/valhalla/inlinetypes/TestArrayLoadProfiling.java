@@ -60,10 +60,14 @@ public class TestArrayLoadProfiling {
     static MyValue3[] array10 = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 1, new MyValue3(42));
     static MyValue3[] array11 = (MyValue3[])ValueClass.newNullRestrictedAtomicArray(MyValue3.class, 1, new MyValue3(42));
     static MyValue3[] array12 = (MyValue3[])ValueClass.newReferenceArray(MyValue3.class, 1);
-    static MyValue4[] array13 = (MyValue4[])ValueClass.newNullRestrictedNonAtomicArray(MyValue4.class, 1, new MyValue4(42));
-    static MyValue4[] array14 = (MyValue4[])ValueClass.newNullRestrictedAtomicArray(MyValue4.class, 1, new MyValue4(42));
+    static MyValue4[] array13 = (MyValue4[])ValueClass.newNullRestrictedNonAtomicArray(MyValue4.class, 1, new MyValue4((byte)42)); // atomic
+    static MyValue4[] array14 = (MyValue4[])ValueClass.newNullRestrictedAtomicArray(MyValue4.class, 1, new MyValue4((byte)42)); // atomic
     static MyValue4[] array15 = (MyValue4[])ValueClass.newNullableAtomicArray(MyValue4.class, 1);
     static MyValue4[] array16 = { new MyValue4((byte)42) };
+    static MyValue5[] array17 = (MyValue5[])ValueClass.newNullRestrictedNonAtomicArray(MyValue5.class, 1, new MyValue5((byte)42)); // non atomic
+    static MyValue5[] array18 = (MyValue5[])ValueClass.newNullRestrictedAtomicArray(MyValue5.class, 1, new MyValue5((byte)42)); // non atomic
+    static MyValue5[] array19 = (MyValue5[])ValueClass.newNullableAtomicArray(MyValue5.class, 1);
+    static MyValue5[] array20 = { new MyValue5((byte)42) };
     static {
         array6[0] = new MyValue1((byte)42);
         array7[0] = new MyValue2((byte)42);
@@ -71,6 +75,7 @@ public class TestArrayLoadProfiling {
         array9[0] = new MyValue1((byte)42);
         array12[0] = new MyValue3((byte)42);
         array15[0] = new MyValue4((byte)42);
+        array19[0] = new MyValue5((byte)42);
     }
     
     @Test
@@ -508,14 +513,16 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test26")
     public static void test26Runner() {
-        // for (int i = 0; i < 10; i++) {
-        //     test26(array1);
-        //     test26(array2);
-        // }
-        test26(array13);
-        test26(array14);
-        // test26(array15);
-        // test26(array16);
+        for (int i = 0; i < 10; i++) {
+            test26(array1);
+            test26(array2);
+        }
+        // test26(array13);
+        // test26(array14);
+        // test26(array17);
+        // test26(array18);
+        test26(array15);
+        test26(array16);
     }
 
     // @Test
@@ -580,10 +587,23 @@ public class TestArrayLoadProfiling {
     }
 
     static value class MyValue4 implements I {
-        int intField;
+        byte byteField;
+        byte byteField2;
 
-        MyValue4(int intField) {
-            this.intField = intField;
+        MyValue4(byte byteField) {
+            this.byteField = byteField;
+            this.byteField2 = byteField;
+        }
+
+        public void m() {
+        }
+    }
+
+    static value class MyValue5 implements I {
+        byte byteField;
+
+        MyValue5(byte byteField) {
+            this.byteField = byteField;
         }
 
         public void m() {
