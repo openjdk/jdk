@@ -216,8 +216,8 @@
  */
 
 /*
- * @key randomness
  * @test id=no-coops
+ * @key randomness
  * @summary Test clone barriers work correctly
  * @library /test/lib
  * @requires vm.gc.Shenandoah
@@ -250,8 +250,8 @@
  */
 
 /*
- * @key randomness
  * @test id=no-coops-verify
+ * @key randomness
  * @summary Test clone barriers work correctly
  * @library /test/lib
  * @requires vm.gc.Shenandoah
