@@ -64,15 +64,19 @@ public class LazyConstantsIrTest {
     //  * Access should be folded.
     //  * No barriers expected for a folded access (as opposed to a non-folded).
 
+    // Lazy constant
+
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR })
-    static int foldLazyConstant() {
+    static int foldLazyConstantGet() {
         return LAZY_CONSTANT.get();
     }
 
+    // Lazy list
+
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
-    static int foldLazyList() {
+    static int foldLazyListGet() {
         return LAZY_LIST.get(0);
     }
 
@@ -82,9 +86,11 @@ public class LazyConstantsIrTest {
         return LAZY_LIST.size();
     }
 
+    // Lazy map
+
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
-    static int foldLazyMap() {
+    static int foldLazyMapGet() {
         return LAZY_MAP.get(0);
     }
 
@@ -96,7 +102,15 @@ public class LazyConstantsIrTest {
 
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
-    static boolean foldLazySet() {
+    static int foldLazyMapHashCode() {
+        return LAZY_MAP.hashCode();
+    }
+
+    // Lazy set
+
+    @Test
+    @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
+    static boolean foldLazySetContains() {
         return LAZY_SET.contains(THE_VALUE);
     }
 
@@ -111,6 +125,5 @@ public class LazyConstantsIrTest {
     static int foldLazySetSize() {
         return LAZY_SET.size();
     }
-
 
 }

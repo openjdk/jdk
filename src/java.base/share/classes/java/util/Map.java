@@ -1801,6 +1801,31 @@ public interface Map<K, V> {
      * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
+     * <P>
+     * Here is an example involving an application that caches the values returned by some
+     * {@code expensiveOperation(int param))} for a given set of input parameters. By
+     * using a lazy map, we ensure that the {@code expensiveOperation(int param)} is
+     * called at most once per distinct input parameter. Once created, the retrieval of
+     * values is eligible for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     private static final Map<Integer, Double> CACHE
+     *         = Map.ofLazy(Set.of(0, 1, 3, 42, 97), param -> expensiveOperaton(param));
+     *
+     *     public static Optional<Double> cachedExpensiveOperation(int param) {
+     *         return Optional.ofNullable(CACHE.get(param));
+     *     }
+     *
+     *     private double expensiveOperation(int param) {
+     *       // Calculate the value ...
+     *     }
+     *
+     *      // Eligible for constant folding
+     *      double val = cachedExpensiveOperation(42).orElseThrow();
+     *
+     * }
+     * }
      * <p>
      * If the provided {@code Set} of {@code keys} is subsequently modified, the returned
      * {@code Map} will not reflect such modifications.

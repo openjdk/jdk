@@ -40,9 +40,6 @@ import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.ref.PhantomReference;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -53,8 +50,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 

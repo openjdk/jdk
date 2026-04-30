@@ -323,6 +323,13 @@ final class LazyMapTest {
     }
 
     @ParameterizedTest
+    @MethodSource("allSets")
+    void entrySetHashCode(Set<Value> set) {
+        assertEquals(newRegularMap(set).entrySet().hashCode(),
+                newLazyMap(set).entrySet().hashCode());
+    }
+
+    @ParameterizedTest
     @MethodSource("nonEmptySets")
     void keySet(Set<Value> set) {
         var lazy = newLazyMap(set);
@@ -722,7 +729,8 @@ final class LazyMapTest {
 
     static Stream<Operation> nullAverseOperations() {
         return Stream.of(
-            new Operation("forEach",     m -> m.forEach(null))
+            new Operation("forEach",       m -> m.forEach(null)),
+            new Operation("containsValue", m -> m.containsValue(null))
         );
     }
 

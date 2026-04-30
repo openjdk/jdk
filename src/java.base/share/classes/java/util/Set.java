@@ -815,6 +815,8 @@ public interface Set<E> extends Collection<E> {
      *     }
      *
      *     public static void process() {
+     *         // The if condition (and subsequent elimiated branch) is
+     *          // eligible for constant folding
      *         if (OPTIONS.contains(Option.DRY_RUN)) {
      *             // Skip processing in DRY_RUN mode
      *             return;

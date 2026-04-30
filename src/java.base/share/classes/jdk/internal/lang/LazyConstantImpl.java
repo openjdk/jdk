@@ -69,7 +69,8 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     // created by one thread and computed by another thread.
     // After the function is successfully invoked, the field is set to
     // `null` to allow the function to be collected. If the function fails, the field is
-    // set to the class of the Exception.
+    // set to the name of the exception class. We are not storing the exception class
+    // as that would have pinned the class loader of the exception.
     private volatile Object computingFunctionOrExceptionType;
 
     private LazyConstantImpl(Supplier<? extends T> computingFunction) {
@@ -101,12 +102,12 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                     } catch (Throwable ex) {
                         // Release the original computing function and replace it with
                         // an exception marker
-                        computingFunctionOrExceptionType = ex.getClass();
+                        computingFunctionOrExceptionType = ex.getClass().getName().intern();
                         throw new NoSuchElementException(ex);
                     }
                 } else {
                     throw new NoSuchElementException("Unable to access the constant because " +
-                            ((Class<?>) computingFunctionOrExceptionType).getName() +
+                            computingFunctionOrExceptionType +
                             " was thrown at initial computation");
                 }
             }
@@ -139,7 +140,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             if (cf != null) {
                 return (cf instanceof Supplier<?> supplier)
                         ? "computing function=" + isolateToString(supplier)
-                        : "failed with=" + ((Class<?>) cf).getName();
+                        : "failed with=" + cf;
             }
             // As we know `computingFunction` is `null` or via a volatile read, we
             // can now be sure that this lazy constant is initialized

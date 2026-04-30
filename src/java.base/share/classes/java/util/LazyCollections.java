@@ -34,12 +34,12 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Container class for lazy collections implementations. Not part of the public API.
@@ -110,6 +110,7 @@ final class LazyCollections {
 
         @Override
         public int indexOf(Object o) {
+            Objects.requireNonNull(o);
             for (int i = 0; i < size; i++) {
                 if (Objects.equals(o, get(i))) {
                     return i;
@@ -120,6 +121,7 @@ final class LazyCollections {
 
         @Override
         public int lastIndexOf(Object o) {
+            Objects.requireNonNull(o);
             for (int i = size - 1; i >= 0; i--) {
                 if (Objects.equals(o, get(i))) {
                     return i;
@@ -181,18 +183,15 @@ final class LazyCollections {
                 if (member.test(ordinal)) {
                     @SuppressWarnings("unchecked")
                     final K k = (K) key;
-                    return orElseCompute(k, indexForAsInt(k));
+                    return orElseCompute(k, indexFor(k));
                 }
             }
             return defaultValue;
         }
 
+        @ForceInline
         @Override
-        Integer indexFor(K key) {
-            return indexForAsInt(key);
-        }
-
-        private int indexForAsInt(K key) {
+        int indexFor(K key) {
             return key.ordinal() - min;
         }
 
@@ -203,7 +202,7 @@ final class LazyCollections {
             extends AbstractLazyMap<K, V> {
 
         // Use an unmodifiable map with known entries that are @Stable. Lookups through this map can be folded because
-        // it is created using Map.ofEntrie. This allows us to avoid creating a separate hashing function.
+        // it is created using Map.ofEntries. This allows us to avoid creating a separate hashing function.
         private final Map<K, Integer> indexMapper;
 
         public LazyMap(Set<K> keys, Function<? super K, ? extends V> computingFunction) {
@@ -231,8 +230,11 @@ final class LazyCollections {
 
         @Override public boolean containsKey(Object o) { return indexMapper.containsKey(o); }
 
+        @ForceInline
         @Override
-        Integer indexFor(K key) {
+        // This method will throw an NPE if the key does not exist. So, callers need to
+        // make sure the key exist before invoking this method.
+        int indexFor(K key) {
             return indexMapper.get(key);
         }
     }
@@ -247,10 +249,15 @@ final class LazyCollections {
         private final FunctionHolder<Function<? super K, ? extends V>> functionHolder;
         private final Set<Entry<K, V>> entrySet;
         // This field shadows AbstractMap.values which is of another type
-        private final V[] values;
-        // This field shadows AbstractMap.keySet which is not @Stable.
         @Stable
-        Set<K> keySet;
+        private final V[] values;
+        // This field shadows AbstractMap.keySet which is not trusted
+        private final Set<K> keySet;
+
+        // We are using a `long` here to get stable access even in the case
+        // that the 32-bit hash code is zero.
+        @Stable
+        private long hash;
 
         private AbstractLazyMap(Set<K> keySet,
                                 int size,
@@ -261,20 +268,59 @@ final class LazyCollections {
             this.values = newGenericArray(backingSize);
             this.mutexes = new Mutexes(backingSize);
             this.throwables = new Throwables(backingSize);
-            super();
             this.keySet = keySet;
+            super();
             this.entrySet = LazyMapEntrySet.of(this);
         }
 
         // Abstract methods
         @Override public abstract boolean containsKey(Object o);
-        abstract Integer indexFor(K key);
+        abstract int indexFor(K key);
 
         // Public methods
         @Override public final int              size() { return size; }
         @Override public final boolean          isEmpty() { return size == 0; }
         @Override public final Set<Entry<K, V>> entrySet() { return entrySet; }
         @Override public Set<K>                 keySet() { return keySet; }
+
+        @Override
+        public final boolean containsValue(Object value) {
+            Objects.requireNonNull(value);
+            for (K key : keySet) {
+                if (value.equals(orElseCompute(key, indexFor(key)))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public final int hashCode() {
+            // Racy computation
+            long h = hash;
+            if (h == 0) {
+                // Set a bit in the upper 32-bit region of the `long` to
+                // cater for the case the lower 32-bit hash is zero.
+                hash = h = expandToLong(hashCode0());
+            }
+            return reduceToInt(h);
+        }
+
+        private int hashCode0() {
+            int hash = 0;
+            for (K key : keySet) {
+                hash += key.hashCode() ^ orElseCompute(key, indexFor(key)).hashCode();
+            }
+            return hash;
+        }
+
+        @Override
+        public final void forEach(BiConsumer<? super K, ? super V> action) {
+            Objects.requireNonNull(action);
+            for (K key : keySet) {
+                action.accept(key, orElseCompute(key, indexFor(key)));
+            }
+        }
 
         @ForceInline
         @Override
@@ -335,16 +381,17 @@ final class LazyCollections {
                 @Override
                 public Entry<K, V> next() {
                     final K k = keyIterator.next();
-                    return new LazyEntry<>(k, map, map.functionHolder);
+                    return new LazyEntry<>(k, map);
                 }
 
                 @Override
                 public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                    Objects.requireNonNull(action);
                     final Consumer<? super K> innerAction =
                             new Consumer<>() {
                                 @Override
                                 public void accept(K key) {
-                                    action.accept(new LazyEntry<>(key, map, map.functionHolder));
+                                    action.accept(new LazyEntry<>(key, map));
                                 }
                             };
                     keyIterator.forEachRemaining(innerAction);
@@ -359,8 +406,7 @@ final class LazyCollections {
         }
 
         private record LazyEntry<K, V>(@Override K getKey, // trick
-                                       AbstractLazyMap<K, V> map,
-                                       FunctionHolder<Function<? super K, ? extends V>> functionHolder) implements Entry<K, V> {
+                                       AbstractLazyMap<K, V> map) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
             @Override public V      getValue() { return map.orElseCompute(getKey, map.indexFor(getKey)); }
@@ -375,7 +421,7 @@ final class LazyCollections {
                         && Objects.equals(getValue(), e.getValue());
             }
 
-            private int hash(Object obj) {
+            private static int hash(Object obj) {
                 return (obj == null) ? 0 : obj.hashCode();
             }
         }
@@ -431,6 +477,7 @@ final class LazyCollections {
         public LazySet(Set<? extends E> elementCandidates,
                        Predicate<? super E> computingFunction) {
             this.map = Map.ofLazy(elementCandidates, computingFunction::test);
+            super();
         }
 
         @Override
@@ -445,12 +492,12 @@ final class LazyCollections {
             if (h == 0) {
                 // Set a bit in the upper 32-bit region of the `long` to
                 // cater for the case the lower 32-bit hash is zero.
-                hash = h = (hashCode0() + (1L << 33));
+                hash = h = expandToLong(hashCode0());
             }
-            return (int) h;
+            return reduceToInt(h);
         }
 
-        public int hashCode0() {
+        private int hashCode0() {
             int hash = 0;
             for (var e: map.entrySet()) {
                 if (e.getValue()) {
@@ -474,6 +521,7 @@ final class LazyCollections {
 
             public LazySetIterator(Iterator<Map.Entry<E, Boolean>> iterator) {
                 this.iterator = iterator;
+                super();
             }
 
             @Override
@@ -597,6 +645,7 @@ final class LazyCollections {
 
         Throwables(int size) {
             this.throwables = new String[size];
+            super();
         }
 
         Optional<String> get(int index) {
@@ -737,6 +786,16 @@ final class LazyCollections {
                 function = null;
             }
         }
+    }
+
+    // Methods for supporting stable `int` values using a `long` field.
+
+    private static long expandToLong(int value) {
+        return (value + (1L << 33));
+    }
+
+    private static int reduceToInt(long value) {
+        return (int) value;
     }
 
     // Factories

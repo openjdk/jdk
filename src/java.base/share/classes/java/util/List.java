@@ -1250,6 +1250,29 @@ public interface List<E> extends SequencedCollection<E> {
      * <p>
      * The returned List is <em>not</em> {@linkplain Serializable}.
      * <p>
+     * Here is an example involving an application that maintains three separate
+     * {@code OrderController} components. Depending on a thread's id, one of the
+     * three {@code OrderController} components will be selected. By using a lazy list,
+     * we ensure that at most three {@code OrderController} instances are created. Once
+     * created, the component retrieval is eligible for constant folding by the JVM:
+     * {@snippet lang = java:
+     * class Application {
+     *
+     *     private static final POOL_SIZE = 3;
+     *
+     *     static final List<OrderController> ORDERS
+     *         = List.ofLazy(POOL_SIZE, _ -> new OrderController());
+     *
+     *     public static OrderController orders() {
+     *         long index = Thread.currentThread().threadId() % POOL_SIZE;
+     *         return ORDERS.get((int)index);
+     *     }
+     *
+     *      // Eligible for constant folding
+     *      OrderController orders = orders();
+     * }
+     * }
+     * <p>
      * The returned {@code List<E>} can be thought of as a list backed by a
      * {@code List<LazyConstant<E>>} field and where the {@linkplain List#get(int)}
      * operation is equivalent to:

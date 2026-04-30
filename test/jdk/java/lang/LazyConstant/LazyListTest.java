@@ -560,6 +560,9 @@ final class LazyListTest {
         return Stream.of(
                 new Operation("forEach",     l -> l.forEach(null)),
                 new Operation("containsAll", l -> l.containsAll(null)),
+                new Operation("contains",    l -> l.contains(null)),
+                new Operation("indexOf",     l -> l.indexOf(null)),
+                new Operation("lastIndexOf", l -> l.lastIndexOf(null)),
                 new Operation("toArray",     l -> l.toArray((Integer[]) null)),
                 new Operation("toArray",     l -> l.toArray((IntFunction<Integer[]>) null))
         );

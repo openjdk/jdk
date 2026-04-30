@@ -361,7 +361,7 @@ final class LazyConstantTest {
         assertEquals(UnsupportedOperationException.class, x.getCause().getClass());
 
         Object underlyingAfter = LazyConstantTestUtil.computingFunction(f1);
-        assertEquals(UnsupportedOperationException.class, underlyingAfter);
+        assertEquals(UnsupportedOperationException.class.getName(), underlyingAfter);
     }
 
     private static Stream<LazyConstant<Integer>> lazyConstants() {
