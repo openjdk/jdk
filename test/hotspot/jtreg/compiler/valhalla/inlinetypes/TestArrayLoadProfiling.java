@@ -26,6 +26,7 @@
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
+ * @modules java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
@@ -37,6 +38,7 @@ package compiler.valhalla.inlinetypes;
 
 import compiler.lib.ir_framework.*;
 import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.lang.reflect.Method;
@@ -590,6 +592,7 @@ public class TestArrayLoadProfiling {
         }
     }
 
+    @LooselyConsistentValue
     static value class MyValue4 implements I {
         byte byteField;
         byte byteField2;
