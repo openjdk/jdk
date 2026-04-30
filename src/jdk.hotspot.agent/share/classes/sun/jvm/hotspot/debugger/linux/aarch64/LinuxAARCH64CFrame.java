@@ -142,7 +142,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         CodeCache cc = VM.getVM().getCodeCache();
         CodeBlob currentBlob = cc.findBlobUnsafe(pc());
 
-        // This case is different from HotSpot. See JDK-8371194 for details.
+        // This case is different from HotSpot. See JDK-8371194 and JDK-8382548 for details.
         if (currentBlob == null) { // current frame is native
           senderSP = getSenderSP(null);
         } else { // current frame is Java
@@ -155,7 +155,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
           } else if (currentBlob.getFrameSize() == 0) {
             senderSP = fp().addOffsetTo(2 * VM.getVM().getAddressSize());
           } else {
-            // Calculate sender SP and FP without FP as possible
+            // Calculate sender SP and FP without FP
             // because we cannot believe FP if PreserveFramePointer is disabled.
             senderSP = sp().addOffsetTo(currentBlob.getFrameSize());
             senderFP = senderSP.getAddressAt(-2 * VM.getVM().getAddressSize());
