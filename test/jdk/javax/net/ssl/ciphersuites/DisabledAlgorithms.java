@@ -32,10 +32,12 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.Security;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -172,15 +174,14 @@ public class DisabledAlgorithms {
      * Checks if that specified cipher suites cannot be used.
      */
     private static void checkFailure(String[] ciphersuites) throws Exception {
-        for (String ciphersuite : ciphersuites) {
-            try (SSLServer server = new SSLServer(new String[]{ciphersuite})) {
-                startNewThread(server);
-                while (!server.isRunning()) {
-                    sleep();
-                }
+        try (SSLServer server = new SSLServer(ciphersuites)) {
+            startNewThread(server);
+            while (!server.isRunning()) {
+                sleep();
+            }
 
-                int port = server.getPort();
-                boolean clientSawExpectedException = false;
+            int port = server.getPort();
+            for (String ciphersuite : ciphersuites) {
                 try (SSLClient client = new SSLClient(port, ciphersuite)) {
                     client.connect();
                     throw new RuntimeException("Expected SSLHandshakeException "
@@ -188,18 +189,17 @@ public class DisabledAlgorithms {
                 } catch (SSLHandshakeException e) {
                     System.out.println("Got expected exception on client side: "
                             + e);
-                    clientSawExpectedException = true;
                 }
+            }
 
-                server.stop();
-                while (server.isRunning()) {
-                    sleep();
-                }
+            server.stop();
+            while (server.isRunning()) {
+                sleep();
+            }
 
-                if (!(clientSawExpectedException || server.sslError())) {
-                    throw new RuntimeException("Expected SSL exception "
-                            + "not thrown on client or server side");
-                }
+            if (!server.sslError()) {
+                throw new RuntimeException("Expected SSL exception "
+                        + "not thrown on server side");
             }
         }
 
@@ -209,14 +209,14 @@ public class DisabledAlgorithms {
      * Checks if specified cipher suites can be used.
      */
     private static void checkSuccess(String[] ciphersuites) throws Exception {
-        for (String ciphersuite : ciphersuites) {
-            try (SSLServer server = new SSLServer(new String[]{ciphersuite})) {
-                startNewThread(server);
-                while (!server.isRunning()) {
-                    sleep();
-                }
+        try (SSLServer server = new SSLServer(ciphersuites)) {
+            startNewThread(server);
+            while (!server.isRunning()) {
+                sleep();
+            }
 
-                int port = server.getPort();
+            int port = server.getPort();
+            for (String ciphersuite : ciphersuites) {
                 try (SSLClient client = new SSLClient(port, ciphersuite)) {
                     client.connect();
                     String negotiated = client.getNegotiatedCipherSuite();
@@ -227,15 +227,15 @@ public class DisabledAlgorithms {
                                 + negotiated);
                     }
                 }
+            }
 
-                server.stop();
-                while (server.isRunning()) {
-                    sleep();
-                }
+            server.stop();
+            while (server.isRunning()) {
+                sleep();
+            }
 
-                if (server.error()) {
-                    throw new RuntimeException("Unexpected error on server side");
-                }
+            if (server.error()) {
+                throw new RuntimeException("Unexpected error on server side");
             }
         }
 
@@ -270,7 +270,7 @@ public class DisabledAlgorithms {
                     DisabledAlgorithms.CERTIFICATES, getServerContextParameters());
             SSLServerSocketFactory ssf = context.getServerSocketFactory();
             SSLServerSocket ssocket = (SSLServerSocket)
-                    ssf.createServerSocket(0);
+                    ssf.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
 
             if (ciphersuites != null) {
                 System.out.println("Server: enable cipher suites: "
@@ -285,15 +285,20 @@ public class DisabledAlgorithms {
         public void run() {
             System.out.println("Server: started");
             running = true;
-            try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
-                System.out.println("Server: accepted client connection");
-                socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-                socket.startHandshake();
-                System.out.println("Server: negotiated cipher suite: " +
-                        socket.getSession().getCipherSuite());
-            } catch (SSLHandshakeException e) {
-                System.out.println("Server: run: " + e);
-                sslError = true;
+            try {
+                while (!stopped) {
+                    try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
+                        System.out.println("Server: accepted client connection from "
+                                + socket.getRemoteSocketAddress());
+                        socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+                        socket.startHandshake();
+                        System.out.println("Server: negotiated cipher suite: " +
+                                socket.getSession().getCipherSuite());
+                    } catch (SSLException e) {
+                        System.out.println("Server: run: " + e);
+                        sslError = true;
+                    }
+                }
             } catch (IOException e) {
                 if (!stopped) {
                     System.out.println("Server: run: unexpected exception: "
@@ -359,7 +364,8 @@ public class DisabledAlgorithms {
             SSLContext context = createSSLContext(DisabledAlgorithms.CERTIFICATES,
                     null, getClientContextParameters());
             SSLSocketFactory ssf = context.getSocketFactory();
-            SSLSocket socket = (SSLSocket) ssf.createSocket("localhost", port);
+            SSLSocket socket = (SSLSocket) ssf.createSocket(
+                    InetAddress.getLoopbackAddress(), port);
             socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (ciphersuite != null) {
