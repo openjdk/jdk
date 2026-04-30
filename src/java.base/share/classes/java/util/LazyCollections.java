@@ -241,16 +241,16 @@ final class LazyCollections {
     static abstract sealed class AbstractLazyMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
-        // This field shadows AbstractMap.keySet which is not @Stable.
-        Set<K> keySet;
-        // This field shadows AbstractMap.values which is of another type
-        @Stable
-        final V[] values;
-        Mutexes mutexes;
-        Throwables throwables;
+        private final Mutexes mutexes;
+        private final Throwables throwables;
         private final int size;
-        final FunctionHolder<Function<? super K, ? extends V>> functionHolder;
+        private final FunctionHolder<Function<? super K, ? extends V>> functionHolder;
         private final Set<Entry<K, V>> entrySet;
+        // This field shadows AbstractMap.values which is of another type
+        private final V[] values;
+        // This field shadows AbstractMap.keySet which is not @Stable.
+        @Stable
+        Set<K> keySet;
 
         private AbstractLazyMap(Set<K> keySet,
                                 int size,
@@ -358,7 +358,7 @@ final class LazyCollections {
             }
         }
 
-        private record LazyEntry<K, V>(K getKey, // trick
+        private record LazyEntry<K, V>(@Override K getKey, // trick
                                        AbstractLazyMap<K, V> map,
                                        FunctionHolder<Function<? super K, ? extends V>> functionHolder) implements Entry<K, V> {
 
@@ -420,7 +420,7 @@ final class LazyCollections {
         private final Map<E, Boolean> map;
 
         // -1 is used as a sentinel value for zero so we can get
-        // stable access for all `size` values.
+        // stable access for all `size` values. `size` is always non-negative.
         @Stable
         private int size;
         // We are using a `long` here to get stable access even in the case

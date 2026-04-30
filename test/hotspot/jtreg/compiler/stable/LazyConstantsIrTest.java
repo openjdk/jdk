@@ -59,36 +59,58 @@ public class LazyConstantsIrTest {
     static final Set<Integer> LAZY_SET = Set.ofLazy(Set.of(THE_VALUE), _ -> true);
     static final Map<Integer, Integer> LAZY_MAP = Map.ofLazy(Set.of(0), _ -> THE_VALUE);
 
+
+    // For all tests:
+    //  * Access should be folded.
+    //  * No barriers expected for a folded access (as opposed to a non-folded).
+
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR })
     static int foldLazyConstant() {
-        // Access should be folded.
-        // No barriers expected for a folded access (as opposed to a non-folded).
         return LAZY_CONSTANT.get();
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
     static int foldLazyList() {
-        // Access should be folded.
-        // No barriers expected for a folded access (as opposed to a non-folded).
         return LAZY_LIST.get(0);
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
-    static boolean foldLazySet() {
-        // Access should be folded.
-        // No barriers expected for a folded access (as opposed to a non-folded).
-        return LAZY_SET.contains(THE_VALUE);
+    static int foldLazyListSize() {
+        return LAZY_LIST.size();
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
     static int foldLazyMap() {
-        // Access should be folded.
-        // No barriers expected for a folded access (as opposed to a non-folded).
         return LAZY_MAP.get(0);
     }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
+    static int foldLazyMapSize() {
+        return LAZY_MAP.size();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
+    static boolean foldLazySet() {
+        return LAZY_SET.contains(THE_VALUE);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
+    static int foldLazySetHashCode() {
+        return LAZY_SET.hashCode();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LOAD, IRNode.MEMBAR})
+    static int foldLazySetSize() {
+        return LAZY_SET.size();
+    }
+
 
 }
