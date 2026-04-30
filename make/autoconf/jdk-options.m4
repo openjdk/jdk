@@ -323,6 +323,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_SUBST(COPY_DEBUG_SYMBOLS)
   AC_SUBST(ZIP_EXTERNAL_DEBUG_SYMBOLS)
 
+  # Should we enable objcopy debuginfo compression ?
+  UTIL_ARG_ENABLE(NAME: objcopy-debuginfo-compression, DEFAULT: false,
+      RESULT: ENABLE_OBJCOPY_DEBUGINFO_COMPRESSION,
+      DESC: [Set to enable compression in the debuginfo files],
+      CHECKING_MSG: [if debuginfo compression with objcopy is done])
+  AC_SUBST(ENABLE_OBJCOPY_DEBUGINFO_COMPRESSION)
+
   # Should we add external native debug symbols to the shipped bundles?
   AC_MSG_CHECKING([if we should add external native debug symbols to the shipped bundles])
   AC_ARG_WITH([external-symbols-in-bundles],

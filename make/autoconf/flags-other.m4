@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,18 +83,6 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
   fi
 
   AC_SUBST(STRIPFLAGS)
-])
-
-AC_DEFUN([FLAGS_SETUP_OBJCOPYFLAGS],
-[
-  UTIL_ARG_WITH(NAME: additional-objcopy-flags, TYPE: string,
-      DEFAULT: [],
-      DESC: [Add flags to objcopy calls],
-      OPTIONAL: true)
-
-  OBJCOPYFLAGS=$ADDITIONAL_OBJCOPY_FLAGS
-
-  AC_SUBST(OBJCOPYFLAGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_RCFLAGS],
