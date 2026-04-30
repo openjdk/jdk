@@ -100,14 +100,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
-}
-
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
@@ -258,7 +250,6 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   if (sts_active && !cancelled_gc()) {
-    assert(!ShenandoahEvacOOMHandler::is_active(), "Potential deadlock: cannot yield while OOM evac handler is active");
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -273,7 +264,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
   reset_cancellation_time();
-  _oom_evac_handler.clear();
 }
 
 inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
