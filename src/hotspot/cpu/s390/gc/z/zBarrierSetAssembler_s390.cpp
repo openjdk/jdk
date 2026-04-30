@@ -59,6 +59,8 @@ long some_fubar = 0;
 long store_slow_fubar = 0;
 long c1_load_fubar = 0;
 long c1_store_fubar = 0;
+long copy_load_slow_fubar = 0;
+long disjoint_fubar = 0;
 long atomic_nmethod_fubar = 0;
 long c1_load_runtime_fubar = 0;
 long c1_load_stub_fubar = 0;
@@ -245,8 +247,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
 
-    __ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
-    __ z_agsi(0, Z_R3, 1);
+    //__ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
+    //__ z_agsi(0, Z_R3, 1);
   }
 
   // Slow-path has already uncolored
@@ -295,8 +297,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // we can only have good value for fast path, for others it can be good as well as null
 
     if (is_atomic) {
-      __ load_const_optimized(rnew_zpointer, (uintptr_t)&atomic_nmethod_fubar);
-      __ z_agsi(0, rnew_zpointer, 1);
+      //__ load_const_optimized(rnew_zpointer, (uintptr_t)&atomic_nmethod_fubar);
+      //__ z_agsi(0, rnew_zpointer, 1);
       // Atomic operations must ensure that the contents of memory are store-good before
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
@@ -313,8 +315,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
-      __ load_const_optimized(rnew_zpointer, (uintptr_t)&non_atomic_nmethod_fubar);
-      __ z_agsi(0, rnew_zpointer, 1);
+      //__ load_const_optimized(rnew_zpointer, (uintptr_t)&non_atomic_nmethod_fubar);
+      //__ z_agsi(0, rnew_zpointer, 1);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
       __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
       // RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
@@ -379,11 +381,11 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_stg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
 
   // Compute the buffer entry address
-  __ z_la(temp2, Address(temp2, ZStoreBarrierBuffer::buffer_offset()));
+  __ load_address(temp2, Address(temp2, ZStoreBarrierBuffer::buffer_offset()));
   __ z_agr(temp2, temp1);
 
   // Compute and log the store address
-  __ z_la(temp1, ref_addr);
+  __ load_address(temp1, ref_addr);
   __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::p_offset())));
 
   // Load and log the prev value
@@ -418,14 +420,14 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
-    __ load_const_optimized(temp2, (uintptr_t)&atomic_store_medium_fubar);
-    __ z_agsi(0, temp2, 1);
+    //__ load_const_optimized(temp2, (uintptr_t)&atomic_store_medium_fubar);
+    //__ z_agsi(0, temp2, 1);
     __ z_lg(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotZero, slow_path);
 
-    __ load_const_optimized(temp2, (uintptr_t)&atomic_null_fubar);
-    __ z_agsi(0, temp2, 1);
+    //__ load_const_optimized(temp2, (uintptr_t)&atomic_null_fubar);
+    //__ z_agsi(0, temp2, 1);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
@@ -474,8 +476,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Register temp3) {
   BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
 
-  __ load_const_optimized(temp1, (uintptr_t)&store_fubar);
-  __ z_agsi(0, temp1, 1);
+  //__ load_const_optimized(temp1, (uintptr_t)&store_fubar);
+  //__ z_agsi(0, temp1, 1);
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
@@ -549,11 +551,9 @@ void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
                                              Register load_bad_mask,
                                              Label& slow_path,
                                              Label& continuation) const {
-  __ stop("copy load at fast");
-
   __ z_lg(zpointer, Address(addr, 0));
-  __ z_cgr(zpointer, load_bad_mask);
-  __ branch_optimized(Assembler::bcondNotEqual, slow_path);
+  __ z_ngrk(Z_R0_scratch, zpointer, load_bad_mask);
+  __ branch_optimized(Assembler::bcondNotZero, slow_path);
   __ bind(continuation);
 }
 
@@ -569,7 +569,12 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
 
   __ align(32);
   __ bind(slow_path);
-  __ stop("copy load at slow");
+
+  //__ z_ldgr(Z_F1, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&copy_load_slow_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F1);
+
   {
     ZRuntimeCallSpill rcs(masm, Z_R0);
     assert(zpointer != Z_ARG2, "or change argument setup");
@@ -592,13 +597,13 @@ void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
                                               Label& continuation,
                                               bool dest_uninitialized) const {
 
-  __ stop("copy store at fast");
   if (!dest_uninitialized) {
     __ z_lg(Z_R0, Address(ref_addr, 0));
-    __ z_cgr(Z_R0, store_bad_mask);
-    __ branch_optimized(Assembler::bcondNotEqual, medium_path);
+    __ z_ngr(Z_R0, store_bad_mask);
+    __ branch_optimized(Assembler::bcondNotZero, medium_path);
     __ bind(continuation);
   }
+  __ z_nill(zpointer, 0);
   __ z_ogr(zpointer, store_good_mask);
   __ z_stg(zpointer, Address(ref_addr, 0));
 }
@@ -614,11 +619,13 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
   __ stop("copy store at slow");
 
   if (!dest_unintialized) {
-    Label slow_path;
+    Label slow_path, slow_path_continuation;
     __ align(32);
     __ bind(medium_path);
     // TODO: Check for slow_path_continuation -> done
-    store_barrier_medium(masm, Address(addr, 0), Z_R0_scratch, Z_R1_scratch, false, false, continuation, slow_path, continuation);
+    __ z_ldgr(Z_F0, Z_tmp_1);
+    store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_R1_scratch, false, false, continuation, slow_path, slow_path_continuation);
+    __ z_lgdr(Z_tmp_1, Z_F0);
     __ bind(slow_path);
     {
       ZRuntimeCallSpill rcs(masm, noreg);
@@ -634,7 +641,10 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 //      count: Z_ARG3 (int >= 0)
 // TODO: Use vector instructions
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
-  __ stop("generate disjoint oop copy");
+  //__ z_ldgr(Z_F1, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&disjoint_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F1);
 
   const Register zpointer = Z_R1;
   // RuntimeTODO: Where is zpointer stored?
@@ -707,10 +717,10 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
 
   __ block_comment("arraycopy_prologue (zgc) {");
 
-  __ z_ldgr(Z_F0, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&arraycopy_prologue_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F0);
+  //__ z_ldgr(Z_F0, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&arraycopy_prologue_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F0);
 
   load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
 
@@ -736,7 +746,6 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Register robj,
                                                          Register temp,
                                                          Label& slowpath) {
-  __ stop("try resolve jobject in native");
   BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
 
   Label done, tagged, weak_tagged, uncolor;
@@ -788,10 +797,10 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
-  __ z_ldgr(Z_F2, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&z_color_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F2);
+  //__ z_ldgr(Z_F2, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&z_color_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F2);
 
   __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
@@ -815,10 +824,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   
 
   if (on_non_strong) {
-    __ z_ldgr(Z_F0, Z_R1);
-    __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
-    __ z_agsi(0, Z_R1, 1);
-    __ z_lgdr(Z_R1, Z_F0);
+    //__ z_ldgr(Z_F0, Z_R1);
+    //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
+    //__ z_agsi(0, Z_R1, 1);
+    //__ z_lgdr(Z_R1, Z_F0);
     // Test against MarkBad mask
     __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
@@ -853,10 +862,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   Register ref_addr = noreg;
   Register temp = noreg;
 
-  __ z_ldgr(Z_F0, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F0);
+  //__ z_ldgr(Z_F0, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F0);
 
   if (stub->tmp()->is_valid()) {
     //Load address into tmp register
@@ -907,10 +916,10 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                                                      LIR_Opr new_zaddress,
                                                      LIR_Opr new_zpointer,
                                                      ZStoreBarrierStubC1* stub) const {
-  __ z_ldgr(Z_F1, Z_R1);
-  __ load_const_optimized(Z_R1, (uintptr_t)&c1_store_fubar);
-  __ z_agsi(0, Z_R1, 1);
-  __ z_lgdr(Z_R1, Z_F1);
+  //__ z_ldgr(Z_F1, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_store_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F1);
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
@@ -948,8 +957,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  __ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
-  __ z_agsi(0, scratch, 1);
+  //__ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
+  //__ z_agsi(0, scratch, 1);
  
   // Pass store address in the stack
   __ z_lay(Z_R0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
@@ -1027,8 +1036,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
 
-  __ load_const_optimized(Z_R5, (uintptr_t)&c1_store_runtime_fubar);
-  __ z_agsi(0, Z_R5, 1);
+  //__ load_const_optimized(Z_R5, (uintptr_t)&c1_store_runtime_fubar);
+  //__ z_agsi(0, Z_R5, 1);
 
   offset = 168;
   __ restore_return_pc();                   offset += 8;

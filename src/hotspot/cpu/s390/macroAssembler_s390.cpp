@@ -56,6 +56,8 @@
 
 #include <ucontext.h>
 
+long verify_fubar = 0;
+
 #define BLOCK_COMMENT(str) block_comment(str)
 #define BIND(label)        bind(label); BLOCK_COMMENT(#label ":")
 
@@ -5950,6 +5952,7 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
 
   save_return_pc();
 
+  
   // Push frame, but preserve flags
   z_lgr(Z_R0, Z_SP);
   z_lay(Z_SP, -((int64_t)nbytes_save + frame::z_abi_160_size), Z_SP);
@@ -5959,7 +5962,12 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
 
   lgr_if_needed(Z_ARG2, oop);
   load_const_optimized(Z_ARG1, (address)msg);
+  //load_const_optimized(Z_R1, (uintptr_t)&verify_fubar);
+  //z_agsi(0, Z_R1, 1);
+
   load_const_optimized(Z_R1, entry_addr);
+
+
   z_lg(Z_R1, 0, Z_R1);
   call_c(Z_R1);
 

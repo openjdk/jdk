@@ -46,6 +46,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -1352,6 +1355,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
+    } else
+#endif
     generate_disjoint_copy(aligned, size, true, true);
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
@@ -1463,6 +1472,12 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
+#if INCLUDE_ZGC
+    if (UseZGC) {
+      ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
+      zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
+    } else 
+#endif
     generate_conjoint_copy(aligned, size, true);  // Must preserve ARG2, ARG3.
 
     bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, Z_ARG2, Z_ARG3, true);
