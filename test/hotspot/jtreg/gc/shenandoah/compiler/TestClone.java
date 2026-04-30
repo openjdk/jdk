@@ -22,6 +22,9 @@
  * questions.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
 /*
  * @test id=default
  * @summary Test clone barriers work correctly
@@ -168,6 +171,37 @@
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+/*
+ * @test id=aggressive-verify
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:+ShenandoahVerify
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:+ShenandoahVerify
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *                   -XX:+ShenandoahVerify
  *                   -XX:TieredStopAtLevel=4
  *                   TestClone
  */
@@ -427,9 +461,12 @@
 
 public class TestClone {
 
+    private static final List<Object> objects = new ArrayList<>();
+    private static volatile Object sink;
+
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 10000; i++) {
-            Object[] src = new Object[i];
+            Object[] src = new Object[i % 512]; // A range of sizes, but limit overhead
             for (int c = 0; c < src.length; c++) {
                 src[c] = new Object();
             }
@@ -438,6 +475,7 @@ public class TestClone {
             testWithObject(new SmallObject());
             testWithObject(new LargeObject());
         }
+        testOld();
     }
 
     static void testWith(Object[] src) {
@@ -485,6 +523,25 @@ public class TestClone {
             dst.x15 != src.x15 ||
             dst.x16 != src.x16) {
             throw new IllegalStateException("Contents do not match");
+        }
+    }
+
+    public static void testOld() throws Exception {
+        // Trying to stress the interaction with garbage collection.
+        // Clone old objects while creating garbage. Do *not* read from the cloned
+        // objects as this may trigger LRB to heal a stale from-space reference.
+        // The failure mode here is a ShenandoahVerify observing a bad ref.
+        for (int i = 0; i < 100_000; i++) {
+            objects.add(new SmallObject());
+            objects.add(new LargeObject());
+            objects.add(new Object[i % 100]); // various sizes
+            Object oldObject = objects.get(i % 100);
+            sink = switch (oldObject) {
+                case SmallObject s -> s.clone();
+                case LargeObject l -> l.clone();
+                case Object[] a -> a.clone();
+                default -> throw new IllegalStateException("Impossible");
+            };
         }
     }
 
