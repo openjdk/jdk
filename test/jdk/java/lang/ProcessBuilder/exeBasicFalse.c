@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.shared;
-
 /**
- * Exception threw when {@link ComparisonConstraintParser} parses an invalid comparator.
+ * Command line program to return exit status 1.
+ * Note: the file name prefix "exe" identifies the source should be built into BasicFalse(.exe).
  */
-@SuppressWarnings("serial")
-public class InvalidComparatorException extends Exception {
-    private final String comparator;
-
-    public InvalidComparatorException(String comparator) {
-        this.comparator = comparator;
-    }
-
-    public String getComparator() {
-        return comparator;
-    }
+int main(int argc, char** argv) {
+    return 1;
 }

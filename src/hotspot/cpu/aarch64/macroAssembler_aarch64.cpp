@@ -7274,3 +7274,20 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
 
   bind(unlocked);
 }
+
+// Rotate using USHR and SLI instructions (or copy, if rotate count is zero)
+void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                                        FloatRegister src, int shift_amount) {
+  assert(src != dst, "did not expect src and dst to be the same register");
+
+  int esize = BitsPerByte << (T / 2);
+  int lshift = shift_amount & (esize - 1);
+
+  if (lshift == 0) {
+    // T & 1 == 0 => 64-bit arrangements, else 128-bit arrangements
+    orr(dst, (T & 1) == 0 ? T8B : T16B, src, src);
+  } else {
+    ushr(dst, T, src, esize - lshift);
+    sli(dst, T, src, lshift);
+  }
+}
