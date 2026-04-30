@@ -46,7 +46,6 @@ public abstract class XOperations extends JPanel implements ActionListener {
             "jam.xoperations.invoke.result";
     private java.util.List<NotificationListener> notificationListenersList;
     private Hashtable<JButton, OperationEntry> operationEntryTable;
-
     private XMBean mbean;
     private MBeanInfo mbeanInfo;
     private MBeansTab mbeansTab;
@@ -129,7 +128,6 @@ public abstract class XOperations extends JPanel implements ActionListener {
             methodButton.putClientProperty("html.disable", Boolean.TRUE);
             methodButton.setText(operations[i].getName());
             methodButton.setToolTipText(operations[i].getDescription());
-
             boolean callable = isCallable(operations[i].getSignature());
             if (callable) {
                 methodButton.addActionListener(this);

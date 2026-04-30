@@ -52,7 +52,6 @@ public class OperationEntry extends JPanel {
             add(new JLabel("(",JLabel.CENTER));
             inputs = new XTextField[params.length];
             for (int i = 0; i < params.length; i++) {
-
                 if(params[i].getName() != null) {
                     JLabel name = new JLabel(params[i].getName(), JLabel.CENTER) {
                         @Override

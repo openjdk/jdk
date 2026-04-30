@@ -821,7 +821,6 @@ public class XMBeanAttributes extends XTable {
                                                      int column) {
 
             table.putClientProperty("html.disable", Boolean.TRUE);
-
             Object val = value;
             if(column == VALUE_COLUMN) {
                 Object obj = getModel().getValueAt(row,

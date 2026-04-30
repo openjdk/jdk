@@ -95,7 +95,6 @@ public class XSheet extends JPanel
 
     private void setupScreen() {
         putClientProperty("html.disable", Boolean.TRUE);
-
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createLineBorder(Color.GRAY));
         // add main panel to XSheet
