@@ -130,7 +130,7 @@ public class SocketNAPITest {
                         // check ID remains consistent
                         sID = s.getOption(SO_INCOMING_NAPI_ID);
                         cID = c.getOption(SO_INCOMING_NAPI_ID);
-                        if(initialRun) {
+                        if (initialRun) {
                             assertTrue(sID >= 0, "Socket: Server");
                             assertTrue(cID >= 0, "Socket: Client");
                             initialRun = false;
