@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,10 @@
  * @run main/othervm/timeout=480 DisabledAlgorithms empty
  */
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.Security;
 import java.util.concurrent.TimeUnit;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
@@ -55,6 +52,8 @@ import javax.net.ssl.SSLSocketFactory;
  * that the handshake cannot complete successfully.
  */
 public class DisabledAlgorithms {
+
+    private static final int SOCKET_TIMEOUT_MILLIS = 10_000;
 
     public static final SSLContextTemplate.Cert[] CERTIFICATES = {
             SSLContextTemplate.Cert.EE_DSA_SHA1_1024,
@@ -139,15 +138,15 @@ public class DisabledAlgorithms {
         }
 
         switch (args[0]) {
-            case "default":
+            case "default" -> {
                 // use default jdk.tls.disabledAlgorithms
                 System.out.println("jdk.tls.disabledAlgorithms = "
                         + Security.getProperty("jdk.tls.disabledAlgorithms"));
 
                 // check that disabled cipher suites can't be used by default
                 checkFailure(DISABLED_CIPHERSUITES);
-                break;
-            case "empty":
+            }
+            case "empty" -> {
                 // reset jdk.tls.disabledAlgorithms
                 Security.setProperty("jdk.tls.disabledAlgorithms", "");
                 System.out.println("jdk.tls.disabledAlgorithms = "
@@ -162,9 +161,8 @@ public class DisabledAlgorithms {
                 // check that disabled cipher suites can be used if
                 // jdk.{tls,certpath}.disabledAlgorithms is empty
                 checkSuccess(DISABLED_CIPHERSUITES);
-                break;
-            default:
-                throw new RuntimeException("Wrong parameter: " + args[0]);
+            }
+            default -> throw new RuntimeException("Wrong parameter: " + args[0]);
         }
 
         System.out.println("Test passed");
@@ -174,14 +172,15 @@ public class DisabledAlgorithms {
      * Checks if that specified cipher suites cannot be used.
      */
     private static void checkFailure(String[] ciphersuites) throws Exception {
-        try (SSLServer server = new SSLServer(ciphersuites)) {
-            startNewThread(server);
-            while (!server.isRunning()) {
-                sleep();
-            }
+        for (String ciphersuite : ciphersuites) {
+            try (SSLServer server = new SSLServer(new String[]{ciphersuite})) {
+                startNewThread(server);
+                while (!server.isRunning()) {
+                    sleep();
+                }
 
-            int port = server.getPort();
-            for (String ciphersuite : ciphersuites) {
+                int port = server.getPort();
+                boolean clientSawExpectedException = false;
                 try (SSLClient client = new SSLClient(port, ciphersuite)) {
                     client.connect();
                     throw new RuntimeException("Expected SSLHandshakeException "
@@ -189,17 +188,18 @@ public class DisabledAlgorithms {
                 } catch (SSLHandshakeException e) {
                     System.out.println("Got expected exception on client side: "
                             + e);
+                    clientSawExpectedException = true;
                 }
-            }
 
-            server.stop();
-            while (server.isRunning()) {
-                sleep();
-            }
+                server.stop();
+                while (server.isRunning()) {
+                    sleep();
+                }
 
-            if (!server.sslError()) {
-                throw new RuntimeException("Expected SSL exception "
-                        + "not thrown on server side");
+                if (!(clientSawExpectedException || server.sslError())) {
+                    throw new RuntimeException("Expected SSL exception "
+                            + "not thrown on client or server side");
+                }
             }
         }
 
@@ -209,14 +209,14 @@ public class DisabledAlgorithms {
      * Checks if specified cipher suites can be used.
      */
     private static void checkSuccess(String[] ciphersuites) throws Exception {
-        try (SSLServer server = new SSLServer(ciphersuites)) {
-            startNewThread(server);
-            while (!server.isRunning()) {
-                sleep();
-            }
+        for (String ciphersuite : ciphersuites) {
+            try (SSLServer server = new SSLServer(new String[]{ciphersuite})) {
+                startNewThread(server);
+                while (!server.isRunning()) {
+                    sleep();
+                }
 
-            int port = server.getPort();
-            for (String ciphersuite : ciphersuites) {
+                int port = server.getPort();
                 try (SSLClient client = new SSLClient(port, ciphersuite)) {
                     client.connect();
                     String negotiated = client.getNegotiatedCipherSuite();
@@ -227,15 +227,15 @@ public class DisabledAlgorithms {
                                 + negotiated);
                     }
                 }
-            }
 
-            server.stop();
-            while (server.isRunning()) {
-                sleep();
-            }
+                server.stop();
+                while (server.isRunning()) {
+                    sleep();
+                }
 
-            if (server.error()) {
-                throw new RuntimeException("Unexpected error on server side");
+                if (server.error()) {
+                    throw new RuntimeException("Unexpected error on server side");
+                }
             }
         }
 
@@ -285,40 +285,32 @@ public class DisabledAlgorithms {
         public void run() {
             System.out.println("Server: started");
             running = true;
-            while (!stopped) {
-                try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
-                    System.out.println("Server: accepted client connection");
-                    InputStream in = socket.getInputStream();
-                    OutputStream out = socket.getOutputStream();
-                    int b = in.read();
-                    if (b < 0) {
-                        throw new IOException("Unexpected EOF");
-                    }
-                    System.out.println("Server: send data: " + b);
-                    out.write(b);
-                    out.flush();
-                    socket.getSession().invalidate();
-                } catch (SSLHandshakeException e) {
+            try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
+                System.out.println("Server: accepted client connection");
+                socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+                socket.startHandshake();
+                System.out.println("Server: negotiated cipher suite: " +
+                        socket.getSession().getCipherSuite());
+            } catch (SSLHandshakeException e) {
+                System.out.println("Server: run: " + e);
+                sslError = true;
+            } catch (IOException e) {
+                if (!stopped) {
+                    System.out.println("Server: run: unexpected exception: "
+                            + e);
+                    e.printStackTrace();
+                    otherError = true;
+                } else {
                     System.out.println("Server: run: " + e);
-                    sslError = true;
-                } catch (IOException e) {
-                    if (!stopped) {
-                        System.out.println("Server: run: unexpected exception: "
-                                + e);
-                        e.printStackTrace();
-                        otherError = true;
-                        stopped = true;
-                    } else {
-                        System.out.println("Server: run: " + e);
-                        System.out.println("The exception above occurred "
-                                + "because socket was closed, "
-                                + "please ignore it");
-                    }
+                    System.out.println("The exception above occurred "
+                            + "because socket was closed, "
+                            + "please ignore it");
                 }
+            } finally {
+                running = false;
             }
 
             System.out.println("Server: finished");
-            running = false;
         }
 
         int getPort() {
@@ -368,6 +360,7 @@ public class DisabledAlgorithms {
                     null, getClientContextParameters());
             SSLSocketFactory ssf = context.getSocketFactory();
             SSLSocket socket = (SSLSocket) ssf.createSocket("localhost", port);
+            socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
 
             if (ciphersuite != null) {
                 System.out.println("Client: enable cipher suite: "
@@ -379,20 +372,7 @@ public class DisabledAlgorithms {
 
         void connect() throws IOException {
             System.out.println("Client: connect to server");
-            try (
-                    BufferedInputStream bis = new BufferedInputStream(
-                            socket.getInputStream());
-                    BufferedOutputStream bos = new BufferedOutputStream(
-                            socket.getOutputStream())) {
-                bos.write('x');
-                bos.flush();
-
-                int read = bis.read();
-                if (read < 0) {
-                    throw new IOException("Client: couldn't read a response");
-                }
-                socket.getSession().invalidate();
-            }
+            socket.startHandshake();
         }
 
         String[] getEnabledCiperSuites() {
