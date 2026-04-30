@@ -46,7 +46,8 @@ import java.util.Objects;
  * This class is capable of reading a concatenated GZIP stream.
  *
  * @apiNote
- * The {@link #close} method should be called to release resources used by this stream.
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @spec https://www.rfc-editor.org/info/rfc1952
  *       RFC 1952: GZIP file format specification version 4.3
