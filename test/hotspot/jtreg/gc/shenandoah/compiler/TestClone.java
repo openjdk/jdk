@@ -22,8 +22,8 @@
  * questions.
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /*
  * @test id=default
@@ -461,131 +461,141 @@ import java.util.List;
 
 public class TestClone {
 
-    private static final List<Object> objects = new ArrayList<>();
-    private static volatile Object sink;
+    private static final int ENTRIES = 10_000;
+    private static final int ITERS = 1_000_000;
+    private static final int ARRAY_MAX_SIZE = 128;
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 10000; i++) {
-            Object[] src = new Object[i % 512]; // A range of sizes, but limit overhead
-            for (int c = 0; c < src.length; c++) {
-                src[c] = new Object();
-            }
-            testWith(src);
+        SmallObject[] small = new SmallObject[ENTRIES];
+        LargeObject[] large = new LargeObject[ENTRIES];
+        Ref[][] array = new Ref[ENTRIES][];
 
-            testWithObject(new SmallObject());
-            testWithObject(new LargeObject());
+        for (int i = 0; i < ENTRIES; i++) {
+            small[i] = new SmallObject(i);
+            large[i] = new LargeObject(i);
+            array[i] = newArray(i);
         }
-        testOld();
+
+        Random rand = Utils.getRandomInstance();
+        for (int i = 0; i < ITERS; i++) {
+            int r = rand.nextInt(ENTRIES);
+
+            SmallObject s = small[r];
+            small[r] = (SmallObject) s.clone();
+            verify(s, r); // verify *after* clone to avoid LRB healing from-space refs
+
+            LargeObject l = large[r];
+            large[r] = (LargeObject) l.clone();
+            verify(l, r);
+
+            Ref[] a = array[r];
+            array[r] = a.clone();
+            verify(a, r);
+        }
     }
 
-    static void testWith(Object[] src) {
-        Object[] dst = src.clone();
+    static Ref[] newArray(int id) {
+        int size = id % ARRAY_MAX_SIZE;
+        Ref[] arr = new Ref[size];
+        for (int i = 0; i < size; i++) arr[i] = new Ref(id * 1_000 + i);
+        return arr;
+    }
+
+    static void verify(SmallObject src, int id) {
+        int expected = id;
+        if (src.x1.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x1.x);
+        if (src.x2.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x2.x);
+        if (src.x3.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x3.x);
+        if (src.x4.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x4.x);
+    }
+
+    static void verify(LargeObject src, int id) {
+        int expected = id;
+        if (src.x01.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x01.x);
+        if (src.x02.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x02.x);
+        if (src.x03.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x03.x);
+        if (src.x04.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x04.x);
+        if (src.x05.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x05.x);
+        if (src.x06.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x06.x);
+        if (src.x07.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x07.x);
+        if (src.x08.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x08.x);
+        if (src.x09.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x09.x);
+        if (src.x10.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x10.x);
+        if (src.x11.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x11.x);
+        if (src.x12.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x12.x);
+        if (src.x13.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x13.x);
+        if (src.x14.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x14.x);
+        if (src.x15.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x15.x);
+        if (src.x16.x != expected++) throw new IllegalStateException("Mismatch: id=" + id + ", expected=" + (expected - 1) + ", actual=" + src.x16.x);
+    }
+
+    static void verify(Ref[] src, int id) {
+        int expectedLen = id % 1000;
         int srcLen = src.length;
-        int dstLen = dst.length;
-        if (srcLen != dstLen) {
-            throw new IllegalStateException("Lengths do not match: " + srcLen + " vs " + dstLen);
+        if (srcLen != expectedLen) {
+            throw new IllegalStateException("Lengths do not match: " + srcLen + " vs " + expectedLen);
         }
-        for (int c = 0; c < src.length; c++) {
-            Object s = src[c];
-            Object d = dst[c];
-            if (s != d) {
-                throw new IllegalStateException("Elements do not match at " + c + ": " + s + " vs " + d + ", len = " + srcLen);
+        for (int i = 0; i < src.length; i++) {
+            int expectedVal = id * 1_000 + i;
+            int val = src[i].x;
+            if (val != expectedVal) {
+                throw new IllegalStateException("Elements do not match at " + i + ": " + val + " vs " + expectedVal + ", len = " + srcLen);
             }
         }
     }
 
-    static void testWithObject(SmallObject src) {
-        SmallObject dst = src.clone();
-        if (dst.x1 != src.x1 ||
-            dst.x2 != src.x2 ||
-            dst.x3 != src.x3 ||
-            dst.x4 != src.x4) {
-            throw new IllegalStateException("Contents do not match");
+    static class Ref {
+        int x;
+
+        Ref(int x) {
+            this.x = x;
         }
     }
 
-    static void testWithObject(LargeObject src) {
-        LargeObject dst = src.clone();
-        if (dst.x01 != src.x01 ||
-            dst.x02 != src.x02 ||
-            dst.x03 != src.x03 ||
-            dst.x04 != src.x04 ||
-            dst.x05 != src.x05 ||
-            dst.x06 != src.x06 ||
-            dst.x07 != src.x07 ||
-            dst.x08 != src.x08 ||
-            dst.x09 != src.x09 ||
-            dst.x10 != src.x10 ||
-            dst.x11 != src.x11 ||
-            dst.x12 != src.x12 ||
-            dst.x13 != src.x13 ||
-            dst.x14 != src.x14 ||
-            dst.x15 != src.x15 ||
-            dst.x16 != src.x16) {
-            throw new IllegalStateException("Contents do not match");
-        }
-    }
-
-    public static void testOld() throws Exception {
-        // Trying to stress the interaction with garbage collection.
-        // Clone old objects while creating garbage. Do *not* read from the cloned
-        // objects as this may trigger LRB to heal a stale from-space reference.
-        // The failure mode here is a ShenandoahVerify observing a bad ref.
-        for (int i = 0; i < 100_000; i++) {
-            objects.add(new SmallObject());
-            objects.add(new LargeObject());
-            objects.add(new Object[i % 100]); // various sizes
-            Object oldObject = objects.get(i % 100);
-            sink = switch (oldObject) {
-                case SmallObject s -> s.clone();
-                case LargeObject l -> l.clone();
-                case Object[] a -> a.clone();
-                default -> throw new IllegalStateException("Impossible");
-            };
-        }
-    }
-
-    static class SmallObject implements Cloneable {
-        Object x1 = new Object();
-        Object x2 = new Object();
-        Object x3 = new Object();
-        Object x4 = new Object();
-
+    static abstract class DefaultClone<T> implements Cloneable {
         @Override
-        public SmallObject clone() {
+        @SuppressWarnings("unchecked")
+        public T clone() {
             try {
-                return (SmallObject) super.clone();
+                return (T) super.clone();
             } catch (CloneNotSupportedException e) {
-                throw new AssertionError();
+                throw new AssertionError(e);
             }
         }
     }
 
-    static class LargeObject implements Cloneable {
-        Object x01 = new Object();
-        Object x02 = new Object();
-        Object x03 = new Object();
-        Object x04 = new Object();
-        Object x05 = new Object();
-        Object x06 = new Object();
-        Object x07 = new Object();
-        Object x08 = new Object();
-        Object x09 = new Object();
-        Object x10 = new Object();
-        Object x11 = new Object();
-        Object x12 = new Object();
-        Object x13 = new Object();
-        Object x14 = new Object();
-        Object x15 = new Object();
-        Object x16 = new Object();
+    static class SmallObject extends DefaultClone {
+        Ref x1,x2,x3,x4;
 
-        @Override
-        public LargeObject clone() {
-            try {
-                return (LargeObject) super.clone();
-            } catch (CloneNotSupportedException e) {
-                throw new AssertionError();
-            }
+        SmallObject(int x) {
+            x1 = new Ref(x++);
+            x2 = new Ref(x++);
+            x3 = new Ref(x++);
+            x4 = new Ref(x++);
+        }
+    }
+
+    static class LargeObject extends DefaultClone {
+        Ref x01,x02,x03,x04,x05,x06,x07,x08;
+        Ref x09,x10,x11,x12,x13,x14,x15,x16;
+
+        LargeObject(int x) {
+            x01 = new Ref(x++);
+            x02 = new Ref(x++);
+            x03 = new Ref(x++);
+            x04 = new Ref(x++);
+            x05 = new Ref(x++);
+            x06 = new Ref(x++);
+            x07 = new Ref(x++);
+            x08 = new Ref(x++);
+            x09 = new Ref(x++);
+            x10 = new Ref(x++);
+            x11 = new Ref(x++);
+            x12 = new Ref(x++);
+            x13 = new Ref(x++);
+            x14 = new Ref(x++);
+            x15 = new Ref(x++);
+            x16 = new Ref(x++);
         }
     }
 }
