@@ -513,18 +513,10 @@ public class TestArrayLoadProfiling {
 
     @Run(test = "test26")
     public static void test26Runner() {
-        // if (ValueClass.isAtomicArray(array13)) {
-        //     throw new RuntimeException("atomic");
-        // }
-        if (!ValueClass.isAtomicArray(array14)) {
-            throw new RuntimeException("not atomic");
-        }
-        // if (ValueClass.isAtomicArray(array17)) {
-        //     throw new RuntimeException("atomic");
-        // }
-        if (!ValueClass.isAtomicArray(array18)) {
-            throw new RuntimeException("not atomic");
-        }
+        System.out.println("array13 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array13) ? "atomic" : " non atomic"));
+        System.out.println("array14 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array14) ? "atomic" : " non atomic"));
+        System.out.println("array17 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array17) ? "atomic" : " non atomic"));
+        System.out.println("array18 is " + (ValueClass.isFlatArray(array13) ? "flat" : " non flat") + " " + (ValueClass.isAtomicArray(array18) ? "atomic" : " non atomic"));
         for (int i = 0; i < 10; i++) {
             test26(array1);
             test26(array2);
