@@ -307,7 +307,6 @@ public class LockingThread extends Thread {
     private Thread.State requiredState;
 
     public void waitState() {
-
         // try wait with timeout to avoid possible hanging (if LockingThread have finished execution because of uncaught exception)
         int result = waitStateWicket.waitFor(60000);
 
