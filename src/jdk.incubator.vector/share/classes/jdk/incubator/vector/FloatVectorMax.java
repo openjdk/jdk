@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class FloatVectorMax extends FloatVector {
     static final FloatSpecies VSPECIES =
         (FloatSpecies) FloatVector.SPECIES_MAX;
@@ -358,7 +358,7 @@ final class FloatVectorMax extends FloatVector {
     @Override
     @ForceInline
     public final FloatShuffleMax toShuffle() {
-        return (FloatShuffleMax) toShuffle(vspecies(), false);
+        return (FloatShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -556,7 +556,7 @@ final class FloatVectorMax extends FloatVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class FloatMaskMax extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -604,7 +604,7 @@ final class FloatVectorMax extends FloatVector {
 
         @Override
         FloatMaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -614,7 +614,7 @@ final class FloatVectorMax extends FloatVector {
 
         @Override
         FloatMaskMax bOp(VectorMask<Float> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((FloatMaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -764,16 +764,16 @@ final class FloatVectorMax extends FloatVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, FloatMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((FloatMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((FloatMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, FloatMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((FloatMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((FloatMaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -781,7 +781,7 @@ final class FloatVectorMax extends FloatVector {
         static FloatMaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(FloatMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final FloatMaskMax  TRUE_MASK = new FloatMaskMax(true);
         private static final FloatMaskMax FALSE_MASK = new FloatMaskMax(false);
@@ -789,7 +789,7 @@ final class FloatVectorMax extends FloatVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class FloatShuffleMax extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -830,7 +830,7 @@ final class FloatVectorMax extends FloatVector {
         @Override
         @ForceInline
         public FloatVectorMax toVector() {
-            return (FloatVectorMax) toBitsVector().castShape(vspecies(), 0);
+            return (FloatVectorMax) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -841,7 +841,7 @@ final class FloatVectorMax extends FloatVector {
 
         @Override
         IntVectorMax toBitsVector0() {
-            return ((IntVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((IntVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -866,7 +866,7 @@ final class FloatVectorMax extends FloatVector {
         @ForceInline
         public final FloatMaskMax laneIsValid() {
             return (FloatMaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -874,7 +874,7 @@ final class FloatVectorMax extends FloatVector {
         public final FloatShuffleMax rearrange(VectorShuffle<Float> shuffle) {
             FloatShuffleMax concreteShuffle = (FloatShuffleMax) shuffle;
             return (FloatShuffleMax) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_MAX))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -887,7 +887,7 @@ final class FloatVectorMax extends FloatVector {
                 v = (IntVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (FloatShuffleMax) v.toShuffle(vspecies(), false);
+            return (FloatShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static int[] prepare(int[] indices, int offset) {

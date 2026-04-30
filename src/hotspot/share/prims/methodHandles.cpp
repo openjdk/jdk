@@ -157,6 +157,19 @@ int MethodHandles::ref_kind_to_flags(int ref_kind) {
   return flags;
 }
 
+#ifdef ASSERT
+const char* MethodHandles::ref_kind_to_verify_msg(int ref_kind) {
+  switch (ref_kind) {
+    case JVM_REF_invokeSpecial:   return "verify_ref_kind expected invokeSpecial";
+    case JVM_REF_invokeStatic:    return "verify_ref_kind expected invokeStatic";
+    case JVM_REF_invokeVirtual:   return "verify_ref_kind expected invokeVirtual";
+    case JVM_REF_invokeInterface: return "verify_ref_kind expected invokeInterface";
+    default:  assert(false, "unexpected ref_kind: %d", ref_kind);
+  }
+  return "";
+}
+#endif
+
 Handle MethodHandles::resolve_MemberName_type(Handle mname, Klass* caller, TRAPS) {
   Handle empty;
   Handle type(THREAD, java_lang_invoke_MemberName::type(mname()));
