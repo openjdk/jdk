@@ -2400,8 +2400,6 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
-  // Check card_table_base address first since it can point to any address
-  BarrierSet* bs = BarrierSet::barrier_set();
   // fast path for stubs and external addresses
   if (_hash_table != nullptr) {
     int *result = _hash_table->get(addr);
