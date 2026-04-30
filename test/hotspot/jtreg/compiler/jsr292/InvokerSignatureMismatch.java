@@ -39,7 +39,7 @@ public class InvokerSignatureMismatch {
 
     static void mainLink(int i) throws Throwable {
         Object name = MethodHandleHelper.internalMemberName(INT_MH);
-        MethodHandleHelper.linkToStatic((float) i, name);
+        MethodHandleHelper.linkToStatic(name, (float) i);
     }
 
     static void mainInvoke(int i) throws Throwable {

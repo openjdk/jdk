@@ -67,7 +67,7 @@ public class PopFrameMethodNameInvariantTest {
                     "body",
                     MethodType.methodType(void.class, float.class));
             Object name = MethodHandleHelper.internalMemberName(target);
-            MethodHandleHelper.linkToStatic((float)1.0, name);
+            MethodHandleHelper.linkToStatic(name, (float)1.0);
         }
     }
 
