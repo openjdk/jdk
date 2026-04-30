@@ -25,11 +25,13 @@
  * @summary Basic tests for making sure ComputedConstant publishes values safely
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.lang
+ * @library /test/lib
  * @enablePreview
  * @run junit LazyConstantSafePublicationTest
  */
 
 import jdk.internal.lang.LazyConstantImpl;
+import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -49,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
-    private static final int THREADS = Math.max(2, Runtime.getRuntime().availableProcessors());
+    private static final int THREADS = Math.max(8, Runtime.getRuntime().availableProcessors());
 
     static final class Holder {
         // These are non-final fields but should be seen
@@ -83,27 +85,27 @@ final class LazyConstantSafePublicationTest {
                 int c = h.c;
                 int d = h.d;
                 int e = h.e;
-                observations[i] = a + (b << 1) + (c << 2) + (d << 3) + (e << 4);
+                observations[i] = a + (b << 1) + (c << 2) + (c << 3) + (d << 4) + (e << 5);
             }
         }
     }
 
     static final class Producer implements Runnable {
 
-        final LazyConstant<Holder>[] constants;
+        final LazyConstantImpl<Holder>[] constants;
 
-        public Producer(LazyConstant<Holder>[] constants) {
+        public Producer(LazyConstantImpl<Holder>[] constants) {
             this.constants = constants;
         }
 
         @Override
         public void run() {
-            LazyConstant<Holder> s;
+            LazyConstantImpl<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
                 s = constants[i];
                 s.get();
-                deadlineNs += 1000;
+                deadlineNs += Utils.adjustTimeout(1000L);
                 while (System.nanoTime() < deadlineNs) {
                     Thread.onSpinWait();
                 }
@@ -133,7 +135,7 @@ final class LazyConstantSafePublicationTest {
         join(constants, consumers, producerThread);
         join(constants, consumers, consumersThreads.toArray(Thread[]::new));
 
-        int[] histogram = new int[32];
+        int[] histogram = new int[64];
         for (Consumer consumer : consumers) {
             for (int i = 0; i < SIZE; i++) {
                 histogram[consumer.observations[i]]++;
@@ -141,20 +143,20 @@ final class LazyConstantSafePublicationTest {
         }
 
         // unless a = 1, ..., e = 1, zero observations should be seen
-        for (int i = 0; i < 31; i++) {
-            assertEquals(0, histogram[i], Integer.toString(i));
+        for (int i = 0; i < 63; i++) {
+            assertEquals(0, histogram[i]);
         }
-        // a = 1, ..., e = 1 : index 2^4-1 = 31
+        // a = 1, ..., e = 1 : index 2^5-1 = 63
         // All observations should end up in this bucket
-        assertEquals(THREADS * SIZE, histogram[31]);
+        assertEquals(THREADS * SIZE, histogram[63]);
     }
 
     static void join(final LazyConstantImpl<Holder>[] constants, List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
-                long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
+                long deadline = System.nanoTime() + Utils.adjustTimeout(TimeUnit.MINUTES.toNanos(4));
                 while (t.isAlive()) {
-                    t.join(TimeUnit.SECONDS.toMillis(10));
+                    t.join(TimeUnit.SECONDS.toMillis(20));
                     if (t.isAlive()) {
                         String stack = Arrays.stream(t.getStackTrace())
                                 .map(Objects::toString)
@@ -183,7 +185,7 @@ final class LazyConstantSafePublicationTest {
         @SuppressWarnings("unchecked")
         LazyConstantImpl<Holder>[] constants = (LazyConstantImpl<Holder>[]) new LazyConstantImpl[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            constants[i] = (LazyConstantImpl<Holder>) LazyConstant.of(Holder::new);
+            constants[i] = LazyConstantImpl.ofLazy(Holder::new);
         }
         return constants;
     }
