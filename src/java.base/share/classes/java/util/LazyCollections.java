@@ -65,7 +65,7 @@ final class LazyCollections {
         // Keeping track of `size` separately reduces bytecode size compared to
         // using `elements.length`.
         private final int size;
-        final FunctionHolder<IntFunction<? extends E>> functionHolder;
+        private final FunctionHolder<IntFunction<? extends E>> functionHolder;
         private final Mutexes mutexes;
         private final Throwables throwables;
 
@@ -145,7 +145,7 @@ final class LazyCollections {
     }
 
     @jdk.internal.vm.annotation.TrustFinalFields
-    static final class LazyEnumMap<K extends Enum<K>, V>
+    private static final class LazyEnumMap<K extends Enum<K>, V>
             extends AbstractLazyMap<K, V> {
 
         private final Class<K> enumType;
@@ -199,7 +199,7 @@ final class LazyCollections {
     }
 
     @jdk.internal.vm.annotation.TrustFinalFields
-    static final class LazyMap<K, V>
+    private static final class LazyMap<K, V>
             extends AbstractLazyMap<K, V> {
 
         // Use an unmodifiable map with known entries that are @Stable. Lookups through this map can be folded because
@@ -238,7 +238,7 @@ final class LazyCollections {
     }
 
     @jdk.internal.vm.annotation.TrustFinalFields
-    static abstract sealed class AbstractLazyMap<K, V>
+    private static abstract sealed class AbstractLazyMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         private final Mutexes mutexes;
@@ -295,7 +295,7 @@ final class LazyCollections {
 
         @jdk.internal.vm.annotation.TrustFinalFields
         @jdk.internal.ValueBased
-        static final class LazyMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
+        private static final class LazyMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
 
             // Use a separate field for the outer class in order to facilitate
             // a trusted field.
@@ -413,7 +413,7 @@ final class LazyCollections {
     }
 
     @jdk.internal.vm.annotation.TrustFinalFields
-    static final class LazySet<E>
+    private static final class LazySet<E>
             extends ImmutableCollections.AbstractImmutableSet<E>
             implements Set<E> {
 
@@ -536,7 +536,7 @@ final class LazyCollections {
 
     }
 
-    static final class Mutexes {
+    private static final class Mutexes {
 
         private static final Object TOMB_STONE = new Object();
 
@@ -590,7 +590,7 @@ final class LazyCollections {
      * This class is not thread safe across indices. However, it will always be accessed
      * under the same monitor for a given index.
      */
-    static final class Throwables {
+    private static final class Throwables {
 
         @Stable
         final String[] throwables;
@@ -618,43 +618,9 @@ final class LazyCollections {
         return (E[]) new Object[length];
     }
 
-    public static <E> List<E> ofLazyList(int size,
-                                         IntFunction<? extends E> computingFunction) {
-        return new LazyList<>(size, computingFunction);
-    }
-
-    public static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
-                                             Function<? super K, ? extends V> computingFunction) {
-        return new LazyMap<>(keys, computingFunction);
-    }
-
-    public static <E> Set<E> ofLazySet(Set<? extends E> elementCandidates,
-                                       Predicate<? super E> computingFunction) {
-        return new LazySet<>(elementCandidates, computingFunction);
-    }
 
     @SuppressWarnings("unchecked")
-    public static <K, E extends Enum<E>, V>
-    Map<K, V> ofLazyMapWithEnumKeys(Set<K> keys,
-                                    Function<? super K, ? extends V> computingFunction) {
-        // The input set is not empty
-        final Class<E> enumType = ((E) keys.iterator().next()).getDeclaringClass();
-        final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
-        for (K t : keys) {
-            final int ordinal = ((E) t).ordinal();
-            min = Math.min(min, ordinal);
-            max = Math.max(max, ordinal);
-            bitSet.set(ordinal);
-        }
-        final int backingSize = max - min + 1;
-        final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Map<K, V>) new LazyEnumMap<>((Set<E>) keys, enumType, min, backingSize, member, (Function<E, V>) computingFunction);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> T orElseComputeSlowPath(final T[] array,
+    private static <T> T orElseComputeSlowPath(final T[] array,
                                        final int index,
                                        final Mutexes mutexes,
                                        final Throwables throwables,
@@ -700,14 +666,14 @@ final class LazyCollections {
         }
     }
 
-    static void throwIfPreviousException(int index, Throwables throwables, Object input) {
+    private static void throwIfPreviousException(int index, Throwables throwables, Object input) {
         final var throwable = throwables.get(index);
         if (throwable.isPresent()) {
             throw noSuchElementException(throwable.get(), input, null);
         }
     }
 
-    static NoSuchElementException noSuchElementException(String throwableName,
+    private static NoSuchElementException noSuchElementException(String throwableName,
                                                          Object input,
                                                          Throwable cause) {
         final String isolatedToString = LazyConstantImpl.isolateToString(input);
@@ -716,17 +682,17 @@ final class LazyCollections {
         return new NoSuchElementException(message, cause);
     }
 
-    static InternalError cannotReachHere(FunctionHolder<?> functionHolder, Object input) {
+    private static InternalError cannotReachHere(FunctionHolder<?> functionHolder, Object input) {
         return new InternalError("cannot reach here: " + functionHolder.function() + " for " + LazyConstantImpl.isolateToString(input));
     }
 
-    static void preventReentry(Object mutex, Object input) {
+    private static void preventReentry(Object mutex, Object input) {
         if (Thread.holdsLock(mutex)) {
             throw new IllegalStateException("Recursive initialization of a lazy collection is illegal: " + LazyConstantImpl.isolateToString(input));
         }
     }
 
-    static <T> void set(T[] array, int index, Object mutex, T newValue) {
+    private static <T> void set(T[] array, int index, Object mutex, T newValue) {
         assert Thread.holdsLock(mutex) : index + "didn't hold " + mutex;
         // We know we hold the monitor here so plain semantic is enough
         // This is an extra safety net to emulate a CAS op.
@@ -743,7 +709,7 @@ final class LazyCollections {
      * @param <U> the underlying function type
      */
     @AOTSafeClassInitializer
-    static final class FunctionHolder<U> {
+    private static final class FunctionHolder<U> {
 
         private static final long COUNTER_OFFSET = UNSAFE.objectFieldOffset(FunctionHolder.class, "counter");
 
@@ -771,6 +737,42 @@ final class LazyCollections {
                 function = null;
             }
         }
+    }
+
+    // Factories
+
+    static <E> List<E> ofLazyList(int size,
+                                         IntFunction<? extends E> computingFunction) {
+        return new LazyList<>(size, computingFunction);
+    }
+
+    static <K, V> Map<K, V> ofLazyMap(Set<K> keys,
+                                             Function<? super K, ? extends V> computingFunction) {
+        return new LazyMap<>(keys, computingFunction);
+    }
+
+    static <E> Set<E> ofLazySet(Set<? extends E> elementCandidates,
+                                       Predicate<? super E> computingFunction) {
+        return new LazySet<>(elementCandidates, computingFunction);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <K, E extends Enum<E>, V> Map<K, V> ofLazyMapWithEnumKeys(Set<K> keys,
+                                                                     Function<? super K, ? extends V> computingFunction) {
+        // The input set is not empty
+        final Class<E> enumType = ((E) keys.iterator().next()).getDeclaringClass();
+        final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        for (K t : keys) {
+            final int ordinal = ((E) t).ordinal();
+            min = Math.min(min, ordinal);
+            max = Math.max(max, ordinal);
+            bitSet.set(ordinal);
+        }
+        final int backingSize = max - min + 1;
+        final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
+        return (Map<K, V>) new LazyEnumMap<>((Set<E>) keys, enumType, min, backingSize, member, (Function<E, V>) computingFunction);
     }
 
 }
