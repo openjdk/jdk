@@ -38,7 +38,7 @@ import java.util.Arrays;
 public class DataBufferConstructorTest {
 
     static void testByteConstructor(int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(size);
              failed = true;
@@ -54,7 +54,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testByteConstructor(int size, int numBanks,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(size, numBanks);
              failed = true;
@@ -70,7 +70,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testByteConstructor(byte[] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(dataArray, size);
              failed = true;
@@ -86,7 +86,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testByteConstructor(byte[] dataArray, int size, int offset,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(dataArray, size, offset);
              failed = true;
@@ -102,7 +102,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testByteConstructor(byte[][] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(dataArray, size);
              failed = true;
@@ -117,7 +117,7 @@ public class DataBufferConstructorTest {
         }
     }
     static void testByteConstructor(byte[][] dataArray, int size, int[] offsets,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferByte(dataArray, size, offsets);
              failed = true;
@@ -133,7 +133,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testShortConstructor(int size,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                 new DataBufferShort(size);
@@ -153,7 +153,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testShortConstructor(int size, int numBanks,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                 new DataBufferShort(size, numBanks);
@@ -173,7 +173,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testShortConstructor(short[] dataArray, int size,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                 new DataBufferShort(dataArray, size);
@@ -193,7 +193,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testShortConstructor(short[] dataArray, int size, int offset,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                  new DataBufferShort(dataArray, size, offset);
@@ -213,7 +213,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testShortConstructor(short[][] dataArray, int size,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                  new DataBufferShort(dataArray, size);
@@ -232,7 +232,7 @@ public class DataBufferConstructorTest {
         }
     }
     static void testShortConstructor(short[][] dataArray, int size, int[] offsets,
-                                    boolean signed, Class expectedExceptionType) {
+                                    boolean signed, Class<?> expectedExceptionType) {
         try {
              if (signed) {
                  new DataBufferShort(dataArray, size, offsets);
@@ -252,7 +252,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testIntConstructor(int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(size);
              failed = true;
@@ -268,7 +268,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testIntConstructor(int size, int numBanks,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(size, numBanks);
              failed = true;
@@ -284,7 +284,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testIntConstructor(int[] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(dataArray, size);
              failed = true;
@@ -300,7 +300,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testIntConstructor(int[] dataArray, int size, int offset,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(dataArray, size, offset);
              failed = true;
@@ -316,7 +316,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testIntConstructor(int[][] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(dataArray, size);
              failed = true;
@@ -331,7 +331,7 @@ public class DataBufferConstructorTest {
         }
     }
     static void testIntConstructor(int[][] dataArray, int size, int[] offsets,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferInt(dataArray, size, offsets);
              failed = true;
@@ -347,7 +347,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(size);
              failed = true;
@@ -363,7 +363,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(int size, int numBanks,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(size, numBanks);
              failed = true;
@@ -379,7 +379,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(float[] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(dataArray, size);
              failed = true;
@@ -395,7 +395,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(float[] dataArray, int size, int offset,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(dataArray, size, offset);
              failed = true;
@@ -411,7 +411,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(float[][] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(dataArray, size);
              failed = true;
@@ -427,7 +427,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testFloatConstructor(float[][] dataArray, int size, int[] offsets,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferFloat(dataArray, size, offsets);
              failed = true;
@@ -443,7 +443,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(size);
              failed = true;
@@ -459,7 +459,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(int size, int numBanks,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(size, numBanks);
              failed = true;
@@ -475,7 +475,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(double[] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(dataArray, size);
              failed = true;
@@ -491,7 +491,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(double[] dataArray, int size, int offset,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(dataArray, size, offset);
              failed = true;
@@ -507,7 +507,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(double[][] dataArray, int size,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(dataArray, size);
              failed = true;
@@ -523,7 +523,7 @@ public class DataBufferConstructorTest {
     }
 
     static void testDoubleConstructor(double[][] dataArray, int size, int[] offsets,
-                                    Class expectedExceptionType) {
+                                    Class<?> expectedExceptionType) {
         try {
              new DataBufferDouble(dataArray, size, offsets);
              failed = true;
@@ -540,6 +540,7 @@ public class DataBufferConstructorTest {
 
     static boolean failed = false;
 
+    static final int[] nullOffsetArray = null;
     static final int[] zeroOffsetArray = { 0 } ;
     static final int[] negOffsetArray = { -1 } ;
     static final int[] oneOffsetArray = { 1 } ;
@@ -553,6 +554,7 @@ public class DataBufferConstructorTest {
         final byte[] tenByteArray = new byte[10];
         final byte[] oneKByteArray = new byte[1000];
         final byte[][] nullByteArrays = null;
+        final byte[][] nullByteSubArrays = { nullByteArray } ;
         final byte[][] zeroByteSubArrays = { zeroByteArray } ;
         final byte[][] oneByteSubArrays = { oneByteArray } ;
 
@@ -582,12 +584,15 @@ public class DataBufferConstructorTest {
 
         // DataBufferByte(byte[][] dataArray, int size)
         testByteConstructor(nullByteArrays, 0, NullPointerException.class);
+        testByteConstructor(nullByteSubArrays, 1, NullPointerException.class);
         testByteConstructor(oneByteSubArrays, 0, IllegalArgumentException.class);
         testByteConstructor(oneByteSubArrays, -1, IllegalArgumentException.class);
         testByteConstructor(oneByteSubArrays, 2, IllegalArgumentException.class);
 
         // DataBufferByte(byte[][] dataArray, int size, int[] offsets)
+        testByteConstructor(oneByteSubArrays, 1, nullOffsetArray, NullPointerException.class);
         testByteConstructor(nullByteArrays, 0, zeroOffsetArray, NullPointerException.class);
+        testByteConstructor(nullByteSubArrays, 1, zeroOffsetArray, NullPointerException.class);
         testByteConstructor(zeroByteSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testByteConstructor(oneByteSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testByteConstructor(oneByteSubArrays, 1, negOffsetArray, IllegalArgumentException.class);
@@ -636,11 +641,13 @@ public class DataBufferConstructorTest {
 
             // DataBufferShort(short[][] dataArray, int size)
             testShortConstructor(nullShortArrays, 0, signed, NullPointerException.class);
+            testShortConstructor(nullShortSubArrays,1, signed, NullPointerException.class);
             testShortConstructor(oneShortSubArrays, 0, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, -1, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, 2, signed, IllegalArgumentException.class);
 
             // DataBufferShort(short[][] dataArray, int size, int[] offsets)
+            testShortConstructor(oneShortSubArrays, 1, nullOffsetArray, signed, NullPointerException.class);
             testShortConstructor(nullShortArrays, 0, zeroOffsetArray, signed, NullPointerException.class);
             testShortConstructor(zeroShortSubArrays, 0, zeroOffsetArray, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, 0, zeroOffsetArray, signed, IllegalArgumentException.class);
@@ -657,6 +664,7 @@ public class DataBufferConstructorTest {
         final int[] tenIntArray = new int[10];
         final int[] oneKIntArray = new int[1000];
         final int[][] nullIntArrays = null;
+        final int[][] nullIntSubArrays = { nullIntArray } ;
         final int[][] zeroIntSubArrays = { zeroIntArray } ;
         final int[][] oneIntSubArrays = { oneIntArray } ;
 
@@ -686,12 +694,15 @@ public class DataBufferConstructorTest {
 
         // DataBufferInt(int[][] dataArray, int size)
         testIntConstructor(nullIntArrays, 0, NullPointerException.class);
+        testIntConstructor(nullIntSubArrays, 1, NullPointerException.class);
         testIntConstructor(zeroIntSubArrays, 0, IllegalArgumentException.class);
         testIntConstructor(oneIntSubArrays, -1, IllegalArgumentException.class);
         testIntConstructor(oneIntSubArrays, 2, IllegalArgumentException.class);
 
         // DataBufferInt(int[][] dataArray, int size, int[] offsets)
+        testIntConstructor(oneIntSubArrays, 1, nullOffsetArray, NullPointerException.class);
         testIntConstructor(nullIntArrays, 0, zeroOffsetArray, NullPointerException.class);
+        testIntConstructor(nullIntSubArrays, 1, zeroOffsetArray, NullPointerException.class);
         testIntConstructor(zeroIntSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testIntConstructor(oneIntSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testIntConstructor(oneIntSubArrays, 1, negOffsetArray, IllegalArgumentException.class);
@@ -706,6 +717,7 @@ public class DataBufferConstructorTest {
         final float[] tenFloatArray = new float[10];
         final float[] oneKFloatArray = new float[1000];
         final float[][] nullFloatArrays = null;
+        final float[][] nullFloatSubArrays = { nullFloatArray } ;
         final float[][] zeroFloatSubArrays = { zeroFloatArray } ;
         final float[][] oneFloatSubArrays = { oneFloatArray } ;
 
@@ -735,12 +747,15 @@ public class DataBufferConstructorTest {
 
         // DataBufferFloat(float[][] dataArray, int size)
         testFloatConstructor(nullFloatArrays, 0, NullPointerException.class);
+        testFloatConstructor(nullFloatSubArrays, 1, NullPointerException.class);
         testFloatConstructor(zeroFloatSubArrays, 0, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, -1, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, 2, IllegalArgumentException.class);
 
         // DataBufferFloat(float[][] dataArray, int size, int[] offsets)
+        testFloatConstructor(oneFloatSubArrays, 1, nullOffsetArray, NullPointerException.class);
         testFloatConstructor(nullFloatArrays, 0, zeroOffsetArray, NullPointerException.class);
+        testFloatConstructor(nullFloatSubArrays, 1, zeroOffsetArray, NullPointerException.class);
         testFloatConstructor(zeroFloatSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, 1, negOffsetArray, IllegalArgumentException.class);
@@ -784,13 +799,16 @@ public class DataBufferConstructorTest {
 
         // DataBufferDouble(double[][] dataArray, int size)
         testDoubleConstructor(nullDoubleArrays, 0, NullPointerException.class);
+        testDoubleConstructor(nullDoubleSubArrays, 1, NullPointerException.class);
         testDoubleConstructor(zeroDoubleSubArrays, 0, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleSubArrays, -1, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleSubArrays, 2, IllegalArgumentException.class);
         testDoubleConstructor(oneKDoubleArray, 1000, Integer.MAX_VALUE - 50, IllegalArgumentException.class);
 
         // DataBufferDouble(double[][] dataArray, int size, int[] offsets)
+        testDoubleConstructor(oneDoubleSubArrays, 1, nullOffsetArray, NullPointerException.class);
         testDoubleConstructor(nullDoubleArrays, 0, zeroOffsetArray, NullPointerException.class);
+        testDoubleConstructor(nullDoubleSubArrays, 1, zeroOffsetArray, NullPointerException.class);
         testDoubleConstructor(zeroDoubleSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleSubArrays, 0, zeroOffsetArray, IllegalArgumentException.class);
         testDoubleConstructor(oneDoubleSubArrays, -1, oneOffsetArray, IllegalArgumentException.class);
