@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,24 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.shared;
+package jdk.jfr.jvm;
 
+import jdk.test.lib.process.ProcessTools;
 /**
- * Exception threw when {@link ComparisonConstraintParser} parses an invalid comparator.
+ * @test TestAfterShutdown
+ * @requires vm.flagless
+ * @summary Checks that API interactions with JFR after shutdown works as expected
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @build jdk.jfr.jvm.AfterShutdown
+ * @run main/othervm jdk.jfr.jvm.TestAfterShutdown
  */
-@SuppressWarnings("serial")
-public class InvalidComparatorException extends Exception {
-    private final String comparator;
-
-    public InvalidComparatorException(String comparator) {
-        this.comparator = comparator;
-    }
-
-    public String getComparator() {
-        return comparator;
+public class TestAfterShutdown {
+    public static void main(String... args) throws Exception {
+        var pb = ProcessTools.createTestJavaProcessBuilder(AfterShutdown.class.getName());
+        var result = ProcessTools.executeProcess(pb);
+        result.shouldHaveExitValue(0);
+        result.shouldNotContain("FAIL");
+        result.shouldContain("PASS");
     }
 }

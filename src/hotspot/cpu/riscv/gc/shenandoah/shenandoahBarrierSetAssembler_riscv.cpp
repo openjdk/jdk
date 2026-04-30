@@ -290,7 +290,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
   // Calling with super_call_VM_leaf with c_rarg0/1 bypasses interpreter checks and avoids any moves.
   __ super_call_VM_leaf(target, c_rarg0, c_rarg1);
