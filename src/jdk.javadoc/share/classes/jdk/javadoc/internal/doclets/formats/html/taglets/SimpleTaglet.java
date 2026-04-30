@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -257,43 +256,5 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         return new ContentBuilder(
                 HtmlTree.DT(RawHtml.of(header)),
                 HtmlTree.DD(body));
-    }
-
-    protected static Set<Taglet.Location> getLocations(String locations) {
-        Set<Taglet.Location> set = EnumSet.noneOf(Taglet.Location.class);
-        for (int i = 0; i < locations.length(); i++) {
-            switch (locations.charAt(i)) {
-                case 'a':  case 'A':
-                    return EnumSet.allOf(Taglet.Location.class);
-                case 'c':  case 'C':
-                    set.add(Taglet.Location.CONSTRUCTOR);
-                    break;
-                case 'f':  case 'F':
-                    set.add(Taglet.Location.FIELD);
-                    break;
-                case 'm':  case 'M':
-                    set.add(Taglet.Location.METHOD);
-                    break;
-                case 'o':  case 'O':
-                    set.add(Taglet.Location.OVERVIEW);
-                    break;
-                case 'p':  case 'P':
-                    set.add(Taglet.Location.PACKAGE);
-                    break;
-                case 's':  case 'S':        // super-packages, anyone?
-                    set.add(Taglet.Location.MODULE);
-                    break;
-                case 't':  case 'T':
-                    set.add(Taglet.Location.TYPE);
-                    break;
-                case 'x':  case 'X':
-                    break;
-            }
-        }
-        return set;
-    }
-
-    protected static boolean isEnabled(String locations) {
-        return locations.matches("[^Xx]*");
     }
 }

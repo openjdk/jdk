@@ -50,14 +50,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A taglet that represents the {@code {@note ...}} tag to create inline notes.
+ * A taglet that represents the bimodal {@code @note} tag to create notes.
  */
 public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
-    final private String defaultHeader;
-    final private String defaultKind;
+    private final String defaultHeader;
+    private final String defaultKind;
+    private final boolean isBlockTag;
 
-    final static String CSS_CLASS_PREFIX = "note-tag-";
+    private static final String CSS_CLASS_PREFIX = "note-tag";
 
     private final Map<String, Set<String>> idMap = new HashMap<>();
 
@@ -65,6 +66,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
                 config.docResources.getText("doclet.Note_Tag_Default_Header"),
                 true, EnumSet.allOf(Taglet.Location.class), true);
+        this.isBlockTag = true;
         this.defaultHeader = this.header;
         this.defaultKind = null;
     }
@@ -79,14 +81,17 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
      *                  'm' for method, 'c' for constructor and 'f' for field.
      */
     NoteTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
-        super(config, tagName, DocTree.Kind.NOTE, header, true, getLocations(locations), isEnabled(locations));
+        super(config, tagName, DocTree.Kind.NOTE, header,
+                allowInlineUse(locations), getLocations(locations), isEnabled(locations));
+        this.isBlockTag = allowBlockUse(locations);
         this.defaultHeader = header;
         this.defaultKind = tagName;
+        // TODO check 'b' and 'i' location flags are not both present
     }
 
     @Override
     public boolean isBlockTag() {
-        return true;
+        return isBlockTag;
     }
 
     @Override
@@ -114,7 +119,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                                 .setId(id != null
                                         ? HtmlId.of(id)
                                         : config.htmlIds.forNote(holder, defaultKind, false, getExistingIds()))
-                                .addStyle(CSS_CLASS_PREFIX + kind)
+                                .addStyle(getCSSClass(kind))
                                 .add(HtmlTree.DT(RawHtml.of(hdr)))
                                 .add(body);
                     } else {
@@ -155,7 +160,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
         var kind = attr.getOrDefault("kind", defaultKind);
         if (kind != null) {
-            result.addStyle(CSS_CLASS_PREFIX + kind.trim());
+            result.addStyle(getCSSClass(kind));
         }
 
         for (var entry : attr.entrySet()) {
@@ -187,5 +192,57 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 // ErroneousTree is a subtype of TextTree
                 .map(t -> ((TextTree) t).getBody())
                 .collect(Collectors.joining());
+    }
+
+    private String getCSSClass(String kind) {
+        return kind == null
+                ? CSS_CLASS_PREFIX
+                : CSS_CLASS_PREFIX + "-" + kind.trim();
+    }
+
+    private static Set<Taglet.Location> getLocations(String locations) {
+        Set<Taglet.Location> set = EnumSet.noneOf(Taglet.Location.class);
+        for (int i = 0; i < locations.length(); i++) {
+            switch (locations.charAt(i)) {
+                case 'a':  case 'A':
+                    return EnumSet.allOf(Taglet.Location.class);
+                case 'c':  case 'C':
+                    set.add(Taglet.Location.CONSTRUCTOR);
+                    break;
+                case 'f':  case 'F':
+                    set.add(Taglet.Location.FIELD);
+                    break;
+                case 'm':  case 'M':
+                    set.add(Taglet.Location.METHOD);
+                    break;
+                case 'o':  case 'O':
+                    set.add(Taglet.Location.OVERVIEW);
+                    break;
+                case 'p':  case 'P':
+                    set.add(Taglet.Location.PACKAGE);
+                    break;
+                case 's':  case 'S':        // super-packages, anyone?
+                    set.add(Taglet.Location.MODULE);
+                    break;
+                case 't':  case 'T':
+                    set.add(Taglet.Location.TYPE);
+                    break;
+                case 'x':  case 'X':
+                    break;
+            }
+        }
+        return set;
+    }
+
+    private static boolean isEnabled(String locations) {
+        return locations.matches("[^Xx]*");
+    }
+
+    private static boolean allowInlineUse(String locations) {
+        return locations.matches("[^Bb]*");
+    }
+
+    private static boolean allowBlockUse(String locations) {
+        return locations.matches("[^Ii]*");
     }
 }

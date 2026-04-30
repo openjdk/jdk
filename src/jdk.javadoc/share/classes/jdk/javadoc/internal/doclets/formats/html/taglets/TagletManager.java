@@ -355,8 +355,9 @@ public class TagletManager {
      *
      * @param element the tags holder
      * @param trees the trees containing the comments
+     * @param {@code true} if trees contains inline tags
      */
-    public void checkTags(Element element, Iterable<? extends DocTree> trees) {
+    public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean isInline) {
         for (DocTree tag : trees) {
             String name = switch (tag.getKind()) {
                 case UNKNOWN_INLINE_TAG -> ((InlineTagTree) tag).getTagName();
@@ -383,6 +384,15 @@ public class TagletManager {
             final Taglet taglet = allTaglets.get(name);
             if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
                 continue; // taglet has been disabled
+            }
+
+            // Check inline/block use for custom note tags
+            if (taglet instanceof NoteTaglet noteTaglet) {
+                if (isInline && !noteTaglet.isInlineTag()) {
+                    messages.warning("doclet.tag_block_only", noteTaglet.getName());
+                } else if (!isInline && !noteTaglet.isBlockTag()) {
+                    messages.warning("doclet.tag_inline_only", noteTaglet.getName());
+                }
             }
 
             // Check and verify tag usage

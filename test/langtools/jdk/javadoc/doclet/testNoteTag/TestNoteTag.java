@@ -72,13 +72,13 @@ public class TestNoteTag extends JavadocTester {
 
         checkOrder("p/C.html",
                 """
-                        <div class="block-note note-tag-note" id="note-p.C">
+                        <div class="block-note note-tag" id="note-p.C">
                         <dt>Note:</dt>
                         <dd>First note</dd>
                         <dd>Second note</dd>
                         </div>""",
                 """
-                        <div class="block-note note-tag-note" id="note-p.C1">
+                        <div class="block-note note-tag" id="note-p.C1">
                         <dt>Important:</dt>
                         <dd>First important note</dd>
                         <dd>Second important note</dd>

@@ -229,8 +229,8 @@ public class TagletWriter {
         }
 
         Content output = getOutputInstance();
-        tagletManager.checkTags(element, utils.getBlockTags(element));
-        tagletManager.checkTags(element, utils.getFullBody(element));
+        tagletManager.checkTags(element, utils.getBlockTags(element), false);
+        tagletManager.checkTags(element, utils.getFullBody(element), true);
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 // The type parameters and state components are documented in a special
