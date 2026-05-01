@@ -74,6 +74,7 @@ import sun.reflect.annotation.TypeAnnotationParser;
 public final
 class Field extends AccessibleObject implements Member {
     private final Class<?>            clazz;
+    private final int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
     private final String              name;
@@ -90,7 +91,6 @@ class Field extends AccessibleObject implements Member {
      * Some lazily initialized immutable states can be stored on root and shared to the copies.
      */
     private Field root;
-    private int slot; // used also for Jfr epoch encoding
     private transient volatile FieldRepository genericInfo;
     private @Stable FieldAccessor fieldAccessor; // access control enabled
     private @Stable FieldAccessor overrideFieldAccessor; // access control suppressed
@@ -1549,7 +1549,7 @@ class Field extends AccessibleObject implements Member {
             VM.initialErr().println(sb);
         }
 
-        FinalFieldMutationEvent.offer(root, root.slot);
+        FinalFieldMutationEvent.offer(root);
     }
 
     /**

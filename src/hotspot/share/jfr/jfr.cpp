@@ -45,7 +45,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 
-
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
 }
@@ -182,8 +181,8 @@ void Jfr::on_report_java_out_of_memory() {
   }
 }
 
-int64_t Jfr::epoch_generation_offset() {
-  return reinterpret_cast<int64_t>(JfrTraceIdEpoch::epoch_generation_address());
+bool Jfr::update_epoch(oop oop) {
+  return JfrTraceIdEpoch::update(oop);
 }
 
 #if INCLUDE_CDS

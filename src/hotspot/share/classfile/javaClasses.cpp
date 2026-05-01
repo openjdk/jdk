@@ -3588,7 +3588,7 @@ int java_lang_reflect_Field::_modifiers_offset;
 int java_lang_reflect_Field::_trusted_final_offset;
 int java_lang_reflect_Field::_signature_offset;
 int java_lang_reflect_Field::_annotations_offset;
-int java_lang_reflect_Field::slot_mask = (1 << 17) - 1;
+JFR_ONLY(int java_lang_reflect_Field::_jfr_epoch_offset;)
 
 #define FIELD_FIELDS_DO(macro) \
   macro(_clazz_offset,     k, vmSymbols::clazz_name(),     class_signature,  false); \
@@ -3603,11 +3603,13 @@ int java_lang_reflect_Field::slot_mask = (1 << 17) - 1;
 void java_lang_reflect_Field::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_Field_klass();
   FIELD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);)
 }
 
 #if INCLUDE_CDS
 void java_lang_reflect_Field::serialize_offsets(SerializeClosure* f) {
   FIELD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);)
 }
 #endif
 
@@ -3646,13 +3648,10 @@ void java_lang_reflect_Field::set_type(oop field, oop value) {
 }
 
 int java_lang_reflect_Field::slot(oop reflect) {
-  // We use a mask because JFR is encoding
-  // information in the most significant bits.
-  return reflect->int_field(_slot_offset) & slot_mask;
+  return reflect->int_field(_slot_offset);
 }
 
 void java_lang_reflect_Field::set_slot(oop reflect, int value) {
-  assert(value <= slot_mask, "slot value is too big");
   reflect->int_field_put(_slot_offset, value);
 }
 
@@ -3675,6 +3674,29 @@ void java_lang_reflect_Field::set_signature(oop field, oop value) {
 void java_lang_reflect_Field::set_annotations(oop field, oop value) {
   field->obj_field_put(_annotations_offset, value);
 }
+
+#if INCLUDE_JFR
+u2 java_lang_reflect_Field::epoch(oop ref) {
+  return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
+}
+
+int jdk_internal_event_JfrEpoch::_jfr_epoch_offset;
+
+void jdk_internal_event_JfrEpoch::compute_offsets() {
+  InstanceKlass* k = vmClasses::jfrEpoch_klass();
+  JFR_EPOCH_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_event_JfrEpoch::serialize_offsets(SerializeClosure* f) {
+  JFR_EPOCH_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+u2 jdk_internal_event_JfrEpoch::epoch(oop ref) {
+  return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
+}
+#endif // INCLUDE_JFR
 
 oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordComponent* component, TRAPS) {
   // Allocate java.lang.reflect.RecordComponent instance
@@ -5401,6 +5423,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
   f(vector_VectorPayload) \
+  JFR_ONLY(f(jdk_internal_event_JfrEpoch)) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \
