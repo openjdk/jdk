@@ -90,7 +90,7 @@ public abstract class SystemImage implements AutoCloseable {
         if (!Files.isDirectory(modulesDir)) {
             throw new FileSystemNotFoundException(modulesDir.toString());
         }
-        return new ExplodedImage(modulesDir);
+        return new ExplodedImage(modulesDir, mode.isPreviewModeEnabled());
     }
 
     private static final String RUNTIME_HOME;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,11 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -51,7 +53,6 @@ import java.util.zip.ZipFile;
 import jdk.internal.jmod.JmodFile;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import sun.net.www.ParseUtil;
-
 
 /**
  * A factory for creating ModuleReference implementations where the modules are
@@ -122,8 +123,9 @@ class ModuleReferences {
      */
     static ModuleReference newExplodedModule(ModuleInfo.Attributes attrs,
                                              ModulePatcher patcher,
+                                             boolean previewMode,
                                              Path dir) {
-        Supplier<ModuleReader> supplier = () -> new ExplodedModuleReader(dir);
+        Supplier<ModuleReader> supplier = () -> new ExplodedModuleReader(dir, previewMode);
         return newModule(attrs, dir.toUri(), supplier, patcher, null);
     }
 
@@ -366,10 +368,13 @@ class ModuleReferences {
      */
     static class ExplodedModuleReader implements ModuleReader {
         private final Path dir;
+        private final Path previewDir;
         private volatile boolean closed;
 
-        ExplodedModuleReader(Path dir) {
+        ExplodedModuleReader(Path dir, boolean previewMode) {
             this.dir = dir;
+            Path path = dir.resolve("META-INF", "preview");
+            this.previewDir = (previewMode && Files.isDirectory(path)) ? path : null;
         }
 
         /**
@@ -379,10 +384,23 @@ class ModuleReferences {
             if (closed) throw new IOException("ModuleReader is closed");
         }
 
+        private Path toFilePath(String name) throws IOException {
+            if (previewDir != null) {
+                if (isPreviewEntry(name)) {
+                    return null;
+                }
+                Path previewPath = Resources.toFilePath(previewDir, name);
+                if (previewPath != null && Files.exists(previewPath)) {
+                    return previewPath;
+                }
+            }
+            return Resources.toFilePath(dir, name);
+        }
+
         @Override
         public Optional<URI> find(String name) throws IOException {
             ensureOpen();
-            Path path = Resources.toFilePath(dir, name);
+            Path path = toFilePath(name);
             if (path != null) {
                 try {
                     return Optional.of(path.toUri());
@@ -397,7 +415,7 @@ class ModuleReferences {
         @Override
         public Optional<InputStream> open(String name) throws IOException {
             ensureOpen();
-            Path path = Resources.toFilePath(dir, name);
+            Path path = toFilePath(name);
             if (path != null) {
                 return Optional.of(Files.newInputStream(path));
             } else {
@@ -408,7 +426,7 @@ class ModuleReferences {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ensureOpen();
-            Path path = Resources.toFilePath(dir, name);
+            Path path = toFilePath(name);
             if (path != null) {
                 return Optional.of(ByteBuffer.wrap(Files.readAllBytes(path)));
             } else {
@@ -419,15 +437,35 @@ class ModuleReferences {
         @Override
         public Stream<String> list() throws IOException {
             ensureOpen();
-            return Files.walk(dir, Integer.MAX_VALUE)
-                        .map(f -> Resources.toResourceName(dir, f))
-                        .filter(s -> s.length() > 0);
+            LinkedHashSet<String> names = new LinkedHashSet<>();
+            collectNames(dir, names);
+            if (previewDir != null) {
+                collectNames(previewDir, names);
+            }
+            return names.stream();
+        }
+
+        private void collectNames(Path dir, Set<String> dest) throws IOException {
+            try (Stream<Path> files = Files.walk(dir, Integer.MAX_VALUE)) {
+                files.map(f -> Resources.toResourceName(dir, f))
+                        .filter(s -> !s.isEmpty())
+                        .filter(s -> previewDir == null || !isPreviewEntry(s))
+                        .forEach(dest::add);
+            }
         }
 
         @Override
         public void close() {
             closed = true;
         }
-    }
 
+        // Names do not have a leading '/'.
+        private static final String PREVIEW_PREFIX = "META-INF/preview";
+
+        private static boolean isPreviewEntry(String name) {
+            return name.startsWith(PREVIEW_PREFIX) &&
+                    (name.length() == PREVIEW_PREFIX.length()
+                            || name.charAt(PREVIEW_PREFIX.length()) == '/');
+        }
+    }
 }
