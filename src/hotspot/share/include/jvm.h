@@ -329,8 +329,8 @@ JVM_FindScopedValueBindings(JNIEnv *env, jclass threadClass);
 JNIEXPORT jlong JNICALL
 JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
 
-JNIEXPORT jlong JNICALL
-JVM_GetJfrEpochGenerationOffset(JNIEnv* env, jclass clazz);
+JNIEXPORT jboolean JNICALL
+JVM_JfrEpochUpdate(JNIEnv* env, jclass jfrEpoch, jobject obj);
 
 /*
  * jdk.internal.vm.Continuation

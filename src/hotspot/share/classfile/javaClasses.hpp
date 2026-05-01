@@ -820,6 +820,32 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
 };
 
 
+#if INCLUDE_JFR
+
+#define JFR_EPOCH_INJECTED_FIELDS(macro) \
+  macro(jdk_internal_event_JfrEpoch, jfr_epoch, int_signature, false)
+
+class jdk_internal_event_JfrEpoch : AllStatic {
+ private:
+  static int _jfr_epoch_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  static u2 epoch(oop field);
+  static int epoch_offset() { CHECK_INIT(_jfr_epoch_offset); }
+
+  // Debugging
+  friend class JavaClasses;
+};
+
+#define FIELD_INJECTED_FIELDS(macro) \
+  macro(java_lang_reflect_Field, jfr_epoch, int_signature, false)
+
+#endif // INCLUDE_JFR
+
 // Interface to java.lang.reflect.Field objects
 
 class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
@@ -834,8 +860,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _trusted_final_offset;
   static int _signature_offset;
   static int _annotations_offset;
-
-  static int slot_mask;
+  JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
 
@@ -865,6 +890,9 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
+
+  JFR_ONLY(static u2 epoch(oop field);)
+  JFR_ONLY(static int epoch_offset() { CHECK_INIT(_jfr_epoch_offset); })
 
   // Debugging
   friend class JavaClasses;
