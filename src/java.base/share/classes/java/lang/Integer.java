@@ -607,16 +607,22 @@ public final class Integer extends Number
                 : 1;  // or any value > 0
         int i = 1;
         int d;
-        while (i + 1 < len
-                && (d = DecimalDigits.digit2(value, i)) != -1
-                && MIN_VALUE / 100 <= result & result <= 0) {
+        // Inline digit2 logic to avoid method call and lookup table
+        while (i + 1 < len) {
+            byte c0 = value[i];
+            byte c1 = value[i + 1];
+            // Check if both characters are digits (0-9)
+            if (c0 < '0' || c0 > '9' || c1 < '0' || c1 > '9') break;
+            if (result < MIN_VALUE / 100 || result > 0) break;
+            // Calculate two-digit value inline without lookup table
+            d = (c0 - '0') * 10 + (c1 - '0');
             result = result * 100 - d;  // overflow from d => result > 0
             i += 2;
         }
         if (i < len
-                && Integer.isDigitLatin1(d = value[i])
-                && MIN_VALUE / 10 <= result & result <= 0) {
-            result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
+                && (d = value[i] - '0') >= 0 && d <= 9
+                && result >= MIN_VALUE / 10 && result <= 0) {
+            result = result * 10 - d;  // overflow from d => result > 0
             i += 1;
         }
         if (i == len
