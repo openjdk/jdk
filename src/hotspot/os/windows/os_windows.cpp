@@ -1294,6 +1294,14 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->kind = JVMTI_TIMER_ELAPSED;                // elapsed not CPU time
 }
 
+jlong os::initial_time_count() {
+  return 0;
+}
+
+uint64_t os::initial_time_date() {
+  return 0;
+}
+
 char* os::local_time_string(char *buf, size_t buflen) {
   SYSTEMTIME st;
   GetLocalTime(&st);
@@ -4469,6 +4477,10 @@ void os::init(void) {
   main_thread_id = (int) GetCurrentThreadId();
 }
 
+void os::win32::revive_init(void) {
+
+}
+
 // To install functions for atexit processing
 extern "C" {
   static void perfMemory_exit_helper() {
@@ -5055,7 +5067,11 @@ void os::exit(int num) {
 }
 
 void os::_exit(int num) {
-  exit_process_or_thread(EPT_PROCESS_DIE, num);
+  if (!Thread::is_revived()) {
+    exit_process_or_thread(EPT_PROCESS_DIE, num);
+  } else {
+    TerminateProcess(GetCurrentProcess(), num);
+  }
 }
 
 // Is a (classpath) directory empty?

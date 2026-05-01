@@ -271,6 +271,8 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
+  static void revive_init();                   // Process revival
+
   // Get environ pointer, platform independently
   static char** get_environ();
 
@@ -296,6 +298,9 @@ class os: AllStatic {
   static jlong elapsed_frequency();
 
   static double elapsed_process_cpu_time();
+
+  static jlong initial_time_count();
+  static uint64_t initial_time_date();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone

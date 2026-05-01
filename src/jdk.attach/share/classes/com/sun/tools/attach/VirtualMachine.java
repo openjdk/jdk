@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.attach;
 import com.sun.tools.attach.spi.AttachProvider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.io.IOException;
 
@@ -199,6 +200,82 @@ public abstract class VirtualMachine {
         for (AttachProvider provider: providers) {
             try {
                 return provider.attachVirtualMachine(id);
+            } catch (AttachNotSupportedException x) {
+                lastExc = x;
+            }
+        }
+        throw lastExc;
+    }
+
+    /**
+     * Attach to a Java virtual machine.
+     *
+     * Details as per the {@link attach(String)} method.
+     * This method additionally accepts a Map of named parameters and values.
+     *
+     * @param   id
+     *          The abstract identifier that identifies the Java virtual machine.
+     *
+     * @param   env
+     *          A Map of provider-specific settings to configure the attach, may be null or empty.
+     *
+     * @return  A VirtualMachine representing the target VM.
+     *
+     * @implNote The Oracle JDK ships with an attach provider which recognises the {@code id} as a
+     * live process ID, or the filename of a core file (on Linux) or MiniDump (Windows).
+     * When reading a core or MiniDump, the following settings are read from the Map:
+     *
+     * <table class="striped">
+     * <caption style="display:none">
+     *     Configurable properties that may be recongised by attach provider.
+     * </caption>
+     * <thead>
+     *   <tr>
+     *     <th scope="col">Name</th>
+     *     <th scope="col">Data Type</th>
+     *     <th scope="col">Default Value</th>
+     *     <th scope="col">Description</th>
+     *   </tr>
+     * </thead>
+     *
+     * <tbody>
+     * <tr>
+     *   <th scope="row">libDirs</th>
+     *   <td>{@link java.lang.String}</td>
+     *   <td>null/unset</td>
+     *   <td>Directory path of where to search for shared libraries when initially reading a core file.
+     *       This may be a list of multiple directories, separated by File.pathSeparator.
+     *       Required when files are transported between machines, or libraries at locations in the dump
+     *       have changed.
+     *   </td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">revivalCachePath</th>
+     *   <td>{@link java.lang.String}</td>
+     *   <td>null/unset</td>
+     *   <td>Directory path of where a cache directory may be created, when initially opening core.
+     *       Used when core file is in a location without write access.
+     *   </td>
+     * </tr>
+     * </tbody>
+     * </table>
+     *
+     * @since 27
+     */
+    public static VirtualMachine attach(String id, Map<String, ?> env)
+        throws AttachNotSupportedException, IOException
+    {
+        if (id == null) {
+            throw new NullPointerException("id cannot be null");
+        }
+        List<AttachProvider> providers = AttachProvider.providers();
+        if (providers.size() == 0) {
+            throw new AttachNotSupportedException("no providers installed");
+        }
+        AttachNotSupportedException lastExc = null;
+        for (AttachProvider provider: providers) {
+            try {
+                return provider.attachVirtualMachine(id, env);
             } catch (AttachNotSupportedException x) {
                 lastExc = x;
             }

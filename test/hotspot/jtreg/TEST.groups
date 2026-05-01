@@ -60,7 +60,8 @@ hotspot_handshake = \
   runtime/handshake
 
 hotspot_serviceability = \
-  serviceability
+  serviceability \
+  serviceability/revival
 
 hotspot_resourcehogs = \
   resourcehogs
@@ -614,7 +615,8 @@ hotspot_appcds_with_jfr = \
  -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java
 
 tier1_serviceability = \
-  serviceability/ \
+  serviceability/revival \
+  serviceability \
   -serviceability/dcmd/compiler/CompilerQueueTest.java \
   -serviceability/jvmti/RedefineClasses/RedefineLeak.java \
   -serviceability/jvmti/RedefineClasses/RedefineLeakThrowable.java \
@@ -670,6 +672,7 @@ hotspot_tier2_runtime = \
 
 hotspot_tier2_serviceability = \
   serviceability/ \
+  serviceability/revival \
  -:tier1_serviceability
 
 hotspot_tier2_runtime_platform_agnostic = \

@@ -563,7 +563,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
 }
 
 TableStatistics SymbolTable::get_table_statistics() {
-  static TableStatistics ts;
+  NOT_WINDOWS(static) TableStatistics ts; // Avoid atexit for static destructor on Windows
   auto sz = [&](Symbol* value) {
     assert(value != nullptr, "expected valid value");
     return (value)->size() * HeapWordSize;

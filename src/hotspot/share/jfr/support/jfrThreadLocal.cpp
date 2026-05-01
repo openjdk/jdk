@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,10 @@ JfrThreadLocal::JfrThreadLocal() :
   _do_async_processing_of_cpu_time_jfr_requests(false)
 #endif
   {
-  Thread* thread = Thread::current_or_null();
-  _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
+  if (!Thread::is_revived()) {
+    Thread* thread = Thread::current_or_null();
+    _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
+  }
 }
 
 u8 JfrThreadLocal::add_data_lost(u8 value) {

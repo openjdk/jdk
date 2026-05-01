@@ -91,6 +91,7 @@ Atomic<jlong>     VMError::_step_start_time{-1};
 Atomic<bool>      VMError::_step_did_timeout{false};
 Atomic<bool>      VMError::_step_did_succeed{false};
 Atomic<intptr_t>  VMError::_first_error_tid{-1};
+double            VMError::_first_error_time = 0;
 int               VMError::_id;
 const char*       VMError::_message;
 char              VMError::_detail_msg[1024];
@@ -852,6 +853,9 @@ void VMError::report(outputStream* st, bool _verbose) {
     // process id, thread id
     st->print(", pid=%d", os::current_process_id());
     st->print(", tid=%zu", os::current_thread_id());
+    if (Thread::is_revived()) {
+      st->print(" (revived)");
+    }
     st->cr();
 
   STEP_IF("printing error message", should_report_bug(_id)) // already printed the message.
@@ -1714,6 +1718,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   intptr_t mytid = os::current_thread_id();
   if (_first_error_tid.compare_set(-1, mytid)) {
 
+    // Record time of fault.
+    _first_error_time = os::elapsedTime();
+
     if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
     }
@@ -2185,6 +2192,10 @@ void VMError::controlled_crash(int how) {
   if (!Threads_lock->owned_by_self()) {
     Threads_lock->try_lock();
     // The VM is going to die so no need to unlock Thread_lock.
+  }
+  // Additionally own the Heap_lock before crashing.
+  if (!Heap_lock->owned_by_self()) {
+    Heap_lock->try_lock();
   }
 
   switch (how) {

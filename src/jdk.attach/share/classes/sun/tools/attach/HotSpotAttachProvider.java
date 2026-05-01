@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@
  */
 package sun.tools.attach;
 
+import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import sun.jvmstat.monitor.HostIdentifier;
@@ -44,6 +48,24 @@ import sun.jvmstat.monitor.VmIdentifier;
 public abstract class HotSpotAttachProvider extends AttachProvider {
 
     public HotSpotAttachProvider() {
+    }
+
+    /**
+     * This method accepts a Map of parameters which is passed to the attach provider.
+     */
+    @Override
+    public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
+        throws AttachNotSupportedException, IOException {
+
+        // The 'vmid' existing as a file implies it is a core or minidump:
+        if (new File(vmid).exists()) {
+            return new VirtualMachineCoreDumpImpl(this, vmid, env);
+        }
+        // AttachNotSupportedException will be thrown if the target VM can be determined
+        // to be not attachable.
+        testAttachable(vmid);
+
+        return new VirtualMachineImpl(this, vmid);
     }
 
     /*

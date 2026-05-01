@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -136,6 +137,28 @@ public abstract class AttachProvider {
      */
     public abstract VirtualMachine attachVirtualMachine(String id)
         throws AttachNotSupportedException, IOException;
+
+    /**
+     * Attach to a Java virtual machine.
+     *
+     * Details as per the {@link attachVirtualMachine(String)} method.
+     * This method additionally accepts a Map of named parameters and values.
+     *
+     * @param  id
+     *         The abstract identifier that identifies the Java virtual machine.
+     *
+     * @param  env
+     *         A Map of provider-specific settings to configure the attach, may be null or empty.
+     *
+     * @return  VirtualMachine representing the target virtual machine.
+     *
+     * @since 27
+     */
+    public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
+        throws AttachNotSupportedException, IOException {
+
+        throw new UnsupportedOperationException("Not implemented in base AttachProvider class");
+    }
 
     /**
      * Attaches to a Java virtual machine.

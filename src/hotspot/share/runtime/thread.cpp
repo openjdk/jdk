@@ -47,8 +47,12 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "services/diagnosticArgument.hpp"
+#include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -185,6 +189,11 @@ void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
   _thr_current = nullptr;
   ThreadLocalStorage::set_thread(nullptr);
+}
+
+void Thread::revive_thread_current() {
+  _thr_current = this;
+  ThreadLocalStorage::set_thread(this);
 }
 
 void Thread::record_stack_base_and_size() {
@@ -567,3 +576,96 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   DEBUG_ONLY(_starting_thread = jt;)
   return os::create_main_thread(jt);
 }
+
+jboolean Thread::_revived_vm = false;
+
+#define REVIVAL_MAGIC 0x2e6e656b6e617266
+#define REVIVAL_VERSION 1
+struct revival_data {
+  uint64_t magic;
+  uint64_t version;
+  uint64_t size_this;
+  uint64_t status;
+
+  const char *runtime_name;
+  const char *runtime_version;
+  const char *runtime_vendor_version;
+  const char *jdk_debug_level;
+
+  uint64_t tls_index;
+  uint64_t initial_time_count; // e.g. clock_gettime MONOTONIC (since system boot), ns
+  uint64_t initial_time_date;  // e.g. time_t since epoch, seconds
+  double error_time; // os::elapsedTime() at first VM error
+
+  void* vm_thread;
+  void* tty;
+  void* parse_and_execute;
+  void* info1;
+  void* info2;
+  void* info3;
+};
+
+struct revival_data vm_revival_data;
+
+void* Thread::process_revival() {
+  _revived_vm = true;
+#ifdef LINUX
+  os::Linux::revive_init();
+#endif
+#ifdef _WINDOWS
+  os::win32::revive_init();
+#endif
+  // A Thread object is needed for our caller to call the dcmd parser.
+  // Use the VMThread so threads invoking a VMOperation will run it themselves.
+  VMThread* t = VMThread::vm_thread();
+  if (t == nullptr) {
+    return nullptr;
+  }
+  t->record_stack_base_and_size();
+  t->set_osthread(new OSThread());
+
+  // Reset current thread:
+  int tls_index = ThreadLocalStorage::revive(t);
+  t->revive_thread_current();
+  Thread *c = Thread::current_or_null(); // Verify TLS
+  if (c == nullptr) {
+    return nullptr;
+  }
+  // Reset some VM state/options:
+  ostream_revive(); // Fix tty
+  SafepointSynchronize::set_is_at_safepoint();
+  DisplayVMOutput = 1;
+  LogVMOutput = 0;
+  NativeMemoryTracking = nullptr;
+  UnlockDiagnosticVMOptions = true;
+  DebuggingContext::force(); // Disable asserts
+  Mutex::revive_all();
+
+  struct revival_data* rdata = &vm_revival_data;
+  memset(&vm_revival_data, 0, sizeof(struct revival_data));
+  rdata->magic = REVIVAL_MAGIC;
+  rdata->version = REVIVAL_VERSION;
+  rdata->size_this = sizeof(vm_revival_data);
+  rdata->status = 1;
+
+  rdata->runtime_name = JDK_Version::runtime_name();
+  rdata->runtime_version = JDK_Version::runtime_version();
+  rdata->runtime_vendor_version = JDK_Version::runtime_vendor_version();
+  rdata->jdk_debug_level = VM_Version::printable_jdk_debug_level();
+
+  rdata->tls_index = tls_index;
+  rdata->initial_time_count = os::initial_time_count();
+  rdata->initial_time_date = os::initial_time_date();
+  rdata->error_time = VMError::error_time();
+
+  rdata->vm_thread = t;
+  rdata->tty = tty;
+
+  rdata->parse_and_execute = (void*) &DCmd::parse_and_execute;
+  return (void*) rdata;
+}
+
+void* process_revival() {
+  return (void*) Thread::process_revival();
+}
+

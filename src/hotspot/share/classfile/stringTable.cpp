@@ -728,7 +728,7 @@ struct SizeFunc : StackObj {
 };
 
 TableStatistics StringTable::get_table_statistics() {
-  static TableStatistics ts;
+  NOT_WINDOWS(static) TableStatistics ts; // Avoid atexit for static destructor on Windows
   SizeFunc sz;
 
   Thread* jt = Thread::current();
