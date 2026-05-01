@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,4 +27,33 @@
  * @compile/module=jdk.jpackage -Xlint:all -Werror
  *    jdk/jpackage/internal/ExecutableOSVersionTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.ExecutableOSVersionTest
+ */
+
+/* @test
+ * @summary WixVariables unit tests
+ * @requires (os.family == "windows")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/WixVariablesTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.WixVariablesTest
+ */
+
+/* @test
+ * @summary UiSpec unit tests
+ * @requires (os.family == "windows")
+ * @modules jdk.jpackage/jdk.jpackage.internal.wixui:open
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/wixui/UISpecTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.wixui.UISpecTest
+ */
+
+/* @test
+ * @summary Test WiX Toolset lookup algorithm
+ * @requires (os.family == "windows")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/WixToolTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.WixToolTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.lang.ref.SoftReference;
 import java.text.ListFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -104,6 +105,9 @@ public class LocaleResources {
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
+
+    // TimeZoneNamesBundle explicit metazone dst offset prefix
+    private static final String TZNB_METAZONE_DSTOFFSET_PREFIX = "metazone.dstoffset.";
 
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
@@ -321,7 +325,8 @@ public class LocaleResources {
 
         if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
-            if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (key.startsWith(TZNB_EXCITY_PREFIX) ||
+                key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 if (tznb.containsKey(key)) {
                     val = tznb.getString(key);
                     assert val instanceof String;
@@ -378,7 +383,8 @@ public class LocaleResources {
         Set<String[]> value = new LinkedHashSet<>();
         Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
-            if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
+            if (!key.startsWith(TZNB_EXCITY_PREFIX) &&
+                !key.startsWith(TZNB_METAZONE_DSTOFFSET_PREFIX)) {
                 value.add(rb.getStringArray(key));
                 tzIds.remove(key);
             }
@@ -457,19 +463,21 @@ public class LocaleResources {
 
     /**
      * Returns a date-time format pattern
-     * @param timeStyle style of time; one of FULL, LONG, MEDIUM, SHORT in DateFormat,
-     *                  or -1 if not required
-     * @param dateStyle style of time; one of FULL, LONG, MEDIUM, SHORT in DateFormat,
-     *                  or -1 if not required
+     * @param dateStyle style of time; one of FULL, LONG, MEDIUM, SHORT in FormatStyle,
+     *                  or null if not required
+     * @param timeStyle style of time; one of FULL, LONG, MEDIUM, SHORT in FormatStyle,
+     *                  or null if not required
      * @param calType   the calendar type for the pattern
      * @return the pattern string
      */
-    public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType) {
+    public String getDateTimeFormatterPattern(FormatStyle dateStyle, FormatStyle timeStyle, String calType) {
         calType = CalendarDataUtility.normalizeCalendarType(calType);
         String pattern;
-        pattern = getDateTimePattern("java.time.", timeStyle, dateStyle, calType);
+        int ts = timeStyle != null ? timeStyle.ordinal() : -1;
+        int ds = dateStyle != null ? dateStyle.ordinal() : -1;
+        pattern = getDateTimePattern("java.time.", ts, ds, calType);
         if (pattern == null) {
-            pattern = getDateTimePattern(null, timeStyle, dateStyle, calType);
+            pattern = getDateTimePattern(null, ts, ds, calType);
         }
         return pattern;
     }

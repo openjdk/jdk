@@ -137,6 +137,15 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  // A full GC may be entered directly, or as an upgrade from a failed
+  // degenerated GC. In the latter case, self-forwarded objects may be
+  // present from the failed evacuation. Drain those marks before any phase
+  // (verify, update_roots, phase1_mark_heap) walks headers.
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
+  }
+
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
@@ -252,6 +261,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase5_epilog();
   }
+  heap->start_idle_span();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -260,10 +270,12 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
+  FREE_C_HEAP_ARRAY(worker_slices);
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
+
+  DEBUG_ONLY(heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_fullgc(_generation);
@@ -687,7 +699,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     }
   }
 
-  FREE_C_HEAP_ARRAY(size_t, live);
+  FREE_C_HEAP_ARRAY(live);
 
 #ifdef ASSERT
   ResourceBitMap map(n_regions);
@@ -877,8 +889,11 @@ public:
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
-      ContinuationGCSupport::relativize_stack_chunk(new_obj);
+      // Restore the mark word before relativizing the stack chunk. The copy's
+      // mark word contains the full GC forwarding encoding, which would cause
+      // is_stackChunk() to read garbage (especially with compact headers).
       new_obj->init_mark();
+      ContinuationGCSupport::relativize_stack_chunk(new_obj);
     }
   }
 };
@@ -1124,8 +1139,9 @@ void ShenandoahFullGC::phase5_epilog() {
       if (heap->mode()->is_generational()) {
         ShenandoahGenerationalFullGC::compute_balances();
       }
-      free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+      heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
     }
+
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();
 

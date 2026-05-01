@@ -46,7 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /*
  * @test
  * @summary Direct test for HttpResponse.BodySubscriber.buffering() cancellation
- * @run junit/othervm BufferingSubscriberCancelTest
+ * @run junit/othervm ${test.main.class}
  */
 
 public class BufferingSubscriberCancelTest {
@@ -214,6 +214,6 @@ public class BufferingSubscriberCancelTest {
                 return;
             Thread.sleep(100);
         }
-        assertEquals(expected, actual); // will fail with the usual testng message
+        assertEquals(expected, actual); // will fail with the usual junit message
     }
 }

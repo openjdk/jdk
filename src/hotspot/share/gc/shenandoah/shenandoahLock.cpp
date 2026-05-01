@@ -93,7 +93,7 @@ ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");
 }
 
-void ShenandoahSimpleLock::lock() {
+void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
   _lock.lock();
 }
 
@@ -101,28 +101,31 @@ void ShenandoahSimpleLock::unlock() {
   _lock.unlock();
 }
 
-ShenandoahReentrantLock::ShenandoahReentrantLock() :
-  ShenandoahSimpleLock(), _owner(nullptr), _count(0) {
-  assert(os::mutex_init_done(), "Too early!");
+template<typename Lock>
+ShenandoahReentrantLock<Lock>::ShenandoahReentrantLock() :
+  Lock(), _owner(nullptr), _count(0) {
 }
 
-ShenandoahReentrantLock::~ShenandoahReentrantLock() {
+template<typename Lock>
+ShenandoahReentrantLock<Lock>::~ShenandoahReentrantLock() {
   assert(_count == 0, "Unbalance");
 }
 
-void ShenandoahReentrantLock::lock() {
+template<typename Lock>
+void ShenandoahReentrantLock<Lock>::lock(bool allow_block_for_safepoint) {
   Thread* const thread = Thread::current();
   Thread* const owner = _owner.load_relaxed();
 
   if (owner != thread) {
-    ShenandoahSimpleLock::lock();
+    Lock::lock(allow_block_for_safepoint);
     _owner.store_relaxed(thread);
   }
 
   _count++;
 }
 
-void ShenandoahReentrantLock::unlock() {
+template<typename Lock>
+void ShenandoahReentrantLock<Lock>::unlock() {
   assert(owned_by_self(), "Invalid owner");
   assert(_count > 0, "Invalid count");
 
@@ -130,12 +133,17 @@ void ShenandoahReentrantLock::unlock() {
 
   if (_count == 0) {
     _owner.store_relaxed((Thread*)nullptr);
-    ShenandoahSimpleLock::unlock();
+    Lock::unlock();
   }
 }
 
-bool ShenandoahReentrantLock::owned_by_self() const {
+template<typename Lock>
+bool ShenandoahReentrantLock<Lock>::owned_by_self() const {
   Thread* const thread = Thread::current();
   Thread* const owner = _owner.load_relaxed();
   return owner == thread;
 }
+
+// Explicit template instantiation
+template class ShenandoahReentrantLock<ShenandoahSimpleLock>;
+template class ShenandoahReentrantLock<ShenandoahLock>;
