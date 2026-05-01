@@ -657,6 +657,8 @@ public class LocaleResources {
         // "preferred"/"allowed" input skeleton maps
         var inputSkeletons = new HashMap<String, Map<String, String>>();
         Pattern p = Pattern.compile("([^:]+):([^;]+);");
+
+        // CLDR is guaranteed to implement ResourceBundleBasedAdapter
         if (LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR) instanceof ResourceBundleBasedAdapter rbba) {
             var r = rbba.getLocaleData().getDateFormatData(Locale.ROOT);
             Stream.of("preferred", "allowed").forEach(type -> {
