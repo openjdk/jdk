@@ -949,7 +949,6 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
 
-  DirectiveSet* directive;
   if (compilation_context != nullptr) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
