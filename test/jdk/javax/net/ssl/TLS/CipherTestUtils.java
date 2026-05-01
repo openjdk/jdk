@@ -23,9 +23,6 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -37,7 +34,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -50,7 +46,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
@@ -197,7 +192,8 @@ public class CipherTestUtils {
     static abstract class Server implements Runnable, AutoCloseable {
 
         final CipherTestUtils cipherTest;
-        final CountDownLatch serverStarted = new CountDownLatch(1);
+        // Thread that uses this server
+        private volatile Thread serverThread;
 
         Server(CipherTestUtils cipherTest) throws Exception {
             this.cipherTest = cipherTest;
@@ -239,6 +235,14 @@ public class CipherTestUtils {
             TestParameters tp = (TestParameters) CipherTestUtils.TESTS.get(0);
             out.write(tp.toString().getBytes());
             out.write(" Test PASSED.".getBytes());
+        }
+
+        protected void setServerThread(final Thread serverThread) {
+            this.serverThread = serverThread;
+        }
+
+        protected final Thread getServerThread() {
+            return serverThread;
         }
     }
 
@@ -522,6 +526,7 @@ public class CipherTestUtils {
         CipherTestUtils cipherTest = CipherTestUtils.getInstance();
         Server srv = peerFactory.newServer(cipherTest, PeerFactory.FREE_PORT);
         Thread serverThread = new Thread(srv, "Server");
+        srv.setServerThread(serverThread);
         serverThread.start();
 
         return srv;
