@@ -31,7 +31,7 @@
 #include "runtime/os.hpp"
 
 ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info) {
+  ShenandoahStaticHeuristics(space_info) {
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 
@@ -51,9 +51,14 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
 }
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
-  log_trigger("Start next cycle immediately");
-  accept_trigger();
-  return true;
+  double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
+  if (last_time_ms > ShenandoahAggressiveGCInterval) {
+    log_trigger("Time since last GC (%.0f ms) is larger than agressive interval (%zu ms)",
+                  last_time_ms, ShenandoahAggressiveGCInterval);
+    accept_trigger();
+    return true;
+  }
+  return ShenandoahStaticHeuristics::should_start_gc();
 }
 
 bool ShenandoahAggressiveHeuristics::should_unload_classes() {
