@@ -59,7 +59,7 @@ import jtreg.SkippedException;
 public class AttachRevival {
 
     public static void main(String[] args) throws Throwable {
-        if (args.length > 1) { 
+        if (args.length > 1) {
             // We are the initial test invocation.
             // Will re-invoke ourself to cause crash and core, wait for that process,
             // then attach to the core.
@@ -149,9 +149,9 @@ public class AttachRevival {
         }
         System.out.println("PASSED");
     }
-        
+
     static void testAttach(String coreFileName, String type, String command) throws Throwable {
-		System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
+        System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
 
         VirtualMachine vm = VirtualMachine.attach(coreFileName, null);
         System.out.println("vm = '" + vm.toString() + "'");
@@ -162,25 +162,25 @@ public class AttachRevival {
             vm.startLocalManagementAgent();
             throw new RuntimeException("startLocalManagementAgent should not succeed");
         } catch (IOException e1) {
-            System.out.println("Expected Exception from startLocalManagementAgent:"); 
-            e1.printStackTrace(System.out); 
+            System.out.println("Expected Exception from startLocalManagementAgent:");
+            e1.printStackTrace(System.out);
         }
 
         try {
             vm.loadAgent("noAgent");
             throw new RuntimeException("loadAgent should not succeed");
         } catch (IOException e2) {
-            System.out.println("Expected Exception from loadAgent:"); 
-            e2.printStackTrace(System.out); 
+            System.out.println("Expected Exception from loadAgent:");
+            e2.printStackTrace(System.out);
         }
 
         try {
             Properties props = vm.getSystemProperties();
-            System.out.println(props); 
+            System.out.println(props);
             throw new RuntimeException("getSystemProperties should not succeed");
         } catch (IOException e3) {
             // java.io.IOException: command 'properties' not implemented
-            System.out.println("Expected Exception from getSystemProperties:"); 
+            System.out.println("Expected Exception from getSystemProperties:");
             e3.printStackTrace(System.out);
         }
 
@@ -195,8 +195,9 @@ public class AttachRevival {
             PrintStreamPrinter.drainUTF8(is, System.out);
             throw new RuntimeException("jcmd should not succeed after detach");
         } catch (IOException e4) {
-            System.out.println("Expected Exception from jcmd after detach:"); 
+            System.out.println("Expected Exception from jcmd after detach:");
             e4.printStackTrace(System.out);
         }
     }
 }
+

@@ -492,7 +492,7 @@ char* file_name_for_nt_file(char* name, const char* libdir) {
  */
 void ELFFile::read_file_mappings() {
     if (!is_core()) {
-		error("read_file_mappings: Not a core file: %s", filename);
+        error("read_file_mappings: Not a core file: %s", filename);
 	}
     if (file_mappings.size() != 0) return;
 
@@ -690,7 +690,7 @@ void ELFFile::write_mem_mappings(int mappings_fd) {
             break; // Kernel mapping?  Not something we can map in.  Phdrs are in ascending address order.
         }
 
-		bool skip = false;
+        bool skip = false;
         if (!(phdr->p_flags & PF_W)) {
             std::list<Segment>::iterator iter;
             for (iter = file_mappings.begin(); iter != file_mappings.end(); iter++) {

@@ -299,9 +299,9 @@ void* do_mmap_pd(void* addr, size_t length, char* filename, int fd, size_t offse
     // Failure with EINVAL is expected on a Linux gcore (gdb) due to unaligned file offsets.
     void* e = mmap(addr, length, prot, flags, fd, offset);
     if (e == (void*) -1L) {
-	    logv("do_mmap_pd: mmap(%p, %zu, %d, %d, %d, file offset 0x%lx) failed: errno = %d: %s",
-              addr, length, prot, flags, fd, offset, errno, strerror(errno));
-	}
+        logv("do_mmap_pd: mmap(%p, %zu, %d, %d, %d, file offset 0x%lx) failed: errno = %d: %s",
+            addr, length, prot, flags, fd, offset, errno, strerror(errno));
+    }
     return e;
 }
 
@@ -460,7 +460,7 @@ void* load_sharedobject_pd(const char* name, void* vaddr) {
         // Trying dlclose and forcing retry is not successful.
         // Terminate, for calling process to retry:
         exitForRetry();
-	}
+    }
     return h;
 }
 

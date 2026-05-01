@@ -167,7 +167,7 @@ public class JCmdRevival {
     private static String MAJOR = System.getProperty("java.vm.version").substring(0, 2);
 
     public static void main(String[] args) throws Throwable {
-        if (args.length > 1) { 
+        if (args.length > 1) {
             // We are the initial test invocation.
             // Will re-invoke ourself to cause crash and core, wait for that process,
             // then run "jcmd command" on the core.
@@ -272,9 +272,9 @@ public class JCmdRevival {
         }
         System.out.println("PASSED");
     }
-        
+
     static void testJCmd(String coreFileName, String type, String command) throws Throwable {
-		System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
+        System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
 
         String coreBaseName = coreFileName;
         int index = coreFileName.lastIndexOf(File.separator);

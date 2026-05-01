@@ -57,7 +57,6 @@ uint64_t* core_teb;
 void revived_exit(int e) {
        logv("revived_exit: %d", e);
 #ifdef WINDOWS
-	// Sleep(500);
     TerminateProcess(GetCurrentProcess(), e);
 #else
     _exit(e);
@@ -380,9 +379,9 @@ void* load_sharedlibrary_fromdir(const char* dirname, const char* libname, void*
  *
  * The core.mappings little language:
  *
- * M 	map directly from core                      revival_mapping_mmap(vaddr, length, offset, core_filename, core_fd);
- * m 	map allocation, not backed by core          revival_mapping_allocate(void* vaddr, size_t length);
- * C 	copy data (into an earlier "m" allocation)  revival_mapping_copy(vaddr, length, offset, false, core_filename, core_fd);
+ * M    map directly from core                      revival_mapping_mmap(vaddr, length, offset, core_filename, core_fd);
+ * m    map allocation, not backed by core          revival_mapping_allocate(void* vaddr, size_t length);
+ * C    copy data (into an earlier "m" allocation)  revival_mapping_copy(vaddr, length, offset, false, core_filename, core_fd);
  */
 int mappings_file_read(const char* corename, const char* dirname, const char* mappings_filename) {
     char s1[BUFLEN];
