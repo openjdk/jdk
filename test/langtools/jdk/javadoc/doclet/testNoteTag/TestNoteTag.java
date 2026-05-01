@@ -52,18 +52,18 @@ public class TestNoteTag extends JavadocTester {
     public void testMultipleBlockNotes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
-                package p;
-                /**
-                 * @note First note
-                 * @note Second note
-                 * @note [header="Important:"] First important note
-                 * @note [header="Important:"] Second important note
-                 * @note [header="Warning:" id="first-warning" kind="warning"] First warning
-                 * @note [header="Warning:" id="second-warning"] Second warning
-                 */
-                public class C {
-                }
-                """);
+                    package p;
+                    /**
+                     * @note First note
+                     * @note Second note
+                     * @note [header="Important:"] First important note
+                     * @note [header="Important:"] Second important note
+                     * @note [header="Warning:" id="first-warning" kind="warning"] First warning
+                     * @note [header="Warning:" id="second-warning"] Second warning
+                     */
+                    public class C {
+                    }
+                    """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
@@ -96,31 +96,33 @@ public class TestNoteTag extends JavadocTester {
     public void testUnterminatedAttributes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
-                package p;
-                /**
-                * First sentence. {@note [header=Warning }
-                * @note
-                *  [ id=important-note
-                *    kind=important
-                */
-                public class C {
-                }
-                """);
+                    package p;
+                    /**
+                    * First sentence. {@note [header=Warning }
+                    * @note
+                    *  [ id=important-note
+                    *    kind=important
+                    */
+                    public class C {
+                    }
+                    """);
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "p");
         checkExit(Exit.ERROR);
 
-        checkOutput(Output.OUT, true,
-                "C.java:3: error: unterminated attributes",
+        checkOutput(Output.OUT, true, """
+                    C.java:3: error: unterminated attributes
+                    * First sentence. {@note [header=Warning }
+                                                             ^
+                    """,
                 """
-                * First sentence. {@note [header=Warning }
-                                                         ^""",
-                "C.java:6: error: unterminated attributes",
-                """
-                *    kind=important
-                                  ^""");
+                    C.java:6: error: unterminated attributes
+                    *    kind=important
+                                      ^
+                    """);
+
 
         checkOrder("p/C.html", """
                 <details class="invalid-tag">
@@ -129,5 +131,87 @@ public class TestNoteTag extends JavadocTester {
                 </details>""");
     }
 
+    @Test
+    public void testValuelessAttribute(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                    package p;
+                    /**
+                    * First sentence. {@note [id] body }
+                    *
+                    * @note [ id=important-note kind] body
+                    */
+                    public class C {
+                    }
+                    """);
 
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true, """
+                    C.java:3: error: attribute lacks value
+                    * First sentence. {@note [id] body }
+                                              ^
+                    """,
+                """
+                    C.java:5: error: attribute lacks value
+                    * @note [ id=important-note kind] body
+                                                ^
+                    """);
+
+        checkOrder("p/C.html", """
+                    <div class="inline-note" id="note-p.C1"><span class="note-header">Note:</span>
+                    body </div>
+                    </div>
+                    <dl class="notes">
+                    <div class="block-note note-tag" id="important-note">
+                    <dt>Note:</dt>
+                    <dd>body</dd>
+                    </div>
+                    </dl>""");
+    }
+
+    @Test
+    public void testDuplicateAttribute(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                    package p;
+                    /**
+                    * First sentence. {@note [id=foo id=bar] body }
+                    *
+                    * @note [kind=important kind=important] body
+                    */
+                    public class C {
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true, """
+                    C.java:3: error: repeated attribute: id=bar
+                    * First sentence. {@note [id=foo id=bar] body }
+                                                     ^
+                    """,
+                """
+                    C.java:5: error: repeated attribute: kind=important
+                    * @note [kind=important kind=important] body
+                                            ^
+                    """);
+
+        checkOrder("p/C.html", """
+                    <div class="inline-note" id="bar"><span class="note-header">Note:</span>
+                    body </div>
+                    </div>
+                    <dl class="notes">
+                    <div class="block-note note-tag-important" id="note-p.C">
+                    <dt>Note:</dt>
+                    <dd>body</dd>
+                    </div>
+                    </dl>""");
+    }
 }

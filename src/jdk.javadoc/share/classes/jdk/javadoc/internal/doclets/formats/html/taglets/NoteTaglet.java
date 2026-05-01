@@ -180,10 +180,13 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     }
 
     private Map<String, String> getAttributes(NoteTree note) {
+        // Missing values and duplicate keys are checked by Doclint.
         return note.getAttributes().stream()
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
                 .map(t -> (AttributeTree) t)
-                .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf));
+                .filter(at -> at.getValue() != null)
+                .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf,
+                                          (_, newValue) -> newValue));
     }
 
     private Set<String> getExistingIds() {
