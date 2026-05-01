@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,21 @@
  * questions.
  */
 
+#include <dlfcn.h>
+#include <unistd.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/pollset.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
+#include "nio.h"
 #include "jlong.h"
 
 #include "sun_nio_ch_Pollset.h"
 
-#include <dlfcn.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stddef.h>
-#include <sys/pollset.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
+static short POLLFD_SIZE = (short)(sizeof(struct pollfd));
 
 typedef pollset_t pollset_create_func(int maxfd);
 typedef int pollset_destroy_func(pollset_t ps);
@@ -82,6 +82,16 @@ Java_sun_nio_ch_Pollset_fdOffset(JNIEnv* env, jclass this) {
 }
 
 JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Pollset_fdLimit(JNIEnv *env, jclass this)
+{
+    struct rlimit rlp;
+    if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
+    }
+    return (jint)rlp.rlim_cur;
+}
+
+JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Pollset_pollsetCreate(JNIEnv *env, jclass c) {
     /* pollset_create can take the maximum number of fds, but we
      * cannot predict this number so we leave it at OPEN_MAX. */
@@ -107,16 +117,67 @@ Java_sun_nio_ch_Pollset_pollsetCtl(JNIEnv *env, jclass c, jint ps,
     return (res == 0) ? 0 : errno;
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_PollsetArrayWrapper_pollsetBulkCtl(JNIEnv *env, jobject this,
+                                jint pollsetFD, jlong address, jint count)
+{
+
+    /*
+     * Upon success, pollset_ctl returns 0. Upon failure, pollset_ctl returns the
+     * 0-based problem element number of the pollctl_array (for example, 2 is returned
+     * for element 3). If the first element is the problem element, or some other error
+     * occurs prior to processing the array of elements, -1 is returned and errno is
+     * set to the appropriate code. The calling application must acknowledge that elements
+     * in the array prior to the problem element were successfully processed and should
+     * attempt to call pollset_ctl again with the elements of pollctl_array beyond the
+     * problematic element0.
+     */
+
+    int res = 0;
+
+    while ( count > 0 ) {
+
+        res = pollset_ctl(pollsetFD, (struct poll_ctl *)(intptr_t) address, count);
+
+        if (res == 0) {
+            break;
+        } else if (res == -1) {
+            if(errno == EINTR) {
+                continue;
+            }
+            address += POLLFD_SIZE;
+            count--;
+            continue;
+        } else {
+            address += ( res + 1 ) * POLLFD_SIZE;
+            count -= ( res + 1 );
+            continue;
+        }
+    }
+
+
+    if (res < 0 && errno != EBADF && errno != ENOENT && errno!=EINVAL && errno != EPERM ) {
+        JNU_ThrowIOExceptionWithLastError(env, "pollset_ctl failed");
+    }
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Pollset_pollsetPoll(JNIEnv *env, jclass c,
                                         jint ps, jlong address, jint numfds, jint timeout) {
     struct pollfd *events = jlong_to_ptr(address);
-    int res;
-
-    RESTARTABLE(_pollset_poll(ps, events, numfds, timeout), res);
+    int res = _pollset_poll(ps, events, numfds, timeout);
     if (res < 0) {
-        perror("pollset_poll failed");
-        JNU_ThrowIOExceptionWithLastError(env, "pollset_poll failed");
+	if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+	}
+	// Don't throw exception on EBADF - pollset may have been closed
+        // This can happen during concurrent close operations
+	else if (errno == EBADF) {
+            return 0;  // Return 0 events, selector is closing
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "pollset failed");
+            return IOS_THROWN;
+        }
     }
     return res;
 }
@@ -124,7 +185,16 @@ Java_sun_nio_ch_Pollset_pollsetPoll(JNIEnv *env, jclass c,
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_pollsetDestroy(JNIEnv *env, jclass c, jint ps) {
     int res;
+    // Validate pollset descriptor before attempting destroy
+    if (ps < 0) {
+        return;  // Already destroyed or invalid
+    }
     RESTARTABLE(_pollset_destroy((pollset_t)ps), res);
+    // Don't throw exception on EBADF - pollset might already be destroyed
+    if (res < 0 && errno != EBADF) {
+        JNU_ThrowIOExceptionWithLastError(env, "pollset_destroy failed");
+    }
+
 }
 
 JNIEXPORT void JNICALL
@@ -164,5 +234,14 @@ Java_sun_nio_ch_Pollset_drain1(JNIEnv *env, jclass cl, jint fd) {
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_close0(JNIEnv *env, jclass c, jint fd) {
     int res;
+    // Validate file descriptor before attempting close
+    if (fd < 0) {
+        return;  // Already closed or invalid
+    }
     RESTARTABLE(close(fd), res);
+    // Don't throw exception on EBADF - FD might already be closed
+    // This is expected during cleanup in concurrent scenarios
+    if (res < 0 && errno != EBADF) {
+        JNU_ThrowIOExceptionWithLastError(env, "close failed");
+    }
 }
