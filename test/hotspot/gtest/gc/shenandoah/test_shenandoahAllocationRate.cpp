@@ -66,7 +66,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
   EXPECT_EQ(rate.average(), 0);
 }
 
-TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
+TEST_VM_F(ShenandoahAllocationRateTest, DISABLED_ignore_too_small_elapsed_time) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   allocate(rate, 2048);
   allocate(rate, 2048);

@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -102,12 +101,11 @@ public:
   }
 
   void allocated(size_t allocated_bytes);
-  void record_rate_sample(double timestamp, double rate);
+
   size_t accelerated_consumption(double& acceleration, double& current_rate, double time_delta);
 
   double average() {
     MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
-    // TODO: cache results
     return _baseline_average;
   }
 
@@ -116,6 +114,9 @@ public:
     // TODO: compute standard deviation along with average
     return _baseline_average;
   }
+private:
+  void record_rate_sample(double timestamp, double rate);
+  void update_averages();
 };
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;

@@ -84,12 +84,22 @@ void ShenandoahAllocRate<Clock>::record_rate_sample(double timestamp, double rat
   } else {
     _num_samples++;
   }
+
+  update_averages();
 }
 
 template<typename Clock>
 size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration, double& current_rate, double time_delta) {
-
   MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
+
+  acceleration = _acceleration;
+  current_rate = _momentary_average;
+
+  return static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::update_averages() {
 
   double x_sum = 0.0;
   double y_sum = 0.0;
@@ -98,11 +108,10 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   double weighted_y_sum = 0;
   double total_weight = 0;
   bool momentary_done = false;
-  double momentary_rate = 0.0;
   uint momentary_oldest_index = 0;
   bool recent_done = false;
-  double recent_rate = 0.0;
   uint recent_oldest_index = 0;
+  _acceleration = 0.0;
 
   assert(_num_samples > 0, "At minimum, we should have sample from this period");
   const uint count = MIN2(_buffer_size, _num_samples);
@@ -124,26 +133,25 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
       x2_sum += _rate_timestamps[index] * _rate_timestamps[index];
       xy_sum +=  _rate_timestamps[index] * _rate_samples[index];
       if (i >= _recent_window_size - 1) {
-        recent_rate = total_weight > 0 ? weighted_y_sum / total_weight : 0;
+        _recent_average = total_weight > 0 ? weighted_y_sum / total_weight : 0;
         recent_done = true;
         recent_oldest_index = preceding_index;
       }
     }
 
     if (!momentary_done && i >= _momentary_sample_size) {
-      momentary_rate = total_weight > 0 ? weighted_y_sum / total_weight: 0;
+      _momentary_average = total_weight > 0 ? weighted_y_sum / total_weight: 0;
       momentary_done = true;
       momentary_oldest_index = preceding_index;
     }
     index = preceding_index;
   }
 
-  const double baseline_rate = total_weight > 0 ? weighted_y_sum / total_weight: 0;
-  _baseline_average = baseline_rate;
+  _baseline_average = total_weight > 0 ? weighted_y_sum / total_weight: 0;
 
   if (log_is_enabled(Debug, gc, sampling)) {
     log_debug(gc, sampling)("Baseline: " PROPERFMT "/s, Recent: " PROPERFMT "/s, Momentary: " PROPERFMT "/s",
-      PROPERFMTARGS(baseline_rate), PROPERFMTARGS(recent_rate), PROPERFMTARGS(momentary_rate));
+      PROPERFMTARGS(_baseline_average), PROPERFMTARGS(_recent_average), PROPERFMTARGS(_momentary_average));
 
     const double latest = _rate_timestamps[newest];
     const double oldest_recent_time = _rate_timestamps[recent_oldest_index];
@@ -156,9 +164,7 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
   }
 
   // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
-  current_rate = momentary_rate;
-  acceleration = 0.0;
-  if (_num_samples >= _buffer_size && recent_rate > baseline_rate)  {
+  if (_num_samples >= _buffer_size && _recent_average > _baseline_average)  {
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
     //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
 
@@ -169,13 +175,10 @@ size_t ShenandoahAllocRate<Clock>::accelerated_consumption(double& acceleration,
     log_debug(gc, sampling)("slope: %.2f, intercept: %.2f", slope, y_intercept);
     if (slope > 0) {
       const double proposed_current_rate = slope * _rate_timestamps[newest] + y_intercept;
-      acceleration = slope;
-      current_rate = proposed_current_rate;
+      _acceleration = slope;
+      _momentary_average = proposed_current_rate;
     }
   }
-
-  const size_t words_to_be_consumed = static_cast<size_t>(current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
-  return words_to_be_consumed;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP_INLINE_HPP
