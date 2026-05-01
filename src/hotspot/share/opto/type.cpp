@@ -49,6 +49,9 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 
 // Portions of code courtesy of Clifford Click
 
@@ -97,7 +100,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectorz:",      false, Op_VecZ,              relocInfo::none          },  // VectorZ
 #endif
   { Bad,             T_ADDRESS,    "anyptr:",       false, Op_RegP,              relocInfo::none          },  // AnyPtr
-  { Bad,             T_ADDRESS,    "rawptr:",       false, Op_RegP,              relocInfo::none          },  // RawPtr
+  { Bad,             T_ADDRESS,    "rawptr:",       false, Op_RegP,              relocInfo::external_word_type },  // RawPtr
   { Bad,             T_OBJECT,     "oop:",          true,  Op_RegP,              relocInfo::oop_type      },  // OopPtr
   { Bad,             T_OBJECT,     "inst:",         true,  Op_RegP,              relocInfo::oop_type      },  // InstPtr
   { Bad,             T_OBJECT,     "ary:",          true,  Op_RegP,              relocInfo::oop_type      },  // AryPtr
@@ -732,6 +735,11 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
+#if INCLUDE_SHENANDOAHGC
+  ShenandoahBarrierSetC2::init();
+#endif //INCLUDE_SHENANDOAHGC
+
+  BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
   ArrayCopyNode::initialize_arraycopy_Type();
   OptoRuntime::initialize_types();
@@ -1816,6 +1824,13 @@ bool TypeInt::contains(const TypeInt* t) const {
   return TypeIntHelper::int_type_is_subset(this, t);
 }
 
+#ifdef ASSERT
+bool TypeInt::strictly_contains(const TypeInt* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
+}
+#endif // ASSERT
+
 const Type* TypeInt::xmeet(const Type* t) const {
   return TypeIntHelper::int_type_xmeet(this, t);
 }
@@ -1943,6 +1958,13 @@ bool TypeLong::contains(const TypeLong* t) const {
   assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_is_subset(this, t);
 }
+
+#ifdef ASSERT
+bool TypeLong::strictly_contains(const TypeLong* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t) && !TypeIntHelper::int_type_is_equal(this, t);
+}
+#endif // ASSERT
 
 const Type* TypeLong::xmeet(const Type* t) const {
   return TypeIntHelper::int_type_xmeet(this, t);
@@ -3467,7 +3489,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
 #ifdef _LP64
   if (_offset > 0 || _offset == Type::OffsetTop || _offset == Type::OffsetBot) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowklass = UseCompressedClassPointers;
+      _is_ptr_to_narrowklass = true;
     } else if (klass() == nullptr) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");

@@ -26,13 +26,16 @@ import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * Test MethodHandleProxies::asInterfaceInstance with an inaccessible interface
  */
 public class Unnamed {
-    public static void main(String... args) throws Throwable {
+    @Test
+    void testInaccessible() throws Throwable {
         MethodHandle target = MethodHandles.constant(String.class, "test");
         Class<?> intf = Class.forName("p2.TestIntf");
         Object t = MethodHandleProxies.asInterfaceInstance(intf, target);

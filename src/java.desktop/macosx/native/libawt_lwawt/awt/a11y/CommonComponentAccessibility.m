@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,10 +132,11 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"desktopicon"];
     [rolesMap setObject:@"SpinboxAccessibility" forKey:@"spinbox"];
-    [rolesMap setObject:@"StaticTextAccessibility" forKey:@"hyperlink"];
+    [rolesMap setObject:@"LinkAccessibility" forKey:@"hyperlink"];
     [rolesMap setObject:@"StaticTextAccessibility" forKey:@"label"];
     [rolesMap setObject:@"RadiobuttonAccessibility" forKey:@"radiobutton"];
     [rolesMap setObject:@"CheckboxAccessibility" forKey:@"checkbox"];
+    [rolesMap setObject:@"CheckboxAccessibility" forKey:@"togglebutton"];
     [rolesMap setObject:@"SliderAccessibility" forKey:@"slider"];
     [rolesMap setObject:@"ScrollAreaAccessibility" forKey:@"scrollpane"];
     [rolesMap setObject:@"ScrollBarAccessibility" forKey:@"scrollbar"];
@@ -1189,13 +1190,24 @@ static jobject sAccessibilityClass = NULL;
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
     GET_CACCESSIBILITY_CLASS_RETURN(FALSE);
-    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
-                                 "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
-    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
-                                 [self axContextWithEnv:(env)], index, fComponent);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleAction, sjc_CAccessibility, "getAccessibleAction",
+                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleAction;", FALSE);
+
+    jobject axAction = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleAction, fAccessible, fComponent);
     CHECK_EXCEPTION();
 
-    return TRUE;
+    if (axAction != NULL) {
+        DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+                                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
+        (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
+                                     axAction, index, fComponent);
+        CHECK_EXCEPTION();
+
+        (*env)->DeleteLocalRef(env, axAction);
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 
 // NSAccessibilityActions methods

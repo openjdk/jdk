@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -736,12 +735,10 @@ public:
   void iterate_regions_in_range(MemRegion range, const Func& func);
 
   // Commit the required number of G1 region(s) according to the size requested
-  // and mark them as 'old' region(s). Preferred address is treated as a hint for
-  // the location of the archive space in the heap. The returned address may or may
-  // not be same as the preferred address.
+  // and mark them as 'old' region(s).
   // This API is only used for allocating heap space for the archived heap objects
   // in the CDS archive.
-  HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
+  HeapWord* alloc_archive_region(size_t word_size);
 
   // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
@@ -825,7 +822,6 @@ public:
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
-  G1ConcurrentMarkThread* _cm_thread;
 
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
@@ -917,9 +913,6 @@ public:
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize() override;
-
-  // Returns whether concurrent mark threads (and the VM) are about to terminate.
-  bool concurrent_mark_is_terminating() const;
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
@@ -1039,7 +1032,7 @@ public:
   // Returns how much memory there is assigned to non-young heap that can not be
   // allocated into any more without garbage collection after a hypothetical
   // allocation of allocation_word_size.
-  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size) const;
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
@@ -1268,7 +1261,6 @@ public:
 
   bool is_marked(oop obj) const;
 
-  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const G1HeapRegion* hr) const;
@@ -1283,7 +1275,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the bitmap.
-  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

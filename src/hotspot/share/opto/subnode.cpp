@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -745,71 +745,40 @@ const Type* CmpINode::Value(PhaseGVN* phase) const {
 
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
-  assert(!t1->isa_ptr(), "obsolete usage of CmpU");
+const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
+  const TypeInt* r0 = t1->is_int();
+  const TypeInt* r1 = t2->is_int();
 
-  // comparing two unsigned ints
-  const TypeInt *r0 = t1->is_int();   // Handy access
-  const TypeInt *r1 = t2->is_int();
-
-  // Current installed version
-  // Compare ranges for non-overlap
-  juint lo0 = r0->_lo;
-  juint hi0 = r0->_hi;
-  juint lo1 = r1->_lo;
-  juint hi1 = r1->_hi;
-
-  // If either one has both negative and positive values,
-  // it therefore contains both 0 and -1, and since [0..-1] is the
-  // full unsigned range, the type must act as an unsigned bottom.
-  bool bot0 = ((jint)(lo0 ^ hi0) < 0);
-  bool bot1 = ((jint)(lo1 ^ hi1) < 0);
-
-  if (bot0 || bot1) {
-    // All unsigned values are LE -1 and GE 0.
-    if (lo0 == 0 && hi0 == 0) {
-      return TypeInt::CC_LE;            //   0 <= bot
-    } else if ((jint)lo0 == -1 && (jint)hi0 == -1) {
-      return TypeInt::CC_GE;            // -1 >= bot
-    } else if (lo1 == 0 && hi1 == 0) {
-      return TypeInt::CC_GE;            // bot >= 0
-    } else if ((jint)lo1 == -1 && (jint)hi1 == -1) {
-      return TypeInt::CC_LE;            // bot <= -1
-    }
-  } else {
-    // We can use ranges of the form [lo..hi] if signs are the same.
-    assert(lo0 <= hi0 && lo1 <= hi1, "unsigned ranges are valid");
-    // results are reversed, '-' > '+' for unsigned compare
-    if (hi0 < lo1) {
-      return TypeInt::CC_LT;            // smaller
-    } else if (lo0 > hi1) {
-      return TypeInt::CC_GT;            // greater
-    } else if (hi0 == lo1 && lo0 == hi1) {
-      return TypeInt::CC_EQ;            // Equal results
-    } else if (lo0 >= hi1) {
-      return TypeInt::CC_GE;
-    } else if (hi0 <= lo1) {
-      // Check for special case in Hashtable::get.  (See below.)
-      if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
-        return TypeInt::CC_LT;
-      return TypeInt::CC_LE;
-    }
-  }
   // Check for special case in Hashtable::get - the hash index is
   // mod'ed to the table size so the following range check is useless.
   // Check for: (X Mod Y) CmpU Y, where the mod result and Y both have
   // to be positive.
   // (This is a gross hack, since the sub method never
   // looks at the structure of the node in any other case.)
-  if ((jint)lo0 >= 0 && (jint)lo1 >= 0 && is_index_range_check())
+  if (r0->_lo >= 0 && r1->_lo >= 0 && is_index_range_check()) {
     return TypeInt::CC_LT;
+  }
+
+  if (r0->_uhi < r1->_ulo) {
+    return TypeInt::CC_LT;
+  } else if (r0->_ulo > r1->_uhi) {
+    return TypeInt::CC_GT;
+  } else if (r0->is_con() && r1->is_con()) {
+    // Since r0->_ulo == r0->_uhi == r0->get_con(), we only reach here if the constants are equal
+    assert(r0->get_con() == r1->get_con(), "must reach a previous branch otherwise");
+    return TypeInt::CC_EQ;
+  } else if (r0->_uhi == r1->_ulo) {
+    return TypeInt::CC_LE;
+  } else if (r0->_ulo == r1->_uhi) {
+    return TypeInt::CC_GE;
+  }
 
   const Type* joined = r0->join(r1);
   if (joined == Type::TOP) {
     return TypeInt::CC_NE;
   }
 
-  return TypeInt::CC;                   // else use worst case results
+  return TypeInt::CC;
 }
 
 const Type* CmpUNode::Value(PhaseGVN* phase) const {
@@ -963,51 +932,21 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
 // Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
-  assert(!t1->isa_ptr(), "obsolete usage of CmpUL");
-
-  // comparing two unsigned longs
-  const TypeLong* r0 = t1->is_long();   // Handy access
+  const TypeLong* r0 = t1->is_long();
   const TypeLong* r1 = t2->is_long();
 
-  // Current installed version
-  // Compare ranges for non-overlap
-  julong lo0 = r0->_lo;
-  julong hi0 = r0->_hi;
-  julong lo1 = r1->_lo;
-  julong hi1 = r1->_hi;
-
-  // If either one has both negative and positive values,
-  // it therefore contains both 0 and -1, and since [0..-1] is the
-  // full unsigned range, the type must act as an unsigned bottom.
-  bool bot0 = ((jlong)(lo0 ^ hi0) < 0);
-  bool bot1 = ((jlong)(lo1 ^ hi1) < 0);
-
-  if (bot0 || bot1) {
-    // All unsigned values are LE -1 and GE 0.
-    if (lo0 == 0 && hi0 == 0) {
-      return TypeInt::CC_LE;            //   0 <= bot
-    } else if ((jlong)lo0 == -1 && (jlong)hi0 == -1) {
-      return TypeInt::CC_GE;            // -1 >= bot
-    } else if (lo1 == 0 && hi1 == 0) {
-      return TypeInt::CC_GE;            // bot >= 0
-    } else if ((jlong)lo1 == -1 && (jlong)hi1 == -1) {
-      return TypeInt::CC_LE;            // bot <= -1
-    }
-  } else {
-    // We can use ranges of the form [lo..hi] if signs are the same.
-    assert(lo0 <= hi0 && lo1 <= hi1, "unsigned ranges are valid");
-    // results are reversed, '-' > '+' for unsigned compare
-    if (hi0 < lo1) {
-      return TypeInt::CC_LT;            // smaller
-    } else if (lo0 > hi1) {
-      return TypeInt::CC_GT;            // greater
-    } else if (hi0 == lo1 && lo0 == hi1) {
-      return TypeInt::CC_EQ;            // Equal results
-    } else if (lo0 >= hi1) {
-      return TypeInt::CC_GE;
-    } else if (hi0 <= lo1) {
-      return TypeInt::CC_LE;
-    }
+  if (r0->_uhi < r1->_ulo) {
+    return TypeInt::CC_LT;
+  } else if (r0->_ulo > r1->_uhi) {
+    return TypeInt::CC_GT;
+  } else if (r0->is_con() && r1->is_con()) {
+    // Since r0->_ulo == r0->_uhi == r0->get_con(), we only reach here if the constants are equal
+    assert(r0->get_con() == r1->get_con(), "must reach a previous branch otherwise");
+    return TypeInt::CC_EQ;
+  } else if (r0->_uhi == r1->_ulo) {
+    return TypeInt::CC_LE;
+  } else if (r0->_ulo == r1->_uhi) {
+    return TypeInt::CC_GE;
   }
 
   const Type* joined = r0->join(r1);
@@ -1015,7 +954,7 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
     return TypeInt::CC_NE;
   }
 
-  return TypeInt::CC;                   // else use worst case results
+  return TypeInt::CC;
 }
 
 //=============================================================================
@@ -1042,15 +981,6 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   const TypeKlassPtr* k0 = r0->isa_klassptr();
   const TypeKlassPtr* k1 = r1->isa_klassptr();
   if ((p0 && p1) || (k0 && k1)) {
-    if (p0 && p1) {
-      Node* in1 = in(1)->uncast();
-      Node* in2 = in(2)->uncast();
-      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
-      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
-      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, nullptr)) {
-        return TypeInt::CC_GT;  // different pointers
-      }
-    }
     bool    xklass0 = p0 ? p0->klass_is_exact() : k0->klass_is_exact();
     bool    xklass1 = p1 ? p1->klass_is_exact() : k1->klass_is_exact();
     bool unrelated_classes = false;
@@ -1251,6 +1181,24 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   this->set_req_X(1, ldk2, phase);
 
   return this;
+}
+
+const Type* CmpPNode::Value(PhaseGVN* phase) const {
+  const Type* res = CmpNode::Value(phase);
+  if (res == TypeInt::CC) {
+    const TypeOopPtr* p0 = phase->type(in(1))->isa_oopptr();
+    const TypeOopPtr* p1 = phase->type(in(2))->isa_oopptr();
+    if (p0 != nullptr && p1 != nullptr) {
+      Node* in1 = in(1)->uncast();
+      Node* in2 = in(2)->uncast();
+      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
+      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
+      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, phase)) {
+        return TypeInt::CC_GT; // different pointers
+      }
+    }
+  }
+  return res;
 }
 
 //=============================================================================

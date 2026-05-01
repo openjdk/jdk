@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -308,7 +309,7 @@ static jlong* resize_counters_array(jlong* old_counters, int current_size, int n
     if (new_size > current_size) {
       memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
     }
-    FREE_C_HEAP_ARRAY(jlong, old_counters);
+    FREE_C_HEAP_ARRAY(old_counters);
   }
   return new_counters;
 }
@@ -377,15 +378,6 @@ void JavaThread::check_possible_safepoint() {
   // Clear unhandled oops in JavaThreads so we get a crash right away.
   clear_unhandled_oops();
 #endif // CHECK_UNHANDLED_OOPS
-
-  // Macos/aarch64 should be in the right state for safepoint (e.g.
-  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
-  // happens in practice, making such issues hard to find and reproduce.
-#if defined(__APPLE__) && defined(AARCH64)
-  if (AssertWXAtThreadSync) {
-    assert_wx_state(WXWrite);
-  }
-#endif
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
@@ -440,6 +432,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _no_safepoint_count(0),
   _visited_for_critical_count(false),
 #endif
+
+  NOT_PRODUCT(_bytecode_tracer_data{} COMMA)
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),
@@ -499,7 +493,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _suspend_resume_manager(this, &_handshake._lock),
 
   _is_in_vthread_transition(false),
-  DEBUG_ONLY(_is_vthread_transition_disabler(false) COMMA)
+  JVMTI_ONLY(_is_vthread_transition_disabler(false) COMMA)
   DEBUG_ONLY(_is_disabler_at_start(false) COMMA)
 
   _popframe_preserved_args(nullptr),
@@ -519,6 +513,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
 #if INCLUDE_JFR
   _last_freeze_fail_result(freeze_ok),
+#endif
+
+#ifdef MACOS_AARCH64
+  _cur_wx_enable(nullptr),
+  _cur_wx_mode(nullptr),
 #endif
 
   _lock_stack(this),
@@ -704,7 +703,7 @@ JavaThread::~JavaThread() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
+    FREE_C_HEAP_ARRAY(_jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
 }
@@ -1165,11 +1164,13 @@ void JavaThread::set_is_in_vthread_transition(bool val) {
   AtomicAccess::store(&_is_in_vthread_transition, val);
 }
 
-#ifdef ASSERT
+#if INCLUDE_JVMTI
 void JavaThread::set_is_vthread_transition_disabler(bool val) {
   _is_vthread_transition_disabler = val;
 }
+#endif
 
+#ifdef ASSERT
 void JavaThread::set_is_disabler_at_start(bool val) {
   _is_disabler_at_start = val;
 }
@@ -1183,7 +1184,9 @@ void JavaThread::set_is_disabler_at_start(bool val) {
 //
 bool JavaThread::java_suspend(bool register_vthread_SR) {
   // Suspending a vthread transition disabler can cause deadlocks.
-  assert(!is_vthread_transition_disabler(), "no suspend allowed for vthread transition disablers");
+  // The HandshakeState::has_operation does not allow such suspends.
+  // But the suspender thread is an exclusive transition disablers, so there can't be other disabers here.
+  JVMTI_ONLY(assert(!is_vthread_transition_disabler(), "suspender thread is an exclusive transition disabler");)
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
@@ -1884,7 +1887,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != nullptr, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
+  FREE_C_HEAP_ARRAY((char*)_popframe_preserved_args);
   _popframe_preserved_args = nullptr;
   _popframe_preserved_args_size = 0;
 }

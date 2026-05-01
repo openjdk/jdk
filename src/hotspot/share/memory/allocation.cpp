@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "utilities/ostream.hpp"
@@ -65,8 +67,23 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
+// These are used by the Serviceability Agent even if CDS is disabled
 void* MetaspaceObj::_aot_metaspace_base = nullptr;
 void* MetaspaceObj::_aot_metaspace_top  = nullptr;
+
+#if INCLUDE_CDS
+volatile bool MetaspaceObj::_aot_metaspace_range_initialized = false;
+
+void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {
+  _aot_metaspace_base = base;
+  _aot_metaspace_top = top;
+  AtomicAccess::release_store(&_aot_metaspace_range_initialized, true);
+}
+
+bool MetaspaceObj::aot_metaspace_range_initialized() {
+  return AtomicAccess::load_acquire(&_aot_metaspace_range_initialized);
+}
+#endif
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
@@ -161,12 +178,34 @@ void AnyObj::set_allocation_type(address res, allocation_type type) {
   }
 }
 
+void AnyObj::set_in_aot_cache() {
+  _allocation_t[0] = 0;
+  _allocation_t[1] = 0;
+}
+
+bool AnyObj::in_aot_cache() const {
+  if (MetaspaceObj::is_pointer_in_aot_cache(this)) {
+    // "this" can be AOT space only if aot_metaspace_range_initialized()
+    precond(_allocation_t[0] == 0);
+    precond(_allocation_t[1] == 0);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 AnyObj::allocation_type AnyObj::get_allocation_type() const {
+  if (in_aot_cache()) {
+    return STACK_OR_EMBEDDED;
+  }
   assert(~(_allocation_t[0] | allocation_mask) == (uintptr_t)this, "lost resource object");
   return (allocation_type)((~_allocation_t[0]) & allocation_mask);
 }
 
 bool AnyObj::is_type_set() const {
+  if (in_aot_cache()) {
+    return true;
+  }
   allocation_type type = (allocation_type)(_allocation_t[1] & allocation_mask);
   return get_allocation_type()  == type &&
          (_allocation_t[1] - type) == (uintptr_t)(&_allocation_t[1]);

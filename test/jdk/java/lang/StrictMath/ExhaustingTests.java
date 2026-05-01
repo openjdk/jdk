@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,10 @@ public class ExhaustingTests {
             new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
             new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
             new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
+
+            new UnaryTestCase("asinh", FdlibmTranslit::asinh, StrictMath::asinh, DEFAULT_SHIFT),
+            new UnaryTestCase("acosh", FdlibmTranslit::acosh, StrictMath::acosh, DEFAULT_SHIFT),
+            new UnaryTestCase("atanh", FdlibmTranslit::atanh, StrictMath::atanh, DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {
