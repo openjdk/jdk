@@ -34,7 +34,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
@@ -42,7 +42,6 @@
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCCounters.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -945,10 +944,6 @@ void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
 }
 
 void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-  // Currently, there is no facility in the do_full_collection(bool) API to notify
-  // the caller that the collection did not succeed (e.g., because it was locked
-  // out by the GC locker). So, right now, we'll ignore the return value.
-
   do_full_collection(size_t(0) /* allocation_word_size */,
                      clear_all_soft_refs,
                      false /* do_maximal_compaction */);
@@ -1652,21 +1647,14 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  assert(_cm != nullptr, "_cm must have been created");
-  assert(_cm->is_fully_initialized(), "thread must exist in order to check if mark is terminating");
-  return _cm->cm_thread()->should_terminate();
-}
-
 void G1CollectedHeap::stop() {
+  assert_not_at_safepoint();
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
-  if (_cm->is_fully_initialized()) {
-    _cm->cm_thread()->stop();
-  }
+  _cm->stop();
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
@@ -1723,8 +1711,7 @@ void G1CollectedHeap::ref_processing_init() {
   //   * Reference discovery is MT (see below).
   //   * Reference discovery requires a barrier (see below).
   //   * Reference processing may or may not be MT
-  //     (depending on the value of ParallelRefProcEnabled
-  //     and ParallelGCThreads).
+  //     (depending on the value of ParallelGCThreads).
   //   * A full GC disables reference discovery by the CM
   //     ref processor and abandons any entries on it's
   //     discovered lists.
@@ -1858,12 +1845,12 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
     record_whole_heap_examined_timestamp();
   }
 
-  // We need to clear the "in_progress" flag in the CM thread before
+  // We need to tell G1ConcurrentMark to update the state  before
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cm->cm_thread()->set_idle();
+    _cm->notify_concurrent_cycle_completed();
   }
 
   // Notify threads waiting in System.gc() (with ExplicitGCInvokesConcurrent)
@@ -2490,7 +2477,7 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
 void G1CollectedHeap::gc_prologue(bool full) {
   // Update common counters.
   increment_total_collections(full /* full gc */);
-  if (full || collector_state()->in_concurrent_start_gc()) {
+  if (full || collector_state()->is_in_concurrent_start_gc()) {
     increment_old_marking_cycles_started();
   }
 }
@@ -2563,14 +2550,12 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 
 void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
   assert(_cm->is_fully_initialized(), "sanity");
-  assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
+  assert(!collector_state()->is_in_concurrent_cycle(), "Can not start concurrent cycle when already running");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
-    _cm->post_concurrent_mark_start();
-    _cm->cm_thread()->start_full_mark();
+    _cm->start_full_concurrent_cycle();
   } else {
-    _cm->post_concurrent_undo_start();
-    _cm->cm_thread()->start_undo_mark();
+    _cm->start_undo_concurrent_cycle();
   }
   G1CGC_lock->notify();
 }
@@ -2662,7 +2647,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
 
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     log_debug(gc, verify)("Marking state");
     _verifier->verify_marking_state();
   }
@@ -2743,7 +2728,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
   // Record whether this pause may need to trigger a concurrent operation. Later,
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
-  bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
+  bool should_start_concurrent_mark_operation = collector_state()->is_in_concurrent_start_gc();
 
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
@@ -2838,7 +2823,7 @@ bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
 }
 
 void G1CollectedHeap::make_pending_list_reachable() {
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != nullptr) {
       // Any valid worker id is fine here as we are in the VM thread and single-threaded.
@@ -2971,7 +2956,7 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->abandon();
 }
 
-size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
   const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
@@ -3223,14 +3208,14 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->in_concurrent_start_gc();
+  bool const during_im = collector_state()->is_in_concurrent_start_gc();
   if (during_im && allocated_bytes > 0) {
     _cm->add_root_region(alloc_region);
   }
   G1HeapRegionPrinter::retire(alloc_region);
 }
 
-void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
   _cm->raw_mark_in_bitmap(obj);

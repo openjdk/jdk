@@ -160,15 +160,15 @@ public class TestPreview extends JavadocTester {
         checkOutput("java.base/preview/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview" class="current-selection">preview</a></li>
                     </ol>""");
         checkOutput("java.base/preview/Core.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html">preview</a></li>
-                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview">preview</a></li>
+                    <li><a href="Core.html" title="Class Core" class="current-selection">Core</a></li>
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\

@@ -44,6 +44,7 @@
     cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
+    cflags(PrintCompilation2,       bool, PrintCompilation2, PrintCompilation2) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
@@ -283,7 +284,7 @@ class ControlIntrinsicValidator {
 
   ~ControlIntrinsicValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 

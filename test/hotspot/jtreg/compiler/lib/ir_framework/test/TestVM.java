@@ -26,6 +26,8 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
@@ -37,8 +39,6 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
 
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "Test VM". The class is
@@ -159,6 +159,7 @@ public class TestVM {
      */
     public static void main(String[] args) {
         try {
+            TestVmSocket.connect();
             String testClassName = args[0];
             System.out.println("TestVM main() called - about to run tests in class " + testClassName);
             Class<?> testClass = getClassObject(testClassName, "test");
@@ -167,7 +168,7 @@ public class TestVM {
             framework.addHelperClasses(args);
             framework.start();
         } finally {
-            TestFrameworkSocket.closeClientSocket();
+            TestVmSocket.close();
         }
     }
 
@@ -593,8 +594,8 @@ public class TestVM {
                 "Cannot overload @Test methods, but method " + m + " has " + overloads.size() + " overload" + (overloads.size() == 1 ? "" : "s") + ":" +
                 overloads.stream().map(String::valueOf).collect(Collectors.joining("\n    - ", "\n    - ", ""))
         );
-        TestFormat.check(!testMethodMap.containsKey(m.getName()),
-                         "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
+        TestFramework.check(!testMethodMap.containsKey(m.getName()),
+                            "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
         TestFormat.check(testAnno != null, m + " must be a method with a @Test annotation");
 
         Check checkAnno = getAnnotation(m, Check.class);
@@ -835,7 +836,6 @@ public class TestVM {
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = PRINT_TIMES ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -864,7 +864,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestFrameworkSocket.write("Run " + test.toString(), TestFrameworkSocket.TESTLIST_TAG, true);
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
             }
             try {
                 test.run();
@@ -879,23 +879,15 @@ public class TestVM {
             if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                durations.put(duration, test.getName());
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
                 }
+                // Will be correctly formatted later.
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
                 WHITE_BOX.fullGC();
-            }
-        }
-
-        // Print execution times
-        if (PRINT_TIMES) {
-            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
-            for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
-                        PRINT_TIMES_TAG, true);
             }
         }
 

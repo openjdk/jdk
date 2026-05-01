@@ -52,7 +52,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnSupportedCPU {
     private static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
 
     public static void main(String[] args) throws Throwable {
-        if (!IntrinsicPredicates.isSHA3IntrinsicAvailable().getAsBoolean()) {
+        if (!IntrinsicPredicates.SHA3_INTRINSIC_AVAILABLE.getAsBoolean()) {
             throw new SkippedException("Skipping... SHA3 intrinsics are not available on this platform.");
         }
 
@@ -111,7 +111,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnSupportedCPU {
     private static void testWarningWhenEnablingWithUseSHADisabled() throws Throwable {
         // A warning should be printed when trying to enable UseSHA3Intrinsics with -UseSHA
         CommandLineOptionTest.verifySameJVMStartup(
-            new String[] { WARNING_MESSAGE },  // Warning should appear
+            new String[] { "warning" },  // Warning should appear
             null,  // No unexpected output
             "JVM should start successfully",
             String.format("A warning should be printed when trying to enable %s while %s is disabled",

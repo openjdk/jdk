@@ -184,24 +184,30 @@ address Method::get_c2i_no_clinit_check_entry() {
   return adapter()->get_c2i_no_clinit_check_entry();
 }
 
-char* Method::name_and_sig_as_C_string() const {
-  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature());
+char* Method::name_and_sig_as_C_string(bool use_double_colon) const {
+  return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), use_double_colon);
 }
 
 char* Method::name_and_sig_as_C_string(char* buf, int size) const {
   return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature(), buf, size);
 }
 
-char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature) {
+char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, bool use_double_colon) {
   const char* klass_name = klass->external_name();
   int klass_name_len  = (int)strlen(klass_name);
   int method_name_len = method_name->utf8_length();
-  int len             = klass_name_len + 1 + method_name_len + signature->utf8_length();
+  int separator_len   = use_double_colon ? 2 : 1;
+  int len             = klass_name_len + separator_len + method_name_len + signature->utf8_length();
   char* dest          = NEW_RESOURCE_ARRAY(char, len + 1);
   strcpy(dest, klass_name);
-  dest[klass_name_len] = '.';
-  strcpy(&dest[klass_name_len + 1], method_name->as_C_string());
-  strcpy(&dest[klass_name_len + 1 + method_name_len], signature->as_C_string());
+  if (use_double_colon) {
+    dest[klass_name_len + 0] = ':';
+    dest[klass_name_len + 1] = ':';
+  } else {
+    dest[klass_name_len] = '.';
+  }
+  strcpy(&dest[klass_name_len + separator_len], method_name->as_C_string());
+  strcpy(&dest[klass_name_len + separator_len + method_name_len], signature->as_C_string());
   dest[len] = 0;
   return dest;
 }
@@ -2204,7 +2210,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); print_access_flags(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();
@@ -2278,8 +2284,8 @@ void Method::print_on(outputStream* st) const {
   }
 }
 
-void Method::print_linkage_flags(outputStream* st) {
-  access_flags().print_on(st);
+void Method::print_linkage_flags(outputStream* st) const {
+  print_access_flags(st);
   if (is_default_method()) {
     st->print("default ");
   }
@@ -2288,6 +2294,22 @@ void Method::print_linkage_flags(outputStream* st) {
   }
 }
 #endif //PRODUCT
+
+void Method::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public      ()) st->print("public ");
+  if (flags.is_private     ()) st->print("private ");
+  if (flags.is_protected   ()) st->print("protected ");
+  if (flags.is_static      ()) st->print("static ");
+  if (flags.is_final       ()) st->print("final ");
+  if (flags.is_synchronized()) st->print("synchronized ");
+  if (flags.is_bridge      ()) st->print("bridge ");
+  if (flags.is_varargs     ()) st->print("varargs ");
+  if (flags.is_native      ()) st->print("native ");
+  if (flags.is_abstract    ()) st->print("abstract ");
+  if (flags.is_strictfp    ()) st->print("strict ");
+  if (flags.is_synthetic   ()) st->print("synthetic ");
+}
 
 void Method::print_value_on(outputStream* st) const {
   assert(is_method(), "must be method");

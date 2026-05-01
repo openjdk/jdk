@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,11 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
 }
 
+void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle.
+  __ ld(obj, 0, obj);
+}
+
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert_different_registers(tmp, R0);
@@ -349,19 +354,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
         Register spill_addr = R0;
         int spill_offset = offset - reg_save_index * BytesPerWord;
         if (action == ACTION_SAVE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->stxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->stxvd2x(vs_reg, spill_addr);
-          }
+          _masm->stxv(vs_reg, spill_offset, R1_SP);
         } else if (action == ACTION_RESTORE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->lxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->lxvd2x(vs_reg, spill_addr);
-          }
+          _masm->lxv(vs_reg, spill_offset, R1_SP);
         } else {
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }

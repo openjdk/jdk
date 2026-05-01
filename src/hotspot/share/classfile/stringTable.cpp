@@ -946,7 +946,7 @@ void StringTable::init_shared_table() {
       //   so we are all good.
       // - If there's a reference to it, we will report an error inside HeapShared.cpp and
       //   dumping will fail.
-      HeapShared::add_to_dumped_interned_strings(string);
+      HeapShared::archive_interned_string(string);
     }
     n++;
     return true;

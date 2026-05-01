@@ -43,7 +43,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -61,7 +61,10 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.util.MacBundle;
+import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -77,6 +80,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     @SuppressWarnings("this-escape")
     public JPackageCommand() {
         toolProviderSource = new ToolProviderSource();
+        executorPrototype = new Executor().dumpOutput(true);
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
         excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
@@ -86,10 +90,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
         args.addAll(cmd.args);
         toolProviderSource = cmd.toolProviderSource.copy();
-        saveConsoleOutput = cmd.saveConsoleOutput;
-        discardStdout = cmd.discardStdout;
-        discardStderr = cmd.discardStderr;
-        suppressOutput = cmd.suppressOutput;
+        executorPrototype = cmd.executorPrototype.copy();
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         removeOldOutputBundle = cmd.removeOldOutputBundle;
@@ -98,10 +99,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyActions = new Actions(cmd.verifyActions);
         standardAsserts = cmd.standardAsserts;
         readOnlyPathAsserts = cmd.readOnlyPathAsserts;
-        outputValidators = cmd.outputValidators;
+        validators = cmd.validators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
         unpackedPackageDirectory = cmd.unpackedPackageDirectory;
+        explicitVersion = cmd.explicitVersion;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -245,7 +247,109 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        return PropertyFinder.findAppProperty(this,
+                PropertyFinder.<JPackageCommand>of(Optional.ofNullable(explicitVersion))
+                        .or(PropertyFinder.cmdlineOptionWithValue("--app-version"))
+                        .or(JPackageCommand::derivedVersion),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return appImageFile.version();
+                })
+        ).orElse(DEFAULT_VERSION);
+    }
+
+    private Optional<String> derivedVersion() {
+        if (isRuntime()) {
+            var predefinedRuntimePath = Path.of(getArgumentValue("--runtime-image"));
+            if (TKit.isOSX()) {
+                // This is a macOS runtime bundle.
+                return MacBundle.fromPath(predefinedRuntimePath).map(predefinedRuntimeBundle -> {
+                    return Result.<Optional<String>>of(() -> {
+                        // This is a macOS runtime bundle created from the predefined runtime bundle (not a predefined runtime directory).
+                        // The version of this bundle should be copied from the Info.plist file of the predefined runtime bundle.
+                        return MacHelper.readPList(predefinedRuntimeBundle.infoPlistFile()).findValue("CFBundleVersion");
+                    }).value().flatMap(x -> x).or(() -> {
+                        // Failed to read version from the Info.plist file of the predefined runtime bundle.
+                        // Try to read it from the "release" file of the predefined runtime directory.
+                        return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimeBundle.homeDir());
+                    });
+                }).orElseGet(() -> {
+                    return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimePath);
+                });
+            } else {
+                return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimePath);
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> normalizedVersionFromRuntimeReleaseFile(Path runtimeDir) {
+        return Result.of(() -> {
+            return RuntimeReleaseFile.loadFromRuntime(runtimeDir).getJavaVersion().toString();
+        }, Exception.class).value().map(JPackageCommand::normalizeDerivedVersion).map(map -> {
+            return Objects.requireNonNull(map.get(packageType()));
+        });
+    }
+
+    public static Map<PackageType, String> normalizeDerivedVersion(String version) {
+        var dotted = DottedVersion.lazy(version);
+
+        var map = new HashMap<PackageType, String>();
+
+        // Linux
+        map.put(PackageType.LINUX_IMAGE, version);
+        map.put(PackageType.LINUX_DEB, version);
+        if (dotted.getUnprocessedSuffix().contains("-")) {
+            map.put(PackageType.LINUX_RPM, dotted.toComponentsString());
+        } else {
+            map.put(PackageType.LINUX_RPM, version);
+        }
+
+        // macOS
+        PackageType.ALL_MAC.forEach(type -> {
+            map.put(type, dotted.trim(3).pad(1).toComponentsString());
+        });
+
+        // Windows
+        PackageType.ALL_WINDOWS.forEach(type -> {
+            DottedVersion ver;
+            if (dotted.getComponentsCount() < 2) {
+                ver = dotted.pad(2);
+            } else {
+                ver = dotted.trim(4);
+            }
+            map.put(type, ver.toComponentsString());
+        });
+
+        map.put(PackageType.IMAGE, Objects.requireNonNull(map.get(PackageType.appImageForOS(PackageType.IMAGE.os()))));
+
+        return map;
+    }
+
+    /**
+     * Sets application version.
+     * <p>
+     * Use this method to explicitly set the application version. Normally, the
+     * application version can be derived from the command line, but sometimes, when
+     * jpackage derives it from other sources, the {@code JPackageCommand} class
+     * can't get it correctly. Use this method in these uncommon cases.
+     *
+     * @param v the application version or {@code null} to reset previously set
+     *          value
+     * @return this
+     */
+    public JPackageCommand version(String v) {
+        verifyMutable();
+        explicitVersion = v;
+        return this;
+    }
+
+    public String fullVersion() {
+        if (isImagePackageType() || !PackageType.LINUX.contains(packageType())) {
+            return version();
+        } else {
+            return version() + LinuxHelper.getReleaseSuffix(this);
+        }
     }
 
     public String name() {
@@ -293,12 +397,20 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setFakeRuntime() {
-        verifyMutable();
         addPrerequisiteAction(cmd -> {
             cmd.setArgumentValue("--runtime-image", createInputRuntimeImage(RuntimeImageType.RUNTIME_TYPE_FAKE));
         });
 
         return this;
+    }
+
+    public JPackageCommand usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        verifyIsOfType(PackageType.IMAGE);
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(verifier -> {
+            addVerifyAction(verifier, ActionRole.LAUNCHER_VERIFIER);
+        });
+        return usePredefinedAppImage(appImageCmd.outputBundle());
     }
 
     public JPackageCommand usePredefinedAppImage(Path predefinedAppImagePath) {
@@ -307,6 +419,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action) {
+        verifyMutable();
         prerequisiteActions.add(action);
         return this;
     }
@@ -322,6 +435,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand, ? extends Exception> action, ActionRole actionRole) {
+        verifyMutable();
         verifyActions.add(action, actionRole);
         return this;
     }
@@ -386,8 +500,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static Path createInputRuntimeImage(RuntimeImageType role) {
         Objects.requireNonNull(role);
 
-        final Path runtimeImageDir;
-        switch (role) {
+        return switch (role) {
 
             case RUNTIME_TYPE_FAKE -> {
                 Consumer<Path> createBulkFile = ThrowingConsumer.toConsumer(path -> {
@@ -399,7 +512,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                     }
                 });
 
-                runtimeImageDir = TKit.createTempDirectory("fake_runtime");
+                var runtimeImageDir = TKit.createTempDirectory("fake_runtime");
 
                 TKit.trace(String.format("Init fake runtime in [%s] directory", runtimeImageDir));
 
@@ -412,32 +525,28 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 // Package bundles with 0KB size are unexpected and considered
                 // an error by PackageTest.
                 createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib", "bulk")));
+
+                yield runtimeImageDir;
             }
 
             case RUNTIME_TYPE_HELLO_APP -> {
-                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
-                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-                } else {
-                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+                yield DEFAULT_RUNTIME_IMAGE.filter(Predicate.not(JPackageCommand::isFakeRuntime)).orElseGet(() -> {
+                    var dir = TKit.createTempDirectory("runtime-image").resolve("data");
 
                     new Executor().setToolProvider(JavaTool.JLINK)
                             .dumpOutput()
                             .addArguments(
-                                    "--output", runtimeImageDir.toString(),
+                                    "--output", dir.toString(),
                                     "--add-modules", "java.desktop",
                                     "--strip-debug",
                                     "--no-header-files",
                                     "--no-man-pages")
                             .execute();
-                }
-            }
 
-            default -> {
-                throw ExceptionBox.reachedUnreachable();
+                    return dir;
+                });
             }
-        }
-
-        return runtimeImageDir;
+        };
     }
 
     public JPackageCommand setPackageType(PackageType type) {
@@ -759,6 +868,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else if (TKit.isLinux()) {
             criticalRuntimeFiles = LinuxHelper.CRITICAL_RUNTIME_FILES;
         } else if (TKit.isOSX()) {
+            runtimeDir = MacBundle.fromPath(runtimeDir).map(MacBundle::homeDir).orElse(runtimeDir);
             criticalRuntimeFiles = MacHelper.CRITICAL_RUNTIME_FILES;
         } else {
             throw TKit.throwUnknownPlatformError();
@@ -832,27 +942,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand removeEnvVars(String ... envVarName) {
+        verifyMutable();
+        List.of(envVarName).forEach(executorPrototype::removeEnvVar);
+        return this;
+    }
+
+    public JPackageCommand setEnvVar(String envVarName, String envVarValue) {
+        verifyMutable();
+        executorPrototype.setEnvVar(envVarName, envVarValue);
+        return this;
+    }
+
     public JPackageCommand saveConsoleOutput(boolean v) {
         verifyMutable();
-        saveConsoleOutput = v;
+        executorPrototype.saveOutput(v);
         return this;
     }
 
     public JPackageCommand discardStdout(boolean v) {
         verifyMutable();
-        discardStdout = v;
+        executorPrototype.discardStdout(v);
         return this;
     }
 
     public JPackageCommand discardStderr(boolean v) {
         verifyMutable();
-        discardStderr = v;
+        executorPrototype.discardStderr(v);
         return this;
     }
 
     public JPackageCommand dumpOutput(boolean v) {
         verifyMutable();
-        suppressOutput = !v;
+        executorPrototype.dumpOutput(v);
         return this;
     }
 
@@ -863,8 +985,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
-                .map(JPackageCommand::isFakeRuntime).orElse(false));
+        return ignoreDefaultRuntime(DEFAULT_RUNTIME_IMAGE.map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
@@ -895,19 +1016,20 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return removeOldOutputBundle;
     }
 
-    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
-        return validateOutput(validator::apply);
-    }
-
-    public JPackageCommand validateOutput(Consumer<Iterator<String>> validator) {
-        Objects.requireNonNull(validator);
-        saveConsoleOutput(true);
-        outputValidators.add(validator);
+    public JPackageCommand validateOut(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().add(validator).applyTo(this);
         return this;
     }
 
-    public JPackageCommand validateOutput(TKit.TextStreamVerifier.Group group) {
-        group.tryCreate().ifPresent(this::validateOutput);
+    public JPackageCommand validateErr(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().stderr().add(validator).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateResult(Consumer<Executor.Result> validator) {
+        Objects.requireNonNull(validator);
+        saveConsoleOutput(true);
+        validators.add(validator);
         return this;
     }
 
@@ -916,7 +1038,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         public String value(JPackageCommand cmd);
     }
 
-    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+    public static CannedArgument cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(label);
         return new CannedArgument() {
@@ -936,28 +1058,83 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return v.addPrefix("message.error-header");
     }
 
+    public static CannedFormattedString makeError(String key, Object ... args) {
+        return makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
     public static CannedFormattedString makeAdvice(CannedFormattedString v) {
         return v.addPrefix("message.advice-header");
     }
 
+    public static CannedFormattedString makeAdvice(String key, Object ... args) {
+        return makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
     public String getValue(CannedFormattedString str) {
-        return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
+        return new CannedFormattedString(str.formatter(), str.format(), str.args().stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
                 return cannedArg.value(this);
             } else {
                 return arg;
             }
-        }).toArray()).getValue();
+        }).toList()).getValue();
     }
 
-    public JPackageCommand validateOutput(CannedFormattedString... str) {
-        // Will look up the given errors in the order they are specified.
-        validateOutput(Stream.of(str).map(this::getValue)
-                .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier.group(),
-                        TKit.TextStreamVerifier.Group::add,
-                        TKit.TextStreamVerifier.Group::add));
+    public JPackageCommand validateOut(CannedFormattedString... strings) {
+        new JPackageOutputValidator().expectMatchingStrings(strings).applyTo(this);
         return this;
+    }
+
+    public JPackageCommand validateErr(CannedFormattedString... strings) {
+        new JPackageOutputValidator().stderr().expectMatchingStrings(strings).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            List<CannedFormattedString> expectedMessages) {
+
+        Objects.requireNonNull(validatorMutator);
+
+        if (!messageGroup.isEnum()) {
+            throw new IllegalArgumentException();
+        }
+
+        var messageSpecs = messageGroup.getEnumConstants();
+
+        var expectMessageFormats = expectedMessages.stream().map(CannedFormattedString::format).toList();
+
+        var groupMessageFormats = Stream.of(messageSpecs)
+                .map(CannedFormattedString.Spec::format)
+                .collect(Collectors.toMap(x -> x, x -> x))
+                .keySet();
+
+        if (!groupMessageFormats.containsAll(expectMessageFormats)) {
+            // Expected format strings should be a subset of the group format strings.
+            throw new IllegalArgumentException();
+        }
+
+        if (!expectedMessages.isEmpty()) {
+            new JPackageOutputValidator().expectMatchingStrings(expectedMessages).mutate(validatorMutator).applyTo(this);
+        }
+
+        Stream.of(messageSpecs).filter(spec -> {
+            return !expectMessageFormats.contains(spec.format());
+        }).map(CannedFormattedString.Spec::asPattern).map(pattern -> {
+            return TKit.assertTextStream(pattern).negate();
+        }).forEach(validator -> {
+            new JPackageOutputValidator().add(validator).stdoutAndStderr().applyTo(this);
+        });
+
+        return this;
+    }
+
+    public JPackageCommand validateOutput(
+            Class<? extends CannedFormattedString.Spec> messageGroup,
+            Consumer<JPackageOutputValidator> validatorMutator,
+            CannedFormattedString... expected) {
+        return validateOutput(messageGroup, validatorMutator, List.of(expected));
     }
 
     public boolean isWithToolProvider() {
@@ -970,18 +1147,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     Executor createExecutor() {
-        Executor exec = new Executor()
-                .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
-                .discardStdout(discardStdout).discardStderr(discardStderr)
+        Executor exec = executorPrototype.copy()
                 .setDirectory(executeInDirectory)
                 .addArguments(args);
 
         toolProviderSource.toolProvider().ifPresentOrElse(exec::setToolProvider, () -> {
-                    exec.setExecutable(JavaTool.JPACKAGE);
-                    if (TKit.isWindows()) {
-                        exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
-                    }
-                });
+            exec.setExecutable(JavaTool.JPACKAGE);
+            if (TKit.isWindows()) {
+                exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
+            }
+        });
 
         return exec;
     }
@@ -1041,6 +1216,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
+        standardAssertOutputValidators().forEach(validator -> {
+            validator.applyTo(copy);
+        });
+
         Executor.Result result;
         if (expectedExitCode.isEmpty()) {
             result = copy.createExecutor().executeWithoutExitCodeCheck();
@@ -1055,8 +1234,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
-        for (final var outputValidator: outputValidators) {
-            outputValidator.accept(result.getOutput().iterator());
+        for (final var validator: copy.validators) {
+            validator.accept(result);
         }
 
         if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
@@ -1179,14 +1358,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
             Function<JPackageCommand, List<Path>> create() {
                 return cmd -> {
-                    if (enable != null && !enable.test(cmd)) {
+                    if (!cmd.hasArgument(argName) || (enable != null && !enable.test(cmd))) {
                         return List.of();
                     } else {
                         final List<Optional<Path>> dirs;
                         if (multiple) {
                             dirs = Stream.of(cmd.getAllArgumentValues(argName))
-                                    .map(Builder::tokenizeValue)
-                                    .flatMap(x -> x)
+                                    .flatMap(Builder::tokenizeValue)
                                     .map(Builder::toExistingFile).toList();
                         } else {
                             dirs = Optional.ofNullable(cmd.getArgumentValue(argName))
@@ -1197,11 +1375,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                                 .map(cmd::getArgumentValue)
                                 .filter(Objects::nonNull)
                                 .map(Builder::toExistingFile)
-                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .flatMap(Optional::stream)
                                 .collect(toSet());
 
                         return dirs.stream()
-                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .flatMap(Optional::stream)
                                 .filter(Predicate.not(mutablePaths::contains))
                                 .toList();
                     }
@@ -1284,7 +1462,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }),
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
-            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
+            if (TKit.isOSX()) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
@@ -1308,7 +1486,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
-                return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+                if (!TKit.isOSX() || !cmd.hasArgument("--mac-sign")) {
+                    return true;
+                } else {
+                    var signAppImage = MacHelper.signPredefinedAppImage(cmd)
+                            || MacHelper.hasAppImageSignIdentity(cmd)
+                            || MacHelper.isSignWithoutSignIdentity(cmd);
+                    return !signAppImage;
+                }
             }).filter(_ -> {
                 // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
                 return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
@@ -1360,10 +1545,38 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(cmd.appLayout().libapplauncher());
             }
         }),
+        LINUX_PACKAGE_ARCH(cmd -> {
+            if (TKit.isLinux() && !cmd.isImagePackageType()) {
+                var asserter = TKit.assertTextStream(LinuxUnexpectedBundleArchRegexp.VALUE).negate();
+                return Stream.of(true, false).map(stderr -> {
+                    var validator = new JPackageOutputValidator();
+                    if (stderr) {
+                        return validator.stderr();
+                    } else {
+                        return validator;
+                    }
+                }).map(validator -> {
+                    return validator.add(asserter);
+                }).toList();
+            } else {
+                return List.of();
+            }
+        }),
         ;
 
-        StandardAssert(Consumer<JPackageCommand> action) {
+        StandardAssert(
+                Consumer<JPackageCommand> action,
+                Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier) {
             this.action = action;
+            this.outputValidatorsSupplier = outputValidatorsSupplier;
+        }
+
+        StandardAssert(Consumer<JPackageCommand> action) {
+            this(Objects.requireNonNull(action), null);
+        }
+
+        StandardAssert(Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier) {
+            this(null, Objects.requireNonNull(outputValidatorsSupplier));
         }
 
         private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
@@ -1375,7 +1588,38 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return copy;
         }
 
+        Stream<JPackageOutputValidator> outputValidators(JPackageCommand cmd) {
+            Objects.requireNonNull(cmd);
+            return Optional.ofNullable(outputValidatorsSupplier).map(v -> {
+                return v.apply(cmd);
+            }).stream().flatMap(Collection::stream);
+        }
+
+        void apply(JPackageCommand cmd) {
+            Objects.requireNonNull(cmd);
+            if (action != null) {
+                action.accept(cmd);
+            }
+        }
+
         private final Consumer<JPackageCommand> action;
+        private final Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier;
+
+        private static final class LinuxUnexpectedBundleArchRegexp {
+            private static final Pattern ANY = Pattern.compile(".*");
+            private static final Pattern ARCHITECTURE_PROPERTY = Pattern.compile("Arch|Architecture");
+
+            static final Pattern VALUE = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("error.unexpected-package-property", arg -> {
+                return switch ((String)arg) {
+                    case "propertyName" -> {
+                        yield ARCHITECTURE_PROPERTY;
+                    }
+                    default -> {
+                        yield ANY;
+                    }
+                };
+            }, "propertyName", "expectedValue", "actualValue", "customResource");
+        }
     }
 
     public JPackageCommand setStandardAsserts(StandardAssert ... asserts) {
@@ -1392,9 +1636,15 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     JPackageCommand runStandardAsserts() {
         for (var standardAssert : standardAsserts.stream().sorted().toList()) {
-            standardAssert.action.accept(this);
+            standardAssert.apply(this);
         }
         return this;
+    }
+
+    private List<JPackageOutputValidator> standardAssertOutputValidators() {
+        return standardAsserts.stream().sorted().flatMap(standardAssert -> {
+            return standardAssert.outputValidators(this);
+        }).toList();
     }
 
     private boolean expectAppImageFile() {
@@ -1561,9 +1811,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
-            addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
-        }
+
+        DEFAULT_RUNTIME_IMAGE.filter(_ -> {
+            return Stream.of("--runtime-image", "--jlink-options", "--app-image").noneMatch(this::hasArgument) && !ignoreDefaultRuntime;
+        }).ifPresent(defaultRuntime -> {
+            addArguments("--runtime-image", defaultRuntime);
+        });
 
         if (!hasArgument("--verbose") && TKit.verboseJPackage() && !ignoreDefaultVerbose) {
             addArgument("--verbose");
@@ -1654,10 +1907,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
             return str;
         }).collect(Collectors.joining(" "));
-    }
-
-    public static Stream<String> stripTimestamps(Stream<String> stream) {
-        return stream.map(JPackageCommand::stripTimestamp);
     }
 
     public static String stripTimestamp(String str) {
@@ -1779,26 +2028,23 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         Optional<ToolProvider> toolProvider() {
-            switch (mode) {
+            return switch (mode) {
                 case USE_PROCESS -> {
-                    return Optional.empty();
+                    yield Optional.empty();
                 }
                 case USE_TOOL_PROVIDER -> {
                     if (customToolProvider != null) {
-                        return Optional.of(customToolProvider);
+                        yield Optional.of(customToolProvider);
                     } else {
-                        return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
+                        yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
                             return Optional.of(JavaTool.JPACKAGE.asToolProvider());
                         });
                     }
                 }
                 case INHERIT_DEFAULTS -> {
-                    return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
+                    yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
         }
 
         ToolProviderSource() {
@@ -1821,10 +2067,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private final ToolProviderSource toolProviderSource;
-    private boolean saveConsoleOutput;
-    private boolean discardStdout;
-    private boolean discardStderr;
-    private boolean suppressOutput;
+    private final Executor executorPrototype;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
     private boolean removeOldOutputBundle;
@@ -1834,22 +2077,27 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path executeInDirectory;
     private Path winMsiLogFile;
     private Path unpackedPackageDirectory;
+    private String explicitVersion;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
-    private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
+    private List<Consumer<Executor.Result>> validators = new ArrayList<>();
 
     private enum DefaultToolProviderKey {
         VALUE
     }
 
-    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).collect(toMap(PackageType::getType, x -> x));
+    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).filter(type -> {
+        return type.isNative() || type == PackageType.IMAGE;
+    }).collect(toMap(PackageType::getType, x -> x));
 
     // Set the property to the path of run-time image to speed up
     // building app images and platform bundles by avoiding running jlink.
     // The value of the property will be automatically appended to
     // jpackage command line if the command line doesn't have
     // `--runtime-image` parameter set.
-    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
+    private static final Optional<Path> DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of);
+
+    public static final String DEFAULT_VERSION = "1.0";
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(

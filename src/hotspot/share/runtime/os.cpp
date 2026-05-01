@@ -303,10 +303,10 @@ static void free_array_of_char_arrays(char** a, size_t n) {
       while (n > 0) {
           n--;
           if (a[n] != nullptr) {
-            FREE_C_HEAP_ARRAY(char, a[n]);
+            FREE_C_HEAP_ARRAY(a[n]);
           }
       }
-      FREE_C_HEAP_ARRAY(char*, a);
+      FREE_C_HEAP_ARRAY(a);
 }
 
 bool os::dll_locate_lib(char *buffer, size_t buflen,
@@ -353,7 +353,7 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
     }
   }
 
-  FREE_C_HEAP_ARRAY(char*, fullfname);
+  FREE_C_HEAP_ARRAY(fullfname);
   return retval;
 }
 
@@ -562,7 +562,7 @@ void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char 
   char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
   if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
-    FREE_C_HEAP_ARRAY(char, agent_function_name);
+    FREE_C_HEAP_ARRAY(agent_function_name);
   }
   return entryName;
 }
@@ -1285,7 +1285,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   bool accessible = is_readable_pointer(addr);
 
   // Check if addr points into the narrow Klass protection zone
-  if (UseCompressedClassPointers && CompressedKlassPointers::is_in_protection_zone(addr)) {
+  if (CompressedKlassPointers::is_in_protection_zone(addr)) {
     st->print_cr(PTR_FORMAT " points into nKlass protection zone", p2i(addr));
     return;
   }
@@ -1339,8 +1339,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Compressed klass needs to be decoded first.
+  // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
-  if (UseCompressedClassPointers && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
+  if (((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
     Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
@@ -1509,20 +1510,20 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
     Arguments::set_boot_class_path(jimage, true);
-    FREE_C_HEAP_ARRAY(char, jimage);
+    FREE_C_HEAP_ARRAY(jimage);
     return true;
   }
-  FREE_C_HEAP_ARRAY(char, jimage);
+  FREE_C_HEAP_ARRAY(jimage);
 
   // check if developer build with exploded modules
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
   if (base_classes == nullptr) return false;
   if (os::stat(base_classes, &st) == 0) {
     Arguments::set_boot_class_path(base_classes, false);
-    FREE_C_HEAP_ARRAY(char, base_classes);
+    FREE_C_HEAP_ARRAY(base_classes);
     return true;
   }
-  FREE_C_HEAP_ARRAY(char, base_classes);
+  FREE_C_HEAP_ARRAY(base_classes);
 
   return false;
 }
@@ -1652,7 +1653,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
     opath[i] = s;
     p += len + 1;
   }
-  FREE_C_HEAP_ARRAY(char, inpath);
+  FREE_C_HEAP_ARRAY(inpath);
   *elements = count;
   return opath;
 }
@@ -1912,17 +1913,7 @@ void os::trace_page_sizes_for_requested_size(const char* str,
 // as was done for logical processors here, or replicate and
 // specialize this method for each platform.  (Or fix os to have
 // some inheritance structure and use subclassing.  Sigh.)
-// If you want some platform to always or never behave as a server
-// class machine, change the setting of AlwaysActAsServerClassMachine
-// and NeverActAsServerClassMachine in globals*.hpp.
 bool os::is_server_class_machine() {
-  // First check for the early returns
-  if (NeverActAsServerClassMachine) {
-    return false;
-  }
-  if (AlwaysActAsServerClassMachine) {
-    return true;
-  }
   // Then actually look at the machine
   bool  result                                    = false;
   const unsigned int server_processors            = 2;
@@ -2293,7 +2284,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 // We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
 // We assume that there is some external synchronization that prevents a region from being uncommitted
 // before it is finished being committed.
-bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+void os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
@@ -2306,38 +2297,22 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
 
-  if (res) {
-    log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_info(os, map)("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
+  if (!res) {
+    fatal("Failed to uncommit " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-
-  return res;
+  log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
-// The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
-// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
-// We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
-// We assume that there is some external synchronization that prevents a region from being released
-// before it is finished being reserved.
-bool os::release_memory(char* addr, size_t bytes) {
+// pd_release_memory is called outside the protection of the NMT lock.
+// Until pd_release_memory is called, The OS is unable to give away the about-to-be-released range to another thread.
+// So there is no risk of another thread re-reserving the range before this function is done with it.
+void os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
-  bool res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory(addr, bytes);
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  if (!pd_release_memory(addr, bytes)) {
+    fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-  if (!res) {
-    log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  }
-  return res;
+  log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
 // Prints all mappings
@@ -2406,18 +2381,11 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-bool os::unmap_memory(char *addr, size_t bytes) {
-  bool result;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    result = pd_unmap_memory(addr, bytes);
-    if (result) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    result = pd_unmap_memory(addr, bytes);
+void os::unmap_memory(char *addr, size_t bytes) {
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  if (!pd_unmap_memory(addr, bytes)) {
+    fatal("Failed to unmap memory " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
-  return result;
 }
 
 void os::disclaim_memory(char *addr, size_t bytes) {
@@ -2443,20 +2411,6 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   }
 
   return result;
-}
-
-bool os::release_memory_special(char* addr, size_t bytes) {
-  bool res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory_special(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory_special(addr, bytes);
-  }
-  return res;
 }
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
