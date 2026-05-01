@@ -984,10 +984,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 .map(dt -> (AttributeTree) dt)
                 .forEach(attr -> {
                     if (attr.getValue() == null) {
-                        env.messages.error(SYNTAX, attr, "dc.attr.lacks.value");
+                        env.messages.warning(SYNTAX, attr, "dc.attr.lacks.value");
                     }
                     if (names.contains(attr.getName())) {
-                        env.messages.error(SYNTAX, attr, "dc.attr.repeated", attr);
+                        env.messages.warning(SYNTAX, attr, "dc.attr.repeated", attr);
                     }
                     names.add(attr.getName());
                 });

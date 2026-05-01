@@ -139,7 +139,7 @@ public class TestNoteTag extends JavadocTester {
                     /**
                     * First sentence. {@note [id] body }
                     *
-                    * @note [ id=important-note kind] body
+                    * @note [ id=important-note kind ] body
                     */
                     public class C {
                     }
@@ -148,16 +148,16 @@ public class TestNoteTag extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "p");
-        checkExit(Exit.ERROR);
+        checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true, """
-                    C.java:3: error: attribute lacks value
+                    C.java:3: warning: attribute lacks value
                     * First sentence. {@note [id] body }
                                               ^
                     """,
                 """
-                    C.java:5: error: attribute lacks value
-                    * @note [ id=important-note kind] body
+                    C.java:5: warning: attribute lacks value
+                    * @note [ id=important-note kind ] body
                                                 ^
                     """);
 
@@ -181,7 +181,7 @@ public class TestNoteTag extends JavadocTester {
                     /**
                     * First sentence. {@note [id=foo id=bar] body }
                     *
-                    * @note [kind=important kind=important] body
+                    * @note [kind=important kind=other] body
                     */
                     public class C {
                     }
@@ -190,21 +190,21 @@ public class TestNoteTag extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "p");
-        checkExit(Exit.ERROR);
+        checkExit(Exit.OK);
 
         checkOutput(Output.OUT, true, """
-                    C.java:3: error: repeated attribute: id=bar
+                    C.java:3: warning: repeated attribute: id=bar
                     * First sentence. {@note [id=foo id=bar] body }
                                                      ^
                     """,
                 """
-                    C.java:5: error: repeated attribute: kind=important
-                    * @note [kind=important kind=important] body
+                    C.java:5: warning: repeated attribute: kind=other
+                    * @note [kind=important kind=other] body
                                             ^
                     """);
 
         checkOrder("p/C.html", """
-                    <div class="inline-note" id="bar"><span class="note-header">Note:</span>
+                    <div class="inline-note" id="foo"><span class="note-header">Note:</span>
                     body </div>
                     </div>
                     <dl class="notes">

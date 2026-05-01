@@ -186,7 +186,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 .map(t -> (AttributeTree) t)
                 .filter(at -> at.getValue() != null)
                 .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf,
-                                          (_, newValue) -> newValue));
+                                          (oldValue, _) -> oldValue));
     }
 
     private Set<String> getExistingIds() {
