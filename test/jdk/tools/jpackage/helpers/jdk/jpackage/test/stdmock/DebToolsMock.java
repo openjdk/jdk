@@ -56,7 +56,7 @@ public interface DebToolsMock extends EnvironmentMock {
         }
 
         public Builder withPackageLookup(boolean v) {
-            if(v) {
+            if (v) {
                 packageLookup = LinuxPackageLookupMock.ENABLED;
             } else {
                 packageLookup = LinuxPackageLookupMock.DISABLED;

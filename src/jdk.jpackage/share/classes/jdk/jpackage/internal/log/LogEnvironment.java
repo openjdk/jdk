@@ -212,9 +212,9 @@ public final class LogEnvironment {
                 ErrorLogger.class,
                 traits,
                 sink -> {
-                    var printStacktrace = traits.contains(ErrorLoggerTrait.PRINT_STACK_TRACE_ALWAYS);
+                    var printStackTrace = traits.contains(ErrorLoggerTrait.PRINT_STACK_TRACE_ALWAYS);
                     var printCommandOutput = traits.contains(ErrorLoggerTrait.PRINT_FAILED_COMMAND_OUTPUT);
-                    return ErrorLogger.create(sink, printStacktrace, printCommandOutput);
+                    return ErrorLogger.create(sink, printStackTrace, printCommandOutput);
                 },
                 ErrorLogger::create).orElse(ErrorLogger.DISCARDING_LOGGER);
     }

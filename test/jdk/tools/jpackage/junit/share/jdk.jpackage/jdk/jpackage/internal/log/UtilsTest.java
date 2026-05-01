@@ -241,13 +241,13 @@ class UtilsTest {
             var buf = new StringWriter();
             logger.foo(buf::append);
             assertTrue(buf.toString().isEmpty());
-        } while(false);
+        } while (false);
 
         do {
             var sb = new StringBuilder();
             logger.foo(sb);
             assertTrue(sb.isEmpty());
-        } while(false);
+        } while (false);
 
         assertDoesNotThrow(logger::hashCode);
         assertDoesNotThrow(logger::toString);

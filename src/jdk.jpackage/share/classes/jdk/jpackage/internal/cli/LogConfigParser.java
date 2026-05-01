@@ -55,7 +55,7 @@ public final class LogConfigParser {
 
         var groupCategories = new BitSet(MessageCategory.values().length);
         var enableCategories = new BitSet(MessageCategory.values().length);
-        var diableCategories = new BitSet(MessageCategory.values().length);
+        var disableCategories = new BitSet(MessageCategory.values().length);
 
         Stream.of(str.split("(?<=.),")).filter(Predicate.not(String::isEmpty)).forEach(v -> {
             if (v.charAt(0) == '-') {
@@ -63,7 +63,7 @@ public final class LogConfigParser {
                 if (category == null) {
                     throw ex.get();
                 } else {
-                    diableCategories.set(category.ordinal());
+                    disableCategories.set(category.ordinal());
                 }
             } else {
                 Optional.ofNullable(GROUPS.get(v)).ifPresentOrElse(categoryGroup -> {
@@ -85,7 +85,7 @@ public final class LogConfigParser {
 
         for (var category : MessageCategory.values()) {
             if (enableCategories.get(category.ordinal()) ||
-                    (groupCategories.get(category.ordinal()) && !diableCategories.get(category.ordinal()))) {
+                    (groupCategories.get(category.ordinal()) && !disableCategories.get(category.ordinal()))) {
                 categories.add(category);
             }
         }
