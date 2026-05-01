@@ -47,6 +47,42 @@ public class TestCustomNoteTag extends JavadocTester {
     ToolBox tb = new ToolBox();
 
     @Test
+    public void testMarkdown(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /// First sentence. {@warning abc {@linkplain C _emphasized_} def}
+                ///
+                /// @example [id=example] __xyz__ {@snippet :
+                ///    code ...
+                /// }
+                public class C { }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-tag", "warning:a:Warning:",
+                "-tag", "example:a:Example:",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html", """
+                     <div class="block"><p>First sentence.</p>
+                     <div class="inline-note note-tag-warning" id="warning-p.C1"><span class="note-header">Warning:</span>
+                     abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
+                """
+                     <dl class="notes">
+                     <div class="block-note note-tag-example" id="example">
+                     <dt>Example:</dt>
+                     <dd><p><strong>xyz</strong></p>""",
+                """
+                     <pre class="snippet" id="snippet-p.C1"><code class="language-java">   code ...
+                     </code></pre>
+                     </div>""");
+    }
+
+
+    @Test
     public void testNewLocationFlags(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """

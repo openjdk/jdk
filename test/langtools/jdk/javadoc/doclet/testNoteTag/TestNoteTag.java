@@ -49,6 +49,39 @@ public class TestNoteTag extends JavadocTester {
     ToolBox tb = new ToolBox();
 
     @Test
+    public void testMarkdown(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /// First sentence. {@note [id=inline-note] abc {@linkplain C _emphasized_ label} def}
+                ///
+                /// @note [id=block-note] xyz {@linkplain C **bold label**}
+                ///
+                public class C {
+                    /// Constructor.
+                    C() {}
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html", """
+                    <div class="block"><p>First sentence.</p>
+                    <div class="inline-note" id="inline-note"><span class="note-header">Note:</span>
+                    abc <a href="C.html" title="class in p"><em>emphasized</em> label</a> def</div>""",
+                """
+                    <dl class="notes">
+                    <div class="block-note note-tag" id="block-note">
+                    <dt>Note:</dt>
+                    <dd>xyz <a href="C.html" title="class in p"><strong>bold label</strong></a></dd>
+                    </div>
+                    </dl>""");
+    }
+
+    @Test
     public void testMultipleBlockNotes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
