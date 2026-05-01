@@ -488,13 +488,13 @@ class SocketChannelImpl
 
     @Override
     public int read(ByteBuffer buf) throws IOException {
-        if (!jfrTracing || !SocketReadEvent.enabled()) {
-            return implRead(buf);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            int nbytes = implRead(buf);
+            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            return nbytes;
         }
-        long start = SocketReadEvent.timestamp();
-        int nbytes = implRead(buf);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
-        return nbytes;
+        return implRead(buf);
     }
 
 
@@ -502,13 +502,13 @@ class SocketChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if (!jfrTracing || !SocketReadEvent.enabled()) {
-            return implRead(dsts, offset, length);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            long nbytes = implRead(dsts, offset, length);
+            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            return nbytes;
         }
-        long start = SocketReadEvent.timestamp();
-        long nbytes = implRead(dsts, offset, length);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
-        return nbytes;
+        return implRead(dsts, offset, length);
     }
 
     /**
@@ -613,26 +613,26 @@ class SocketChannelImpl
 
     @Override
     public int write(ByteBuffer buf) throws IOException {
-        if (!jfrTracing || !SocketWriteEvent.enabled()) {
-            return implWrite(buf);
+        if (jfrTracing && SocketWriteEvent.enabled()) {
+            long start = SocketWriteEvent.timestamp();
+            int nbytes = implWrite(buf);
+            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            return nbytes;
         }
-        long start = SocketWriteEvent.timestamp();
-        int nbytes = implWrite(buf);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
-        return nbytes;
+        return implWrite(buf);
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if (!jfrTracing || !SocketWriteEvent.enabled()) {
-            return implWrite(srcs, offset, length);
+        if (jfrTracing && SocketWriteEvent.enabled()) {
+            long start = SocketWriteEvent.timestamp();
+            long nbytes = implWrite(srcs, offset, length);
+            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            return nbytes;
         }
-        long start = SocketWriteEvent.timestamp();
-        long nbytes = implWrite(srcs, offset, length);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
-        return nbytes;
+        return implWrite(srcs, offset, length);
     }
 
     /**

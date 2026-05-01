@@ -38,6 +38,7 @@ class SocketInputStream extends InputStream {
     // Flag set by jdk.internal.event.JFRTracing to indicate if
     // socket reads should be traced by JFR.
     private static boolean jfrTracing;
+
     private final SocketChannelImpl sc;
     private final IntSupplier timeoutSupplier;
 
@@ -77,13 +78,13 @@ class SocketInputStream extends InputStream {
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int timeout = timeoutSupplier.getAsInt();
-        if (!jfrTracing || !SocketReadEvent.enabled()) {
-            return implRead(b, off, len, timeout);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            int n = implRead(b, off, len, timeout);
+            SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
+            return n;
         }
-        long start = SocketReadEvent.timestamp();
-        int n = implRead(b, off, len, timeout);
-        SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
-        return n;
+        return implRead(b, off, len, timeout);
     }
 
     @Override

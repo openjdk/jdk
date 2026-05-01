@@ -975,13 +975,13 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (!jfrTracing || !SocketReadEvent.enabled()) {
-                return implRead(b, off, len);
+            if (jfrTracing && SocketReadEvent.enabled()) {
+                long start = SocketReadEvent.timestamp();
+                int nbytes = implRead(b, off, len);
+                SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+                return nbytes;
             }
-            long start = SocketReadEvent.timestamp();
-            int nbytes = implRead(b, off, len);
-            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            return nbytes;
+            return implRead(b, off, len);
         }
 
         private int implRead(byte[] b, int off, int len) throws IOException {
@@ -1088,13 +1088,13 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            if (!jfrTracing || !SocketWriteEvent.enabled()) {
+            if (jfrTracing && SocketWriteEvent.enabled()) {
+                long start = SocketWriteEvent.timestamp();
                 implWrite(b, off, len);
+                SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
                 return;
             }
-            long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {

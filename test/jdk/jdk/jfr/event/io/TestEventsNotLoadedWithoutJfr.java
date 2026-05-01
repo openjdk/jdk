@@ -25,8 +25,8 @@ package jdk.jfr.event.io;
 
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
+import static jdk.test.lib.Asserts.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,13 +40,14 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -71,7 +72,6 @@ public class TestEventsNotLoadedWithoutJfr {
     }
 
     public static class Helper {
-        private static final String HOSTNAME = "127.0.0.1";
         private static final byte[] SERVER_MSG = "server message".getBytes();
         private static final byte[] CLIENT_MSG = "client message".getBytes();
 
@@ -83,61 +83,69 @@ public class TestEventsNotLoadedWithoutJfr {
         }
 
         private static void exerciseFileForce() throws IOException, ExecutionException, InterruptedException {
-            File tmp = Utils.createTempFile("TestEventsNotLoadedWithoutJfr", ".tmp").toFile();
-            String s = "unremarkable data";
-            ByteBuffer data = ByteBuffer.allocate(s.length());
-            data.put(s.getBytes());
-
-            // Check both AsynchronousFileChannel and FileChannelImpl
-            try (AsynchronousFileChannel afc = AsynchronousFileChannel.open(tmp.toPath(), READ, WRITE)) {
+            Path tmp = Files.createTempFile(Path.of(""), "TestEventsNotLoadedWithoutJfr", ".tmp");
+            try {
+                String s = "short";
+                ByteBuffer data = ByteBuffer.allocate(s.length());
+                data.put(s.getBytes());
                 data.flip();
-                afc.write(data, 0).get();
-                afc.force(true);
-            }
-            try (FileChannel fc = FileChannel.open(tmp.toPath(), READ, WRITE)) {
-                data.clear();
-                fc.write(data);
-                fc.force(true);
+
+                // Check both AsynchronousFileChannel and FileChannelImpl
+                try (AsynchronousFileChannel afc = AsynchronousFileChannel.open(tmp, READ, WRITE)) {
+                    int expectedWritten = data.remaining();
+                    int actualWritten = afc.write(data, 0).get();
+                    assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
+                    afc.force(true);
+                }
+                data.flip();
+                try (FileChannel fc = FileChannel.open(tmp, READ, WRITE)) {
+                    int expectedWritten = data.remaining();
+                    int actualWritten = fc.write(data);
+                    assertEquals(actualWritten, expectedWritten, "Unexpected amount written.");
+                    fc.force(true);
+                }
+            } finally {
+                Files.deleteIfExists(tmp);
             }
         }
 
         // Exercises inner Socket$SocketInputStream / Socket$SocketOutputStream
-        private static void exerciseSocket() {
+        private static void exerciseSocket() throws IOException, InterruptedException {
             try (ServerSocket ss = new ServerSocket()) {
                 ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
-                Thread serverThread = new Thread(() -> {
-                   try (Socket server = ss.accept();
-                        InputStream in = server.getInputStream();
-                        OutputStream out = server.getOutputStream()) {
-                       byte[] buf = new byte[CLIENT_MSG.length];
-                       in.read(buf);
-                       out.write(SERVER_MSG);
-                   } catch (Exception e) {
-                       throw new RuntimeException(e);
-                   }
-                });
-                serverThread.start();
-
-                try (Socket client = new Socket()) {
-                    client.connect(ss.getLocalSocketAddress());
-                    try (InputStream in = client.getInputStream();
-                    OutputStream out = client.getOutputStream()) {
-                        out.write(CLIENT_MSG);
-                        byte[] buf = new byte[SERVER_MSG.length];
-                        in.read(buf);
+                Thread clientThread = new Thread(() -> {
+                    try (Socket client = new Socket()) {
+                        client.connect(ss.getLocalSocketAddress());
+                        try (InputStream in = client.getInputStream();
+                             OutputStream out = client.getOutputStream()) {
+                            out.write(CLIENT_MSG);
+                            byte[] buf = new byte[SERVER_MSG.length];
+                            in.read(buf);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
+                });
+                clientThread.start();
+
+                try (Socket server = ss.accept();
+                     InputStream in = server.getInputStream();
+                     OutputStream out = server.getOutputStream()) {
+                    byte[] buf = new byte[CLIENT_MSG.length];
+                    in.read(buf);
+                    out.write(SERVER_MSG);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
 
-                serverThread.join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                clientThread.join();
             }
         }
 
         private static void exerciseSocketChannelImpl() {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                ssc.bind(new InetSocketAddress(HOSTNAME, 0));
+                ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
                 Thread serverThread = new Thread(() -> {
                     try (SocketChannel server = ssc.accept()) {
@@ -167,7 +175,7 @@ public class TestEventsNotLoadedWithoutJfr {
 
         private static void exerciseSocketInputStream() {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                ssc.bind(new InetSocketAddress(HOSTNAME, 0));
+                ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
                 Thread serverThread = new Thread(() -> {
                    try (SocketChannel server = ssc.accept()) {
@@ -188,7 +196,7 @@ public class TestEventsNotLoadedWithoutJfr {
                     try (InputStream in = client.socket().getInputStream();
                          OutputStream out = client.socket().getOutputStream()) {
                         out.write(CLIENT_MSG);
-                        byte [] buf = new byte[SERVER_MSG.length];
+                        byte[] buf = new byte[SERVER_MSG.length];
                         in.read(buf);
                     }
                 }
@@ -198,7 +206,6 @@ public class TestEventsNotLoadedWithoutJfr {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }
 

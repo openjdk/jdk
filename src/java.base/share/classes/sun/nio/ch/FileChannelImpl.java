@@ -635,13 +635,13 @@ public class FileChannelImpl
 
     @Override
     public void force(boolean metaData) throws IOException {
-        if (!jfrTracing || !FileForceEvent.enabled()) {
+        if (jfrTracing && FileForceEvent.enabled()) {
+            long start = FileForceEvent.timestamp();
             implForce(metaData);
+            FileForceEvent.offer(start, path, metaData);
             return;
         }
-        long start = FileForceEvent.timestamp();
         implForce(metaData);
-        FileForceEvent.offer(start, path, metaData);
     }
 
     // Assume at first that the underlying kernel supports sendfile/equivalent;
