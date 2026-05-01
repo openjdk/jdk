@@ -89,11 +89,7 @@ public class TestJSSE {
         System.out.println("Testing protocol: " + protocol);
         System.out.println("Testing cipher  : " + cipher);
 
-<<<<<<< Updated upstream
-        var server = CipherTestUtils.mainServer(
-=======
         return CipherTestUtils.mainServer(
->>>>>>> Stashed changes
             new JSSEFactory(null, protocol, cipher, "Server JSSE"),
             expectedExcp);
     }
