@@ -641,7 +641,7 @@ public class DataBufferConstructorTest {
 
             // DataBufferShort(short[][] dataArray, int size)
             testShortConstructor(nullShortArrays, 0, signed, NullPointerException.class);
-            testShortConstructor(nullShortSubArrays,1, signed, NullPointerException.class);
+            testShortConstructor(nullShortSubArrays, 1, signed, NullPointerException.class);
             testShortConstructor(oneShortSubArrays, 0, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, -1, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, 2, signed, IllegalArgumentException.class);
@@ -649,6 +649,7 @@ public class DataBufferConstructorTest {
             // DataBufferShort(short[][] dataArray, int size, int[] offsets)
             testShortConstructor(oneShortSubArrays, 1, nullOffsetArray, signed, NullPointerException.class);
             testShortConstructor(nullShortArrays, 0, zeroOffsetArray, signed, NullPointerException.class);
+            testShortConstructor(nullShortSubArrays, 1, zeroOffsetArray, signed, NullPointerException.class);
             testShortConstructor(zeroShortSubArrays, 0, zeroOffsetArray, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, 0, zeroOffsetArray, signed, IllegalArgumentException.class);
             testShortConstructor(oneShortSubArrays, 1, negOffsetArray, signed, IllegalArgumentException.class);
