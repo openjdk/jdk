@@ -85,11 +85,11 @@ class SNIHostNameNegativeTest {
                 .boxed()
                 .map(Character::toString)
                 .flatMap(s -> Stream.of(
-                        // Empty label
+                        // Empty labels
+                        new Arg<>(false, s + "example.com"),
                         new Arg<>(false, "example" + s + s + "com"),
                         new Arg<>(false, "example" + s + ".com"),
                         new Arg<>(false, "example." + s + "com"),
-                        // Trailing dot
                         new Arg<>(false, "example.com" + s)));
 
         // Illegal host names with particular edge cases
