@@ -213,7 +213,7 @@
           "at all times, even during the GC cycle;"                         \
           " static - trigger GC when free heap falls below a specified "    \
           "threshold;"                                                      \
-          " aggressive - run GC very frequently (controlled by "           \
+          " aggressive - run GC very frequently (controlled by "            \
           "ShenandoahAggressiveGCInterval), try to evacuate everything "    \
           "(recommended only for testing);"                                 \
           " compact - run GC more frequently and with deeper targets to "   \
