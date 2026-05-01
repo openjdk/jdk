@@ -92,5 +92,42 @@ public class TestNoteTag extends JavadocTester {
                         </dl>""");
     }
 
+    @Test
+    public void testUnterminatedAttributes(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                * First sentence. {@note [header=Warning }
+                * @note
+                *  [ id=important-note
+                *    kind=important
+                */
+                public class C {
+                }
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "C.java:3: error: unterminated attributes",
+                """
+                * First sentence. {@note [header=Warning }
+                                                         ^""",
+                "C.java:6: error: unterminated attributes",
+                """
+                *    kind=important
+                                  ^""");
+
+        checkOrder("p/C.html", """
+                <details class="invalid-tag">
+                <summary>invalid @note</summary>
+                <pre>{@note [header=Warning }</pre>
+                </details>""");
+    }
+
 
 }

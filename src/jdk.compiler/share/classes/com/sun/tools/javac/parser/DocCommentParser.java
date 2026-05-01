@@ -2146,7 +2146,8 @@ public class DocCommentParser {
                         nextChar();
                         attributes = tagAttrs(']');
                         if (ch != ']') {
-                            throw new ParseException("dc.unexpected.content");
+                            nextChar();
+                            throw new ParseException("dc.unterminated.attributes");
                         }
                         nextChar();
                     }
@@ -2470,7 +2471,7 @@ public class DocCommentParser {
     }
 
     /*
-     * Reads a series of inline snippet tag attributes.
+     * Reads a series of tag attributes for a snippet or note tag.
      *
      * Attributes are terminated by the first of terminator char or
      * an unmatched "}" (closing curly).
