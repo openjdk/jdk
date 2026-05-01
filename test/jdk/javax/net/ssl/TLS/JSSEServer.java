@@ -71,7 +71,7 @@ public class JSSEServer extends CipherTestUtils.Server {
                     e.printStackTrace(System.out);
                 }
             } catch (Exception e) {
-                if (e.getCause() instanceof SocketException && closeServer) {
+                if (e instanceof SocketException && closeServer) {
                     // letting the server close
                     System.out.println("SocketException:");
                     e.printStackTrace(System.out);
