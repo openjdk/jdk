@@ -25,6 +25,9 @@
 
 package javax.net.ssl;
 
+import sun.security.x509.DNSName;
+
+import java.io.IOException;
 import java.net.IDN;
 import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
@@ -89,7 +92,7 @@ public final class SNIHostName extends SNIServerName {
      * <li>{@code example.com}
      * <li>{@code \u00ebxample.com} &mdash; User-friendly IDN containing
      * non-ASCII Unicode code points
-     * <li>{@code xn--xample-ova.com} &mdash; IDN in ASCII Compatible Encoding
+     * <li>{@code xn--xample-ova.com} &mdash; IDN in ASCII-Compatible Encoding
      * (ACE)
      * </ul>
      *
@@ -103,8 +106,8 @@ public final class SNIHostName extends SNIServerName {
      * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
      * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
      * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
-     * translate non-ASCII Unicode code points into their corresponding ASCII
-     * Compatible Encoding (ACE).
+     * translate non-ASCII Unicode code points into their corresponding
+     * ASCII-Compatible Encoding (ACE).
      *
      * @param hostname the hostname of this server name
      *
@@ -155,22 +158,18 @@ public final class SNIHostName extends SNIServerName {
      * <li>{@code example.com}
      * <li>{@code \u00ebxample.com} &mdash; User-friendly IDN containing
      * non-ASCII Unicode code points
-     * <li>{@code xn--xample-ova.com} &mdash; IDN in ASCII Compatible Encoding
+     * <li>{@code xn--xample-ova.com} &mdash; IDN in ASCII-Compatible Encoding
      * (ACE)
      * </ul>
      *
-     * <h4>DNS hostname validation</h4>
+     * <h4>Translation of non-ASCII Unicode code points</h4>
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
      * StandardCharsets#US_ASCII ASCII}.
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to enforce the restrictions on ASCII characters in hostnames (see
-     * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
-     * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
-     * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
-     * translate non-ASCII Unicode code points into their corresponding ASCII
-     * Compatible Encoding (ACE).
+     * is used to translate non-ASCII Unicode code points into their
+     * corresponding ASCII-Compatible Encoding (ACE).
      *
      * @apiNote
      *
@@ -218,8 +217,8 @@ public final class SNIHostName extends SNIServerName {
      * <li>{@code "example.com".getBytes(US_ASCII)}
      * <li>{@code "\u00ebxample.com".getBytes(UTF_8)} &mdash; User-friendly IDN
      * containing non-ASCII Unicode code points
-     * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in ASCII
-     * Compatible Encoding (ACE)
+     * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in
+     * ASCII-Compatible Encoding (ACE)
      * </ul>
      *
      * <h4>Supported encodings</h4>
@@ -240,8 +239,8 @@ public final class SNIHostName extends SNIServerName {
      * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
      * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
      * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
-     * translate non-ASCII Unicode code points into their corresponding ASCII
-     * Compatible Encoding (ACE).
+     * translate non-ASCII Unicode code points into their corresponding
+     * ASCII-Compatible Encoding (ACE).
      *
      * @apiNote
      *
@@ -330,8 +329,8 @@ public final class SNIHostName extends SNIServerName {
      * <li>{@code "example.com".getBytes(US_ASCII)}
      * <li>{@code "\u00ebxample.com".getBytes(UTF_8)} &mdash; User-friendly IDN
      * containing non-ASCII Unicode code points
-     * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in ASCII
-     * Compatible Encoding (ACE)
+     * <li>{@code "xn--xample-ova.com".getBytes(US_ASCII)} &mdash; IDN in
+     * ASCII-Compatible Encoding (ACE)
      * </ul>
      *
      * <h4>Supported encodings</h4>
@@ -342,18 +341,14 @@ public final class SNIHostName extends SNIServerName {
      * requires {@linkplain StandardCharsets#US_ASCII ASCII}. To tolarate this,
      * this constructor accepts both encodings.
      *
-     * <h4>DNS hostname validation</h4>
+     * <h4>Translation of non-ASCII Unicode code points</h4>
      *
      * Per <a href="http://www.ietf.org/rfc/rfc6066.txt">RFC 6066</a>,
      * the server name value of a hostname is encoded in {@linkplain
      * StandardCharsets#US_ASCII ASCII}.
      * {@link IDN#toASCII(String, int) IDN.toASCII(hostname, IDN.USE_STD3_ASCII_RULES)}
-     * is used to enforce the restrictions on ASCII characters in hostnames (see
-     * <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>,
-     * <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a>,
-     * <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>), and
-     * translate non-ASCII Unicode code points into their corresponding ASCII
-     * Compatible Encoding (ACE).
+     * is used to translate non-ASCII Unicode code points into their
+     * corresponding ASCII-Compatible Encoding (ACE).
      *
      * @apiNote
      *
@@ -537,8 +532,9 @@ public final class SNIHostName extends SNIServerName {
      * is illegal if it
      * <ul>
      * <li>is an {@linkplain java.net.InetAddress#ofLiteral(String) IP
-     * literal}, which is not permitted per <a
-     * href="https://www.rfc-editor.org/rfc/rfc6066.html#page-6">RFC 6066</a>.
+     * literal address}, which is not permitted per <a
+     * href="https://www.rfc-editor.org/rfc/rfc6066.html#page-6">RFC 6066</a>,
+     * <li>or is an invalid value for the dNSName field of an X.509 certificate.
      * </ul>
      *
      * @param strict Flag to toggle strict checks
@@ -567,6 +563,14 @@ public final class SNIHostName extends SNIServerName {
         if (isIPv4LiteralAddress(hostname) || isIPv6LiteralAddress(hostname)) {
             throw new IllegalArgumentException(
                     "Server name value of host_name cannot be an IP literal address");
+        }
+
+        // Is it a valid dNSName?
+        try {
+            new DNSName(hostname);
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(
+                    "Server name value of host_name must be a valid DNSName", ioe);
         }
 
     }

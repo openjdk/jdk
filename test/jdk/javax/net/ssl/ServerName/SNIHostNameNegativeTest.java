@@ -74,7 +74,9 @@ class SNIHostNameNegativeTest {
                 })
                 .flatMap((String s) -> Stream.of(
                         new Arg<>(false, s),                        // Equals
-                        new Arg<>(false, "exa" + s + "mple.com"),   // Contains
+                        new Arg<>(false, "exa" + s + "mple.com"),   // Contains in between LDH
+                        new Arg<>(false, "example" + s + ".com"),   // Contains before dot
+                        new Arg<>(false, "example." + s + "com"),   // Contains after dot
                         new Arg<>(false, s + "example.com"),        // Starts with
                         new Arg<>(false, "example.com" + s)));      // Ends with
 
@@ -96,6 +98,11 @@ class SNIHostNameNegativeTest {
                 new Arg<>(false, "example..com"),
                 new Arg<>(false, "com."),
                 new Arg<>(false, "."),
+                // Illegal hyphens
+                new Arg<>(false, "-abc.com"),
+                new Arg<>(false, "abc-.com"),
+                new Arg<>(false, "abc.-com"),
+                new Arg<>(false, "abc.com-"),
                 // punycode("\u00ebxample.com") = "xn--xample-ova.com"
                 new Arg<>(false, "xn--xample-ova" + illegalPunycodeChar + ".com"),
                 new Arg<>(false, "xn--xample-ova.com" + illegalPunycodeChar),

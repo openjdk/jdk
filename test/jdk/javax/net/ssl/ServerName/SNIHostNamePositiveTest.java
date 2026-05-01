@@ -64,7 +64,13 @@ class SNIHostNamePositiveTest {
 
         // Basic valid host names
         var basicCases = Stream.of(
-                new Arg<>(false, "example.com"),
+                new Arg<>(false, "abc.com"),
+                new Arg<>(false, "ABC.COM"),
+                new Arg<>(false, "a12.com"),
+                new Arg<>(false, "a1b2c3.com"),
+                new Arg<>(false, "1abc.com"),
+                new Arg<>(false, "123.com"),
+                new Arg<>(false, "a-b-c.com"),
                 new Arg<>(false, "\u00ebxample.com"),
                 // punycode("\u00ebxample.com") = "xn--xample-ova.com"
                 new Arg<>(false, "xn--xample-ova.com"));
