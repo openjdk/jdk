@@ -27,8 +27,8 @@
 
 #include "ci/ciMethod.hpp"
 #include "code/nmethod.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
