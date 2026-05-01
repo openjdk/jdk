@@ -163,12 +163,6 @@ PSPromotionManager::PSPromotionManager()
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
 
-  if (ParallelGCThreads == 1) {
-    _target_stack_size = 0;
-  } else {
-    _target_stack_size = GCDrainStackTargetSize;
-  }
-
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
 
@@ -204,10 +198,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks(bool totally_drain) {
-  const uint threshold = totally_drain ? 0
-                                       : _target_stack_size;
-
+void PSPromotionManager::process_stacks_to_threshold(uint threshold) {
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
     ScannerTask task;
@@ -225,9 +216,22 @@ void PSPromotionManager::drain_stacks(bool totally_drain) {
     }
   } while (!tq->overflow_empty());
 
-  assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
-  assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
+  assert(tq->size() <= threshold, "Sanity");
   assert(tq->overflow_empty(), "Sanity");
+}
+
+void PSPromotionManager::trim_stacks() {
+  const uint target_stack_size = GCDrainStackTargetSize;
+  const uint max_stack_size = target_stack_size * 2 + 1;
+
+  PSScannerTasksQueue* const tq = claimed_stack_depth();
+  if (!tq->overflow_empty() || tq->size() > max_stack_size) {
+    process_stacks_to_threshold(target_stack_size);
+  }
+}
+
+void PSPromotionManager::drain_stacks() {
+  process_stacks_to_threshold(0);
 }
 
 void PSPromotionManager::flush_labs() {
