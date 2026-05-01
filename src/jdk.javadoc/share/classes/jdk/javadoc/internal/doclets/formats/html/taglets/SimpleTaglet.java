@@ -60,8 +60,23 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     private final boolean enabled;
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} of kind {@code UNKNOWN_BLOCK_TAG} with the given tag name.
      *
+     * @param config    the configuration
+     * @param tagName   the name of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in
+     */
+    SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations) {
+        super(config, tagName, DocTree.Kind.UNKNOWN_BLOCK_TAG, false, locations);
+        this.header = header;
+        this.enabled = true;
+    }
+
+    /**
+     * Constructs a {@code SimpleTaglet} with its tag name defined by {@code tagKind}.
+     *
+     * @param config    the configuration
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
@@ -71,19 +86,9 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} with its tag name defined by {@code tagKind}.
      *
-     * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     */
-    SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations) {
-        this(config, tagName, header, locations, true);
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
+     * @param config    the configuration
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
@@ -97,31 +102,19 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} with the given tag name and kind.
      *
+     * @param config    the configuration
      * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     * @param enabled   whether this tag is enabled
-     */
-    private SimpleTaglet(HtmlConfiguration config, String tagName, String header,
-                         Set<Taglet.Location> locations, boolean enabled) {
-        super(config, tagName, false, locations);
-        this.header = header;
-        this.enabled = enabled;
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
      * @param tagKind   the kind of this tag
      * @param header    the header to output
+     * @param inline    whether this is an inline tag
      * @param locations the possible locations that this tag can appear in
      * @param enabled   whether this tag is enabled
      */
-    protected SimpleTaglet(HtmlConfiguration config, String name, DocTree.Kind tagKind, String header,
+    protected SimpleTaglet(HtmlConfiguration config, String tagName, DocTree.Kind tagKind, String header,
                            boolean inline, Set<Taglet.Location> locations, boolean enabled) {
-        super(config, name, tagKind, inline, locations);
+        super(config, tagName, tagKind, inline, locations);
         this.header = header;
         this.enabled = enabled;
     }
