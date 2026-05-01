@@ -53,7 +53,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
   double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
   if (last_time_ms > ShenandoahAggressiveGCInterval) {
-    log_trigger("Time since last GC (%.0f ms) is larger than agressive interval (%zu ms)",
+    log_trigger("Time since last GC (%.0f ms) is larger than aggressive interval (%zu ms)",
                   last_time_ms, ShenandoahAggressiveGCInterval);
     accept_trigger();
     return true;
