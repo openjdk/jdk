@@ -354,7 +354,7 @@ const char* createTempFilename() {
             if (e < 0) {
                 warn("revival: remove existing core page file failed: %d", e);
             }
-            fdTemp = open(tempName, O_WRONLY | O_CREAT | O_EXCL, 0600); 
+            fdTemp = open(tempName, O_WRONLY | O_CREAT | O_EXCL, 0600);
             if (fdTemp < 0) {
                 error("cannot remove open existing core page file '%s': %d", tempName, fdTemp);
             }

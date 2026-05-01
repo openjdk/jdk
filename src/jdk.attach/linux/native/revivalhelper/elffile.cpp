@@ -493,7 +493,7 @@ char* file_name_for_nt_file(char* name, const char* libdir) {
 void ELFFile::read_file_mappings() {
     if (!is_core()) {
         error("read_file_mappings: Not a core file: %s", filename);
-	}
+    }
     if (file_mappings.size() != 0) return;
 
     // Look for Program Header PT_NOTE:
