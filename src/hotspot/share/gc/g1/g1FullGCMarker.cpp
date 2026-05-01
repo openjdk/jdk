@@ -39,7 +39,7 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _worker_id(worker_id),
     _bitmap(collector->mark_bitmap()),
     _task_queue(),
-    _partial_array_splitter(collector->partial_array_state_manager(), collector->workers(), ObjArrayMarkingStride),
+    _partial_array_splitter(collector->partial_array_state_manager(), collector->workers()),
     _mark_closure(worker_id, this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
@@ -65,7 +65,7 @@ void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
   // Don't push empty arrays to avoid unnecessary work.
   size_t array_length = obj->length();
   if (array_length > 0) {
-    size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length);
+    size_t initial_chunk_size = _partial_array_splitter.start(task_queue(), obj, nullptr, array_length, ObjArrayMarkingStride);
     process_array_chunk(obj, 0, initial_chunk_size);
   }
 }

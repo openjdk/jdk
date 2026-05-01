@@ -499,29 +499,20 @@ private:
   void mov_immediate64(Register dst, uint64_t imm64);
   void mov_immediate32(Register dst, uint32_t imm32);
 
-  int push(unsigned int bitset, Register stack);
-  int pop(unsigned int bitset, Register stack);
-
-  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-
-  int push_p(unsigned int bitset, Register stack);
-  int pop_p(unsigned int bitset, Register stack);
-
   void mov(Register dst, Address a);
 
 public:
 
-  void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
-  void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
+  int push(RegSet regset, Register stack);
+  int pop(RegSet regset, Register stack);
 
-  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
-  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
+  int push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
+  int pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
 
   static RegSet call_clobbered_gp_registers();
 
-  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
-  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
+  int push_p(PRegSet regset, Register stack);
+  int pop_p(PRegSet regset, Register stack);
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
@@ -658,6 +649,14 @@ public:
 
   inline void set_nzcv(Register reg) {
     msr(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
+  // CNTVCTSS_EL0:   op1 == 011
+  //                 CRn == 1110
+  //                 CRm == 0000
+  //                 op2 == 110
+  inline void get_cntvctss_el0(Register reg) {
+    mrs(0b011, 0b1110, 0b0000, 0b110, reg);
   }
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
@@ -1724,6 +1723,7 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+  void spin_wait_wfet(int delay_ns);
 
   void fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
   void fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);

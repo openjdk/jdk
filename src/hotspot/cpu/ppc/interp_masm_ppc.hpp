@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -258,7 +258,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register scratch1, Register scratch2);
   void profile_call(Register scratch1, Register scratch2);
   void profile_final_call(Register scratch1, Register scratch2);
-  void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2,  bool receiver_can_be_null);
+  void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2);
   void profile_typecheck(Register Rklass, Register Rscratch1, Register Rscratch2);
   void profile_ret(TosState state, Register return_bci, Register scratch1, Register scratch2);
   void profile_switch_default(Register scratch1, Register scratch2);

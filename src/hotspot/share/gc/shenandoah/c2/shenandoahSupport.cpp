@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2026, Red Hat, Inc. All rights reserved.
  * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -871,7 +871,7 @@ void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*
 
   Node* thread          = new ThreadLocalNode();
   Node* gc_state_offset = igvn.MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  Node* gc_state_addr   = new AddPNode(phase->C->top(), thread, gc_state_offset);
+  Node* gc_state_addr   = AddPNode::make_off_heap(thread, gc_state_offset);
   Node* gc_state        = new LoadBNode(old_ctrl, raw_mem, gc_state_addr,
                                         DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
                                         TypeInt::BYTE, MemNode::unordered);

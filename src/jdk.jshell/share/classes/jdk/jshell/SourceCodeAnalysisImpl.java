@@ -464,7 +464,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         ImportTree it = findImport(tp);
 
                         if (it != null && it.isModule()) {
-                            int selectStart = (int) sp.getStartPosition(topLevel, tp.getLeaf());
+                            int selectStart = (int) sp.getStartPosition(tp.getLeaf());
                             String qualifiedPrefix = it.getQualifiedIdentifier().getKind() == Kind.MEMBER_SELECT
                                 ? ((MemberSelectTree) it.getQualifiedIdentifier()).getExpression().toString() + "."
                                 : "";
@@ -634,7 +634,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             Element annotationType = tp.getParentPath().getParentPath().getLeaf().getKind() == Kind.ANNOTATION
                                     ? at.trees().getElement(tp.getParentPath().getParentPath())
                                     : at.trees().getElement(tp.getParentPath().getParentPath().getParentPath());
-                            if (sp.getEndPosition(topLevel, tp.getParentPath().getLeaf()) == (-1)) {
+                            if (sp.getEndPosition(tp.getParentPath().getLeaf()) == (-1)) {
                                 //synthetic 'value':
                                 //TODO: filter out existing:
                                 addElements(javadoc, ElementFilter.methodsIn(annotationType.getEnclosedElements()), TRUE, TRUE, cursor, prefix, result);
@@ -846,14 +846,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             new TreePathScanner<Void, Void>() {
                 @Override
                 public Void visitIdentifier(IdentifierTree node, Void p) {
-                    long start = sp.getStartPosition(cut, node);
-                    long end = sp.getEndPosition(cut, node);
+                    long start = sp.getStartPosition(node);
+                    long end = sp.getEndPosition(node);
                     handleElement(false, start, end);
                     return super.visitIdentifier(node, p);
                 }
                 @Override
                 public Void visitMemberSelect(MemberSelectTree node, Void p) {
-                    long exprEnd = sp.getEndPosition(cut, node.getExpression());
+                    long exprEnd = sp.getEndPosition(node.getExpression());
                     Token ident = findTokensFrom(exprEnd, TokenKind.DOT, TokenKind.IDENTIFIER);
                     if (ident != null) {
                         handleElement(false, ident.pos, ident.endPos);
@@ -866,16 +866,16 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     if (mods.getFlags().contains(Modifier.SEALED) ||
                         mods.getFlags().contains(Modifier.NON_SEALED)) {
                         List<Token> modifierTokens = new ArrayList<>();
-                        long modsStart = sp.getStartPosition(cut, mods);
-                        long modsEnd = sp.getEndPosition(cut, mods);
+                        long modsStart = sp.getStartPosition(mods);
+                        long modsEnd = sp.getEndPosition(mods);
                         for (Token t : tokens) {
                             if (t.pos >= modsStart && t.endPos <= modsEnd) {
                                 modifierTokens.add(t);
                             }
                         }
                         for (AnnotationTree at : mods.getAnnotations()) {
-                            long annStart = sp.getStartPosition(cut, at);
-                            long annEnd = sp.getEndPosition(cut, at);
+                            long annStart = sp.getStartPosition(at);
+                            long annEnd = sp.getEndPosition(at);
                             modifierTokens.removeIf(t -> t.pos >= annStart && t.endPos <= annEnd);
                         }
                         OUTER: for (int i = 0; i < modifierTokens.size(); i++) {
@@ -912,7 +912,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         handleElement(true, ident.pos, ident.endPos);
                     }
                     if (!node.getPermitsClause().isEmpty()) {
-                        long start = sp.getStartPosition(cut, node.getPermitsClause().get(0));
+                        long start = sp.getStartPosition(node.getPermitsClause().get(0));
                         Token permitsCandidate = findTokensBefore(start, TokenKind.IDENTIFIER);
                         if (permitsCandidate != null && permitsCandidate.name().contentEquals("permits")) {
                             addKeyword.accept(permitsCandidate);
@@ -946,7 +946,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
                 @Override
                 public Void visitYield(YieldTree node, Void p) {
-                    long start = sp.getStartPosition(cut, node);
+                    long start = sp.getStartPosition(node);
                     Token yield = findTokensFrom(start, TokenKind.IDENTIFIER);
                     addKeyword.accept(yield);
                     return super.visitYield(node, p);
@@ -961,7 +961,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 @Override
                 public Void scan(Tree tree, Void p) {
                     if (tree != null) {
-                        long end = sp.getEndPosition(cut, tree);
+                        long end = sp.getEndPosition(tree);
                         if (end == (-1)) {
                             //synthetic
                             return null;
@@ -1072,14 +1072,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 if (tree == null)
                     return null;
 
-                long start = sp.getStartPosition(topLevel, tree);
-                long end = sp.getEndPosition(topLevel, tree);
+                long start = sp.getStartPosition(tree);
+                long end = sp.getEndPosition(tree);
 
                 if (end == (-1) && tree.getKind() == Kind.ASSIGNMENT &&
                     getCurrentPath() != null &&
                     getCurrentPath().getLeaf().getKind() == Kind.ANNOTATION) {
                     //the assignment is synthetically generated, take the end pos of the nested tree:
-                    end = sp.getEndPosition(topLevel, ((AssignmentTree) tree).getExpression());
+                    end = sp.getEndPosition(((AssignmentTree) tree).getExpression());
                 }
                 if (start <= wrapEndPos && wrapEndPos <= end &&
                     (deepest[0] == null || deepest[0].getLeaf() == getCurrentPath().getLeaf())) {

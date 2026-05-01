@@ -1757,6 +1757,12 @@ static bool match_type_check(PhaseGVN& gvn,
     //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
     // or the narrowOop equivalent.
     (*obj) = extract_obj_from_klass_load(&gvn, val);
+    // Some klass comparisons are not directly in the form
+    // Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq]),
+    // e.g. Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), [eq]).
+    // These patterns with nullable klasses arise from example from
+    // load_array_klass_from_mirror.
+    if (*obj == nullptr) { return false; }
     (*cast_type) = tcon->isa_klassptr()->as_instance_type();
     return true; // found
   }
@@ -1797,8 +1803,8 @@ static bool match_type_check(PhaseGVN& gvn,
       assert(idx == 1 || idx == 2, "");
       Node* vcon = val->in(idx);
 
-      assert(val->find_edge(con) > 0, "");
       if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
+        assert(val->find_edge(con) > 0, "mismatch");
         SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
         Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
         Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);
