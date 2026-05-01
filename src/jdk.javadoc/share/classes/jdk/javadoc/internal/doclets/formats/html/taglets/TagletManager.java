@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -322,8 +321,11 @@ public class TagletManager {
         }
     }
 
+    /**
+     * {@return the names of custom note tags}
+     */
     public Set<String> getCustomTags() {
-        return Collections.unmodifiableSet(customTags);
+        return customTags;
     }
 
     /**

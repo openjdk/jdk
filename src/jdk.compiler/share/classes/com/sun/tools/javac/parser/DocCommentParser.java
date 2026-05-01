@@ -143,6 +143,7 @@ public class DocCommentParser {
      * @param fac a parser factory, for a doc-tree maker and for reference parsers
      * @param diagSource the source in which the comment was found
      * @param comment the comment
+     * @param customTags the names of custom note tags
      */
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment,
                             Set<String> customTags) {

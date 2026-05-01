@@ -28,7 +28,6 @@ package com.sun.tools.javac.api;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.BreakIterator;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -1251,7 +1250,7 @@ public class JavacTrees extends DocTrees {
     }
 
     /**
-     * Sets the tag names of known custom tags. Known custom tags are represented
+     * Sets the tag names of custom note tags. Custom note tags are represented
      * as instances of {@code NoteTree} when returned by methods in this class,
      * instead of {@code UnknownBlockTagTree} or {@code UnknownInlineTagTree}.
      *
@@ -1259,7 +1258,7 @@ public class JavacTrees extends DocTrees {
      * @since 27
      */
     public void setCustomTags(Set<String> customTags) {
-        this.customTags = Collections.unmodifiableSet(customTags);
+        this.customTags = customTags;
     }
 
     /**
