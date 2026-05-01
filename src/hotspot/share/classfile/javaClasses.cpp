@@ -3648,13 +3648,10 @@ void java_lang_reflect_Field::set_type(oop field, oop value) {
 }
 
 int java_lang_reflect_Field::slot(oop reflect) {
-  // We use a mask because JFR is encoding
-  // information in the most significant bits.
-  return reflect->int_field(_slot_offset) & slot_mask;
+  return reflect->int_field(_slot_offset);
 }
 
 void java_lang_reflect_Field::set_slot(oop reflect, int value) {
-  assert(value <= slot_mask, "slot value is too big");
   reflect->int_field_put(_slot_offset, value);
 }
 

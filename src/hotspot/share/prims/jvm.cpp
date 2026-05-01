@@ -2891,11 +2891,13 @@ JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
   return ThreadIdentifier::unsafe_offset();
 JVM_END
 
-JVM_ENTRY(jlong, JVM_GetJfrEpochGenerationOffset(JNIEnv* env, jclass clazz))
+JVM_ENTRY(jboolean, JVM_JfrEpochUpdate(JNIEnv* env, jclass jfrEpoch, jobject obj))
 #if INCLUDE_JFR
-  return Jfr::epoch_generation_offset();
+  oop oop = JNIHandles::resolve_non_null(obj);
+  return Jfr::update_epoch(oop) ? JNI_TRUE : JNI_FALSE;
 #else
-  return 0;
+  ShouldNotCallThis();
+  return JNI_FALSE;
 #endif
 JVM_END
 

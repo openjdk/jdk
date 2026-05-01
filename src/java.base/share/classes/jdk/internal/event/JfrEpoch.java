@@ -22,13 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.event;
 
-#include "jni.h"
-#include "jvm.h"
+import java.lang.reflect.Field;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-#include "jdk_internal_event_JfrEpochGeneration.h"
+/**
+ * The update method serves as an intrinsic for the exact argument signature.
+ * When extending functionality to other types, first ensure that the VM is
+ * configured to accept and handle that specific type. Once VM support for the new type is confirmed,
+ * implement an additional update method overload and decorate it with @IntrinsicCandidate.
+ *
+ * JfrEpoch is itself a supported type already configured by the VM,
+ * so instances can be used directly when full abstraction isn’t needed.
+ */
+public final class JfrEpoch {
 
-JNIEXPORT jlong JNICALL
-Java_jdk_internal_event_JfrEpochGeneration_getJfrEpochGenerationOffset(JNIEnv* env, jclass jfrEpochGen) {
-  return JVM_GetJfrEpochGenerationOffset(env, jfrEpochGen);
+    /**
+     * The update methods takes a state object as an argument and returns true
+     * if the epoch was exclusively updated by the current thread.
+     */
+
+    @IntrinsicCandidate
+    static native boolean update(JfrEpoch epoch);
+
+    @IntrinsicCandidate
+    static native boolean update(Field root);
 }
