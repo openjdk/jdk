@@ -860,7 +860,7 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBit
     if (tcount->is_con()) {
       int real_shift = tcount->get_con();
       masked_shift = real_shift & mask;
-      replace = real_shift != masked_shift;
+      replace = real_shift != (int)masked_shift;
       return true;
     }
 
