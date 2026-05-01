@@ -1139,17 +1139,18 @@ public abstract class SSLEngine {
      * Configures the engine to use client (or server) mode when
      * handshaking.
      * <P>
-     * This method should be called before any handshaking occurs.
-     * Once handshaking has begun, the mode can not be reset for the
-     * life of this engine.
+     * It is provider-specific if the {@code SSLEngine} uses client or server
+     * mode by default, or requires the mode to be set. Since the mode must be
+     * determined before the handshake starts, an application is recommended to
+     * call this method explicitly.
      * <P>
      * Servers normally authenticate themselves, and clients
      * are not required to do so.
      *
      * @implNote
-     * The JDK SunJSSE provider implementation requires that the desired mode
-     * be set explicitly by calling this method before invoking other methods
-     * of the SSLEngine.
+     * The JDK SunJSSE provider implementation does not have a default mode.
+     * An application must call this method before invoking other methods of
+     * the {@code SSLEngine}.
      *
      * @param   mode true if the engine should start its handshaking
      *          in "client" mode
