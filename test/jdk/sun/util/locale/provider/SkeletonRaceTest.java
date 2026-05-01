@@ -47,31 +47,34 @@ public class SkeletonRaceTest {
     @Test
     void testSkeletonRace() {
         // Without the fix, LocaleResources throws an NPE
-        assertDoesNotThrow(this::doRaceTest);
+        for (int run = 0; run < 10; run++) {
+            assertDoesNotThrow(this::doRaceTest);
+        }
     }
 
     private void doRaceTest() throws InterruptedException, ExecutionException {
         Locale[] locales = Locale.getAvailableLocales();
         int threads = 50;
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
-        CountDownLatch ready = new CountDownLatch(threads);
-        CountDownLatch go = new CountDownLatch(1);
-        List<Future<?>> futures = new ArrayList<>();
 
-        for (int i = 0; i < threads; i++) {
-            Locale locale = locales[i % locales.length];
-            futures.add(pool.submit(() -> {
-                ready.countDown();
-                go.await();
-                DateTimeFormatterBuilder.getLocalizedDateTimePattern(
-                    "yMd", IsoChronology.INSTANCE, locale);
-                return null;
-            }));
+        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            CountDownLatch ready = new CountDownLatch(threads);
+            CountDownLatch go = new CountDownLatch(1);
+            List<Future<?>> futures = new ArrayList<>();
+
+            for (int i = 0; i < threads; i++) {
+                Locale locale = locales[i % locales.length];
+                futures.add(pool.submit(() -> {
+                    ready.countDown();
+                    go.await();
+                    DateTimeFormatterBuilder.getLocalizedDateTimePattern(
+                        "yMd", IsoChronology.INSTANCE, locale);
+                    return null;
+                }));
+            }
+
+            ready.await();
+            go.countDown();
+            for (Future<?> f : futures) f.get();
         }
-
-        ready.await();
-        go.countDown();
-        pool.shutdown();
-        for (Future<?> f : futures) f.get();
     }
 }

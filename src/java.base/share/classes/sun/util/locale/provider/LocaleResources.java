@@ -693,12 +693,22 @@ public class LocaleResources {
      */
     private String resolveInputSkeleton(String type) {
         var regionToSkeletonMap = INPUT_SKELETONS.get().get(type);
-        return regionToSkeletonMap != null ?
-            regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
-                regionToSkeletonMap.getOrDefault(locale.getCountry(),
-                    regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-001",
-                        regionToSkeletonMap.getOrDefault("001", "h")))) :
-            "h";
+        var hour = "h";
+
+        if (regionToSkeletonMap != null) {
+            for (var region: new String[] {
+                locale.getLanguage() + "-" + locale.getCountry(),
+                locale.getCountry(),
+                locale.getLanguage() + "-001",
+                "001"}) {
+                hour = regionToSkeletonMap.get(region);
+                if (hour != null) {
+                    break;
+                }
+            }
+        }
+
+        return hour;
     }
 
     /**
