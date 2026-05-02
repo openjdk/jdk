@@ -179,7 +179,7 @@ public abstract class HtmlDocletWriter {
 
     protected final HtmlIds htmlIds;
 
-    private final Set<String> headingIds = new HashSet<>();
+    private final Set<String> existingIds = new HashSet<>();
 
     protected final TableOfContents tableOfContents;
 
@@ -1033,6 +1033,15 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return a set of known existing IDs used in the current HTML page}
+     * Taglets and other embedded components can use this to check for
+     * duplicate IDs and register the IDs they create.
+     */
+    public Set<String> getExistingIds() {
+        return existingIds;
+    }
+
+    /**
      * Add the class link, with only class name as the strong link and prefixing
      * plain package name.
      *
@@ -1601,7 +1610,7 @@ public abstract class HtmlDocletWriter {
                         list.add(code.getLiteral());
                     }
                 });
-                return htmlIds.forHeading(String.join(" ", list), headingIds);
+                return htmlIds.forHeading(String.join(" ", list), existingIds);
             }
         }
     }
@@ -1883,11 +1892,11 @@ public abstract class HtmlDocletWriter {
         String headingContent = sb.toString().trim();
         if (id == null) {
             // Generate id attribute
-            HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
+            HtmlId htmlId = htmlIds.forHeading(headingContent, existingIds);
             id = htmlId.name();
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         } else {
-            headingIds.add(id);
+            existingIds.add(id);
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {

@@ -31,9 +31,7 @@
  * @run main TestNoteTag
  */
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import javadoc.tester.JavadocTester;
@@ -49,18 +47,156 @@ public class TestNoteTag extends JavadocTester {
     ToolBox tb = new ToolBox();
 
     @Test
+    public void testLocationDefaults(Path base) throws IOException {
+        // Test inline and block notes in various locations with default settings (no attributes)
+        Path src = base.resolve("src");
+        Path mdlSrc = src.resolve("m1");
+        tb.writeJavaFiles(mdlSrc, """
+                /**
+                 * Module m1.
+                 * {@warning Module warning}
+                 * {@note Module note}
+                 */
+                module m1 {
+                     exports p.q;
+                     exports p.q.r;
+                }
+                """,
+                """
+                /**
+                 * Package p.q.
+                 * @warning Package warning
+                 * @note Package note
+                 */
+                package p.q;
+                """,
+                """
+                package p.q;
+                /**
+                 * An interface.
+                 * {@warning Interface warning}
+                 * {@warning Second interface warning}
+                 */
+                 public interface I {
+                     /**
+                      * An interface method.
+                      * {@note Note in interface method}
+                      * {@note Second note in interface method}
+                      */
+                     void m();
+                 }
+                """,
+                """
+                package p.q.r;
+                /**
+                 * A class.
+                 */
+                 public class C {
+                    /**
+                     * A class field.
+                     * {@warning Warning in class field}
+                     * @note Note in class field
+                     */
+                    public static int i;
+                 }
+                """);
+        tb.writeFile(mdlSrc.resolve("p/q/doc-files/test.html"), """
+                <html>
+                <body>
+                HTML file with notes.
+                {@warning An inline warning}
+                @note a block note
+                </body>
+                </html>
+                """);
+        tb.writeFile(mdlSrc.resolve("p/q/r/package.html"), """
+                <html>
+                <body>
+                Package HTML file.
+                {@note An inline note}
+                @warning a block warning
+                </body>
+                </html>
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-tag", "warning:A:Warning:",
+                "--module-source-path", src.toString(),
+                "--module", "m1");
+        checkExit(Exit.OK);
+
+        checkOrder("m1/module-summary.html", """
+                <div class="inline-note note-tag-warning" id="m1-warning1"><span class="note-header">Warning:</span>
+                Module warning</div>""",
+                """
+                <div class="inline-note note-tag" id="m1-note1"><span class="note-header">Note:</span>
+                Module note</div>""");
+        checkOrder("m1/p/q/package-summary.html", """
+                <div class="block-note note-tag" id="p.q-note">
+                <dt>Note:</dt>
+                <dd>Package note</dd>
+                </div>""",
+                """
+                <div class="block-note note-tag-warning" id="p.q-warning">
+                <dt>Warning:</dt>
+                <dd>Package warning</dd>
+                </div>""");
+        checkOrder("m1/p/q/I.html", """
+                <div class="inline-note note-tag-warning" id="p.q.I-warning1"><span class="note-header">Warning:</span>
+                Interface warning</div>""",
+                """
+                <div class="inline-note note-tag-warning" id="p.q.I-warning2"><span class="note-header">Warning:</span>
+                Second interface warning</div>""");
+        checkOrder("m1/p/q/doc-files/test.html", """
+                <div class="inline-note note-tag-warning" id="unknown-element-warning1"><span class="note-header">Warning:</span>
+                An inline warning</div>""",
+                """
+                <dl class="notes">
+                <div class="block-note note-tag" id="unknown-element-note">
+                <dt>Note:</dt>
+                <dd>a block note</dd>
+                </div>
+                </dl>""");
+        checkOrder("m1/p/q/r/package-summary.html", """
+                <div class="inline-note note-tag" id="p.q.r-note1"><span class="note-header">Note:</span>
+                An inline note</div>""",
+                """
+                <dl class="notes">
+                <div class="block-note note-tag-warning" id="p.q.r-warning">
+                <dt>Warning:</dt>
+                <dd>a block warning</dd>
+                </div>
+                </dl>""");
+        checkOrder("m1/p/q/r/C.html", """
+                <div class="inline-note note-tag-warning" id="i-warning1"><span class="note-header">Warning:</span>
+                Warning in class field</div>""",
+                """
+                <dl class="notes">
+                <div class="block-note note-tag" id="i-note">
+                <dt>Note:</dt>
+                <dd>Note in class field</dd>
+                </div>
+                </dl>""");
+    }
+
+    @Test
     public void testMarkdown(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                 package p;
-                /// First sentence. {@note [id=inline-note] abc {@linkplain C _emphasized_ label} def}
+                /// First sentence. {@note [id=inline-note] abc {@linkplain C _emphasized_ link} def}
                 ///
-                /// @note [id=block-note] xyz {@linkplain C **bold label**}
+                /// @note [] xyz [**bold** link][C]
                 ///
                 public class C {
                     /// Constructor.
                     C() {}
                 }
+                """);
+        tb.writeFile(src.resolve("p/doc-files/markdown.md"), """
+                Markdown file.
+                {@note Note containing a [link to class C][C]}
+                {@note Second note with a {@linkplain C link to class C}}
                 """);
 
         javadoc("-d", base.resolve("out").toString(),
@@ -70,15 +206,24 @@ public class TestNoteTag extends JavadocTester {
 
         checkOrder("p/C.html", """
                     <div class="block"><p>First sentence.</p>
-                    <div class="inline-note" id="inline-note"><span class="note-header">Note:</span>
-                    abc <a href="C.html" title="class in p"><em>emphasized</em> label</a> def</div>""",
+                    <div class="inline-note note-tag" id="inline-note"><span class="note-header">Note:</span>
+                    abc <a href="C.html" title="class in p"><em>emphasized</em> link</a> def</div>""",
                 """
                     <dl class="notes">
-                    <div class="block-note note-tag" id="block-note">
+                    <div class="block-note note-tag" id="p.C-note">
                     <dt>Note:</dt>
-                    <dd>xyz <a href="C.html" title="class in p"><strong>bold label</strong></a></dd>
+                    <dd>xyz <a href="C.html" title="class in p"><strong>bold</strong> link</a></dd>
                     </div>
                     </dl>""");
+
+        checkOrder("p/doc-files/markdown.html", """
+                <p>Markdown file.</p>""",
+                """
+                    <div class="inline-note note-tag" id="unknown-element-note3"><span class="note-header">Note:</span>
+                    Note containing a <a href="../C.html" title="class in p">link to class C</a></div>""",
+                """
+                    <div class="inline-note note-tag" id="unknown-element-note4"><span class="note-header">Note:</span>
+                    Second note with a <a href="../C.html" title="class in p">link to class C</a></div>""");
     }
 
     @Test
@@ -105,13 +250,13 @@ public class TestNoteTag extends JavadocTester {
 
         checkOrder("p/C.html",
                 """
-                        <div class="block-note note-tag" id="note-p.C">
+                        <div class="block-note note-tag" id="p.C-note">
                         <dt>Note:</dt>
                         <dd>First note</dd>
                         <dd>Second note</dd>
                         </div>""",
                 """
-                        <div class="block-note note-tag" id="note-p.C1">
+                        <div class="block-note note-tag" id="p.C-note1">
                         <dt>Important:</dt>
                         <dd>First important note</dd>
                         <dd>Second important note</dd>
@@ -195,7 +340,7 @@ public class TestNoteTag extends JavadocTester {
                     """);
 
         checkOrder("p/C.html", """
-                    <div class="inline-note" id="note-p.C1"><span class="note-header">Note:</span>
+                    <div class="inline-note note-tag" id="p.C-note1"><span class="note-header">Note:</span>
                     body </div>
                     </div>
                     <dl class="notes">
@@ -237,11 +382,11 @@ public class TestNoteTag extends JavadocTester {
                     """);
 
         checkOrder("p/C.html", """
-                    <div class="inline-note" id="foo"><span class="note-header">Note:</span>
+                    <div class="inline-note note-tag" id="foo"><span class="note-header">Note:</span>
                     body </div>
                     </div>
                     <dl class="notes">
-                    <div class="block-note note-tag-important" id="note-p.C">
+                    <div class="block-note note-tag-important" id="p.C-note">
                     <dt>Note:</dt>
                     <dd>body</dd>
                     </div>

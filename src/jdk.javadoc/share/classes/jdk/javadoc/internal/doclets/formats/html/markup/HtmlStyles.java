@@ -627,7 +627,7 @@ public enum HtmlStyles implements HtmlStyle {
     notes,
 
     /**
-     * The class of a {@code div} element containing the header of a {@code note} tag.
+     * The class of a {@code span} element containing the header of a {@code note} tag.
      */
     noteHeader,
 

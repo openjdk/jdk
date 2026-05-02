@@ -68,7 +68,7 @@ public class TestCustomNoteTag extends JavadocTester {
 
         checkOrder("p/C.html", """
                      <div class="block"><p>First sentence.</p>
-                     <div class="inline-note note-tag-warning" id="warning-p.C1"><span class="note-header">Warning:</span>
+                     <div class="inline-note note-tag-warning" id="p.C-warning1"><span class="note-header">Warning:</span>
                      abc <a href="C.html" title="class in p"><em>emphasized</em></a> def</div>""",
                 """
                      <dl class="notes">
@@ -80,7 +80,6 @@ public class TestCustomNoteTag extends JavadocTester {
                      </code></pre>
                      </div>""");
     }
-
 
     @Test
     public void testNewLocationFlags(Path base) throws IOException {
@@ -97,12 +96,12 @@ public class TestCustomNoteTag extends JavadocTester {
         testWithTagOption(src, base.resolve("out-all"), "custom:t:Custom Note:", "",
                 """
                         <div class="block">First sentence.\s
-                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note\
+                        <div class="inline-note note-tag-custom" id="p.C-custom1"><span class="note\
                         -header">Custom Note:</span>
                         inline note</div>
                         </div>
                         <dl class="notes">
-                        <div class="block-note note-tag-custom" id="custom-p.C">
+                        <div class="block-note note-tag-custom" id="p.C-custom">
                         <dt>Custom Note:</dt>
                         <dd>block note</dd>
                         </div>
@@ -112,7 +111,7 @@ public class TestCustomNoteTag extends JavadocTester {
                 "warning: Tag custom is used as a block tag. It can only be used as an inline tag.",
                 """
                         <div class="block">First sentence.\s
-                        <div class="inline-note note-tag-custom" id="custom-p.C1"><span class="note\
+                        <div class="inline-note note-tag-custom" id="p.C-custom1"><span class="note\
                         -header">Custom Note:</span>
                         inline note</div>
                         </div>
@@ -122,7 +121,7 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                         <div class="block">First sentence. </div>
                         <dl class="notes">
-                        <div class="block-note note-tag-custom" id="custom-p.C">
+                        <div class="block-note note-tag-custom" id="p.C-custom">
                         <dt>Custom Note:</dt>
                         <dd>block note</dd>
                         </div>
@@ -146,4 +145,26 @@ public class TestCustomNoteTag extends JavadocTester {
     }
 
 
+    @Test
+    public void testDisabled(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * First sentence. {@custom inline note}
+                 * @custom block note
+                 */
+                public class C {
+                }
+                """);
+        javadoc("-d", base.resolve("out").toString(),
+                "-tag", "custom:x:Custom Note:",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", false,
+                "inline-note", "block-note", "inline note", "block note",
+                "note-tag-custom", "Custom Note");
+    }
 }

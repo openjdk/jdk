@@ -607,24 +607,19 @@ public class HtmlIds {
      * of the heading with additional checks to make it unique within its containing page.
      *
      * @param headingText the text contained by the heading
-     * @param headingIds the set of heading ids already generated for the current page
+     * @param existingIds the set of heading ids already generated for the current page
      * @return a unique id value for the heading
      */
-    public HtmlId forHeading(CharSequence headingText, Set<String> headingIds) {
+    public HtmlId forHeading(CharSequence headingText, Set<String> existingIds) {
         String idValue = headingText.toString()
                 .toLowerCase(Locale.ROOT)
                 .trim()
                 .replaceAll("[^\\w_-]+", "-");
         // Make id value unique
         idValue = idValue + "-heading";
-        if (!headingIds.add(idValue)) {
-            int counter = 1;
-            while (!headingIds.add(idValue + counter)) {
-                counter++;
-            }
-            idValue = idValue + counter;
-        }
-        return HtmlId.of(idValue);
+        return existingIds.add(idValue)
+            ? HtmlId.of(idValue)
+            : makeUniqueId(idValue, existingIds);
     }
 
     /**
@@ -633,13 +628,13 @@ public class HtmlIds {
      * @param e the element in whose documentation the note appears
      * @param kind the kind of note, or null
      * @param inline true if the id is for an inline note
-     * @param noteIds the set of note ids already generated
+     * @param existingIds the set of ids already generated
      * @return a unique id for the note
      */
-    public HtmlId forNote(Element e, String kind, boolean inline, Set<String> noteIds) {
-        var id = (kind == null ? "note" : kind) + "-" + getElementId(e);
-        if (inline || !noteIds.add(id)) {
-            return makeUniqueId(id, noteIds);
+    public HtmlId forNote(Element e, String kind, boolean inline, Set<String> existingIds) {
+        var id = getElementId(e) + "-" + (kind == null ? "note" : kind);
+        if (inline || !existingIds.add(id)) {
+            return makeUniqueId(id, existingIds);
         }
         return HtmlId.of(id);
     }
@@ -673,6 +668,8 @@ public class HtmlIds {
         }
     }
 
+    // This always appends a digit to the id. To use the id as-is
+    // probe it against existingIds before calling this method.
     private HtmlId makeUniqueId(String id, Set<String> existingIds) {
         int counter = 1;
         while (!existingIds.add(id + counter)) {

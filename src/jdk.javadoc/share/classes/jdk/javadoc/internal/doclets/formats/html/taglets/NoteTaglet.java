@@ -41,8 +41,6 @@ import jdk.javadoc.internal.html.Text;
 
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +59,6 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     private final boolean isBlockTag;
 
     private static final String CSS_CLASS_PREFIX = "note-tag";
-
-    private final Map<String, Set<String>> idMap = new HashMap<>();
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE,
@@ -122,9 +118,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 map.compute(header, (hdr, cnt) -> {
                     if (cnt == null) {
                         return HtmlTree.DIV(HtmlStyles.blockNote)
-                                .setId(id != null
-                                        ? HtmlId.of(id)
-                                        : config.htmlIds.forNote(holder, defaultKind, false, getExistingIds()))
+                                .setId(getId(id, holder, false))
                                 .addStyle(getCSSClass(kind))
                                 .add(HtmlTree.DT(RawHtml.of(hdr)))
                                 .add(body);
@@ -148,26 +142,26 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
+        if (!isEnabled()) {
+            return null;
+        }
         this.tagletWriter = tagletWriter;
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
-        var id = config.htmlIds.forNote(element, defaultKind, true, getExistingIds());
         var note = (NoteTree) tag;
 
         var attr = getAttributes(note);
         var header = attr.getOrDefault("header", defaultHeader);
-        var noteId = attr.getOrDefault("id", id.name());
+        var id = attr.getOrDefault("id", null);
 
         HtmlTree result = HtmlTree.DIV(HtmlStyles.inlineNote)
-                .setId(HtmlId.of(noteId))
+                .setId(getId(id, element, true))
                 .add(HtmlTree.SPAN(HtmlStyles.noteHeader, RawHtml.of(header)))
                 .add(Text.NL)
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
 
         var kind = attr.getOrDefault("kind", defaultKind);
-        if (kind != null) {
-            result.addStyle(getCSSClass(kind));
-        }
+        result.addStyle(getCSSClass(kind));
 
         for (var entry : attr.entrySet()) {
             var name = entry.getKey();
@@ -189,10 +183,15 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                                           (oldValue, _) -> oldValue));
     }
 
-    private Set<String> getExistingIds() {
-        var typeElem = tagletWriter.htmlWriter.getCurrentTypeElement();
-        var typeName = typeElem == null ? "_" : typeElem.getQualifiedName().toString();
-        return idMap.computeIfAbsent(typeName, (s) -> new HashSet<>());
+    private HtmlId getId(String id, Element e, boolean inline) {
+        var existingIds = tagletWriter.htmlWriter.getExistingIds();
+        if (id != null) {
+            if (!existingIds.add(id)) {
+                messages.warning("doclet.taglet_duplicate_id_warn", name, id);
+            }
+            return HtmlId.of(id);
+        }
+        return config.htmlIds.forNote(e, defaultKind, inline, existingIds);
     }
 
     private static String stringValueOf(AttributeTree at) {
