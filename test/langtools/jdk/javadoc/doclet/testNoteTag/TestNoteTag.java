@@ -46,9 +46,9 @@ public class TestNoteTag extends JavadocTester {
 
     ToolBox tb = new ToolBox();
 
+    // Test inline and block notes in various locations with default settings (no attributes)
     @Test
     public void testLocationDefaults(Path base) throws IOException {
-        // Test inline and block notes in various locations with default settings (no attributes)
         Path src = base.resolve("src");
         Path mdlSrc = src.resolve("m1");
         tb.writeJavaFiles(mdlSrc, """

@@ -142,9 +142,6 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
-        if (!isEnabled()) {
-            return null;
-        }
         this.tagletWriter = tagletWriter;
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
