@@ -768,8 +768,9 @@ public final class LauncherHelper {
          * the main class may or may not have a main method, so do this before
          * validating the main class.
          */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
+        if ((JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
+                doesExtendFXApplication(mainClass)) &&
+                ModuleLayer.boot().findModule(FXHelper.JAVAFX_GRAPHICS_MODULE_NAME).isPresent()) {
             // Will abort() if there are problems with FX runtime
             FXHelper.setFXLaunchParameters(what, mode);
             mainClass = FXHelper.class;
@@ -1125,13 +1126,12 @@ public final class LauncherHelper {
         private static void setFXLaunchParameters(String what, int mode) {
 
             // find the module with the FX launcher
-            Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
-            if (om.isEmpty()) {
-                abort(null, "java.launcher.cls.error3");
-            }
+            // this method is only called if we can find the module
+            // in the first place, so it will always be present
+            Module om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME).orElseThrow();
 
             // load the FX launcher class
-            fxLauncherClass = Class.forName(om.get(), JAVAFX_LAUNCHER_CLASS_NAME);
+            fxLauncherClass = Class.forName(om, JAVAFX_LAUNCHER_CLASS_NAME);
             if (fxLauncherClass == null) {
                 abort(null, "java.launcher.cls.error3");
             }
