@@ -1474,6 +1474,7 @@ public:
 #ifdef ASSERT
   void verify_construction();
   bool verify_jvms(const JVMState* jvms) const;
+  static void verify_type_replacement(const Type* old_type, const Type* new_type, const Node* old_node, const Node* new_node = nullptr);
 
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }

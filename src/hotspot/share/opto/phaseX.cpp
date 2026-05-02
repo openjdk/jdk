@@ -2214,8 +2214,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
-  DEBUG_ONLY(dead_loop_check(k);)
-  DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
+#ifdef ASSERT
+  dead_loop_check(k);
+  bool is_new = (k->outcnt() == 0);
+  const Type* old_bottom_type = n->bottom_type();
+#endif // ASSERT
   C->remove_modified_node(k);
 #ifndef PRODUCT
   uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
@@ -2238,6 +2241,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
+    Node::verify_type_replacement(old_bottom_type, i->bottom_type(), n, i);
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
     // Made a change; put users of original Node on worklist
@@ -2298,6 +2302,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Now check for Identities
   i = k->Identity(this);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
+    DEBUG_ONLY(Node::verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i));
     set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
