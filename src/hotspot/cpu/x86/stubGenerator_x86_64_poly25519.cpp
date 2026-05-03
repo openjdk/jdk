@@ -93,6 +93,17 @@ static address limb_0() {
   return (address)LIMB0;
 }
 
+// High term of unsiged to signed normalization 
+ATTRIBUTE_ALIGNED(64) constexpr uint64_t HTERM[] = {
+  0x000000000000004CULL, 0x0000000000000004ULL,
+  0x0000000000000004ULL, 0x0000000000000004ULL,
+  0x0000000000000004ULL, 0x0000000000000000ULL,
+  0x0000000000000000ULL, 0x0000000000000000ULL
+};
+static address high_term() {
+  return (address)HTERM;
+}
+
 void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
   Register t0 = tmp;
   Register rscratch = tmp;
@@ -111,48 +122,46 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   XMMRegister Acc1L = xmm8;
 
   // Constants
-  XMMRegister TermMer  = xmm9;
-  XMMRegister Term104  = xmm10;
-  XMMRegister shift1L  = xmm11;
-  XMMRegister shift1R  = xmm12;
-  XMMRegister BN       = xmm13;
-  XMMRegister AN       = xmm14;
-  XMMRegister Zero     = xmm15;
+  XMMRegister HighTerm = xmm9;
+  XMMRegister shift1L  = xmm10;
+  XMMRegister shift1R  = xmm11;
+  XMMRegister BN       = xmm12;
+  XMMRegister AN       = xmm13;
+  XMMRegister Zero     = xmm14;
 
   KRegister allLimbs   = k1;
-  KRegister permL      = k2;
-  KRegister permLH     = k3;
+  KRegister tMask      = k2;
+  KRegister highA      = k3;
   KRegister allColumns = k4;
   KRegister aMask      = k5;
   KRegister bMask      = k6;
-  KRegister bothNeg    = k7;
-  KRegister highNeg    = permLH;
-  KRegister masks[]    = {permLH, allColumns, aMask, bMask, bothNeg};
+  KRegister shiftA     = k7;
+  KRegister masks[]    = {highA, allColumns, aMask, bMask, shiftA};
 
   __ mov64(t0, 0x1F);
   __ kmovql(allLimbs, t0);
-  __ mov64(t0, 0x7);
-  __ kmovql(permL, t0);
   __ mov64(t0, 0x3F);
   __ kmovql(allColumns, t0);
 
-  __ mov64(t0, 0x4);
-  __ evpbroadcastq(Term104, t0, Assembler::AVX_512bit);
-  __ mov64(t0, 0x4C);
-  __ evpbroadcastq(TermMer, t0, Assembler::AVX_512bit);
-
+  __ evmovdqaq(HighTerm, ExternalAddress(high_term()), Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(shift1L, ExternalAddress(shift_1L()), Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(shift1R, ExternalAddress(shift_1R()), Assembler::AVX_512bit, rscratch);
+  __ evpxorq(Zero, Zero, Zero, Assembler::AVX_512bit);
 
   __ evmovdquq(A, allLimbs, Address(aLimbs, 0), false, Assembler::AVX_512bit);
+  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
+  __ evpcmpq(aMask, allLimbs, A, Zero, 1, true, Assembler::AVX_512bit);
+  __ kshiftrql(highA, aMask, 4);
+  __ kshiftlql(shiftA, aMask, 1);
+  __ kandql(shiftA, shiftA, allLimbs);
+  __ korql(shiftA, shiftA, highA);
+
   __ vpbroadcastq(B0, Address(bLimbs, 0), Assembler::AVX_512bit);
   __ vpbroadcastq(B1, Address(bLimbs, 8), Assembler::AVX_512bit);
   __ vpbroadcastq(B2, Address(bLimbs, 16), Assembler::AVX_512bit);
   __ vpbroadcastq(B3, Address(bLimbs, 24), Assembler::AVX_512bit);
   __ vpbroadcastq(B4, Address(bLimbs, 32), Assembler::AVX_512bit);
 
-  __ evpxorq(Zero, Zero, Zero, Assembler::AVX_512bit);
-  __ evpcmpq(aMask, allLimbs, A, Zero, 1, true, Assembler::AVX_512bit);
 
   // Acc1 = 0, Acc2 = 0
   __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_512bit);
@@ -166,15 +175,10 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsllq(BN, allLimbs, B0, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, aMask, Acc2, BN, true, Assembler::AVX_512bit);
   __ evpcmpq(bMask, allLimbs, B0, Zero, 1, true, Assembler::AVX_512bit);
-  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, bMask, Acc2, AN, true, Assembler::AVX_512bit);
   // Needed for pseudo-Mersenne reduction in high order limb
-  __ kandql(bothNeg, aMask, bMask);
-  __ kshiftlql(bothNeg, bothNeg, 1);
-  __ kshiftrql(highNeg, bothNeg, 5);
-  __ kandql(bothNeg, bothNeg, allLimbs);
-  __ evpsubq(Acc2, bothNeg, Acc2, Term104, true, Assembler::AVX_512bit);
-  __ evpsubq(Acc2, highNeg, Acc2, TermMer, true, Assembler::AVX_512bit);
+  __ kandql(tMask, shiftA, bMask);
+  __ evpsubq(Acc2, tMask, Acc2, HighTerm, true, Assembler::AVX_512bit);
 
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B0, true, Assembler::AVX_512bit);
@@ -192,15 +196,10 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsllq(BN, allLimbs, B1, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, aMask, Acc2, BN, true, Assembler::AVX_512bit);
   __ evpcmpq(bMask, allLimbs, B1, Zero, 1, true, Assembler::AVX_512bit);
-  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, bMask, Acc2, AN, true, Assembler::AVX_512bit);
   // Needed for pseudo-Mersenne reduction in high order limb
-  __ kandql(bothNeg, aMask, bMask);
-  __ kshiftlql(bothNeg, bothNeg, 1);
-  __ kshiftrql(highNeg, bothNeg, 5);
-  __ kandql(bothNeg, bothNeg, allLimbs);
-  __ evpsubq(Acc2, bothNeg, Acc2, Term104, true, Assembler::AVX_512bit);
-  __ evpsubq(Acc2, highNeg, Acc2, TermMer, true, Assembler::AVX_512bit);
+  __ kandql(tMask, shiftA, bMask);
+  __ evpsubq(Acc2, tMask, Acc2, HighTerm, true, Assembler::AVX_512bit);
 
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B1, true, Assembler::AVX_512bit);
@@ -216,16 +215,10 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsllq(BN, allLimbs, B2, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, aMask, Acc2, BN, true, Assembler::AVX_512bit);
   __ evpcmpq(bMask, allLimbs, B2, Zero, 1, true, Assembler::AVX_512bit);
-  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, bMask, Acc2, AN, true, Assembler::AVX_512bit);
   // Needed for pseudo-Mersenne reduction in high order limb
-  __ kandql(bothNeg, aMask, bMask);
-  __ kshiftlql(bothNeg, bothNeg, 1);
-  __ kshiftrql(highNeg, bothNeg, 5);
-  __ kandql(bothNeg, bothNeg, allLimbs);
-  __ evpsubq(Acc2, bothNeg, Acc2, Term104, true, Assembler::AVX_512bit);
-  __ evpsubq(Acc2, highNeg, Acc2, TermMer, true, Assembler::AVX_512bit);
-
+  __ kandql(tMask, shiftA, bMask);
+  __ evpsubq(Acc2, tMask, Acc2, HighTerm, true, Assembler::AVX_512bit);
 
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B2, true, Assembler::AVX_512bit);
@@ -238,6 +231,9 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   // and we use Acc1L for the lower-limbs that will accumulate the reduction.
   // Move c0..c2 to Acc1L before Acc1 before zeroing respective positions
   XMMRegister permLow = B0;
+  KRegister permL     = highA;
+  __ mov64(t0, 0x7);
+  __ kmovql(permL, t0);
   __ evmovdqaq(permLow, allLimbs, ExternalAddress(perm_low()), false, Assembler::AVX_512bit, rscratch);
   __ evpermq(Acc1L, permL, permLow, Acc1, false, Assembler::AVX_512bit);
 
@@ -250,15 +246,10 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsllq(BN, allLimbs, B3, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, aMask, Acc2, BN, true, Assembler::AVX_512bit);
   __ evpcmpq(bMask, allLimbs, B3, Zero, 1, true, Assembler::AVX_512bit);
-  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, bMask, Acc2, AN, true, Assembler::AVX_512bit);
   // Needed for pseudo-Mersenne reduction in high order limb
-  __ kandql(bothNeg, aMask, bMask);
-  __ kshiftlql(bothNeg, bothNeg, 1);
-  __ kshiftrql(highNeg, bothNeg, 5);
-  __ kandql(bothNeg, bothNeg, allLimbs);
-  __ evpsubq(Acc2, bothNeg, Acc2, Term104, true, Assembler::AVX_512bit);
-  __ evpsubq(Acc2, highNeg, Acc2, TermMer, true, Assembler::AVX_512bit);
+  __ kandql(tMask, shiftA, bMask);
+  __ evpsubq(Acc2, tMask, Acc2, HighTerm, true, Assembler::AVX_512bit);
 
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B3, false, Assembler::AVX_512bit);
@@ -274,21 +265,17 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ evpsllq(BN, allLimbs, B4, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, aMask, Acc2, BN, true, Assembler::AVX_512bit);
   __ evpcmpq(bMask, allLimbs, B4, Zero, 1, true, Assembler::AVX_512bit);
-  __ evpsllq(AN, allLimbs, A, 1, true, Assembler::AVX_512bit);
   __ evpsubq(Acc2, bMask, Acc2, AN, true, Assembler::AVX_512bit);
   // Needed for pseudo-Mersenne reduction in high order limb
-  __ kandql(bothNeg, aMask, bMask);
-  __ kshiftlql(bothNeg, bothNeg, 1);
-  __ kshiftrql(highNeg, bothNeg, 5);
-  __ kandql(bothNeg, bothNeg, allLimbs);
-  __ evpsubq(Acc2, bothNeg, Acc2, Term104, true, Assembler::AVX_512bit);
-  __ evpsubq(Acc2, highNeg, Acc2, TermMer, true, Assembler::AVX_512bit);
+  __ kandql(tMask, shiftA, bMask);
+  __ evpsubq(Acc2, tMask, Acc2, HighTerm, true, Assembler::AVX_512bit);
 
   __ vpermq(Acc2, shift1L, Acc2, Assembler::AVX_512bit);
   __ evpmadd52luq(Acc1, allLimbs, A, B4, true, Assembler::AVX_512bit);
   __ evpaddq(Acc1, allColumns, Acc1, Acc2, true, Assembler::AVX_512bit);
   __ vpermq(Acc1, shift1R, Acc1, Assembler::AVX_512bit);
 
+  KRegister permLH = highA;;
   __ mov64(t0, 0x18);
   __ kmovql(permLH, t0);
   // Move c3..c4 to Acc1L for accumulation in reduction
@@ -418,6 +405,7 @@ void StubGenerator::init_AOTAddressTable_poly_25519(GrowableArray<address>& exte
 #define ADD(addr) external_addresses.append((address)addr);
   // use accessors to retrive all correct addresses
   ADD(limb_0());
+  ADD(high_term());
   ADD(perm_low());
   ADD(perm_lowH());
   ADD(shift_1L());
