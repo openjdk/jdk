@@ -45,6 +45,10 @@ import java.util.Objects;
  * A stream consisting of more than one member is commonly referred to as concatenated GZIP stream.
  * This class is capable of reading a concatenated GZIP stream.
  *
+ * <h2><a id="thread_safety">Thread safety</a></h2>
+ * {@code GZIPInputStream} is not safe for use by multiple concurrent threads. Any multithreaded
+ * concurrent use must be guarded by appropriate synchronization.
+ *
  * @apiNote
  * The {@link #close} method should be called to release resources used by this
  * stream, either directly, or with the {@code try}-with-resources statement.
