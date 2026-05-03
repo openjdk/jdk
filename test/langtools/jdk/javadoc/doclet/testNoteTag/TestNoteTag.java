@@ -227,7 +227,7 @@ public class TestNoteTag extends JavadocTester {
     }
 
     @Test
-    public void testMultipleBlockNotes(Path base) throws IOException {
+    public void testGroupedBlockNotes(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                     package p;
@@ -237,7 +237,7 @@ public class TestNoteTag extends JavadocTester {
                      * @note [header="Important:"] First important note
                      * @note [header="Important:"] Second important note
                      * @note [header="Warning:" id="first-warning" kind="warning"] First warning
-                     * @note [header="Warning:" id="second-warning"] Second warning
+                     * @note [header="Warning:" id="second-warning" kind="warning"] Second warning
                      */
                     public class C {
                     }
@@ -247,6 +247,9 @@ public class TestNoteTag extends JavadocTester {
                 "--source-path", src.toString(),
                 "p");
         checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "warning: The kind attribute is ignored in grouped note tags");
 
         checkOrder("p/C.html",
                 """
@@ -398,9 +401,15 @@ public class TestNoteTag extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                     package p;
+                    /**
+                     * @note [id=block-note] A
+                     * @note [id=block-note] B
+                     * @note [id=block-note] C
+                     */
                     public class C {
                         /**
-                         * {@note [id=id_value] 1} {@note 2}.
+                         * {@note [id=inline-note] 1} {@note 2}.
+                         * {@note [id=inline-note] 3}
                          */
                         public void m() {}
                     }
@@ -411,19 +420,32 @@ public class TestNoteTag extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
 
-        // Notes in first sentence of method description must have unique ids when replicated in method summary table.
-        checkOrder("p/C.html", """
-                    <div class="inline-note note-tag" id="id_value"><span class="note-header">Note:</span>
+        checkOrder("p/C.html",
+                // Block notes
+                """
+                    <dl class="notes">
+                    <div class="block-note note-tag" id="block-note">
+                    <dt>Note:</dt>
+                    <dd>A</dd>
+                    <dd id="block-note1">B</dd>
+                    <dd id="block-note2">C</dd>
+                    </div>""",
+                // The first two inline notes are duplicated in the method summary table.
+                """
+                    <div class="inline-note note-tag" id="inline-note"><span class="note-header">Note:</span>
                     1</div>""",
                 """
                     <div class="inline-note note-tag" id="m()-note1"><span class="note-header">Note:</span>
                     2</div>""",
                 """
-                    <div class="inline-note note-tag" id="id_value1"><span class="note-header">Note:</span>
+                    <div class="inline-note note-tag" id="inline-note1"><span class="note-header">Note:</span>
                     1</div>""",
                 """
                     <div class="inline-note note-tag" id="m()-note2"><span class="note-header">Note:</span>
-                    2</div>"""
+                    2</div>""",
+                """
+                    <div class="inline-note note-tag" id="inline-note2"><span class="note-header">Note:</span>
+                    3</div>"""
                 );
     }
 

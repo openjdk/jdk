@@ -34,6 +34,7 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javadoc.tester.JavadocTester;
@@ -270,15 +271,9 @@ public class TestCustomNoteTag extends JavadocTester {
     }
 
     private String locationName(Taglet.Location loc) {
-        return switch (loc) {
-            case OVERVIEW    -> "overview";
-            case MODULE      -> "module";
-            case PACKAGE     -> "package";
-            case TYPE        -> "class";
-            case CONSTRUCTOR -> "constructor";
-            case METHOD      -> "method";
-            case FIELD       -> "field";
-        };
+        return loc == Taglet.Location.TYPE
+                ? "class"
+                : loc.name().toLowerCase(Locale.ROOT);
     }
 
     // Make sure inline and block custom tags comly with new 'B' and 'I' -tag option flags
@@ -294,7 +289,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 public class C {
                 }
                 """);
-        testBlockOrInlineFlag(src, base.resolve("out-all"), "", "",
+
+        testBlockOrInlineFlag(src, base.resolve("out-all"), "", Exit.OK, null,
                 """
                         <div class="block">First sentence.\s
                         <div class="inline-note note-tag-custom" id="p.C-custom1"><span class="note\
@@ -308,7 +304,8 @@ public class TestCustomNoteTag extends JavadocTester {
                         </div>
                         </dl>
                         </div>""");
-        testBlockOrInlineFlag(src, base.resolve("out-inline"), "I",
+
+        testBlockOrInlineFlag(src, base.resolve("out-inline"), "I", Exit.OK,
                 "warning: Tag custom is used as a block tag. It can only be used as an inline tag.",
                 """
                         <div class="block">First sentence.\s
@@ -317,7 +314,8 @@ public class TestCustomNoteTag extends JavadocTester {
                         inline note</div>
                         </div>
                         </div>""");
-        testBlockOrInlineFlag(src, base.resolve("out-block"), "B",
+
+        testBlockOrInlineFlag(src, base.resolve("out-block"), "B", Exit.OK,
                 "warning: Tag custom is used as an inline tag. It can only be used as a block tag.",
                 """
                         <div class="block">First sentence. </div>
@@ -328,18 +326,25 @@ public class TestCustomNoteTag extends JavadocTester {
                         </div>
                         </dl>
                         </div>""");
+
+        testBlockOrInlineFlag(src, base.resolve("out-error"), "BI", Exit.ERROR,
+                "error: The B and I flags cannot be used together in the -tag option",
+                """
+                        <div class="block">First sentence. </div>
+                        </div>""");
     }
 
-    private void testBlockOrInlineFlag(Path src, Path out, String flag,
-                                   String expectedWarning, String... expectedOutput) {
+    private void testBlockOrInlineFlag(Path src, Path out, String flag, Exit expectedExit,
+                                   String expectedMessage, String... expectedOutput) {
         javadoc("-d", out.toString(),
                 "-tag", "custom:A" + flag + ":Custom Note:",
                 "--source-path", src.toString(),
                 "p");
-        checkExit(Exit.OK);
 
-        if (expectedWarning != null) {
-            checkOutput(Output.OUT, true, expectedWarning);
+        checkExit(expectedExit);
+
+        if (expectedMessage != null) {
+            checkOutput(Output.OUT, true, expectedMessage);
         }
 
         checkOrder("p/C.html", expectedOutput);

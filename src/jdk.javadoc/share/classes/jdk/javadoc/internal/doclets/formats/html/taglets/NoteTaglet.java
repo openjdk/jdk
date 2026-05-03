@@ -74,9 +74,11 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
      *
      * @param tagName   the name of this tag
      * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
+     * @param locations the possible locations that this tag can appear in.
      *                  The string can contain 'p' for package, 't' for type,
      *                  'm' for method, 'c' for constructor and 'f' for field.
+     *                  See {@link #getLocations(String) getLocations} for the
+     *                  complete list.
      */
     NoteTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
         super(config, tagName, DocTree.Kind.NOTE, header,
@@ -84,7 +86,9 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         this.isBlockTag = allowBlockUse(locations);
         this.defaultHeader = header;
         this.defaultKind = tagName;
-        // TODO check 'b' and 'i' location flags are not both present
+        if (!isInlineTag() && !isBlockTag()) {
+            messages.error("doclet.note.block_and_inline_flags_together");
+        }
     }
 
     @Override
@@ -104,7 +108,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             return null;
         }
 
-        var map = new LinkedHashMap<String, Content>();
+        var map = new LinkedHashMap<String, HtmlTree>();
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
         for (DocTree tag : tags) {
@@ -115,6 +119,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 var body = HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
                 var id = attr.getOrDefault("id", null);
 
+                // Block notes with the same header are grouped under a single <dt> element, followed by
+                // a <dd> for each note body. Because the style is applied to the enclosing <div> element,
+                // mixing multiple styles in such a grouped note would not lead to a desired outcome.
+                // The first note in a group therefore determines the style of the group.
                 map.compute(header, (hdr, cnt) -> {
                     if (cnt == null) {
                         return HtmlTree.DIV(HtmlStyles.blockNote)
@@ -125,6 +133,9 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                     } else {
                         if (id != null) {
                             body.setId(config.htmlIds.makeUnique(id, tagletWriter.htmlWriter.getExistingIds()));
+                        }
+                        if (kind != defaultKind) {
+                            messages.warning("doclet.note.kind_attribute_ignored");
                         }
                         cnt.add(body);
                         return cnt;
