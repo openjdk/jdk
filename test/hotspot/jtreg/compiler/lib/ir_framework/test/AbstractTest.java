@@ -36,6 +36,7 @@ import java.lang.reflect.Modifier;
 /**
  * Abstract super class for base, checked and custom run tests.
  */
+@SuppressWarnings("serial")
 abstract class AbstractTest {
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     protected static final int TEST_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10")) * 1000;
