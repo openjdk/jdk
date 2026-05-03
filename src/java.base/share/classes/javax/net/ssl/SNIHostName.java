@@ -135,7 +135,7 @@ public final class SNIHostName extends SNIServerName {
 
     private SNIHostName(String hostname, boolean strict) {
         Objects.requireNonNull(hostname, "Server name value of host_name cannot be null");
-        this.hostname = asciifyHostName(hostname, strict);
+        this.hostname = hostname = asciifyHostName(hostname, strict);
         super(StandardConstants.SNI_HOST_NAME, hostname.getBytes(US_ASCII));
     }
 
@@ -281,8 +281,8 @@ public final class SNIHostName extends SNIServerName {
     }
 
     private SNIHostName(byte[] encoded, boolean strict) {
-        // `super(int,byte[])` checks if `encoded` is null
         super(StandardConstants.SNI_HOST_NAME, encoded);
+        assert encoded != null : "\"super(int,byte[])\" was supposed to check if \"encoded\" is null";
         var decoded = decodeHostName(encoded);
         this.hostname = asciifyHostName(decoded, strict);
     }
