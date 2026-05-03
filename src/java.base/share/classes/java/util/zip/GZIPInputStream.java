@@ -192,7 +192,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * {@code len} is negative, or {@code len} is greater than
      * {@code buf.length - off}
      * @throws    ZipException if the compressed input data is corrupt.
-     * @throws    IOException if an I/O error has occurred.
+     * @throws    IOException if the stream is closed or an I/O error has occurred.
      *
      */
     @Override
