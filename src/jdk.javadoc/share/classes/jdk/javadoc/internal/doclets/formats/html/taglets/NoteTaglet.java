@@ -124,7 +124,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                                 .add(body);
                     } else {
                         if (id != null) {
-                            body.setId(HtmlId.of(id));
+                            body.setId(config.htmlIds.makeUnique(id, tagletWriter.htmlWriter.getExistingIds()));
                         }
                         cnt.add(body);
                         return cnt;
@@ -182,13 +182,9 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
     private HtmlId getId(String id, Element e, boolean inline) {
         var existingIds = tagletWriter.htmlWriter.getExistingIds();
-        if (id != null) {
-            if (!existingIds.add(id)) {
-                messages.warning("doclet.taglet_duplicate_id_warn", name, id);
-            }
-            return HtmlId.of(id);
-        }
-        return config.htmlIds.forNote(e, defaultKind, inline, existingIds);
+        return id != null
+            ? config.htmlIds.makeUnique(id, existingIds)
+            : config.htmlIds.forNote(e, defaultKind, inline, existingIds);
     }
 
     private static String stringValueOf(AttributeTree at) {

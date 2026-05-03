@@ -392,4 +392,39 @@ public class TestNoteTag extends JavadocTester {
                     </div>
                     </dl>""");
     }
+
+    @Test
+    public void testUniqueIds(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                    package p;
+                    public class C {
+                        /**
+                         * {@note [id=id_value] 1} {@note 2}.
+                         */
+                        public void m() {}
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // Notes in first sentence of method description must have unique ids when replicated in method summary table.
+        checkOrder("p/C.html", """
+                    <div class="inline-note note-tag" id="id_value"><span class="note-header">Note:</span>
+                    1</div>""",
+                """
+                    <div class="inline-note note-tag" id="m()-note1"><span class="note-header">Note:</span>
+                    2</div>""",
+                """
+                    <div class="inline-note note-tag" id="id_value1"><span class="note-header">Note:</span>
+                    1</div>""",
+                """
+                    <div class="inline-note note-tag" id="m()-note2"><span class="note-header">Note:</span>
+                    2</div>"""
+                );
+    }
+
 }

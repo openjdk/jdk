@@ -615,11 +615,7 @@ public class HtmlIds {
                 .toLowerCase(Locale.ROOT)
                 .trim()
                 .replaceAll("[^\\w_-]+", "-");
-        // Make id value unique
-        idValue = idValue + "-heading";
-        return existingIds.add(idValue)
-            ? HtmlId.of(idValue)
-            : makeUniqueId(idValue, existingIds);
+        return makeUnique(idValue + "-heading", existingIds);
     }
 
     /**
@@ -633,10 +629,10 @@ public class HtmlIds {
      */
     public HtmlId forNote(Element e, String kind, boolean inline, Set<String> existingIds) {
         var id = getElementId(e) + "-" + (kind == null ? "note" : kind);
-        if (inline || !existingIds.add(id)) {
-            return makeUniqueId(id, existingIds);
-        }
-        return HtmlId.of(id);
+        // Multiple block notes are merged into a single description list item,
+        // so ordinal suffixes are usually not needed for block tag ids.
+        return inline ? withUniqueOrdinal(id, existingIds)
+                      : makeUnique(id, existingIds);
     }
 
     /**
@@ -647,7 +643,7 @@ public class HtmlIds {
      * @return a unique id for the snippet
      */
     public HtmlId forSnippet(Element e, Set<String> snippetIds) {
-        return makeUniqueId("snippet-" + getElementId(e), snippetIds);
+        return withUniqueOrdinal("snippet-" + getElementId(e), snippetIds);
     }
 
     private String getElementId(Element e) {
@@ -668,13 +664,33 @@ public class HtmlIds {
         }
     }
 
-    // This always appends a digit to the id. To use the id as-is
-    // probe it against existingIds before calling this method.
-    private HtmlId makeUniqueId(String id, Set<String> existingIds) {
+    /**
+     * Returns an HTML id based on a proposed id value that is unique within the
+     * given set of existing ids.
+     *
+     * <p>If the proposed id is not already present in {@code existingIds}, it is
+     * added to the set and returned as-is. Otherwise, an id with a unique ordinal
+     * suffix is added to the set and returned.</p>
+     *
+     * @param id the proposed id
+     * @param existingIds the set of ids already generated
+     * @return a unique id
+     */
+    public HtmlId makeUnique(String id, Set<String> existingIds) {
+        return existingIds.add(id)
+                ? HtmlId.of(id)
+                : withUniqueOrdinal(id, existingIds);
+    }
+
+    /*
+     * Returns an HTML id composed of base and an ordinal suffix that is unique within
+     * the given set of id values. The returned id is added to the set of existing ids.
+     */
+    private HtmlId withUniqueOrdinal(String base, Set<String> existingIds) {
         int counter = 1;
-        while (!existingIds.add(id + counter)) {
+        while (!existingIds.add(base + counter)) {
             counter++;
         }
-        return HtmlId.of(id + counter);
+        return HtmlId.of(base + counter);
     }
 }
