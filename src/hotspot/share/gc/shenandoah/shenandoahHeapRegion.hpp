@@ -283,6 +283,30 @@ private:
 
   bool _needs_bitmap_reset;
 
+  // Indicates that this region is currently reserved as an active CAS alloc
+  // slot of a collector / old-collector ShenandoahAllocator, and may
+  // therefore receive evacuation-copy writes that have not yet been covered
+  // by _update_watermark. Read on the barrier fast path via
+  // ShenandoahBarrierSet::need_bulk_update to force bulk updates over the
+  // region while it is active.
+  //
+  // Ordering contract:
+  //   - Writers use release_store for both true and false transitions.
+  //   - Readers use load_acquire. Observing `false` implies the preceding
+  //     writer stores, notably set_update_watermark(r->stable_top()) in
+  //     release_alloc_regions, are also visible.
+  //   - On reserve, the flag is set BEFORE set_active_alloc_region(), so
+  //     any thread that can reach the region via an _alloc_regions slot or
+  //     its _atomic_top also observes the flag as true.
+  //   - On release, the flag is cleared AFTER unset_active_alloc_region()
+  //     and set_update_watermark(), so any thread observing the flag as
+  //     false also observes the final _top and _update_watermark.
+  //
+  // Writers:
+  //   - ShenandoahAllocator::replenish_alloc_regions (set true on reserve)
+  //   - ShenandoahAllocator::release_alloc_regions   (set false on release)
+  // Readers:
+  //   - ShenandoahBarrierSet::need_bulk_update       (barrier fast path)
   Atomic<bool> _collector_allocator_reserved;
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
