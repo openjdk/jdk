@@ -199,7 +199,7 @@ public class ManyLambdasSerialization {
 
         for (int i = 0; i < LAMBDA_COUNT; i++) {
             String index = Integer.toString(i);
-            int capturedValue = 200;
+            int capturedValues = 10;
 
             lambdaMethods.add("""
                                   private static Supplier<Integer> create${INDEX}() {
@@ -207,9 +207,9 @@ public class ManyLambdasSerialization {
                                       return (Supplier<Integer> & Serializable) () -> ${CAPTURED};
                                   }
                               """.replace("${INDEX}", index)
-                                 .replace("${DECLARATIONS}", Stream.iterate(0, v -> v + 1).limit(capturedValue).map(v -> "int v" + v + " = " + index + ";\n").collect(Collectors.joining()))
-                                 .replace("${CAPTURED}", Stream.iterate(0, v -> v + 1).limit(capturedValue).map(v -> "v" + v).collect(Collectors.joining(" + "))));
-            tests.add("        runTest(${EXPECTED}, create${INDEX}());\n".replace("${INDEX}", index).replace("${EXPECTED}", String.valueOf(capturedValue * i)));
+                                 .replace("${DECLARATIONS}", Stream.iterate(0, v -> v + 1).limit(capturedValues).map(v -> "int v" + v + " = " + index + ";\n").collect(Collectors.joining()))
+                                 .replace("${CAPTURED}", Stream.iterate(0, v -> v + 1).limit(capturedValues).map(v -> "v" + v).collect(Collectors.joining(" + "))));
+            tests.add("        runTest(${EXPECTED}, create${INDEX}());\n".replace("${INDEX}", index).replace("${EXPECTED}", String.valueOf(capturedValues * i)));
         }
 
         StringBuilder code = new StringBuilder();
@@ -250,6 +250,79 @@ public class ManyLambdasSerialization {
 
         new JavacTask(tb)
                 .sources(code.toString())
+                .outdir(".")
+                .run()
+                .writeAll();
+
+        List<String> output = new JavaTask(tb)
+                .classpath(".")
+                .className("Test")
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDERR);
+
+        tb.checkEqual(List.of("OK"), output);
+    }
+
+    @Test
+    public void testVeryManySerializableLambdasCapturing() {
+        List<String> lambdaMethods = new ArrayList<>();
+        List<String> tests = new ArrayList<>();
+
+        for (int i = 0; i < LAMBDA_COUNT; i++) {
+            String index = Integer.toString(i);
+            int capturedValues = 200;
+
+            lambdaMethods.add("""
+                                  private static Supplier<Integer> create${INDEX}() {
+                                      ${DECLARATIONS}
+                                      return (Supplier<Integer> & Serializable) () -> ${CAPTURED};
+                                  }
+                              """.replace("${INDEX}", index)
+                                 .replace("${DECLARATIONS}", Stream.iterate(0, v -> v + 1).limit(capturedValues).map(v -> "int v" + v + " = " + index + ";\n").collect(Collectors.joining()))
+                                 .replace("${CAPTURED}", Stream.iterate(0, v -> v + 1).limit(capturedValues).map(v -> "v" + v).collect(Collectors.joining(" + "))));
+            tests.add("        runTest(${EXPECTED}, create${INDEX}());\n".replace("${INDEX}", index).replace("${EXPECTED}", String.valueOf(capturedValues * i)));
+        }
+
+        StringBuilder code = new StringBuilder();
+        code.append("""
+                    import java.io.*;
+                    import java.util.function.Supplier;
+                    class Test {
+                    """);
+
+        lambdaMethods.forEach(code::append);
+
+        code.append("""
+                        private static void runTest(int expectedResult, Supplier<Integer> instance) throws Exception {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                                oos.writeObject(instance);
+                                oos.close();
+                            }
+                            try (ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+                                 ObjectInputStream ois = new ObjectInputStream(in)) {
+                                int actual = ((Supplier<Integer>) ois.readObject()).get();
+                                if (expectedResult != actual) {
+                                    throw new AssertionError("Expected: " + expectedResult + ", actual: " + actual);
+                                }
+                            }
+                        }
+
+                        public static void main() throws Exception {
+                    """);
+
+        tests.forEach(code::append);
+
+        code.append("""
+                            System.err.println("OK");
+                        }
+                    }
+                    """);
+
+        new JavacTask(tb)
+                .sources(code.toString())
+                .options("-XDdeserializableLambdaCaseCountLimit=15")
                 .outdir(".")
                 .run()
                 .writeAll();
