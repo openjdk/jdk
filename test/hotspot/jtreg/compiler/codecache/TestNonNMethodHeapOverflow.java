@@ -58,66 +58,70 @@ import jdk.test.whitebox.code.NMethod;
 import java.lang.reflect.Method;
 
 public class TestNonNMethodHeapOverflow {
-   private static final WhiteBox WB = WhiteBox.getWhiteBox();
-   private static final int HeapBlockHeaderSize = 8;
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final int HeapBlockHeaderSize = 8;
 
-   public static void main(String[] args) throws Exception {
-       WB.lockCompilation();
+    public static void main(String[] args) throws Exception {
+        WB.lockCompilation();
 
-       BlobType blobType;
-       int blobSize = 128;
-       int allocSize = blobSize - HeapBlockHeaderSize;
-       // fill the NonNMethod heap
-       do {
-           long addr = WB.allocateCodeBlob(allocSize, BlobType.NonNMethod.id);
-           if (addr == 0) {
-               throw new RuntimeException("Failed to allocate in BlobType.NonNMethod");
-           }
-           blobType = CodeBlob.getCodeBlob(addr).code_blob_type;
-       } while (blobType == BlobType.NonNMethod);
+        BlobType blobType;
+        int blobSize = 128;
+        int allocSize = blobSize - HeapBlockHeaderSize;
+        // fill the NonNMethod heap
+        do {
+            long addr = WB.allocateCodeBlob(allocSize, BlobType.NonNMethod.id);
+            if (addr == 0) {
+                throw new RuntimeException("Failed to allocate in BlobType.NonNMethod");
+            }
+            blobType = CodeBlob.getCodeBlob(addr).code_blob_type;
+        } while (blobType == BlobType.NonNMethod);
 
-       long heapSize = BlobType.MethodNonProfiled.getSize();
-       int allocated = 0;
-       // fill the first half of NonProfiled heap
-       while (allocated < heapSize / 2) {
-           long addr = WB.allocateCodeBlob(allocSize, BlobType.MethodNonProfiled.id);
-           if (addr == 0) {
-               throw new RuntimeException("Failed to allocate in MethodNonProfiled");
-           }
-           allocated += blobSize;
-       }
+        if (blobType != BlobType.NonProfiled) {
+            throw new RuntimeException("NonNMethod->NonProfiled fallback mechanism was changed? Need to update the test");
+        }
 
-       WB.unlockCompilation();
+        long heapSize = BlobType.MethodNonProfiled.getSize();
+        int allocated = 0;
+        // fill the first half of NonProfiled heap
+        while (allocated < heapSize / 2) {
+            long addr = WB.allocateCodeBlob(allocSize, BlobType.MethodNonProfiled.id);
+            if (addr == 0) {
+                throw new RuntimeException("Failed to allocate in MethodNonProfiled");
+            }
+            allocated += blobSize;
+        }
 
-       // loading triggers i2c/c2i adapter generation; NonNMethod heap is full, adapters go into a middle of NonProfiled heap
-       Class<?> c = Class.forName("compiler.codecache.TestNonNMethodHeapOverflowTarget");
-       Method methodB = c.getDeclaredMethod("b");
-       methodB.invoke(null);
+        WB.unlockCompilation();
 
-       // compile b() at level 2 so the nmethod goes into the beginning of Profiled heap
-       int compLevel = 2;
-       WB.enqueueMethodForCompilation(methodB, compLevel);
-       while (WB.isMethodQueuedForCompilation(methodB)) {
-           Thread.sleep(100);
-       }
-       if (WB.getMethodCompilationLevel(methodB) != compLevel) {
-          throw new IllegalStateException("b() is not compiled at the compilation level " + compLevel +
-                                          ". Got: " + WB.getMethodCompilationLevel(methodB));
-       }
+        // loading triggers i2c/c2i adapter generation; NonNMethod heap is full, adapters go into a middle of NonProfiled heap
+        Class<?> c = Class.forName("compiler.codecache.TestNonNMethodHeapOverflowTarget");
+        Method methodB = c.getDeclaredMethod("b");
+        methodB.invoke(null);
 
-       // The distance from the static call stub in nmethod to the c2i adapter exceeds 128MB (AArch64 near-branch range):
-       //
-       //  |        Profiled                | NonNMethod |       NonProfiled              |
-       //   -------------------------------- ------------ --------------------------------
-       //  |[nmethod]                       |############|################[c2i]           |
+        // compile b() at level 2 so the nmethod goes into the beginning of Profiled heap
+        int compLevel = 2;
+        WB.enqueueMethodForCompilation(methodB, compLevel);
+        while (WB.isMethodQueuedForCompilation(methodB)) {
+            Thread.sleep(100);
+        }
+        if (WB.getMethodCompilationLevel(methodB) != compLevel) {
+            throw new IllegalStateException("b() is not compiled at the compilation level " + compLevel +
+                                            ". Got: " + WB.getMethodCompilationLevel(methodB));
+        }
 
-       NMethod nm = NMethod.get(methodB, false);
-       System.out.println("b() at 0x" + Long.toHexString(nm.address) + " heap=" + nm.code_blob_type);
+        // The distance from the static call stub in nmethod to the c2i adapter exceeds 128MB (AArch64 near-branch range):
+        //
+        //  |        Profiled                | NonNMethod |       NonProfiled              |
+        //   -------------------------------- ------------ --------------------------------
+        //  |[nmethod]                       |############|################[c2i]           |
 
-       // invoke compiled b(): triggers resolve_static_call_blob to patch the static call stub
-       // in nmethod to point to the c2i adapter for a()
-       methodB.invoke(null);
-   }
+        NMethod nm = NMethod.get(methodB, false);
+        System.out.println("b() at 0x" + Long.toHexString(nm.address) + " heap=" + nm.code_blob_type);
+
+        // invoke compiled b(): triggers resolve_static_call_blob to patch the static call stub
+        // in nmethod to point to the c2i adapter for a()
+        methodB.invoke(null);
+    }
 }
 
 class TestNonNMethodHeapOverflowTarget {
