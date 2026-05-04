@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
-=======
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
->>>>>>> master
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,59 +23,38 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
-<<<<<<< HEAD
-=======
 import jdk.test.lib.Utils;
 
 import java.util.Random;
 
->>>>>>> master
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
-<<<<<<< HEAD
- * @bug 8282365
- * @summary Test that Ideal transformations of UDivINode and UModINode are
- * being performed as expected.
- *
-=======
- * @bug 8332268
+ * @bug 8332268 8282365
  * @key randomness
  * @summary Test that Ideal transformations of UDivINode* are being performed as expected.
->>>>>>> master
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
 public class UDivINodeIdealizationTests {
-<<<<<<< HEAD
-=======
     public static final int RANDOM_POWER_OF_2 = 1 << (1 + Utils.getRandomInstance().nextInt(30));
+    public static final int RANDOM_CONSTANT = Utils.getRandomInstance().nextInt();
 
->>>>>>> master
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-<<<<<<< HEAD
-    @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByPow2", "largeDivisorCon", "largeDivisorVar",
-                 "magicDiv13", "magicDiv7", "magicDiv13Bounded",
+    @Run(test = {"constantDiv", "identity", "identityAgain", "identityAgainButBig", "identityThird",
+                 "retainDenominator", "divByPow2", "divByPow2Big", "divByPow2Random",
+                 "largeDivisorCon", "largeDivisorVar",
+                 "magicDiv13", "magicDiv7", "magicDiv13Bounded", "magicDivConstant", "magicDivConstantBounded",
                  "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
             a = (a == 0) ? 1 : a;
         int b = RunInfo.getRandom().nextInt();
             b = (b == 0) ? 1 : b;
-=======
-    @Run(test = {"constant", "identity", "identityAgain", "identityAgainButBig", "identityThird",
-            "retainDenominator", "divByPow2", "divByPow2Big", "divByPow2Random" })
-    public void runMethod() {
-        int a = RunInfo.getRandom().nextInt();
-        a = (a == 0) ? 1 : a;
-        int b = RunInfo.getRandom().nextInt();
-        b = (b == 0) ? 1 : b;
->>>>>>> master
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
@@ -91,7 +66,6 @@ public class UDivINodeIdealizationTests {
     }
 
     @DontCompile
-<<<<<<< HEAD
     public int udiv(int a, int b) {
         return Integer.divideUnsigned(a, b);
     }
@@ -128,6 +102,14 @@ public class UDivINodeIdealizationTests {
         }
 
         try {
+            Asserts.assertEQ(udiv(a, RANDOM_CONSTANT), magicDivConstant(a));
+            Asserts.assertEQ(udiv((char)a, RANDOM_CONSTANT), magicDivConstantBounded(a));
+            Asserts.assertNE(0, RANDOM_CONSTANT, "Expected an exception to be thrown");
+        } catch (ArithmeticException e) {
+            Asserts.assertEQ(0, RANDOM_CONSTANT, "Did not expect an exception to be thrown.");
+        }
+
+        try {
             Asserts.assertEQ(0, constantMod(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         }
@@ -137,7 +119,10 @@ public class UDivINodeIdealizationTests {
 
         Asserts.assertEQ(a, identity(a));
         Asserts.assertEQ(a, identityAgain(a));
+        Asserts.assertEQ(udiv(a, Integer.divideUnsigned((1 << 20) + 1, (1 << 20) + 1)), identityAgainButBig(a));
         Asserts.assertEQ(udiv(a, 8), divByPow2(a));
+        Asserts.assertEQ(udiv(a, Integer.MIN_VALUE), divByPow2Big(a));
+        Asserts.assertEQ(udiv(a, RANDOM_POWER_OF_2), divByPow2Random(a));
         Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
         Asserts.assertEQ(udiv(a, Math.min(b, -1)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
@@ -153,72 +138,25 @@ public class UDivINodeIdealizationTests {
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
     public int constantDiv(int x) {
-=======
-    public void assertResult(int a, int b, boolean shouldThrow) {
-        try {
-            Asserts.assertEQ(Integer.divideUnsigned(a, a), constant(a));
-            Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
-        } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
-        }
-
-        try {
-            Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(b, b)), identityThird(a, b));
-            Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
-        } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
-        }
-
-        try {
-            Asserts.assertEQ(Integer.divideUnsigned((a * b), b), retainDenominator(a, b));
-            Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
-        } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
-        }
-
-        Asserts.assertEQ(Integer.divideUnsigned(a, 1), identity(a));
-        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(13, 13)), identityAgain(a));
-        Asserts.assertEQ(Integer.divideUnsigned(a, 8), divByPow2(a), "divByPow2 " + a);
-        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.MIN_VALUE), divByPow2Big(a));
-        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned((1 << 20) + 1, (1 << 20) + 1)), identityAgainButBig(a));
-    }
-
-    @Test
-    @IR(failOn = {IRNode.UDIV})
-    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
-    // Checks x / x => 1
-    public int constant(int x) {
->>>>>>> master
         return Integer.divideUnsigned(x, x);
     }
 
     @Test
-<<<<<<< HEAD
     @IR(failOn = {IRNode.UDIV_I})
-=======
-    @IR(failOn = {IRNode.UDIV})
->>>>>>> master
     // Checks x / 1 => x
     public int identity(int x) {
         return Integer.divideUnsigned(x, 1);
     }
 
     @Test
-<<<<<<< HEAD
     @IR(failOn = {IRNode.UDIV_I})
-=======
-    @IR(failOn = {IRNode.UDIV})
->>>>>>> master
     // Checks x / (c / c) => x
     public int identityAgain(int x) {
         return Integer.divideUnsigned(x, Integer.divideUnsigned(13, 13));
     }
 
     @Test
-<<<<<<< HEAD
     @IR(failOn = {IRNode.UDIV_I})
-=======
-    @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public int identityAgainButBig(int x) {
         // (1 << 20) + 1 is an arbitrary integer that cannot be optimized by the power of 2 optimizations
@@ -226,8 +164,7 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV})
->>>>>>> master
+    @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public int identityThird(int x, int y) {
@@ -235,21 +172,6 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-<<<<<<< HEAD
-    @IR(counts = {IRNode.MUL_I, "1",
-                  IRNode.UDIV_I, "1",
-                  IRNode.DIV_BY_ZERO_TRAP, "1"
-                 }, applyIfPlatform = {"x64", "true"})
-    // Hotspot should keep the division because it may cause a division by zero trap
-    public int retainDenominator(int x, int y) {
-        return Integer.divideUnsigned(x * y, y);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.URSHIFT_I, "1"}, applyIfPlatform = {"x64", "true"})
-    // Checks x / 2^c0 => x >>> c0
-=======
     @IR(counts = {IRNode.MUL, "1",
             IRNode.UDIV_I, "1",
             IRNode.DIV_BY_ZERO_TRAP, "1"
@@ -259,20 +181,30 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV})
+    @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.URSHIFT, "1"})
     // Dividing an unsigned number by 8 is a trivial right shift by 3
->>>>>>> master
     public int divByPow2(int x) {
         return Integer.divideUnsigned(x, 8);
     }
 
     @Test
-<<<<<<< HEAD
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.CMP_U, "1",
-                  IRNode.CMOVE_I, "1"
-                 }, applyIfPlatform = {"x64", "true"})
+    @IR(counts = {IRNode.URSHIFT, "1"})
+    public int divByPow2Big(int x) {
+        return Integer.divideUnsigned(x, Integer.MIN_VALUE);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.URSHIFT, "1"})
+    public int divByPow2Random(int x) {
+        return Integer.divideUnsigned(x, RANDOM_POWER_OF_2);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.CMP_U, "1", IRNode.CMOVE_I, "1"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorCon(int x) {
         return Integer.divideUnsigned(x, -7);
@@ -280,9 +212,7 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.CMP_U, "1",
-                  IRNode.CMOVE_I, "1"
-                 }, applyIfPlatform = {"x64", "true"})
+    @IR(counts = {IRNode.CMP_U, "1", IRNode.CMOVE_I, "1"})
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorVar(int x, int y) {
         return Integer.divideUnsigned(x, Math.min(y, -1));
@@ -293,8 +223,7 @@ public class UDivINodeIdealizationTests {
     @IR(counts = {IRNode.MUL_L, "1",
                   IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
-                  IRNode.CONV_L2I, "1",
-                 }, applyIfPlatform = {"x64", "true"})
+                  IRNode.CONV_L2I, "1"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 13 lies inside the limit of a u32
     public int magicDiv13(int x) {
@@ -307,8 +236,7 @@ public class UDivINodeIdealizationTests {
                   IRNode.ADD_L, "1",
                   IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
-                  IRNode.CONV_L2I, "1",
-                 }, applyIfPlatform = {"x64", "true"})
+                  IRNode.CONV_L2I, "1"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 7 lies outside the limit of a u32 but inside the limit
     // of a u33
@@ -319,13 +247,24 @@ public class UDivINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.MUL_I, "1",
-                  IRNode.URSHIFT_I, "1"
-                 }, applyIfPlatform = {"x64", "true"})
+                  IRNode.URSHIFT_I, "1"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // When the dividend is bounded, we can use smaller constant and do not need to use
     // u64 arithmetic
     public int magicDiv13Bounded(int x) {
         return Integer.divideUnsigned((char)x, 13);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    public int magicDivConstant(int x) {
+        return Integer.divideUnsigned(x, RANDOM_CONSTANT);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    public int magicDivConstantBounded(int x) {
+        return Integer.divideUnsigned((char)x, RANDOM_CONSTANT);
     }
 
     @Test
@@ -345,7 +284,7 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UMOD_I})
-    @IR(counts = {IRNode.AND_I, "1"}, applyIfPlatform = {"x64", "true"})
+    @IR(counts = {IRNode.AND_I, "1"})
     // Checks x % 2^c0 => x & (2^c0 - 1)
     public int modByPow2(int x) {
         return Integer.remainderUnsigned(x, 8);
@@ -358,24 +297,10 @@ public class UDivINodeIdealizationTests {
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
                   IRNode.MUL_I, "1",
-                  IRNode.SUB_I, "1"
-                 }, applyIfPlatform = {"x64", "true"})
+                  IRNode.SUB_I, "1"})
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // The constant derived from 13 lies inside the limit of a u32
     public int magicMod13(int x) {
         return Integer.remainderUnsigned(x, 13);
-=======
-    @IR(failOn = {IRNode.UDIV})
-    @IR(counts = {IRNode.URSHIFT, "1"})
-    public int divByPow2Random(int x) {
-        return Integer.divideUnsigned(x, RANDOM_POWER_OF_2);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.UDIV})
-    @IR(counts = {IRNode.URSHIFT, "1"})
-    public int divByPow2Big(int x) {
-        return Integer.divideUnsigned(x, Integer.MIN_VALUE);
->>>>>>> master
     }
 }

@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
-=======
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
->>>>>>> master
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +34,6 @@
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-<<<<<<< HEAD
-=======
 
 class DivModIntegerNode : public Node {
 private:
@@ -60,7 +54,6 @@ private:
   }
 };
 
->>>>>>> master
 //------------------------------DivINode---------------------------------------
 // Integer division
 // Note: this is division as defined by JVMS, i.e., MinInt/-1 == MinInt.
@@ -224,34 +217,24 @@ public:
 // Unsigned integer modulus
 class UModINode : public DivModIntegerNode {
 public:
-<<<<<<< HEAD
-  UModINode( Node* c, Node* in1, Node* in2 ) : Node(c, in1, in2) {}
-=======
   UModINode(Node* c, Node* in1, Node* in2) : DivModIntegerNode(c, in1, in2) {}
->>>>>>> master
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------UModLNode---------------------------------------
 // Unsigned long modulus
 class UModLNode : public DivModIntegerNode {
 public:
-<<<<<<< HEAD
-  UModLNode( Node* c, Node* in1, Node* in2 ) : Node(c, in1, in2) {}
-=======
   UModLNode(Node* c, Node* in1, Node* in2) : DivModIntegerNode(c, in1, in2) {}
->>>>>>> master
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------DivModNode---------------------------------------

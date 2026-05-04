@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-#include <limits>
-#include <type_traits>
 
 // Compute magic multiplier and shift constant for converting a 32/64 bit
 // division by constant into a multiply/shift series.

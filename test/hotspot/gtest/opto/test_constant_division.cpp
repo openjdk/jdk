@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "opto/divconstants.hpp"
 #include "runtime/os.hpp"
-#include "utilities/growableArray.hpp"
 #include "unittest.hpp"
-
-#include <type_traits>
+#include "utilities/growableArray.hpp"
 
 // Generate a random positive integer of type T in a way that biases
 // towards smaller values

@@ -571,7 +571,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_L, "CMoveL");
     }
 
-<<<<<<< HEAD
     public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
     static {
         superWordNodes(CMOVE_VD, "CMoveVD");
@@ -580,7 +579,8 @@ public class IRNode {
     public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
     static {
         superWordNodes(CMOVE_VF, "CMoveVF");
-=======
+    }
+
     public static final String CMP_F = PREFIX + "CMP_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_F, "CmpF");
@@ -589,7 +589,6 @@ public class IRNode {
     public static final String CMP_D = PREFIX + "CMP_D" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_D, "CmpD");
->>>>>>> master
     }
 
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
