@@ -282,6 +282,10 @@ class Eval {
                 bindings.add(new BindingInfo(bindingName, EvalPretty.prettyExpr((JCTree) bindingTypeTree, false)));
             }
         } else {
+            DiagList dl = trialCompile(Wrap.methodWrap(userSource));
+            if (dl.hasErrors()){
+                return compileFailResult(dl, userSource, kindOfTree(unitTree));
+            }
             bindings = ExpressionToTypeInfo.enhancedLocalVariableDeclInferBindings(userSource, state, false);
         }
 

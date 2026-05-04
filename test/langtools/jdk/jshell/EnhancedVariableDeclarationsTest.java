@@ -144,6 +144,29 @@ public class EnhancedVariableDeclarationsTest extends KullaTesting {
     }
 
     @Test
+    public void testInferredPatternsNonExhaustive() {
+        assertEval("record Point(int x) {}");
+        assertEval("record Pair(int x, int y) {}");
+        assertEval("record Box<T>(T value) {}");
+        assertEval("record Holder(Object value) {}");
+        assertEval("interface IBox {}");
+        assertEval("record BoxImpl(int x) implements IBox {}");
+
+        assertDeclareFail("Pair(var x, var y) = new Object();", "compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type");
+        assertDeclareFail("Box(var value) = new Object();", "compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type");
+        assertDeclareFail("BoxImpl(var x) = (IBox) new BoxImpl(1);", "compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type");
+        assertDeclareFail("Holder(Point(var x)) = new Holder(new Point(1));", "compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type");
+    }
+
+    @Test
+    public void testInferredPatternsNotApplicable() {
+        assertEval("record Point(int x) {}");
+        assertEval("record Pair(int x, int y) {}");
+        assertDeclareFail("Point(var x) = \"just a string\";", "compiler.err.prob.found.req");
+        assertDeclareFail("Point(var x) = new Pair(1, 2);", "compiler.err.prob.found.req");
+    }
+
+    @Test
     public void testInferredMultipleComponentsNested() {
         assertEval("record Point(int a, int b) {}");
         assertEval("record NumberedPoint(Point p, int n) {}");

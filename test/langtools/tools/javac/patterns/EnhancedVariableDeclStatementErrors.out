@@ -18,8 +18,8 @@ EnhancedVariableDeclStatementErrors.java:21:20: compiler.err.prob.found.req: (co
 EnhancedVariableDeclStatementErrors.java:22:27: compiler.err.unexpected.type: kindname.value, kindname.class
 EnhancedVariableDeclStatementErrors.java:29:16: compiler.err.cant.resolve.location: kindname.variable, sx, , , (compiler.misc.location: kindname.class, EnhancedVariableDeclStatementErrors, null)
 EnhancedVariableDeclStatementErrors.java:34:19: compiler.err.already.defined: kindname.variable, sx, kindname.method, shadowing_error(EnhancedVariableDeclStatementErrors.Point)
-EnhancedVariableDeclStatementErrors.java:11:9: compiler.err.not.exhaustive.statement
-EnhancedVariableDeclStatementErrors.java:15:9: compiler.err.not.exhaustive.statement
+EnhancedVariableDeclStatementErrors.java:11:9: compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type: EnhancedVariableDeclStatementErrors.Point, java.lang.Object
+EnhancedVariableDeclStatementErrors.java:15:9: compiler.err.enhanced.local.variable.declaration.not.exhaustive.on.type: EnhancedVariableDeclStatementErrors.Point, EnhancedVariableDeclStatementErrors.OPoint
 - compiler.note.preview.filename: EnhancedVariableDeclStatementErrors.java, DEFAULT
 - compiler.note.preview.recompile
 22 errors

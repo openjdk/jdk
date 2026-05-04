@@ -667,7 +667,7 @@ public class Flow {
             }
 
             if (!checkExhaustiveSwitchProperty(tree.expr.pos(), tree.pattern, tree.expr.type).exhaustive()) {
-                log.error(tree, Errors.NotExhaustiveStatement);
+                log.error(tree, Errors.EnhancedLocalVariableDeclarationNotExhaustiveOnType(tree.pattern.type, tree.expr.type));
             }
 
             scan(tree.expr);
