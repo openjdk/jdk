@@ -264,8 +264,11 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
   oop res = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
   shenandoah_assert_not_in_cset_except(addr, res, (res == nullptr || heap->cancelled_gc()));
 
-  // Regardless of CAS result, we can skip SATB. If CAS failed, there was no store.
-  // If CAS succeeded, the previous memory value is equal to compare_value, which we know is live.
+  // If CAS succeeded, the previous memory value is now the result, throw it to SATB.
+  // If CAS failed, there was no store, so no SATB is needed.
+  if (res == compare_value) {
+    satb_enqueue(res);
+  }
   return res;
 }
 
