@@ -877,8 +877,7 @@ static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
     return true;
   }
   CompilerDirectiveMatcher matcher(mh, comp);
-  bool exclude = matcher.directive_set()->ExcludeOption;
-  return exclude;
+  return matcher.directive_set()->ExcludeOption;
 }
 
 static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
