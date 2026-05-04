@@ -1185,9 +1185,7 @@ WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompilerDirectiveMatcher matcher(mh, CompileBroker::compiler(comp_level));
-  bool result = matcher.directive_set()->PrintAssemblyOption;
-
-  return result;
+  return matcher.directive_set()->PrintAssemblyOption;
 WB_END
 
 WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring pattern))
