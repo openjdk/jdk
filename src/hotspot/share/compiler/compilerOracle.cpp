@@ -61,21 +61,21 @@ static const char* const default_compile_commands[] = {
 #endif
     nullptr };
 
-// CompLevel               | return value | -XX:CompileCommand bitmask
-// -------------------------------------------------------------------
-// 0 (interpreter)         | N/A          |  N/A
-// 1 (C1)                  |   1          |    1
-// 2 (C1 + counters)       |   2          |   10
-// 3 (C1 + counters + mdo) |   4          |  100
-// 4 (C2/JVMCI)            |   8          | 1000
-// All C1 levels           |   7          |  111
-// All levels              |  15          | 1111
+// CompLevel               | -XX:CompileCommand bitmask
+// ----------------------------------------------------
+// 0 (interpreter)         |  N/A
+// 1 (C1)                  |    1
+// 2 (C1 + counters)       |   10
+// 3 (C1 + counters + mdo) |  100
+// 4 (C2/JVMCI)            | 1000
+// All C1 levels           |  111
+// All levels              | 1111
 
 static const int comp_level_bitmask[CompLevel_count] = {0, 1, 10, 100, 1000};
 static const int comp_level_bitmask_all_levels = 1111;
 static const intx default_comp_level_argument = comp_level_bitmask_all_levels;
 
-inline int bitmask_applies_to_comp_level(int bitmask, int comp_level) {
+inline bool bitmask_applies_to_comp_level(int bitmask, int comp_level) {
   assert(comp_level > CompLevel_none && comp_level < CompLevel_count, "CompLevel out of bounds");
   return (bitmask / comp_level_bitmask[comp_level]) % 10 == 1;
 }
