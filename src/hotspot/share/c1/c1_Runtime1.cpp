@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,6 +982,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     constantPoolHandle constants(current, caller_method->constants());
     LinkResolver::resolve_field_access(result, constants, field_access.index(), caller_method, Bytecodes::java_code(code), CHECK);
     patch_field_offset = result.offset();
+    patch_field_type = result.field_type();
 
     // If we're patching a field which is volatile then at compile it
     // must not have been know to be volatile, so the generated code
@@ -993,22 +994,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     // handling in the volatile case.
 
     deoptimize_for_volatile = result.access_flags().is_volatile();
-
-    // If we are patching a field which should be atomic, then
-    // the generated code is not correct either, force deoptimizing.
-    // We need to only cover T_LONG and T_DOUBLE fields, as we can
-    // break access atomicity only for them.
-
-    // Strictly speaking, the deoptimization on 64-bit platforms
-    // is unnecessary, and T_LONG stores on 32-bit platforms need
-    // to be handled by special patching code when AlwaysAtomicAccesses
-    // becomes product feature. At this point, we are still going
-    // for the deoptimization for consistency against volatile
-    // accesses.
-
-    patch_field_type = result.field_type();
-    deoptimize_for_atomic = (AlwaysAtomicAccesses && (patch_field_type == T_DOUBLE || patch_field_type == T_LONG));
-
   } else if (load_klass_or_mirror_patch_id) {
     Klass* k = nullptr;
     switch (code) {
@@ -1081,17 +1066,12 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     ShouldNotReachHere();
   }
 
-  if (deoptimize_for_volatile || deoptimize_for_atomic) {
-    // At compile time we assumed the field wasn't volatile/atomic but after
-    // loading it turns out it was volatile/atomic so we have to throw the
+  if (deoptimize_for_volatile) {
+    // At compile time we assumed the field wasn't volatile but after
+    // loading it turns out it was volatile so we have to throw the
     // compiled code out and let it be regenerated.
     if (TracePatching) {
-      if (deoptimize_for_volatile) {
-        tty->print_cr("Deoptimizing for patching volatile field reference");
-      }
-      if (deoptimize_for_atomic) {
-        tty->print_cr("Deoptimizing for patching atomic field reference");
-      }
+      tty->print_cr("Deoptimizing for patching volatile field reference");
     }
 
     // It's possible the nmethod was invalidated in the last
