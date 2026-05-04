@@ -341,10 +341,9 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   }
 }
 
-LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr value, LIR_Opr tmp, CodeStub* stub)
+LIR_OpFlattenedArrayCheck::LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp, CodeStub* stub)
   : LIR_Op(lir_flat_array_check, LIR_OprFact::illegalOpr, nullptr)
   , _array(array)
-  , _value(value)
   , _tmp(tmp)
   , _stub(stub) {}
 
@@ -855,7 +854,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       LIR_OpFlattenedArrayCheck* opFlattenedArrayCheck = (LIR_OpFlattenedArrayCheck*)op;
 
       if (opFlattenedArrayCheck->_array->is_valid()) do_input(opFlattenedArrayCheck->_array);
-      if (opFlattenedArrayCheck->_value->is_valid()) do_input(opFlattenedArrayCheck->_value);
       if (opFlattenedArrayCheck->_tmp->is_valid())   do_temp(opFlattenedArrayCheck->_tmp);
 
       do_stub(opFlattenedArrayCheck->_stub);
@@ -1613,8 +1611,8 @@ void LIR_List::null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_nu
   }
 }
 
-void LIR_List::check_flat_array(LIR_Opr array, LIR_Opr value, LIR_Opr tmp, CodeStub* stub) {
-  LIR_OpFlattenedArrayCheck* c = new LIR_OpFlattenedArrayCheck(array, value, tmp, stub);
+void LIR_List::check_flat_array(LIR_Opr array, LIR_Opr tmp, CodeStub* stub) {
+  LIR_OpFlattenedArrayCheck* c = new LIR_OpFlattenedArrayCheck(array, tmp, stub);
   append(c);
 }
 
@@ -2153,7 +2151,6 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
 
 void LIR_OpFlattenedArrayCheck::print_instr(outputStream* out) const {
   array()->print(out);                   out->print(" ");
-  value()->print(out);                   out->print(" ");
   tmp()->print(out);                     out->print(" ");
   if (stub() != nullptr) {
     out->print("[label:" INTPTR_FORMAT "]", p2i(stub()->entry()));

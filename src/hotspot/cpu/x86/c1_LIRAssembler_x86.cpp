@@ -1566,16 +1566,6 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
   // declared type is Object[], abstract[], interface[] or VT.ref[]).
   // If this array is a flat array, take the slow path.
   __ test_flat_array_oop(op->array()->as_register(), op->tmp()->as_register(), *op->stub()->entry());
-  if (!op->value()->is_illegal()) {
-    // TODO 8350865 This is also used for profiling code, right? And in that case we don't care about null but just want to know if the array is flat or not.
-    // The array is not a flat array, but it might be null-free. If we are storing
-    // a null into a null-free array, take the slow path (which will throw NPE).
-    Label skip;
-    __ cmpptr(op->value()->as_register(), NULL_WORD);
-    __ jcc(Assembler::notEqual, skip);
-    __ test_null_free_array_oop(op->array()->as_register(), op->tmp()->as_register(), *op->stub()->entry());
-    __ bind(skip);
-  }
 }
 
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
@@ -2510,7 +2500,6 @@ void LIR_Assembler::arraycopy_inlinetype_check(Register obj, Register tmp, CodeS
   }
   if (is_dest) {
     __ test_null_free_array_oop(obj, tmp, *slow_path->entry());
-    // TODO 8350865 Flat no longer implies null-free, so we need to check for flat dest. Can we do better here?
     __ test_flat_array_oop(obj, tmp, *slow_path->entry());
   } else {
     __ test_flat_array_oop(obj, tmp, *slow_path->entry());

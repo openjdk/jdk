@@ -5075,7 +5075,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
         } else {
           generate_fair_guard(flat_array_test(refined_klass_node, /* flat = */ false), bailout);
         }
-        // TODO 8350865 This is not correct anymore. Write tests and fix logic similar to arraycopy.
+        // TODO 8251971 This is not correct anymore. Write tests and fix logic similar to arraycopy.
       } else if (UseArrayFlattening && (orig_t == nullptr || !orig_t->is_not_flat()) &&
                  // If dest is flat, src must be flat as well (guaranteed by src <: dest check if validated).
                  ((!tklass->is_flat() && tklass->can_be_inline_array()) || !can_validate)) {
@@ -6646,7 +6646,7 @@ bool LibraryCallKit::inline_arraycopy() {
       slow_region->add_req(not_subtype_ctrl);
     }
 
-    // TODO 8350865 Improve this. What about atomicity? Make sure this is always folded for type arrays.
+    // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
     // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
     Node* src_klass = load_object_klass(src);
     Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
@@ -6669,7 +6669,7 @@ bool LibraryCallKit::inline_arraycopy() {
     Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
     generate_fair_guard(tst, slow_region);
 
-    // TODO 8350865 This is too strong
+    // TODO 8251971 This is too strong
     generate_fair_guard(flat_array_test(src), slow_region);
     generate_fair_guard(flat_array_test(dest), slow_region);
 

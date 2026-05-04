@@ -163,7 +163,9 @@ bool Instruction::maybe_flat_array() const {
 bool Instruction::maybe_null_free_array() const {
   ciType* type = declared_type();
   if (type != nullptr) {
-    if (type->is_obj_array_klass()) {
+    if (type->is_loaded() && type->is_array_klass() && type->as_array_klass()->is_refined()) {
+      return type->as_array_klass()->is_elem_null_free();
+    } else if (type->is_obj_array_klass()) {
       // Due to array covariance, the runtime type might be a null-free array.
       if (type->as_obj_array_klass()->can_be_inline_array_klass()) {
         return true;
@@ -288,9 +290,8 @@ ciType* NewTypeArray::exact_type() const {
 }
 
 ciType* NewObjectArray::exact_type() const {
-  // TODO 8350865 The refined type should be used here
-  // return ciArrayKlass::make(klass(), false, true, true);
-  return ciArrayKlass::make(klass());
+  // Returns the refined type
+  return ciObjArrayKlass::make(klass());
 }
 
 ciType* NewMultiArray::exact_type() const {

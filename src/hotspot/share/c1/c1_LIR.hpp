@@ -1578,13 +1578,11 @@ class LIR_OpFlattenedArrayCheck: public LIR_Op {
 
  private:
   LIR_Opr       _array;
-  LIR_Opr       _value;
   LIR_Opr       _tmp;
   CodeStub*     _stub;
 public:
-  LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr value, LIR_Opr tmp, CodeStub* stub);
+  LIR_OpFlattenedArrayCheck(LIR_Opr array, LIR_Opr tmp, CodeStub* stub);
   LIR_Opr array() const                          { return _array;         }
-  LIR_Opr value() const                          { return _value;         }
   LIR_Opr tmp() const                            { return _tmp;           }
   CodeStub* stub() const                         { return _stub;          }
 
@@ -2429,7 +2427,7 @@ class LIR_List: public CompilationResourceObj {
 
   void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
   void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
-  void check_flat_array(LIR_Opr array, LIR_Opr value, LIR_Opr tmp, CodeStub* stub);
+  void check_flat_array(LIR_Opr array, LIR_Opr tmp, CodeStub* stub);
   void check_null_free_array(LIR_Opr array, LIR_Opr tmp);
   void substitutability_check(LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr equal_result, LIR_Opr not_equal_result,
                               ciKlass* left_klass, ciKlass* right_klass, LIR_Opr tmp1, LIR_Opr tmp2,
