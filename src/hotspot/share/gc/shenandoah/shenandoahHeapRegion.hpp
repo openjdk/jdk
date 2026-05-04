@@ -211,6 +211,7 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
   bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
+  bool is_regular_or_regular_pinned() const { auto cur_state = state(); return cur_state == _regular || cur_state == _pinned; }
 
   inline bool is_young() const;
   inline bool is_old() const;

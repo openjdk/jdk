@@ -446,7 +446,7 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
 }
 
 inline char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
+  return integer_cast<char>(_gc_state.raw_value());
 }
 
 inline bool ShenandoahHeap::is_gc_state(GCState state) const {
