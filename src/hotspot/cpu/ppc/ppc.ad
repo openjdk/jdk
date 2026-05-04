@@ -5931,6 +5931,7 @@ instruct loadConF_Ex(regF dst, immF src, iRegLdst tmp) %{
   effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
 
+  // See loadConP.
   ins_cannot_rematerialize(true);
 
   format %{ "LFS     $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
