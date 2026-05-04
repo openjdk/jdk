@@ -301,6 +301,12 @@ source %{
           return false;
         }
         break;
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        if (length_in_bytes > 16) {
+          return false; // NEON only, since SLI/USHR are not available in SVE
+        }
+        break;
       default:
         break;
     }
@@ -359,6 +365,11 @@ source %{
       case Op_MinVHF:
       case Op_SqrtVHF:
       case Op_FmaVHF:
+        return false;
+      // There's no SLI instruction in SVE, so we can't have an optimal vector
+      // rotate with masking when emitting code for SVE.
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
         return false;
       default:
         break;
@@ -567,13 +578,9 @@ instruct vloadcon(vReg dst, immI0 src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (UseSVE == 0) {
       uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+      int entry_idx = __ vector_iota_entry_index(bt);
       assert(length_in_bytes <= 16, "must be");
-      // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 16.
-      int offset = exact_log2(type2aelembytes(bt)) << 4;
-      if (is_floating_point_type(bt)) {
-        offset += 32;
-      }
-      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + offset));
+      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices(entry_idx)));
       if (length_in_bytes == 16) {
         __ ldrq($dst$$FloatRegister, rscratch1);
       } else {
@@ -1965,6 +1972,25 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
       assert(type2aelembytes(bt) == 4 || type2aelembytes(bt) == 8, "unsupported type");
       __ usra($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister, con);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector rotate with constant shift count (NEON only)
+// Uses USHR+SLI 2-instruction sequence instead of SHL+USHR+ORR 3-instruction decomposition.
+
+instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst);
+  format %{ "vrotateconstant $dst, $src, $shift" %}
+  ins_encode %{
+    int opc = this->ideal_Opcode();
+    int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
+                                      $shift$$constant : -$shift$$constant);
+    __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
+                          $src$$FloatRegister, raw_shift);
   %}
   ins_pipe(pipe_slow);
 %}

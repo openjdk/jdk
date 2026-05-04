@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,10 +91,14 @@ class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   }
 
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handle_async_exception(exception());
+    PRAGMA_DIAG_POP
   }
   oop exception() {
     assert(!_exception.is_empty(), "invariant");
