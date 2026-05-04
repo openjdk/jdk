@@ -49,6 +49,9 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 
 // Portions of code courtesy of Clifford Click
 
@@ -701,7 +704,7 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= nullptr;
 
-  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
+  TypeVect::VECTMASK = (TypeVect*)(new TypePVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
 
   if (Matcher::supports_scalable_vector()) {
@@ -732,6 +735,11 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
+#if INCLUDE_SHENANDOAHGC
+  ShenandoahBarrierSetC2::init();
+#endif //INCLUDE_SHENANDOAHGC
+
+  BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
   ArrayCopyNode::initialize_arraycopy_Type();
   OptoRuntime::initialize_types();
@@ -2458,7 +2466,7 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
 }
 
 // Create a vector mask type with the given element basic type and length.
-// - Returns "TypeVectMask" (PVectMask) for platforms that support the predicate
+// - Returns "TypePVectMask" (PVectMask) for platforms that support the predicate
 //   feature and it is implemented properly in the backend, allowing the mask to
 //   be stored in a predicate/mask register.
 // - Returns a normal vector type "TypeVectA ~ TypeVectZ" (NVectMask) otherwise,
@@ -2466,7 +2474,7 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
 const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    return TypeVectMask::make(elem_bt, length);
+    return TypePVectMask::make(elem_bt, length);
   } else {
     return make(elem_bt, length);
   }
@@ -2566,8 +2574,8 @@ void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
 }
 #endif
 
-const TypeVectMask* TypeVectMask::make(const BasicType elem_bt, uint length) {
-  return (TypeVectMask*) (new TypeVectMask(elem_bt, length))->hashcons();
+const TypePVectMask* TypePVectMask::make(const BasicType elem_bt, uint length) {
+  return (TypePVectMask*) (new TypePVectMask(elem_bt, length))->hashcons();
 }
 
 //=============================================================================
@@ -3481,7 +3489,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
 #ifdef _LP64
   if (_offset > 0 || _offset == Type::OffsetTop || _offset == Type::OffsetBot) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowklass = UseCompressedClassPointers;
+      _is_ptr_to_narrowklass = true;
     } else if (klass() == nullptr) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");

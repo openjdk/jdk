@@ -830,8 +830,7 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
   });
 }
 
-// Iterate ObjectMonitors where the owner == thread; this does NOT include
-// ObjectMonitors where owner is set to a stack-lock address in thread.
+// Iterate ObjectMonitors where the owner == thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
   int64_t key = ObjectMonitor::owner_id_from(thread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
@@ -1416,7 +1415,11 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  if (!mark.has_monitor()) {
+  // Note: When using ObjectMonitorTable we may observe an intermediate state,
+  // where the monitor is globally visible, but no thread has yet transitioned
+  // the markWord. To avoid reporting a false positive during this transition, we
+  // skip the `!mark.has_monitor()` test if we are using the ObjectMonitorTable.
+  if (!UseObjectMonitorTable && !mark.has_monitor()) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not think it has a monitor: obj="
                   INTPTR_FORMAT ", mark=" INTPTR_FORMAT, p2i(n),
@@ -1960,12 +1963,10 @@ ObjectMonitor* ObjectSynchronizer::inflate_into_object_header(oop object, Object
     const markWord mark = object->mark_acquire();
 
     // The mark can be in one of the following states:
-    // *  inflated     - Just return if using stack-locking.
-    //                   If using fast-locking and the ObjectMonitor owner
-    //                   is anonymous and the locking_thread owns the
-    //                   object lock, then we make the locking_thread
-    //                   the ObjectMonitor owner and remove the lock from
-    //                   the locking_thread's lock stack.
+    // *  inflated     - If the ObjectMonitor owner is anonymous and the
+    //                   locking_thread owns the object lock, then we make the
+    //                   locking_thread the ObjectMonitor owner and remove the
+    //                   lock from the locking_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
     // *  unlocked     - Aggressively inflate the object.
 
