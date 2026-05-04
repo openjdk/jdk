@@ -94,4 +94,6 @@ define_pd_global(bool,     TrapBasedRangeChecks,          true);
 // Ergonomics related flags
 define_pd_global(bool,     NeverActAsServerClassMachine, false);
 
+define_pd_global(size_t, ConstantTableSizeThreshold, 32 * 1024);
+
 #endif // CPU_PPC_C2_GLOBALS_PPC_HPP

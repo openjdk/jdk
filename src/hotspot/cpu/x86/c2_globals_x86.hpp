@@ -77,4 +77,5 @@ define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x8
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);
 
+define_pd_global(size_t, ConstantTableSizeThreshold, 0); //Currently unused.
 #endif // CPU_X86_C2_GLOBALS_X86_HPP

@@ -526,11 +526,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         }
       }
       uint nj_size = nj->size(C->regalloc());
-#ifdef PPC64
       if (_toc_is_short && nj->is_Mach()) {
         nj_size -= nj->as_Mach()->ins_toc_short_size();
       }
-#endif
       blk_size += nj_size;
 
       // Remember end of call offset
@@ -1335,7 +1333,7 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
     const_req = constant_table().alignment() + constant_table().size() + add_size;
-    PPC64_ONLY(_toc_is_short = (add_size <= 32 * 1024));
+    _toc_is_short = (add_size + constant_table().size() < ConstantTableSizeThreshold);
   }
 
   // Initialize the space for the BufferBlob used to find and verify

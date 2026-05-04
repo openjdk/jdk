@@ -2592,29 +2592,22 @@ encode %{
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
     bool is_short = ra_->C->output()->toc_is_short();
 
-    if (ra_->C->output()->in_scratch_emit_size()) {
-      if (is_short) {
-        __ ld($dst$$Register, 0, $toc$$Register);
-      } else {
-        __ addis($dst$$Register, $toc$$Register, 0);
-        __ ld($dst$$Register, 0, $dst$$Register);
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      address const_toc_addr = __ long_constant((jlong)$src$$constant);
+      if (const_toc_addr == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
       }
-      return;
-    }
-    address const_toc_addr = __ long_constant((jlong)$src$$constant);
-    if (const_toc_addr == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
+      ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
 
-    int toc_offset = __ offset_to_method_toc(const_toc_addr);
+      int toc_offset = __ offset_to_method_toc(const_toc_addr);
 
-    if (is_short) {
-      __ ld($dst$$Register, toc_offset, $toc$$Register);
-    } else {
-      __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $dst$$Register);
+      if (is_short) {
+        __ ld($dst$$Register, toc_offset, $toc$$Register);
+      } else {
+        __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $dst$$Register);
+      }
     }
   %}
 %} // encode
@@ -2727,43 +2720,35 @@ encode %{
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
     int toc_offset = 0;
     bool is_short = ra_->C->output()->toc_is_short();
-    if (ra_->C->output()->in_scratch_emit_size()) {
-      if (is_short) {
-        __ ld($dst$$Register, 0, $toc$$Register);
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      intptr_t val = $src$$constant;
+      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
+      address const_toc_addr;
+      RelocationHolder r; // Initializes type to none.
+      if (constant_reloc == relocInfo::oop_type) {
+        AddressLiteral a = __ constant_oop_address((jobject)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+        r = a.rspec();
+      } else if (constant_reloc == relocInfo::metadata_type) {
+        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
       } else {
-        __ addis($dst$$Register, $toc$$Register, 0);
-        __ ld($dst$$Register, 0, $dst$$Register);
+        const_toc_addr = __ long_constant((jlong)$src$$constant);
       }
-      return;
-    }
 
-    intptr_t val = $src$$constant;
-    relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-    address const_toc_addr;
-    RelocationHolder r; // Initializes type to none.
-    if (constant_reloc == relocInfo::oop_type) {
-      AddressLiteral a = __ constant_oop_address((jobject)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      r = a.rspec();
-    } else if (constant_reloc == relocInfo::metadata_type) {
-      AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-    } else {
-      const_toc_addr = __ long_constant((jlong)$src$$constant);
-    }
-
-    if (const_toc_addr == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    __ relocate(r); // If set above.
-    // Get the constant's TOC offset.
-    toc_offset = __ offset_to_method_toc(const_toc_addr);
-    if (is_short) {
-      __ ld($dst$$Register, toc_offset, $toc$$Register);
-    } else {
-      __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $dst$$Register);
+      if (const_toc_addr == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
+      __ relocate(r); // If set above.
+      // Get the constant's TOC offset.
+      toc_offset = __ offset_to_method_toc(const_toc_addr);
+      if (is_short) {
+        __ ld($dst$$Register, toc_offset, $toc$$Register);
+      } else {
+        __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $dst$$Register);
+      }
     }
   %}
 
@@ -5969,28 +5954,20 @@ instruct loadConF(regF dst, immF src, iRegLdst toc, iRegLdst tmp) %{
   ins_encode %{
     bool is_short = ra_->C->output()->toc_is_short();
 
-    if (ra_->C->output()->in_scratch_emit_size()) {
-      if (is_short) {
-        __ lfs($dst$$FloatRegister, 0, $toc$$Register);
-      } else {
-        __ addis($tmp$$Register, $toc$$Register, 0);
-        __ lfs($dst$$FloatRegister, 0, $tmp$$Register);
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      address float_address = __ float_constant($src$$constant);
+      if (float_address == nullptr) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
       }
-      return;
-    }
+      int toc_offset = __ offset_to_method_toc(float_address);
 
-    address float_address = __ float_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int toc_offset = __ offset_to_method_toc(float_address);
-
-    if (is_short) {
-      __ lfs($dst$$FloatRegister, toc_offset, $toc$$Register);
-    } else {
-      __ addis($tmp$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
-      __ lfs($dst$$FloatRegister, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $tmp$$Register);
+      if (is_short) {
+        __ lfs($dst$$FloatRegister, toc_offset, $toc$$Register);
+      } else {
+        __ addis($tmp$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(toc_offset));
+        __ lfs($dst$$FloatRegister, MacroAssembler::largeoffset_si16_si16_lo(toc_offset), $tmp$$Register);
+      }
     }
   %}
   ins_pipe(pipe_class_memory);

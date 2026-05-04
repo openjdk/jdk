@@ -60,5 +60,5 @@ define_pd_global(bool, UseTypeProfile,               false);
 
 define_pd_global(bool, OptimizeSinglePrecision,      true);
 define_pd_global(bool, CSEArrayLength,               true);
-
+define_pd_global(size_t, ConstantTableSizeThreshold, 0); //Currently Unused.
 #endif // CPU_ARM_C1_GLOBALS_ARM_HPP
