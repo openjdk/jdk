@@ -249,29 +249,41 @@ inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, T* addr) {
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value) {
-  oop res;
-  oop expected = compare_value;
-  do {
-    compare_value = expected;
-    res = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
-    expected = res;
-  } while ((compare_value != expected) && (resolve_forwarded(compare_value) == resolve_forwarded(expected)));
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  shenandoah_assert_not_in_cset_except(nullptr, compare_value, (compare_value == nullptr || heap->cancelled_gc()));
+  shenandoah_assert_not_in_cset_except(nullptr, new_value,         (new_value == nullptr || heap->cancelled_gc()));
 
-  // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
-  // because it must be the previous value.
-  res = load_reference_barrier(decorators, res, static_cast<T*>(nullptr));
-  satb_enqueue(res);
+  // Perform LRB on location to fix it up for this and all following CASes.
+  // This guarantees there are no false negatives due to concurrent evacuation,
+  // and that the read value is already passed by some LRB.
+  load_reference_barrier(decorators, RawAccess<>::oop_load(addr), addr);
+
+  oop res = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
+  shenandoah_assert_not_in_cset_except(addr, res, (res == nullptr || heap->cancelled_gc()));
+
+  // If CAS succeeded, the previous memory value is now the result, throw it to SATB.
+  // If CAS failed, there was no store, so no SATB is needed.
+  if (res == compare_value) {
+    satb_enqueue(res);
+  }
   return res;
 }
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value) {
-  oop previous = RawAccess<>::oop_atomic_xchg(addr, new_value);
-  // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
-  // because it must be the previous value.
-  previous = load_reference_barrier<T>(decorators, previous, static_cast<T*>(nullptr));
-  satb_enqueue(previous);
-  return previous;
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  shenandoah_assert_not_in_cset_except(nullptr, new_value, (new_value == nullptr || heap->cancelled_gc()));
+
+  // Perform LRB on location to fix it up for this and all following XCHGs.
+  // This guarantees that the read value is already passed by some LRB.
+  load_reference_barrier(decorators, RawAccess<>::oop_load(addr), addr);
+
+  oop res = RawAccess<>::oop_atomic_xchg(addr, new_value);
+  shenandoah_assert_not_in_cset_except(addr, res, (res == nullptr || heap->cancelled_gc()));
+
+  // XCHG always succeeds, and the previous memory value is now the result, throw it to SATB.
+  satb_enqueue(res);
+  return res;
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
