@@ -249,6 +249,8 @@ inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, T* addr) {
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "CAS only for strong refs");
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_not_in_cset_except(nullptr, compare_value, (compare_value == nullptr || heap->cancelled_gc()));
   shenandoah_assert_not_in_cset_except(nullptr, new_value,         (new_value == nullptr || heap->cancelled_gc()));
@@ -271,6 +273,8 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value) {
+  assert((decorators & ON_STRONG_OOP_REF) != 0, "XCHG only for strong refs");
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_not_in_cset_except(nullptr, new_value, (new_value == nullptr || heap->cancelled_gc()));
 
