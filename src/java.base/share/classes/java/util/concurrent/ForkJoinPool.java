@@ -2011,10 +2011,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 w.nsteals = ++nsteals;
                                 int prevSrc = src;
                                 w.source = src = qid; // volatile
-                                if (nt != null &&
-                                    (prevSrc < 0 ||
-                                     ((qid & 1) == 0 &&
-                                      (fifo != 0 || t.noUserHelp() != 0))))
+                                if (nt != null && (prevSrc != qid || (qid & 1) == 0))
                                     signalWork();     // propagate
                                 w.topLevelExec(t, fifo);
                                 rescan = true;
@@ -2065,10 +2062,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((phase = w.phase) != activePhase &&
                     (qs = queues) != null && (n = qs.length) > 0) {
                     for (int k = n, i = activePhase; k-- > 0 ; ++i) {
-                        WorkQueue q; int cap; ForkJoinTask<?>[] a;
+                        WorkQueue q; int cap, b, m; ForkJoinTask<?>[] a;
                         if ((q = qs[i & (n - 1)]) != null) {
                             if ((a = q.array) != null && (cap = a.length) > 0 &&
-                                a[q.base & (cap - 1)] != null) {
+                                (a[(b = q.base) & (m = cap - 1)] != null ||
+                                 a[(b + 1) & m] != null || a[(b + 2) & m] != null)) {
                                 WorkQueue v; int sp, j; long c;
                                 if (((c = ctl) & RC_MASK) <= qac &&
                                     (sp = (int)c) != 0 &&
@@ -2113,32 +2111,44 @@ public class ForkJoinPool extends AbstractExecutorService
             long deadline = 0L;
             int steps = 0, activePhase = phase + IDLE;
             while ((phase = w.phase) != activePhase && (runState & STOP) == 0L) {
-                boolean trimmable = false;    // true if at head and quiescent
+                boolean trimmable = false;    // true if at ctl head and quiescent
+                int spins = 0, step;
                 long d = 0L, c;
-                if ((int)(c = ctl) == activePhase && (c & RC_MASK) == 0L) {
-                    trimmable = true;
-                    boolean trim = false;
-                    long now = System.currentTimeMillis();
-                    if (deadline == 0L) {
-                        d = deadline = now + keepAlive;
-                        if (w.source == INVALID_ID)
+                if ((int)(c = ctl) == activePhase) {
+                    int tc = ((short)(c >>> TC_SHIFT) | 1) & SMASK;
+                    spins = tc + (tc << 1);   // proportional to 1 scan cost
+                    if ((c & RC_MASK) == 0L) {
+                        trimmable = true;
+                        boolean trim = false;
+                        long now = System.currentTimeMillis();
+                        if (deadline == 0L) {
+                            d = deadline = now + keepAlive;
+                            if (w.source == INVALID_ID)
+                                trim = true;
+                        }
+                        else if ((d = deadline) - now <= TIMEOUT_SLOP)
                             trim = true;
+                        if (trim && tryTrim(w, c, activePhase))
+                            break;
                     }
-                    else if ((d = deadline) - now <= TIMEOUT_SLOP)
-                        trim = true;
-                    if (trim && tryTrim(w, c, activePhase))
-                        break;
                 }
-                if (steps == 1)              // enable unpark
-                    w.parking = activePhase;
-                else if (steps > 1)
-                    Thread.interrupted();    // clear status
-                if ((phase = w.phase) == activePhase)
-                    break;
-                if (steps++ == 0)            // yield before park
-                    Thread.yield();
-                else
+                if ((step = steps++) == 0) {  // spin or yield before park
+                    for (int s = spins; (phase = w.phase) != activePhase && --s > 0;)
+                        Thread.onSpinWait();  // spin at head
+                    if (phase == activePhase)
+                        break;
+                    if (spins == 0)
+                        Thread.yield();
+                }
+                else {
+                    if (step == 1)            // enable unpark
+                        w.parking = activePhase;
+                    else
+                        Thread.interrupted(); // clear status
+                    if ((phase = w.phase) == activePhase)
+                        break;
                     U.park(trimmable, d);
+                }
             }
             LockSupport.setCurrentBlocker(null);
         }
