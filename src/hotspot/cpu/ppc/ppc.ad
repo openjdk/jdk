@@ -5863,7 +5863,9 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
 instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
+
   ins_num_consts(1);
+
   ins_toc_short_size(4);
   format %{ "LD      $dst, offset, $toc \t// load ptr $src from TOC" %}
   size(8);
@@ -5938,7 +5940,9 @@ instruct loadConF_Ex(regF dst, immF src, iRegLdst tmp) %{
 instruct loadConD(regD dst, immD src, iRegLdst toc, iRegLdst tmp) %{
   effect(DEF dst, USE src, USE toc, USE tmp);
   ins_cost(MEMORY_REF_COST);
+
   ins_num_consts(1);
+
   ins_toc_short_size(4);
   format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC" %}
   size(8);
@@ -5979,7 +5983,7 @@ instruct loadConD_Ex(regD dst, immD src, iRegLdst tmp) %{
   match(Set dst src);
   effect(TEMP tmp);
   ins_cost(MEMORY_REF_COST);
-
+  // See loadConP.
   ins_cannot_rematerialize(true);
 
   format %{ "ConD    $dst, offset, $constanttablebase \t// load $src from table, postalloc expanded" %}
