@@ -235,18 +235,12 @@ final class ProviderConfig {
         }
         try {
             Provider p = ProviderLoader.INSTANCE.load(provName);
-            if (p != null) {
-                if (hasArgument()) {
-                    p = p.configure(argument);
-                }
-                if (debug != null) {
-                    debug.println("Loaded provider " + p.getName());
-                }
-            } else {
-                if (debug != null) {
-                    debug.println("Error loading provider " +
-                        ProviderConfig.this);
-                }
+            if (debug != null) {
+                debug.println(p != null ?
+                    "Loaded provider " + p.getName() :
+                    "Error loading provider " + ProviderConfig.this);
+            }
+            if (p == null) {
                 disableLoad();
             }
             return p;
