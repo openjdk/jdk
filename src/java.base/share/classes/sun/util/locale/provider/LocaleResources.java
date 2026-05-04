@@ -695,7 +695,6 @@ public class LocaleResources {
      */
     private String resolveInputSkeleton(String type) {
         var regionToSkeletonMap = INPUT_SKELETONS.get().get(type);
-        var hour = "h";
 
         if (regionToSkeletonMap != null) {
             for (var region: new String[] {
@@ -703,14 +702,14 @@ public class LocaleResources {
                 locale.getCountry(),
                 locale.getLanguage() + "-001",
                 "001"}) {
-                hour = regionToSkeletonMap.get(region);
+                var hour = regionToSkeletonMap.get(region);
                 if (hour != null) {
-                    break;
+                    return hour;
                 }
             }
         }
 
-        return hour;
+        return "h";
     }
 
     /**
