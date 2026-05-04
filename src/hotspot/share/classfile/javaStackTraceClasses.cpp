@@ -22,11 +22,6 @@
  *
  */
 
-#include "cds/aotMetaspace.hpp"
-#include "cds/aotReferenceObjSupport.hpp"
-#include "cds/archiveBuilder.hpp"
-#include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClassesImpl.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -34,55 +29,43 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
-#include "code/dependencyContext.hpp"
 #include "code/pcDesc.hpp"
-#include "jvm.h"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/init.hpp"
-#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/utf8.hpp"
 
 // Inline helper functions
 
 static inline int64_t merge_method_id_bci_and_version(u2 method_id, u2 bci, int version) {
-  return (int64_t)(((int64_t)version << 32) | build_int_from_shorts(method_id, bci));
+  return (int64_t)(((uint64_t)version << 32) | (uint32_t)build_int_from_shorts(method_id, bci));
 }
 
 static inline int version_at(int64_t merged) {
-  return (int)(merged >> 32);
+  return (int)((uint64_t)merged >> 32);
 }
 
 static inline int method_id_at(int64_t merged) {
-  return extract_low_short_from_int((unsigned int)merged);
+  return extract_low_short_from_int((uint32_t)merged);
 }
 
 static inline int bci_at(int64_t merged) {
-  return extract_high_short_from_int((unsigned int)merged);
+  return extract_high_short_from_int((uint32_t)merged);
 }
 
 static inline int get_line_number(Method* method, int bci) {
@@ -194,8 +177,6 @@ void java_lang_Throwable::print(oop throwable, outputStream* st) {
 
 
 static inline bool version_matches(Method* method, int version) {
-  // After this many redefines, the stack trace is unreliable.
-  assert(version < USHRT_MAX, "version is too big");
   return method != nullptr && (method->constants()->version() == version);
 }
 
