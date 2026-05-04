@@ -211,6 +211,156 @@ public:
   3. Implement the enhanced triggering decisions, and test on Extremem and on specjbb and on complete CI test suite.
 
 
+  Primitive functions:
+
+  // feeds into predict_mark_time()
+  void log_marked_young_words(double at_gc_start_time, size_t words_marked);
+
+  // Returns the most recently logged value
+  size_t marked_young_words()
+  // Uses linear prediction to predict a future value
+  size_t predict_marked_young_words(double at_gc_start_tiem);
+
+  // The stable remset is the size of remset minus the transient burst size
+  // feeds into predict_mark_time()
+  void log_stable_remset_WORDS(double at_gc_start_time, size_t remset_words);
+  // Uses linear prediction to predicat a future value
+  size_t predict_stable_remset_words(double at_gc_start_time);
+
+  // A remset burst size is the size by which the remset has grown due to the most recent cycle's old evacuations and promotions,
+  // including promotions in place.  All of this data is identified as DIRTY.
+  // feeds into predict_mark_time()
+  void log_burst_remset_words(size_t remset_words);
+  size_t predict_burst_remset_words();
+
+  // At tne end of evacuation, log words promoted by evacuation.  This is the growth of old used minus the live data promoted in
+  // place.  This is more accurate that promotion reserve.
+  void log_words_promoted_by_evacuation(size_t words_promoted);
+  size_t words_promoted_by_evacuation();
+
+  // Words evacuated from young to young
+  void log_young_evacuation_words(double at_gc_start_time, size_t young_words_evacuated)
+  size_t predict_young_evacuation_words(double at_gc_start_time);
+
+  // At end of choose_collection_set(), call this to identify how many regions will be promoted in place
+  void log_words_promoted_in_place(size_t promote_in_place_words))
+  void words_promoted_in_place()
+
+  // At the end of marking, we record how much memory was allocated during marking.  This represents an additional "floating
+  // garbage" workload that needs to be processed during update refs.
+  size_t log_words_allocated_during_mark(size_t words_allocated)
+  size_t words_allocated_during_mark()
+
+  // At the end of old marking, we update marked words in old.  This has the side effect of setting recently_promoted_words
+  // to zero.
+  void log_marked_old_words(size_t words_marked)
+  size_t marked_old_words();
+
+  // At the start of each evacuation, we add to the total of recently_promoted_words.  Doing this at final mark allows
+  // simpler invocations of predict_update_time().  Note that recently_promoted includes promotion_reserve plus planned
+  // promotion in place.
+  void add_to_recently_promoted_words(size_t recently_promoted)
+
+  // At the end of evacuation, we decrease recently_promoted_words by the unexpended promotion reserve.
+  void subtract_from_recently_promoted_words(size_t recently_not_promoted)
+  size_t recently_promoted_words()
+  
+
+
+  Nonprimitive functions:
+  // processed_words is sum of marked_young_words plus stable_remset_words plus burst_remset_words
+  void log_gc_mark_time(double at_gc_start_time, long processed_words, double mark_time)
+
+  // prediction based on sum of predict_marked_young_words() plus predict_stable_remset_words() plus predict_burst_remset_words()
+  double predict_mark_time(double at_gc_start_time)
+  
+  // The linear prediction model predicts evacuation time as a function of total words evacuated.  We sum the first three
+  // arguments to represent the independenet value.  evacuation_time is the dependent value.  Predictions include a stdev from
+  // the best-fit line.  
+  void log_gc_evac_time(size_t words_evacuated_to_young, size_t words_promoted_by_evacuation, size_t words_evacuated_to_old,
+                        double evacuation_time)
+
+   // Use this to predict evacuation time component of an anticipated GC cycle (before we have completed marking)
+   // The estimate is based on the total anticipated evacuation load, which is the sum of:
+   //     old_generation->get_promoted_reserve() / ShenandoahPromoEvacWaste, plus
+   //     old_generation->get_evacuation_reserve() / ShenandoahOldEvacWaste, plus
+   //     predict_young_evacuation_words(at_gc_start_time)
+   // Note that old_generation->get_promoted_reserve() includes promotions that may be implemented "in place".  Promotion
+   // in place is easier than promotion by evacuation, even including the extra costs to be paid during update references
+   // to coalesce and fill the pip region.  Thus, this represents a conservative approxmation.
+   double predict_evac_time(double at_gc_start_time)
+
+   // Use this to predict evacuation time component after we have completed marking.  After marking, we know "exactly" how
+   // may words will be evacuated.  This is the sum of all live data for regions in the collection set.  Our linear prediction
+   // model does not distinguish between words targeting young and old generations (for simplicity, even though it appears
+   // that words evacuated to old generation are more expensive than words evacuated to young generation).
+   double predict_evac_time(size_t words_to_be_evacuated, words_to_be_promoted_in_place)
+
+   // Kelvin TODO: promote-in-place C&F is performed during evacuation.  Should we move it to update refs?  We can recycle
+   // collection set regions after evacuation, but before C&F is finished.
+
+               
+   // At GC trigger time, we call this with conservative parameter values:
+   //               anticipated_live_young: predict_marked_young_words(at_gc_start_time) - 
+   //                                       (old_generation->get_promoted_reserve() / ShenandaohPromoEvacWaste)
+   //   anticipated_floating_garbage_young: current allocation_rate * predict_gc_mark_time (or accelerated consumption)
+   //          anticipated_young_evacuated: predict_young_evacuation_words(at_gc_start_time) +
+   //                                       old_generation->get_promoted_reserve() / ShenandoahPromoEvacWaste
+   //  anticipated_words_promoted_in_place: 0
+   //    if we are doing mixed_evacuations:
+   //
+   //                 anticipated_live_old: marked_old_words() + recently_promoted_words()
+   //            anticipated_old_evacuated: old_generation->get_evacuation_reserve() / ShenandoahOldEvacWaste
+   //         anticipated_old_remset_words: 0
+   //
+   //                            otherwise:
+   //
+   //                 anticipated_live_old: 0
+   //            anticipated_old_evacuated: 0
+   //         anticipated_old_remset_words: predict_stable_remset_words()
+   //                                       + old_generation->get_promoted_reserve() / ShenandoahPromoEvacWaste
+   //
+   // After mark, we call this with more accurate parameter values:
+   //               anticipated_live_young: marked_young_words()
+   //                                       - (words_promoted_in_place() + old_generation->get_promoted_reserve())
+   //                                       (Note: old_gen->get_promoted_reserve() has been adjusted by choose_cset)
+   //   anticipated_floating_garbage_young: words_allocated_duing_mark()
+   //          anticipated_young_evacuated: (cset->get_live_bytes_in_tenurable_bytes()
+   //                                        + cset->get_live_bytes_in_untenurable_regions()) / HeapWordSize
+   //  anticipated_words_promoted_in_place: words_promoted_in_place()
+   //    if we are doing mixed_evacuations:
+   //
+   //                 anticipated_live_old: marked_old_words() + recently_promoted_words()
+   //            anticipated_old_evacuated: cset->get_live_bytes_in_tenurable_regions()
+   //                                       + cset->get_old_bytes_reserved_for_evacuation()
+   //                                       (Note: this does not count opportunistic promotions from untenurable regions.
+   //                                        At the end of evacuation, we know exactly how much was promoted by evacuation and
+   //                                        we should use that: words_promoted_by_evacuation() as a replacement for
+   //                                        cset->get_live_bytes_in_tenurable_regions().  Assert that the replacement is
+   //                                        >= the original.)
+   //         anticipated_old_remset_words: 0
+   //
+   //                            otherwise:
+   //
+   //                 anticipated_live_old: 0
+   //            anticipated_old_evacuated: 0
+   //         anticipated_old_remset_words: predict_stable_remset_words() + cset->get_live_bytes_in_tenurable_regions()
+   //                                       (Note: this does not count opportunistic promotions from untenurable regions.
+   //                                        At the end of evacuation, we know exactly how much was promoted by evacuation and
+   //                                        we should use that: words_promoted_by_evacuation() as a replacement for
+   //                                        cset->get_live_bytes_in_tenurable_regions().  Assert that the replacement is
+   //                                        >= the original.)
+   //
+   // The linear prediction model is based on the total number of words to be evacuated.  This is computed as:
+   //    (anticipated_live_young + anticipated_floating_garbage_young - anticipated_young_evacuated) +
+   //    (anticipated_live_old + anticipated_words_promoted_in_place - anticipated_old_evacuated) +
+   //    anticipated_old_remset_words
+   // We assert that (anticipated_old_remset_words == 0) || (anticipated_old_evacuated == 0) 
+   double predict_update_time(size_t anticipated_live_young,
+                              size_t anticipated_floating_garbage_young, size_t anticipated_young_evacuated,
+                              size_t anticipated_live_old,
+                              size_t anticipated_old_evacuated,
+                              size_t anticipated_words_promoted_in_place, size_t anticipated_old_remset_words)
 
   set_anticipated_remset_words() should be based on historical precedent.
   1. At the end of each GC cycle, remember how many words were moved into old by that GC cycle.  This includes
