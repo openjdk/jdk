@@ -32,27 +32,29 @@ import java.awt.image.Raster;
 
 public class InterleavedRasterTest {
 
-   public static void main(String[] args) {
-     int w = 1;
-     int h = 1;
-     int b = -1;
-      try {
-          Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
-      } catch (IllegalArgumentException e) {
-      }
-      w = 100_000;
-      h = 1;
-      b = 100_000;
-      try {
-          Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
-      } catch (IllegalArgumentException e) {
-      }
-      w = 10_000;
-      h = 10_000;
-      b = 10_000;
-      try {
-          Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
-      } catch (IllegalArgumentException e) {
-      }
-   }
+    public static void main(String[] args) {
+
+        int w = 1;
+        int h = 1;
+        int b = -1;
+        test(w, h, b);
+
+        w = 100_000;
+        h = 1;
+        b = 100_000;
+        test(w, h, b);
+
+        w = 10_000;
+        h = 10_000;
+        b = 10_000;
+        test(w, h, b);
+    }
+
+    static void test(int w, int h, int b) {
+        try {
+            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, b, null);
+            throw new RuntimeException("No IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+        }
+    }
 }
