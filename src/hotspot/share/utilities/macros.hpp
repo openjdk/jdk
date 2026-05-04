@@ -552,11 +552,6 @@
 #define MACOS_AARCH64 1
 #endif
 
-#define WINDOWS_AARCH64_ONLY(x) WINDOWS_ONLY(AARCH64_ONLY(x))
-#if defined(_WINDOWS) && defined(AARCH64)
-#define WINDOWS_AARCH64 1
-#endif
-
 #if defined(RISCV32) || defined(RISCV64)
 #define RISCV
 #define RISCV_ONLY(code) code

@@ -29,9 +29,8 @@
 // CRT-provided TLS slot for this module (jvm.dll), set by the OS loader.
 extern "C" unsigned long _tls_index;
 
-// TLS offset read by the assembly code in `aarch64_get_thread_helper()`.  This
-// offset is initialized by `initialize_thr_current_tls_offset()`.
-extern "C" int64_t _jvm_thr_current_tls_offset = 0;
+// TLS offset read by the assembly code in `aarch64_get_thread_helper()`.
+extern "C" int64_t _jvm_thr_current_tls_offset = JavaThread::get_thr_tls_offset();
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
@@ -95,12 +94,10 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
 void JavaThread::cache_global_variables() { }
 
-void initialize_thr_current_tls_offset() {
-  JavaThread::initialize_thr_current_tls_offset();
-}
-
-void JavaThread::initialize_thr_current_tls_offset() {
-  static bool init_thr_tls_offset = []() {
+int64_t JavaThread::get_thr_tls_offset() {
+  // Use magic statics to ensure that only one thread initializes the static
+  // variable, making the following code both thread safe and efficient.
+  static int64_t thr_tls_offset = []() {
     char* tebPointer = (char*)NtCurrentTeb();
 
     // 0x58 is the offset of ThreadLocalStoragePointer within the TEB.  This is
@@ -119,8 +116,8 @@ void JavaThread::initialize_thr_current_tls_offset() {
     // assembly can load directly.  In subsequent calls to
     // `aarch64_get_thread_helper()`, the assembly will read the TEB to find the
     // TLS block and then add this offset to find `Thread::_thr_current`.
-    _jvm_thr_current_tls_offset = (int64_t)(curr_ptr - tls_block);
-
-    return true;
+    return (int64_t)(curr_ptr - tls_block);
   }();
+
+  return thr_tls_offset;
 }
