@@ -100,14 +100,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
-}
-
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
@@ -272,7 +264,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
   reset_cancellation_time();
-  _oom_evac_handler.clear();
 }
 
 inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
