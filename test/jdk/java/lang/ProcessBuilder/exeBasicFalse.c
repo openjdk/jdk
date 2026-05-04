@@ -21,18 +21,10 @@
  * questions.
  */
 
-package jdk.internal.vm;
-
 /**
- * Defines methods that use package-private methods on ThreadSnapshot.
+ * Command line program to return exit status 1.
+ * Note: the file name prefix "exe" identifies the source should be built into BasicFalse(.exe).
  */
-public class Helper {
-
-    /**
-     * Uses ThreadSnapshot.of(Thread) to take a snapshot of the given thread, returning
-     * {@code true} if the thread is alive.
-     */
-    public static boolean isAlive(Thread thread) {
-        return ThreadSnapshot.of(thread) != null;
-    }
+int main(int argc, char** argv) {
+    return 1;
 }

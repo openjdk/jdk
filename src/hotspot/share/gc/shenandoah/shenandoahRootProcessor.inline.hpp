@@ -163,7 +163,7 @@ public:
 
       // Update region liveness data
       ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
-      if (region->is_regular() || region->is_regular_pinned()) {
+      if (region->is_regular_or_regular_pinned()) {
         assert(!ShenandoahHeapRegion::requires_humongous(invisible_root_word_size), "Must not be humongous.");
         region->increase_live_data_alloc_words(invisible_root_word_size);
       } else if (region->is_humongous_start()) {

@@ -1329,9 +1329,14 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
-void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slow_path) {
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slow_path);
+#undef __
+#endif // COMPILER2
+
+#define __ masm->
+
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path) {
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
   __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
@@ -1343,7 +1348,6 @@ void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, R
 }
 
 #undef __
-#endif // COMPILER2
 
 static int patch_barrier_relocation_offset(int format) {
   switch (format) {

@@ -45,47 +45,6 @@
 
 #define __ masm->
 
-static void save_machine_state(MacroAssembler* masm, bool handle_gpr, bool handle_fp) {
-  if (handle_gpr) {
-    __ push_IU_state();
-  }
-
-  if (handle_fp) {
-    // Some paths can be reached from the c2i adapter with live fp arguments in registers.
-    assert(Argument::n_float_register_parameters_j == 8, "8 fp registers to save at java call");
-
-    const int xmm_size = wordSize * 2;
-    __ subptr(rsp, xmm_size * 8);
-    __ movdbl(Address(rsp, xmm_size * 0), xmm0);
-    __ movdbl(Address(rsp, xmm_size * 1), xmm1);
-    __ movdbl(Address(rsp, xmm_size * 2), xmm2);
-    __ movdbl(Address(rsp, xmm_size * 3), xmm3);
-    __ movdbl(Address(rsp, xmm_size * 4), xmm4);
-    __ movdbl(Address(rsp, xmm_size * 5), xmm5);
-    __ movdbl(Address(rsp, xmm_size * 6), xmm6);
-    __ movdbl(Address(rsp, xmm_size * 7), xmm7);
-  }
-}
-
-static void restore_machine_state(MacroAssembler* masm, bool handle_gpr, bool handle_fp) {
-  if (handle_fp) {
-    const int xmm_size = wordSize * 2;
-    __ movdbl(xmm0, Address(rsp, xmm_size * 0));
-    __ movdbl(xmm1, Address(rsp, xmm_size * 1));
-    __ movdbl(xmm2, Address(rsp, xmm_size * 2));
-    __ movdbl(xmm3, Address(rsp, xmm_size * 3));
-    __ movdbl(xmm4, Address(rsp, xmm_size * 4));
-    __ movdbl(xmm5, Address(rsp, xmm_size * 5));
-    __ movdbl(xmm6, Address(rsp, xmm_size * 6));
-    __ movdbl(xmm7, Address(rsp, xmm_size * 7));
-    __ addptr(rsp, xmm_size * 8);
-  }
-
-  if (handle_gpr) {
-    __ pop_IU_state();
-  }
-}
-
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                        Register src, Register dst, Register count) {
 
@@ -130,20 +89,27 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ testb(gc_state, flags);
       __ jcc(Assembler::zero, L_done);
 
-      save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
-
-      assert(src == rdi, "expected");
-      assert(dst == rsi, "expected");
-      assert(count == rdx, "expected");
-      if (UseCompressedOops) {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop),
-                        src, dst, count);
-      } else {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop),
-                        src, dst, count);
+      __ push_call_clobbered_registers(/* save_fpu = */ false);
+      // If arguments are not in proper places, shuffle them.
+      // Doing this via the stack is the most straight-forward way to avoid
+      // accidentally smashing any register.
+      if (c_rarg0 != src || c_rarg1 != dst || c_rarg2 != count) {
+        __ push(src);
+        __ push(dst);
+        __ push(count);
+        __ pop(c_rarg2);
+        __ pop(c_rarg1);
+        __ pop(c_rarg0);
       }
+      address target = nullptr;
+      if (UseCompressedOops) {
+        target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop);
+      } else {
+        target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop);
+      }
+      __ call_VM_leaf(target, 3);
 
-      restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ false);
+      __ pop_call_clobbered_registers(/* restore_fpu = */ false);
 
       __ bind(L_done);
     }
@@ -178,15 +144,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
 void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
                                                  Register obj,
                                                  Register pre_val,
-                                                 Register tmp,
-                                                 bool tosca_live,
-                                                 bool expand_call) {
+                                                 Register tmp) {
   assert(ShenandoahSATBBarrier, "Should be checked by caller");
-
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
   const Register thread = r15_thread;
 
   Label done;
@@ -208,7 +167,12 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
 
   // Do we need to load the previous value?
   if (obj != noreg) {
-    __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
+    if (UseCompressedOops) {
+      __ movl(pre_val, Address(obj, 0));
+      __ decode_heap_oop(pre_val);
+    } else {
+      __ movq(pre_val, Address(obj, 0));
+    }
   }
 
   // Is the previous value null?
@@ -232,54 +196,22 @@ void ShenandoahBarrierSetAssembler::satb_barrier(MacroAssembler* masm,
   __ jmp(done);
 
   __ bind(runtime);
-  // save the live input values
-  if(tosca_live) __ push(rax);
 
-  if (obj != noreg && obj != rax)
-    __ push(obj);
+  // Slow-path call.
+  // Some paths can be reached from the c2i adapter with live fp arguments in registers.
+  __ enter();
+  __ push_call_clobbered_registers(/* save_fpu = */ true);
 
-  if (pre_val != rax)
-    __ push(pre_val);
-
-  // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // that checks that the *(ebp+frame::interpreter_frame_last_sp) == nullptr.
-  //
-  // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
-  // the caller frame and so this check will most likely fail at runtime.
-  //
-  // Expanding the call directly bypasses the generation of the check.
-  // So when we do not have have a full interpreter frame on the stack
-  // expand_call should be passed true.
-
-  // We move pre_val into c_rarg0 early, in order to avoid smashing it, should
-  // pre_val be c_rarg1 (where the call prologue would copy thread argument).
-  // Note: this should not accidentally smash thread, because thread is always r15.
   assert(thread != c_rarg0, "smashed arg");
   if (c_rarg0 != pre_val) {
     __ mov(c_rarg0, pre_val);
   }
 
-  if (expand_call) {
-    assert(pre_val != c_rarg1, "smashed arg");
-    if (c_rarg1 != thread) {
-      __ mov(c_rarg1, thread);
-    }
-    // Already moved pre_val into c_rarg0 above
-    __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), 1);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), c_rarg0);
-  }
+  // Calling with super_call_VM_leaf with c_rarg0 bypasses interpreter checks and avoids any moves.
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_barrier_pre), c_rarg0);
 
-  // save the live input values
-  if (pre_val != rax)
-    __ pop(pre_val);
-
-  if (obj != noreg && obj != rax)
-    __ pop(obj);
-
-  if(tosca_live) __ pop(rax);
+  __ pop_call_clobbered_registers(/* restore_fpu = */ true);
+  __ leave();
 
   __ bind(done);
 }
@@ -351,111 +283,51 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ jcc(Assembler::zero, not_cset);
   }
 
-  save_machine_state(masm, /* handle_gpr = */ false, /* handle_fp = */ true);
-
-  // The rest is saved with the optimized path
-
-  uint num_saved_regs = 4 + (dst != rax ? 1 : 0) + 4 + (UseAPX ? 16 : 0);
-  __ subptr(rsp, num_saved_regs * wordSize);
-  uint slot = num_saved_regs;
+  // Slow-path call.
+  // Save registers that can be clobbered by call.
+  // Some paths can be reached from the c2i adapter with live fp arguments in registers.
+  __ enter();
   if (dst != rax) {
-    __ movptr(Address(rsp, (--slot) * wordSize), rax);
+    __ push(rax);
   }
-  __ movptr(Address(rsp, (--slot) * wordSize), rcx);
-  __ movptr(Address(rsp, (--slot) * wordSize), rdx);
-  __ movptr(Address(rsp, (--slot) * wordSize), rdi);
-  __ movptr(Address(rsp, (--slot) * wordSize), rsi);
-  __ movptr(Address(rsp, (--slot) * wordSize), r8);
-  __ movptr(Address(rsp, (--slot) * wordSize), r9);
-  __ movptr(Address(rsp, (--slot) * wordSize), r10);
-  __ movptr(Address(rsp, (--slot) * wordSize), r11);
-  // Save APX extended registers r16–r31 if enabled
-  if (UseAPX) {
-    __ movptr(Address(rsp, (--slot) * wordSize), r16);
-    __ movptr(Address(rsp, (--slot) * wordSize), r17);
-    __ movptr(Address(rsp, (--slot) * wordSize), r18);
-    __ movptr(Address(rsp, (--slot) * wordSize), r19);
-    __ movptr(Address(rsp, (--slot) * wordSize), r20);
-    __ movptr(Address(rsp, (--slot) * wordSize), r21);
-    __ movptr(Address(rsp, (--slot) * wordSize), r22);
-    __ movptr(Address(rsp, (--slot) * wordSize), r23);
-    __ movptr(Address(rsp, (--slot) * wordSize), r24);
-    __ movptr(Address(rsp, (--slot) * wordSize), r25);
-    __ movptr(Address(rsp, (--slot) * wordSize), r26);
-    __ movptr(Address(rsp, (--slot) * wordSize), r27);
-    __ movptr(Address(rsp, (--slot) * wordSize), r28);
-    __ movptr(Address(rsp, (--slot) * wordSize), r29);
-    __ movptr(Address(rsp, (--slot) * wordSize), r30);
-    __ movptr(Address(rsp, (--slot) * wordSize), r31);
-  }
-  // r12-r15 are callee saved in all calling conventions
-  assert(slot == 0, "must use all slots");
+  __ push_call_clobbered_registers_except(rax, /* save_fpu = */ true);
 
   // Shuffle registers such that dst is in c_rarg0 and addr in c_rarg1.
-  Register arg0 = c_rarg0, arg1 = c_rarg1;
-  if (dst == arg1) {
-    __ lea(arg0, src);
-    __ xchgptr(arg1, arg0);
+  if (dst == c_rarg1) {
+    __ lea(c_rarg0, src);
+    __ xchgptr(c_rarg1, c_rarg0);
   } else {
-    __ lea(arg1, src);
-    __ movptr(arg0, dst);
+    __ lea(c_rarg1, src);
+    __ movptr(c_rarg0, dst);
   }
 
+  address target = nullptr;
   if (is_strong) {
     if (is_narrow) {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow);
     } else {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong);
     }
   } else if (is_weak) {
     if (is_narrow) {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow);
     } else {
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
+      target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
     }
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
+    target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
 
-  // Restore APX extended registers r31–r16 if previously saved
-  if (UseAPX) {
-    __ movptr(r31, Address(rsp, (slot++) * wordSize));
-    __ movptr(r30, Address(rsp, (slot++) * wordSize));
-    __ movptr(r29, Address(rsp, (slot++) * wordSize));
-    __ movptr(r28, Address(rsp, (slot++) * wordSize));
-    __ movptr(r27, Address(rsp, (slot++) * wordSize));
-    __ movptr(r26, Address(rsp, (slot++) * wordSize));
-    __ movptr(r25, Address(rsp, (slot++) * wordSize));
-    __ movptr(r24, Address(rsp, (slot++) * wordSize));
-    __ movptr(r23, Address(rsp, (slot++) * wordSize));
-    __ movptr(r22, Address(rsp, (slot++) * wordSize));
-    __ movptr(r21, Address(rsp, (slot++) * wordSize));
-    __ movptr(r20, Address(rsp, (slot++) * wordSize));
-    __ movptr(r19, Address(rsp, (slot++) * wordSize));
-    __ movptr(r18, Address(rsp, (slot++) * wordSize));
-    __ movptr(r17, Address(rsp, (slot++) * wordSize));
-    __ movptr(r16, Address(rsp, (slot++) * wordSize));
-  }
-  __ movptr(r11, Address(rsp, (slot++) * wordSize));
-  __ movptr(r10, Address(rsp, (slot++) * wordSize));
-  __ movptr(r9,  Address(rsp, (slot++) * wordSize));
-  __ movptr(r8,  Address(rsp, (slot++) * wordSize));
-  __ movptr(rsi, Address(rsp, (slot++) * wordSize));
-  __ movptr(rdi, Address(rsp, (slot++) * wordSize));
-  __ movptr(rdx, Address(rsp, (slot++) * wordSize));
-  __ movptr(rcx, Address(rsp, (slot++) * wordSize));
-
+  // Calling with super_call_VM_leaf with c_rarg0/1 bypasses interpreter checks and avoids any moves.
+  __ super_call_VM_leaf(target, c_rarg0, c_rarg1);
+  __ pop_call_clobbered_registers_except(rax, /* restore_fpu = */ true);
   if (dst != rax) {
     __ movptr(dst, rax);
-    __ movptr(rax, Address(rsp, (slot++) * wordSize));
+    __ pop(rax);
   }
-
-  assert(slot == num_saved_regs, "must use all slots");
-  __ addptr(rsp, num_saved_regs * wordSize);
-
-  restore_machine_state(masm, /* handle_gpr = */ false, /* handle_fp = */ true);
+  __ leave();
 
   __ bind(not_cset);
 
@@ -530,19 +402,10 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
   // 3: apply keep-alive barrier if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
-
-    assert_different_registers(dst, tmp1, r15_thread);
-    // Generate the SATB pre-barrier code to log the value of
-    // the referent field in an SATB buffer.
     satb_barrier(masm /* masm */,
                  noreg /* obj */,
                  dst /* pre_val */,
-                 tmp1 /* tmp */,
-                 true /* tosca_live */,
-                 true /* expand_call */);
-
-    restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
+                 tmp1 /* tmp */);
   }
 }
 
@@ -593,22 +456,19 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     __ lea(tmp1, dst);
   }
 
-  bool storing_non_null = (val != noreg);
-
   // 2: pre-barrier: SATB needs the previous value
   if (ShenandoahBarrierSet::need_satb_barrier(decorators, type)) {
     satb_barrier(masm,
                  tmp1 /* obj */,
                  tmp2 /* pre_val */,
-                 tmp3 /* tmp */,
-                 storing_non_null /* tosca_live */,
-                 false /* expand_call */);
+                 tmp3 /* tmp */);
   }
 
   // Store!
   BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
 
   // 3: post-barrier: card barrier needs store address
+  bool storing_non_null = (val != noreg);
   if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
     card_barrier(masm, tmp1);
   }
@@ -630,12 +490,11 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-#ifdef COMPILER2
-void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
   Label done;
 
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slowpath);
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, slowpath);
 
   // Check if the reference is null, and if it is, take the fast path.
   __ testptr(obj, obj);
@@ -649,7 +508,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
   __ jcc(Assembler::notZero, slowpath);
   __ bind(done);
 }
-#endif // COMPILER2
 
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.
