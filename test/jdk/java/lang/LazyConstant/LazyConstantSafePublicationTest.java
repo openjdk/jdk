@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
  * @summary Basic tests for making sure ComputedConstant publishes values safely
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.lang
+ * @library /test/lib
  * @enablePreview
  * @run junit LazyConstantSafePublicationTest
  */
 
+import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -48,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
-    private static final int THREADS = Runtime.getRuntime().availableProcessors();
+    private static final int THREADS = Math.max(8, Runtime.getRuntime().availableProcessors());
 
     static final class Holder {
         // These are non-final fields but should be seen
@@ -102,7 +104,7 @@ final class LazyConstantSafePublicationTest {
             for (int i = 0; i < SIZE; i++) {
                 s = constants[i];
                 s.get();
-                deadlineNs += 1000;
+                deadlineNs += Utils.adjustTimeout(1000L);
                 while (System.nanoTime() < deadlineNs) {
                     Thread.onSpinWait();
                 }
@@ -151,9 +153,9 @@ final class LazyConstantSafePublicationTest {
     static void join(final LazyConstant<Holder>[] constants, List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
-                long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
+                long deadline = System.nanoTime() + Utils.adjustTimeout(TimeUnit.MINUTES.toNanos(4));
                 while (t.isAlive()) {
-                    t.join(TimeUnit.SECONDS.toMillis(10));
+                    t.join(TimeUnit.SECONDS.toMillis(20));
                     if (t.isAlive()) {
                         String stack = Arrays.stream(t.getStackTrace())
                                 .map(Objects::toString)

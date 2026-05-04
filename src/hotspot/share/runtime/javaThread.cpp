@@ -37,6 +37,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -308,7 +309,7 @@ static jlong* resize_counters_array(jlong* old_counters, int current_size, int n
     if (new_size > current_size) {
       memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
     }
-    FREE_C_HEAP_ARRAY(jlong, old_counters);
+    FREE_C_HEAP_ARRAY(old_counters);
   }
   return new_counters;
 }
@@ -431,6 +432,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _no_safepoint_count(0),
   _visited_for_critical_count(false),
 #endif
+
+  NOT_PRODUCT(_bytecode_tracer_data{} COMMA)
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),
@@ -700,7 +703,7 @@ JavaThread::~JavaThread() {
 
 #if INCLUDE_JVMCI
   if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
+    FREE_C_HEAP_ARRAY(_jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
 }
@@ -1884,7 +1887,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != nullptr, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
+  FREE_C_HEAP_ARRAY((char*)_popframe_preserved_args);
   _popframe_preserved_args = nullptr;
   _popframe_preserved_args_size = 0;
 }
