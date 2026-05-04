@@ -42,12 +42,11 @@
  * {@link java.lang.NullPointerException NullPointerException} to be
  * thrown.
  *
- * <h2>Related Documentation</h2>
- *
- * <p> An excellent tutorial and overview of regular expressions is <a
+ * @note [header="Related Documentation:"]
+ * An excellent tutorial and overview of regular expressions is <a
  * href="http://www.oreilly.com/catalog/regex/"><i>Mastering Regular
  * Expressions</i>, Jeffrey E. F. Friedl, O'Reilly and Associates,
- * 1997.</a> </p>
+ * 1997</a>.
  *
  * @since 1.4
  * @author Mike McCloskey

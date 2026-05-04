@@ -47,8 +47,8 @@ import static javax.lang.model.SourceVersion.*;
  * Methods in this class may be overridden subject to their general
  * contract.
  *
- * <p id=note_for_subclasses><strong>WARNING:</strong> The {@code
- * ElementVisitor} interface implemented by this class may have
+ * @apiNote [header="Warning:" id=note_for_subclasses kind=important]
+ * The {@code ElementVisitor} interface implemented by this class may have
  * methods added to it or the {@link ElementKind ElementKind enum}
  * used in this class may have constants added to it in the future to
  * accommodate new, currently unknown, language structures added to
@@ -56,7 +56,7 @@ import static javax.lang.model.SourceVersion.*;
  * Therefore, methods whose names begin with {@code "visit"} may be
  * added to this class in the future; to avoid incompatibilities,
  * classes and subclasses which extend this class should not declare
- * any instance methods with names beginning with {@code "visit"}.</p>
+ * any instance methods with names beginning with {@code "visit"}.
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to directly or indirectly call

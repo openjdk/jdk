@@ -70,7 +70,7 @@ package java.util;
  * ordering as the input sorted set.  There is no way to enforce this
  * recommendation, as interfaces cannot contain constructors.
  *
- * <p>Note: several methods return subsets with restricted ranges.
+ * {@note Several methods return subsets with restricted ranges.
  * Such ranges are <i>half-open</i>, that is, they include their low
  * endpoint but not their high endpoint (where applicable).
  * If you need a <i>closed range</i> (which includes both endpoints), and
@@ -87,6 +87,7 @@ package java.util;
  * containing all of the Strings in {@code s} from {@code low} to
  * {@code high}, exclusive:<pre>
  *   SortedSet&lt;String&gt; sub = s.subSet(low+"\0", high);</pre>
+ * }
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
