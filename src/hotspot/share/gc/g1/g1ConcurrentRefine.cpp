@@ -135,12 +135,24 @@ G1ConcurrentRefineSweepState::~G1ConcurrentRefineSweepState() {
   delete _sweep_table;
 }
 
-void G1ConcurrentRefineSweepState::set_state_start_time() {
-  _state_start[static_cast<uint>(_state)] = Ticks::now();
+void G1ConcurrentRefineSweepState::enter_state(State state, Ticks timestamp) {
+  assert(state > State::Idle, "precondition");
+  assert(state != State::Last, "preconditon");
+  assert(_state == State(static_cast<uint>(state) - 1),
+         "must come from previous state but is %s", state_name(_state));
+
+  _state_start[static_cast<uint>(state)] = timestamp;
+  _state = state;
 }
 
-Tickspan G1ConcurrentRefineSweepState::get_duration(State start, State end) {
+Tickspan G1ConcurrentRefineSweepState::get_duration(State start, State end) const {
+  assert(end >= start, "precondition");
   return _state_start[static_cast<uint>(end)] - _state_start[static_cast<uint>(start)];
+}
+
+Tickspan G1ConcurrentRefineSweepState::time_since_start(Ticks completion_time) const {
+  assert(_state >= State::SwapGlobalCT, "precondition");
+  return completion_time - _state_start[static_cast<uint>(State::SwapGlobalCT)];
 }
 
 void G1ConcurrentRefineSweepState::reset_stats() {
@@ -151,35 +163,11 @@ void G1ConcurrentRefineSweepState::add_yield_during_sweep_duration(jlong duratio
   stats()->inc_yield_during_sweep_duration(duration);
 }
 
-bool G1ConcurrentRefineSweepState::advance_state(State next_state) {
-  bool result = is_in_progress();
-  if (result) {
-    _state = next_state;
-  } else {
-    _state = State::Idle;
-  }
-  return result;
-}
-
-void G1ConcurrentRefineSweepState::assert_state(State expected) {
-  assert(_state == expected, "must be %s but is %s", state_name(expected), state_name(_state));
-}
-
-void G1ConcurrentRefineSweepState::start_work() {
-  assert_state(State::Idle);
-
-  set_state_start_time();
-
+bool G1ConcurrentRefineSweepState::swap_global_card_table() {
+  enter_state(State::SwapGlobalCT, Ticks::now());
   _stats.reset();
 
-  _state = State::SwapGlobalCT;
-}
-
-bool G1ConcurrentRefineSweepState::swap_global_card_table() {
-  assert_state(State::SwapGlobalCT);
-
   GCTraceTime(Info, gc, refine) tm("Concurrent Refine Global Card Table Swap");
-  set_state_start_time();
 
   {
     // We can't have any new threads being in the process of created while we
@@ -190,21 +178,19 @@ bool G1ConcurrentRefineSweepState::swap_global_card_table() {
 
     MutexLocker mu(Threads_lock);
     // A GC that advanced the epoch might have happened, which already switched
-    // The global card table. Do nothing.
+    // the global card table. Do nothing.
     if (is_in_progress()) {
       G1BarrierSet::g1_barrier_set()->swap_global_card_table();
     }
   }
 
-  return advance_state(State::SwapJavaThreadsCT);
+  return is_in_progress();
 }
 
 bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
-  assert_state(State::SwapJavaThreadsCT);
+  enter_state(State::SwapJavaThreadsCT, Ticks::now());
 
   GCTraceTime(Info, gc, refine) tm("Concurrent Refine Java Thread CT swap");
-
-  set_state_start_time();
 
   {
     // Need to leave the STS to avoid potential deadlock in the handshake.
@@ -222,15 +208,13 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
     Handshake::execute(&cl);
   }
 
-  return advance_state(State::SynchronizeGCThreads);
-  }
+  return is_in_progress();
+}
 
 bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
-  assert_state(State::SynchronizeGCThreads);
+  enter_state(State::SynchronizeGCThreads, Ticks::now());
 
   GCTraceTime(Info, gc, refine) tm("Concurrent Refine GC Thread CT swap");
-
-  set_state_start_time();
 
   {
     class RendezvousGCThreads: public VM_Operation {
@@ -265,93 +249,148 @@ bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
     VMThread::execute(&op);
   }
 
-  return advance_state(State::SnapshotHeap);
+  return is_in_progress();
 }
 
-void G1ConcurrentRefineSweepState::snapshot_heap(bool concurrent) {
-  if (concurrent) {
-    GCTraceTime(Info, gc, refine) tm("Concurrent Refine Snapshot Heap");
+void G1ConcurrentRefineSweepState::snapshot_heap() {
+  enter_state(State::SnapshotHeap, Ticks::now());
 
-    assert_state(State::SnapshotHeap);
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Snapshot Heap");
 
-    set_state_start_time();
+  snapshot_heap_inner();
+}
 
+bool G1ConcurrentRefineSweepState::sweep_refinement_table(jlong& total_yield_duration) {
+  enter_state(State::SweepRT, Ticks::now());
+
+  while (true) {
+    {
+      GCTraceTime(Info, gc, refine) tm("Concurrent Refine Table Step");
+
+      G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
+
+      G1ConcurrentRefineSweepTask task(_sweep_table, &_stats, cr->num_threads_wanted());
+      cr->run_with_refinement_workers(&task);
+
+      assert(is_in_progress(), "inv");
+      if (task.sweep_completed()) {
+        return true;
+      }
+    }
+
+    assert(SuspendibleThreadSet::should_yield(), "must be");
+    // Interrupted by safepoint request.
+    {
+      jlong yield_start = os::elapsed_counter();
+      SuspendibleThreadSet::yield();
+
+      if (!is_in_progress()) {
+        return false;
+      } else {
+        jlong yield_during_sweep_duration = os::elapsed_counter() - yield_start;
+        log_trace(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
+                              TimeHelper::counter_to_millis(yield_during_sweep_duration));
+        total_yield_duration += yield_during_sweep_duration;
+      }
+    }
+  }
+}
+
+static void print_refinement_stats(const Tickspan& total_duration,
+                                   const Tickspan& pre_sweep_duration,
+                                   const G1ConcurrentRefineStats* stats) {
+  assert(total_duration >= Tickspan(), "must be non-negative");
+  assert(pre_sweep_duration >= Tickspan(), "must be non-negative");
+  assert(pre_sweep_duration <= total_duration, "must be bounded by total duration");
+
+  log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2fms) "
+                        "(scanned %zu clean %zu (%.2f%%) not_clean %zu (%.2f%%) not_parsable %zu "
+                        "refers_to_cset %zu (%.2f%%) still_refers_to_cset %zu (%.2f%%) no_cross_region %zu pending %zu)",
+                        total_duration.seconds() * 1000.0,
+                        pre_sweep_duration.seconds() * 1000.0,
+                        TimeHelper::counter_to_millis(stats->refine_duration()),
+                        stats->cards_scanned(),
+                        stats->cards_clean(),
+                        percent_of(stats->cards_clean(), stats->cards_scanned()),
+                        stats->cards_not_clean(),
+                        percent_of(stats->cards_not_clean(), stats->cards_scanned()),
+                        stats->cards_not_parsable(),
+                        stats->cards_refer_to_cset(),
+                        percent_of(stats->cards_refer_to_cset(), stats->cards_not_clean()),
+                        stats->cards_already_refer_to_cset(),
+                        percent_of(stats->cards_already_refer_to_cset(), stats->cards_not_clean()),
+                        stats->cards_no_cross_region(),
+                        stats->cards_pending()
+                       );
+}
+
+void G1ConcurrentRefineSweepState::handle_ongoing_refinement_at_safepoint() {
+  assert_at_safepoint();
+  if (!is_in_progress()) {
+    return;
+  }
+
+  const Ticks completion_time = Ticks::now();
+
+  const Tickspan total_duration = time_since_start(completion_time);
+  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, MIN2(_state, State::SweepRT));
+
+  print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
+
+  const bool is_in_sweep_rt = _state == State::SweepRT;
+
+  if (!is_in_sweep_rt) {
+    // Refinement has been interrupted without having a snapshot. There may
+    // be a mix of already swapped and not-swapped card tables assigned to threads,
+    // so they might have already dirtied the swapped card tables.
+    // Conservatively scan all (non-free, non-committed) region's card tables,
+    // creating the snapshot right now.
+    log_debug(gc, refine)("Create work from scratch");
     snapshot_heap_inner();
-
-    advance_state(State::SweepRT);
   } else {
-    assert_state(State::Idle);
-    assert_at_safepoint();
-
-    snapshot_heap_inner();
+    log_debug(gc, refine)("Continue existing work");
   }
+
+  _state = State::Idle;
 }
 
-void G1ConcurrentRefineSweepState::sweep_refinement_table_start() {
-  assert_state(State::SweepRT);
-
-  set_state_start_time();
+void G1ConcurrentRefineSweepState::cancel_refinement() {
+  _state = State::Idle;
 }
 
-bool G1ConcurrentRefineSweepState::sweep_refinement_table_step() {
-  assert_state(State::SweepRT);
+void G1ConcurrentRefineSweepState::complete_refinement(jlong total_yield_during_sweep_duration,
+                                                       jlong epoch_yield_duration,
+                                                       jlong next_epoch_start) {
+  enter_state(State::CompleteRefineWork, Ticks::now());
 
-  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Table Step");
+  GCTraceTime(Info, gc, refine) tm("Concurrent Refine Complete Work");
 
-  G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
+  add_yield_during_sweep_duration(total_yield_during_sweep_duration);
 
-  G1ConcurrentRefineSweepTask task(_sweep_table, &_stats, cr->num_threads_wanted());
-  cr->run_with_refinement_workers(&task);
+  const Ticks completion_time = Ticks::now();
 
-  if (task.sweep_completed()) {
-    advance_state(State::CompleteRefineWork);
-    return true;
-  } else {
-    return false;
+  const Tickspan total_duration = time_since_start(completion_time);
+  const Tickspan pre_sweep_duration = get_duration(State::SwapGlobalCT, State::SweepRT);
+
+  print_refinement_stats(total_duration, pre_sweep_duration, &_stats);
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1Policy* policy = g1h->policy();
+  policy->record_refinement_stats(stats());
+
+  {
+    MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
+    policy->record_dirtying_stats(TimeHelper::counter_to_millis(g1h->last_refinement_epoch_start()),
+                                  TimeHelper::counter_to_millis(next_epoch_start),
+                                  _stats.cards_pending(),
+                                  TimeHelper::counter_to_millis(epoch_yield_duration),
+                                  0 /* pending_cards_from_gc */,
+                                  _stats.cards_to_cset());
+    g1h->set_last_refinement_epoch_start(next_epoch_start, epoch_yield_duration);
   }
-}
+  _stats.reset();
 
-bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log) {
-  if (concurrent) {
-    assert_state(State::CompleteRefineWork);
-  } else {
-    // May have been forced to complete at any other time.
-    assert(is_in_progress() && _state != State::CompleteRefineWork, "must be but is %s", state_name(_state));
-  }
-
-  set_state_start_time();
-
-  if (print_log) {
-    G1ConcurrentRefineStats* s = &_stats;
-
-    State state_bounded_by_sweeprt = (_state == State::SweepRT || _state == State::CompleteRefineWork)
-                                   ? State::SweepRT : _state;
-
-    log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2fms) "
-                          "(scanned %zu clean %zu (%.2f%%) not_clean %zu (%.2f%%) not_parsable %zu "
-                          "refers_to_cset %zu (%.2f%%) still_refers_to_cset %zu (%.2f%%) no_cross_region %zu pending %zu)",
-                          get_duration(State::Idle, _state).seconds() * 1000.0,
-                          get_duration(State::Idle, state_bounded_by_sweeprt).seconds() * 1000.0,
-                          TimeHelper::counter_to_millis(s->refine_duration()),
-                          s->cards_scanned(),
-                          s->cards_clean(),
-                          percent_of(s->cards_clean(), s->cards_scanned()),
-                          s->cards_not_clean(),
-                          percent_of(s->cards_not_clean(), s->cards_scanned()),
-                          s->cards_not_parsable(),
-                          s->cards_refer_to_cset(),
-                          percent_of(s->cards_refer_to_cset(), s->cards_not_clean()),
-                          s->cards_already_refer_to_cset(),
-                          percent_of(s->cards_already_refer_to_cset(), s->cards_not_clean()),
-                          s->cards_no_cross_region(),
-                          s->cards_pending()
-                         );
-  }
-
-  bool has_sweep_rt_work = _state == State::SweepRT;
-
-  advance_state(State::Idle);
-  return has_sweep_rt_work;
+  _state = State::Idle;
 }
 
 void G1ConcurrentRefineSweepState::snapshot_heap_inner() {
@@ -381,10 +420,6 @@ void G1ConcurrentRefineSweepState::snapshot_heap_inner() {
     }
   } cl(_sweep_table);
   G1CollectedHeap::heap()->heap_region_iterate(&cl);
-}
-
-bool G1ConcurrentRefineSweepState::is_in_progress() const {
-  return _state != State::Idle;
 }
 
 bool G1ConcurrentRefineSweepState::are_java_threads_synched() const {
@@ -422,19 +457,8 @@ jint G1ConcurrentRefine::initialize() {
 }
 
 G1ConcurrentRefineSweepState& G1ConcurrentRefine::sweep_state_for_merge() {
-  bool has_sweep_claims = sweep_state().complete_work(false /* concurrent */);
-  if (has_sweep_claims) {
-    log_debug(gc, refine)("Continue existing work");
-  } else {
-    // Refinement has been interrupted without having a snapshot. There may
-    // be a mix of already swapped and not-swapped card tables assigned to threads,
-    // so they might have already dirtied the swapped card tables.
-    // Conservatively scan all (non-free, non-committed) region's card tables,
-    // creating the snapshot right now.
-    log_debug(gc, refine)("Create work from scratch");
-
-    sweep_state().snapshot_heap(false /* concurrent */);
-  }
+  sweep_state().handle_ongoing_refinement_at_safepoint();
+  assert(!sweep_state().is_in_progress(), "postcondition");
   return sweep_state();
 }
 
