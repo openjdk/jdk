@@ -1725,17 +1725,6 @@ static inline void emit_fp_ucom(MacroAssembler* masm, enum FP_PREC pt,
   }
 }
 
-static inline void emit_fp_ucom_avx10_2(MacroAssembler* masm, enum FP_PREC pt,
-                                        XMMRegister p, XMMRegister q) {
-  if (pt == fp_prec_hlf) {
-    __ evucomxsh(p, q);
-  } else if (pt == fp_prec_flt) {
-    __ evucomxss(p, q);
-  } else {
-    __ evucomxsd(p, q);
-  }
-}
-
 static inline void movfp(MacroAssembler* masm, enum FP_PREC pt,
                          XMMRegister dst, XMMRegister src, Register scratch) {
   if (pt == fp_prec_hlf) {
@@ -1747,8 +1736,41 @@ static inline void movfp(MacroAssembler* masm, enum FP_PREC pt,
   }
 }
 
-static inline void emit_fp_nan(MacroAssembler* masm, enum FP_PREC pt,
-                               XMMRegister dst, Register rt) {
+// Math.min()          # Math.max()
+// -----------------------------
+// (v)ucomis[h/s/d]    #
+// ja   -> b           # a
+// jp   -> NaN         # NaN
+// jb   -> a           # b
+// je   -> a | b       # a & b
+static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
+                            XMMRegister a, XMMRegister b, Register rt,
+                            bool min, enum FP_PREC pt) {
+  Label nan, zero, below, above, done;
+
+  emit_fp_ucom(masm, pt, a, b);
+
+  if (dst->encoding() != (min ? b : a)->encoding()) {
+    __ jcc(Assembler::above, above); // CF=0 & ZF=0
+  } else {
+    __ jcc(Assembler::above, done);
+  }
+  __ jcc(Assembler::parity, nan);  // PF=1
+  __ jcc(Assembler::below, below); // CF=1
+
+  // equal
+  if (min) {
+    __ vpor(dst, a, b, Assembler::AVX_128bit);
+  } else {
+    __ vpand(dst, a, b, Assembler::AVX_128bit);
+  }
+  __ jmp(done);
+
+  __ bind(above);
+  movfp(masm, pt, dst, min ? b : a, rt);
+  __ jmp(done);
+
+  __ bind(nan);
   if (pt == fp_prec_hlf) {
     __ movl(rt, 0x00007e00); // Float16.NaN
     __ evmovw(dst, rt);
@@ -1759,99 +1781,10 @@ static inline void emit_fp_nan(MacroAssembler* masm, enum FP_PREC pt,
     __ mov64(rt, 0x7ff8000000000000L); // Double.NaN
     __ movdq(dst, rt);
   }
-}
-
-static inline void emit_fp_equal(MacroAssembler* masm, XMMRegister dst,
-                                 XMMRegister a, XMMRegister b,
-                                 bool min) {
-  if (min) {
-    __ vpor(dst, a, b, Assembler::AVX_128bit);
-  } else {
-    __ vpand(dst, a, b, Assembler::AVX_128bit);
-  }
-}
-
-// Math.min()              # Math.max()
-// ------------------------------------
-// (v)ucomis[h/s/d]        #
-// ja   -> b               # a
-// jp   -> NaN             # NaN
-// jb   -> a               # b
-// je   -> a | b           # a & b
-static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
-                            XMMRegister a, XMMRegister b,
-                            Register rt, bool min,
-                            enum FP_PREC pt) {
-  Label nan, below, above, done;
-
-  emit_fp_ucom(masm, pt, a, b);
-
-  if (dst->encoding() != (min ? b : a)->encoding()) {
-    __ jccb(Assembler::above, above); // CF=0 & ZF=0
-  } else {
-    __ jccb(Assembler::above, done);
-  }
-  __ jccb(Assembler::parity, nan); // PF=1
-  __ jccb(Assembler::below, below); // CF=1
-
-  // equal
-  emit_fp_equal(masm, dst, a, b, min);
-  __ jmp(done);
-
-  // Compensate for proximity of jump targets to origination points
-  __ nop(15);
-
-  __ bind(above);
-  movfp(masm, pt, dst, min ? b : a, rt);
-  __ jmp(done);
-
-  __ bind(nan);
-  emit_fp_nan(masm, pt, dst, rt);
   __ jmp(done);
 
   __ bind(below);
   movfp(masm, pt, dst, min ? a : b, rt);
-
-  __ bind(done);
-}
-
-// Math.min()            # Math.max()
-// ----------------------------------
-// vucomxs[h/s/d]        #
-// ja   -> b             # a
-// je   -> a | b         # a & b
-// jp   -> NaN           # NaN
-// jb   -> a             # b
-static void emit_fp_min_max_avx10_2(MacroAssembler* masm, XMMRegister dst,
-                                    XMMRegister a, XMMRegister b,
-                                    Register rt, bool min,
-                                    enum FP_PREC pt) {
-  Label nan, equal, above, done;
-
-  emit_fp_ucom_avx10_2(masm, pt, a, b);
-
-  if (dst->encoding() != (min ? b : a)->encoding()) {
-    __ jccb(Assembler::above, above); // CF=0 & ZF=0
-  } else {
-    __ jccb(Assembler::above, done);
-  }
-  __ jccb(Assembler::equal, equal); // ZF=1
-  __ jccb(Assembler::parity, nan); // PF=1
-
-  // below
-  movfp(masm, pt, dst, min ? a : b, rt);
-  __ jmp(done);
-
-  __ bind(above);
-  movfp(masm, pt, dst, min ? b : a, rt);
-  __ jmp(done);
-
-  __ bind(equal);
-  emit_fp_equal(masm, dst, a, b, min);
-  __ jmp(done);
-
-  __ bind(nan);
-  emit_fp_nan(masm, pt, dst, rt);
 
   __ bind(done);
 }
@@ -7438,8 +7371,8 @@ instruct minmaxF_reduction_reg_avx10_2(regF dst, regF a, regF b, rRegI rtmp, rFl
   ins_encode %{
     int opcode = this->ideal_Opcode();
     bool min = (opcode == Op_MinF) ? true : false;
-    emit_fp_min_max_avx10_2(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $rtmp$$Register,
-                            min, fp_prec_flt /*pt*/);
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $rtmp$$Register,
+                    min, fp_prec_flt /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7507,8 +7440,8 @@ instruct minmaxD_reduction_reg_avx10_2(regD dst, regD a, regD b, rRegI rtmp, rFl
   ins_encode %{
     int opcode = this->ideal_Opcode();
     bool min = (opcode == Op_MinD) ? true : false;
-    emit_fp_min_max_avx10_2(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $rtmp$$Register,
-                            min, fp_prec_dbl /*pt*/);
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $rtmp$$Register,
+                    min, fp_prec_dbl /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}
