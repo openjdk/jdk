@@ -793,6 +793,14 @@ public interface Set<E> extends Collection<E> {
      * <p>
      * The returned Set is <em>not</em> {@linkplain Serializable}.
      * <p>
+     * If the provided {@code Set} of {@code elementCandidates} is subsequently modified,
+     * the returned {@code Set} will not reflect such modifications.
+     * <p>
+     * The {@code Set} of {@code elementCandidates} must use
+     * {@linkplain Set#equals(Object) equals()} as its equivalence relation, or its
+     * comparison method must be consistent with {@code equals()}, otherwise the behavior
+     * is unspecified.
+     * <p>
      * Here is an example involving an application that manages various configurable
      * options -- commonly referred to as "switches" -- that control its behavior. The
      * state of these switches can be determined through the command line, a configuration
@@ -826,14 +834,6 @@ public interface Set<E> extends Collection<E> {
      *
      * }
      * }
-     * <p>
-     * If the provided {@code Set} of {@code elementCandidates} is subsequently modified,
-     * the returned {@code Set} will not reflect such modifications.
-     * <p>
-     * The {@code Set} of {@code elementCandidates} must use
-     * {@linkplain Set#equals(Object) equals()} as its equivalence relation, or its
-     * comparison method must be consistent with {@code equals()}, otherwise the behavior
-     * is unspecified.
      * <p>
      * The returned {@code Set<E>} can be thought of as a set backed by a
      * {@code Map<E, LazyConstant<Boolean>>} field and where the {@linkplain Set#contains(Object)}

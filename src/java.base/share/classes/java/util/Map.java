@@ -1801,6 +1801,13 @@ public interface Map<K, V> {
      * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * If the provided {@code Set} of {@code keys} is subsequently modified, the returned
+     * {@code Map} will not reflect such modifications.
+     * <p>
+     * The {@code Set} of {@code keys} must use {@linkplain Set#equals(Object) equals()}
+     * as its equivalence relation, or its comparison method must be consistent with
+     * equals, otherwise the behavior is unspecified.
      * <P>
      * Here is an example involving an application that caches the values returned by some
      * {@code expensiveOperation(int param))} for a given set of input parameters. By
@@ -1811,7 +1818,7 @@ public interface Map<K, V> {
      * class Application {
      *
      *     private static final Map<Integer, Double> CACHE
-     *         = Map.ofLazy(Set.of(0, 1, 3, 42, 97), param -> expensiveOperaton(param));
+     *         = Map.ofLazy(Set.of(0, 1, 3, 42, 97), param -> expensiveOperation(param));
      *
      *     public static Optional<Double> cachedExpensiveOperation(int param) {
      *         return Optional.ofNullable(CACHE.get(param));
@@ -1826,13 +1833,6 @@ public interface Map<K, V> {
      *
      * }
      * }
-     * <p>
-     * If the provided {@code Set} of {@code keys} is subsequently modified, the returned
-     * {@code Map} will not reflect such modifications.
-     * <p>
-     * The {@code Set} of {@code keys} must use {@linkplain Set#equals(Object) equals()}
-     * as its equivalence relation, or its comparison method must be consistent with
-     * equals, otherwise the behavior is unspecified.
      * <p>
      * The returned {@code Map<K, V>} can be thought of as a map backed by a
      * {@code Map<K, LazyConstant<V>>} field and where the {@linkplain Map#get(Object)}
