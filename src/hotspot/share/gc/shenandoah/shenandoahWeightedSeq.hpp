@@ -34,8 +34,12 @@ class ShenandoahWeightedSeq {
   uint _num_samples;
   double* const _x_values;
   double* const _y_values;
+  double* const _weights;
   double _sum_of_x_values;
   double _sum_of_y_values;
+  double _sum_of_weighted_y_values;
+  double _sum_of_weights;
+  double _sum_of_weighted_yy;
   double _sum_of_xy;
   double _sum_of_xx;
 
@@ -45,13 +49,24 @@ class ShenandoahWeightedSeq {
 
 public:
 
-  ShenandoahWeightedSeq(uint size);
+  explicit ShenandoahWeightedSeq(uint size);
   ~ShenandoahWeightedSeq();
 
-  void add(double x, double y, double weight = 1.0);
+  void add(double x, double y);
+  void add(double x, double y, double weight);
   double predict(double x, double margin_of_error) const;
   double residual_sd() const { return _residual_sd; }
   double average() const { return _sum_of_y_values / MAX2(_num_samples, 1u); }
+  double weighted_average() const { return _sum_of_weighted_y_values / MAX2(_sum_of_weights, 1.0); }
+  double weighted_sd() const {
+    if (_sum_of_weights <= 0.0) {
+      return 0.0;
+    }
+
+    const double weighted_mean = _sum_of_weighted_y_values / _sum_of_weights;
+    const double variance = _sum_of_weighted_yy / _sum_of_weights - weighted_mean * weighted_mean;
+    return sqrt(MAX2(variance, 0.0));
+  }
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHWEIGHTEDSEQ_HPP

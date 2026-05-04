@@ -33,8 +33,12 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _num_samples(0),
   _x_values(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _y_values(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
+  _weights(NEW_C_HEAP_ARRAY(double, _size, mtGC)),
   _sum_of_x_values(0),
   _sum_of_y_values(0),
+  _sum_of_weighted_y_values(0),
+  _sum_of_weights(0),
+  _sum_of_weighted_yy(0),
   _sum_of_xy(0),
   _sum_of_xx(0),
   _slope(0.0),
@@ -45,6 +49,13 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
 ShenandoahWeightedSeq::~ShenandoahWeightedSeq() {
   FREE_C_HEAP_ARRAY(_x_values);
   FREE_C_HEAP_ARRAY(_y_values);
+  FREE_C_HEAP_ARRAY(_weights);
+}
+
+void ShenandoahWeightedSeq::add(double x, double y) {
+  const uint index = (_first_sample_index + _num_samples - 1) % _size;
+  const double weight = _num_samples > 0 ? x - _x_values[index] : 0;
+  add(x, y, weight);
 }
 
 void ShenandoahWeightedSeq::add(double x, double y, double weight) {
@@ -55,14 +66,22 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     _sum_of_y_values -= _y_values[index];
     _sum_of_xy -= _x_values[index] * _y_values[index];
     _sum_of_xx -= _x_values[index] * _x_values[index];
+    _sum_of_weighted_y_values -= _weights[index] * _y_values[index];
+    _sum_of_weights -= _weights[index];
+    _sum_of_weighted_yy -= _y_values[index] * _y_values[index] * _weights[index];
   }
+
   _x_values[index] = x;
   _y_values[index] = y;
+  _weights[index] = weight;
 
   _sum_of_x_values += x;
   _sum_of_y_values += y;
   _sum_of_xy += x * y;
   _sum_of_xx += x * x;
+  _sum_of_weighted_y_values += y * weight;
+  _sum_of_weights += weight;
+  _sum_of_weighted_yy += y * y * weight;
 
   if (_num_samples < _size) {
     _num_samples++;

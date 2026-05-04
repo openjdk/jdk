@@ -59,3 +59,39 @@ TEST_VM(ShenandoahWeightedSeqTest, predict_y_equals_x_squared) {
   EXPECT_NEAR(seq.predict(4, 1), 13.138, 0.001);
   EXPECT_NEAR(seq.predict(5, 1), 17.138, 0.001);
 }
+
+TEST_VM(ShenandoahWeightedSeqTest, simple_average_no_samples) {
+  ShenandoahWeightedSeq seq(SIZE);
+  EXPECT_DOUBLE_EQ(seq.average(), 0.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, simple_average_one_sample) {
+  ShenandoahWeightedSeq seq(SIZE);
+  seq.add(1, 1);
+  EXPECT_DOUBLE_EQ(seq.average(), 1.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, simple_average) {
+  ShenandoahWeightedSeq seq(SIZE);
+  seq.add(1, 1);
+  seq.add(2, 1);
+  EXPECT_DOUBLE_EQ(seq.average(), 1.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, simple_average_2) {
+  ShenandoahWeightedSeq seq(SIZE);
+  seq.add(1, 1);
+  seq.add(2, 2);
+  EXPECT_DOUBLE_EQ(seq.average(), 1.5);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, weighted_average_no_samples) {
+  ShenandoahWeightedSeq seq(SIZE);
+  EXPECT_DOUBLE_EQ(seq.weighted_average(), 0.0);
+}
+
+TEST_VM(ShenandoahWeightedSeqTest, weighted_average_one_sample) {
+  ShenandoahWeightedSeq seq(SIZE);
+  seq.add(1, 2, 2);
+  EXPECT_DOUBLE_EQ(seq.weighted_average(), 2.0);
+}
