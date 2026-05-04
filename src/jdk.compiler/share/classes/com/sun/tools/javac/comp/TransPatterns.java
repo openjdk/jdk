@@ -1158,6 +1158,28 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
+    private List<JCStatement> makeEnhancedVariableMatchChecks(int pos,
+                                                              VarSymbol candidate,
+                                                              JCPattern pattern) {
+        // null check logic
+        JCExpression candidateRef =
+                make.at(pos).Ident(candidate).setType(candidate.type);
+
+        JCStatement nullCheck =
+                make.at(pos).Exec(attr.makeNullCheck(candidateRef));
+
+        // pattern matching check logic and remainder check
+        List<JCExpression> matchExParams = List.of(makeNull(), makeNull());
+        JCTree.JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
+
+        JCInstanceOf instanceOfTree = make.TypeTest(make.Ident(candidate).setType(candidate.type), pattern);
+
+        JCIf matchCheck = make.If(makeUnary(Tag.NOT,
+                translate(instanceOfTree)).setType(syms.booleanType), thr, null);
+
+        return List.of(nullCheck, matchCheck);
+    }
+
     @Override
     public void visitEnhancedVariableDeclaration(JCTree.JCEnhancedVariableDeclaration tree) {
         /**
@@ -1170,8 +1192,12 @@ public class TransPatterns extends TreeTranslator {
          * (where <pattern> is a record pattern) is translated to:
          *
          * <pre>{@code
-         *     if (<expression> == null) throw new NullPointerException();
-         *     if (!(<expression> instanceof(<pattern>)) {
+         *     <expr-type> N$temp = <expression>;
+         *     if ( N$temp == null ) {
+         *         throw new NullPointerException();
+         *     }
+         *     <binding variable declarations>
+         *     if (!( N$temp instanceof <pattern> ) {
          *         throw new MatchException(null, null);
          *     }
          * }</pre>
@@ -1184,33 +1210,20 @@ public class TransPatterns extends TreeTranslator {
 
             // synthetic temp to hold RHS
             VarSymbol letBoundCandidate = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
-                    names.fromString("match" + tree.pos + target.syntheticNameChar() + "temp"),
+                    names.fromString(tree.pos + target.syntheticNameChar() + "temp"),
                     tempType,
                     currentMethodSym);
             JCStatement letBoundCandidateRef =
                     make.at(tree.pos).VarDef(letBoundCandidate, expr).setType(tempType);
-            JCExpression letBoundCandidateIdent = make.Ident(letBoundCandidate).setType(tempType);
 
-            // npe logic
-            JCIf ifNPEstatement = make.If(makeBinary(Tag.EQ, letBoundCandidateIdent, makeNull()).setType(syms.booleanType),
-                    make.Throw(makeNewClass(syms.nullPointerExceptionType, List.of(makeNull()))),
-                    null);
-
-            // enhanced local variable declaration logic (mapping to a switch with one case)
-            List<JCExpression> matchExParams = List.of(makeNull(), makeNull());
-            JCTree.JCThrow thr = make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
-
-            JCInstanceOf instanceOfTree = make.TypeTest(letBoundCandidateIdent, tree.pattern);
-            tree.type = syms.booleanType;
-
-            JCIf ifNode = make.If(makeUnary(Tag.NOT,
-                    translate(instanceOfTree)).setType(syms.booleanType), thr, null);
+            List<JCStatement> checks =
+                    makeEnhancedVariableMatchChecks(tree.pos, letBoundCandidate, tree.pattern);
 
             // concatenate all
             result = make.Block(0,
                     List.of(letBoundCandidateRef,
-                            ifNPEstatement,
-                            bindingContext.decorateStatement(ifNode)));
+                            checks.head,
+                            bindingContext.decorateStatement(checks.tail.head)));
         } finally {
             bindingContext.pop();
         }
@@ -1226,49 +1239,48 @@ public class TransPatterns extends TreeTranslator {
                  * A statement of the form
                  *
                  * <pre>
-                 *     for (<pattern> : coll ) stmt ;
+                 *     for ( <pattern> : coll ) stmt ;
                  * </pre>
                  *
                  * (where coll implements {@code Iterable<R>}) gets translated to
                  *
                  * <pre>{@code
                  *     for (<type-of-coll-item> N$temp : coll) {
-                 *     switch (N$temp) {
-                 *         case <pattern>: stmt;
-                 *     }
+                 *          < binding variable declarations >
+                 *          if ( N$temp == null ) {
+                 *              throw new NullPointerException();
+                 *          }
+                 *          if (!( N$temp instanceof <pattern> ) {
+                 *              throw new MatchException(null, null);
+                 *          }
+                 *          stmt ;
                  * }</pre>
                  *
                  */
-                Type selectorType = types.classBound(tree.elementType);
+                tree.expr = translate(tree.expr);
 
                 currentValue = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
-                        names.fromString("patt" + tree.pos + target.syntheticNameChar() + "temp"),
-                        selectorType,
+                        names.fromString(tree.pos + target.syntheticNameChar() + "temp"),
+                        types.classBound(tree.elementType),
                         currentMethodSym);
 
-                JCStatement newForVariableDeclaration =
-                        make.at(tree.pos).VarDef(currentValue, null).setType(selectorType);
+                tree.varOrRecordPattern = make.at(tree.pos)
+                        .VarDef(currentValue, null)
+                        .setType(currentValue.type);
 
-                JCCase casePattern = make.Case(CaseTree.CaseKind.STATEMENT,
-                        List.of(make.PatternCaseLabel(jcRecordPattern)),
-                        null,
-                        List.of(translate(tree.body)),
-                        null);
+                JCStatement originalBody = tree.body;
 
-                JCSwitch switchBody =
-                        make.Switch(make.Ident(currentValue).setType(selectorType),
-                                List.of(casePattern));
+                List<JCStatement> checks =
+                        makeEnhancedVariableMatchChecks(tree.pos, currentValue, jcRecordPattern);
 
-                switchBody.patternSwitch = true;
+                JCStatement translatedBody = translate(originalBody);
 
-                // re-using the same node to eliminate the need to re-patch targets (break/continue)
-                tree.varOrRecordPattern = newForVariableDeclaration.setType(selectorType);
-                tree.expr = translate(tree.expr);
-                tree.body = translate(switchBody);
+                tree.body = make.at(originalBody.pos).Block(0,
+                        bindingContext.bindingVars(tree.pos)
+                                .appendList(checks)
+                                .append(translatedBody));
 
-                JCTree.JCEnhancedForLoop newForEach = tree;
-
-                result = bindingContext.decorateStatement(newForEach);
+                result = tree;
             } else {
                 super.visitForeachLoop(tree);
                 result = bindingContext.decorateStatement(tree);
