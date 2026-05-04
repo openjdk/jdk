@@ -64,6 +64,7 @@ JAVADOC_TAGS := \
     -tag 'apiNote:a:API Note:' \
     -tag 'implSpec:a:Implementation Requirements:' \
     -tag 'implNote:a:Implementation Note:' \
+    -tag note \
     -tag param \
     -tag return \
     -tag throws \
