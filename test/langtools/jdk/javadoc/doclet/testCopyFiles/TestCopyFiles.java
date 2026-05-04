@@ -93,9 +93,9 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../../index-all.html">Index</a>""",
                 "phi-HEADER-phi",
                 """
-                    <a href="../../../module-summary.html">acme.mdle</a>""",
+                    <a href="../../../module-summary.html" title="Module acme.mdle">acme.mdle</a>""",
                 """
-                    <a href="../../package-summary.html" class="current-selection">p</a>""",
+                    <a href="../../package-summary.html" title="Package p" class="current-selection">p</a>""",
                 """
                    SubReadme.html at second level of doc-file directory for acme.module.""",
                 // check footer
@@ -115,9 +115,9 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../../../index-all.html">Index</a>""",
                 "phi-HEADER-phi",
                 """
-                    <a href="../../../../module-summary.html">acme.mdle</a>""",
+                    <a href="../../../../module-summary.html" title="Module acme.mdle">acme.mdle</a>""",
                 """
-                    <a href="../../../package-summary.html" class="current-selection">p</a>""",
+                    <a href="../../../package-summary.html" title="Package p" class="current-selection">p</a>""",
                 """
                    SubSubReadme.html at third level of doc-file directory.""",
                 // check bottom
