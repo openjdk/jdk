@@ -139,11 +139,11 @@ public class TransTypes extends TreeTranslator {
     JCExpression coerce(JCExpression tree, Type target) {
         Type btarget = target.baseType();
         if (tree.type.isPrimitive() == target.isPrimitive()) {
-            boolean assignable = types.isAssignable(tree.type, btarget, types.noWarnings);
+            boolean rawAssignable = types.isAssignable(tree.type, btarget, types.noWarnings);
             if (allowEnhancedVariableDecls && types.isSafeDirectSubType(tree.type, btarget)) {
-                assignable = false;
+                rawAssignable = false;
             }
-            return assignable
+            return rawAssignable
                 ? tree
                 : cast(tree, btarget);
         }
