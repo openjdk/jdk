@@ -521,7 +521,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         nj_size -= nj->as_Mach()->ins_toc_short_size();
       }
       blk_size += nj_size;
-
       // Remember end of call offset
       if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
         last_call_adr = blk_starts[i]+blk_size;

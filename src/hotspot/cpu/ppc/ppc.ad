@@ -13760,6 +13760,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   match(CallDynamicJava); // To get all the data fields we need ...
   effect(USE meth);
   predicate(false);       // ... but never match.
+
   ins_field_load_ic_node(loadConLNode*);
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
