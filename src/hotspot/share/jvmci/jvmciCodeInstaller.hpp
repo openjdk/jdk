@@ -120,7 +120,10 @@ class HotSpotCompiledCodeStream : public ResourceObj {
   bool available() const;
 
   oop get_oop(int id, JVMCI_TRAPS) const;
-  JavaThread* thread() const { return _thread; }
+  JavaThread* thread() const {
+    DEBUG_ONLY(guarantee(_thread != nullptr, "Current thread must be set");)
+    return _thread;
+  }
 
   void set_virtual_objects(GrowableArray<ScopeValue*>* objs) { _virtual_objects = objs; }
   ScopeValue* virtual_object_at(int id, JVMCI_TRAPS) const;

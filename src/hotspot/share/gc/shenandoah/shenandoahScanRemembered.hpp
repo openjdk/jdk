@@ -912,6 +912,11 @@ struct ShenandoahRegionChunk {
   ShenandoahHeapRegion* _r;      // The region of which this represents a chunk
   size_t _chunk_offset;          // HeapWordSize offset
   size_t _chunk_size;            // HeapWordSize qty
+
+  ShenandoahHeapRegion* region() const {
+    DEBUG_ONLY(guarantee(_r != nullptr, "Chunk region must be set");)
+    return _r;
+  }
 };
 
 // ShenandoahRegionChunkIterator divides the total remembered set scanning effort into ShenandoahRegionChunks
