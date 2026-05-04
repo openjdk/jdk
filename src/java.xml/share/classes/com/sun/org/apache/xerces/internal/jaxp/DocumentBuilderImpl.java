@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,18 +35,18 @@ import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.jaxp.validation.XSGrammarPoolContainer;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager.Property;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager.State;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import jdk.xml.internal.FeaturePropertyBase.State;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
+import jdk.xml.internal.XMLSecurityPropertyManager.Property;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
@@ -59,7 +59,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: July 2023
+ * @LastModified: May 2025
  */
 public class DocumentBuilderImpl extends DocumentBuilder
         implements JAXPConstants
@@ -140,7 +140,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
     {
         domParser = new DOMParser();
 
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        fSecurityPropertyMgr = dbf.fSecurityPropertyMgr;
         domParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         fSecurityManager = dbf.fSecurityManager;
@@ -297,17 +297,10 @@ public class DocumentBuilderImpl extends DocumentBuilder
                         }
                      }
                   } else {
-                     //check if the property is managed by security manager
-                     if (fSecurityManager == null ||
-                             !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, val)) {
-                         //check if the property is managed by security property manager
-                         if (fSecurityPropertyMgr == null ||
-                                 !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, val)) {
-                             //fall back to the existing property manager
-                             domParser.setProperty(name, val);
-                         }
+                     if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, val)) {
+                         //fall back to the existing property manager
+                         domParser.setProperty(name, val);
                      }
-
                   }
              }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
  // key: compiler.misc.feature.flexible.constructors
- // key: compiler.warn.preview.feature.use
- // options: --enable-preview -source ${jdk.version} -Xlint:preview
+ // key: compiler.err.feature.not.supported.in.source
+ // options: --release 24
 
 class FeatureFlexibleConstructors {
     FeatureFlexibleConstructors() {

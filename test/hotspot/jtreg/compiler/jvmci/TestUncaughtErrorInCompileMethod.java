@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *          which is only read in a debug VM.
  * @requires vm.jvmci
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
@@ -56,7 +57,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
+public class TestUncaughtErrorInCompileMethod {
 
     static volatile boolean compilerCreationErrorOccurred;
 
@@ -86,6 +87,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseJVMCICompiler", "-Djvmci.Compiler=ErrorCompiler",
+            "-XX:-UseJVMCINativeLibrary",
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",
             "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED",
@@ -124,7 +126,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
             // Check that hs-err contains the stack trace of the fatal exception (sample shown above)
             String[] stackTraceSubstrings = {
-                "at compiler.jvmci.TestUncaughtErrorInCompileMethod$1.createCompiler(TestUncaughtErrorInCompileMethod.java",
+                "at compiler.jvmci.TestUncaughtErrorInCompileMethod$Locator$1.createCompiler(TestUncaughtErrorInCompileMethod.java",
                 "at jdk.internal.vm.ci/jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.compileMethod(HotSpotJVMCIRuntime.java"
             };
             for (String expect : stackTraceSubstrings) {
@@ -172,31 +174,34 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         }
     }
 
-    @Override
-    public <S> S getProvider(Class<S> service) {
-        if (service == JVMCICompilerFactory.class) {
-            return service.cast(new JVMCICompilerFactory() {
-                final AtomicInteger counter = new AtomicInteger();
-                @Override
-                public String getCompilerName() {
-                    return "ErrorCompiler";
-                }
+    public static class Locator extends JVMCIServiceLocator {
 
-                @Override
-                public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
-                    int attempt = counter.incrementAndGet();
-                    CompilerCreationError e = new CompilerCreationError(attempt);
-                    e.printStackTrace();
-                    if (attempt >= 10) {
-                        // Delay notifying the loop in main so that compilation failures
-                        // have time to be reported by -XX:+PrintCompilation.
-                        compilerCreationErrorOccurred = true;
+        @Override
+        public <S> S getProvider(Class<S> service) {
+            if (service == JVMCICompilerFactory.class) {
+                return service.cast(new JVMCICompilerFactory() {
+                    final AtomicInteger counter = new AtomicInteger();
+                    @Override
+                    public String getCompilerName() {
+                        return "ErrorCompiler";
                     }
-                    throw e;
-                }
-            });
+
+                    @Override
+                    public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
+                        int attempt = counter.incrementAndGet();
+                        CompilerCreationError e = new CompilerCreationError(attempt);
+                        e.printStackTrace();
+                        if (attempt >= 10) {
+                            // Delay notifying the loop in main so that compilation failures
+                            // have time to be reported by -XX:+PrintCompilation.
+                            compilerCreationErrorOccurred = true;
+                        }
+                        throw e;
+                    }
+                });
+            }
+            return null;
         }
-        return null;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,10 +136,7 @@ public class CommentHelper {
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
-        // Workaround for JDK-8284193
-        // DocTrees.getElement(DocTreePath) returns javac-internal Symbols
-        var e = doctrees.getElement(docTreePath);
-        return e == null || e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED ? null : e;
+        return doctrees.getElement(docTreePath);
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
@@ -188,6 +185,12 @@ public class CommentHelper {
         Utils utils = configuration.utils;
         if (e == null) {
             return null;
+        } else if (utils.isTypeParameterElement(e)) {
+            // Return the enclosing member for type parameters of generic methods or constructors.
+            Element encl = e.getEnclosingElement();
+            if (utils.isExecutableElement(encl)) {
+                return encl;
+            }
         }
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }

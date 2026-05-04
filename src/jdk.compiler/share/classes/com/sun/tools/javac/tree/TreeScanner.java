@@ -273,8 +273,8 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitLambda(JCLambda tree) {
-        scan(tree.body);
         scan(tree.params);
+        scan(tree.body);
     }
 
     public void visitParens(JCParens tree) {
@@ -359,6 +359,9 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
+    }
+
+    public void visitVarType(JCVarType tree) {
     }
 
     public void visitTypeArray(JCArrayTypeTree tree) {

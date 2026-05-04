@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
-#include "unittest.hpp"
+#include "zunittest.hpp"
 
-class ZLiveMapTest : public ::testing::Test {
+class ZLiveMapTest : public ZTest {
 private:
   // Setup and tear down
   ZHeap*            _old_heap;
@@ -37,7 +36,6 @@ private:
 public:
 
   virtual void SetUp() {
-    ZGlobalsPointers::initialize();
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
@@ -85,6 +83,6 @@ protected:
   }
 };
 
-TEST_F(ZLiveMapTest, strongly_live_for_large_zpage) {
+TEST_VM_F(ZLiveMapTest, strongly_live_for_large_zpage) {
   strongly_live_for_large_zpage();
 }

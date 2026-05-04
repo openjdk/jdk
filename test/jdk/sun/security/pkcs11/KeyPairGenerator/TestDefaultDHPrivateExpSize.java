@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
-import java.security.PrivateKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.interfaces.DHPrivateKey;
+
+import jtreg.SkippedException;
 import sun.security.util.SecurityProviderConstants;
 import sun.security.provider.ParameterCache;
 
@@ -47,8 +47,7 @@ public class TestDefaultDHPrivateExpSize extends PKCS11Test {
         System.out.println("Testing " + p.getName());
 
         if (p.getService("KeyPairGenerator", "DH") == null) {
-            System.out.println("Skip, no support for DH KeyPairGenerator");
-            return;
+            throw new SkippedException("Skip, no support for DH KeyPairGenerator");
         }
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", p);

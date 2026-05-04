@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Red Hat Inc
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +53,7 @@ public class JMXInterfaceBindingTest {
     public static final int JMX_PORT_RANGE_UPPER = 9200;
     public static final int JMX_PORT_RANGE_LOWER_SSL = 9201; // 9200 might be RMI Port
     public static final int JMX_PORT_RANGE_UPPER_SSL = 9300;
-    private static final int MAX_RETRY_ATTEMTS = 10;
+    private static final int MAX_RETRY_ATTEMPTS = 10;
     public static final String READY_MSG = "MainThread: Ready for connections";
     public static final String TEST_CLASS = JMXAgentInterfaceBinding.class.getSimpleName();
     public static final String KEYSTORE_LOC = System.getProperty("test.src", ".") +
@@ -159,7 +160,7 @@ public class JMXInterfaceBindingTest {
                     System.err.println("Retrying the test for " + name);
                 }
                 needRetry = runTest();
-            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMTS));
+            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMPTS));
 
             if (testFailed) {
                 int exitValue = output.getExitValue();
@@ -205,6 +206,7 @@ public class JMXInterfaceBindingTest {
             // This is needed for testing on loopback
             args.add("-Djava.rmi.server.hostname=" + address);
             if (useSSL) {
+                args.add("-Djdk.rmi.ssl.client.enableEndpointIdentification=false");
                 args.add("-Dcom.sun.management.jmxremote.registry.ssl=true");
                 args.add("-Djavax.net.ssl.keyStore=" + KEYSTORE_LOC);
                 args.add("-Djavax.net.ssl.trustStore=" + TRUSTSTORE_LOC);

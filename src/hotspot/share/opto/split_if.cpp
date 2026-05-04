@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -30,6 +29,7 @@
 #include "opto/movenode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
 
 //------------------------------split_thru_region------------------------------
@@ -38,6 +38,11 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
   RegionNode* r = new RegionNode(region->req());
   IdealLoopTree* loop = get_loop(n);
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Splitting %d %s through %d %s", n->_idx, n->Name(), region->_idx, region->Name());
+  }
+#endif
   for (uint i = 1; i < region->req(); i++) {
     Node* x = n->clone();
     Node* in0 = n->in(0);
@@ -80,7 +85,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     if( split_up( n->in(i), blk1, blk2 ) ) {
       // Got split recursively and self went dead?
       if (n->outcnt() == 0)
-        _igvn.remove_dead_node(n);
+        _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
       return true;
     }
   }
@@ -95,7 +100,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     return true;
   }
 
-  clone_template_assertion_predicate_expression_down(n);
+  clone_template_assertion_expression_down(n);
 
   if (n->Opcode() == Op_OpaqueZeroTripGuard) {
     // If this Opaque1 is part of the zero trip guard for a loop:
@@ -136,14 +141,6 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     }
   }
 
-  // Found some other Node; must clone it up
-#ifndef PRODUCT
-  if( PrintOpto && VerifyLoopOptimizations ) {
-    tty->print("Cloning up: ");
-    n->dump();
-  }
-#endif
-
   // ConvI2L may have type information on it which becomes invalid if
   // it moves up in the graph so change any clones so widen the type
   // to TypeLong::INT when pushing it up.
@@ -153,6 +150,11 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   }
 
   // Now actually split-up this guy.  One copy per control path merging.
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
+  }
+#endif
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
@@ -193,6 +195,11 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 // AddP and CheckCastPP have the same obj input after split if.
 bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2) {
   if (n->Opcode() == Op_AddP && at_relevant_ctrl(n, blk1, blk2)) {
+#ifndef PRODUCT
+    if (TraceSplitIf) {
+      tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
+    }
+#endif
     Node_List cmp_nodes;
     uint old = C->unique();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -266,7 +273,7 @@ void PhaseIdealLoop::clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp
         _igvn.replace_input_of(decode_clone, 1, loadklass_clone);
         _igvn.replace_input_of(loadklass_clone, MemNode::Address, addp_clone);
         if (decode->outcnt() == 0) {
-          _igvn.remove_dead_node(decode);
+          _igvn.remove_dead_node(decode, PhaseIterGVN::NodeOrigin::Graph);
         }
       }
     }
@@ -283,7 +290,7 @@ void PhaseIdealLoop::clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp
         _igvn.replace_input_of(cmp, i, loadklass_clone);
         _igvn.replace_input_of(loadklass_clone, MemNode::Address, addp_clone);
         if (loadklass->outcnt() == 0) {
-          _igvn.remove_dead_node(loadklass);
+          _igvn.remove_dead_node(loadklass, PhaseIterGVN::NodeOrigin::Graph);
         }
       }
     }
@@ -310,9 +317,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 
       // Must clone down
 #ifndef PRODUCT
-      if( PrintOpto && VerifyLoopOptimizations ) {
-        tty->print("Cloning down: ");
-        n->dump();
+      if (TraceSplitIf) {
+        tty->print_cr("  Cloning down (Cmp): %d %s", n->_idx, n->Name());
       }
 #endif
       if (!n->is_FastLock()) {
@@ -322,7 +328,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate()) {
+            if (use->is_OpaqueConstantBool() || use->is_OpaqueTemplateAssertionPredicate() ||
+                use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
                 assert(iff->is_If(), "unexpected node type");
@@ -343,16 +350,11 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           }
           if (at_relevant_ctrl(bol, blk1, blk2)) {
             // Recursively sink any BoolNode
-#ifndef PRODUCT
-            if( PrintOpto && VerifyLoopOptimizations ) {
-              tty->print("Cloning down: ");
-              bol->dump();
-            }
-#endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, Opaque4, or OpaqueInitializedAssertionPredicates
-              if (u->is_Opaque4() || u->is_OpaqueInitializedAssertionPredicate()) {
+              // Uses are either IfNodes, CMoves, OpaqueConstantBool or Opaque*AssertionPredicate
+              if (u->is_OpaqueConstantBool() || u->is_OpaqueTemplateAssertionPredicate() ||
+                  u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
                   Node* iff = u->last_out(k);
@@ -367,7 +369,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
                   _igvn.replace_input_of(x2, 1, x1);
                   _igvn.replace_input_of(iff, 1, x2);
                 }
-                _igvn.remove_dead_node(u);
+                _igvn.remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
                 --j;
               } else {
                 // We might see an Opaque1 from a loop limit check here
@@ -383,7 +385,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
                 --j;
               }
             }
-            _igvn.remove_dead_node(bol);
+            _igvn.remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);
             --i;
           }
         }
@@ -401,7 +403,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
         register_new_node(x, ctrl_or_self(use));
         _igvn.replace_input_of(use, pos, x);
       }
-      _igvn.remove_dead_node(n);
+      _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
 
       return true;
     }
@@ -409,25 +411,33 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
   return false;
 }
 
-// 'n' could be a node belonging to a Template Assertion Predicate Expression (i.e. any node between a Template
-// Assertion Predicate and its OpaqueLoop* nodes (included)). We cannot simply split this node up since this would
-// create a phi node inside the Template Assertion Predicate Expression - making it unrecognizable as such. Therefore,
-// we completely clone the entire Template Assertion Predicate Expression "down". This ensures that we have an
-// untouched copy that is still recognized by the Template Assertion Predicate matching code.
-void PhaseIdealLoop::clone_template_assertion_predicate_expression_down(Node* node) {
-  if (!TemplateAssertionPredicateExpressionNode::is_in_expression(node)) {
+// 'n' could be a node belonging to a Template Assertion Expression (i.e. any node between a Template Assertion Predicate
+// and its OpaqueLoop* nodes (included)). We cannot simply split this node up since this would  create a phi node inside
+// the Template Assertion Expression - making it unrecognizable as such. Therefore, we completely clone the entire
+// Template Assertion Expression "down". This ensures that we have an untouched copy that is still recognized by the
+// Template Assertion Predicate matching code.
+void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
+  if (!TemplateAssertionExpressionNode::is_in_expression(node)) {
     return;
   }
 
-  TemplateAssertionPredicateExpressionNode template_assertion_predicate_expression_node(node);
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Cloning down (Template Assertion Expression): %d %s", node->_idx, node->Name());
+  }
+#endif
+
+  TemplateAssertionExpressionNode template_assertion_expression_node(node);
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
-    Opaque4Node* opaque4_node = template_assertion_predicate->in(1)->as_Opaque4();
-    TemplateAssertionPredicateExpression template_assertion_predicate_expression(opaque4_node);
-    Node* new_ctrl = template_assertion_predicate->in(0);
-    Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(new_ctrl, this);
-    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque4_node);
+    OpaqueTemplateAssertionPredicateNode* opaque_node =
+        template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
+    TemplateAssertionExpression template_assertion_expression(opaque_node, this);
+    Node* new_control = template_assertion_predicate->in(0);
+    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_control,
+                                                                                                   opaque_node->loop_node());
+    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque_node);
   };
-  template_assertion_predicate_expression_node.for_each_template_assertion_predicate(clone_expression);
+  template_assertion_expression_node.for_each_template_assertion_predicate(clone_expression);
 }
 
 //------------------------------register_new_node------------------------------
@@ -475,6 +485,11 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
   Node *phi_post;
   if( prior_n == new_false || prior_n == new_true ) {
     phi_post = def->clone();
+#ifndef PRODUCT
+    if (TraceSplitIf) {
+      tty->print_cr("  Spinup: cloning def to sink: %d %s -> %d %s", def->_idx, def->Name(), phi_post->_idx, phi_post->Name());
+    }
+#endif
     phi_post->set_req(0, prior_n );
     register_new_node(phi_post, prior_n);
   } else {
@@ -488,6 +503,11 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
     } else {
       assert( def->is_Phi(), "" );
       assert( prior_n->is_Region(), "must be a post-dominating merge point" );
+#ifndef PRODUCT
+      if (TraceSplitIf) {
+        tty->print_cr("  Spinup: creating new Phi for merge: %d %s", def->_idx, def->Name());
+      }
+#endif
 
       // Need a Phi here
       phi_post = PhiNode::make_blank(prior_n, def);
@@ -497,7 +517,7 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
       Node *t = _igvn.hash_find_insert(phi_post);
       if( t ) {                 // See if we already have this one
         // phi_post will not be used, so kill it
-        _igvn.remove_dead_node(phi_post);
+        _igvn.remove_dead_node(phi_post, PhaseIterGVN::NodeOrigin::Speculative);
         phi_post->destruct(&_igvn);
         phi_post = t;
       } else {
@@ -627,7 +647,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
         Node* m = n->out(j);
         // If m is dead, throw it away, and declare progress
         if (_loop_or_ctrl[m->_idx] == nullptr) {
-          _igvn.remove_dead_node(m);
+          _igvn.remove_dead_node(m, PhaseIterGVN::NodeOrigin::Graph);
           // fall through
         }
         else if (m != iff && split_up(m, region, iff)) {
@@ -672,7 +692,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
     // Replace in the graph with lazy-update mechanism
     new_iff->set_req(0, new_iff); // hook self so it does not go dead
-    lazy_replace(ifp, ifpx);
+    replace_node_and_forward_ctrl(ifp, ifpx);
     new_iff->set_req(0, region);
 
     // Record bits for later xforms
@@ -684,11 +704,15 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       new_true = ifpx;
     }
   }
-  _igvn.remove_dead_node(new_iff);
+  assert(new_false != nullptr, "iff is malformed");
+  assert(new_true != nullptr, "iff is malformed");
+
+  _igvn.remove_dead_node(new_iff, PhaseIterGVN::NodeOrigin::Speculative);
   // Lazy replace IDOM info with the region's dominator
-  lazy_replace(iff, region_dom);
-  lazy_update(region, region_dom); // idom must be update before handle_uses
-  region->set_req(0, nullptr);        // Break the self-cycle. Required for lazy_update to work on region
+  replace_node_and_forward_ctrl(iff, region_dom);
+  // Break the self-cycle. Required for forward_ctrl to work on region.
+  region->set_req(0, nullptr);
+  forward_ctrl(region, region_dom); // idom must be updated before handle_use
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;
@@ -699,7 +723,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   for (DUIterator k = region->outs(); region->has_out(k); k++) {
     Node* phi = region->out(k);
     if (!phi->in(0)) {         // Dead phi?  Remove it
-      _igvn.remove_dead_node(phi);
+      _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Graph);
     } else if (phi == region) { // Found the self-reference
       continue;                 // No roll-back of DUIterator
     } else if (phi->is_Phi()) { // Expected common case: Phi hanging off of Region
@@ -718,7 +742,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
         handle_use(use, phi, &phi_cache, region_dom, new_false, new_true, old_false, old_true);
       } // End of while phi has uses
       // Remove the dead Phi
-      _igvn.remove_dead_node( phi );
+      _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Graph);
     } else {
       assert(phi->in(0) == region, "Inconsistent graph");
       // Random memory op guarded by Region.  Compute new DEF for USE.
@@ -731,15 +755,12 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
     --k;
   } // End of while merge point has phis
 
-  _igvn.remove_dead_node(region);
-  if (iff->Opcode() == Op_RangeCheck) {
-    // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
-    // into the region is left, an array load could become dependent on a condition that's not a range check for
-    // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
-    // floating above its range check.
-    pin_array_access_nodes_dependent_on(new_true);
-    pin_array_access_nodes_dependent_on(new_false);
-  }
+  _igvn.remove_dead_node(region, PhaseIterGVN::NodeOrigin::Graph);
+
+  // Control is updated here to a region, which is not a test, so any node that
+  // depends_only_on_test must be pinned
+  pin_nodes_dependent_on(new_true, iff->Opcode() == Op_RangeCheck);
+  pin_nodes_dependent_on(new_false, iff->Opcode() == Op_RangeCheck);
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -751,13 +772,22 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
 }
 
-void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
+void PhaseIdealLoop::pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck) {
   for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
     Node* use = ctrl->out(i);
     if (!use->depends_only_on_test()) {
       continue;
     }
-    Node* pinned_clone = use->pin_array_access_node();
+
+
+    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
+    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
+    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
+    if (use->is_Load() && !old_iff_is_rangecheck) {
+      continue;
+    }
+
+    Node* pinned_clone = use->pin_node_under_control();
     if (pinned_clone != nullptr) {
       register_new_node_with_ctrl_of(pinned_clone, use);
       _igvn.replace_node(use, pinned_clone);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 #define SHARE_MEMORY_METADATAFACTORY_HPP
 
 #include "classfile/classLoaderData.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <type_traits>
 
 class MetadataFactory : AllStatic {
  public:
@@ -48,13 +48,19 @@ class MetadataFactory : AllStatic {
     return array;
   }
 
+  // This API should be used for TrainingData only.
+  template <typename T>
+  static Array<T>* new_array_from_c_heap(int length, MemTag flags) {
+    return new (length, flags) Array<T>(length);
+  }
+
   template <typename T>
   static void free_array(ClassLoaderData* loader_data, Array<T>* data) {
     if (data != nullptr) {
       assert(loader_data != nullptr, "shouldn't pass null");
-      assert(!data->is_shared(), "cannot deallocate array in shared spaces");
+      assert(!data->in_aot_cache(), "cannot deallocate array in aot metaspace spaces");
       int size = data->size();
-      loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size, false);
+      loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size);
     }
   }
 
@@ -66,9 +72,8 @@ class MetadataFactory : AllStatic {
       int size = md->size();
       // Call metadata's deallocate function which will deallocate fields and release_C_heap_structures
       assert(!md->on_stack(), "can't deallocate things on stack");
-      assert(!md->is_shared(), "cannot deallocate if in shared spaces");
+      assert(!md->in_aot_cache(), "cannot deallocate if in aot metaspace spaces");
       md->deallocate_contents(loader_data);
-      bool is_klass = md->is_klass();
       // Call the destructor. This is currently used for MethodData which has a member
       // that needs to be destructed to release resources. Most Metadata derived classes have noop
       // destructors and/or cleanup using deallocate_contents.
@@ -76,7 +81,7 @@ class MetadataFactory : AllStatic {
       // or volatile so we can call the destructor of the type T points to.
       using U = std::remove_cv_t<T>;
       md->~U();
-      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, is_klass);
+      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size);
     }
   }
 };

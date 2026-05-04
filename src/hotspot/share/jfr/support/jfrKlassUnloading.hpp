@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ class JfrKlassUnloading : AllStatic {
   static bool on_unload(const Klass* k);
   static int64_t event_class_count();
   static bool is_unloaded(traceid klass_id, bool previous_epoch = false);
-  static void sort(bool previous_epoch = false);
   static void clear();
 };
 

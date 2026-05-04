@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "unittest.hpp"
+#include "zunittest.hpp"
 
-class ZAddressTest : public ::testing::Test {
+class ZAddressTest : public ZTest {
 protected:
   static zpointer color(uintptr_t value, uintptr_t color) {
     return ZAddress::color(zaddress(value | ZAddressHeapBase), color);
@@ -375,8 +374,7 @@ protected:
   static void is_checks() {
     int young_phase = 0;
     int old_phase = 0;
-    // Setup
-    ZGlobalsPointers::initialize();
+
     test_is_checks_on_all();
 
     advance_and_test_old_phase(old_phase, 4);
@@ -432,6 +430,6 @@ protected:
   }
 };
 
-TEST_F(ZAddressTest, is_checks) {
+TEST_VM_F(ZAddressTest, is_checks) {
   is_checks();
 }

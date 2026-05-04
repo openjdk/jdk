@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.nio.ch;
 
 import java.nio.channels.*;
 import java.util.concurrent.*;
-import java.security.AccessController;
-import sun.security.action.GetIntegerAction;
 import jdk.internal.misc.InnocuousThread;
 
 /**
@@ -41,9 +39,8 @@ class Invoker {
     // maximum number of completion handlers that may be invoked on the current
     // thread before it re-directs invocations to the thread pool. This helps
     // avoid stack overflow and lessens the risk of starvation.
-    @SuppressWarnings("removal")
-    private static final int maxHandlerInvokeCount = AccessController.doPrivileged(
-        new GetIntegerAction("sun.nio.ch.maxCompletionHandlersOnStack", 16));
+    private static final int maxHandlerInvokeCount =
+        Integer.getInteger("sun.nio.ch.maxCompletionHandlersOnStack", 16);
 
     // Per-thread object with reference to channel group and a counter for
     // the number of completion handlers invoked. This should be reset to 0
@@ -115,7 +112,6 @@ class Invoker {
      * Invoke handler without checking the thread identity or number of handlers
      * on the thread stack.
      */
-    @SuppressWarnings("removal")
     static <V,A> void invokeUnchecked(CompletionHandler<V,? super A> handler,
                                       A attachment,
                                       V value,
@@ -129,18 +125,6 @@ class Invoker {
 
         // clear interrupt
         Thread.interrupted();
-
-        // clear thread locals when in default thread pool
-        if (System.getSecurityManager() != null) {
-            Thread me = Thread.currentThread();
-            if (me instanceof InnocuousThread) {
-                GroupAndInvokeCount thisGroupAndInvokeCount = myGroupAndInvokeCount.get();
-                ((InnocuousThread)me).eraseThreadLocals();
-                if (thisGroupAndInvokeCount != null) {
-                    myGroupAndInvokeCount.set(thisGroupAndInvokeCount);
-                }
-            }
-        }
     }
 
     /**

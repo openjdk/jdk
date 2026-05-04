@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -45,6 +44,16 @@ Symbol* fieldDescriptor::generic_signature() const {
 bool fieldDescriptor::is_trusted_final() const {
   InstanceKlass* ik = field_holder();
   return is_final() && (is_static() || ik->is_hidden() || ik->is_record());
+}
+
+bool fieldDescriptor::is_mutable_static_final() const {
+  InstanceKlass* ik = field_holder();
+  // write protected fields (JLS 17.5.4)
+  if (is_final() && is_static() && ik == vmClasses::System_klass() &&
+      (offset() == java_lang_System::in_offset() || offset() == java_lang_System::out_offset() || offset() == java_lang_System::err_offset())) {
+   return true;
+  }
+  return false;
 }
 
 AnnotationArray* fieldDescriptor::annotations() const {
@@ -87,7 +96,7 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
-void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
+void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
@@ -95,13 +104,25 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
     // but that's ok because of constant pool merging.
     assert(field_holder() == ik || ik->is_scratch_class(), "must be already initialized to this class");
   }
-  _fieldinfo= ik->field(index);
-  assert((int)_fieldinfo.index() == index, "just checking");
+  _fieldinfo = fieldinfo;
   guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
 
+void fieldDescriptor::print_access_flags(outputStream* st) const {
+  AccessFlags flags = access_flags();
+  if (flags.is_public   ()) st->print("public ");
+  if (flags.is_private  ()) st->print("private ");
+  if (flags.is_protected()) st->print("protected ");
+  if (flags.is_static   ()) st->print("static ");
+  if (flags.is_final    ()) st->print("final ");
+  if (flags.is_volatile ()) st->print("volatile ");
+  if (flags.is_transient()) st->print("transient ");
+  if (flags.is_enum     ()) st->print("enum ");
+  if (flags.is_synthetic()) st->print("synthetic ");
+}
+
 void fieldDescriptor::print_on(outputStream* st) const {
-  access_flags().print_on(st);
+  print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
   name()->print_value_on(st);
   st->print(" ");

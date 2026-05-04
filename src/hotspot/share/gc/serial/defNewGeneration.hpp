@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,22 @@
 #ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
-class CSpaceCounters;
+class HSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
 
@@ -57,8 +54,6 @@ class DefNewGeneration: public Generation {
 
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
-  // Size of object to pretenure in words; command line provides bytes
-  size_t      _pretenure_size_threshold_words;
 
   // ("Weak") Reference processing support
   SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -100,36 +95,19 @@ class DefNewGeneration: public Generation {
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
 
-  virtual void restore_preserved_marks();
-
-  // Preserved marks
-  PreservedMarksSet _preserved_marks_set;
-
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
   bool _promo_failure_drain_in_progress;
 
   // Performance Counters
   GenerationCounters*  _gen_counters;
-  CSpaceCounters*      _eden_counters;
-  CSpaceCounters*      _from_counters;
-  CSpaceCounters*      _to_counters;
+  HSpaceCounters*      _eden_counters;
+  HSpaceCounters*      _from_counters;
+  HSpaceCounters*      _to_counters;
 
   // sizing information
   size_t               _max_eden_size;
   size_t               _max_survivor_size;
-
-  // Allocation support
-  bool _should_allocate_from_space;
-  bool should_allocate_from_space() const {
-    return _should_allocate_from_space;
-  }
-  void clear_should_allocate_from_space() {
-    _should_allocate_from_space = false;
-  }
-  void set_should_allocate_from_space() {
-    _should_allocate_from_space = true;
-  }
 
   // Tenuring
   void adjust_desired_tenuring_threshold();
@@ -151,6 +129,13 @@ class DefNewGeneration: public Generation {
     size_t n = gen_size / (SurvivorRatio + 2);
     return n > alignment ? align_down(n, alignment) : alignment;
   }
+
+  size_t calculate_desired_young_gen_bytes() const;
+
+  void expand_eden_by(size_t delta_bytes);
+
+  void resize_inner();
+  void post_resize();
 
  public:
   DefNewGeneration(ReservedSpace rs,
@@ -185,8 +170,6 @@ class DefNewGeneration: public Generation {
   // heuristic resizing decisions.
   size_t unsafe_max_alloc_nogc() const;
 
-  size_t contiguous_available() const;
-
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
@@ -206,30 +189,10 @@ class DefNewGeneration: public Generation {
 
   HeapWord* block_start(const void* p) const;
 
-  // Allocation support
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    assert(UseTLAB || !is_tlab, "Should not allocate tlab");
-    assert(word_size != 0, "precondition");
+  HeapWord* par_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(size_t word_size);
 
-    size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-
-    const bool overflows     = word_size >= overflow_limit;
-    const bool check_too_big = _pretenure_size_threshold_words > 0;
-    const bool not_too_big   = word_size < _pretenure_size_threshold_words;
-    const bool size_ok       = is_tlab || !check_too_big || not_too_big;
-
-    bool result = !overflows &&
-                  size_ok;
-
-    return result;
-  }
-
-  HeapWord* allocate(size_t word_size, bool is_tlab);
-  HeapWord* allocate_from_space(size_t word_size);
-
-  HeapWord* par_allocate(size_t word_size, bool is_tlab);
-
-  void gc_epilogue(bool full);
+  void gc_epilogue();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
@@ -238,19 +201,10 @@ class DefNewGeneration: public Generation {
   // Reset for contribution of "to-space".
   void reset_scratch();
 
-  // GC support
-  void compute_new_size();
-
-  // Returns true if the collection is likely to be safely
-  // completed. Even if this method returns true, a collection
-  // may not be guaranteed to succeed, and the system should be
-  // able to safely unwind and recover from that failure, albeit
-  // at some additional cost.
-  bool collection_attempt_is_safe();
+  void resize_after_young_gc();
+  void resize_after_full_gc();
 
   bool collect(bool clear_all_soft_refs);
-
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }
@@ -259,8 +213,7 @@ class DefNewGeneration: public Generation {
   void update_counters();
 
   // Printing
-  virtual const char* name() const;
-  virtual const char* short_name() const { return "DefNew"; }
+  const char* name() const { return "DefNew"; }
 
   void print_on(outputStream* st) const;
 
@@ -272,22 +225,9 @@ class DefNewGeneration: public Generation {
 
   DefNewTracer* gc_tracer() const { return _gc_tracer; }
 
- protected:
-  // If clear_space is true, clear the survivor spaces.  Eden is
-  // cleared if the minimum size of eden is 0.  If mangle_space
-  // is true, also mangle the space in debug mode.
-  void compute_space_boundaries(uintx minimum_eden_size,
-                                bool clear_space,
-                                bool mangle_space);
-
-  // Return adjusted new size for NewSizeThreadIncrease.
-  // If any overflow happens, revert to previous new size.
-  size_t adjust_for_thread_increase(size_t new_size_candidate,
-                                    size_t new_size_before,
-                                    size_t alignment,
-                                    size_t thread_increase_size) const;
-
-  size_t calculate_thread_increase_size(int threads_count) const;
+ private:
+  // Initialize eden/from/to spaces.
+  void init_spaces();
 
 
   // Scavenge support

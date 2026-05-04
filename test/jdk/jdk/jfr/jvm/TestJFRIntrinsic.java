@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Intrinsic for JFR
- * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
  *
@@ -132,10 +131,10 @@ public class TestJFRIntrinsic {
             int maxLevel = flagValue.intValue();
             return IntStream.rangeClosed(1, maxLevel).toArray();
         } else {
-            if (Platform.isServer() && !Platform.isEmulatedClient()) {
+            if (Platform.isServer()) {
                 return new int[]{4};
             }
-            if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
+            if (Platform.isClient() || Platform.isMinimal()) {
                 return new int[]{1};
             }
         }

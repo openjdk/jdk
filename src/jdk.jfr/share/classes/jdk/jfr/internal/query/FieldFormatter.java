@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class FieldFormatter {
             if (d.equals(ChronoUnit.FOREVER.getDuration())) {
                 return "Indefinite";
             }
-            return ValueFormatter.formatDuration(d);
+            return ValueFormatter.formatDuration(d, field.precision);
         }
         if (object instanceof Instant instant) {
             return ValueFormatter.formatTimestamp(instant);
@@ -165,7 +165,7 @@ public class FieldFormatter {
                 return object + " Hz";
             }
         }
-        if (object instanceof Number number) {
+        if (object instanceof Number number && !field.identifier) {
             return ValueFormatter.formatNumber(number);
         }
         return object.toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 
  */
 
-#include "precompiled.hpp"
 #include "unittest.hpp"
 #include "nmt/arrayWithFreeList.hpp"
 
@@ -74,7 +73,7 @@ struct LL {
 // That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
 // and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
 // where Foo is a function that can be called on some type with the return type being Foo<E>.
-template<typename E, template<typename, MEMFLAGS> class Allocator>
+template<typename E, template<typename, MemTag> class Allocator>
 struct LL2 {
   struct Node;
   using NodeAllocator = Allocator<Node, mtTest>;

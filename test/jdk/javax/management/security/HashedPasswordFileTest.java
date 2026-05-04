@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,15 +110,18 @@ public class HashedPasswordFileTest {
     }
 
     private String getPasswordFilePath() {
-        String testDir = System.getProperty("test.src");
-        String testFileName = "jmxremote.password";
-        return testDir + File.separator + testFileName;
+        return "jmxremote.password";
     }
 
     private File createNewPasswordFile() throws IOException {
         File file = new File(getPasswordFilePath());
-        if (file.exists()) {
-            file.delete();
+        if (file.exists() && !file.delete()) {
+            // if the password file exists but is not deleted, try to make it
+            // writable then try again to remove it
+            if (!file.canWrite() && file.setWritable(true, true)) {
+                if (!file.delete())
+                    System.err.println("WARNING: Password file not deleted");
+            }
         }
         file.createNewFile();
         return file;

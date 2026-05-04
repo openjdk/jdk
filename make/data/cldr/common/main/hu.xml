@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -72,6 +72,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">bini</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bangla</language>
 			<language type="bo">tibeti</language>
@@ -296,11 +297,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">bafia</language>
 			<language type="ksh">kölsch</language>
 			<language type="ku">kurd</language>
+			<language type="ku" menu="core">kurd</language>
+			<language type="ku" menu="extension">kurmandzsi</language>
 			<language type="kum">kumük</language>
 			<language type="kut">kutenai</language>
 			<language type="kv">komi</language>
 			<language type="kw">korni</language>
 			<language type="kwk">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiz</language>
 			<language type="la">latin</language>
 			<language type="lad">ladino</language>
@@ -311,10 +315,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezg</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgi</language>
-			<language type="lij" draft="contributed">ligur</language>
+			<language type="lij">ligur</language>
 			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
-			<language type="lmo" draft="contributed">lombard</language>
+			<language type="lmo">lombard</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
 			<language type="lol">mongó</language>
@@ -327,7 +331,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushai</language>
 			<language type="luy">lujia</language>
 			<language type="lv">lett</language>
@@ -364,7 +367,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ms">maláj</language>
 			<language type="mt">máltai</language>
 			<language type="mua">mundang</language>
-			<language type="mul">többszörös nyelvek</language>
+			<language type="mul">több nyelv</language>
 			<language type="mus">krík</language>
 			<language type="mwl">mirandéz</language>
 			<language type="mwr">márvári</language>
@@ -509,7 +512,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">comorei</language>
 			<language type="syc">klasszikus szír</language>
 			<language type="syr">szír</language>
-			<language type="szl" draft="contributed">sziléziai</language>
+			<language type="szl">sziléziai</language>
 			<language type="ta">tamil</language>
 			<language type="tce">déli tutchone</language>
 			<language type="te">telugu</language>
@@ -556,10 +559,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">ismeretlen nyelv</language>
 			<language type="ur">urdu</language>
 			<language type="uz">üzbég</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
-			<language type="vec" draft="contributed">velencei</language>
+			<language type="vec">velencei</language>
 			<language type="vi">vietnámi</language>
+			<language type="vmw">makua</language>
 			<language type="vo">volapük</language>
 			<language type="vot">votják</language>
 			<language type="vun">vunjo</language>
@@ -573,6 +576,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">wu kínai</language>
 			<language type="xal">kalmük</language>
 			<language type="xh">xhosza</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">szoga</language>
 			<language type="yao">jaó</language>
 			<language type="yap">japi</language>
@@ -602,7 +606,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Adlm">Adlam</script>
 			<script type="Aghb" draft="contributed">Kaukázusi albaniai</script>
-			<script type="Arab">Arab</script>
 			<script type="Arab" alt="variant">Perzsa-arab</script>
 			<script type="Aran">Nasztalik</script>
 			<script type="Armi">Birodalmi arámi</script>
@@ -656,7 +659,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hung">Ómagyar</script>
 			<script type="Inds">Indus</script>
 			<script type="Ital">Régi olasz</script>
-			<script type="Jamo">Jamo</script>
 			<script type="Java">Jávai</script>
 			<script type="Jpan">Japán</script>
 			<script type="Kali">Kajah li</script>
@@ -731,7 +733,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tfng">Berber</script>
 			<script type="Tglg">Tagalog</script>
 			<script type="Thaa">Thaana</script>
-			<script type="Thai">Thai</script>
 			<script type="Tibt">Tibeti</script>
 			<script type="Ugar">Ugari</script>
 			<script type="Vaii">Vai</script>
@@ -832,7 +833,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">Kína</territory>
 			<territory type="CO">Kolumbia</territory>
 			<territory type="CP">Clipperton-sziget</territory>
-			<territory type="CQ" draft="contributed">Sark</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Costa Rica</territory>
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Zöld-foki Köztársaság</territory>
@@ -1133,33 +1134,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNumeric">Numerikus rendezés</key>
 			<key type="colStrength">Rendezés erőssége</key>
 			<key type="currency">Pénznem</key>
+			<key type="em">Emoji megjelenítése</key>
 			<key type="hc">Óraformátum (12 – 24)</key>
 			<key type="lb">Sortörés stílusa</key>
+			<key type="lw">Szavakon belüli sortörések</key>
 			<key type="ms">Mértékegységrendszer</key>
 			<key type="numbers">Számok</key>
+			<key type="ss">Mondattörés rövidítés után</key>
 			<key type="timezone">Időzóna</key>
 			<key type="va">Földrajzi helyvariáns</key>
 			<key type="x">Privát használatra</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buddhista naptár</type>
+			<type key="calendar" type="buddhist" scope="core">Buddhista</type>
 			<type key="calendar" type="chinese">Kínai naptár</type>
+			<type key="calendar" type="chinese" scope="core">Kínai</type>
 			<type key="calendar" type="coptic">Kopt naptár</type>
+			<type key="calendar" type="coptic" scope="core">Kopt</type>
 			<type key="calendar" type="dangi">Dangi naptár</type>
+			<type key="calendar" type="dangi" scope="core">Dangi</type>
 			<type key="calendar" type="ethiopic">Etióp naptár</type>
+			<type key="calendar" type="ethiopic" scope="core">Etióp</type>
 			<type key="calendar" type="ethiopic-amete-alem">Etióp amete alem naptár</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Etióp amete alem</type>
 			<type key="calendar" type="gregorian">Gergely-naptár</type>
+			<type key="calendar" type="gregorian" scope="core">Gergely</type>
 			<type key="calendar" type="hebrew">Héber naptár</type>
+			<type key="calendar" type="hebrew" scope="core">Héber</type>
 			<type key="calendar" type="indian">Indiai nemzeti naptár</type>
 			<type key="calendar" type="islamic">Hidzsra naptár</type>
+			<type key="calendar" type="islamic" scope="core">Hidzsra</type>
 			<type key="calendar" type="islamic-civil">Hidzsra naptár (táblázatos, polgári)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Hidzsra naptár (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hidzsra (táblázatos, polgári)</type>
+			<type key="calendar" type="islamic-umalqura">Hidzsra naptár (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hidzsra (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 naptár</type>
 			<type key="calendar" type="japanese">Japán naptár</type>
+			<type key="calendar" type="japanese" scope="core">Japán</type>
 			<type key="calendar" type="persian">Perzsa naptár</type>
+			<type key="calendar" type="persian" scope="core">Perzsa</type>
 			<type key="calendar" type="roc">Kínai köztársasági naptár</type>
+			<type key="calendar" type="roc" scope="core">Kínai köztársasági</type>
 			<type key="cf" type="account">Könyvelési pénznemformátum</type>
+			<type key="cf" type="account" scope="core">Könyvelési</type>
 			<type key="cf" type="standard">Normál pénznemformátum</type>
+			<type key="cf" type="standard" scope="core">Normál</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Szimbólumok rendezése</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Rendezés szimbólumok figyelmen kívül hagyásával</type>
 			<type key="colBackwards" type="no" draft="contributed">Ékezetek normál rendezése</type>
@@ -1169,23 +1189,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Nagybetűs szavak rendezése előre</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Kis- és nagybetűket meg nem különböztető rendezés</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Rendezés kisbetű-nagybetű szerint</type>
-			<type key="collation" type="big5han">Hagyományos kínai sorrend - Big5</type>
 			<type key="collation" type="compat">Előző rendezési sorrend a kompatibilitás érdekében</type>
+			<type key="collation" type="compat" scope="core">Kompatibilitás</type>
 			<type key="collation" type="dictionary">Szótári rendezési sorrend</type>
+			<type key="collation" type="dictionary" scope="core">Szótári</type>
 			<type key="collation" type="ducet">Alapértelmezett Unicode rendezési sorrend</type>
+			<type key="collation" type="ducet" scope="core">Alapértelmezett Unicode</type>
 			<type key="collation" type="emoji" draft="contributed">Emodzsi rendezési sorrend</type>
 			<type key="collation" type="eor">Európai rendezési szabályok</type>
-			<type key="collation" type="gb2312han">Egyszerűsített kínai sorrend - GB2312</type>
 			<type key="collation" type="phonebook">Telefonkönyv sorrend</type>
+			<type key="collation" type="phonebook" scope="core">Telefonkönyv</type>
 			<type key="collation" type="phonetic">Fonetikus rendezési sorrend</type>
+			<type key="collation" type="phonetic" scope="core">Fonetikus</type>
 			<type key="collation" type="pinyin">Pinyin sorrend</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Általános célú keresés</type>
+			<type key="collation" type="search" scope="core">Keresés</type>
 			<type key="collation" type="searchjl" draft="contributed">Keresés hangul kezdő mássalhangzó szerint</type>
 			<type key="collation" type="standard">Normál rendezési sorrend</type>
+			<type key="collation" type="standard" scope="core">Normál</type>
 			<type key="collation" type="stroke">Vonássorrend</type>
-			<type key="collation" type="traditional">Hagyományos</type>
+			<type key="collation" type="stroke" scope="core">Vonás</type>
+			<type key="collation" type="traditional">Hagyományos sorrend</type>
+			<type key="collation" type="traditional" scope="core">Hagyományos</type>
 			<type key="collation" type="unihan">Szótővonás rendezési sorrend</type>
+			<type key="collation" type="unihan" scope="core">Szótővonás</type>
 			<type key="collation" type="zhuyin">Zujin rendezési sorrend</type>
+			<type key="collation" type="zhuyin" scope="core">Zujin</type>
 			<type key="colNormalization" type="no" draft="contributed">Rendezés normalizálás nélkül</type>
 			<type key="colNormalization" type="yes" draft="contributed">Unicode szerinti normalizált rendezés</type>
 			<type key="colNumeric" type="no" draft="contributed">Számjegyek egyedi rendezése</type>
@@ -1198,18 +1228,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="d0" type="fwidth">Teljes szélesség</type>
 			<type key="d0" type="hwidth">Fél szélesség</type>
 			<type key="d0" type="npinyin" draft="contributed">Szám</type>
+			<type key="em" type="default" scope="core">Alapértelmezett</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Szöveg</type>
 			<type key="hc" type="h11">12 órás rendszer (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 órás rendszer (0–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 órás rendszer (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 órás rendszer (0–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">Tág stílusú sortörés</type>
+			<type key="lb" type="loose" scope="core">Tág</type>
 			<type key="lb" type="normal">Normál stílusú sortörés</type>
+			<type key="lb" type="normal" scope="core">Normál</type>
 			<type key="lb" type="strict">Szűk stílusú sortörés</type>
+			<type key="lb" type="strict" scope="core">Szűk</type>
+			<type key="lw" type="breakall" scope="core">Az összes törése</type>
+			<type key="lw" type="keepall" scope="core">Az összes megtartása</type>
+			<type key="lw" type="normal" scope="core">Normál</type>
+			<type key="lw" type="phrase" scope="core">Megtartás a kifejezéseknél</type>
 			<type key="m0" type="bgn">BGN</type>
 			<type key="m0" type="ungegn">UNGEGN</type>
 			<type key="ms" type="metric">Méterrendszer</type>
+			<type key="ms" type="metric" scope="core">Méter</type>
 			<type key="ms" type="uksystem">Angolszász mértékegységrendszer</type>
+			<type key="ms" type="uksystem" scope="core">Angolszász</type>
 			<type key="ms" type="ussystem">Amerikai mértékegységrendszer</type>
+			<type key="ms" type="ussystem" scope="core">Amerikai</type>
 			<type key="numbers" type="arab">Arab-indiai számjegyek</type>
 			<type key="numbers" type="arabext">Kibővített arab-indiai számjegyek</type>
 			<type key="numbers" type="armn">Örmény számok</type>
@@ -1254,6 +1301,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tibt">Tibeti számjegyek</type>
 			<type key="numbers" type="traditional" draft="contributed">Hagyományos számok</type>
 			<type key="numbers" type="vaii">Vai számjegyek</type>
+			<type key="ss" type="none" scope="core">Ki</type>
+			<type key="ss" type="standard" scope="core">Be</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrikus</measurementSystemName>
@@ -1282,9 +1331,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-initial">…{0}</ellipsis>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1413,23 +1459,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d., E</dateFormatItem>
+						<dateFormatItem id="Eh">E a h</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y.</dateFormatItem>
-						<dateFormatItem id="GyMd">GGGGG y/MM/dd</dateFormatItem>
+						<dateFormatItem id="GyM">G y. M.</dateFormatItem>
+						<dateFormatItem id="GyMd">G y. M. d.</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. MMM d.</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y. MMM d., E</dateFormatItem>
@@ -1439,6 +1501,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="hv">a h v</dateFormatItem>
 						<dateFormatItem id="Md">M. d.</dateFormatItem>
 						<dateFormatItem id="MEd">M. d., E</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d.</dateFormatItem>
@@ -1693,6 +1756,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="night1">éjjel</dayPeriod>
 							<dayPeriod type="night2">hajnal</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">éjfél</dayPeriod>
+							<dayPeriod type="noon">dél</dayPeriod>
+							<dayPeriod type="morning1">reggel</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">délután</dayPeriod>
+							<dayPeriod type="evening1">este</dayPeriod>
+							<dayPeriod type="night1">éjjel</dayPeriod>
+							<dayPeriod type="night2">hajnal</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">éjfél</dayPeriod>
 							<dayPeriod type="noon">dél</dayPeriod>
@@ -1705,6 +1778,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1">reggel</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">délután</dayPeriod>
+							<dayPeriod type="evening1">este</dayPeriod>
+							<dayPeriod type="night1">éjjel</dayPeriod>
+							<dayPeriod type="night2">hajnal</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">reggel</dayPeriod>
 							<dayPeriod type="morning2">délelőtt</dayPeriod>
@@ -1806,13 +1887,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d., E</dateFormatItem>
+						<dateFormatItem id="Eh">E a h</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">G y.</dateFormatItem>
+						<dateFormatItem id="GyM">G y. MM.</dateFormatItem>
 						<dateFormatItem id="GyMd">GGGGG y. MM. dd.</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y. MM. dd., E</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. MMM d.</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y. MMM d., E</dateFormatItem>
@@ -1824,6 +1909,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
+						<dateFormatItem id="hv">a h v</dateFormatItem>
 						<dateFormatItem id="Md">M. d.</dateFormatItem>
 						<dateFormatItem id="MEd">M. d., E</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d.</dateFormatItem>
@@ -2355,6 +2441,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} idő</regionFormat>
 			<regionFormat type="daylight">{0} nyári idő</regionFormat>
 			<regionFormat type="standard">{0} zónaidő</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>koordinált világidő</standard>
@@ -2366,23 +2455,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Dubai">
 				<exemplarCity>Dubaj</exemplarCity>
 			</zone>
-			<zone type="Europe/Tirane">
-				<exemplarCity>Tirana</exemplarCity>
-			</zone>
 			<zone type="Asia/Yerevan">
 				<exemplarCity>Jereván</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Vostok">
 				<exemplarCity>Vosztok</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Río Gallegos</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucumán</exemplarCity>
-			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity>Córdoba</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Bécs</exemplarCity>
@@ -2405,26 +2482,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint-Barthélemy</exemplarCity>
 			</zone>
-			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepé</exemplarCity>
-			</zone>
 			<zone type="America/Rio_Branco">
 				<exemplarCity>Río Branco</exemplarCity>
-			</zone>
-			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiabá</exemplarCity>
-			</zone>
-			<zone type="America/Belem">
-				<exemplarCity>Belém</exemplarCity>
-			</zone>
-			<zone type="America/Araguaina">
-				<exemplarCity>Araguaína</exemplarCity>
-			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>São Paulo</exemplarCity>
-			</zone>
-			<zone type="America/Maceio">
-				<exemplarCity>Maceió</exemplarCity>
 			</zone>
 			<zone type="Asia/Thimphu">
 				<exemplarCity>Timpu</exemplarCity>
@@ -2447,26 +2506,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Shanghai">
 				<exemplarCity>Sanghaj</exemplarCity>
 			</zone>
-			<zone type="America/Bogota">
-				<exemplarCity>Bogotá</exemplarCity>
-			</zone>
 			<zone type="America/Havana">
 				<exemplarCity>Havanna</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Zöld-foki szigetek</exemplarCity>
 			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Karácsony-sziget</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prága</exemplarCity>
-			</zone>
-			<zone type="Europe/Busingen">
-				<exemplarCity>Büsingen</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
 				<exemplarCity>Dzsibuti</exemplarCity>
@@ -2493,7 +2543,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>El-Ajún</exemplarCity>
 			</zone>
 			<zone type="Africa/Asmera">
-				<exemplarCity>Asmera</exemplarCity>
+				<exemplarCity>Aszmara</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
 				<exemplarCity>Kanári-szigetek</exemplarCity>
@@ -2584,7 +2634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Biskek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
+				<exemplarCity>Canton-sziget</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati-sziget</exemplarCity>
@@ -2643,9 +2693,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulánbátor</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Csojbalszan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makaó</exemplarCity>
 			</zone>
@@ -2654,9 +2701,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldív-szigetek</exemplarCity>
-			</zone>
-			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlán</exemplarCity>
 			</zone>
 			<zone type="America/Bahia_Banderas">
 				<exemplarCity>Bahia Banderas</exemplarCity>
@@ -2703,14 +2747,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lisszabon</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -2805,9 +2843,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Bratislava">
 				<exemplarCity>Pozsony</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>Salvador</exemplarCity>
 			</zone>
@@ -2843,9 +2878,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake-sziget</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Észak-Dakota</exemplarCity>
@@ -2900,9 +2932,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>nyugat-afrikai időzóna</generic>
-					<standard>nyugat-afrikai téli idő</standard>
-					<daylight>nyugat-afrikai nyári idő</daylight>
+					<standard>nyugat-afrikai időzóna</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3126,13 +3156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>kínai nyári idő</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>csojbalszani idő</generic>
-					<standard>csojbalszani téli idő</standard>
-					<daylight>csojbalszani nyári idő</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>karácsony-szigeti idő</standard>
@@ -3193,7 +3216,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>közép-európai időzóna</generic>
+					<generic>közép-európai idő</generic>
 					<standard>közép-európai téli idő</standard>
 					<daylight>közép-európai nyári idő</daylight>
 				</long>
@@ -3315,6 +3338,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>guyanai téli idő</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>hawaii-aleuti téli idő</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>hawaii-aleuti időzóna</generic>
@@ -3399,6 +3427,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Petropavlovszk-kamcsatkai idő</generic>
 					<standard>Petropavlovszk-kamcsatkai zónaidő</standard>
 					<daylight>Petropavlovszk-kamcsatkai nyári idő</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>kazahsztáni idő</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3760,6 +3793,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>truki idő</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Törökországi idő</generic>
+					<standard>Törökországi zónaidő</standard>
+					<daylight>Törökországi nyári idő</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>türkmenisztáni idő</generic>
@@ -3916,6 +3956,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3946,8 +3990,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 B ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -4157,7 +4199,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Costa Rica-i colon</displayName>
 			</currency>
 			<currency type="CSD">
-				<displayName>szerb dinár</displayName>
+				<displayName>szerb dinár (2002–2006)</displayName>
 				<displayName count="one" draft="contributed">szerb dinár (2002–2006)</displayName>
 				<displayName count="other" draft="contributed">szerb dinár (2002–2006)</displayName>
 			</currency>
@@ -4301,7 +4343,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>HKD</symbol>
 			</currency>
 			<currency type="HNL">
-				<displayName>hodurasi lempira</displayName>
+				<displayName>hondurasi lempira</displayName>
 			</currency>
 			<currency type="HRD">
 				<displayName>Horvát dínár</displayName>
@@ -4339,7 +4381,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>iraki dínár</displayName>
 			</currency>
 			<currency type="IRR">
-				<displayName>iráni rial</displayName>
+				<displayName>iráni riál</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>izlandi korona</displayName>
@@ -4445,7 +4487,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Madagaszkári frank</displayName>
 			</currency>
 			<currency type="MKD">
-				<displayName>macedon dínár</displayName>
+				<displayName>macedón dénár</displayName>
 			</currency>
 			<currency type="MKN">
 				<displayName draft="contributed">macedón dénár (1992–1993)</displayName>
@@ -4541,7 +4583,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>NZD</symbol>
 			</currency>
 			<currency type="OMR">
-				<displayName>ománi rial</displayName>
+				<displayName>ománi riál</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName>panamai balboa</displayName>
@@ -4582,7 +4624,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>paraguayi guarani</displayName>
 			</currency>
 			<currency type="QAR">
-				<displayName>katari rial</displayName>
+				<displayName>katari riál</displayName>
 			</currency>
 			<currency type="RHD">
 				<displayName>rhodéziai dollár</displayName>
@@ -4596,7 +4638,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>román lej</displayName>
 			</currency>
 			<currency type="RSD">
-				<displayName>szerb dínár</displayName>
+				<displayName>szerb dinár</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>orosz rubel</displayName>
@@ -4608,7 +4650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ruandai frank</displayName>
 			</currency>
 			<currency type="SAR">
-				<displayName>szaúdi riyal</displayName>
+				<displayName>szaúdi riál</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName>salamon-szigeteki dollár</displayName>
@@ -4648,7 +4690,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sierra Leone-i leone</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Sierra Leone-i leone (1964—2022)</displayName>
+				<displayName>Sierra Leone-i leone (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>szomáli shilling</displayName>
@@ -4764,12 +4806,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Uruguayi peso (1975–1993)</displayName>
 			</currency>
 			<currency type="UYU">
-				<displayName>uruguay-i peso</displayName>
-				<displayName count="one">uruguayi peso</displayName>
-				<displayName count="other">uruguayi peso</displayName>
+				<displayName>uruguayi peso</displayName>
 			</currency>
 			<currency type="UZS">
-				<displayName>üzbegisztáni szum</displayName>
+				<displayName>üzbegisztáni szom</displayName>
 			</currency>
 			<currency type="VEB">
 				<displayName>Venezuelai bolivar (1871–2008)</displayName>
@@ -4818,6 +4858,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kelet-karibi dollár</displayName>
 				<symbol>XCD</symbol>
 			</currency>
+			<currency type="XCG">
+				<displayName>karibi forint</displayName>
+				<displayName count="one">karibi forint</displayName>
+				<displayName count="other">karibi forint</displayName>
+			</currency>
 			<currency type="XDR">
 				<displayName>Special Drawing Rights</displayName>
 			</currency>
@@ -4863,7 +4908,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jemeni dínár</displayName>
 			</currency>
 			<currency type="YER">
-				<displayName>jemeni rial</displayName>
+				<displayName>jemeni riál</displayName>
 			</currency>
 			<currency type="YUD">
 				<displayName>Jugoszláv kemény dínár</displayName>
@@ -4903,6 +4948,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWD">
 				<displayName>Zimbabwei dollár (1980–2008)</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>zimbabwei arany</displayName>
+				<displayName count="one">zimbabwei arany</displayName>
+				<displayName count="other">zimbabwei arany</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Zimbabwei dollár (2009)</displayName>
@@ -4959,10 +5009,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>yocto{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-27">
-				<unitPrefixPattern draft="contributed">ronto{0}</unitPrefixPattern>
+				<unitPrefixPattern>ronto{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-30">
-				<unitPrefixPattern draft="contributed">quecto{0}</unitPrefixPattern>
+				<unitPrefixPattern>quecto{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>deka{0}</unitPrefixPattern>
@@ -4995,10 +5045,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p27">
-				<unitPrefixPattern draft="contributed">ronna{0}</unitPrefixPattern>
+				<unitPrefixPattern>ronna{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p30">
-				<unitPrefixPattern draft="contributed">quetta{0}</unitPrefixPattern>
+				<unitPrefixPattern>quetta{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
@@ -5219,7 +5269,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligramm/deciliter</displayName>
 				<unitPattern count="one">{0} milligramm/deciliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milligramm/decilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milligramm/deciliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milligramm/deciliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milligramm/deciliterré</unitPattern>
 				<unitPattern count="other">{0} milligramm/deciliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milligramm/decilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milligramm/deciliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milligramm/deciliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milligramm/deciliterré</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<unitPattern count="one">{0} millimól/liter</unitPattern>
@@ -5245,7 +5303,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="terminative">{0} itemig</unitPattern>
 				<unitPattern count="other" case="translative">{0} itemmé</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>rész</displayName>
+				<unitPattern count="one">{0} rész</unitPattern>
+				<unitPattern count="other">{0} rész</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} részecske/millió</unitPattern>
 				<unitPattern count="one" case="accusative">{0} részecske/milliót</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} részecske/millióval</unitPattern>
@@ -5306,6 +5369,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} móllal</unitPattern>
 				<unitPattern count="other" case="terminative">{0} mólig</unitPattern>
 				<unitPattern count="other" case="translative">{0} móllá</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>glükóz</displayName>
+				<unitPattern count="one">{0} glükóz</unitPattern>
+				<unitPattern count="other">{0} glükóz</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter per kilométer</displayName>
@@ -5720,7 +5788,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-kilocalorie">
 				<displayName>kilokalória</displayName>
 				<unitPattern count="one">{0} kilokalória</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilokalóriát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilokalóriával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilokalóriáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilokalóriává</unitPattern>
 				<unitPattern count="other">{0} kilokalória</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilokalóriát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilokalóriával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilokalóriáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilokalóriává</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<displayName>kalória</displayName>
@@ -5736,9 +5812,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="translative">{0} kalóriává</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="contributed">kalória</displayName>
-				<unitPattern count="one" draft="contributed">{0} kalória</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kalória</unitPattern>
+				<displayName>kalória</displayName>
+				<unitPattern count="one">{0} kalória</unitPattern>
+				<unitPattern count="other">{0} kalória</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -5933,14 +6009,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} képpont per hüvelyk</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="contributed">pont per centiméter</displayName>
-				<unitPattern count="one" draft="contributed">{0} pont per centiméter</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} pont per centiméter</unitPattern>
+				<displayName>pont per centiméter</displayName>
+				<unitPattern count="one">{0} pont per centiméter</unitPattern>
+				<unitPattern count="other">{0} pont per centiméter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">pont per hüvelyk</displayName>
-				<unitPattern count="one" draft="contributed">{0} pont per hüvelyk</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} pont per hüvelyk</unitPattern>
+				<displayName>pont per hüvelyk</displayName>
+				<unitPattern count="one">{0} pont per hüvelyk</unitPattern>
+				<unitPattern count="other">{0} pont per hüvelyk</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>földsugár</displayName>
@@ -6101,7 +6177,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-point">
 				<unitPattern count="one">{0} pont</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pontot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ponttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} pontig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ponttá</unitPattern>
 				<unitPattern count="other">{0} pont</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pontot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ponttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} pontig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ponttá</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<unitPattern count="one">{0} Nap-sugár</unitPattern>
@@ -6346,7 +6430,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>higanymilliméter</displayName>
 				<unitPattern count="one">{0} higanymilliméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} higanymillimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} higanymilliméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} higanymilliméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} higanymilliméterré</unitPattern>
 				<unitPattern count="other">{0} higanymilliméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} higanymillimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} higanymilliméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} higanymilliméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} higanymilliméterré</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>higany</displayName>
+				<unitPattern count="one">{0} higany</unitPattern>
+				<unitPattern count="other">{0} higany</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>font per négyzethüvelyk</displayName>
@@ -6485,9 +6582,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} csomó</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
-				<displayName draft="contributed">Beaufort</displayName>
-				<unitPattern count="one" draft="contributed">Beaufort {0}</unitPattern>
-				<unitPattern count="other" draft="contributed">Beaufort {0}</unitPattern>
+				<displayName>Beaufort</displayName>
+				<unitPattern count="one">Beaufort {0}</unitPattern>
+				<unitPattern count="other">Beaufort {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<unitPattern count="one">{0} fok</unitPattern>
@@ -6716,6 +6813,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="terminative">{0} bögréig</unitPattern>
 				<unitPattern count="other" case="translative">{0} bögrévé</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>metrikus folyadékuncia</displayName>
+				<unitPattern count="one">{0} metrikus folyadékuncia</unitPattern>
+				<unitPattern count="other">{0} metrikus folyadékuncia</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>hold-láb</displayName>
 				<unitPattern count="one">{0} hold-láb</unitPattern>
@@ -6778,6 +6880,83 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} birodalmi kvart</unitPattern>
 				<unitPattern count="other">{0} birodalmi kvart</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>szteradián</displayName>
+				<unitPattern count="one">{0} szteradián</unitPattern>
+				<unitPattern count="other">{0} szteradián</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>katal</displayName>
+				<unitPattern count="one">{0} katal</unitPattern>
+				<unitPattern count="other">{0} katal</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>coulomb</displayName>
+				<unitPattern count="one">{0} coulomb</unitPattern>
+				<unitPattern count="other">{0} coulomb</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>farad</displayName>
+				<unitPattern count="one">{0} farad</unitPattern>
+				<unitPattern count="other">{0} farad</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>henry</displayName>
+				<unitPattern count="one">{0} henry</unitPattern>
+				<unitPattern count="other">{0} henry</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>siemens</displayName>
+				<unitPattern count="one">{0} siemens</unitPattern>
+				<unitPattern count="other">{0} siemens</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>kalória [IT]</displayName>
+				<unitPattern count="one">{0} kalória [IT]</unitPattern>
+				<unitPattern count="other">{0} kalória [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>becquerel</displayName>
+				<unitPattern count="one">{0} becquerel</unitPattern>
+				<unitPattern count="other">{0} becquerel</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>sievert</displayName>
+				<unitPattern count="one">{0} sievert</unitPattern>
+				<unitPattern count="other">{0} sievert</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>gray</displayName>
+				<unitPattern count="one">{0} gray</unitPattern>
+				<unitPattern count="other">{0} gray</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>kilogramm-erő</displayName>
+				<unitPattern count="one">{0} kilogramm-erő</unitPattern>
+				<unitPattern count="other">{0} kilogramm-erő</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>tesla</displayName>
+				<unitPattern count="one">{0} tesla</unitPattern>
+				<unitPattern count="other">{0} tesla</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>weber</displayName>
+				<unitPattern count="one">{0} weber</unitPattern>
+				<unitPattern count="other">{0} weber</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<unitPattern count="one">{0} éjszaka</unitPattern>
+				<unitPattern count="one" case="accusative">{0} éjszakát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} éjszakával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} éjszakáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} éjszakává</unitPattern>
+				<unitPattern count="other">{0} éjszaka</unitPattern>
+				<unitPattern count="other" case="accusative">{0} éjszakát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} éjszakával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} éjszakáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} éjszakává</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kardinális irány</displayName>
 			</coordinateUnit>
@@ -6820,7 +6999,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>rész</displayName>
+				<unitPattern count="one">{0} rész</unitPattern>
+				<unitPattern count="other">{0} rész</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>részecske/millió</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6828,6 +7012,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>ezrelék</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mól</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -6922,9 +7112,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>V</displayName>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="contributed">cal</displayName>
-				<unitPattern count="one" draft="contributed">{0} cal</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} cal</unitPattern>
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>
@@ -6946,18 +7136,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>megapixel</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="contributed">dpcm</displayName>
-				<unitPattern count="one" draft="contributed">{0} dpcm</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} dpcm</unitPattern>
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">dpi</displayName>
-				<unitPattern count="one" draft="contributed">{0} dpi</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} dpi</unitPattern>
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="one" draft="contributed">{0} képpont</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} képpont</unitPattern>
+				<unitPattern count="one">{0} képpont</unitPattern>
+				<unitPattern count="other">{0} képpont</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
@@ -7006,6 +7196,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>Nap-sugár</displayName>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>Kt</displayName>
@@ -7162,6 +7355,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} bir. qt</unitPattern>
 				<unitPattern count="other">{0} bir. qt</unitPattern>
 			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>éjszakák</displayName>
+				<unitPattern count="one">{0} éjszaka</unitPattern>
+				<unitPattern count="other">{0} éjszaka</unitPattern>
+				<perUnitPattern>{0}/éjszaka</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>irány</displayName>
 				<coordinateUnitPattern type="east">{0} K</coordinateUnitPattern>
@@ -7182,7 +7384,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/l</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>rész</displayName>
+				<unitPattern count="one">{0} rész</unitPattern>
+				<unitPattern count="other">{0} rész</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7190,6 +7397,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">{0} l/100 km</unitPattern>
@@ -7231,8 +7441,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hgin</displayName>
 			</unit>
 			<unit type="speed-beaufort">
-				<unitPattern count="one" draft="contributed">B{0}</unitPattern>
-				<unitPattern count="other" draft="contributed">B{0}</unitPattern>
+				<unitPattern count="one">B{0}</unitPattern>
+				<unitPattern count="other">B{0}</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>fl.dr.</displayName>
@@ -7243,6 +7453,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>csi</displayName>
 				<unitPattern count="one">{0} csi</unitPattern>
 				<unitPattern count="other">{0} csi</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>cal-IT</displayName>
 			</unit>
 		</unitLength>
 	</units>
@@ -7267,8 +7480,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="compatibility">{0} – kompatibilitás</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} – zárt</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} – kibővített</characterLabelPattern>
-		<characterLabelPattern type="facing-left" draft="contributed">balra néző {0}</characterLabelPattern>
-		<characterLabelPattern type="facing-right" draft="contributed">jobbra néző {0}</characterLabelPattern>
+		<characterLabelPattern type="facing-left">balra néző {0}</characterLabelPattern>
+		<characterLabelPattern type="facing-right">jobbra néző {0}</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} – történelmi</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} – vegyes</characterLabelPattern>
 		<characterLabelPattern type="other">{0} – egyéb</characterLabelPattern>

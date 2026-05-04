@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,30 @@
 
 /**
  * @test
- * @bug 8309034
+ * @bug 8309034 8334545
  * @summary Test that when saving a class initialization failure caused by
  *          a StackOverflowError, that we record the SOE as the underlying
  *          cause, even if we can't create the ExceptionInInitializerError
- * @requires os.simpleArch == "x64"
- * @comment The reproducer only fails in the desired way on x64.
- * @requires vm.flagless
  * @comment This test could easily be perturbed so don't allow flag settings.
- *
- * @run main/othervm -Xss160K -Xint TestStackOverflowDuringInit
+ * @requires vm.flagless
+ * @library /test/lib
+ * @comment Run with the smallest stack possible to limit the execution time.
+ *          This is the smallest stack that is supported by all platforms.
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestStackOverflowDuringInit {
+
+    static String expected = "java.lang.NoClassDefFoundError: Could not initialize class TestStackOverflowDuringInit$LongCache";
+    static String cause = "Caused by: java.lang.StackOverflowError";
 
     // The setup for this is somewhat intricate. We need to trigger a
     // StackOverflowError during execution of the static initializer
@@ -51,11 +59,33 @@ public class TestStackOverflowDuringInit {
     // of another class, which is where we will fail to create the EIIE.
     // Even then this is non-trivial, only the use of Long.valueOf from
     // the original reproducer seems to trigger SOE in just the right places.
+    // Later changes to the JDK meant that LongCache was initialized before
+    // the test even started under jtreg so we define local versions.
+
+    static class LongCache {
+        // Must have a static initializer
+        static {
+            System.out.println("LongCache is initializing");
+        }
+        static java.lang.Long valueOf(long l) {
+            return Long.valueOf(l);
+        }
+    }
+
+    static class MyLong {
+        static java.lang.Long valueOf(long l) {
+            if (l > -128 && l < 127) {
+                return LongCache.valueOf(l);
+            } else {
+                return Long.valueOf(l);
+            }
+        }
+    }
 
     static void recurse() {
         try {
-            // This will initialize Long but not touch LongCache.
-            Long.valueOf(1024L);
+            // This will initialize MyLong but not touch LongCache.
+            MyLong.valueOf(1024L);
             recurse();
         } finally {
             // This will require initializing LongCache, which will
@@ -63,32 +93,51 @@ public class TestStackOverflowDuringInit {
             // will be marked erroneous. As we unwind and again execute this
             // we will throw NoClassDefFoundError due to the erroneous
             // state of LongCache.
-            Long.valueOf(0);
+            MyLong.valueOf(0);
+        }
+    }
+
+    static class Launcher {
+        public static void main(String[] args) throws Exception {
+
+            // Pre-load, but not initialize, LongCache, else we will
+            // hit SOE during class loading.
+            System.out.println("Pre-loading ...");
+            Class<?> c = Class.forName("TestStackOverflowDuringInit$LongCache",
+                                       false,
+                                       TestStackOverflowDuringInit.class.getClassLoader());
+            try {
+                recurse();
+            } catch (Throwable ex) {
+                //            ex.printStackTrace();
+                verify_stack(ex, expected, cause);
+            }
+        }
+
+        private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
+            ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
+            try (PrintStream printStream = new PrintStream(byteOS)) {
+                e.printStackTrace(printStream);
+            }
+            String stackTrace = byteOS.toString("ASCII");
+            System.out.println(stackTrace);
+            if (!stackTrace.contains(expected) ||
+                (cause != null && !stackTrace.contains(cause))) {
+                throw new RuntimeException(expected + " and/or " + cause + " missing from stacktrace");
+            }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        String expected = "java.lang.NoClassDefFoundError: Could not initialize class java.lang.Long$LongCache";
-        String cause = "Caused by: java.lang.StackOverflowError";
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        long minimumJavaStackSize = wb.getMinimumJavaStackSize();
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xss" + Long.toString(minimumJavaStackSize), "-Xint",
+                Launcher.class.getName());
 
-        try {
-            recurse();
-        } catch (Throwable ex) {
-            //            ex.printStackTrace();
-            verify_stack(ex, expected, cause);
-        }
-    }
-
-    private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
-        ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
-        try (PrintStream printStream = new PrintStream(byteOS)) {
-            e.printStackTrace(printStream);
-        }
-        String stackTrace = byteOS.toString("ASCII");
-        System.out.println(stackTrace);
-        if (!stackTrace.contains(expected) ||
-            (cause != null && !stackTrace.contains(cause))) {
-            throw new RuntimeException(expected + " and/or " + cause + " missing from stacktrace");
-        }
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.shouldContain(expected);
+        analyzer.shouldContain(cause);
     }
 }

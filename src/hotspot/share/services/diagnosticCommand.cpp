@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "cds/cdsConfig.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -33,12 +33,13 @@
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
 #include "memory/metaspace/metaspaceDCmd.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
@@ -52,12 +53,11 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -70,9 +70,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "os_posix.hpp"
 #include "trimCHeapDCmd.hpp"
+
 #include <errno.h>
 #endif
 
@@ -90,84 +91,83 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmd::register_dcmds(){
-  // Registration of the diagnostic commands
-  // First argument specifies which interfaces will export the command
-  // Second argument specifies if the command is enabled
-  // Third  argument specifies if the command is hidden
+void DCmd::register_dcmds() {
+  // Argument specifies on which interfaces a command is made available:
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
                          | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSecurityPropertiesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export));
 #if INCLUDE_SERVICES
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export));
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export));
 #endif // INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export));
+#if INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export));
+#endif // INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export));
 #ifdef LINUX
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export));
 #endif // LINUX
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export));
+#endif // LINUX or WINDOWS or MacOS
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export));
 
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export));
 
   // Enhanced JMX Agent Support
-  // These commands won't be exported via the DiagnosticCommandMBean until an
-  // appropriate permission is created for them
+  // These commands not currently exported via the DiagnosticCommandMBean
   uint32_t jmx_agent_export_flags = DCmd_Source_Internal | DCmd_Source_AttachAPI;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags, true,false));
-
-  // Debug on cmd (only makes sense with JVMTI since the agentlib needs it).
-#if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
-#endif // INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags));
 
 #if INCLUDE_CDS
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<AOTEndRecordingDCmd>(full_export));
 #endif // INCLUDE_CDS
 
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -190,8 +190,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     for (int i = 0; i < cmd_list->length(); i++) {
       DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       output()->print_cr("\t%s", factory->description());
       output()->cr();
       factory = factory->next();
@@ -201,8 +200,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     DCmdFactory* factory = DCmdFactory::factory(source, _cmd.value(),
                                                 strlen(_cmd.value()));
     if (factory != nullptr) {
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
       output()->cr();
@@ -221,8 +219,7 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
     for (int i = 0; i < cmd_list->length(); i++) {
       DCmdFactory* factory = DCmdFactory::factory(source, cmd_list->at(i),
                                                   strlen(cmd_list->at(i)));
-      output()->print_cr("%s%s", factory->name(),
-                         factory->is_enabled() ? "" : " [disabled]");
+      output()->print_cr("%s", factory->name());
       factory = factory->_next;
     }
     output()->print_cr("\nFor more information about a specific command use 'help <command>'.");
@@ -320,7 +317,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       char *opt = (char *)os::malloc(opt_len, mtInternal);
       if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
-                           "Could not allocate " SIZE_FORMAT " bytes for argument.",
+                           "Could not allocate %zu bytes for argument.",
                            opt_len);
         return;
       }
@@ -338,8 +335,8 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
-void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
-  // load VMSupport
+// helper method for printing system and security properties
+static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
   InstanceKlass* ik = InstanceKlass::cast(k);
@@ -347,39 +344,36 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
     ik->initialize(THREAD);
   }
   if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    out->cr();
     CLEAR_PENDING_EXCEPTION;
     return;
   }
-
-  // invoke the serializePropertiesToByteArray method
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
-
   Symbol* signature = vmSymbols::void_byte_array_signature();
-  JavaCalls::call_static(&result,
-                         ik,
-                         vmSymbols::serializePropertiesToByteArray_name(),
-                         signature,
-                         &args,
-                         THREAD);
+  JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
+
   if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    out->cr();
     CLEAR_PENDING_EXCEPTION;
     return;
   }
-
-  // The result should be a [B
   oop res = result.get_oop();
-  assert(res->is_typeArray(), "just checking");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
-
-  // copy the bytes to the output stream
+  assert(res->is_typeArray(), "should be a byte array");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "should be a byte array");
   typeArrayOop ba = typeArrayOop(res);
-  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-  output()->print_raw((const char*)addr, ba->length());
+  jbyte* addr = ba->byte_at_addr(0);
+  out->print_raw((const char*)addr, ba->length());
+}
+
+void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+  print_properties(vmSymbols::serializePropertiesToByteArray_name(), output(), THREAD);
+}
+
+void PrintSecurityPropertiesDCmd::execute(DCmdSource source, TRAPS) {
+  print_properties(vmSymbols::serializeSecurityPropertiesToByteArray_name(), output(), THREAD);
 }
 
 VMUptimeDCmd::VMUptimeDCmd(outputStream* output, bool heap) :
@@ -415,7 +409,7 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
   MutexLocker hl(THREAD, Heap_lock);
-  Universe::heap()->print_on(output());
+  Universe::heap()->print_heap_on(output());
 }
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
@@ -473,7 +467,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  _filename("filename","Name of the dump file", "FILE",true),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -699,7 +693,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
 
@@ -772,7 +766,7 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, k, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
@@ -789,7 +783,7 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, k, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
@@ -810,7 +804,7 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
 
   loadAgentModule(CHECK);
   Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result, k, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
@@ -852,20 +846,15 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
-#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
-
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
+  _filename("filename", "Name of the map file", "FILE", false, DEFAULT_PERFMAP_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  // The check for _filename.is_set() is because we don't want to use
-  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
-  // of the default, not the actual default.
-  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
+  CodeCache::write_perf_map(_filename.value(), output());
 }
 #endif // LINUX
 
@@ -893,22 +882,17 @@ void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
 EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, nullptr),
-  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, nullptr)
+  _max("max", "Maximum number of events to be printed (newest first). If omitted or zero, all events are printed.", "INT", false, "0")
 {
   _dcmdparser.add_dcmd_option(&_log);
   _dcmdparser.add_dcmd_option(&_max);
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  const char* max_value = _max.value();
-  int max = -1;
-  if (max_value != nullptr) {
-    char* endptr = nullptr;
-    int max;
-    if (!parse_integer(max_value, &max)) {
-      output()->print_cr("Invalid max option: \"%s\".", max_value);
-      return;
-    }
+  int max = (int)_max.value();
+  if (max < 0) {
+    output()->print_cr("Invalid max option: \"%d\".", max);
+    return;
   }
   const char* log_name = _log.value();
   if (log_name != nullptr) {
@@ -992,17 +976,39 @@ public:
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
 
 #if INCLUDE_CDS
-#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
+  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+    output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
+    return;
+  }
+
+  if (AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Recording has already ended.");
+    return;
+  }
+
+  AOTMetaspace::dump_static_archive(THREAD);
+  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+    output()->print_cr("Error: Failed to end recording.");
+    return;
+  }
+
+  output()->print_cr("Recording ended successfully.");
+}
+#endif // INCLUDE_CDS
+
+#if INCLUDE_CDS
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid%p_<subcmd>.jsa"
 
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+  _filename("filename", "Name of shared archive to be dumped", "FILE", false,
             DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
@@ -1040,7 +1046,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   // call CDS.dumpSharedArchive
   Handle fileh;
   if (file != nullptr) {
-    fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
+    fileh = java_lang_String::create_from_str(file, CHECK);
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
@@ -1062,50 +1068,11 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 }
 #endif // INCLUDE_CDS
 
-#if INCLUDE_JVMTI
-extern "C" typedef char const* (JNICALL *debugInit_startDebuggingViaCommandPtr)(JNIEnv* env, jthread thread, char const** transport_name,
-                                                                                char const** address, jboolean* first_start);
-static debugInit_startDebuggingViaCommandPtr dvc_start_ptr = nullptr;
-
-void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
-  char const* transport = nullptr;
-  char const* addr = nullptr;
-  jboolean is_first_start = JNI_FALSE;
-  JavaThread* thread = THREAD;
-  jthread jt = JNIHandles::make_local(thread->threadObj());
-  ThreadToNativeFromVM ttn(thread);
-  const char *error = "Could not find jdwp agent.";
-
-  if (!dvc_start_ptr) {
-    JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
-    while (it.has_next()) {
-      JvmtiAgent* agent = it.next();
-      if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == nullptr)) {
-        char const* func = "debugInit_startDebuggingViaCommand";
-        dvc_start_ptr = (debugInit_startDebuggingViaCommandPtr) os::find_agent_function(agent, false, &func, 1);
-      }
-    }
-  }
-
-  if (dvc_start_ptr) {
-    error = dvc_start_ptr(thread->jni_environment(), jt, &transport, &addr, &is_first_start);
-  }
-
-  if (error != nullptr) {
-    output()->print_cr("Debugging has not been started: %s", error);
-  } else {
-    output()->print_cr(is_first_start ? "Debugging has been started." : "Debugging is already active.");
-    output()->print_cr("Transport : %s", transport ? transport : "#unknown");
-    output()->print_cr("Address : %s", addr ? addr : "#unknown");
-  }
-}
-#endif // INCLUDE_JVMTI
-
 ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
                                            DCmdWithParser(output, heap),
   _overwrite("-overwrite", "May overwrite existing file", "BOOLEAN", false, "false"),
   _format("-format", "Output format (\"plain\" or \"json\")", "STRING", false, "plain"),
-  _filepath("filepath", "The file path to the output file", "STRING", true) {
+  _filepath("filepath", "The file path to the output file", "FILE", true) {
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_format);
   _dcmdparser.add_dcmd_argument(&_filepath);
@@ -1127,13 +1094,6 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
   Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
   Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
 
   // invoke the ThreadDump method to dump to file
   JavaValue result(T_OBJECT);
@@ -1164,60 +1124,91 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   output()->print_raw((const char*)addr, ba->length());
 }
 
+// Calls a static no-arg method on jdk.internal.vm.JcmdVThreadCommands that returns a byte[] with
+// the output. If the method completes successfully then the bytes are copied to the output stream.
+// If the method fails then the exception is printed to the output stream.
+static void execute_vthread_command(Symbol* method_name, outputStream* output, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_JcmdVThreadCommands(), true, CHECK);
+
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         method_name,
+                         vmSymbols::void_byte_array_signature(),
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output);
+    output->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // copy the bytes to the output stream
+  oop res = cast_to_oop(result.get_jobject());
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
+}
+
+void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
+}
+
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  _verbose("verbose", "Print detailed information", "BOOLEAN", false, "false"),
+  _legend("legend", "Table mode: print legend", "BOOLEAN", false, "false"),
+  _minsize("minsize", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_minsize);
+  _dcmdparser.add_dcmd_option(&_legend);
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
-  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+  CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
-SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
-}
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+  MemMapPrinter::print_all_mappings(output());
 }
 
-static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+static constexpr char default_filename[] = "vm_memory_map_%p.txt";
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-F", "file path", "STRING", false, default_filename) {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  DCmdWithParser(output, heap),
+  _filename("-F", "file path", "FILE", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream defaultname;
-  const char* name = nullptr;
-  if (_filename.is_set()) {
-    name = _filename.value();
-  } else {
-    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
-    name = defaultname.base();
+  const char* name = _filename.value();
+  if (name == nullptr || name[0] == 0) {
+    output()->print_cr("filename is empty or not specified.  No file written");
+    return;
   }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    MemMapPrinter::print_all_mappings(&fs);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
-    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
+    const char* absname = os::realpath(name, tmp, sizeof(tmp));
     name = absname != nullptr ? absname : name;
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {

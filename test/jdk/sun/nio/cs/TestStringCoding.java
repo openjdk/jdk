@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  */
 
 /* @test
- * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
+ * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307 8372353
  * @summary Test if StringCoding and NIO result have the same de/encoding result
+ * @library /test/lib
  * @modules java.base/sun.nio.cs
- * @run main/othervm/timeout=2000 -Djava.security.manager=allow TestStringCoding
+ * @run main/othervm/timeout=2000 TestStringCoding
  * @key randomness
  */
 
 import java.util.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class TestStringCoding {
     public static void main(String[] args) throws Throwable {
@@ -50,50 +55,46 @@ public class TestStringCoding {
         }
         byte[] asciiBA =  Arrays.copyOf(latinBA, 0x80);
 
-        for (Boolean hasSM: new boolean[] { false, true }) {
-            if (hasSM) {
-                System.setSecurityManager(new PermissiveSecurityManger());
-            }
-            for (Charset cs:  Charset.availableCharsets().values()) {
-                if ("ISO-2022-CN".equals(cs.name()) ||
-                    "x-COMPOUND_TEXT".equals(cs.name()) ||
-                    "x-JISAutoDetect".equals(cs.name()))
-                    continue;
-                System.out.printf("Testing(sm=%b) " + cs.name() + "....", hasSM);
 
-                testNewString(cs, testGetBytes(cs, new String(bmp)));
-                testNewString(cs, testGetBytes(cs, new String(latin)));
-                testNewString(cs, testGetBytes(cs, new String(ascii)));
-                testGetBytes(cs, testNewString(cs, latinBA));
-                testGetBytes(cs, testNewString(cs, asciiBA));
+        for (Charset cs:  Charset.availableCharsets().values()) {
+            if ("ISO-2022-CN".equals(cs.name()) ||
+                "x-COMPOUND_TEXT".equals(cs.name()) ||
+                "x-JISAutoDetect".equals(cs.name()))
+                continue;
+            System.out.println("Testing " + cs.name() + "....");
 
-                // "randomed" sizes
-                Random rnd = new Random();
-                for (int i = 0; i < 10; i++) {
-                    //System.out.printf("    blen=%d, clen=%d%n", blen, clen);
-                    char[] bmp0 = Arrays.copyOf(bmp, rnd.nextInt(0x10000));
-                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
-                    //add a pair of surrogates
-                    int pos = bmp0.length / 2;
-                    if ((pos + 1) < bmp0.length) {
-                        bmp0[pos] = '\uD800';
-                        bmp0[pos+1] = '\uDC00';
-                    }
-                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
+            testNewString(cs, testGetBytes(cs, new String(bmp)));
+            testNewString(cs, testGetBytes(cs, new String(latin)));
+            testNewString(cs, testGetBytes(cs, new String(ascii)));
+            testGetBytes(cs, testNewString(cs, latinBA));
+            testGetBytes(cs, testNewString(cs, asciiBA));
 
-                    char[] latin0 = Arrays.copyOf(latin, rnd.nextInt(0x100));
-                    char[] ascii0 = Arrays.copyOf(ascii, rnd.nextInt(0x80));
-                    byte[] latinBA0 = Arrays.copyOf(latinBA, rnd.nextInt(0x100));
-                    byte[] asciiBA0 = Arrays.copyOf(asciiBA, rnd.nextInt(0x80));
-                    testNewString(cs, testGetBytes(cs, new String(latin0)));
-                    testNewString(cs, testGetBytes(cs, new String(ascii0)));
-                    testGetBytes(cs, testNewString(cs, latinBA0));
-                    testGetBytes(cs, testNewString(cs, asciiBA0));
+            // "randomed" sizes
+            Random rnd = new Random();
+            for (int i = 0; i < 10; i++) {
+                //System.out.printf("    blen=%d, clen=%d%n", blen, clen);
+                char[] bmp0 = Arrays.copyOf(bmp, rnd.nextInt(0x10000));
+                testNewString(cs, testGetBytes(cs, new String(bmp0)));
+                //add a pair of surrogates
+                int pos = bmp0.length / 2;
+                if ((pos + 1) < bmp0.length) {
+                    bmp0[pos] = '\uD800';
+                    bmp0[pos+1] = '\uDC00';
                 }
-                testSurrogates(cs);
-                testMixed(cs);
-                System.out.println("done!");
+                testNewString(cs, testGetBytes(cs, new String(bmp0)));
+
+                char[] latin0 = Arrays.copyOf(latin, rnd.nextInt(0x100));
+                char[] ascii0 = Arrays.copyOf(ascii, rnd.nextInt(0x80));
+                byte[] latinBA0 = Arrays.copyOf(latinBA, rnd.nextInt(0x100));
+                byte[] asciiBA0 = Arrays.copyOf(asciiBA, rnd.nextInt(0x80));
+                testNewString(cs, testGetBytes(cs, new String(latin0)));
+                testNewString(cs, testGetBytes(cs, new String(ascii0)));
+                testGetBytes(cs, testNewString(cs, latinBA0));
+                testGetBytes(cs, testNewString(cs, asciiBA0));
             }
+            testSurrogates(cs);
+            testMixed(cs);
+            System.out.println("done!");
         }
     }
 
@@ -168,6 +169,12 @@ public class TestStringCoding {
         if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
         }
+        //encodedLength(cs);
+        int encodedLength = str.encodedLength(cs);
+        if (baSC.length != encodedLength) {
+            throw new RuntimeException(String.format("encodedLength failed (%d != %d) -> %s",
+                    baSC.length, encodedLength, cs.name()));
+        }
         return baSC;
     }
 
@@ -199,29 +206,70 @@ public class TestStringCoding {
             if (cs.name().equals("UTF-8") ||     // utf8 handles surrogates
                 cs.name().equals("CESU-8"))      // utf8 handles surrogates
                 return;
-            enc.replaceWith(new byte[] { (byte)'A'});
-            sun.nio.cs.ArrayEncoder cae = (sun.nio.cs.ArrayEncoder)enc;
 
-            String str = "ab\uD800\uDC00\uD800\uDC00cd";
-            byte[] ba = new byte[str.length() - 2];
-            int n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 6 || !"abAAcd".equals(new String(ba, cs.name())))
-                throw new RuntimeException("encode1(surrogates) failed  -> "
-                                           + cs.name());
+            // Configure the replacement sequence
+            enc.replaceWith(new byte[]{(byte) 'A'});
 
-            ba = new byte[str.length()];
-            n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 6 || !"abAAcd".equals(new String(ba, 0, n,
-                                                     cs.name())))
-                throw new RuntimeException("encode2(surrogates) failed  -> "
-                                           + cs.name());
-            str = "ab\uD800B\uDC00Bcd";
-            ba = new byte[str.length()];
-            n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 8 || !"abABABcd".equals(new String(ba, 0, n,
-                                                       cs.name())))
-                throw new RuntimeException("encode3(surrogates) failed  -> "
-                                           + cs.name());
+            // Test `String::new(byte[], Charset)` with surrogate-pair
+            {
+                var srcStr = "ab\uD800\uDC00\uD800\uDC00cd";
+                assertEquals(8, srcStr.length());
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(6);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        6, dstBuf.position(),
+                        "Was expecting 6 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, cs);
+                assertEquals("abAAcd", dstStr);
+            }
+
+            // Test `String::new(byte[], int, int, Charset)` with surrogate-pair
+            {
+                var srcStr = "ab\uD800\uDC00\uD800\uDC00cd";
+                assertEquals(8, srcStr.length());
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(8);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        6, dstBuf.position(),
+                        "Was expecting 6 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, 0, 6, cs);
+                assertEquals("abAAcd", dstStr);
+            }
+
+            // Test `String::new(byte[], int, int, Charset)` with a dangling
+            // high- and low-surrogate
+            {
+                var srcStr = "ab\uD800B\uDC00Bcd";
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(8);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        8, dstBuf.position(),
+                        "Was expecting 8 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, 0, 8, cs);
+                assertEquals("abABABcd", dstStr);
+            }
+
             /* sun.nio.cs.ArrayDeEncoder works on the assumption that the
                invoker (StringCoder) allocates enough output buf, utf8
                and double-byte coder does not check the output buffer limit.
@@ -247,7 +295,8 @@ public class TestStringCoding {
         }
     }
 
-    static class PermissiveSecurityManger extends SecurityManager {
-        @Override public void checkPermission(java.security.Permission p) {}
+    private static String prettyPrintBytes(byte[] bs) {
+        return "[" + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(bs) + "]";
     }
+
 }

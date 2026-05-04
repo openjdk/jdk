@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
   * @summary Parameters type profiling is not performed from aarch64 interpreter
   *
   * @requires os.arch != "arm"
-  * @requires vm.flavor == "server" & vm.compMode == "Xmixed" & !vm.emulatedClient & !vm.graal.enabled
+  * @requires vm.flavor == "server" & vm.compMode == "Xmixed" & !vm.graal.enabled
   *
   * @comment the test can't be run w/ TieredStopAtLevel < 4
   * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4
+  * @requires vm.compMode != "Xcomp"
   *
   * @library /test/lib /
   * @build jdk.test.whitebox.WhiteBox
@@ -38,13 +39,13 @@
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=020
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=020
   *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
-  *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=200
+  *                   -XX:-TieredCompilation -XX:TypeProfileLevel=200
   *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   */
@@ -93,8 +94,8 @@ public class TestTypeProfiling {
     }
 
     static public void main(String[] args) throws Exception {
-        if (!Platform.isServer() || Platform.isEmulatedClient()) {
-            throw new Error("TESTBUG: Not server mode");
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
         // Only execute if C2 is available
         if (TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {

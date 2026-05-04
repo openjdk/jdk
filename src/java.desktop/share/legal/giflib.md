@@ -1,9 +1,9 @@
-## GIFLIB v5.2.2
+## GIFLIB v6.1.2
 
 ### GIFLIB License
 ```
 
-The GIFLIB distribution is Copyright (c) 1997  Eric S. Raymond
+= MIT LICENSE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+---------------------------------
+The below applies to the following file(s):
+giflib/dgif_lib.c
+giflib/gifalloc.c
+giflib/gif_err.c
+giflib/openbsd-reallocarray.c
 
-tree/README
+Copyright (C) 1989 Gershon Elber
+Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
+Copyright (C) Eric S. Raymond <esr@thyrsus.com>
+
+SPDX-License-Identifier: MIT
+
 
 == Authors ==
 
@@ -37,14 +48,5 @@ former maintainer
 
 Eric Raymond <esr[AT]snark.thyrsus.com>
 current as well as long time former maintainer of giflib code
-
-There have been many other contributors; see the attributions in the
-version-control history to learn more.
-
-
-tree/openbsd-reallocarray.c
-
-Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
-SPDX-License-Identifier: MIT
 
 ```

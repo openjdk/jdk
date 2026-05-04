@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.NoSuchPaddingException;
 
-import jdk.test.lib.Utils;
+import jtreg.SkippedException;
 
 public class TestChaChaPoly extends PKCS11Test {
 
@@ -70,8 +70,7 @@ public class TestChaChaPoly extends PKCS11Test {
         try {
             Cipher.getInstance(ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + ALGO);
         }
         this.p = p;
         testTransformations();

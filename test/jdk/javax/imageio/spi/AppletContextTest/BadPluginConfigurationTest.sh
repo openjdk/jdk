@@ -1,5 +1,5 @@
 #!/bin/ksh -p
-# Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -255,36 +255,12 @@ case "$OS" in
       ;;
 esac
 
-
-# Update policy file to grant read permission
-echo "grant codeBase \"file:${TEST_CODEBASE}\" {" > classpath.policy
-echo " permission java.io.FilePermission \"${TEST_PLUGIN_JAR}\", \"read\";" >> classpath.policy
-echo " permission java.util.PropertyPermission \"test.5076692.property\", \"read\";" >> classpath.policy
-echo "};" >> classpath.policy
-echo "grant codeBase \"file:${TEST_PLUGIN_JAR}\" {" >> classpath.policy
-echo " permission java.util.PropertyPermission \"test.5076692.property\", \"read\";" >> classpath.policy
-echo "};" >> classpath.policy
-
-echo ---------------------
-echo --- Applet policy ---
-echo ---------------------
-cat classpath.policy
-echo ---------------------
-echo
-
 echo -------------------------------
 echo ---  Applet Classpath Test  ---
 echo -------------------------------
-#
-# please note that we need to use "==" in setup of the java.security.policy
-# property in order to overwrite policies defined in the user policy file
-# For more details see:
-#  http://java.sun.com/j2se/1.5.0/docs/guide/security/PolicyFiles.html)
-#
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ".${PATHSEP}${TEST_PLUGIN_JAR}" \
-    -Djava.security.policy==classpath.policy \
-    -Djava.security.manager IIOPluginTest
+
+${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ".${PATHSEP}${TEST_PLUGIN_JAR}" IIOPluginTest
 
 status=$?
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
@@ -32,21 +32,20 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
+#include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <ifaddrs.h>
+#include <limits.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <stdlib.h>
-#include <dlfcn.h>
-#include <pthread.h>
-#include <limits.h>
-#include <ifaddrs.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /**
    /proc/[number]/stat
@@ -430,7 +429,10 @@ static int get_boot_time(uint64_t* time) {
 }
 
 static int perf_context_switch_rate(double* rate) {
+  PRAGMA_DIAG_PUSH
+  PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
   static pthread_mutex_t contextSwitchLock = PTHREAD_MUTEX_INITIALIZER;
+  PRAGMA_DIAG_POP
   static uint64_t      bootTime;
   static uint64_t      lastTimeNanos;
   static uint64_t      lastSwitches;
@@ -543,7 +545,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
   if (_counters.cpus != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _counters.cpus);
+    FREE_C_HEAP_ARRAY(_counters.cpus);
   }
 }
 
@@ -703,11 +705,9 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::is_valid_entry(st
 
   if (atoi(entry->d_name) != 0) {
     jio_snprintf(buffer, PATH_MAX, "/proc/%s", entry->d_name);
-    buffer[PATH_MAX - 1] = '\0';
 
     if (is_dir(buffer)) {
       jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", entry->d_name);
-      buffer[PATH_MAX - 1] = '\0';
       if (fsize(buffer, size) != OS_ERR) {
         return true;
       }
@@ -722,7 +722,6 @@ void SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_name() {
   char  buffer[PATH_MAX];
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
   if ((fp = os::fopen(buffer, "r")) != nullptr) {
     if (fgets(buffer, PATH_MAX, fp) != nullptr) {
       char* start, *end;
@@ -750,7 +749,6 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_cmdline() {
   char* cmdline = nullptr;
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/cmdline", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
   if ((fp = os::fopen(buffer, "r")) != nullptr) {
     size_t size = 0;
     char   dummy;
@@ -785,8 +783,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
   char buffer[PATH_MAX];
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
-  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
+  return os::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {
@@ -814,7 +811,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
   cmdline = get_cmdline();
   if (cmdline != nullptr) {
     process_info->set_command_line(allocate_string(cmdline));
-    FREE_C_HEAP_ARRAY(char, cmdline);
+    FREE_C_HEAP_ARRAY(cmdline);
   }
 
   return OS_OK;
@@ -940,12 +937,12 @@ CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != nullptr) {
     if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
-      FREE_C_HEAP_ARRAY(char, cpu_name);
+      FREE_C_HEAP_ARRAY(cpu_name);
       _cpu_info->set_cpu_name(nullptr);
     }
     if (_cpu_info->cpu_description() != nullptr) {
        const char* cpu_desc = _cpu_info->cpu_description();
-       FREE_C_HEAP_ARRAY(char, cpu_desc);
+       FREE_C_HEAP_ARRAY(cpu_desc);
       _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;
@@ -986,7 +983,7 @@ NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
 int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char* iface, const char* counter) const {
   char buf[128];
 
-  snprintf(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
+  os::snprintf_checked(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
 
   int fd = os::open(buf, O_RDONLY, 0);
   if (fd == -1) {
@@ -999,7 +996,6 @@ int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char
     return -1;
   }
 
-  buf[num_bytes] = '\0';
   int64_t value = strtoll(buf, nullptr, 10);
 
   return value;

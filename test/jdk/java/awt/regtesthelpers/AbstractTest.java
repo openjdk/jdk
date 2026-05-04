@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
      @build AbstractTest
      @run main YourTest
    </pre>
- * Note that if you are about to create a test based on
- * Applet-template, then put those lines into html-file, not in java-file.
  * <p> And put an
  * import test.java.awt.regtesthelpers.AbstractTest;
  * into the java source.

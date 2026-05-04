@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,19 @@
  * @run main/othervm -Djava.net.preferIPv4Stack=true DeadlockTest
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+
 import jdk.test.lib.net.IPSupport;
 
 public class DeadlockTest {
-    public static void main(String [] argv) throws Exception {
+    public static void main(String[] argv) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
         ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
@@ -52,16 +59,9 @@ public class DeadlockTest {
             Thread c1 = new Thread(ct);
             c1.start();
 
-            // Wait for the client thread to finish
-            c1.join(20000);
-
-            // If timeout, we assume there is a deadlock
-            if (c1.isAlive() == true) {
-                // Close the socket to force the server thread
-                // terminate too
-                s1.stop();
-                throw new Exception("Takes too long. Dead lock");
-            }
+            // Wait for the client thread to finish.
+            // If it doesn't finish then it's a sign of a deadlock
+            c1.join();
         } finally {
             ss.close();
             clientSocket.close();
@@ -73,7 +73,7 @@ class ServerThread implements Runnable {
 
     private static boolean dbg = false;
 
-    ObjectInputStream  in;
+    ObjectInputStream in;
     ObjectOutputStream out;
 
     ServerSocket server;

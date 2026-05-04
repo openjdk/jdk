@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     static boolean TEST_WITH_CLEANER = Boolean.getBoolean("test.with.cleaner");
     static boolean TEST_WITH_EXCEPTION = Boolean.getBoolean("test.with.exception");
     static boolean TEST_WITH_OOM = Boolean.getBoolean("test.with.oom");
+
+    static final int WASTE_SIZE = 1024;
     static List<byte[]> waste = new ArrayList();
+    static Object sink;
 
     static Cleaner cleaner;
     static Thread thread;
@@ -59,10 +62,13 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
               return new byte[] {1, 2, 3, 4, 5, 6, 7, 8};
             }
             if (TEST_WITH_OOM) {
-                // fill until OOM
+                // Fill until OOM and fail. This sets up heap for secondary OOM
+                // later on, which should be caught by CDS code. The size of waste
+                // array defines how much max free space would be left for later
+                // code to run with.
                 System.out.println("Fill objects until OOM");
-                for (;;) {
-                    waste.add(new byte[64*1024]);
+                while (true) {
+                    waste.add(new byte[WASTE_SIZE]);
                 }
             }
         }
@@ -104,8 +110,8 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     }
 
     public static void makeGarbage() {
-        for (int x=0; x<10; x++) {
-            Object[] a = new Object[10000];
+        for (int x = 0; x < 10; x++) {
+            sink = new byte[WASTE_SIZE];
         }
     }
 
@@ -115,7 +121,7 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
         public void run() {
             // Allocate something. This will cause G1 to allocate an EDEN region.
             // See JDK-8245925
-            Object o = new Object();
+            sink = new Object();
             System.out.println("cleaning " + i);
         }
     }

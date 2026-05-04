@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -277,18 +276,20 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-
-  if (is_power_of_2(c - 1)) {
-    __ shift_left(left, exact_log2(c - 1), tmp);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, exact_log2(u_value - 1), tmp);
     __ add(tmp, left, result);
     return true;
-  } else if (is_power_of_2(c + 1)) {
-    __ shift_left(left, exact_log2(c + 1), tmp);
+  } else if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, exact_log2(u_value + 1), tmp);
     __ sub(tmp, left, result);
     return true;
-  } else {
-    return false;
+  } else if (c == -1) {
+    __ negate(left, result);
+    return true;
   }
+  return false;
 }
 
 void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp) {
@@ -406,7 +407,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
 
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _ladd, _lmul, _lsub, _ldiv, _lrem
@@ -777,13 +778,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_floatToFloat16: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ f2hf(src, dst, tmp);
           break;
         }
         case vmIntrinsics::_float16ToFloat: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ hf2f(src, dst, tmp);
           break;
         }
@@ -982,7 +981,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       CallingConvention* cc = frame_map()->c_calling_convention(&signature);
       const LIR_Opr result_reg = result_register_for(x->type());
 
-      LIR_Opr addr = new_pointer_register();
+      LIR_Opr addr = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(a), addr);
 
       crc.load_item_force(cc->at(0));
@@ -1059,7 +1058,7 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
       CallingConvention* cc = frame_map()->c_calling_convention(&signature);
       const LIR_Opr result_reg = result_register_for(x->type());
 
-      LIR_Opr addr = new_pointer_register();
+      LIR_Opr addr = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(a), addr);
 
       crc.load_item_force(cc->at(0));
@@ -1246,7 +1245,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(StubId::c1_new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1277,20 +1276,18 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+    stub = new SimpleExceptionStub(StubId::c1_throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
     stub = new DeoptimizeStub(info_for_exception,
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(StubId::c1_throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
-    tmp3 = new_register(objectType);
-  }
+  tmp3 = new_register(objectType);
   __ checkcast(reg, obj.result(), x->klass(),
                new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
@@ -1309,12 +1306,15 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   }
   obj.load_item();
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
-  if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
-    tmp3 = new_register(objectType);
-  }
+  tmp3 = new_register(objectType);
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(StubId::c1_is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {
@@ -1398,14 +1398,5 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
-  // 8179954: We need to make sure that the code generated for
-  // volatile accesses forms a sequentially-consistent set of
-  // operations when combined with STLR and LDAR.  Without a leading
-  // membar it's possible for a simple Dekker test to fail if loads
-  // use LD;DMB but stores use STLR.  This can happen if C2 compiles
-  // the stores in one method and C1 compiles the loads in another.
-  if (!CompilerConfig::is_c1_only_no_jvmci()) {
-    __ membar();
-  }
   __ volatile_load_mem_reg(address, result, info);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,6 @@ module jdk.localedata {
     provides sun.util.locale.provider.LocaleDataMetaInfo with
         sun.util.resources.cldr.provider.CLDRLocaleDataMetaInfo,
         sun.util.resources.provider.NonBaseLocaleDataMetaInfo;
-    provides sun.util.resources.LocaleData.CommonResourceBundleProvider with
+    provides sun.util.resources.LocaleData.LocaleDataResourceBundleProvider with
         sun.util.resources.provider.LocaleDataProvider;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@
  * @requires vm.jvmci & !vm.graal.enabled & vm.compMode == "Xmixed" & vm.opt.TieredStopAtLevel == null
  * @library / /test/lib
  * @library ../common/patches
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -63,29 +62,34 @@ import jdk.test.lib.Asserts;
 import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
 
-public class JvmciNotifyBootstrapFinishedEventTest extends JVMCIServiceLocator implements HotSpotVMEventListener {
+public class JvmciNotifyBootstrapFinishedEventTest {
     private static final boolean BOOTSTRAP = Boolean
             .getBoolean("compiler.jvmci.events.JvmciNotifyBootstrapFinishedEventTest.bootstrap");
-    private static volatile int gotBoostrapNotification = 0;
+    private static volatile int gotBootstrapNotification = 0;
 
     public static void main(String args[]) {
         if (BOOTSTRAP) {
-            Asserts.assertEQ(gotBoostrapNotification, 1, "Did not receive expected number of bootstrap events");
+            Asserts.assertEQ(gotBootstrapNotification, 1, "Did not receive expected number of bootstrap events");
         } else {
-            Asserts.assertEQ(gotBoostrapNotification, 0, "Got unexpected bootstrap event");
+            Asserts.assertEQ(gotBootstrapNotification, 0, "Got unexpected bootstrap event");
         }
     }
 
-    @Override
-    public <S> S getProvider(Class<S> service) {
-        if (service == HotSpotVMEventListener.class) {
-            return service.cast(this);
+    public static class Locator extends JVMCIServiceLocator implements HotSpotVMEventListener {
+        public Locator() {
+            Thread.dumpStack();
         }
-        return null;
-    }
+        @Override
+        public <S> S getProvider(Class<S> service) {
+            if (service == HotSpotVMEventListener.class) {
+                return service.cast(this);
+            }
+            return null;
+        }
 
-    @Override
-    public void notifyBootstrapFinished() {
-        gotBoostrapNotification++;
+        @Override
+        public void notifyBootstrapFinished() {
+            gotBootstrapNotification++;
+        }
     }
 }

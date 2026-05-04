@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class InitTimer implements AutoCloseable {
     /**
      * Cache for value of {@code jvmci.InitTimer} system property.
      */
-    @NativeImageReinitialize private static Boolean enabledPropertyValue;
+    private static Boolean enabledPropertyValue;
 
     private static AtomicInteger nesting;
     private static final String SPACES = "                                            ";

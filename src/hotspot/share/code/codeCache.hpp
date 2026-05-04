@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,17 @@ class OopClosure;
 class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
 class DeoptimizationScope;
+class ReservedSpace;
+
+#ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
+#endif
 
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
-  friend class CodeCacheLoader;
   friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
@@ -114,11 +118,7 @@ class CodeCache : AllStatic {
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
-  static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
-  static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
-  // Returns the name of the VM option to set the size of the corresponding CodeHeap
-  static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
-  static ReservedCodeSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
@@ -141,6 +141,8 @@ class CodeCache : AllStatic {
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
   static void add_heap(CodeHeap* heap);
+  static CodeHeap* get_code_heap(const void* cb);              // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(CodeBlobType code_blob_type); // Returns the CodeHeap for the given CodeBlobType
   static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
@@ -223,7 +225,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, uint size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
+  LINUX_ONLY(static void write_perf_map(const char* filename, outputStream* st);) // Prints warnings and error messages to outputStream
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
@@ -255,12 +257,12 @@ class CodeCache : AllStatic {
   static bool heap_available(CodeBlobType code_blob_type);
 
   // Returns the CodeBlobType for the given nmethod
-  static CodeBlobType get_code_blob_type(nmethod* nm) {
+  static CodeBlobType get_code_blob_type(const nmethod* nm) {
     return get_code_heap(nm)->code_blob_type();
   }
 
   static bool code_blob_type_accepts_nmethod(CodeBlobType type) {
-    return type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
+    return type == CodeBlobType::All || type <= CodeBlobType::MethodHot;
   }
 
   static bool code_blob_type_accepts_allocable(CodeBlobType type) {

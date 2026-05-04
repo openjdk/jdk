@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
@@ -43,7 +42,7 @@
   } while (0)
 
 TEST_VM(FlagGuard, bool_flag) {
-  TEST_FLAG(AlwaysActAsServerClassMachine, bool, true);
+  TEST_FLAG(PrintCompilation, bool, true);
 }
 
 TEST_VM(FlagGuard, int_flag) {
@@ -59,7 +58,7 @@ TEST_VM(FlagGuard, size_t_flag) {
 }
 
 TEST_VM(FlagGuard, uint64_t_flag) {
-  TEST_FLAG(MaxRAM, uint64_t, 1337);
+  TEST_FLAG(ErrorLogTimeout, uint64_t, 1337);
 }
 
 TEST_VM(FlagGuard, double_flag) {

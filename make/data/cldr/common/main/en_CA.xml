@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -164,7 +164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
 						<dateFormatItem id="UMd">U-MM-dd</dateFormatItem>
 						<dateFormatItem id="UMd" alt="variant">d/M/U</dateFormatItem>
-						<dateFormatItem id="yMd" alt="variant">d/M/r</dateFormatItem>
 						<dateFormatItem id="yyyyM">r-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">r-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMd" alt="variant">d/M/r</dateFormatItem>
@@ -229,7 +228,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/y GGGGG</pattern>
+							<pattern>M/d/y G</pattern>
 							<pattern alt="variant">d/M/y GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
@@ -1030,7 +1029,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat type="daylight">{0} Daylight Saving Time</regionFormat>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint-Barthélemy</exemplarCity>
 			</zone>
@@ -1040,14 +1038,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Kitts">
 				<exemplarCity>Saint Kitts</exemplarCity>
 			</zone>
-			<zone type="Asia/Aqtau">
-				<exemplarCity>Aktau</exemplarCity>
-			</zone>
 			<zone type="America/St_Lucia">
 				<exemplarCity>Saint Lucia</exemplarCity>
-			</zone>
-			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity>Saint Helena</exemplarCity>
@@ -1058,392 +1050,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Thomas">
 				<exemplarCity>Saint Thomas</exemplarCity>
 			</zone>
-			<metazone type="Afghanistan">
-				<short>
-					<standard>AFT</standard>
-				</short>
-			</metazone>
-			<metazone type="Alaska">
-				<long>
-					<generic>Alaska Time</generic>
-					<standard>Alaska Standard Time</standard>
-					<daylight>Alaska Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Central">
-				<long>
-					<generic>Central Time</generic>
-					<standard>Central Standard Time</standard>
-					<daylight>Central Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Eastern">
-				<long>
-					<generic>Eastern Time</generic>
-					<standard>Eastern Standard Time</standard>
-					<daylight>Eastern Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Mountain">
-				<long>
-					<generic>Mountain Time</generic>
-					<standard>Mountain Standard Time</standard>
-					<daylight>Mountain Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="America_Pacific">
-				<long>
-					<generic>Pacific Time</generic>
-					<standard>Pacific Standard Time</standard>
-					<daylight>Pacific Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Apia">
-				<long>
-					<generic>Apia Time</generic>
-					<standard>Apia Standard Time</standard>
-					<daylight>Apia Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Arabian">
-				<long>
-					<generic>Arabian Time</generic>
-					<standard>Arabian Standard Time</standard>
-					<daylight>Arabian Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Argentina">
-				<short>
-					<generic>ART</generic>
-				</short>
-			</metazone>
-			<metazone type="Atlantic">
-				<long>
-					<generic>Atlantic Time</generic>
-					<standard>Atlantic Standard Time</standard>
-					<daylight>Atlantic Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Australia_Central">
-				<long>
-					<generic>Central Australia Time</generic>
-					<standard>Australian Central Standard Time</standard>
-					<daylight>Australian Central Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Australia_CentralWestern">
-				<long>
-					<generic>Australian Central Western Time</generic>
-					<standard>Australian Central Western Standard Time</standard>
-					<daylight>Australian Central Western Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<generic>ACWT</generic>
-					<standard>ACWST</standard>
-					<daylight>ACWDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Australia_Eastern">
-				<long>
-					<generic>Eastern Australia Time</generic>
-					<standard>Australian Eastern Standard Time</standard>
-					<daylight>Australian Eastern Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<generic>AET</generic>
-					<standard>AEST</standard>
-					<daylight>AEDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Australia_Western">
-				<long>
-					<generic>Western Australia Time</generic>
-					<standard>Australian Western Standard Time</standard>
-					<daylight>Australian Western Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<standard>AWST</standard>
-					<daylight>AWDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Bangladesh">
-				<short>
-					<standard>BST</standard>
-				</short>
-			</metazone>
-			<metazone type="Bhutan">
-				<short>
-					<standard>BTT</standard>
-				</short>
-			</metazone>
-			<metazone type="Brasilia">
-				<short>
-					<generic>BRT</generic>
-					<daylight>BRST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Brunei">
-				<short>
-					<standard>BNT</standard>
-				</short>
-			</metazone>
-			<metazone type="Chatham">
-				<long>
-					<generic>Chatham Time</generic>
-					<standard>Chatham Standard Time</standard>
-					<daylight>Chatham Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<standard>CHAST</standard>
-					<daylight>CHADT</daylight>
-				</short>
-			</metazone>
-			<metazone type="China">
-				<long>
-					<generic>China Time</generic>
-					<standard>China Standard Time</standard>
-					<daylight>China Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Christmas">
-				<short>
-					<standard>CXT</standard>
-				</short>
-			</metazone>
-			<metazone type="Cocos">
-				<short>
-					<standard>CCT</standard>
-				</short>
-			</metazone>
-			<metazone type="Colombia">
-				<short>
-					<daylight>COST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Cuba">
-				<long>
-					<generic>Cuba Time</generic>
-					<standard>Cuba Standard Time</standard>
-					<daylight>Cuba Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="East_Timor">
-				<short>
-					<standard>TLT</standard>
-				</short>
-			</metazone>
-			<metazone type="Easter">
-				<short>
-					<standard>EAST</standard>
-					<daylight>EASST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Ecuador">
-				<short>
-					<standard>ECT</standard>
-				</short>
-			</metazone>
-			<metazone type="Falkland">
-				<short>
-					<generic>FKT</generic>
-					<daylight>FKST</daylight>
-				</short>
-			</metazone>
 			<metazone type="French_Southern">
 				<long>
 					<standard>French Southern and Antarctic Time</standard>
 				</long>
 			</metazone>
-			<metazone type="Galapagos">
-				<short>
-					<standard>GALT</standard>
-				</short>
-			</metazone>
-			<metazone type="Greenland_Eastern">
-				<short>
-					<generic>EGT</generic>
-				</short>
-			</metazone>
-			<metazone type="Guyana">
-				<short>
-					<standard>GYT</standard>
-				</short>
-			</metazone>
-			<metazone type="Hawaii_Aleutian">
-				<long>
-					<generic>Hawaii-Aleutian Time</generic>
-					<standard>Hawaii-Aleutian Standard Time</standard>
-					<daylight>Hawaii-Aleutian Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="India">
-				<short>
-					<standard>IST</standard>
-				</short>
-			</metazone>
-			<metazone type="Indochina">
-				<short>
-					<standard>ICT</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Central">
-				<short>
-					<standard>WITA</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Eastern">
-				<short>
-					<standard>WIT</standard>
-				</short>
-			</metazone>
-			<metazone type="Indonesia_Western">
-				<short>
-					<standard>WIB</standard>
-				</short>
-			</metazone>
-			<metazone type="Iran">
-				<long>
-					<generic>Iran Time</generic>
-					<standard>Iran Standard Time</standard>
-					<daylight>Iran Daylight Saving Time</daylight>
-				</long>
-				<short>
-					<standard>IRST</standard>
-					<daylight>IRDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Israel">
-				<long>
-					<generic>Israel Time</generic>
-					<standard>Israel Standard Time</standard>
-					<daylight>Israel Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Japan">
-				<long>
-					<generic>Japan Time</generic>
-					<standard>Japan Standard Time</standard>
-					<daylight>Japan Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Korea">
-				<long>
-					<generic>Korean Time</generic>
-					<standard>Korean Standard Time</standard>
-					<daylight>Korean Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Lord_Howe">
-				<long>
-					<generic>Lord Howe Time</generic>
-					<standard>Lord Howe Standard Time</standard>
-					<daylight>Lord Howe Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Malaysia">
-				<short>
-					<standard>MYT</standard>
-				</short>
-			</metazone>
-			<metazone type="Maldives">
-				<short>
-					<standard>MVT</standard>
-				</short>
-			</metazone>
-			<metazone type="Mexico_Pacific">
-				<long>
-					<generic>Mexican Pacific Time</generic>
-					<standard>Mexican Pacific Standard Time</standard>
-					<daylight>Mexican Pacific Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Nepal">
-				<short>
-					<standard>NPT</standard>
-				</short>
-			</metazone>
-			<metazone type="New_Zealand">
-				<long>
-					<generic>New Zealand Time</generic>
-					<standard>New Zealand Standard Time</standard>
-					<daylight>New Zealand Daylight Saving Time</daylight>
-				</long>
-			</metazone>
 			<metazone type="Newfoundland">
-				<long>
-					<generic>Newfoundland Time</generic>
-					<standard>Newfoundland Standard Time</standard>
-					<daylight>Newfoundland Daylight Saving Time</daylight>
-				</long>
 				<short>
 					<generic>NT</generic>
 					<standard>NST</standard>
 					<daylight>NDT</daylight>
 				</short>
 			</metazone>
-			<metazone type="Norfolk">
-				<long>
-					<generic>Norfolk Island Time</generic>
-					<standard>Norfolk Island Standard Time</standard>
-					<daylight>Norfolk Island Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Noronha">
-				<short>
-					<generic>FNT</generic>
-				</short>
-			</metazone>
-			<metazone type="Pakistan">
-				<short>
-					<standard>PKT</standard>
-				</short>
-			</metazone>
-			<metazone type="Paraguay">
-				<short>
-					<generic>PYT</generic>
-					<daylight>PYST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Peru">
-				<short>
-					<generic>PET</generic>
-				</short>
-			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Saint-Pierre-et-Miquelon Time</generic>
 					<standard>Saint-Pierre-et-Miquelon Standard Time</standard>
-					<daylight>Saint-Pierre-et-Miquelon Daylight Saving Time</daylight>
+					<daylight>Saint-Pierre-et-Miquelon Daylight Time</daylight>
 				</long>
 				<short>
 					<generic>PMT</generic>
 					<standard>PMST</standard>
 					<daylight>PMDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Samoa">
-				<long>
-					<generic>Samoa Time</generic>
-					<standard>Samoa Standard Time</standard>
-					<daylight>Samoa Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Taipei">
-				<long>
-					<generic>Taipei Time</generic>
-					<standard>Taipei Standard Time</standard>
-					<daylight>Taipei Daylight Saving Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Uruguay">
-				<short>
-					<standard>UYT</standard>
-					<daylight>UYST</daylight>
-				</short>
-			</metazone>
-			<metazone type="Venezuela">
-				<short>
-					<standard>VET</standard>
 				</short>
 			</metazone>
 			<metazone type="Wallis">
@@ -1469,11 +1097,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Belarusian new rouble (1994–1999)</displayName>
 				<displayName count="other">Belarusian new roubles (1994–1999)</displayName>
 			</currency>
-			<currency type="BYN">
-				<displayName>Belarusian Rouble</displayName>
-				<displayName count="one">Belarusian rouble</displayName>
-				<displayName count="other">Belarusian roubles</displayName>
-			</currency>
 			<currency type="BYR">
 				<displayName>Belarusian Rouble (2000–2016)</displayName>
 				<displayName count="one">Belarusian rouble (2000–2016)</displayName>
@@ -1489,11 +1112,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Latvian Rouble</displayName>
 				<displayName count="one">Latvian rouble</displayName>
 				<displayName count="other">Latvian roubles</displayName>
-			</currency>
-			<currency type="RUB">
-				<displayName>Russian Rouble</displayName>
-				<displayName count="one">Russian rouble</displayName>
-				<displayName count="other">Russian roubles</displayName>
 			</currency>
 			<currency type="RUR">
 				<displayName>Russian Rouble (1991–1998)</displayName>
@@ -1522,6 +1140,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="USD">
 				<symbol>US$</symbol>
+			</currency>
+			<currency type="XCG">
+				<symbol draft="contributed">Cg</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>unknown currency</displayName>
@@ -1795,7 +1416,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} fluid ounces</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName>US dessertspoon</displayName>
 				<unitPattern count="one">{0} US dessertspoon</unitPattern>
 				<unitPattern count="other">{0} US dessertspoons</unitPattern>
 			</unit>
@@ -1846,9 +1466,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimoles/litre</displayName>
 			</unit>
-			<unit type="concentr-item">
-				<displayName>items</displayName>
-			</unit>
 			<unit type="concentr-permille">
 				<displayName>per mille</displayName>
 			</unit>
@@ -1875,12 +1492,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName>bytes</displayName>
 				<unitPattern count="one">{0} byte</unitPattern>
 				<unitPattern count="other">{0} bytes</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName>bits</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bits</unitPattern>
 			</unit>
@@ -2034,11 +1649,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName>US dssp</displayName>
-				<unitPattern count="one">{0} US dssp</unitPattern>
-				<unitPattern count="other">{0} US dssp</unitPattern>
-			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dssp</displayName>
 				<unitPattern count="one">{0} dssp</unitPattern>
@@ -2114,9 +1724,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-ampere">
 				<displayName>A</displayName>
 			</unit>
-			<unit type="electric-ohm">
-				<displayName>Ω</displayName>
-			</unit>
 			<unit type="electric-volt">
 				<displayName>V</displayName>
 			</unit>
@@ -2189,11 +1796,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0}fl oz</unitPattern>
 				<unitPattern count="other">{0}fl oz</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName>US dsp</displayName>
-				<unitPattern count="one">{0}USdsp</unitPattern>
-				<unitPattern count="other">{0}USdsp</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp</displayName>

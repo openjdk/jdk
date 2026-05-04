@@ -30,8 +30,6 @@ import java.security.Provider;
 import java.util.Objects;
 
 import org.ietf.jgss.*;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.jgss.*;
 import sun.security.jgss.spi.*;
 import sun.security.util.*;
@@ -85,8 +83,8 @@ public class SpNegoContext implements GSSContextSpi {
     private final SpNegoMechFactory factory;
 
     // debug property
-    static final Debug DEBUG = Debug.of("spnego", GetPropertyAction
-            .privilegedGetProperty("sun.security.spnego.debug"));
+    static final Debug DEBUG = Debug.of("spnego",
+            System.getProperty("sun.security.spnego.debug"));
 
     /**
      * Constructor for SpNegoContext to be called on the context initiator's

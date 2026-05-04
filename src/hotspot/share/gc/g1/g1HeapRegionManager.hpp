@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "services/memoryUsage.hpp"
 
 class G1HeapRegion;
-class HeapRegionClosure;
-class HeapRegionClaimer;
-class FreeRegionList;
+class G1HeapRegionClaimer;
+class G1HeapRegionClosure;
+class G1FreeRegionList;
 class WorkerThreads;
 
 class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
@@ -49,7 +50,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 // This allows maximum flexibility for deciding what to commit or uncommit given
 // a request from outside.
 //
-// HeapRegions are kept in the _regions array in address order. A region's
+// G1HeapRegions are kept in the _regions array in address order. A region's
 // index in the array corresponds to its index in the heap (i.e., 0 is the
 // region at the bottom of the heap, 1 is the one after it, etc.). Two
 // regions that are consecutive in the array should also be adjacent in the
@@ -64,25 +65,25 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 // * _num_committed (returned by length()) is the number of currently
 //   committed regions. These may not be contiguous.
-// * _allocated_heapregions_length (not exposed outside this class) is the
-//   number of regions+1 for which we have HeapRegions.
-// * max_length() returns the maximum number of regions the heap may commit.
-// * reserved_length() returns the maximum number of regions the heap has reserved.
+// * _next_highest_used_hrm_index (not exposed outside this class) is the
+//   highest heap region index +1 for which we have G1HeapRegions.
+// * max_num_regions() returns the maximum number of regions the heap has reserved.
 //
 
-class HeapRegionManager: public CHeapObj<mtGC> {
+class G1HeapRegionManager: public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class HeapRegionClaimer;
+  friend class G1HeapRegionClaimer;
 
   G1RegionToSpaceMapper* _bot_mapper;
-  G1RegionToSpaceMapper* _cardtable_mapper;
+  G1RegionToSpaceMapper* _card_table_mapper;
+  G1RegionToSpaceMapper* _refinement_table_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
-  // Internal only. The highest heap region +1 we allocated a G1HeapRegion instance for.
-  uint _allocated_heapregions_length;
+  // Internal only. The highest heap region index +1 we allocated a G1HeapRegion instance for.
+  uint _next_highest_used_hrm_index;
 
   HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
@@ -90,7 +91,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // Pass down commit calls to the VirtualSpace.
   void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_workers = nullptr);
 
-  // Initialize the HeapRegions in the range and put them on the free list.
+  // Initialize the G1HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
 
   // Find a contiguous set of empty or uncommitted regions of length num_regions and return
@@ -123,7 +124,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1HeapRegionTable _regions;
   G1RegionToSpaceMapper* _heap_mapper;
   G1RegionToSpaceMapper* _bitmap_mapper;
-  FreeRegionList _free_list;
+  G1FreeRegionList _free_list;
 
   void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = nullptr);
 
@@ -157,12 +158,13 @@ public:
 #endif
 public:
   // Empty constructor, we'll initialize it with the initialize() method.
-  HeapRegionManager();
+  G1HeapRegionManager();
 
   void initialize(G1RegionToSpaceMapper* heap_storage,
                   G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable);
+                  G1RegionToSpaceMapper* card_table,
+                  G1RegionToSpaceMapper* refinement_table);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new G1HeapRegion that owns G1HeapRegion at index 0. Since at the moment we commit
@@ -196,12 +198,12 @@ public:
   void rebuild_free_list(WorkerThreads* workers);
 
   // Insert the given region list into the global free region list.
-  void insert_list_into_free_list(FreeRegionList* list) {
+  void insert_list_into_free_list(G1FreeRegionList* list) {
     _free_list.add_ordered(list);
   }
 
   // Allocate a free region with specific node index. If fails allocate with next node index.
-  G1HeapRegion* allocate_free_region(HeapRegionType type, uint requested_node_index);
+  G1HeapRegion* allocate_free_region(G1HeapRegionType type, uint requested_node_index);
 
   // Allocate a humongous object from the free list
   G1HeapRegion* allocate_humongous(uint num_regions);
@@ -221,6 +223,8 @@ public:
     return _free_list.length();
   }
 
+  uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
+
   uint num_free_regions(uint node_index) const {
     return _free_list.length(node_index);
   }
@@ -229,24 +233,21 @@ public:
     return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
-  // Return the number of regions available (uncommitted) regions.
-  uint available() const { return max_length() - length(); }
+  // Return the number of regions uncommitted or ready to be uncommitted.
+  uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint length() const { return _committed_map.num_active(); }
+  uint num_committed_regions() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
-  uint reserved_length() const { return (uint)_regions.length(); }
-
-  // Return maximum number of regions that heap can expand to.
-  uint max_length() const { return reserved_length(); }
+  uint max_num_regions() const { return (uint)_regions.length(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 
   MemRegion reserved() const { return MemRegion(heap_bottom(), heap_end()); }
 
   // Expand the sequence to reflect that the heap has grown. Either create new
-  // HeapRegions, or re-use existing ones. Returns the number of regions the
+  // G1HeapRegions, or re-use existing ones. Returns the number of regions the
   // sequence was expanded by. If a G1HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
   uint expand_by(uint num_regions, WorkerThreads* pretouch_workers);
@@ -256,11 +257,6 @@ public:
 
   G1HeapRegion* next_region_in_heap(const G1HeapRegion* r) const;
 
-  // Find the highest free or uncommitted region in the reserved heap,
-  // and if uncommitted, commit it. If none are available, return G1_NO_HRM_INDEX.
-  // Set the 'expanded' boolean true if a new region was committed.
-  uint find_highest_free(bool* expanded);
-
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
   // and not free, and return the number of regions newly committed in commit_count.
@@ -268,10 +264,10 @@ public:
 
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
-  void iterate(HeapRegionClosure* blk) const;
-  void iterate(HeapRegionIndexClosure* blk) const;
+  void iterate(G1HeapRegionClosure* blk) const;
+  void iterate(G1HeapRegionIndexClosure* blk) const;
 
-  void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;
+  void par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClaimer* hrclaimer, const uint start_index) const;
 
   // Uncommit up to num_regions_to_remove regions that are completely free.
   // Return the actual number of uncommitted regions.
@@ -294,19 +290,19 @@ public:
   void verify_optional() PRODUCT_RETURN;
 };
 
-// The HeapRegionClaimer is used during parallel iteration over heap regions,
+// The G1HeapRegionClaimer is used during parallel iteration over heap regions,
 // allowing workers to claim heap regions, gaining exclusive rights to these regions.
-class HeapRegionClaimer : public StackObj {
+class G1HeapRegionClaimer : public StackObj {
   uint           _n_workers;
   uint           _n_regions;
-  volatile uint* _claims;
+  Atomic<uint>*  _claims;
 
   static const uint Unclaimed = 0;
   static const uint Claimed   = 1;
 
  public:
-  HeapRegionClaimer(uint n_workers);
-  ~HeapRegionClaimer();
+  G1HeapRegionClaimer(uint n_workers);
+  ~G1HeapRegionClaimer();
 
   inline uint n_regions() const {
     return _n_regions;

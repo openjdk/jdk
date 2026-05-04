@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm GetPrivateKey
- * @run main/othervm -Djava.security.manager=allow GetPrivateKey sm policy
  */
 
-import java.io.File;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -47,24 +45,13 @@ import java.util.TreeSet;
 public class GetPrivateKey extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
-        if (initSecmod() == false) {
-            return;
-        }
+        initSecmod();
 
         String configName = BASE + SEP + "nss.cfg";
         Provider p = getSunPKCS11(configName);
 
         System.out.println(p);
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setSecurityManager(new SecurityManager());
-        }
 
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);

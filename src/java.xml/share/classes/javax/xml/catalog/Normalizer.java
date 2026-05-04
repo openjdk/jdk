@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * The Normalizer is responsible for normalizing Public and System Identifiers
  * as specified in section 6.2, 6.3 and 6.4 of the specification
- *  * <a
- * href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html">
+ * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
  * XML Catalogs, OASIS Standard V1.1, 7 October 2005</a>.
  *
  * @since 9

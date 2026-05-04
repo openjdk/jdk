@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.net.www.protocol.http;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
@@ -67,10 +66,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * repeatedly, via the Authenticator. Default is false, which means that this
      * behavior is switched off.
      */
-    @SuppressWarnings("removal")
-    static final boolean serializeAuth = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction(
-                "http.auth.serializeRequests")).booleanValue();
+    static final boolean serializeAuth = Boolean.getBoolean("http.auth.serializeRequests");
 
     /* AuthCacheValue: */
 
@@ -433,9 +429,10 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * @param conn The connection to apply the header(s) to
      * @param p A source of header values for this connection, if needed.
      * @param raw The raw header field (if needed)
-     * @return true if all goes well, false if no headers were set.
+     * @throws IOException if no headers were set
      */
-    public abstract boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw);
+    public abstract void setHeaders(HttpURLConnection conn, HeaderParser p, String raw)
+            throws IOException;
 
     /**
      * Check if the header indicates that the current auth. parameters are stale.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "jvm.h"
@@ -130,8 +129,8 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   }
 #ifdef ASSERT
   if (required_len > result_len) {
-    warning("outputStream::do_vsnprintf output truncated -- buffer length is " SIZE_FORMAT
-            " bytes but " SIZE_FORMAT " bytes are needed.",
+    warning("outputStream::do_vsnprintf output truncated -- buffer length is %zu"
+            " bytes but %zu bytes are needed.",
             add_cr ? buflen + 1 : buflen, required_len + 1);
   }
 #endif
@@ -160,6 +159,12 @@ void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool a
   } else {
     do_vsnprintf_and_write_with_automatic_buffer(format, ap, add_cr);
   }
+}
+
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
 }
 
 void outputStream::print(const char* format, ...) {
@@ -191,9 +196,10 @@ void outputStream::print_raw(const char* str, size_t len) {
   write(str, len);
 }
 
-void outputStream::fill_to(int col) {
-  int need_fill = col - position();
+int outputStream::fill_to(int col) {
+  const int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
+  return need_fill;
 }
 
 void outputStream::move_to(int col, int slop, int min_space) {
@@ -223,10 +229,6 @@ void outputStream::sp(int count) {
 
 void outputStream::cr() {
   this->write("\n", 1);
-}
-
-void outputStream::cr_indent() {
-  cr(); indent();
 }
 
 void outputStream::stamp() {
@@ -277,12 +279,6 @@ outputStream& outputStream::indent() {
   return *this;
 }
 
-bool outputStream::set_autoindent(bool value) {
-  const bool old = _autoindent;
-  _autoindent = value;
-  return old;
-}
-
 void outputStream::print_jlong(jlong value) {
   print(JLONG_FORMAT, value);
 }
@@ -300,16 +296,16 @@ void outputStream::print_julong(julong value) {
  * 0000020: 0000 0000 0000 0040 0000 0000 0000 015d  .......@.......]
  * ...
  *
- * indent is applied to each line.  Ends with a CR.
+ * Ends with a CR.
  */
 void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
       if (rel_addr) {
-        indent().print("%07" PRIxPTR ":", i);
+        print("%07" PRIxPTR ":", i);
       } else {
-        indent().print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
+        print(PTR_FORMAT ":", p2i((unsigned char*)data + i));
       }
     }
     if (i % 2 == 0) {
@@ -373,7 +369,7 @@ void stringStream::grow(size_t new_capacity) {
     }
     zero_terminate();
   } else {
-    _buffer = REALLOC_C_HEAP_ARRAY(char, _buffer, new_capacity, mtInternal);
+    _buffer = REALLOC_C_HEAP_ARRAY(_buffer, new_capacity, mtInternal);
     _capacity = new_capacity;
   }
 }
@@ -386,7 +382,7 @@ void stringStream::write(const char* s, size_t len) {
   }
   const size_t reasonable_max_len = 1 * G;
   if (len >= reasonable_max_len) {
-    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    assert(false, "bad length? (%zu)", len);
     return;
   }
   size_t write_len = 0;
@@ -429,17 +425,19 @@ char* stringStream::as_string(bool c_heap) const {
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
   copy[_written] = '\0';  // terminating null
-  if (c_heap) {
-    // Need to ensure our content is written to memory before we return
-    // the pointer to it.
-    OrderAccess::storestore();
-  }
+  return copy;
+}
+
+char* stringStream::as_string(Arena* arena) const {
+  char* copy = NEW_ARENA_ARRAY(arena, char, _written + 1);
+  ::memcpy(copy, _buffer, _written);
+  copy[_written] = '\0';  // terminating null
   return copy;
 }
 
 stringStream::~stringStream() {
   if (!_is_fixed && _buffer != _small_buffer) {
-    FREE_C_HEAP_ARRAY(char, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
   }
 }
 
@@ -608,15 +606,15 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
-long fileStream::fileSize() {
-  long size = -1;
+int64_t fileStream::fileSize() {
+  int64_t size = -1;
   if (_file != nullptr) {
-    long pos = ::ftell(_file);
+    int64_t pos = os::ftell(_file);
     if (pos < 0) return pos;
-    if (::fseek(_file, 0, SEEK_END) == 0) {
-      size = ::ftell(_file);
+    if (os::fseek(_file, 0, SEEK_END) == 0) {
+      size = os::ftell(_file);
     }
-    ::fseek(_file, pos, SEEK_SET);
+    os::fseek(_file, pos, SEEK_SET);
   }
   return size;
 }
@@ -678,7 +676,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   }
 
   fileStream* file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -696,7 +694,7 @@ fileStream* defaultStream::open_file(const char* log_name) {
   jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
   file = new (mtInternal) fileStream(try_name);
-  FREE_C_HEAP_ARRAY(char, try_name);
+  FREE_C_HEAP_ARRAY(try_name);
   if (file->is_open()) {
     return file;
   }
@@ -874,7 +872,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
+      _log_file->print_cr("<writer thread='%zu'/>", writer_id);
     }
     _last_writer = writer_id;
   }
@@ -989,9 +987,13 @@ void ostream_exit() {
   if (tmp != &tty_preinit_stream && tmp != defaultStream::instance) {
     delete tmp;
   }
-  delete defaultStream::instance;
-  xtty = nullptr;
+  // Keep xtty usable as long as possible by ensuring we null it out before
+  // deleting anything.
+  defaultStream* ds = defaultStream::instance;
   defaultStream::instance = nullptr;
+  xtty = nullptr;
+  OrderAccess::fence(); // force visibility to concurrently executing threads
+  delete ds;
 }
 
 // ostream_abort() is called by os::abort() when VM is about to die.
@@ -1037,7 +1039,7 @@ void bufferedStream::write(const char* s, size_t len) {
     const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
     if (end > reasonable_cap) {
       // In debug VM, assert right away.
-      assert(false, "Exceeded max buffer size for this string.");
+      assert(false, "Exceeded max buffer size for this string (\"%.200s...\").", buffer);
       // Release VM: silently truncate. We do this since these kind of errors
       // are both difficult to predict with testing (depending on logging content)
       // and usually not serious enough to kill a production VM for it.
@@ -1049,7 +1051,7 @@ void bufferedStream::write(const char* s, size_t len) {
       }
     }
     if (buffer_length < end) {
-      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
+      buffer = REALLOC_C_HEAP_ARRAY(buffer, end, mtInternal);
       buffer_length = end;
     }
   }
@@ -1068,17 +1070,17 @@ char* bufferedStream::as_string() {
 }
 
 bufferedStream::~bufferedStream() {
-  FREE_C_HEAP_ARRAY(char, buffer);
+  FREE_C_HEAP_ARRAY(buffer);
 }
 
 #ifndef PRODUCT
 
 #if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #elif defined(_WINDOWS)
 #include <Ws2tcpip.h>
 #endif

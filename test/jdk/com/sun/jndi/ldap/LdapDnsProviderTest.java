@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,27 +58,10 @@ import jdk.test.lib.RandomFactory;
  * @build jdk.test.lib.RandomFactory
  * @compile dnsprovider/TestDnsProvider.java
  * @run main/othervm LdapDnsProviderTest
- * @run main/othervm LdapDnsProviderTest nosm
- * @run main/othervm -Djava.security.manager=allow LdapDnsProviderTest smnodns
- * @run main/othervm -Djava.security.manager=allow LdapDnsProviderTest smdns
- * @run main/othervm LdapDnsProviderTest nosmbaddns
+ * @run main/othervm LdapDnsProviderTest serviceloader
+ * @run main/othervm LdapDnsProviderTest missingprovider
  */
 
-class DNSSecurityManager extends SecurityManager {
-
-    private boolean dnsProvider = false;
-
-    public void setAllowDnsProvider(boolean allow) {
-        dnsProvider = allow;
-    }
-
-    @Override
-    public void checkPermission(Permission p) {
-        if (p.getName().equals("ldapDnsProvider") && !dnsProvider) {
-            throw new SecurityException(p.getName());
-        }
-    }
-}
 
 class ProviderTest implements Callable<Boolean> {
 
@@ -172,32 +155,18 @@ public class LdapDnsProviderTest {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 0 && args[0].equals("nosm")) {
-            // no security manager, serviceloader
+        if (args.length > 0 && args[0].equals("serviceloader")) {
+            // service loader
+            // TestDnsProvider
             installServiceConfigurationFile("dnsprovider.TestDnsProvider");
             runTest("ldap:///dc=example,dc=com", "yupyupyup:389");
-        } else if (args.length > 0 && args[0].equals("smnodns")) {
-            // security manager & serviceloader
-            installServiceConfigurationFile("dnsprovider.TestDnsProvider");
-            // install security manager
-            System.setSecurityManager(new DNSSecurityManager());
-            runTest("ldap:///dc=example,dc=com", "ServiceConfigurationError");
-        } else if (args.length > 0 && args[0].equals("smdns")) {
-            // security manager & serviceloader
-            DNSSecurityManager sm = new DNSSecurityManager();
-            installServiceConfigurationFile("dnsprovider.TestDnsProvider");
-            // install security manager
-            System.setSecurityManager(sm);
-            sm.setAllowDnsProvider(true);
-            runTest("ldap:///dc=example,dc=com", "yupyupyup:389");
-        } else if (args.length > 0 && args[0].equals("nosmbaddns")) {
-            // no security manager, no serviceloader
-            // DefaultLdapDnsProvider
+        } else if (args.length > 0 && args[0].equals("missingprovider")) {
+            // no service loader
+            // MissingDnsProvider
             installServiceConfigurationFile("dnsprovider.MissingDnsProvider");
-            // no SecurityManager
             runTest("ldap:///dc=example,dc=com", "not found");
         } else {
-            // no security manager, no serviceloader
+            // no service loader
             // DefaultLdapDnsProvider
             System.err.println("TEST_CLASSES:");
             System.err.println(TEST_CLASSES);
@@ -207,7 +176,6 @@ public class LdapDnsProviderTest {
                 f.delete();
             }
 
-            // no SecurityManager
             runTest("ldap:///dc=example,dc=com", "localhost:389");
             runTest("ldap://localhost/dc=example,dc=com", "localhost:389");
             runLocalHostTestWithRandomPort("ldap", "/dc=example,dc=com", 5);

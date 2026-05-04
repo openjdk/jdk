@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,26 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.StackMapFrameInfo;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.ObjectVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.SimpleVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.UninitializedVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.TreeMap;
 
-import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.classfile.impl.StackMapGenerator.*;
 
 public class StackMapDecoder {
 
-    private static final int
-                    SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
-                    SAME_EXTENDED = 251;
+    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = {};
 
     private final ClassReader classReader;
     private final int pos;
@@ -73,7 +77,7 @@ public class StackMapDecoder {
         if (!isStatic) {
             vtis = new VerificationTypeInfo[methodType.parameterCount() + 1];
             if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
-                vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
+                vtis[i++] = SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
@@ -83,10 +87,10 @@ public class StackMapDecoder {
         for (int pi = 0; pi < methodType.parameterCount(); pi++) {
             var arg = methodType.parameterType(pi);
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
-                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.LONG;
+                case 'F' -> SimpleVerificationTypeInfo.FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.DOUBLE;
                 case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
@@ -103,15 +107,20 @@ public class StackMapDecoder {
                 mi.methodTypeSymbol(),
                 (mi.methodFlags() & ACC_STATIC) != 0);
         int prevOffset = -1;
-        var map = new TreeMap<Integer, StackMapFrameInfo>();
+        // avoid using method handles due to early bootstrap
+        StackMapFrameInfo[] infos = entries.toArray(NO_STACK_FRAME_INFOS);
         //sort by resolved label offsets first to allow unordered entries
-        for (var fr : entries) {
-            map.put(dcb.labelToBci(fr.target()), fr);
-        }
-        b.writeU2(map.size());
-        for (var me : map.entrySet()) {
-            int offset = me.getKey();
-            var fr = me.getValue();
+        Arrays.sort(infos, new Comparator<StackMapFrameInfo>() {
+            public int compare(final StackMapFrameInfo o1, final StackMapFrameInfo o2) {
+                return Integer.compare(dcb.labelToBci(o1.target()), dcb.labelToBci(o2.target()));
+            }
+        });
+        b.writeU2(infos.length);
+        for (var fr : infos) {
+            int offset = dcb.labelToBci(fr.target());
+            if (offset == prevOffset) {
+                throw new IllegalArgumentException("Duplicated stack frame bytecode index: " + offset);
+            }
             writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
             prevOffset = offset;
             prevLocals = fr.locals();
@@ -124,29 +133,25 @@ public class StackMapDecoder {
             int commonLocalsSize = Math.min(prevLocals.size(), fr.locals().size());
             int diffLocalsSize = fr.locals().size() - prevLocals.size();
             if (-3 <= diffLocalsSize && diffLocalsSize <= 3 && equals(fr.locals(), prevLocals, commonLocalsSize)) {
-                if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
+                if (diffLocalsSize == 0 && offsetDelta <= SAME_FRAME_END) { //same frame
                     out.writeU1(offsetDelta);
                 } else {   //chop, same extended or append frame
-                    out.writeU1(251 + diffLocalsSize);
-                    out.writeU2(offsetDelta);
+                    out.writeU1U2(SAME_FRAME_EXTENDED + diffLocalsSize, offsetDelta);
                     for (int i=commonLocalsSize; i<fr.locals().size(); i++) writeTypeInfo(out, fr.locals().get(i));
                 }
                 return;
             }
         } else if (fr.stack().size() == 1 && fr.locals().equals(prevLocals)) {
-            if (offsetDelta < 64) {  //same locals 1 stack item frame
-                out.writeU1(64 + offsetDelta);
+            if (offsetDelta <= SAME_LOCALS_1_STACK_ITEM_FRAME_END  - SAME_LOCALS_1_STACK_ITEM_FRAME_START) {  //same locals 1 stack item frame
+                out.writeU1(SAME_LOCALS_1_STACK_ITEM_FRAME_START + offsetDelta);
             } else {  //same locals 1 stack item extended frame
-                out.writeU1(247);
-                out.writeU2(offsetDelta);
+                out.writeU1U2(SAME_LOCALS_1_STACK_ITEM_EXTENDED, offsetDelta);
             }
             writeTypeInfo(out, fr.stack().get(0));
             return;
         }
         //full frame
-        out.writeU1(255);
-        out.writeU2(offsetDelta);
-        out.writeU2(fr.locals().size());
+        out.writeU1U2U2(FULL_FRAME, offsetDelta, fr.locals().size());
         for (var l : fr.locals()) writeTypeInfo(out, l);
         out.writeU2(fr.stack().size());
         for (var s : fr.stack()) writeTypeInfo(out, s);
@@ -160,14 +165,16 @@ public class StackMapDecoder {
     }
 
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
-        bw.writeU1(vti.tag());
-        switch (vti) {
-            case SimpleVerificationTypeInfo svti ->
-                {}
-            case ObjectVerificationTypeInfo ovti ->
-                bw.writeIndex(ovti.className());
-            case UninitializedVerificationTypeInfo uvti ->
-                bw.writeU2(bw.labelContext().labelToBci(uvti.newTarget()));
+        int tag = vti.tag();
+        switch (tag) {
+            case ITEM_TOP, ITEM_INTEGER, ITEM_FLOAT, ITEM_DOUBLE, ITEM_LONG, ITEM_NULL,
+                 ITEM_UNINITIALIZED_THIS ->
+                bw.writeU1(tag);
+            case ITEM_OBJECT ->
+                bw.writeU1U2(tag, bw.cpIndex(((ObjectVerificationTypeInfo)vti).className()));
+            case ITEM_UNINITIALIZED ->
+                bw.writeU1U2(tag, bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
+            default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
     }
 
@@ -178,11 +185,11 @@ public class StackMapDecoder {
         var entries = new StackMapFrameInfo[u2()];
         for (int ei = 0; ei < entries.length; ei++) {
             int frameType = classReader.readU1(p++);
-            if (frameType < 64) {
+            if (frameType <= SAME_FRAME_END) {
                 bci += frameType + 1;
                 stack = List.of();
-            } else if (frameType < 128) {
-                bci += frameType - 63;
+            } else if (frameType <= SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
+                bci += frameType - SAME_LOCALS_1_STACK_ITEM_FRAME_START + 1;
                 stack = List.of(readVerificationTypeInfo());
             } else {
                 if (frameType < SAME_LOCALS_1_STACK_ITEM_EXTENDED)
@@ -190,14 +197,14 @@ public class StackMapDecoder {
                 bci += u2() + 1;
                 if (frameType == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
                     stack = List.of(readVerificationTypeInfo());
-                } else if (frameType < SAME_EXTENDED) {
-                    locals = locals.subList(0, locals.size() + frameType - SAME_EXTENDED);
+                } else if (frameType < SAME_FRAME_EXTENDED) {
+                    locals = locals.subList(0, locals.size() + frameType - SAME_FRAME_EXTENDED);
                     stack = List.of();
-                } else if (frameType == SAME_EXTENDED) {
+                } else if (frameType == SAME_FRAME_EXTENDED) {
                     stack = List.of();
-                } else if (frameType < SAME_EXTENDED + 4) {
+                } else if (frameType <= APPEND_FRAME_END) {
                     int actSize = locals.size();
-                    var newLocals = locals.toArray(new VerificationTypeInfo[actSize + frameType - SAME_EXTENDED]);
+                    var newLocals = locals.toArray(new VerificationTypeInfo[actSize + frameType - SAME_FRAME_EXTENDED]);
                     for (int i = actSize; i < newLocals.length; i++)
                         newLocals[i] = readVerificationTypeInfo();
                     locals = List.of(newLocals);
@@ -224,24 +231,27 @@ public class StackMapDecoder {
     private VerificationTypeInfo readVerificationTypeInfo() {
         int tag = classReader.readU1(p++);
         return switch (tag) {
-            case VT_TOP -> SimpleVerificationTypeInfo.ITEM_TOP;
-            case VT_INTEGER -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-            case VT_FLOAT -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-            case VT_DOUBLE -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-            case VT_LONG -> SimpleVerificationTypeInfo.ITEM_LONG;
-            case VT_NULL -> SimpleVerificationTypeInfo.ITEM_NULL;
-            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
-            case VT_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
-            case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
+            case ITEM_TOP -> SimpleVerificationTypeInfo.TOP;
+            case ITEM_INTEGER -> SimpleVerificationTypeInfo.INTEGER;
+            case ITEM_FLOAT -> SimpleVerificationTypeInfo.FLOAT;
+            case ITEM_DOUBLE -> SimpleVerificationTypeInfo.DOUBLE;
+            case ITEM_LONG -> SimpleVerificationTypeInfo.LONG;
+            case ITEM_NULL -> SimpleVerificationTypeInfo.NULL;
+            case ITEM_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
+            case ITEM_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
+            case ITEM_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);
         };
     }
 
     public static record ObjectVerificationTypeInfoImpl(
             ClassEntry className) implements ObjectVerificationTypeInfo {
+        public ObjectVerificationTypeInfoImpl {
+            requireNonNull(className);
+        }
 
         @Override
-        public int tag() { return VT_OBJECT; }
+        public int tag() { return ITEM_OBJECT; }
 
         @Override
         public boolean equals(Object o) {
@@ -264,9 +274,12 @@ public class StackMapDecoder {
     }
 
     public static record UninitializedVerificationTypeInfoImpl(Label newTarget) implements UninitializedVerificationTypeInfo {
+        public UninitializedVerificationTypeInfoImpl {
+            requireNonNull(newTarget);
+        }
 
         @Override
-        public int tag() { return VT_UNINITIALIZED; }
+        public int tag() { return ITEM_UNINITIALIZED; }
 
         @Override
         public String toString() {
@@ -285,5 +298,10 @@ public class StackMapDecoder {
                                            List<VerificationTypeInfo> locals,
                                            List<VerificationTypeInfo> stack)
             implements StackMapFrameInfo {
+        public StackMapFrameImpl {
+            requireNonNull(target);
+            locals = Util.sanitizeU2List(locals);
+            stack = Util.sanitizeU2List(stack);
+        }
     }
 }

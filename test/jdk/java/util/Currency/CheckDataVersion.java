@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Currency;
 
 class CheckDataVersion {
@@ -63,33 +61,23 @@ class CheckDataVersion {
                         break;
                     }
                 }
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
-                    try {
-                        InputStream in = Currency.class.getModule().getResourceAsStream("java/util/currency.data");
-                        String sep = File.separator;
-                        DataInputStream dis = new DataInputStream(in);
-                        int magic = dis.readInt();
-                        if (magic != 0x43757244) {
-                            throw new RuntimeException("The magic number in the JRE's currency data is incorrect.  Expected: 0x43757244, Got: 0x"+magic);
-                        }
-                        int fileVerNumber = dis.readInt();
-                        int dataVerNumber = dis.readInt();
-                        if (Integer.parseInt(fileVersion) != fileVerNumber ||
-                            Integer.parseInt(dataVersion) != dataVerNumber) {
-                            throw new RuntimeException("Test data and JRE's currency data are inconsistent.  test: (file: "+fileVersion+" data: "+dataVersion+"), JRE: (file: "+fileVerNumber+" data: "+dataVerNumber+")");
-                        }
-System.out.println("test: (file: "+fileVersion+" data: "+dataVersion+"), JRE: (file: "+fileVerNumber+" data: "+dataVerNumber+")");
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    }
-                    return null;
+                InputStream JREdata = Currency.class.getModule().getResourceAsStream("java/util/currency.data");
+                DataInputStream dis = new DataInputStream(JREdata);
+                int magic = dis.readInt();
+                if (magic != 0x43757244) {
+                    throw new RuntimeException("The magic number in the JRE's currency data is incorrect.  Expected: 0x43757244, Got: 0x"+magic);
                 }
-            });
+                int fileVerNumber = dis.readInt();
+                int dataVerNumber = dis.readInt();
+                if (Integer.parseInt(fileVersion) != fileVerNumber ||
+                        Integer.parseInt(dataVersion) != dataVerNumber) {
+                    throw new RuntimeException("Test data and JRE's currency data are inconsistent.  test: (file: "+fileVersion+" data: "+dataVersion+"), JRE: (file: "+fileVerNumber+" data: "+dataVerNumber+")");
+                }
+                System.out.println("test: (file: "+fileVersion+" data: "+dataVersion+"), JRE: (file: "+fileVerNumber+" data: "+dataVerNumber+")");
+            } catch (IOException ioe) {
+                throw new RuntimeException(
+                        "currency.data was not retrieved properly", ioe);
+            }
             checked = true;
         }
     }

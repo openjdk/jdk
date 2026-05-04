@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @bug 8214781 8293187
  * @summary Test for the -XX:ArchiveHeapTestClass flag
  * @requires vm.debug == true & vm.cds.write.archived.java.heap
- * @modules java.base/sun.invoke.util java.logging
+ * @requires vm.cds.supports.aot.class.linking
+ * @modules java.logging
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -35,12 +36,13 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot.jar
  *             CDSTestClassA CDSTestClassA$XX CDSTestClassA$YY
  *             CDSTestClassB CDSTestClassC CDSTestClassD
- *             CDSTestClassE CDSTestClassF CDSTestClassG
+ *             CDSTestClassE CDSTestClassF
  *             pkg.ClassInPackage
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar Hello
  * @run driver ArchiveHeapTestClass
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -56,7 +58,6 @@ public class ArchiveHeapTestClass {
     static final String CDSTestClassD_name = CDSTestClassD.class.getName();
     static final String CDSTestClassE_name = CDSTestClassE.class.getName();
     static final String CDSTestClassF_name = CDSTestClassF.class.getName();
-    static final String CDSTestClassG_name = CDSTestClassG.class.getName();
     static final String ClassInPackage_name = pkg.ClassInPackage.class.getName().replace('.', '/');
     static final String ARCHIVE_TEST_FIELD_NAME = "archivedObjects";
 
@@ -73,7 +74,7 @@ public class ArchiveHeapTestClass {
         extraOpts = TestCommon.concat(extraOpts,
                                       "-Xbootclasspath/a:" + bootJar,
                                       "-XX:ArchiveHeapTestClass=" + bootClass,
-                                      "-Xlog:cds+heap");
+                                      "-Xlog:aot+heap");
         return TestCommon.dump(appJar, classlist, extraOpts);
     }
 
@@ -105,13 +106,13 @@ public class ArchiveHeapTestClass {
         testCase("Simple positive case");
         output = dumpBootAndHello(CDSTestClassA_name);
         mustSucceed(output, CDSTestClassA.getOutput()); // make sure <clinit> is executed
-        output.shouldMatch("warning.*cds.*Loading ArchiveHeapTestClass " + CDSTestClassA_name);
-        output.shouldMatch("warning.*cds.*Initializing ArchiveHeapTestClass " + CDSTestClassA_name);
+        output.shouldMatch("warning.*aot.*Loading ArchiveHeapTestClass " + CDSTestClassA_name);
+        output.shouldMatch("warning.*aot.*Initializing ArchiveHeapTestClass " + CDSTestClassA_name);
         output.shouldContain("Archived field " + CDSTestClassA_name + "::" + ARCHIVE_TEST_FIELD_NAME);
         output.shouldMatch("Archived object klass CDSTestClassA .*\\[LCDSTestClassA;");
         output.shouldMatch("Archived object klass CDSTestClassA .*CDSTestClassA\\$YY");
 
-        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:cds+heap", CDSTestClassA_name)
+        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:aot+heap", CDSTestClassA_name)
             .assertNormalExit(CDSTestClassA.getOutput(),
                               "resolve subgraph " + CDSTestClassA_name);
 
@@ -151,18 +152,14 @@ public class ArchiveHeapTestClass {
         output = dumpBootAndHello(CDSTestClassD_name);
         mustFail(output, "Unable to find the static T_OBJECT field CDSTestClassD::archivedObjects");
 
-        testCase("Use a disallowed class: in unnamed module but not in unname package");
-        output = dumpBootAndHello(CDSTestClassE_name);
-        mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
+        if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
+            testCase("Use a disallowed class: in unnamed module but not in unname package");
+            output = dumpBootAndHello(CDSTestClassE_name);
+            mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
 
-        testCase("Use a disallowed class: not in java.base module");
-        output = dumpBootAndHello(CDSTestClassF_name);
-        mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
-
-        if (false) { // JDK-8293187
-            testCase("sun.invoke.util.Wrapper");
-            output = dumpBootAndHello(CDSTestClassG_name);
-            mustSucceed(output);
+            testCase("Use a disallowed class: not in java.base module");
+            output = dumpBootAndHello(CDSTestClassF_name);
+            mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
         }
     }
 }
@@ -171,12 +168,27 @@ class CDSTestClassA {
     static final String output = "CDSTestClassA.<clinit> was executed";
     static Object[] archivedObjects;
     static {
-        archivedObjects = new Object[5];
-        archivedObjects[0] = output;
-        archivedObjects[1] = new CDSTestClassA[0];
-        archivedObjects[2] = new YY();
-        archivedObjects[3] = new int[0];
-        archivedObjects[4] = new int[2][2];
+        // The usual convention would be to call this here:
+        //     CDS.initializeFromArchive(CDSTestClassA.class);
+        // However, the CDS class is not exported to the unnamed module by default,
+        // and we don't want to use "--add-exports java.base/jdk.internal.misc=ALL-UNNAMED", as
+        // that would disable the archived full module graph, which will disable
+        // CDSConfig::is_using_aot_linked_classes().
+        //
+        // Instead, HeapShared::initialize_test_class_from_archive() will set up the
+        // "archivedObjects" field first, before calling CDSTestClassA.<clinit>. So
+        // if we see that archivedObjects is magically non-null here, that means
+        // it has been restored from the CDS archive.
+        if (archivedObjects == null) {
+            archivedObjects = new Object[5];
+            archivedObjects[0] = output;
+            archivedObjects[1] = new CDSTestClassA[0];
+            archivedObjects[2] = new YY();
+            archivedObjects[3] = new int[0];
+            archivedObjects[4] = new int[2][2];
+        } else {
+            System.out.println("Initialized from CDS");
+        }
         System.out.println(output);
         System.out.println("CDSTestClassA   module  = " + CDSTestClassA.class.getModule());
         System.out.println("CDSTestClassA   package = " + CDSTestClassA.class.getPackage());
@@ -263,14 +275,5 @@ class CDSTestClassF {
         // Not in java.base
         archivedObjects = new Object[1];
         archivedObjects[0] = java.util.logging.Level.OFF;
-    }
-}
-
-class CDSTestClassG {
-    static Object[] archivedObjects;
-    static {
-        // Not in java.base
-        archivedObjects = new Object[1];
-        archivedObjects[0] = sun.invoke.util.Wrapper.BOOLEAN;
     }
 }

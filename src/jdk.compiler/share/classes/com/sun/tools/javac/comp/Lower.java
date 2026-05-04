@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
-import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -37,9 +36,7 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
-import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -51,7 +48,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -64,10 +60,9 @@ import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
-
-import javax.lang.model.type.TypeKind;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -108,6 +103,7 @@ public class Lower extends TreeTranslator {
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean nullCheckOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
     private int variableIndex = 0;
@@ -137,6 +133,8 @@ public class Lower extends TreeTranslator {
         optimizeOuterThis =
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
+        nullCheckOuterThis = options.getBoolean("nullCheckOuterThis",
+            target.nullCheckOuterThisByDefault());
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
         Source source = Source.instance(context);
         Preview preview = Preview.instance(context);
@@ -156,10 +154,6 @@ public class Lower extends TreeTranslator {
     /** Environment for symbol lookup, set by translateTopLevelClass.
      */
     Env<AttrContext> attrEnv;
-
-    /** A hash table mapping syntax trees to their ending source positions.
-     */
-    EndPosTable endPosTable;
 
 /* ************************************************************************
  * Global mappings
@@ -270,26 +264,22 @@ public class Lower extends TreeTranslator {
     Map<ClassSymbol,List<VarSymbol>> freevarCache;
 
     /** A navigator class for collecting the free variables accessed
-     *  from a local class. There is only one case; all other cases simply
-     *  traverse down the tree. This class doesn't deal with the specific
-     *  of Lower - it's an abstract visitor that is meant to be reused in
-     *  order to share the local variable capture logic.
+     *  from a local class.
      */
-    abstract class BasicFreeVarCollector extends TreeScanner {
+    class FreeVarCollector extends CaptureScanner {
 
-        /** Add all free variables of class c to fvs list
-         *  unless they are already there.
-         */
-        abstract void addFreeVars(ClassSymbol c);
-
-        /** If tree refers to a variable in owner of local class, add it to
-         *  free variables list.
-         */
-        public void visitIdent(JCIdent tree) {
-            visitSymbol(tree.sym);
+        FreeVarCollector(JCTree ownerTree) {
+            super(ownerTree);
         }
-        // where
-        abstract void visitSymbol(Symbol _sym);
+
+        void addFreeVars(ClassSymbol c) {
+            List<VarSymbol> fvs = freevarCache.get(c);
+            if (fvs != null) {
+                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
+                    addFreeVar(l.head);
+                }
+            }
+        }
 
         /** If tree refers to a class instance creation expression
          *  add all free variables of the freshly created class.
@@ -309,128 +299,6 @@ public class Lower extends TreeTranslator {
             }
             super.visitApply(tree);
         }
-
-        @Override
-        public void visitYield(JCYield tree) {
-            scan(tree.value);
-        }
-
-    }
-
-    /**
-     * Lower-specific subclass of {@code BasicFreeVarCollector}.
-     */
-    class FreeVarCollector extends BasicFreeVarCollector {
-
-        /** The owner of the local class.
-         */
-        Symbol owner;
-
-        /** The local class.
-         */
-        ClassSymbol clazz;
-
-        /** The list of owner's variables accessed from within the local class,
-         *  without any duplicates.
-         */
-        List<VarSymbol> fvs;
-
-        FreeVarCollector(ClassSymbol clazz) {
-            this.clazz = clazz;
-            this.owner = clazz.owner;
-            this.fvs = List.nil();
-        }
-
-        /** Add free variable to fvs list unless it is already there.
-         */
-        private void addFreeVar(VarSymbol v) {
-            for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail)
-                if (l.head == v) return;
-            fvs = fvs.prepend(v);
-        }
-
-        @Override
-        void addFreeVars(ClassSymbol c) {
-            List<VarSymbol> fvs = freevarCache.get(c);
-            if (fvs != null) {
-                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    addFreeVar(l.head);
-                }
-            }
-        }
-
-        @Override
-        void visitSymbol(Symbol _sym) {
-            Symbol sym = _sym;
-            if (sym.kind == VAR || sym.kind == MTH) {
-                if (sym != null && sym.owner != owner)
-                    sym = proxies.get(sym);
-                if (sym != null && sym.owner == owner) {
-                    VarSymbol v = (VarSymbol)sym;
-                    if (v.getConstValue() == null) {
-                        addFreeVar(v);
-                    }
-                } else {
-                    if (outerThisStack.head != null &&
-                        outerThisStack.head != _sym)
-                        visitSymbol(outerThisStack.head);
-                }
-            }
-        }
-
-        /** If tree refers to a class instance creation expression
-         *  add all free variables of the freshly created class.
-         */
-        public void visitNewClass(JCNewClass tree) {
-            ClassSymbol c = (ClassSymbol)tree.constructor.owner;
-            if (tree.encl == null &&
-                c.hasOuterInstance() &&
-                outerThisStack.head != null)
-                visitSymbol(outerThisStack.head);
-            super.visitNewClass(tree);
-        }
-
-        /** If tree refers to a qualified this or super expression
-         *  for anything but the current class, add the outer this
-         *  stack as a free variable.
-         */
-        public void visitSelect(JCFieldAccess tree) {
-            if ((tree.name == names._this || tree.name == names._super) &&
-                tree.selected.type.tsym != clazz &&
-                outerThisStack.head != null)
-                visitSymbol(outerThisStack.head);
-            super.visitSelect(tree);
-        }
-
-        /** If tree refers to a superclass constructor call,
-         *  add all free variables of the superclass.
-         */
-        public void visitApply(JCMethodInvocation tree) {
-            if (TreeInfo.name(tree.meth) == names._super) {
-                Symbol constructor = TreeInfo.symbol(tree.meth);
-                ClassSymbol c = (ClassSymbol)constructor.owner;
-                if (c.hasOuterInstance() &&
-                    !tree.meth.hasTag(SELECT) &&
-                    outerThisStack.head != null)
-                    visitSymbol(outerThisStack.head);
-            }
-            super.visitApply(tree);
-        }
-
-    }
-
-    ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
-        if (!c.isDirectlyOrIndirectlyLocal()) {
-            return null;
-        }
-        Symbol currentOwner = c.owner;
-        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isDirectlyOrIndirectlyLocal()) {
-            currentOwner = currentOwner.owner;
-        }
-        if (currentOwner.owner.kind.matches(KindSelector.VAL_MTH) && c.isSubClass(currentOwner, types)) {
-            return (ClassSymbol)currentOwner;
-        }
-        return null;
     }
 
     /** Return the variables accessed from within a local class, which
@@ -442,22 +310,10 @@ public class Lower extends TreeTranslator {
         if (fvs != null) {
             return fvs;
         }
-        if (c.owner.kind.matches(KindSelector.VAL_MTH) && !c.isStatic()) {
-            FreeVarCollector collector = new FreeVarCollector(c);
-            collector.scan(classDef(c));
-            fvs = collector.fvs;
-            freevarCache.put(c, fvs);
-            return fvs;
-        } else {
-            ClassSymbol owner = ownerToCopyFreeVarsFrom(c);
-            if (owner != null) {
-                fvs = freevarCache.get(owner);
-                freevarCache.put(c, fvs);
-                return fvs;
-            } else {
-                return List.nil();
-            }
-        }
+        FreeVarCollector collector = new FreeVarCollector(classDef(c));
+        fvs = collector.analyzeCaptures().reverse();
+        freevarCache.put(c, fvs);
+        return fvs;
     }
 
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
@@ -1548,7 +1404,7 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definitions go.
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
-        return freevarDefs(pos, freevars, owner, 0);
+        return freevarDefs(pos, freevars, owner, LOCAL_CAPTURE_FIELD);
     }
 
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
@@ -1564,7 +1420,12 @@ public class Lower extends TreeTranslator {
                 proxyName = proxyName(v.name, index++);
             } while (!proxyNames.add(proxyName));
             VarSymbol proxy = new VarSymbol(
-                flags, proxyName, v.erasure(types), owner);
+                flags, proxyName, v.erasure(types), owner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return v;
+                }
+            };
             proxies.put(v, proxy);
             JCVariableDecl vd = make.at(pos).VarDef(proxy, null);
             vd.vartype = access(vd.vartype);
@@ -1590,7 +1451,7 @@ public class Lower extends TreeTranslator {
     }
 
     private VarSymbol makeOuterThisVarSymbol(Symbol owner, long flags) {
-        Type target = types.erasure(owner.enclClass().type.getEnclosingType());
+        Type target = owner.innermostAccessibleEnclosingClass().erasure(types);
         // Set NOOUTERTHIS for all synthetic outer instance variables, and unset
         // it when the variable is accessed. If the variable is never accessed,
         // we skip creating an outer instance field and saving the constructor
@@ -1876,11 +1737,10 @@ public class Lower extends TreeTranslator {
      *                       due to protection?
      */
     JCExpression makeOwnerThis(DiagnosticPosition pos, Symbol sym, boolean preciseMatch) {
-        Symbol c = sym.owner;
         if (preciseMatch ? sym.isMemberOf(currentClass, types)
                          : currentClass.isSubClass(sym.owner, types)) {
             // in this case, `this' works fine
-            return make.at(pos).This(c.erasure(types));
+            return make.at(pos).This(currentClass.erasure(types));
         } else {
             // need to go via this$n
             return makeOwnerThisN(pos, sym, preciseMatch);
@@ -1931,18 +1791,27 @@ public class Lower extends TreeTranslator {
                     make.Ident(rhs)).setType(lhs.erasure(types)));
     }
 
-    /** Return tree simulating the assignment {@code this.this$n = this$n}.
+    /**
+     * Return tree simulating null checking outer this and/or assigning. This is
+     * called when a null check is required (nullCheckOuterThis), or a synthetic
+     * field is generated (stores).
      */
-    JCStatement initOuterThis(int pos, VarSymbol rhs) {
+    JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
-        VarSymbol lhs = outerThisStack.head;
-        Assert.check(rhs.owner.owner == lhs.owner);
+        Assert.check(nullCheckOuterThis || stores); // One of the flags must be true
         make.at(pos);
-        return
-            make.Exec(
-                make.Assign(
+        JCExpression expression = make.Ident(rhs);
+        if (nullCheckOuterThis) {
+            expression = attr.makeNullCheck(expression);
+        }
+        if (stores) {
+            VarSymbol lhs = outerThisStack.head;
+            Assert.check(rhs.owner.owner == lhs.owner);
+            expression = make.Assign(
                     make.Select(make.This(lhs.owner.erasure(types)), lhs),
-                    make.Ident(rhs)).setType(lhs.erasure(types)));
+                    expression).setType(lhs.erasure(types));
+        }
+        return make.Exec(expression);
     }
 
 /* ************************************************************************
@@ -2185,8 +2054,8 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != tree) {
-                endPosTable.replaceTree(tree, result);
+            if (result != null && result != tree) {
+                result.endpos = tree.endpos;
             }
             return result;
         }
@@ -2347,15 +2216,22 @@ public class Lower extends TreeTranslator {
         }
         // If this$n was accessed, add the field definition and prepend
         // initializer code to any super() invocation to initialize it
-        if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
-            tree.defs = tree.defs.prepend(otdef);
-            enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+        // otherwise prepend enclosing instance null check code if required
+        emitOuter:
+        if (currentClass.hasOuterInstance()) {
+            boolean storesThis = shouldEmitOuterThis(currentClass);
+            if (storesThis) {
+                tree.defs = tree.defs.prepend(otdef);
+                enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+            } else if (!nullCheckOuterThis) {
+                break emitOuter;
+            }
 
             for (JCTree def : tree.defs) {
                 if (TreeInfo.isConstructor(def)) {
                     JCMethodDecl mdef = (JCMethodDecl)def;
                     if (TreeInfo.hasConstructorCall(mdef, names._super)) {
-                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym, storesThis)) ;
                         TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
                     }
                 }
@@ -2678,7 +2554,7 @@ public class Lower extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         LowerSignatureGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override
@@ -2949,47 +2825,55 @@ public class Lower extends TreeTranslator {
      */
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
-            JCExpression exactnessCheck = null;
+            JCStatement prefixStatement;
+            JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
-            // preserving the side effects of the value
-            VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
-                    names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
-                    types.erasure(tree.expr.type),
-                    currentMethodSym);
-            JCStatement var = make.at(tree.pos())
-                    .VarDef(dollar_s, instanceOfExpr);
-
-            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExactTypeBased(tree.expr.type, tree.pattern.type)) {
+                // instanceOfExpr; true
+                prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
-            }
-            else if (tree.expr.type.isReference()) {
-                JCExpression nullCheck =
-                        makeBinary(NE,
-                            make.Ident(dollar_s),
-                            makeNull());
-
-                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
-                    exactnessCheck = nullCheck;
-                } else if (types.unboxedType(tree.expr.type).isPrimitive()) {
-                    exactnessCheck =
-                        makeBinary(AND,
-                            nullCheck,
-                            getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))));
+            } else if (tree.expr.type.isPrimitive()) {
+                // ExactConversionSupport.isXxxExact(instanceOfExpr)
+                prefixStatement = null;
+                exactnessCheck = getExactnessCheck(tree, instanceOfExpr);
+            } else if (tree.expr.type.isReference()) {
+                if (types.isUnconditionallyExactTypeBased(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                    // instanceOfExpr != null
+                    prefixStatement = null;
+                    exactnessCheck = makeBinary(NE, instanceOfExpr, makeNull());
                 } else {
-                    exactnessCheck =
-                        makeBinary(AND,
-                            nullCheck,
-                            make.at(tree.pos())
-                                .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
-                                .setType(syms.booleanType));
-                }
-            }
-            else if (tree.expr.type.isPrimitive()) {
-                exactnessCheck = getExactnessCheck(tree, make.Ident(dollar_s));
-            }
+                    // We read the result of instanceOfExpr, so create variable
+                    VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
+                            names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
+                            types.erasure(tree.expr.type),
+                            currentMethodSym);
+                    prefixStatement = make.at(tree.pos())
+                            .VarDef(dollar_s, instanceOfExpr);
 
-            result = make.LetExpr(List.of(var), exactnessCheck)
+                    JCExpression nullCheck =
+                            makeBinary(NE,
+                                    make.Ident(dollar_s),
+                                    makeNull());
+
+                    if (types.unboxedType(tree.expr.type).isPrimitive()) {
+                        exactnessCheck =
+                            makeBinary(AND,
+                                nullCheck,
+                                getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))));
+                    } else {
+                        exactnessCheck =
+                            makeBinary(AND,
+                                nullCheck,
+                                make.at(tree.pos())
+                                    .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
+                                    .setType(syms.booleanType));
+                    }
+                }
+            } else {
+                throw Assert.error("Non primitive or reference type: " + tree.expr.type);
+            }
+            result = (prefixStatement == null ? exactnessCheck : make.LetExpr(List.of(prefixStatement), exactnessCheck))
                     .setType(syms.booleanType);
         } else {
             tree.expr = translate(tree.expr);
@@ -3101,7 +2985,7 @@ public class Lower extends TreeTranslator {
                 thisArg.type = tree.encl.type;
             } else if (c.isDirectlyOrIndirectlyLocal()) {
                 // local class
-                thisArg = makeThis(tree.pos(), c.type.getEnclosingType().tsym);
+                thisArg = makeThis(tree.pos(), c.innermostAccessibleEnclosingClass());
             } else {
                 // nested class
                 thisArg = makeOwnerThis(tree.pos(), c, false);
@@ -3307,7 +3191,7 @@ public class Lower extends TreeTranslator {
                     ((JCIdent) tree.meth).name = methName;
                 } else if (c.isDirectlyOrIndirectlyLocal() || methName == names._this){
                     // local class or this() call
-                    thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
+                    thisArg = makeThis(tree.meth.pos(), c.innermostAccessibleEnclosingClass());
                 } else if (currentClass.isStatic()) {
                     // super() call from static nested class - invalid
                     log.error(tree.pos(),
@@ -3378,6 +3262,9 @@ public class Lower extends TreeTranslator {
     /** Expand a boxing or unboxing conversion if needed. */
     @SuppressWarnings("unchecked") // XXX unchecked
     <T extends JCExpression> T boxIfNeeded(T tree, Type type) {
+        Assert.check(!type.hasTag(VOID));
+        if (type.hasTag(NONE))
+            return tree;
         boolean havePrimitive = tree.type.isPrimitive();
         if (havePrimitive == type.isPrimitive())
             return tree;
@@ -3805,14 +3692,15 @@ public class Lower extends TreeTranslator {
             if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(tree.var.type, vardefinit);
+                vardefinit = transTypes.coerce(attrEnv, vardefinit, tree.var.type);
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
-                                                  vardefinit).setType(tree.var.type);
+                                                  vardefinit,
+                                                  tree.var.declKind).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
-            body.endpos = TreeInfo.endPos(tree.body);
+            body.bracePos = TreeInfo.endPos(tree.body);
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,
@@ -3894,6 +3782,9 @@ public class Lower extends TreeTranslator {
         Type prevRestype = currentRestype;
         try {
             currentRestype = types.erasure(tree.getDescriptorType(types)).getReturnType();
+            // represent void results as NO_TYPE, to avoid unnecessary boxing in boxIfNeeded
+            if (currentRestype.hasTag(VOID))
+                currentRestype = Type.noType;
             tree.body = tree.getBodyKind() == BodyKind.EXPRESSION ?
                     translate((JCExpression) tree.body, currentRestype) :
                     translate(tree.body);
@@ -3901,337 +3792,6 @@ public class Lower extends TreeTranslator {
             currentRestype = prevRestype;
         }
         result = tree;
-    }
-
-    @Override
-    public void visitReference(JCMemberReference tree) {
-        if (needsConversionToLambda(tree)) {
-            // Convert to a lambda, and process as such
-            MemberReferenceToLambda conv = new MemberReferenceToLambda(tree);
-            result = translate(conv.lambda());
-        } else {
-            super.visitReference(tree);
-        }
-    }
-    // where
-        boolean needsVarArgsConversion(JCMemberReference tree) {
-            return tree.varargsElement != null;
-        }
-
-        /**
-         * @return Is this an array operation like clone()
-         */
-        boolean isArrayOp(JCMemberReference tree) {
-            return tree.sym.owner == syms.arrayClass;
-        }
-
-        boolean receiverAccessible(JCMemberReference tree) {
-            //hack needed to workaround 292 bug (7087658)
-            //when 292 issue is fixed we should remove this and change the backend
-            //code to always generate a method handle to an accessible method
-            return tree.ownerAccessible;
-        }
-
-        /**
-         * Erasure destroys the implementation parameter subtype
-         * relationship for intersection types.
-         * Have similar problems for union types too.
-         */
-        boolean interfaceParameterIsIntersectionOrUnionType(JCMemberReference tree) {
-            List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
-            for (; tl.nonEmpty(); tl = tl.tail) {
-                Type pt = tl.head;
-                if (isIntersectionOrUnionType(pt))
-                    return true;
-            }
-            return false;
-        }
-
-        boolean isIntersectionOrUnionType(Type t) {
-            switch (t.getKind()) {
-                case INTERSECTION:
-                case UNION:
-                    return true;
-                case TYPEVAR:
-                    TypeVar tv = (TypeVar) t;
-                    return isIntersectionOrUnionType(tv.getUpperBound());
-            }
-            return false;
-        }
-
-        private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
-                                                                              Symbol currentClass) {
-            return ((targetReference.flags() & PROTECTED) != 0 &&
-                    targetReference.packge() != currentClass.packge());
-        }
-
-        /**
-         * This method should be called only when target release <= 14
-         * where LambdaMetaFactory does not spin nestmate classes.
-         *
-         * This method should be removed when --release 14 is not supported.
-         */
-        boolean isPrivateInOtherClass(JCMemberReference tree) {
-            assert !target.runtimeUseNestAccess();
-            return  (tree.sym.flags() & PRIVATE) != 0 &&
-                    !types.isSameType(
-                            types.erasure(tree.sym.enclClass().asType()),
-                            types.erasure(currentClass.asType()));
-        }
-
-        /**
-         * Does this reference need to be converted to a lambda
-         * (i.e. var args need to be expanded or "super" is used)
-         */
-        boolean needsConversionToLambda(JCMemberReference tree) {
-            return interfaceParameterIsIntersectionOrUnionType(tree) ||
-                    tree.hasKind(ReferenceKind.SUPER) ||
-                    needsVarArgsConversion(tree) ||
-                    isArrayOp(tree) ||
-                    (!target.runtimeUseNestAccess() && isPrivateInOtherClass(tree)) ||
-                    isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, currentClass) ||
-                    !receiverAccessible(tree) ||
-                    (tree.getMode() == ReferenceMode.NEW &&
-                            tree.kind != ReferenceKind.ARRAY_CTOR &&
-                            (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
-        }
-
-    /**
-     * Converts a method reference which cannot be used directly into a lambda
-     */
-    private class MemberReferenceToLambda {
-
-        private final JCMemberReference tree;
-        private final ListBuffer<JCExpression> args = new ListBuffer<>();
-        private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
-        private final MethodSymbol owner = new MethodSymbol(0, names.empty, Type.noType, currentClass);
-
-        private JCExpression receiverExpression = null;
-
-        MemberReferenceToLambda(JCMemberReference tree) {
-            this.tree = tree;
-        }
-
-        JCExpression lambda() {
-            int prevPos = make.pos;
-            try {
-                make.at(tree);
-
-                //body generation - this can be either a method call or a
-                //new instance creation expression, depending on the member reference kind
-                VarSymbol rcvr = addParametersReturnReceiver();
-                JCExpression expr = (tree.getMode() == ReferenceMode.INVOKE)
-                        ? expressionInvoke(rcvr)
-                        : expressionNew();
-
-                JCLambda slam = make.Lambda(params.toList(), expr);
-                slam.target = tree.target;
-                slam.type = tree.type;
-                slam.pos = tree.pos;
-                slam.wasMethodReference = true;
-                if (receiverExpression != null) {
-                    // use a let expression so that the receiver expression is evaluated eagerly
-                    return make.at(tree.pos).LetExpr(
-                            make.VarDef(rcvr, translate(receiverExpression)), slam).setType(tree.type);
-                } else {
-                    return slam;
-                }
-            } finally {
-                make.at(prevPos);
-            }
-        }
-
-        /**
-         * Generate the parameter list for the converted member reference.
-         *
-         * @return The receiver variable symbol, if any
-         */
-        VarSymbol addParametersReturnReceiver() {
-            Type samDesc = types.erasure(types.findDescriptorSymbol(tree.target.tsym).type);
-            List<Type> samPTypes = samDesc.getParameterTypes();
-            List<Type> descPTypes = tree.getDescriptorType(types).getParameterTypes();
-
-            // Determine the receiver, if any
-            VarSymbol rcvr;
-            switch (tree.kind) {
-                case BOUND:
-                    // The receiver is explicit in the method reference
-                    rcvr = new VarSymbol(SYNTHETIC, names.fromString("rec$"), tree.getQualifierExpression().type, owner);
-                    rcvr.pos = tree.pos;
-                    receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
-                    break;
-                case UNBOUND:
-                    // The receiver is the first parameter, extract it and
-                    // adjust the SAM and unerased type lists accordingly
-                    rcvr = addParameter("rec$", samDesc.getParameterTypes().head, false);
-                    samPTypes = samPTypes.tail;
-                    descPTypes = descPTypes.tail;
-                    break;
-                default:
-                    rcvr = null;
-                    break;
-            }
-            List<Type> implPTypes = tree.sym.type.getParameterTypes();
-            int implSize = implPTypes.size();
-            int samSize = samPTypes.size();
-            // Last parameter to copy from referenced method, exclude final var args
-            int last = needsVarArgsConversion(tree) ? implSize - 1 : implSize;
-
-            // Failsafe -- assure match-up
-            boolean checkForIntersection = tree.varargsElement != null || implSize == descPTypes.size();
-
-            // Use parameter types of the implementation method unless the unerased
-            // SAM parameter type is an intersection type, in that case use the
-            // erased SAM parameter type so that the supertype relationship
-            // the implementation method parameters is not obscured.
-            // Note: in this loop, the lists implPTypes, samPTypes, and descPTypes
-            // are used as pointers to the current parameter type information
-            // and are thus not usable afterwards.
-            for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
-                // By default use the implementation method parameter type
-                Type parmType = implPTypes.head;
-                if (checkForIntersection) {
-                    if (descPTypes.head.getKind() == TypeKind.INTERSECTION) {
-                        parmType = samPTypes.head;
-                    }
-                    // If the unerased parameter type is a type variable whose
-                    // bound is an intersection (eg. <T extends A & B>) then
-                    // use the SAM parameter type
-                    if (descPTypes.head.getKind() == TypeKind.TYPEVAR) {
-                        TypeVar tv = (TypeVar) descPTypes.head;
-                        if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
-                            parmType = samPTypes.head;
-                        }
-                    }
-                }
-                addParameter("x$" + i, parmType, true);
-
-                // Advance to the next parameter
-                implPTypes = implPTypes.tail;
-                samPTypes = samPTypes.tail;
-                descPTypes = descPTypes.tail;
-            }
-            // Flatten out the var args
-            for (int i = last; i < samSize; ++i) {
-                addParameter("xva$" + i, tree.varargsElement, true);
-            }
-
-            return rcvr;
-        }
-
-        private JCExpression makeReceiver(VarSymbol rcvr) {
-            if (rcvr == null) return null;
-            JCExpression rcvrExpr = make.Ident(rcvr);
-            boolean protAccess =
-                    isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, currentClass);
-            Type rcvrType = tree.ownerAccessible && !protAccess ? tree.sym.enclClass().type
-                    : tree.expr.type;
-            if (rcvrType == syms.arrayClass.type) {
-                // Map the receiver type to the actually type, not just "array"
-                rcvrType = tree.getQualifierExpression().type;
-            }
-            if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
-                rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
-            }
-            return rcvrExpr;
-        }
-
-        /**
-         * determine the receiver of the method call - the receiver can
-         * be a type qualifier, the synthetic receiver parameter or 'super'.
-         */
-        private JCExpression expressionInvoke(VarSymbol rcvr) {
-            JCExpression qualifier =
-                    (rcvr != null) ?
-                            makeReceiver(rcvr) :
-                            tree.getQualifierExpression();
-
-            //create the qualifier expression
-            JCFieldAccess select = make.Select(qualifier, tree.sym.name);
-            select.sym = tree.sym;
-            select.type = tree.sym.erasure(types);
-
-            //create the method call expression
-            JCExpression apply = make.Apply(List.nil(), select,
-                            convertArgs(tree.sym, args.toList(), tree.varargsElement)).
-                    setType(tree.sym.erasure(types).getReturnType());
-
-            apply = transTypes.coerce(attrEnv, apply,
-                    types.erasure(tree.referentType.getReturnType()));
-
-            setVarargsIfNeeded(apply, tree.varargsElement);
-            return apply;
-        }
-
-        /**
-         * Lambda body to use for a 'new'.
-         */
-        private JCExpression expressionNew() {
-            if (tree.kind == ReferenceKind.ARRAY_CTOR) {
-                //create the array creation expression
-                JCNewArray newArr = make.NewArray(
-                        make.Type(types.elemtype(tree.getQualifierExpression().type)),
-                        List.of(make.Ident(params.first())),
-                        null);
-                newArr.type = tree.getQualifierExpression().type;
-                return newArr;
-            } else {
-                //create the instance creation expression
-                //note that method reference syntax does not allow an explicit
-                //enclosing class (so the enclosing class is null)
-                // but this may need to be patched up later with the proxy for the outer this
-                JCNewClass newClass = make.NewClass(null,
-                        List.nil(),
-                        make.Type(tree.getQualifierExpression().type),
-                        convertArgs(tree.sym, args.toList(), tree.varargsElement),
-                        null);
-                newClass.constructor = tree.sym;
-                newClass.constructorType = tree.sym.erasure(types);
-                newClass.type = tree.getQualifierExpression().type;
-                setVarargsIfNeeded(newClass, tree.varargsElement);
-                return newClass;
-            }
-        }
-
-        private VarSymbol addParameter(String name, Type p, boolean genArg) {
-            VarSymbol vsym = new VarSymbol(PARAMETER | SYNTHETIC, names.fromString(name), p, owner);
-            vsym.pos = tree.pos;
-            params.append(make.VarDef(vsym, null));
-            if (genArg) {
-                args.append(make.Ident(vsym));
-            }
-            return vsym;
-        }
-    }
-
-    /**
-     * Convert method/constructor arguments by inserting appropriate cast
-     * as required by type-erasure - this is needed when bridging a lambda/method
-     * reference, as the bridged signature might require downcast to be compatible
-     * with the generated signature.
-     */
-    private List<JCExpression> convertArgs(Symbol meth, List<JCExpression> args, Type varargsElement) {
-        Assert.check(meth.kind == MTH);
-        List<Type> formals = types.erasure(meth.type).getParameterTypes();
-        if (varargsElement != null) {
-            Assert.check((meth.flags() & VARARGS) != 0);
-        }
-        return transTypes.translateArgs(args, formals, varargsElement, attrEnv);
-    }
-
-    /**
-     * Set varargsElement field on a given tree (must be either a new class tree
-     * or a method call tree)
-     */
-    private void setVarargsIfNeeded(JCTree tree, Type varargsElement) {
-        if (varargsElement != null) {
-            switch (tree.getTag()) {
-                case APPLY: ((JCMethodInvocation)tree).varargsElement = varargsElement; break;
-                case NEWCLASS: ((JCNewClass)tree).varargsElement = varargsElement; break;
-                case TYPECAST: setVarargsIfNeeded(((JCTypeCast) tree).expr, varargsElement); break;
-                default: throw new AssertionError();
-            }
-        }
     }
 
     public void visitSwitch(JCSwitch tree) {
@@ -4601,7 +4161,7 @@ public class Lower extends TreeTranslator {
                 stmtList.append(switch2);
 
                 JCBlock res = make.Block(0L, stmtList.toList());
-                res.endpos = TreeInfo.endPos(tree);
+                res.bracePos = TreeInfo.endPos(tree);
                 return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
@@ -4788,7 +4348,6 @@ public class Lower extends TreeTranslator {
         try {
             attrEnv = env;
             this.make = make;
-            endPosTable = env.toplevel.endPositions;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;
@@ -4818,7 +4377,6 @@ public class Lower extends TreeTranslator {
             // note that recursive invocations of this method fail hard
             attrEnv = null;
             this.make = null;
-            endPosTable = null;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;

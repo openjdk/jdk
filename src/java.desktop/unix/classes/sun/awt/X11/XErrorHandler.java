@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public abstract class XErrorHandler {
      * but temporary install this function as the error handler to ignore
      * BadWindow error.
      */
-    public static class IgnoreBadWindowHandler extends XBaseErrorHandler {
+    public static final class IgnoreBadWindowHandler extends XBaseErrorHandler {
         @Override
         public int handleError(long display, XErrorEvent err) {
             if (err.get_error_code() == XConstants.BadWindow) {
@@ -62,7 +62,7 @@ public abstract class XErrorHandler {
         }
     }
 
-    public static class VerifyChangePropertyHandler extends XBaseErrorHandler {
+    public static final class VerifyChangePropertyHandler extends XBaseErrorHandler {
         @Override
         public int handleError(long display, XErrorEvent err) {
             if (err.get_request_code() == XProtocolConstants.X_ChangeProperty) {

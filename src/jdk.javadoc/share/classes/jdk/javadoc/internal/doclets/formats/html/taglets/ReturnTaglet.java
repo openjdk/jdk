@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ import com.sun.source.doctree.ReturnTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * A taglet that represents the {@code @return} and {@code {@return }} tags.
@@ -94,7 +94,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends ReturnTree> tags = utils.getReturnTrees(holder);
 
         // make sure we are not using @return on a method with the void return type
-        TypeMirror returnType = utils.getReturnType(tagletWriter.getCurrentPageElement(), method);
+        TypeMirror returnType = utils.getReturnType(tagletWriter.getCurrentTypeElement(), method);
         if (returnType != null && utils.isVoid(returnType)) {
             if (!tags.isEmpty() && !config.isDocLintReferenceGroupEnabled()) {
                 messages.warning(holder, "doclet.Return_tag_on_void_method");

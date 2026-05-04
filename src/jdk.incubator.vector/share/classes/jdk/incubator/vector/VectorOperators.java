@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,15 @@
  */
 package jdk.incubator.vector;
 
-import java.util.function.IntFunction;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.IntFunction;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-
 import jdk.internal.vm.vector.VectorSupport;
+
+import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
 
 /**
  * This class consists solely of static constants
@@ -113,7 +114,7 @@ import jdk.internal.vm.vector.VectorSupport;
  * operations on individual lane values.
  *
  */
-public abstract class VectorOperators {
+public final class VectorOperators {
     private VectorOperators() { }
 
     /**
@@ -129,12 +130,9 @@ public abstract class VectorOperators {
      * @see VectorOperators.Test Test
      * @see VectorOperators.Conversion Conversion
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Operator {
+    public sealed interface Operator {
         /**
          * Returns the symbolic name of this operator,
          * as a constant in {@link VectorOperators}.
@@ -233,13 +231,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Unary)
      * lanewise}{@code (NEG)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Unary extends Operator {
+    public sealed interface Unary extends Operator {
     }
 
     /**
@@ -250,12 +243,9 @@ public abstract class VectorOperators {
      * Vector#lanewise(VectorOperators.Binary,Vector)
      * lanewise}{@code (ADD, v1)}.
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Binary extends Operator {
+    public sealed interface Binary extends Operator {
     }
 
     /**
@@ -265,13 +255,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Ternary,Vector,Vector)
      * lanewise}{@code (FMA, v1, v2)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Ternary extends Operator {
+    public sealed interface Ternary extends Operator {
     }
 
     /**
@@ -281,13 +266,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code e = v0.}{@link
      * IntVector#reduceLanes(VectorOperators.Associative)
      * reduceLanes}{@code (ADD)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Associative extends Binary {
+    public sealed interface Associative extends Binary {
     }
 
     /**
@@ -297,13 +277,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * FloatVector#test(VectorOperators.Test)
      * test}{@code (IS_FINITE)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Test extends Operator {
+    public sealed interface Test extends Operator {
     }
 
     /**
@@ -313,13 +288,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * Vector#compare(VectorOperators.Comparison,Vector)
      * compare}{@code (LT, v1)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Comparison extends Operator {
+    public sealed interface Comparison extends Operator {
     }
 
     /**
@@ -334,13 +304,8 @@ public abstract class VectorOperators {
      *        domain type (the input lane type)
      * @param <F> the boxed element type for the conversion
      *        range type (the output lane type)
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Conversion<E,F> extends Operator {
+    public sealed interface Conversion<E,F> extends Operator {
         /**
          * The domain of this conversion, a primitive type.
          * @return the domain of this conversion
@@ -426,6 +391,7 @@ public abstract class VectorOperators {
         VO_SPECIAL                 = 0x080, // random special handling
         VO_NOFP                    = 0x100,
         VO_ONLYFP                  = 0x200,
+        VO_MATHLIB                 = 0x400,
         VO_OPCODE_VALID            = 0x800,
         VO_OPCODE_SHIFT            = 12,
         VO_OPCODE_LIMIT            = 0x400,
@@ -452,23 +418,23 @@ public abstract class VectorOperators {
     public static final Unary ABS = unary("ABS", "abs", VectorSupport.VECTOR_OP_ABS, VO_ALL);
     /** Produce {@code -a}. */
     public static final Unary NEG = unary("NEG", "-a", VectorSupport.VECTOR_OP_NEG, VO_ALL|VO_SPECIAL);
-    /** Produce {@code bitCount(a)}
+    /** Produce {@code bitCount(a)}. Integral only.
      * @since 19
      */
     public static final Unary BIT_COUNT = unary("BIT_COUNT", "bitCount", VectorSupport.VECTOR_OP_BIT_COUNT, VO_NOFP);
-    /** Produce {@code numberOfTrailingZeros(a)}
+    /** Produce {@code numberOfTrailingZeros(a)}. Integral only.
      * @since 19
      */
     public static final Unary TRAILING_ZEROS_COUNT = unary("TRAILING_ZEROS_COUNT", "numberOfTrailingZeros", VectorSupport.VECTOR_OP_TZ_COUNT, VO_NOFP);
-    /** Produce {@code numberOfLeadingZeros(a)}
+    /** Produce {@code numberOfLeadingZeros(a)}. Integral only.
      * @since 19
      */
     public static final Unary LEADING_ZEROS_COUNT = unary("LEADING_ZEROS_COUNT", "numberOfLeadingZeros", VectorSupport.VECTOR_OP_LZ_COUNT, VO_NOFP);
-    /** Produce {@code reverse(a)}
+    /** Produce {@code reverse(a)}. Integral only.
      * @since 19
      */
     public static final Unary REVERSE = unary("REVERSE", "reverse", VectorSupport.VECTOR_OP_REVERSE, VO_NOFP);
-    /** Produce {@code reverseBytes(a)}
+    /** Produce {@code reverseBytes(a)}. Integral only.
      * @since 19
      */
     public static final Unary REVERSE_BYTES = unary("REVERSE_BYTES", "reverseBytes", VectorSupport.VECTOR_OP_REVERSE_BYTES, VO_NOFP);
@@ -476,67 +442,67 @@ public abstract class VectorOperators {
     /** Produce {@code sin(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary SIN = unary("SIN", "sin", VectorSupport.VECTOR_OP_SIN, VO_ONLYFP);
+    public static final /*float*/ Unary SIN = unary("SIN", "sin", VectorSupport.VECTOR_OP_SIN, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code cos(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary COS = unary("COS", "cos", VectorSupport.VECTOR_OP_COS, VO_ONLYFP);
+    public static final /*float*/ Unary COS = unary("COS", "cos", VectorSupport.VECTOR_OP_COS, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code tan(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary TAN = unary("TAN", "tan", VectorSupport.VECTOR_OP_TAN, VO_ONLYFP);
+    public static final /*float*/ Unary TAN = unary("TAN", "tan", VectorSupport.VECTOR_OP_TAN, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code asin(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary ASIN = unary("ASIN", "asin", VectorSupport.VECTOR_OP_ASIN, VO_ONLYFP);
+    public static final /*float*/ Unary ASIN = unary("ASIN", "asin", VectorSupport.VECTOR_OP_ASIN, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code acos(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary ACOS = unary("ACOS", "acos", VectorSupport.VECTOR_OP_ACOS, VO_ONLYFP);
+    public static final /*float*/ Unary ACOS = unary("ACOS", "acos", VectorSupport.VECTOR_OP_ACOS, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code atan(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary ATAN = unary("ATAN", "atan", VectorSupport.VECTOR_OP_ATAN, VO_ONLYFP);
+    public static final /*float*/ Unary ATAN = unary("ATAN", "atan", VectorSupport.VECTOR_OP_ATAN, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
 
     /** Produce {@code exp(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary EXP = unary("EXP", "exp", VectorSupport.VECTOR_OP_EXP, VO_ONLYFP);
+    public static final /*float*/ Unary EXP = unary("EXP", "exp", VectorSupport.VECTOR_OP_EXP, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code log(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary LOG = unary("LOG", "log", VectorSupport.VECTOR_OP_LOG, VO_ONLYFP);
+    public static final /*float*/ Unary LOG = unary("LOG", "log", VectorSupport.VECTOR_OP_LOG, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code log10(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary LOG10 = unary("LOG10", "log10", VectorSupport.VECTOR_OP_LOG10, VO_ONLYFP);
+    public static final /*float*/ Unary LOG10 = unary("LOG10", "log10", VectorSupport.VECTOR_OP_LOG10, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code sqrt(a)}.  Floating only.  See section "Operations on floating point vectors" above */
     public static final /*float*/ Unary SQRT = unary("SQRT", "sqrt", VectorSupport.VECTOR_OP_SQRT, VO_ONLYFP);
     /** Produce {@code cbrt(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary CBRT = unary("CBRT", "cbrt", VectorSupport.VECTOR_OP_CBRT, VO_ONLYFP);
+    public static final /*float*/ Unary CBRT = unary("CBRT", "cbrt", VectorSupport.VECTOR_OP_CBRT, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
 
     /** Produce {@code sinh(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary SINH = unary("SINH", "sinh", VectorSupport.VECTOR_OP_SINH, VO_ONLYFP);
+    public static final /*float*/ Unary SINH = unary("SINH", "sinh", VectorSupport.VECTOR_OP_SINH, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code cosh(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary COSH = unary("COSH", "cosh", VectorSupport.VECTOR_OP_COSH, VO_ONLYFP);
+    public static final /*float*/ Unary COSH = unary("COSH", "cosh", VectorSupport.VECTOR_OP_COSH, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code tanh(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary TANH = unary("TANH", "tanh", VectorSupport.VECTOR_OP_TANH, VO_ONLYFP);
+    public static final /*float*/ Unary TANH = unary("TANH", "tanh", VectorSupport.VECTOR_OP_TANH, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code expm1(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary EXPM1 = unary("EXPM1", "expm1", VectorSupport.VECTOR_OP_EXPM1, VO_ONLYFP);
+    public static final /*float*/ Unary EXPM1 = unary("EXPM1", "expm1", VectorSupport.VECTOR_OP_EXPM1, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code log1p(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Unary LOG1P = unary("LOG1P", "log1p", VectorSupport.VECTOR_OP_LOG1P, VO_ONLYFP);
+    public static final /*float*/ Unary LOG1P = unary("LOG1P", "log1p", VectorSupport.VECTOR_OP_LOG1P, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
 
     // Binary operators
 
@@ -563,19 +529,46 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Associative OR = assoc("OR", "|", VectorSupport.VECTOR_OP_OR, VO_NOFP+VO_ASSOC);
     /*package-private*/ /** Version of OR which works on float and double too. */
     static final Associative OR_UNCHECKED = assoc("OR_UNCHECKED", "|", VectorSupport.VECTOR_OP_OR, VO_ASSOC+VO_PRIVATE);
+
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
 
+    /** Produce saturating {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturating(int, int)
+     */
+    public static final Binary SADD = binary("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP);
+    /** Produce saturating unsigned {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturatingUnsigned(int, int)
+     */
+    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
+    /** Produce saturating {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturating(int, int)
+     */
+    public static final Binary SSUB = binary("SSUB", "-", VectorSupport.VECTOR_OP_SSUB, VO_NOFP);
+    /** Produce saturating unsigned {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturatingUnsigned(int, int)
+     */
+    public static final Binary SUSUB = binary("SUSUB", "-", VectorSupport.VECTOR_OP_SUSUB, VO_NOFP);
+    /** Produce unsigned {@code min(a,b)}.  Integral only.
+     * @see VectorMath#minUnsigned(int, int) (int, int)
+     */
+    public static final Associative UMIN = assoc("UMIN", "umin", VectorSupport.VECTOR_OP_UMIN, VO_NOFP+VO_ASSOC);
+    /** Produce unsigned {@code max(a,b)}.  Integral only.
+     * @see VectorMath#maxUnsigned(int, int) (int, int)
+     */
+    public static final Associative UMAX = assoc("UMAX", "umax", VectorSupport.VECTOR_OP_UMAX, VO_NOFP+VO_ASSOC);
+
+
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
      * @since 19
      */
@@ -588,15 +581,15 @@ public abstract class VectorOperators {
     /** Produce {@code atan2(a,b)}. See  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Binary ATAN2 = binary("ATAN2", "atan2", VectorSupport.VECTOR_OP_ATAN2, VO_ONLYFP);
+    public static final /*float*/ Binary ATAN2 = binary("ATAN2", "atan2", VectorSupport.VECTOR_OP_ATAN2, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code pow(a,b)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Binary POW = binary("POW", "pow", VectorSupport.VECTOR_OP_POW, VO_ONLYFP);
+    public static final /*float*/ Binary POW = binary("POW", "pow", VectorSupport.VECTOR_OP_POW, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
     /** Produce {@code hypot(a,b)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
      */
-    public static final /*float*/ Binary HYPOT = binary("HYPOT", "hypot", VectorSupport.VECTOR_OP_HYPOT, VO_ONLYFP);
+    public static final /*float*/ Binary HYPOT = binary("HYPOT", "hypot", VectorSupport.VECTOR_OP_HYPOT, VO_ONLYFP | VO_SPECIAL | VO_MATHLIB);
 
     // Ternary operators
 
@@ -635,22 +628,22 @@ public abstract class VectorOperators {
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LT = compare("UNSIGNED_LT", "<",  VectorSupport.BT_ult, VO_NOFP);
+    public static final Comparison ULT = compare("ULT", "<",  VectorSupport.BT_ult, VO_NOFP);
     /** Unsigned compare {@code a<=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LE = compare("UNSIGNED_LE", "<=", VectorSupport.BT_ule, VO_NOFP);
+    public static final Comparison ULE = compare("ULE", "<=", VectorSupport.BT_ule, VO_NOFP);
     /** Unsigned compare {@code a>b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GT = compare("UNSIGNED_GT", ">",  VectorSupport.BT_ugt, VO_NOFP);
+    public static final Comparison UGT = compare("UGT", ">",  VectorSupport.BT_ugt, VO_NOFP);
     /** Unsigned compare {@code a>=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GE = compare("UNSIGNED_GE", ">=", VectorSupport.BT_uge, VO_NOFP);
+    public static final Comparison UGE = compare("UGE", ">=", VectorSupport.BT_uge, VO_NOFP);
 
     // Conversion operators
 
@@ -787,8 +780,8 @@ public abstract class VectorOperators {
 
     private static <E,F> ConversionImpl<E,F>
     convert(String name, char kind, Class<E> dom, Class<F> ran, int opCode, int flags) {
-        int domran = ((LaneType.of(dom).basicType << VO_DOM_SHIFT) +
-                      (LaneType.of(ran).basicType << VO_RAN_SHIFT));
+        int domran = ((LaneType.of(dom).ordinal() << VO_DOM_SHIFT) +
+                      (LaneType.of(ran).ordinal() << VO_RAN_SHIFT));
         if (opCode >= 0) {
             if ((opCode & VO_DOM_RAN_MASK) == 0) {
                 opCode += domran;
@@ -801,7 +794,7 @@ public abstract class VectorOperators {
                                     kind, dom, ran);
     }
 
-    private abstract static class OperatorImpl implements Operator {
+    private abstract static sealed class OperatorImpl implements Operator {
         private final String symName;
         private final String opName;
         private final int opInfo;
@@ -915,10 +908,10 @@ public abstract class VectorOperators {
 
         @ForceInline
         /*package-private*/
-        boolean compatibleWith(LaneType laneType) {
-            if (laneType.elementKind == 'F') {
+        boolean compatibleWith(LaneType type) {
+            if (type.elementKind == 'F') {
                 return !opKind(VO_NOFP);
-            } else if (laneType.elementKind == 'I') {
+            } else if (type.elementKind == 'I') {
                 return !opKind(VO_ONLYFP);
             } else {
                 throw new AssertionError();
@@ -926,35 +919,35 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class UnaryImpl extends OperatorImpl implements Unary {
+    private static final class UnaryImpl extends OperatorImpl implements Unary {
         private UnaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
         }
     }
 
-    private static class BinaryImpl extends OperatorImpl implements Binary {
+    private static sealed class BinaryImpl extends OperatorImpl implements Binary permits AssociativeImpl {
         private BinaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);
         }
     }
 
-    private static class TernaryImpl extends OperatorImpl implements Ternary {
+    private static final class TernaryImpl extends OperatorImpl implements Ternary {
         private TernaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_TERNARY);
         }
     }
 
-    private static class AssociativeImpl extends BinaryImpl implements Associative {
+    private static final class AssociativeImpl extends BinaryImpl implements Associative {
         private AssociativeImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
         }
     }
 
     /*package-private*/
-    static
+    static final
     class ConversionImpl<E,F> extends OperatorImpl
                               implements Conversion<E,F> {
         private ConversionImpl(String symName, String opName, int opInfo,
@@ -1047,8 +1040,8 @@ public abstract class VectorOperators {
             String name;
             Class<?> domType = dom.elementType;
             Class<?> ranType = ran.elementType;
-            int domCode = (dom.basicType << VO_DOM_SHIFT);
-            int ranCode = (ran.basicType << VO_RAN_SHIFT);
+            int domCode = (dom.ordinal() << VO_DOM_SHIFT);
+            int ranCode = (ran.ordinal() << VO_RAN_SHIFT);
             int opCode = domCode + ranCode;
             switch (kind) {
             case 'I':
@@ -1126,16 +1119,16 @@ public abstract class VectorOperators {
                 switch (conv.kind) {
                 case 'W':
                     int domCode = (opc >> VO_DOM_SHIFT) & 0xF;
-                    dom = LaneType.ofBasicType(domCode);
+                    dom = LaneType.ofLaneTypeOrdinal(domCode);
                     break;
                 case 'N':
                     int ranCode = (opc >> VO_RAN_SHIFT) & 0xF;
-                    ran = LaneType.ofBasicType(ranCode);
+                    ran = LaneType.ofLaneTypeOrdinal(ranCode);
                     break;
                 }
                 assert((opc & VO_DOM_RAN_MASK) ==
-                       ((dom.basicType << VO_DOM_SHIFT) +
-                        (ran.basicType << VO_RAN_SHIFT)));
+                       ((dom.ordinal() << VO_DOM_SHIFT) +
+                        (ran.ordinal() << VO_RAN_SHIFT)));
                 ConversionImpl<?,?>[] cache = cacheOf(conv.kind, dom);
                 int ranKey = ran.switchKey;
                 if (cache[ranKey] != conv) {
@@ -1203,12 +1196,12 @@ public abstract class VectorOperators {
                 break;
             case 'W':
                 doc = "In-place widen {@code _domVal} inside _ran to {@code (_ran)_domVal}";
-                LaneType logdom = LaneType.ofBasicType(domran >> VO_DOM_SHIFT & 0xF);
+                LaneType logdom = LaneType.ofLaneTypeOrdinal(domran >> VO_DOM_SHIFT & 0xF);
                 doc = doc.replace("_dom", logdom.elementType.getSimpleName());
                 break;
             case 'N':
                 doc = "In-place narrow {@code _domVal} to {@code (_ran)_domVal} inside _dom";
-                LaneType logran = LaneType.ofBasicType(domran >> VO_RAN_SHIFT & 0xF);
+                LaneType logran = LaneType.ofLaneTypeOrdinal(domran >> VO_RAN_SHIFT & 0xF);
                 doc = doc.replace("_ran", logran.elementType.getSimpleName());
                 break;
             default:
@@ -1230,7 +1223,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class TestImpl extends OperatorImpl implements Test {
+    private static final class TestImpl extends OperatorImpl implements Test {
         private TestImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
@@ -1242,7 +1235,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class ComparisonImpl extends OperatorImpl implements Comparison {
+    private static final class ComparisonImpl extends OperatorImpl implements Comparison {
         private ComparisonImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);
@@ -1346,7 +1339,7 @@ public abstract class VectorOperators {
             if (fn != null)  return fn;
             fn = supplier.apply(opc);
             if (fn == null)  throw badOp(op);
-            assert(VectorSupport.isNonCapturingLambda(fn)) : fn;
+            assert(isNonCapturingLambda(fn)) : fn;
             // The JIT can see into this cache:
             cache[opc] = fn;
             return fn;

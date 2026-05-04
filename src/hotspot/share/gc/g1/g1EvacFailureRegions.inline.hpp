@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +26,13 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "runtime/atomic.hpp"
 
 uint G1EvacFailureRegions::num_regions_evac_failed() const {
-  return Atomic::load(&_num_regions_evac_failed);
+  return _num_regions_evac_failed.load_relaxed();
 }
 
 bool G1EvacFailureRegions::has_regions_evac_failed() const {
@@ -56,7 +57,7 @@ bool G1EvacFailureRegions::record(uint worker_id, uint region_idx, bool cause_pi
   bool success = _regions_evac_failed.par_set_bit(region_idx,
                                                   memory_order_relaxed);
   if (success) {
-    size_t offset = Atomic::fetch_then_add(&_num_regions_evac_failed, 1u);
+    size_t offset = _num_regions_evac_failed.fetch_then_add(1u);
     _evac_failed_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();

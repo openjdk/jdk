@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -32,17 +31,17 @@
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/sampling/sampleList.hpp"
 #include "jfr/leakprofiler/sampling/samplePriorityQueue.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
-#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -89,8 +88,8 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
     // The ObjectSampler instance may have already been cleaned or a new
     // instance was created concurrently.  This allows for a small race where cleaning
     // could be done again.
-    Atomic::store(&_dead_samples, true);
-    Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
+    AtomicAccess::store(&_dead_samples, true);
+    AtomicAccess::store(&_last_sweep, (int64_t)JfrTicks::now().value());
   }
 }
 
@@ -114,8 +113,8 @@ ObjectSampler::ObjectSampler(size_t size) :
         _total_allocated(0),
         _threshold(0),
         _size(size) {
-  Atomic::store(&_dead_samples, false);
-  Atomic::store(&_last_sweep, (int64_t)JfrTicks::now().value());
+  AtomicAccess::store(&_dead_samples, false);
+  AtomicAccess::store(&_last_sweep, (int64_t)JfrTicks::now().value());
 }
 
 ObjectSampler::~ObjectSampler() {
@@ -157,7 +156,7 @@ void ObjectSampler::destroy() {
 static volatile int _lock = 0;
 
 ObjectSampler* ObjectSampler::acquire() {
-  while (Atomic::cmpxchg(&_lock, 0, 1) == 1) {}
+  while (AtomicAccess::cmpxchg(&_lock, 0, 1) == 1) {}
   return _instance;
 }
 
@@ -241,10 +240,10 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
   assert(thread_id != 0, "invariant");
   assert(thread != nullptr, "invariant");
 
-  if (Atomic::load(&_dead_samples)) {
+  if (AtomicAccess::load(&_dead_samples)) {
     // There's a small race where a GC scan might reset this to true, potentially
     // causing a back-to-back scavenge.
-    Atomic::store(&_dead_samples, false);
+    AtomicAccess::store(&_dead_samples, false);
     scavenge();
   }
 
@@ -258,12 +257,25 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
       // quick reject, will not fit
       return;
     }
-    sample = _list->reuse(_priority_queue->pop());
+    ObjectSample* popped = _priority_queue->pop();
+    size_t popped_span = popped->span();
+    ObjectSample* previous = popped->prev();
+    sample = _list->reuse(popped);
+    assert(sample != nullptr, "invariant");
+    if (previous != nullptr) {
+      push_span(previous, popped_span);
+      sample->set_span(span);
+    } else {
+      // The removed sample was the youngest sample in the list, which means the new sample is now the youngest
+      // sample. It should cover the spans of both.
+      sample->set_span(span + popped_span);
+    }
   } else {
     sample = _list->get();
+    assert(sample != nullptr, "invariant");
+    sample->set_span(span);
   }
 
-  assert(sample != nullptr, "invariant");
   signal_unresolved_entry();
   sample->set_thread_id(thread_id);
   if (virtual_thread) {
@@ -278,7 +290,6 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
     sample->set_stack_trace_hash(stacktrace_hash);
   }
 
-  sample->set_span(allocated);
   sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
@@ -305,12 +316,16 @@ void ObjectSampler::remove_dead(ObjectSample* sample) {
   ObjectSample* const previous = sample->prev();
   // push span onto previous
   if (previous != nullptr) {
-    _priority_queue->remove(previous);
-    previous->add_span(sample->span());
-    _priority_queue->push(previous);
+    push_span(previous, sample->span());
   }
   _priority_queue->remove(sample);
   _list->release(sample);
+}
+
+void ObjectSampler::push_span(ObjectSample* sample, size_t span) {
+    _priority_queue->remove(sample);
+    sample->add_span(span);
+    _priority_queue->push(sample);
 }
 
 ObjectSample* ObjectSampler::last() const {
@@ -345,5 +360,5 @@ ObjectSample* ObjectSampler::item_at(int index) {
 }
 
 int64_t ObjectSampler::last_sweep() {
-  return Atomic::load(&_last_sweep);
+  return AtomicAccess::load(&_last_sweep);
 }

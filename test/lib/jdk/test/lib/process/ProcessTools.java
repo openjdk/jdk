@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -251,7 +251,7 @@ public final class ProcessTools {
                                        TimeUnit unit)
             throws IOException, InterruptedException, TimeoutException {
         System.out.println("[" + name + "]:" + String.join(" ", processBuilder.command()));
-        Process p = privilegedStart(processBuilder);
+        Process p = processBuilder.start();
         StreamPumper stdout = new StreamPumper(p.getInputStream());
         StreamPumper stderr = new StreamPumper(p.getErrorStream());
 
@@ -391,7 +391,7 @@ public final class ProcessTools {
                 "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
 
         final List<String> doubleWordArgs = List.of(
-                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports", "--enable-native-access",
                 "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();
@@ -450,7 +450,7 @@ public final class ProcessTools {
     private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
-        ArrayList<String> args = new ArrayList<>();
+        List<String> args = new ArrayList<>();
         args.add(javapath);
 
         String noCPString = System.getProperty("test.noclasspath", "false");
@@ -467,6 +467,8 @@ public final class ProcessTools {
             Collections.addAll(args, command);
         }
 
+        checkDuplicateAgentOpts(args);
+
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
         for (String cmd : args)
@@ -479,6 +481,30 @@ public final class ProcessTools {
             pb.environment().remove("CLASSPATH");
         }
         return pb;
+    }
+
+    // 8377729: Check for duplicate VM JVMTI agent options, as it may
+    // cause test to fail
+    public static void checkDuplicateAgentOpts(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            return;
+        }
+
+        Set<String> seen = new HashSet<>();
+        List<String> dupArgs = args.stream()
+                .filter(arg -> (arg.startsWith("-agent")
+                                || arg.startsWith("-javaagent:"))
+                        && !seen.add(arg))
+                .collect(Collectors.toList());
+
+        if (!dupArgs.isEmpty()) {
+            System.err.println("WARNING: Duplicate JVMTI agent options may"
+                + " cause test to fail:\n" + dupArgs);
+        }
+    }
+
+    public static void checkDuplicateAgentOpts(String[] args) {
+        checkDuplicateAgentOpts(Arrays.asList(args));
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {
@@ -549,7 +575,7 @@ public final class ProcessTools {
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
-     * <p>If you still chose to use
+     * <p>If you still choose to use
      * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.
@@ -583,7 +609,7 @@ public final class ProcessTools {
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
-     * <p>If you still chose to use
+     * <p>If you still choose to use
      * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.
@@ -715,7 +741,7 @@ public final class ProcessTools {
         Process p = null;
         boolean failed = false;
         try {
-            p = privilegedStart(pb);
+            p = pb.start();
             if (input != null) {
                 try (PrintStream ps = new PrintStream(p.getOutputStream())) {
                     ps.print(input);
@@ -731,10 +757,7 @@ public final class ProcessTools {
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());
                 var processOutput = getProcessLog(pb, output);
-                AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                    Files.writeString(Path.of(fileName), processOutput);
-                    return null;
-                });
+                Files.writeString(Path.of(fileName), processOutput);
                 System.out.printf(
                         "Output and diagnostic info for process %d " +
                                 "was saved into '%s'%n", p.pid(), fileName);
@@ -882,16 +905,6 @@ public final class ProcessTools {
         return pb;
     }
 
-    @SuppressWarnings("removal")
-    private static Process privilegedStart(ProcessBuilder pb) throws IOException {
-        try {
-            return AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<Process>) pb::start);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
-    }
-
     private static class ProcessImpl extends Process {
 
         private final InputStream stdOut;
@@ -965,6 +978,15 @@ public final class ProcessTools {
             return rslt;
         }
 
+        @Override
+        public boolean waitFor(Duration duration) throws InterruptedException {
+            boolean rslt = p.waitFor(duration);
+            if (rslt) {
+                waitForStreams();
+            }
+            return rslt;
+        }
+
         private void waitForStreams() throws InterruptedException {
             try {
                 stdoutTask.get();
@@ -987,7 +1009,7 @@ public final class ProcessTools {
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
         Class<?> c = Class.forName(className);
-        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        Method mainMethod = c.getMethod("main", new Class<?>[] { String[].class });
         mainMethod.setAccessible(true);
 
         if (testThreadFactoryName.equals("Virtual")) {

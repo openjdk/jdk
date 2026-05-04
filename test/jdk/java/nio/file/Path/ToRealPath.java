@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import jdk.test.lib.Platform;
 
@@ -51,6 +53,7 @@ public class ToRealPath {
     static final Path SUBDIR;
     static final Path FILE;
     static final Path LINK;
+    static final Set<Path> extraDeletions;
 
     static {
         try {
@@ -59,6 +62,7 @@ public class ToRealPath {
             FILE = Files.createFile(DIR.resolve("foo"));
             LINK = DIR.resolve("link");
             SUPPORTS_LINKS = TestUtil.supportsSymbolicLinks(DIR);
+            extraDeletions = new HashSet<Path>();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -147,15 +151,22 @@ public class ToRealPath {
     public void noCollapseDots1() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);
-        System.out.println("sub: " + sub);
+        System.err.println("sub: " + sub);
         Files.createSymbolicLink(LINK, sub);
-        System.out.println("LINK: " + LINK + " -> " + sub);
+        System.err.println("LINK: " + LINK + " -> " + sub);
         Path p = Path.of("..", "..", FILE.getFileName().toString());
-        System.out.println("p: " + p);
+        System.err.println("p: " + p);
         Path path = LINK.resolve(p);
-        System.out.println("path:      " + path);
-        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        System.err.println("path:      " + path);
+        if (Platform.isWindows() && Files.notExists(path)) {
+            Files.createFile(path);
+            extraDeletions.add(path);
+        }
+        System.err.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        if (Platform.isWindows())
+            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
+        else
+            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
 
         Files.delete(sub);
         Files.delete(sub.getParent());
@@ -170,16 +181,23 @@ public class ToRealPath {
         Path out = Files.createFile(DIR.resolve(Path.of("out.txt")));
         Path aaa = DIR.resolve(Path.of("aaa"));
         Files.createSymbolicLink(aaa, sub);
-        System.out.println("aaa: " + aaa + " -> " + sub);
+        System.err.println("aaa: " + aaa + " -> " + sub);
         Path bbb = DIR.resolve(Path.of("bbb"));
         Files.createSymbolicLink(bbb, sub);
-        System.out.println("bbb: " + bbb + " -> " + sub);
+        System.err.println("bbb: " + bbb + " -> " + sub);
         Path p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
         Path path = DIR.resolve(p);
-        System.out.println("path:      " + path);
-        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
-        System.out.println(path.toRealPath());
+        System.err.println("path:      " + path);
+        if (Platform.isWindows() && Files.notExists(path)) {
+            Files.createFile(path);
+            extraDeletions.add(path);
+        }
+        System.err.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        if (Platform.isWindows())
+            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
+        else
+            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        System.err.println(path.toRealPath());
 
         Files.delete(sub);
         Files.delete(sub.getParent());
@@ -235,5 +253,7 @@ public class ToRealPath {
         Files.delete(FILE);
         Files.delete(SUBDIR);
         Files.delete(DIR);
+        for (Path p : extraDeletions)
+            Files.deleteIfExists(p);
     }
 }

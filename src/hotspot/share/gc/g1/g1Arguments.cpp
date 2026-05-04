@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
@@ -34,8 +33,10 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -68,10 +69,20 @@ void G1Arguments::initialize_alignments() {
   if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
     FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RemSetArrayOfCardsEntries);
   }
+  // G1 prefers to use conditional card marking to avoid overwriting cards that
+  // have already been found to contain a to-collection set reference. This reduces
+  // refinement effort.
+  if (FLAG_IS_DEFAULT(UseCondCardMark)) {
+    FLAG_SET_ERGO(UseCondCardMark, true);
+  }
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
-  return G1HeapRegion::max_region_size();
+  const size_t region_size = FLAG_IS_DEFAULT(G1HeapRegionSize)
+                           ? G1HeapRegion::max_ergonomics_size()
+                           : G1HeapRegion::max_region_size();
+
+  return calculate_heap_alignment(region_size);
 }
 
 void G1Arguments::initialize_verification_types() {
@@ -87,7 +98,7 @@ void G1Arguments::initialize_verification_types() {
       parse_verification_type(token);
       token = strtok_r(nullptr, delimiter, &save_ptr);
     }
-    FREE_C_HEAP_ARRAY(char, type_list);
+    FREE_C_HEAP_ARRAY(type_list);
   }
 }
 
@@ -125,22 +136,21 @@ void G1Arguments::initialize_mark_stack_size() {
                                   MAX2(MarkStackSize, (size_t)ConcGCThreads * TASKQUEUE_SIZE));
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
-
 }
-
 
 void G1Arguments::initialize_card_set_configuration() {
   assert(G1HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
   const uint LOG_M = 20;
-  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(log2i_exact(G1HeapRegionBounds::min_size()) == LOG_M, "inv");
   assert(G1HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
   uint region_size_log_mb = G1HeapRegion::LogOfHRGrainBytes - LOG_M;
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(G1HeapRegion::LogCardsPerRegion);
+    const JVMTypedFlagLimit<uint>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1RemSetArrayOfCardsEntries))->cast<uint>();
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
+                                                    MIN2(G1RemSetArrayOfCardsEntriesBase << region_size_log_mb, limit->max())));
   }
 
   // Howl card set container globals.
@@ -182,7 +192,8 @@ void G1Arguments::initialize() {
     }
     FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
   } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
-    FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
+    const JVMTypedFlagLimit<uint>* conc_refinement_threads_limits = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1ConcRefinementThreads))->cast<uint>();
+    FLAG_SET_ERGO(G1ConcRefinementThreads, MIN2(ParallelGCThreads, conc_refinement_threads_limits->max()));
   }
 
   if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
@@ -195,8 +206,19 @@ void G1Arguments::initialize() {
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
     // In G1, we want the default GC overhead goal to be higher than
     // it is for PS, or the heap might be expanded too aggressively.
-    // We set it here to ~8%.
-    FLAG_SET_DEFAULT(GCTimeRatio, 12);
+    // We set it here to 4%.
+    FLAG_SET_DEFAULT(GCTimeRatio, 24);
+  }
+
+  // Do not interfere with GC-Pressure driven heap resizing unless the user
+  // explicitly sets otherwise. G1 heap sizing should be free to grow or shrink
+  // the heap based on GC pressure, rather than being forced to satisfy
+  // MinHeapFreeRatio or MaxHeapFreeRatio defaults that the user did not set.
+  if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
+  }
+  if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
+    FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
   }
 
   // Below, we might need to calculate the pause time interval based on
@@ -221,10 +243,6 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
   }
 
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
-  }
-
 #ifdef COMPILER2
   // Enable loop strip mining to offer better pause time guarantees
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
@@ -240,15 +258,12 @@ void G1Arguments::initialize() {
 
   // Verify that the maximum parallelism isn't too high to eventually overflow
   // the refcount in G1CardSetContainer.
-  uint max_parallel_refinement_threads = G1ConcRefinementThreads + G1DirtyCardQueueSet::num_par_ids();
   uint const divisor = 3;  // Safe divisor; we increment by 2 for each claim, but there is a small initial value.
-  if (max_parallel_refinement_threads > UINT_MAX / divisor) {
+  if (G1ConcRefinementThreads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
-}
 
-void G1Arguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 CollectedHeap* G1Arguments::create_heap() {

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              
 tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
-tools/javac/patterns/Exhaustiveness.java 					8326616    generic-all    intermittently timeout
 
 ###########################################################################
 #
@@ -72,3 +71,20 @@ tools/javap/output/RepeatingTypeAnnotations.java                                
 ###########################################################################
 #
 # jdeps
+
+#############################################################################
+
+# Preview project specific failures go here at the end of the file.
+#
+# These are NOT failures that occur with the '--enable-preview' option
+# specified in the task definition; those go in the appropriate
+# ProblemList-enable-preview.txt file.
+#
+# These are failures that occur WITHOUT the '--enable-preview' option
+# specified in the task definition OR the '--enable-preview' option
+# MAY BE specified in the test itself. In either case, the failure
+# occurs because of some issue with preview project code, in either
+# implementation or test code.
+
+#############################################################################
+

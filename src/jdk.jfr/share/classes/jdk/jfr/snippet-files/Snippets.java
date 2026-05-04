@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jfr.snippets;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.BooleanFlag;
+import jdk.jfr.Contextual;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.EventFactory;
 import jdk.jfr.EventType;
@@ -65,6 +66,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -97,16 +99,26 @@ public class Snippets {
     @Label("Rollback")
     @Description("Include transactions that are rollbacked")
     public static class RollbackSetting extends SettingControl {
+        private static final String DEFAULT_VALUE = "true";
         private boolean value = true;
 
         @Override
         public String combine(Set<String> values) {
-            return values.contains("true") ? "true" : "false";
+            if (values.contains("true")) {
+                return "true";
+            }
+            if (values.contains("false")) {
+                return "false";
+            }
+            return DEFAULT_VALUE;
         }
 
         @Override
-        public void setValue(String settingValue) {
-            value = "true".equals(settingValue);
+        public void setValue(String value) {
+            // Ignore invalid values
+            if ("true".equals(value) || "false".equals(value)) {
+                this.value = "true".equals(value);
+            }
         }
 
         @Override
@@ -239,6 +251,39 @@ public class Snippets {
         }
     }
     // @end
+
+    // @start region="ContextualTrace"
+    @Label("Trace")
+    @Name("com.example.Trace")
+    class TraceEvent extends Event {
+        @Label("ID")
+        @Contextual
+        String id;
+
+        @Label("Name")
+        @Contextual
+        String name;
+    }
+    // @end
+
+    void hello() {
+        // @start region="ContextualOrder"
+        @Label("Order")
+        @Name("com.example.Order")
+        class OrderEvent extends Event {
+            @Label("Order ID")
+            @Contextual
+            long id;
+
+            @Label("Order Date")
+            @Timestamp(Timestamp.MILLISECONDS_SINCE_EPOCH)
+            long date;
+
+            @Label("Payment Method")
+            String paymentMethod;
+        }
+        // @end
+    }
 
     // @start region="DataAmountOverview"
     @Name("com.example.ImageRender")
@@ -507,21 +552,41 @@ public class Snippets {
 
  // @start region="SettingControlOverview1"
  final class RegExpControl extends SettingControl {
-     private Pattern pattern = Pattern.compile(".*");
-
-     @Override
-     public void setValue(String value) {
-         this.pattern = Pattern.compile(value);
-     }
+     private static final String DEFAULT_VALUE = ".*";
+     private Pattern pattern = Pattern.compile(DEFAULT_VALUE);
 
      @Override
      public String combine(Set<String> values) {
-         return String.join("|", values);
+         List<String> valid = new ArrayList<>();
+         for (String value : values) {
+             try {
+                 Pattern.compile(value);
+                 valid.add(value);
+             } catch (PatternSyntaxException pse) {
+                 // Ignore invalid patterns
+             }
+         }
+         if (valid.isEmpty()) {
+             return DEFAULT_VALUE;
+         }
+         if (valid.size() == 1) {
+             return valid.getFirst();
+         }
+         return "(" + String.join(")|(", valid) + ")";
+     }
+
+     @Override
+     public void setValue(String value) {
+         try {
+             this.pattern = Pattern.compile(value);
+         } catch (PatternSyntaxException pse) {
+             // Ignore invalid patterns
+         }
      }
 
      @Override
      public String getValue() {
-         return pattern.toString();
+         return pattern.pattern();
      }
 
      public boolean matches(String s) {

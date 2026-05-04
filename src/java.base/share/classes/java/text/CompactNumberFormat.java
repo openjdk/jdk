@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ import java.util.stream.Collectors;
  * a compact pattern. This special pattern can appear explicitly for any specific
  * range, or considered as a default pattern for an empty string.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A compact pattern contains a positive and negative subpattern
  * separated by a subpattern boundary character {@code ';'},
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
@@ -159,7 +159,10 @@ import java.util.stream.Collectors;
  * the negative prefix and suffix. The number of minimum integer digits,
  * and other characteristics are all the same as the positive pattern.
  * That means that {@code "0K;-00K"} produces precisely the same behavior
- * as {@code "0K;-0K"}.
+ * as {@code "0K;-0K"}. In {@link NumberFormat##leniency lenient parsing}
+ * mode, loose matching of the minus sign pattern is enabled, following the
+ * LDML’s <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <h4>Escaping Special Characters</h4>
  * Many characters in a compact pattern are taken literally, they are matched
@@ -247,38 +250,43 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * List of positive prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positivePrefixPatterns;
 
     /**
      * List of negative prefix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativePrefixPatterns;
 
     /**
      * List of positive suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> positiveSuffixPatterns;
 
     /**
      * List of negative suffix patterns of this formatter's
-     * compact number patterns.
+     * compact number patterns. This field is a read-only
+     * constant once initialized.
      */
     private transient List<Patterns> negativeSuffixPatterns;
 
     /**
      * List of divisors of this formatter's compact number patterns.
      * Divisor can be either Long or BigInteger (if the divisor value goes
-     * beyond long boundary)
+     * beyond long boundary). This field is a read-only constant
+     * once initialized.
      */
     private transient List<Number> divisors;
 
     /**
      * List of place holders that represent minimum integer digits at each index
-     * for each count.
+     * for each count. This field is a read-only constant once initialized.
      */
     private transient List<Patterns> placeHolderPatterns;
 
@@ -371,7 +379,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * The map for plural rules that maps LDML defined tags (e.g. "one") to
-     * its rule.
+     * its rule. This field is a read-only constant once initialized.
      */
     private transient Map<String, String> rulesMap;
 
@@ -539,29 +547,42 @@ public final class CompactNumberFormat extends NumberFormat {
     public final StringBuffer format(Object number,
             StringBuffer toAppendTo,
             FieldPosition fieldPosition) {
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case BigInteger bi -> format(bi, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
+    }
 
-        if (number == null) {
-            throw new IllegalArgumentException("Cannot format null as a number");
-        }
-
-        if (number instanceof Long || number instanceof Integer
-                || number instanceof Short || number instanceof Byte
-                || number instanceof AtomicInteger
-                || number instanceof AtomicLong
-                || (number instanceof BigInteger
-                && ((BigInteger) number).bitLength() < 64)) {
-            return format(((Number) number).longValue(), toAppendTo,
-                    fieldPosition);
-        } else if (number instanceof BigDecimal) {
-            return format((BigDecimal) number, toAppendTo, fieldPosition);
-        } else if (number instanceof BigInteger) {
-            return format((BigInteger) number, toAppendTo, fieldPosition);
-        } else if (number instanceof Number) {
-            return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
-        } else {
-            throw new IllegalArgumentException("Cannot format "
-                    + number.getClass().getName() + " as a number");
-        }
+    @Override
+    StringBuf format(Object number,
+                     StringBuf toAppendTo,
+                     FieldPosition fieldPosition) {
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, toAppendTo, fieldPosition);
+            case BigInteger bi -> format(bi, toAppendTo, fieldPosition);
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
     }
 
     /**
@@ -593,10 +614,19 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf result,
+                     FieldPosition fieldPosition) {
+
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(double number, StringBuffer result,
+    private StringBuf format(double number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean nanOrInfinity = decimalFormat.handleNaN(number, result, delegate);
@@ -630,16 +660,16 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            roundedNumber = roundedNumber / divisor;
+            decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
 
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    roundedNumber = roundedNumber / divisor;
-                    decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -683,10 +713,19 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf result,
+                     FieldPosition fieldPosition) {
+
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(long number, StringBuffer result, FieldDelegate delegate) {
+    private StringBuf format(long number, StringBuf result, FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
             number = -number;
@@ -703,31 +742,28 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            var noFraction = number % divisor == 0;
+            if (noFraction) {
+                number = number / divisor;
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store
+                // the value in double and follow double path instead of
+                // long path
+                double dNumber = (double) number / divisor;
+                decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if ((number % divisor == 0)) {
-                        number = number / divisor;
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store
-                        // the value in double and follow double path instead of
-                        // long path
-                        double dNumber = (double) number / divisor;
-                        decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                            isNegative, noFraction, getMaximumIntegerDigits(),
+                            getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                            getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
@@ -757,15 +793,15 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         of the prefix and the suffix fields can be
      *                         obtained using {@link NumberFormat.Field#PREFIX}
      *                         and {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigDecimal number, StringBuffer result,
-            FieldPosition fieldPosition) {
+    private StringBuf format(BigDecimal number, StringBuf result,
+                             FieldPosition fieldPosition) {
 
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
@@ -773,7 +809,7 @@ public final class CompactNumberFormat extends NumberFormat {
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(BigDecimal number, StringBuffer result,
+    private StringBuf format(BigDecimal number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean isNegative = number.signum() == -1;
@@ -802,15 +838,15 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
+            decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                    decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -843,15 +879,15 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         prefix and the suffix fields can be obtained
      *                         using {@link NumberFormat.Field#PREFIX} and
      *                         {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigInteger number, StringBuffer result,
-            FieldPosition fieldPosition) {
+    private StringBuf format(BigInteger number, StringBuf result,
+                             FieldPosition fieldPosition) {
 
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
@@ -859,7 +895,7 @@ public final class CompactNumberFormat extends NumberFormat {
         return format(number, result, fieldPosition.getFieldDelegate(), false);
     }
 
-    private StringBuffer format(BigInteger number, StringBuffer result,
+    private StringBuf format(BigInteger number, StringBuf result,
             FieldDelegate delegate, boolean formatLong) {
 
         boolean isNegative = number.signum() == -1;
@@ -873,34 +909,30 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            var noFraction = number.mod(new BigInteger(divisor.toString()))
+                    .compareTo(BigInteger.ZERO) == 0;
+            if (noFraction) {
+                number = number.divide(new BigInteger(divisor.toString()));
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store the value in
+                // BigDecimal and follow BigDecimal path instead of
+                // BigInteger path
+                BigDecimal nDecimal = new BigDecimal(number)
+                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if (number.mod(new BigInteger(divisor.toString()))
-                            .compareTo(BigInteger.ZERO) == 0) {
-                        number = number.divide(new BigInteger(divisor.toString()));
-
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store the value in
-                        // BigDecimal and follow BigDecimal path instead of
-                        // BigInteger path
-                        BigDecimal nDecimal = new BigDecimal(number)
-                                .divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                        decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                        isNegative, noFraction, getMaximumIntegerDigits(),
+                        getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                        getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
@@ -936,7 +968,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.PREFIX} fields
      */
-    private void appendPrefix(StringBuffer result, String prefix,
+    private void appendPrefix(StringBuf result, String prefix,
             FieldDelegate delegate) {
         append(result, expandAffix(prefix), delegate,
                 getFieldPositions(prefix, NumberFormat.Field.PREFIX));
@@ -952,7 +984,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.SUFFIX} fields
      */
-    private void appendSuffix(StringBuffer result, String suffix,
+    private void appendSuffix(StringBuf result, String suffix,
             FieldDelegate delegate) {
         append(result, expandAffix(suffix), delegate,
                 getFieldPositions(suffix, NumberFormat.Field.SUFFIX));
@@ -968,7 +1000,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param positions a list of {@code FieldPosition} in the given
      *                  string
      */
-    private void append(StringBuffer result, String string,
+    private void append(StringBuf result, String string,
             FieldDelegate delegate, List<FieldPosition> positions) {
         if (!string.isEmpty()) {
             int start = result.length();
@@ -1134,23 +1166,21 @@ public final class CompactNumberFormat extends NumberFormat {
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
         CharacterIteratorFieldDelegate delegate
                 = new CharacterIteratorFieldDelegate();
-        StringBuffer sb = new StringBuffer();
-
-        if (obj instanceof Double || obj instanceof Float) {
-            format(((Number) obj).doubleValue(), sb, delegate);
-        } else if (obj instanceof Long || obj instanceof Integer
-                || obj instanceof Short || obj instanceof Byte
-                || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number) obj).longValue(), sb, delegate);
-        } else if (obj instanceof BigDecimal) {
-            format((BigDecimal) obj, sb, delegate);
-        } else if (obj instanceof BigInteger) {
-            format((BigInteger) obj, sb, delegate, false);
-        } else if (obj == null) {
-            throw new NullPointerException(
+        StringBuf sb = StringBufFactory.of();
+        switch (obj) {
+            case Double d -> format(d.doubleValue(), sb, delegate);
+            case Float f -> format(f.doubleValue(), sb, delegate);
+            case Long l -> format(l.longValue(), sb, delegate);
+            case Integer i -> format(i.longValue(), sb, delegate);
+            case Short s -> format(s.longValue(), sb, delegate);
+            case Byte b -> format(b.longValue(), sb, delegate);
+            case AtomicInteger ai -> format(ai.longValue(), sb, delegate);
+            case AtomicLong al -> format(al.longValue(), sb, delegate);
+            case BigDecimal bd -> format(bd, sb, delegate);
+            case BigInteger bi -> format(bi, sb, delegate, false);
+            case null -> throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");
-        } else {
-            throw new IllegalArgumentException(
+            default -> throw new IllegalArgumentException(
                     "Cannot format given Object as a Number");
         }
         return delegate.getIterator(sb.toString());
@@ -1490,7 +1520,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private final transient DigitList digitList = new DigitList();
+    private transient DigitList digitList = new DigitList();
     private static final int STATUS_INFINITE = 0;
     private static final int STATUS_POSITIVE = 1;
     private static final int STATUS_LENGTH   = 2;
@@ -1562,6 +1592,9 @@ public final class CompactNumberFormat extends NumberFormat {
      *   <li> Any other characters are found, that are not the expected symbols,
      *   and are not digits that occur within the numerical portion
      * </ul>
+     * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
      * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.
@@ -1671,14 +1704,12 @@ public final class CompactNumberFormat extends NumberFormat {
         // Given text does not match the non empty valid compact prefixes
         // check with the default prefixes
         if (!gotPositive && !gotNegative) {
-            if (text.regionMatches(pos.index, defaultPosPrefix, 0,
-                    defaultPosPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultPosPrefix)) {
                 // Matches the default positive prefix
                 matchedPosPrefix = defaultPosPrefix;
                 gotPositive = true;
             }
-            if (text.regionMatches(pos.index, defaultNegPrefix, 0,
-                    defaultNegPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultNegPrefix)) {
                 // Matches the default negative prefix
                 matchedNegPrefix = defaultNegPrefix;
                 gotNegative = true;
@@ -1724,7 +1755,7 @@ public final class CompactNumberFormat extends NumberFormat {
         // Call DecimalFormat.subparseNumber() method to parse the
         // number part of the input text
         position = decimalFormat.subparseNumber(text, position,
-                digitList, false, false, status);
+                digitList, false, false, status).fullPos();
 
         if (position == -1) {
             // Unable to parse the number successfully
@@ -1732,26 +1763,6 @@ public final class CompactNumberFormat extends NumberFormat {
             pos.errorIndex = oldStart;
             return null;
         }
-
-        // If parse integer only is true and the parsing is broken at
-        // decimal point, then pass/ignore all digits and move pointer
-        // at the start of suffix, to process the suffix part
-        if (isParseIntegerOnly() && position < text.length()
-                && text.charAt(position) == symbols.getDecimalSeparator()) {
-            position++; // Pass decimal character
-            for (; position < text.length(); ++position) {
-                char ch = text.charAt(position);
-                int digit = ch - symbols.getZeroDigit();
-                if (digit < 0 || digit > 9) {
-                    digit = Character.digit(ch, 10);
-                    // Parse all digit characters
-                    if (!(digit >= 0 && digit <= 9)) {
-                        break;
-                    }
-                }
-            }
-        }
-
         // Number parsed successfully; match prefix and
         // suffix to obtain multiplier
         pos.index = position;
@@ -1922,7 +1933,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!affix.isEmpty() && !affix.equals(defaultAffix)) {
             // Look ahead only for the longer match than the previous match
             if (matchedAffix.length() < affix.length()) {
-                return text.regionMatches(position, affix, 0, affix.length());
+                return decimalFormat.matchAffix(text, position, affix);
             }
         }
         return false;
@@ -2024,8 +2035,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            boolean containsPosSuffix = text.regionMatches(position,
-                    positiveSuffix, 0, positiveSuffix.length());
+            boolean containsPosSuffix = decimalFormat.matchAffix(text, position, positiveSuffix);
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
             if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
@@ -2033,8 +2043,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            boolean containsNegSuffix = text.regionMatches(position,
-                    negativeSuffix, 0, negativeSuffix.length());
+            boolean containsNegSuffix = decimalFormat.matchAffix(text, position, negativeSuffix);
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
             if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
@@ -2167,14 +2176,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the maximum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of integer digits to be shown
-     * @see #getMaximumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the maximum integer digits count is set to 309.
+     * @param newValue the maximum number of integer digits to be shown.
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -2192,14 +2197,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the minimum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of integer digits to be shown
-     * @see #getMinimumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the minimum integer digits count is set to 309.
+     * @param newValue the minimum number of integer digits to be shown.
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -2217,14 +2218,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the minimum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of fraction digits to be shown
-     * @see #getMinimumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the minimum fraction digits count is set to 340.
+     * @param newValue the minimum number of fraction digits to be shown.
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -2243,14 +2240,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the maximum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of fraction digits to be shown
-     * @see #getMaximumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the maximum fraction digits count is set to 340.
+     * @param newValue the maximum number of fraction digits to be shown.
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
@@ -2372,6 +2365,8 @@ public final class CompactNumberFormat extends NumberFormat {
      * parsed as the value {@code 1234000} (1234 (integer part) * 1000
      * (thousand)) and the fractional part would be skipped.
      * The exact format accepted by the parse operation is locale dependent.
+     * @implSpec This implementation does not set the {@code ParsePosition} index
+     * to the position of the decimal symbol, but rather the end of the string.
      *
      * @return {@code true} if compact numbers should be parsed as integers
      *         only; {@code false} otherwise
@@ -2516,8 +2511,14 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public CompactNumberFormat clone() {
         CompactNumberFormat other = (CompactNumberFormat) super.clone();
+
+        // Cloning reference fields. Other fields (e.g., "positivePrefixPatterns")
+        // are not cloned since they are read-only constants after initialization.
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
+        other.decimalFormat = (DecimalFormat) decimalFormat.clone();
+        other.defaultDecimalFormat = (DecimalFormat) defaultDecimalFormat.clone();
+        other.digitList = (DigitList) digitList.clone();
         return other;
     }
 

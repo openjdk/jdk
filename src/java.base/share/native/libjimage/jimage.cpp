@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,15 @@
 #include "jimage.hpp"
 
 #include "imageFile.hpp"
+
+#include "jni_util.h"
+
+/*
+ * Declare jimage library specific JNI_Onload entry for static build.
+ */
+extern "C" {
+DEF_STATIC_JNI_OnLoad
+}
 
 /*
  * JImageOpen - Given the supplied full path file name, open an image file. This
@@ -78,23 +87,6 @@ JIMAGE_Close(JImageFile* image) {
 }
 
 /*
- * JImagePackageToModule - Given an open image file (see JImageOpen) and the name
- * of a package, return the name of module where the package resides. If the
- * package does not exist in the image file, the function returns NULL.
- * The resulting string does/should not have to be released. All strings are
- * utf-8, zero byte terminated.
- *
- * Ex.
- *  const char* package = (*JImagePackageToModule)(image, "java/lang");
- *  tty->print_cr(package);
- *  -> java.base
- */
-extern "C" JNIEXPORT const char*
-JIMAGE_PackageToModule(JImageFile* image, const char* package_name) {
-    return ((ImageFileReader*) image)->get_image_module_data()->package_to_module(package_name);
-}
-
-/*
  * JImageFindResource - Given an open image file (see JImageOpen), a module
  * name, a version string and the name of a class/resource, return location
  * information describing the resource and its size. If no resource is found, the
@@ -118,7 +110,7 @@ JIMAGE_FindResource(JImageFile* image,
     size_t nameLen = strlen(name);
     size_t index;
 
-    // TBD:   assert(moduleNameLen > 0 && "module name must be non-empty");
+    assert(moduleNameLen > 0 && "module name must be non-empty");
     assert(nameLen > 0 && "name must non-empty");
 
     // If the concatenated string is too long for the buffer, return not found

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
@@ -57,16 +56,4 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
 
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
-}
-
-void Generation::print() const { print_on(tty); }
-
-void Generation::print_on(outputStream* st)  const {
-  st->print(" %-20s", name());
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-             capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(_virtual_space.low_boundary()),
-              p2i(_virtual_space.high()),
-              p2i(_virtual_space.high_boundary()));
 }

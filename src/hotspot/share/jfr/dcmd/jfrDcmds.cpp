@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "jfr/jfr.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
+#include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
@@ -48,14 +47,14 @@
 
 bool register_jfr_dcmds() {
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrCheckFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrDumpFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStartFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStopFlightRecordingDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrCheckFlightRecordingDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrDumpFlightRecordingDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStartFlightRecordingDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStopFlightRecordingDCmd>(full_export));
   // JFR.query Uncomment when developing new queries for the JFR.view command
-  // DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrQueryFlightRecordingDCmd>(full_export, true, true));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrViewFlightRecordingDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export, true, false));
+  // DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrQueryFlightRecordingDCmd>(full_export, /*hidden=*/true));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrViewFlightRecordingDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export));
   return true;
 }
 
@@ -292,10 +291,10 @@ static const char* get_as_dcmd_arena_string(oop string) {
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const size_t length = static_cast<size_t>(java_lang_String::utf8_length(string, value)) + 1;
+    const size_t length = java_lang_String::utf8_length(string, value) + 1;
     str = dcmd_arena_allocate(length);
     assert(str != nullptr, "invariant");
-    java_lang_String::as_utf8_string(string, value, str, static_cast<int>(length));
+    java_lang_String::as_utf8_string(string, value, str, length);
   }
   return str;
 }

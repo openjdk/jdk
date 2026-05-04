@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8015831
+ * @bug 8015831 8355753
  * @compile/ref=ThisEscape.out -Xlint:this-escape -XDrawDiagnostics ThisEscape.java
  * @summary Verify 'this' escape detection
  */
@@ -763,6 +763,55 @@ public class ThisEscape {
                 getObject().hashCode();
             }
             return this.obj;
+        }
+    }
+
+    // JDK-8355753 - @SuppressWarnings("this-escape") not respected for indirect leak via field
+    public static class SuppressedIndirectLeakViaField {
+
+        private final int x = this.mightLeak();     // this leak should be suppressed
+        private int y;
+
+        {
+            y = this.mightLeak();                   // this leak should be suppressed
+        }
+
+        public SuppressedIndirectLeakViaField() {
+            this("");
+        }
+
+        @SuppressWarnings("this-escape")
+        private SuppressedIndirectLeakViaField(String s) {
+        }
+
+        public int mightLeak() {
+            return 0;
+        }
+    }
+
+    public static class UnsuppressedIndirectLeakViaField {
+
+        private final int x = this.mightLeak();     // this leak should not be suppressed
+
+        public UnsuppressedIndirectLeakViaField() {
+            this("");       // this constructor does not trigger the warning
+        }
+
+        @SuppressWarnings("this-escape")
+        private UnsuppressedIndirectLeakViaField(String s) {
+            // this constructor does not trigger the warning (obviously; it's directly suppressed)
+        }
+
+        public UnsuppressedIndirectLeakViaField(int z) {
+            // this constructor triggers the warning
+        }
+
+        public UnsuppressedIndirectLeakViaField(float z) {
+            // this constructor also triggers the warning, but should not create a duplicate
+        }
+
+        public int mightLeak() {
+            return 0;
         }
     }
 }

@@ -31,6 +31,7 @@
 
 package sun.security.krb5;
 
+import sun.security.jgss.krb5.Krb5Util;
 import sun.security.util.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
@@ -498,12 +499,7 @@ public class EncryptionKey
 
     public String toString() {
         return "EncryptionKey: keyType=" + keyType
-                + " kvno=" + kvno
-                + " keyValue (hex dump)="
-                + (keyValue == null || keyValue.length == 0 ?
-                " Empty Key" : '\n'
-                + Krb5.hexDumper.encodeBuffer(keyValue)
-                + '\n');
+                + ", kvno=" + kvno + ", " + Krb5Util.keyInfo(keyValue);
     }
 
     /**

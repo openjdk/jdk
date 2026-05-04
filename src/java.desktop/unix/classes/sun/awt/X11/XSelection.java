@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 
@@ -91,8 +90,6 @@ final class XSelection {
     private Map<Long, DataFlavor> formatMap = null;
     /* The formats supported by the current owner was set. */
     private long[] formats = null;
-    /* The AppContext in which the current owner was set. */
-    private AppContext appContext = null;
     // The X server time of the last XConvertSelection() call;
     // protected with 'lock' and awtLock.
     private static long lastRequestServerTime;
@@ -148,7 +145,6 @@ final class XSelection {
         this.contents = contents;
         this.formatMap = formatMap;
         this.formats = formats;
-        this.appContext = AppContext.getAppContext();
         this.ownershipTime = time;
 
         XToolkit.awtLock();
@@ -469,7 +465,6 @@ final class XSelection {
         contents = null;
         formatMap = null;
         formats = null;
-        appContext = null;
         ownershipTime = 0;
     }
 
@@ -483,7 +478,7 @@ final class XSelection {
         int count = 0;
 
         try {
-            SunToolkit.insertTargetMapping(this, appContext);
+            SunToolkit.insertTargetMapping(this);
 
             byteData = DataTransferer.getInstance().convertData(this,
                                                                 contents,
@@ -714,7 +709,8 @@ final class XSelection {
         }
     }
 
-    private static class SelectionEventHandler implements XEventDispatcher {
+    private static final class SelectionEventHandler implements XEventDispatcher {
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.SelectionNotify: {
@@ -769,7 +765,7 @@ final class XSelection {
         }
     }
 
-    private static class IncrementalDataProvider implements XEventDispatcher {
+    private static final class IncrementalDataProvider implements XEventDispatcher {
         private final long requestor;
         private final long property;
         private final long target;
@@ -808,6 +804,7 @@ final class XSelection {
             XToolkit.addEventDispatcher(requestor, this);
         }
 
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.PropertyNotify:
@@ -855,7 +852,8 @@ final class XSelection {
         }
     }
 
-    private static class IncrementalTransferHandler implements XEventDispatcher {
+    private static final class IncrementalTransferHandler implements XEventDispatcher {
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.PropertyNotify:

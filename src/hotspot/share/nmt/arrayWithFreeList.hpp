@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
 #define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/growableArray.hpp"
-#include <type_traits>
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
 // identified via array index.
-template<typename E, MEMFLAGS flag>
+template<typename E, MemTag MT>
 class ArrayWithFreeList {
 
   // An E must be trivially copyable and destructible, but it may be constructed
@@ -52,7 +52,7 @@ private:
     E e;
   };
 
-  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
+  GrowableArrayCHeap<BackingElement, MT> _backing_storage;
   I _free_start;
 
   bool is_in_bounds(I i) {
@@ -60,7 +60,7 @@ private:
   }
 
 public:
-  NONCOPYABLE(ArrayWithFreeList<E COMMA flag>);
+  NONCOPYABLE(ArrayWithFreeList);
 
   ArrayWithFreeList(int initial_capacity = 8)
     : _backing_storage(initial_capacity),

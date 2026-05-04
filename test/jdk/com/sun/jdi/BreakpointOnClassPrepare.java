@@ -104,7 +104,15 @@ public class BreakpointOnClassPrepare extends TestScaffold {
 
     public void breakpointReached(BreakpointEvent event) {
         bkptCount++;
-        System.out.println("Got BreakpointEvent: " + bkptCount + " for thread " + event.thread());
+        String threadInfo;
+        try {
+            threadInfo = event.thread().toString();
+        } catch (ObjectCollectedException e) {
+            // It's possible the Thread already terminated and was collected
+            // if the SUSPEND_NONE policy was used.
+            threadInfo = "(thread collected)";
+        }
+        System.out.println("Got BreakpointEvent: " + bkptCount + " for thread " + threadInfo);
     }
 
     public void vmDisconnected(VMDisconnectEvent event) {

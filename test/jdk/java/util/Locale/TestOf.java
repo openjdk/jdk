@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
+
+/*
  * @test
  * @bug 8282819
  * @summary Unit tests for Locale.of() method. Those tests check the equality
  *      of obtained objects with ones that are gotten from other means with both
  *      well-formed and ill-formed arguments. Also checks the possible NPEs
  *      for error cases.
- * @run testng TestOf
+ * @run junit TestOf
  */
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Locale;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
-@Test
 public class TestOf {
 
-    @DataProvider
-    public Object[][] data_1Arg() {
+    static Object[][] data_1Arg() {
         return new Object[][]{
                 // well-formed
                 {Locale.ENGLISH, "en"},
@@ -55,8 +56,7 @@ public class TestOf {
         };
     }
 
-    @DataProvider
-    public Object[][] data_2Args() {
+    static Object[][] data_2Args() {
         return new Object[][]{
                 // well-formed
                 {Locale.US, "en", "US"},
@@ -69,8 +69,7 @@ public class TestOf {
         };
     }
 
-    @DataProvider
-    public Object[][] data_3Args() {
+    static Object[][] data_3Args() {
         return new Object[][]{
                 // well-formed
                 {Locale.forLanguageTag("en-US-POSIX"), "en", "US", "POSIX"},
@@ -87,23 +86,26 @@ public class TestOf {
         };
     }
 
-    @Test (dataProvider = "data_1Arg")
-    public void test_1Arg(Locale expected, String lang) {
-        assertEquals(Locale.of(lang), expected);
+    @MethodSource("data_1Arg")
+    @ParameterizedTest
+    void test_1Arg(Locale expected, String lang) {
+        assertEquals(expected, Locale.of(lang));
     }
 
-    @Test (dataProvider = "data_2Args")
-    public void test_2Args(Locale expected, String lang, String ctry) {
-        assertEquals(Locale.of(lang, ctry), expected);
+    @MethodSource("data_2Args")
+    @ParameterizedTest
+    void test_2Args(Locale expected, String lang, String ctry) {
+        assertEquals(expected, Locale.of(lang, ctry));
     }
 
-    @Test (dataProvider = "data_3Args")
-    public void test_3Args(Locale expected, String lang, String ctry, String vrnt) {
-        assertEquals(Locale.of(lang, ctry, vrnt), expected);
+    @MethodSource("data_3Args")
+    @ParameterizedTest
+    void test_3Args(Locale expected, String lang, String ctry, String vrnt) {
+        assertEquals(expected, Locale.of(lang, ctry, vrnt));
     }
 
     @Test
-    public void test_NPE() {
+    void test_NPE() {
         assertThrows(NullPointerException.class, () -> Locale.of(null));
         assertThrows(NullPointerException.class, () -> Locale.of("", null));
         assertThrows(NullPointerException.class, () -> Locale.of("", "", null));

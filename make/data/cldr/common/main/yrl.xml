@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1089,12 +1089,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Reyupurawaka turusuwa rupí</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Yupurawakasawa mirĩwa yuí turusúwa ãmurupí</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Yupurawakasawa mirĩwa yuí turusúwa amũrupisawa</type>
-			<type key="collation" type="big5han">Xinanhẽẽga rikusawarupí muakaresawa - Big5</type>
 			<type key="collation" type="compat" draft="contributed">Muakaresawa rinũdewa nũgarásawa</type>
 			<type key="collation" type="dictionary">Disiunariu muakaresawa</type>
 			<type key="collation" type="ducet">Unicode muakaresawa retewa</type>
 			<type key="collation" type="eor" draft="contributed">Tekô eurupawara muakarésawa supé</type>
-			<type key="collation" type="gb2312han">Xinanheẽga iwasuĩma muakarewa - GB2312</type>
 			<type key="collation" type="phonebook">Terefuni sesewara muakaresawa</type>
 			<type key="collation" type="phonetic" draft="contributed">Yupurawakasawa terefuniara mukaresawa</type>
 			<type key="collation" type="pinyin">Pin-yin mukaresawa</type>
@@ -1213,7 +1211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2246,6 +2244,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Hurariyu {0}</regionFormat>
 			<regionFormat type="daylight">Kurasí Ara Hurariyu: {0}</regionFormat>
 			<regionFormat type="standard">Hurariyu Retewa: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Hunururu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Hurariyu Mũdi turususawa Kurdenadu</standard>
@@ -2827,9 +2828,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pinõ Pẽi</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ẽdeburi</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Kumure-ita</exemplarCity>
 			</zone>
@@ -2934,9 +2932,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Urã Baturu</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Xuibausã</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makau</exemplarCity>
@@ -3307,9 +3302,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>Réra</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Hunururu</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ãkurage</exemplarCity>
 			</zone>
@@ -3458,9 +3450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Afirikia Usidẽtawara Hurariyu</generic>
-					<standard>Afirika Usidẽtawara Hurariyu Retewa</standard>
-					<daylight>Afirika Usidẽtawara Kurasí Ara Hurariyu</daylight>
+					<standard>Afirikia Usidẽtawara Hurariyu</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3689,13 +3679,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Xina Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Xoibasã Hurariyu</generic>
-					<standard>Xoibasã Hurariyu Retewa</standard>
-					<daylight>Xoibasã Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>KapuãmaKiritima Hurariyu</standard>
@@ -3858,6 +3841,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>Giyana Hurariyu</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaí asuí Kapuã-ita Areuta-ita Hurariyu Retewa</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -6099,7 +6087,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mirimol irerú-pukú rupi</unitPattern>
 				<unitPattern count="other">{0} mirimol-ita irerú-pukú rupi</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>pisawera-ita miliãu rupi</displayName>
 				<unitPattern count="one">{0} pisawera miliãu rupi</unitPattern>
 				<unitPattern count="other">{0} pisawera-ita miliãu rupi</unitPattern>
@@ -6894,7 +6882,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mirimol/ritru</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>pisawera miliãu rupi</displayName>
 			</unit>
 			<unit type="concentr-percent">

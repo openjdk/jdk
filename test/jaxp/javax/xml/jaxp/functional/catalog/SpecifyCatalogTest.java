@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 package catalog;
 
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import org.junit.jupiter.api.Test;
+
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogResolver;
 
 import static catalog.CatalogTestUtils.FEATURE_FILES;
 import static catalog.CatalogTestUtils.catalogResolver;
@@ -31,24 +34,16 @@ import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.CatalogTestUtils.getCatalogPath;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
-import static javax.xml.catalog.CatalogFeatures.builder;
 import static javax.xml.catalog.CatalogFeatures.Feature.FILES;
-
-import javax.xml.catalog.CatalogFeatures;
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static javax.xml.catalog.CatalogFeatures.builder;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.SpecifyCatalogTest
- * @run testng/othervm catalog.SpecifyCatalogTest
+ * @run junit/othervm catalog.SpecifyCatalogTest
  * @summary This case tests how to specify the catalog files.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class SpecifyCatalogTest {
 
     private static final String ID_URI = "http://remote/dtd/uri/doc.dtd";
@@ -80,7 +75,7 @@ public class SpecifyCatalogTest {
      */
     @Test
     public void specifyCatalogViaSysProps() {
-        setSystemProperty(FEATURE_FILES,
+        System.setProperty(FEATURE_FILES,
                 getCatalogPath("specifyCatalog-sysProps.xml").toASCIIString());
 
         checkResolutionOnEntityResolver(catalogResolver((String[]) null),
@@ -96,13 +91,13 @@ public class SpecifyCatalogTest {
                 "http://local/base/dtd/docAPIURI.dtd");
     }
 
-    private void checkResolutionOnEntityResolver(CatalogResolver resolver,
-            String matchedUri) {
+    private static void checkResolutionOnEntityResolver(CatalogResolver resolver,
+                                                        String matchedUri) {
         checkSysIdResolution(resolver, ID_SYS, matchedUri);
     }
 
-    private void checkResolutionOnUriResolver(CatalogResolver resolver,
-            String matchedUri) {
+    private static void checkResolutionOnUriResolver(CatalogResolver resolver,
+                                                     String matchedUri) {
         checkUriResolution(resolver, ID_URI, matchedUri);
     }
 

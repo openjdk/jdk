@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
 
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -91,8 +90,8 @@ class ServerSocketChannelImpl
     private static final int ST_CLOSED = 2;
     private int state;
 
-    // ID of native thread currently blocked in this channel, for signalling
-    private long thread;
+    // Thread currently blocked in this channel, for signalling
+    private Thread thread;
 
     // Binding
     private SocketAddress localAddress; // null => unbound
@@ -132,7 +131,7 @@ class ServerSocketChannelImpl
         if (family == UNIX) {
             this.fd = UnixDomainSockets.socket();
         } else {
-            this.fd = Net.serverSocket(family, true);
+            this.fd = Net.serverSocket(family);
         }
         this.fdVal = IOUtil.fdVal(fd);
     }
@@ -202,11 +201,7 @@ class ServerSocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            if (isUnixSocket()) {
-                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
-            } else {
-                return Net.getRevealedLocalAddress(localAddress);
-            }
+            return localAddress;
         }
     }
 
@@ -305,7 +300,6 @@ class ServerSocketChannelImpl
     }
 
     private SocketAddress unixBind(SocketAddress local, int backlog) throws IOException {
-        UnixDomainSockets.checkPermission();
         if (local == null) {
             // Attempt up to 10 times to find an unused name in temp directory.
             // If local address supplied then bind called only once
@@ -336,11 +330,6 @@ class ServerSocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkListen(isa.getPort());
-        NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         Net.listen(fd, backlog < 1 ? 50 : backlog);
         return Net.localAddress(fd);
@@ -360,7 +349,7 @@ class ServerSocketChannelImpl
             if (localAddress == null)
                 throw new NotYetBoundException();
             if (blocking)
-                thread = NativeThread.current();
+                thread = NativeThread.threadToSignal();
         }
     }
 
@@ -375,7 +364,7 @@ class ServerSocketChannelImpl
     {
         if (blocking) {
             synchronized (stateLock) {
-                thread = 0;
+                thread = null;
                 if (state == ST_CLOSING) {
                     tryFinishClose();
                 }
@@ -423,7 +412,6 @@ class ServerSocketChannelImpl
         throws IOException
     {
         if (isUnixSocket()) {
-            UnixDomainSockets.checkPermission();
             String[] pa = new String[1];
             int n = UnixDomainSockets.accept(fd, newfd, pa);
             if (n > 0)
@@ -495,16 +483,6 @@ class ServerSocketChannelImpl
         try {
             // newly accepted socket is initially in blocking mode
             IOUtil.configureBlocking(newfd, true);
-
-            // check permitted to accept connections from the remote address
-            if (isNetSocket()) {
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    InetSocketAddress isa = (InetSocketAddress) sa;
-                    sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
-                }
-            }
             return new SocketChannelImpl(provider(), family, newfd, sa);
         } catch (Exception e) {
             nd.close(newfd);
@@ -573,7 +551,7 @@ class ServerSocketChannelImpl
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
-        if ((thread == 0) && !isRegistered()) {
+        if ((thread == null) && !isRegistered()) {
             state = ST_CLOSED;
             nd.close(fd);
             return true;
@@ -605,15 +583,7 @@ class ServerSocketChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    if (NativeThread.isVirtualThread(th)) {
-                        Poller.stopPoll(fdVal);
-                    } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
-                    }
-                }
+                nd.preClose(fd, thread, null);
             }
         }
     }
@@ -654,6 +624,9 @@ class ServerSocketChannelImpl
 
     @Override
     public void kill() {
+        // wait for any accept operation to complete before trying to close
+        acceptLock.lock();
+        acceptLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
@@ -746,9 +719,7 @@ class ServerSocketChannelImpl
                 if (addr == null) {
                     sb.append("unbound");
                 } else if (isUnixSocket()) {
-                    sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
-                } else {
-                    sb.append(Net.getRevealedLocalAddressAsString(addr));
+                    sb.append(addr);
                 }
             }
         }

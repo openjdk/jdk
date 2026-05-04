@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,10 @@ public class CheckSignerCertChain {
                 "-sigalg SHA256withRSA " +
                 "-verbose" +
                 " a.jar e1")
-                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit key")
+                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit RSA key")
                 // For trusted cert, warning should be generated for its weak 1024-bit
                 // key, but not for its SHA1withRSA algorithm.
-                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
+                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit RSA key (weak)")
                 .shouldHaveExitValue(0);
 
         kt("-exportcert -alias ca -rfc -file cacert", "ks");
@@ -92,10 +92,10 @@ public class CheckSignerCertChain {
 
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
                 "-keystore caks -storepass changeit -verbose -debug")
-                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit key")
+                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit RSA key")
                 // For trusted cert, warning should be generated for its weak 1024-bit
                 // key, but not for its SHA1withRSA algorithm.
-                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
+                .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit RSA key (weak)")
                 .shouldHaveExitValue(0);
 
         /*
@@ -118,8 +118,8 @@ public class CheckSignerCertChain {
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
-                .shouldNotContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
+                .shouldNotContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
                 .shouldNotContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: MD5withRSA")
                 .shouldHaveExitValue(0);
 
@@ -134,8 +134,8 @@ public class CheckSignerCertChain {
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
-                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
+                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
                 .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
 
@@ -144,8 +144,8 @@ public class CheckSignerCertChain {
 
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
                 "-keystore caks1 -storepass changeit -verbose -debug")
-                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
+                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
                 .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
     }

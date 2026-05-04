@@ -30,6 +30,7 @@ package gc.arguments;
  * parallel collectors.
  * @key flag-sensitive
  * @requires vm.gc.Parallel & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

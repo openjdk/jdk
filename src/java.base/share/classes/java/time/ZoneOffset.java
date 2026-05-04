@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +86,10 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Supplier;
 
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * A time-zone offset from Greenwich/UTC, such as {@code +02:00}.
@@ -134,8 +137,10 @@ public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
 
-    /** Cache of time-zone offset by offset in seconds. */
-    private static final ConcurrentMap<Integer, ZoneOffset> SECONDS_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
+    /** Cache of time-zone offset by offset in quarters. */
+    private static final int SECONDS_PER_QUARTER = 15 * SECONDS_PER_MINUTE;
+    private static final AtomicReferenceArray<ZoneOffset> QUARTER_CACHE = new AtomicReferenceArray<>(256);
+
     /** Cache of time-zone offset by ID. */
     private static final ConcurrentMap<String, ZoneOffset> ID_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
 
@@ -163,7 +168,7 @@ public final class ZoneOffset
     public static final ZoneOffset MAX = ZoneOffset.ofTotalSeconds(MAX_SECONDS);
 
     /**
-     * The total offset in seconds.
+     * @serial The total offset in seconds.
      */
     private final int totalSeconds;
     /**
@@ -173,8 +178,13 @@ public final class ZoneOffset
     /**
      * The zone rules for an offset will always return this offset. Cache it for efficiency.
      */
-    @Stable
-    private transient ZoneRules rules;
+    private final transient LazyConstant<ZoneRules> rules =
+        LazyConstant.of(new Supplier<ZoneRules>() {
+            @Override
+            public ZoneRules get() {
+                return ZoneRules.of(ZoneOffset.this);
+            }
+        });
 
     //-----------------------------------------------------------------------
     /**
@@ -413,9 +423,9 @@ public final class ZoneOffset
     /**
      * Obtains an instance of {@code ZoneOffset} specifying the total offset in seconds
      * <p>
-     * The offset must be in the range {@code -18:00} to {@code +18:00}, which corresponds to -64800 to +64800.
+     * The offset must be in the range {@code -18:00} to {@code +18:00}, which corresponds to -64,800 to +64,800.
      *
-     * @param totalSeconds  the total time-zone offset in seconds, from -64800 to +64800
+     * @param totalSeconds  the total time-zone offset in seconds, from -64,800 to +64,800
      * @return the ZoneOffset, not null
      * @throws DateTimeException if the offset is not in the required range
      */
@@ -423,12 +433,20 @@ public final class ZoneOffset
         if (totalSeconds < -MAX_SECONDS || totalSeconds > MAX_SECONDS) {
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
-        if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            return SECONDS_CACHE.computeIfAbsent(totalSeconds, totalSecs -> {
-                ZoneOffset result = new ZoneOffset(totalSecs);
+        int quarters = totalSeconds / SECONDS_PER_QUARTER;
+        if (totalSeconds - quarters * SECONDS_PER_QUARTER == 0) {
+            // quarters range from -72 to 72, & 0xff maps them to 0-72 and 184-255.
+            int key = quarters & 0xff;
+            ZoneOffset result = QUARTER_CACHE.getOpaque(key);
+            if (result == null) {
+                result = new ZoneOffset(totalSeconds);
+                var existing = QUARTER_CACHE.compareAndExchange(key, null, result);
+                if (existing != null) {
+                    result = existing;
+                }
                 ID_CACHE.putIfAbsent(result.getId(), result);
-                return result;
-            });
+            }
+            return result;
         } else {
             return new ZoneOffset(totalSeconds);
         }
@@ -438,7 +456,7 @@ public final class ZoneOffset
     /**
      * Constructor.
      *
-     * @param totalSeconds  the total time-zone offset in seconds, from -64800 to +64800
+     * @param totalSeconds  the total time-zone offset in seconds, from -64,800 to +64,800
      */
     private ZoneOffset(int totalSeconds) {
         this.totalSeconds = totalSeconds;
@@ -453,12 +471,14 @@ public final class ZoneOffset
             StringBuilder buf = new StringBuilder();
             int absHours = absTotalSeconds / SECONDS_PER_HOUR;
             int absMinutes = (absTotalSeconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
-            buf.append(totalSeconds < 0 ? "-" : "+")
-                .append(absHours < 10 ? "0" : "").append(absHours)
-                .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
+            buf.append(totalSeconds < 0 ? '-' : '+');
+            DecimalDigits.appendPair(buf, absHours);
+            buf.append(':');
+            DecimalDigits.appendPair(buf, absMinutes);
             int absSeconds = absTotalSeconds % SECONDS_PER_MINUTE;
             if (absSeconds != 0) {
-                buf.append(absSeconds < 10 ? ":0" : ":").append(absSeconds);
+                buf.append(':');
+                DecimalDigits.appendPair(buf, absSeconds);
             }
             return buf.toString();
         }
@@ -506,11 +526,7 @@ public final class ZoneOffset
      */
     @Override
     public ZoneRules getRules() {
-        ZoneRules rules = this.rules;
-        if (rules == null) {
-            rules = this.rules = ZoneRules.of(this);
-        }
-        return rules;
+        return rules.get();
     }
 
     @Override

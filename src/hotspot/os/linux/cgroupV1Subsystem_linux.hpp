@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,110 +25,207 @@
 #ifndef CGROUP_V1_SUBSYSTEM_LINUX_HPP
 #define CGROUP_V1_SUBSYSTEM_LINUX_HPP
 
-#include "runtime/os.hpp"
-#include "memory/allocation.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 
 // Cgroups version 1 specific implementation
 
 class CgroupV1Controller: public CgroupController {
   private:
     /* mountinfo contents */
-    char *_root;
-    char *_mount_point;
+    char* _root;
+    bool _read_only;
 
     /* Constructed subsystem directory */
-    char *_path;
+    char* _path;
 
   public:
-    CgroupV1Controller(char *root, char *mountpoint) {
-      _root = os::strdup(root);
+    CgroupV1Controller(char *root,
+                       char *mountpoint,
+                       bool ro) : _root(os::strdup(root)),
+                                  _read_only(ro),
+                                  _path(nullptr) {
+      _cgroup_path = nullptr;
       _mount_point = os::strdup(mountpoint);
-      _path = nullptr;
+    }
+    // Shallow copy constructor
+    CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
+                                                      _read_only(o._read_only),
+                                                      _path(o._path) {
+      _cgroup_path = o._cgroup_path;
+      _mount_point = o._mount_point;
+    }
+    ~CgroupV1Controller() {
+      // At least one subsystem controller exists with paths to malloc'd path
+      // names
     }
 
-    virtual void set_subsystem_path(char *cgroup_path);
-    char *subsystem_path() { return _path; }
+    void set_subsystem_path(const char *cgroup_path);
+    const char* subsystem_path() override { return _path; }
+    bool is_read_only() override { return _read_only; }
+    bool needs_hierarchy_adjustment() override;
 };
 
-class CgroupV1MemoryController: public CgroupV1Controller {
+class CgroupV1MemoryController final : public CgroupMemoryController {
 
-  public:
-    bool is_hierarchical() { return _uses_mem_hierarchy; }
-    void set_subsystem_path(char *cgroup_path);
   private:
-    /* Some container runtimes set limits via cgroup
-     * hierarchy. If set to true consider also memory.stat
-     * file if everything else seems unlimited */
-    bool _uses_mem_hierarchy;
-    jlong uses_mem_hierarchy();
-    void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
+    bool read_memory_limit_val(physical_memory_size_type& result);
+    bool read_hierarchical_memory_limit_val(physical_memory_size_type& result);
+    bool read_hierarchical_mem_swap_val(physical_memory_size_type& result);
+    bool read_use_hierarchy_val(physical_memory_size_type& result);
+    bool memory_usage_val(physical_memory_size_type& result);
+    bool read_mem_swappiness(physical_memory_size_type& result);
+    bool read_mem_swap(physical_memory_size_type& result);
+    bool memory_soft_limit_val(physical_memory_size_type& result);
+    bool memory_max_usage_val(physical_memory_size_type& result);
+    bool kernel_memory_usage_val(physical_memory_size_type& result);
+    bool kernel_memory_limit_val(physical_memory_size_type& result);
+    bool kernel_memory_max_usage_val(physical_memory_size_type& result);
+    bool uses_mem_hierarchy();
 
   public:
-    CgroupV1MemoryController(char *root, char *mountpoint) : CgroupV1Controller(root, mountpoint) {
-      _uses_mem_hierarchy = false;
+    void set_subsystem_path(const char *cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    bool read_memory_limit_in_bytes(physical_memory_size_type upper_bound,
+                                    physical_memory_size_type& value) override;
+    bool memory_usage_in_bytes(physical_memory_size_type& result) override;
+    bool memory_and_swap_limit_in_bytes(physical_memory_size_type upper_mem_bound,
+                                        physical_memory_size_type upper_swap_bound,
+                                        physical_memory_size_type& result) override;
+    bool memory_and_swap_usage_in_bytes(physical_memory_size_type upper_mem_bound,
+                                        physical_memory_size_type upper_swap_bound,
+                                        physical_memory_size_type& result) override;
+    bool memory_soft_limit_in_bytes(physical_memory_size_type upper_bound,
+                                    physical_memory_size_type& result) override;
+    bool memory_throttle_limit_in_bytes(physical_memory_size_type& result) override;
+    bool memory_max_usage_in_bytes(physical_memory_size_type& result) override;
+    bool rss_usage_in_bytes(physical_memory_size_type& result) override;
+    bool cache_usage_in_bytes(physical_memory_size_type& result) override;
+    bool kernel_memory_usage_in_bytes(physical_memory_size_type& result);
+    bool kernel_memory_limit_in_bytes(physical_memory_size_type upper_bound,
+                                      physical_memory_size_type& result);
+    bool kernel_memory_max_usage_in_bytes(physical_memory_size_type& result);
+    void print_version_specific_info(outputStream* st, physical_memory_size_type upper_mem_bound) override;
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
+    const char* subsystem_path() override { return reader()->subsystem_path(); }
+    const char* mount_point() override { return reader()->mount_point(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
+
+  public:
+    CgroupV1MemoryController(const CgroupV1Controller& reader)
+      : _reader(reader) {
     }
 
+};
+
+class CgroupV1CpuController final : public CgroupCpuController {
+
+  private:
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
+    bool cpu_period_val(uint64_t& result);
+    bool cpu_shares_val(uint64_t& result);
+  public:
+    bool cpu_quota(int& result) override;
+    bool cpu_period(int& result) override;
+    bool cpu_shares(int& result) override;
+    void set_subsystem_path(const char *cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
+    const char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
+    const char* mount_point() override {
+      return reader()->mount_point();
+    }
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
+
+  public:
+    CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
+    }
+};
+
+class CgroupV1CpuacctController final : public CgroupCpuacctController {
+
+  private:
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
+    bool cpu_usage_in_micros_val(uint64_t& result);
+  public:
+    bool cpu_usage_in_micros(uint64_t& result) override;
+    void set_subsystem_path(const char *cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
+    const char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
+    const char* mount_point() override {
+      return reader()->mount_point();
+    }
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
+
+  public:
+    CgroupV1CpuacctController(const CgroupV1Controller& reader) : _reader(reader) {
+    }
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {
 
   public:
-    jlong read_memory_limit_in_bytes();
-    jlong memory_and_swap_limit_in_bytes();
-    jlong memory_and_swap_usage_in_bytes();
-    jlong memory_soft_limit_in_bytes();
-    jlong memory_usage_in_bytes();
-    jlong memory_max_usage_in_bytes();
-    jlong rss_usage_in_bytes();
-    jlong cache_usage_in_bytes();
+    CgroupV1Subsystem(CgroupV1Controller* cpuset,
+                      CgroupV1CpuController* cpu,
+                      CgroupV1CpuacctController* cpuacct,
+                      CgroupV1Controller* pids,
+                      CgroupV1MemoryController* memory);
 
-    jlong kernel_memory_usage_in_bytes();
-    jlong kernel_memory_limit_in_bytes();
-    jlong kernel_memory_max_usage_in_bytes();
+    bool kernel_memory_usage_in_bytes(physical_memory_size_type& result);
+    bool kernel_memory_limit_in_bytes(physical_memory_size_type& result);
+    bool kernel_memory_max_usage_in_bytes(physical_memory_size_type& result);
 
-    char * cpu_cpuset_cpus();
-    char * cpu_cpuset_memory_nodes();
+    char * cpu_cpuset_cpus() override;
+    char * cpu_cpuset_memory_nodes() override;
 
-    int cpu_quota();
-    int cpu_period();
+    bool pids_max(uint64_t& result) override;
+    bool pids_current(uint64_t& result) override;
+    bool is_containerized() override;
 
-    int cpu_shares();
-
-    jlong pids_max();
-    jlong pids_current();
-
-    void print_version_specific_info(outputStream* st);
-
-    const char * container_type() {
+    const char * container_type() override {
       return "cgroupv1";
     }
-    CachingCgroupController * memory_controller() { return _memory; }
-    CachingCgroupController * cpu_controller() { return _cpu; }
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController, double>* cpu_controller() override { return _cpu; }
+    CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; }
 
   private:
     /* controllers */
-    CachingCgroupController* _memory = nullptr;
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* _memory = nullptr;
     CgroupV1Controller* _cpuset = nullptr;
-    CachingCgroupController* _cpu = nullptr;
-    CgroupV1Controller* _cpuacct = nullptr;
+    CachingCgroupController<CgroupCpuController, double>* _cpu = nullptr;
+    CgroupV1CpuacctController* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 
-    jlong read_mem_swappiness();
-    jlong read_mem_swap();
-
-  public:
-    CgroupV1Subsystem(CgroupV1Controller* cpuset,
-                      CgroupV1Controller* cpu,
-                      CgroupV1Controller* cpuacct,
-                      CgroupV1Controller* pids,
-                      CgroupV1MemoryController* memory) {
-      _cpuset = cpuset;
-      _cpu = new CachingCgroupController(cpu);
-      _cpuacct = cpuacct;
-      _pids = pids;
-      _memory = new CachingCgroupController(memory);
-    }
 };
 
 #endif // CGROUP_V1_SUBSYSTEM_LINUX_HPP

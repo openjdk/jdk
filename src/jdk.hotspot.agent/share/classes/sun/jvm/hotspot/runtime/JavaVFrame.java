@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public abstract class JavaVFrame extends VFrame {
     // then print out the receiver. Locals are not always available,
     // e.g., compiled native frames have no scope so there are no locals.
     if (frameCount == 0) {
-      if (getMethod().getName().asString().equals("wait") &&
+      if (getMethod().getName().asString().equals("wait0") &&
           getMethod().getMethodHolder().getName().asString().equals("java/lang/Object")) {
         String waitState = "waiting on"; // assume we are waiting
         // If earlier in the output we reported java.lang.Thread.State ==

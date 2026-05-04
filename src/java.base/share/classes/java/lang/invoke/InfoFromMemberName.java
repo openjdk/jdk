@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import java.security.*;
 import java.lang.reflect.*;
 import java.lang.invoke.MethodHandles.Lookup;
 
@@ -85,16 +84,13 @@ final class InfoFromMemberName implements MethodHandleInfo {
             // For more information see comments on {@link MethodHandleNatives#linkMethod}.
             throw new IllegalArgumentException("cannot reflect signature polymorphic method");
         }
-        @SuppressWarnings("removal")
-        Member mem = AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Member run() {
-                    try {
-                        return reflectUnchecked();
-                    } catch (ReflectiveOperationException ex) {
-                        throw new IllegalArgumentException(ex);
-                    }
-                }
-            });
+
+        Member mem;
+        try {
+            mem = reflectUnchecked();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalArgumentException(ex);
+        }
         try {
             Class<?> defc = getDeclaringClass();
             byte refKind = (byte) getReferenceKind();

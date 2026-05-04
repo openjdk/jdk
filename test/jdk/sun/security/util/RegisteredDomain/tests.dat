@@ -72,9 +72,9 @@ w.foo.公司.cn           公司.cn         foo.公司.cn
 www.foo.com             com             foo.com
 z.www.foo.com           com             foo.com
 com                     com             null
-ar.com                  ar.com          null
-site.ar.com             ar.com          site.ar.com
-w.site.ar.com           ar.com          site.ar.com
+us.com                  us.com          null
+site.us.com             us.com          site.us.com
+w.site.us.com           us.com          site.us.com
 
 # fj (no longer *.fj)
 foo.gov.fj              gov.fj          foo.gov.fj
@@ -108,6 +108,10 @@ w.foo.kawasaki.jp          foo.kawasaki.jp    w.foo.kawasaki.jp
 p.w.foo.kawasaki.jp        foo.kawasaki.jp    w.foo.kawasaki.jp
 city.kawasaki.jp           kawasaki.jp        city.kawasaki.jp
 w.city.kawasaki.jp         kawasaki.jp        city.kawasaki.jp
+
+# kr
+ai.kr                   ai.kr           null
+foo.ai.kr               ai.kr           foo.ai.kr
 
 # kw
 www.example.kw          kw              example.kw
@@ -151,6 +155,7 @@ w.s.k12.oh.us           k12.oh.us       s.k12.oh.us
 s.k12.oh.us             k12.oh.us       s.k12.oh.us
 s.pvt.k12.ma.us         pvt.k12.ma.us   s.pvt.k12.ma.us
 w.s.pvt.k12.ma.us       pvt.k12.ma.us   s.pvt.k12.ma.us
+kids.us                 us              kids.us
 
 # vn
 site.com.vn             com.vn          site.com.vn

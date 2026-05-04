@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,20 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Factory for navigation bar.
@@ -87,8 +88,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -137,6 +139,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case MODULE:
                 addOverviewLink(target);
@@ -148,6 +151,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case PACKAGE:
                 addOverviewLink(target);
@@ -166,6 +170,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case CLASS:
                 addOverviewLink(target);
@@ -184,6 +189,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case USE:
                 addOverviewLink(target);
@@ -208,6 +214,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case TREE:
                 addOverviewLink(target);
@@ -226,6 +233,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case DEPRECATED:
             case INDEX:
@@ -268,12 +276,14 @@ public class Navigation {
                 } else {
                     addHelpLink(target);
                 }
+                addThemeSwitcher(target);
                 break;
             case ALL_CLASSES:
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
@@ -284,6 +294,7 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             case DOC_FILE:
                 addOverviewLink(target);
@@ -310,14 +321,11 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
+                addThemeSwitcher(target);
                 break;
             default:
                 break;
         }
-    }
-
-    private void addContentToList(List<Content> listContents, Content source) {
-        listContents.add(HtmlTree.LI(source));
     }
 
     private void addItemToList(Content list, Content item) {
@@ -326,7 +334,7 @@ public class Navigation {
 
     private void addActivePageLink(Content target, Content label, boolean display) {
         if (display) {
-            target.add(HtmlTree.LI(HtmlStyle.navBarCell1Rev, label));
+            target.add(HtmlTree.LI(HtmlStyles.navBarCell1Rev, label));
         }
     }
 
@@ -394,24 +402,48 @@ public class Navigation {
         HtmlTree link = switch (elem) {
             case ModuleElement mdle -> links.createLink(pathToRoot.resolve(
                     docPaths.moduleSummary(mdle)),
-                    Text.of(mdle.getQualifiedName()));
+                    Text.of(mdle.getQualifiedName()),
+                    getTitle(elem));
             case PackageElement pkg -> links.createLink(pathToRoot.resolve(
                     docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_SUMMARY)),
                     pkg.isUnnamed()
                             ? configuration.contents.defaultPackageLabel
-                            : Text.of(pkg.getQualifiedName()));
+                            : Text.of(pkg.getQualifiedName()),
+                    getTitle(elem));
             // Breadcrumb navigation displays nested classes as separate links.
             // Enclosing classes may be undocumented, in which case we just display the class name.
-            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.hasHiddenTag(type))
-                    ? links.createLink(pathToRoot.resolve(
-                            docPaths.forClass(type)), type.getSimpleName().toString())
+            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.isHidden(type))
+                    ? links.createLink(pathToRoot.resolve(docPaths.forClass(type)),
+                                    Text.of(type.getSimpleName().toString()), getTitle(elem))
                     : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
             default -> throw new IllegalArgumentException(Objects.toString(elem));
         };
         if (selected) {
-            link.setStyle(HtmlStyle.currentSelection);
+            link.setStyle(HtmlStyles.currentSelection);
         }
         contents.add(link);
+    }
+
+    private String getTitle(Element elem) {
+        return switch (elem) {
+            case ModuleElement moduleElement -> contents.moduleLabel + " " + moduleElement.getQualifiedName();
+            case PackageElement packageElement ->  packageElement.isUnnamed()
+                    ? contents.defaultPackageLabel.toString()
+                    : contents.packageLabel + " " + configuration.utils.getPackageName(packageElement);
+            case TypeElement typeElement -> {
+                String key = switch (typeElement.getKind()) {
+                    case INTERFACE       -> "doclet.Interface";
+                    case ENUM            -> "doclet.Enum";
+                    case RECORD          -> "doclet.RecordClass";
+                    case ANNOTATION_TYPE -> "doclet.AnnotationType";
+                    case CLASS           -> "doclet.Class";
+                    default -> throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
+                };
+                yield configuration.getDocResources().getText(key) + " "
+                    + configuration.utils.getSimpleName(typeElement);
+            }
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
     }
 
     private void addPageElementLink(Content list) {
@@ -491,18 +523,82 @@ public class Navigation {
         }
     }
 
+    private void addThemeSwitcher(Content target) {
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        target.add(HtmlTree.LI(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
+                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString())
+                .put(HtmlAttr.TITLE, selectTheme.toString())));
+    }
+
+    private void addThemePanel(Content target) {
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
+                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
+    }
+
     private void addSearch(Content target) {
         var resources = configuration.getDocResources();
+        var placeholder = resources.getText("doclet.search_placeholder");
         var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
-                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
+                .put(HtmlAttr.TITLE, placeholder)
+                .put(HtmlAttr.PLACEHOLDER, placeholder)
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
-                .put(HtmlAttr.AUTOCOMPLETE, "off");
+                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                .put(HtmlAttr.SPELLCHECK, "false");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
-        var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch)
+        var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
+        target.add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_SECTION)
+                .add(HtmlTree.DIV(HtmlStyles.searchForm)
+                        .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(),
+                                contents.getContent("doclet.search.for"))))
+                        .add(HtmlTree.DIV(HtmlIds.SEARCH_INPUT_CONTAINER).addUnchecked(Text.EMPTY))
+                        .add(createModuleSelector()))
+                .add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_CONTAINER).addUnchecked(Text.EMPTY))
+                .add(HtmlTree.DIV(HtmlStyles.searchLinks)
+                        .add(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                                        contents.getContent("doclet.search.linkSearchPageLabel"))
+                                .setId(HtmlIds.SEARCH_PAGE_LINK)))
+                        .add(options.noHelp() || !options.helpFile().isEmpty()
+                                ? HtmlTree.DIV(Text.EMPTY).addUnchecked(Text.EMPTY)
+                                : HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
+                                    contents.getContent("doclet.search.linkSearchHelpLabel"))))));
+    }
+
+    private Content createModuleSelector() {
+        if (!configuration.showModules || configuration.modules.size() < 2) {
+            return Text.EMPTY;
+        }
+        var content = new ContentBuilder(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_MODULES.name(),
+                contents.getContent("doclet.search.in_modules"))));
+        var select = HtmlTree.of(HtmlTag.SELECT)
+                .setId(HtmlIds.SEARCH_MODULES)
+                .put(HtmlAttr.ARIA_LABEL, configuration.getDocResources().getText("doclet.selectModule"))
+                .add(HtmlTree.of(HtmlTag.OPTION)
+                        .put(HtmlAttr.VALUE, "")
+                        .add(contents.getContent("doclet.search.all_modules")));
+
+        for (ModuleElement module : configuration.modules) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
+                    .add(Text.of(module.getQualifiedName().toString())));
+        }
+        return content.add(HtmlTree.DIV(select));
     }
 
     /**
@@ -516,36 +612,36 @@ public class Navigation {
         }
         var navigationBar = HtmlTree.NAV();
 
-        var navContent = new HtmlTree(TagName.DIV);
+        var navContent = HtmlTree.DIV(HtmlStyles.navContent);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
         // The mobile menu button uses three empty spans to produce its animated icon
-        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
-        navContent.setStyle(HtmlStyle.navContent).add(HtmlTree.DIV(HtmlStyle.navMenuButton,
-                        new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyles.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
+        navContent.add(HtmlTree.DIV(HtmlStyles.navMenuButton,
+                        HtmlTree.BUTTON(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                                 .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                                 .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
                                 .add(iconSpan)
                                 .add(iconSpan)
                                 .add(iconSpan)))
-                .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                .add(HtmlTree.DIV(HtmlStyles.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
 
-        var navList = new HtmlTree(TagName.UL)
-                .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
-                .setStyle(HtmlStyle.navList)
+        var navList = HtmlTree.UL(HtmlIds.NAVBAR_TOP_FIRSTROW, HtmlStyles.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);
-        var aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
+        addThemePanel(navContent);
+        var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
-        var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
+
+        var subNavContent = HtmlTree.DIV(HtmlStyles.navContent);
         List<Content> subNavLinks = new ArrayList<>();
         switch (documentedPage) {
             case MODULE, PACKAGE, CLASS, USE, DOC_FILE, TREE -> {
@@ -553,17 +649,17 @@ public class Navigation {
             }
         }
         // Add the breadcrumb navigation links if present.
-        var breadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
+        var breadcrumbNav = HtmlTree.OL(HtmlStyles.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
         subNavContent.addUnchecked(breadcrumbNav);
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);
         }
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.subNav, subNavContent));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.subNav, subNavContent));
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyles.skipNav)
                 .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 

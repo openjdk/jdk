@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
  * @bug 6450200 6450205 6450207 6450211
  * @summary Test proper handling of tasks that terminate abruptly
  * @author Martin Buchholz
- * @run main/othervm -Djava.security.manager=allow ThrowingTasks
+ * @run main ThrowingTasks
  */
 
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,10 +123,6 @@ public class ThrowingTasks {
     static final CountDownLatch allStarted = new CountDownLatch(flakes.size());
     static final CountDownLatch allContinue = new CountDownLatch(1);
 
-    static class PermissiveSecurityManger extends SecurityManager {
-        public void checkPermission(Permission p) { /* bien sur, Monsieur */ }
-    }
-
     static void checkTerminated(ThreadPoolExecutor tpe) {
         try {
             check(tpe.getQueue().isEmpty());
@@ -219,9 +214,6 @@ public class ThrowingTasks {
     static final AtomicInteger terminatedCount    = new AtomicInteger(0);
 
     private static void realMain(String[] args) throws Throwable {
-        if (rnd.nextBoolean())
-            System.setSecurityManager(new PermissiveSecurityManger());
-
         CheckingExecutor tpe = new CheckingExecutor();
 
         for (Runnable task : flakes)

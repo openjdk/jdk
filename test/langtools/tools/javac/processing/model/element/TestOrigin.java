@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug 8171355
  * @summary Test behavior of javax.lang.model.util.Elements.getOrigin.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @build TestOrigin
  * @run main TestOrigin
@@ -302,7 +300,7 @@ public class TestOrigin extends TestRunner {
                                                           newOpens,
                                                           module.uses(),
                                                           module.provides());
-        byte[] newClassFileBytes = ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute)
+        byte[] newClassFileBytes = ClassFile.of().transformClass(cf, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute)
                                                  .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(moduleInfo)) {
             out.write(newClassFileBytes);

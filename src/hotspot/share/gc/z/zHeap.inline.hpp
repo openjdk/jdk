@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRemembered.inline.hpp"
@@ -74,6 +75,29 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   return page->is_object_strongly_live(addr);
 }
 
+inline void ZHeap::retire_allocating_pages(ZPageAgeRange range) {
+  _object_allocator.retire_pages(range);
+}
+
+inline zaddress ZHeap::alloc_object(size_t size) {
+  const zaddress addr = _object_allocator.alloc(size);
+
+  if (is_null(addr)) {
+    out_of_memory();
+  }
+
+  return addr;
+}
+
+inline zaddress ZHeap::alloc_tlab(size_t size) {
+  guarantee(size <= max_tlab_size(), "TLAB too large");
+  return _object_allocator.alloc(size);
+}
+
+inline zaddress ZHeap::alloc_object_for_relocation(size_t size, ZPageAge age) {
+  return _object_allocator.alloc_for_relocation(size, age);
+}
+
 inline bool ZHeap::is_alloc_stalling() const {
   return _page_allocator.is_alloc_stalling();
 }
@@ -86,8 +110,8 @@ inline void ZHeap::handle_alloc_stalling_for_young() {
   _page_allocator.handle_alloc_stalling_for_young();
 }
 
-inline void ZHeap::handle_alloc_stalling_for_old(bool cleared_soft_refs) {
-  _page_allocator.handle_alloc_stalling_for_old(cleared_soft_refs);
+inline void ZHeap::handle_alloc_stalling_for_old(bool cleared_all_soft_refs) {
+  _page_allocator.handle_alloc_stalling_for_old(cleared_all_soft_refs);
 }
 
 inline bool ZHeap::is_oop(uintptr_t addr) const {

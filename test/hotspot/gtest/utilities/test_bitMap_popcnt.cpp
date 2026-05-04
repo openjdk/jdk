@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, SAP and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -43,7 +42,7 @@ public:
   }
 
   ~SimpleFakeBitmap() {
-    FREE_C_HEAP_ARRAY(char, _buffer);
+    FREE_C_HEAP_ARRAY(_buffer);
   }
 
   // Set or clear the specified bit.

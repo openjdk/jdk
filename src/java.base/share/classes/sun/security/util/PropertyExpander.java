@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.util;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.util.function.UnaryOperator;
 
 /**
  * A utility class to expand properties embedded in a string.
@@ -51,15 +52,31 @@ public class PropertyExpander {
         }
     }
 
-    public static String expand(String value)
-        throws ExpandException
-    {
+    public static String expand(String value) throws ExpandException {
         return expand(value, false);
     }
 
-     public static String expand(String value, boolean encodeURL)
-         throws ExpandException
-     {
+    public static String expand(String value, boolean encodeURL)
+            throws ExpandException {
+        return expand(value, encodeURL, System::getProperty);
+    }
+
+    /*
+     * In non-strict mode an undefined property is replaced by an empty string.
+     */
+    public static String expandNonStrict(String value) {
+        try {
+            return expand(value, false, key -> System.getProperty(key, ""));
+        } catch (ExpandException e) {
+            // should not happen
+            throw new AssertionError("unexpected expansion error: when " +
+                    "expansion is non-strict, undefined properties should " +
+                    "be replaced by an empty string", e);
+        }
+    }
+
+    private static String expand(String value, boolean encodeURL,
+            UnaryOperator<String> propertiesGetter) throws ExpandException {
         if (value == null)
             return null;
 
@@ -105,7 +122,7 @@ public class PropertyExpander {
                 if (prop.equals("/")) {
                     sb.append(java.io.File.separatorChar);
                 } else {
-                    String val = System.getProperty(prop);
+                    String val = propertiesGetter.apply(prop);
                     if (val != null) {
                         if (encodeURL) {
                             // encode 'val' unless it's an absolute URI

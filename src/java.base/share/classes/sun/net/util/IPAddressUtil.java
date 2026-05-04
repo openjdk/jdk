@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.net.util;
 
-import sun.security.action.GetPropertyAction;
-
 import java.io.UncheckedIOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -35,12 +33,12 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
 import java.nio.CharBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static jdk.internal.util.Exceptions.formatMsg;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 public class IPAddressUtil {
     private static final int INADDR4SZ = 4;
@@ -166,7 +164,8 @@ public class IPAddressUtil {
      * @return an {@code IllegalArgumentException} instance
      */
     public static IllegalArgumentException invalidIpAddressLiteral(String src) {
-        return new IllegalArgumentException("Invalid IP address literal: " + src);
+        return new IllegalArgumentException(
+            formatMsg("Invalid IP address literal%s", filterNonSocketInfo(src).prefixWith(": ")));
     }
 
     /*
@@ -396,25 +395,23 @@ public class IPAddressUtil {
         }
     }
 
-    @SuppressWarnings("removal")
     private static InetAddress findScopedAddress(InetAddress address) {
-        PrivilegedExceptionAction<List<InetAddress>> pa = () -> NetworkInterface.networkInterfaces()
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(a -> (a instanceof Inet6Address)
-                        && address.equals(a)
-                        && ((Inet6Address) a).getScopeId() != 0)
-                .toList();
-        List<InetAddress> result;
         try {
-            result = AccessController.doPrivileged(pa);
+            List<InetAddress> result = NetworkInterface.networkInterfaces()
+                    .flatMap(NetworkInterface::inetAddresses)
+                    .filter(a -> (a instanceof Inet6Address)
+                            && address.equals(a)
+                            && ((Inet6Address) a).getScopeId() != 0)
+                    .toList();
+
             var sz = result.size();
             if (sz == 0)
                 return null;
             if (sz > 1)
                 throw new UncheckedIOException(new SocketException(
-                    "Duplicate link local addresses: must specify scope-id"));
+                        "Duplicate link local addresses: must specify scope-id"));
             return result.get(0);
-        } catch (PrivilegedActionException pae) {
+        } catch (SocketException socketException) {
             return null;
         }
     }
@@ -927,8 +924,8 @@ public class IPAddressUtil {
     private static final long TERMINAL_PARSE_ERROR = -2L;
 
     private static final String ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP = "jdk.net.allowAmbiguousIPAddressLiterals";
-    private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE = Boolean.valueOf(
-            GetPropertyAction.privilegedGetProperty(ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP, "false"));
+    private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE =
+            Boolean.getBoolean(ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP);
     private static class MASKS {
         private static final String DELAY_URL_PARSING_SP = "jdk.net.url.delayParsing";
         private static final boolean DELAY_URL_PARSING_SP_VALUE;
@@ -939,8 +936,7 @@ public class IPAddressUtil {
         static final long L_SCOPE_MASK;
         static final long H_SCOPE_MASK;
         static {
-            var value = GetPropertyAction.privilegedGetProperty(
-                    DELAY_URL_PARSING_SP, "false");
+            var value = System.getProperty(DELAY_URL_PARSING_SP, "false");
             DELAY_URL_PARSING_SP_VALUE = value.isEmpty()
                     || Boolean.parseBoolean(value);
             if (DELAY_URL_PARSING_SP_VALUE) {

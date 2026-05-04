@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.script;
 
+import java.io.Serial;
+
 /**
  * The generic <code>Exception</code> class for the Scripting APIs.  Checked
  * exception types thrown by underlying scripting implementations must be wrapped in instances of
@@ -36,10 +38,14 @@ package javax.script;
  */
 public class ScriptException extends Exception {
 
+    @Serial
     private static final long serialVersionUID = 8265071037049225001L;
 
+    /** @serial */
     private final String fileName;
+    /** @serial */
     private final int lineNumber;
+    /** @serial */
     private final int columnNumber;
 
     /**

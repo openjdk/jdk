@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -160,8 +162,8 @@ import static java.util.concurrent.Flow.Subscription;
  *     (this.subscription = subscription).request(1);
  *   }
  *   public void onNext(S item) {
- *     subscription.request(1);
  *     submit(function.apply(item));
+ *     subscription.request(1);
  *   }
  *   public void onError(Throwable ex) { closeExceptionally(ex); }
  *   public void onComplete() { close(); }
@@ -202,22 +204,6 @@ public class SubmissionPublisher<T> implements Publisher<T>,
         n |= n >>> 16;
         return (n <= 0) ? 1 : // at least 1
             (n >= BUFFER_CAPACITY_LIMIT) ? BUFFER_CAPACITY_LIMIT : n + 1;
-    }
-
-    // default Executor setup; nearly the same as CompletableFuture
-
-    /**
-     * Default executor -- ForkJoinPool.commonPool() unless it cannot
-     * support parallelism.
-     */
-    private static final Executor ASYNC_POOL =
-        (ForkJoinPool.getCommonPoolParallelism() > 1) ?
-        ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
-
-    /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
-    private static final class ThreadPerTaskExecutor implements Executor {
-        ThreadPerTaskExecutor() {}      // prevent access constructor creation
-        public void execute(Runnable r) { new Thread(r).start(); }
     }
 
     /**
@@ -306,15 +292,13 @@ public class SubmissionPublisher<T> implements Publisher<T>,
 
     /**
      * Creates a new SubmissionPublisher using the {@link
-     * ForkJoinPool#commonPool()} for async delivery to subscribers
-     * (unless it does not support a parallelism level of at least two,
-     * in which case, a new Thread is created to run each task), with
+     * ForkJoinPool#commonPool()} for async delivery to subscribers, with
      * maximum buffer capacity of {@link Flow#defaultBufferSize}, and no
      * handler for Subscriber exceptions in method {@link
      * Flow.Subscriber#onNext(Object) onNext}.
      */
     public SubmissionPublisher() {
-        this(ASYNC_POOL, Flow.defaultBufferSize(), null);
+        this(ForkJoinPool.asyncCommonPool(), Flow.defaultBufferSize(), null);
     }
 
     /**
@@ -616,9 +600,11 @@ public class SubmissionPublisher<T> implements Publisher<T>,
     /**
      * Unless already closed, issues {@link
      * Flow.Subscriber#onComplete() onComplete} signals to current
-     * subscribers, and disallows subsequent attempts to publish.
-     * Upon return, this method does <em>NOT</em> guarantee that all
-     * subscribers have yet completed.
+     * subscribers, and disallows subsequent attempts to publish. To
+     * ensure uniform ordering among subscribers, this method may
+     * await completion of in-progress offers.  Upon return, this
+     * method does <em>NOT</em> guarantee that all subscribers have
+     * yet completed.
      */
     public void close() {
         ReentrantLock lock = this.lock;
@@ -1046,7 +1032,6 @@ public class SubmissionPublisher<T> implements Publisher<T>,
      * assignment coding style. Also, all methods and fields have
      * default visibility to simplify usage by callers.
      */
-    @SuppressWarnings("serial")
     @jdk.internal.vm.annotation.Contended
     static final class BufferedSubscription<T>
         implements Subscription, ForkJoinPool.ManagedBlocker {
@@ -1505,16 +1490,10 @@ public class SubmissionPublisher<T> implements Publisher<T>,
         static final VarHandle QA;
 
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                CTL = l.findVarHandle(BufferedSubscription.class, "ctl",
-                                      int.class);
-                DEMAND = l.findVarHandle(BufferedSubscription.class, "demand",
-                                         long.class);
-                QA = MethodHandles.arrayElementVarHandle(Object[].class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            CTL = MhUtil.findVarHandle(l, "ctl", int.class);
+            DEMAND = MhUtil.findVarHandle(l, "demand", long.class);
+            QA = MethodHandles.arrayElementVarHandle(Object[].class);
 
             // Reduce the risk of rare disastrous classloading in first call to
             // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

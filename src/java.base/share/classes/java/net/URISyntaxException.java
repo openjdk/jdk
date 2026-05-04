@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@ public class URISyntaxException
     private static final long serialVersionUID = 2137979680897488891L;
 
     /**
-     * The input string.
+     * @serial The input string.
      */
     private final String input;
 
     /**
-     * The index at which the parse error occurred,
+     * @serial The index at which the parse error occurred,
      * or {@code -1} if the index is not known.
      */
     private final int index;

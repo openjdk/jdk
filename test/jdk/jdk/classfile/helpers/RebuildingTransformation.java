@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {
 
@@ -59,8 +59,8 @@ class RebuildingTransformation {
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                                     case SignatureAttribute a -> fb.with(SignatureAttribute.of(Signature.parseFrom(a.asTypeSignature().signatureString())));
                                     case SyntheticAttribute a -> fb.with(SyntheticAttribute.of());
-                                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                                 }
                             }
                         });
@@ -75,7 +75,7 @@ class RebuildingTransformation {
                                             cob2.transforming(new CodeRebuildingTransform(), cob3 ->
                                             // first pass transforms bound to unbound instructions
                                             cob3.transforming(new CodeRebuildingTransform(), cob4 -> {
-                                                com.forEachElement(cob4::with);
+                                                com.forEach(cob4::with);
                                                 com.findAttribute(Attributes.stackMapTable()).ifPresent(cob4::with);
                                             }))));
                                     case AnnotationDefaultAttribute a -> mb.with(AnnotationDefaultAttribute.of(transformAnnotationValue(a.defaultValue())));
@@ -91,8 +91,8 @@ class RebuildingTransformation {
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                                     case SignatureAttribute a -> mb.with(SignatureAttribute.of(MethodSignature.parseFrom(a.asMethodSignature().signatureString())));
                                     case SyntheticAttribute a -> mb.with(SyntheticAttribute.of());
-                                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                                 }
                             }
                         });
@@ -131,7 +131,7 @@ class RebuildingTransformation {
                                         case RuntimeVisibleAnnotationsAttribute rvaa -> rcac.accept(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(rvaa.annotations())));
                                         case RuntimeVisibleTypeAnnotationsAttribute rvtaa -> rcac.accept(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(rvtaa.annotations(), null, null)));
                                         case SignatureAttribute sa -> rcac.accept(SignatureAttribute.of(Signature.parseFrom(sa.asTypeSignature().signatureString())));
-                                        default -> throw new AssertionError("Unexpected record component attribute: " + rca.attributeName());
+                                        default -> throw new AssertionError("Unexpected record component attribute: " + rca.attributeName().stringValue());
                                     }}).toArray(Attribute[]::new))).toArray(RecordComponentInfo[]::new)));
                     case RuntimeInvisibleAnnotationsAttribute a -> clb.with(RuntimeInvisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute a -> clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
@@ -142,8 +142,8 @@ class RebuildingTransformation {
                     case SourceFileAttribute a -> clb.with(SourceFileAttribute.of(a.sourceFile().stringValue()));
                     case SourceIDAttribute a -> clb.with(SourceIDAttribute.of(a.sourceId().stringValue()));
                     case SyntheticAttribute a -> clb.with(SyntheticAttribute.of());
-                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                 }
             }
         });
@@ -165,9 +165,9 @@ class RebuildingTransformation {
             case AnnotationValue.OfDouble v -> AnnotationValue.of(v.doubleValue());
             case AnnotationValue.OfFloat v -> AnnotationValue.of(v.floatValue());
             case AnnotationValue.OfLong v -> AnnotationValue.of(v.longValue());
-            case AnnotationValue.OfInteger v -> AnnotationValue.of(v.intValue());
+            case AnnotationValue.OfInt v -> AnnotationValue.of(v.intValue());
             case AnnotationValue.OfShort v -> AnnotationValue.of(v.shortValue());
-            case AnnotationValue.OfCharacter v -> AnnotationValue.of(v.charValue());
+            case AnnotationValue.OfChar v -> AnnotationValue.of(v.charValue());
             case AnnotationValue.OfByte v -> AnnotationValue.of(v.byteValue());
             case AnnotationValue.OfBoolean v -> AnnotationValue.of(v.booleanValue());
             case AnnotationValue.OfClass oc -> AnnotationValue.of(oc.classSymbol());
@@ -179,8 +179,7 @@ class RebuildingTransformation {
         return annotations.stream().map(ta -> TypeAnnotation.of(
                         transformTargetInfo(ta.targetInfo(), cob, labels),
                         ta.targetPath().stream().map(tpc -> TypeAnnotation.TypePathComponent.of(tpc.typePathKind(), tpc.typeArgumentIndex())).toList(),
-                        ta.classSymbol(),
-                        ta.elements().stream().map(ae -> AnnotationElement.of(ae.name().stringValue(), transformAnnotationValue(ae.value()))).toList())).toArray(TypeAnnotation[]::new);
+                        transformAnnotation(ta.annotation()))).toArray(TypeAnnotation[]::new);
     }
 
     static TypeAnnotation.TargetInfo transformTargetInfo(TypeAnnotation.TargetInfo ti, CodeBuilder cob, HashMap<Label, Label> labels) {
@@ -220,27 +219,27 @@ class RebuildingTransformation {
             switch (coe) {
                 case ArrayLoadInstruction i -> {
                     switch (i.typeKind()) {
-                        case ByteType -> cob.baload();
-                        case ShortType -> cob.saload();
-                        case IntType -> cob.iaload();
-                        case FloatType -> cob.faload();
-                        case LongType -> cob.laload();
-                        case DoubleType -> cob.daload();
-                        case ReferenceType -> cob.aaload();
-                        case CharType -> cob.caload();
+                        case BYTE -> cob.baload();
+                        case SHORT -> cob.saload();
+                        case INT -> cob.iaload();
+                        case FLOAT -> cob.faload();
+                        case LONG -> cob.laload();
+                        case DOUBLE -> cob.daload();
+                        case REFERENCE -> cob.aaload();
+                        case CHAR -> cob.caload();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
                 case ArrayStoreInstruction i -> {
                     switch (i.typeKind()) {
-                        case ByteType -> cob.bastore();
-                        case ShortType -> cob.sastore();
-                        case IntType -> cob.iastore();
-                        case FloatType -> cob.fastore();
-                        case LongType -> cob.lastore();
-                        case DoubleType -> cob.dastore();
-                        case ReferenceType -> cob.aastore();
-                        case CharType -> cob.castore();
+                        case BYTE -> cob.bastore();
+                        case SHORT -> cob.sastore();
+                        case INT -> cob.iastore();
+                        case FLOAT -> cob.fastore();
+                        case LONG -> cob.lastore();
+                        case DOUBLE -> cob.dastore();
+                        case REFERENCE -> cob.aastore();
+                        case CHAR -> cob.castore();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -257,8 +256,8 @@ class RebuildingTransformation {
                         case IF_ICMPLE -> cob.if_icmple(target);
                         case IF_ICMPLT -> cob.if_icmplt(target);
                         case IF_ICMPNE -> cob.if_icmpne(target);
-                        case IFNONNULL -> cob.if_nonnull(target);
-                        case IFNULL -> cob.if_null(target);
+                        case IFNONNULL -> cob.ifnonnull(target);
+                        case IFNULL -> cob.ifnull(target);
                         case IFEQ -> cob.ifeq(target);
                         case IFGE -> cob.ifge(target);
                         case IFGT -> cob.ifgt(target);
@@ -305,38 +304,38 @@ class RebuildingTransformation {
                 }
                 case ConvertInstruction i -> {
                     switch (i.fromType()) {
-                        case DoubleType -> {
+                        case DOUBLE -> {
                             switch (i.toType()) {
-                                case FloatType -> cob.d2f();
-                                case IntType -> cob.d2i();
-                                case LongType -> cob.d2l();
+                                case FLOAT -> cob.d2f();
+                                case INT -> cob.d2i();
+                                case LONG -> cob.d2l();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case FloatType -> {
+                        case FLOAT -> {
                             switch (i.toType()) {
-                                case DoubleType -> cob.f2d();
-                                case IntType -> cob.f2i();
-                                case LongType -> cob.f2l();
+                                case DOUBLE -> cob.f2d();
+                                case INT -> cob.f2i();
+                                case LONG -> cob.f2l();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case IntType -> {
+                        case INT -> {
                             switch (i.toType()) {
-                                case ByteType -> cob.i2b();
-                                case CharType -> cob.i2c();
-                                case DoubleType -> cob.i2d();
-                                case FloatType -> cob.i2f();
-                                case LongType -> cob.i2l();
-                                case ShortType -> cob.i2s();
+                                case BYTE -> cob.i2b();
+                                case CHAR -> cob.i2c();
+                                case DOUBLE -> cob.i2d();
+                                case FLOAT -> cob.i2f();
+                                case LONG -> cob.i2l();
+                                case SHORT -> cob.i2s();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case LongType -> {
+                        case LONG -> {
                             switch (i.toType()) {
-                                case DoubleType -> cob.l2d();
-                                case FloatType -> cob.l2f();
-                                case IntType -> cob.l2i();
+                                case DOUBLE -> cob.l2d();
+                                case FLOAT -> cob.l2f();
+                                case INT -> cob.l2i();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
@@ -411,21 +410,21 @@ class RebuildingTransformation {
                 }
                 case LoadInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.iload(i.slot());
-                        case FloatType -> cob.fload(i.slot());
-                        case LongType -> cob.lload(i.slot());
-                        case DoubleType -> cob.dload(i.slot());
-                        case ReferenceType -> cob.aload(i.slot());
+                        case INT -> cob.iload(i.slot());
+                        case FLOAT -> cob.fload(i.slot());
+                        case LONG -> cob.lload(i.slot());
+                        case DOUBLE -> cob.dload(i.slot());
+                        case REFERENCE -> cob.aload(i.slot());
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
                 case StoreInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.istore(i.slot());
-                        case FloatType -> cob.fstore(i.slot());
-                        case LongType -> cob.lstore(i.slot());
-                        case DoubleType -> cob.dstore(i.slot());
-                        case ReferenceType -> cob.astore(i.slot());
+                        case INT -> cob.istore(i.slot());
+                        case FLOAT -> cob.fstore(i.slot());
+                        case LONG -> cob.lstore(i.slot());
+                        case DOUBLE -> cob.dstore(i.slot());
+                        case REFERENCE -> cob.astore(i.slot());
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -516,12 +515,12 @@ class RebuildingTransformation {
                 }
                 case ReturnInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.ireturn();
-                        case FloatType -> cob.freturn();
-                        case LongType -> cob.lreturn();
-                        case DoubleType -> cob.dreturn();
-                        case ReferenceType -> cob.areturn();
-                        case VoidType -> cob.return_();
+                        case INT -> cob.ireturn();
+                        case FLOAT -> cob.freturn();
+                        case LONG -> cob.lreturn();
+                        case DOUBLE -> cob.dreturn();
+                        case REFERENCE -> cob.areturn();
+                        case VOID -> cob.return_();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -595,8 +594,10 @@ class RebuildingTransformation {
                             StackMapFrameInfo.of(labels.computeIfAbsent(fr.target(), l -> cob.newLabel()),
                                     transformFrameTypeInfos(fr.locals(), cob, labels),
                                     transformFrameTypeInfos(fr.stack(), cob, labels))).toList()));
-                case CustomAttribute a ->
-                    throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
+                case CustomAttribute<?> a ->
+                    throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                case UnknownAttribute a ->
+                    throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
             }
         }
     }

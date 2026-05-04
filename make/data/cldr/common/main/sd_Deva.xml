@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -183,15 +183,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">जनवरी</month>
-							<month type="2">फरवरी</month>
+							<month type="2">फेबरवरी</month>
 							<month type="3">मार्चु</month>
-							<month type="4">अप्रैल</month>
+							<month type="4">अप्रेल</month>
 							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
-							<month type="8">अगस्ट</month>
+							<month type="8">आगस्ट</month>
 							<month type="9">सप्टेंबर</month>
-							<month type="10">ओक्टोबर</month>
+							<month type="10">आक्टोबर</month>
 							<month type="11">नवंबर</month>
 							<month type="12">डिसंबर</month>
 						</monthWidth>
@@ -227,13 +227,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">जनवरी</month>
-							<month type="2">फरवरी</month>
+							<month type="2">फेबरवरी</month>
 							<month type="3">मार्चु</month>
-							<month type="4">अप्रैल</month>
+							<month type="4">अप्रेल</month>
 							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
-							<month type="8">अगस्ट</month>
+							<month type="8">आगस्ट</month>
 							<month type="9">सप्टेंबर</month>
 							<month type="10">ऑक्टोबर</month>
 							<month type="11">नवंबर</month>
@@ -247,16 +247,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sun">आर्त</day>
 							<day type="mon">सू</day>
 							<day type="tue">मंग</day>
-							<day type="wed">बु॒ध</day>
+							<day type="wed">ॿुध</day>
 							<day type="thu">विस</day>
 							<day type="fri">जुम</day>
 							<day type="sat">छंछ</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">आ</day>
+							<day type="mon">सू</day>
+							<day type="tue">मं</day>
+							<day type="wed">ॿु</day>
+							<day type="thu">वि</day>
+							<day type="fri">जु</day>
+							<day type="sat">छं</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">आर्तवार</day>
 							<day type="mon">सूमर</day>
 							<day type="tue">मंगलु</day>
-							<day type="wed">बु॒धर</day>
+							<day type="wed">ॿुधर</day>
 							<day type="thu">विस्पत</day>
 							<day type="fri">जुमो</day>
 							<day type="sat">छंछर</day>
@@ -434,15 +443,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>साल</displayName>
+				<relative type="-1">पोएं साल</relative>
+				<relative type="0">हिन साल</relative>
+				<relative type="1">ईंदड़ साल</relative>
 			</field>
 			<field type="quarter">
 				<displayName>टिमाही</displayName>
 			</field>
 			<field type="month">
 				<displayName>महिनो</displayName>
+				<relative type="-1">पोएं महिने</relative>
+				<relative type="0">हिन महिने</relative>
+				<relative type="1">ईंदड़ महिने</relative>
 			</field>
 			<field type="week">
 				<displayName>हफ्तो</displayName>
+				<relative type="-1">पोएं हफ़्ते</relative>
+				<relative type="0">हिन हफ़्ते</relative>
+				<relative type="1">ईंदड़ हफ़्ते</relative>
 			</field>
 			<field type="day">
 				<displayName>दीं॒हुं</displayName>
@@ -452,6 +470,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="weekday">
 				<displayName>हफ्ते जो दीं॒हुं</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">पोएं आर्तवार</relative>
+				<relative type="0">हिन आर्तवार</relative>
+				<relative type="1">ईंदड़ आर्तवार</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>दीं॒हुं/ रातु</displayName>
@@ -472,9 +495,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<gmtFormat>जीएमटी{0}</gmtFormat>
 			<gmtZeroFormat>जीएमटी</gmtZeroFormat>
-			<regionFormat>{0} वक्त</regionFormat>
+			<regionFormat>{0} वक़्तु</regionFormat>
 			<regionFormat type="daylight">{0} दीं॒ह जो वक्त</regionFormat>
-			<regionFormat type="standard">{0} मअयारी वक्त</regionFormat>
+			<regionFormat type="standard">{0} मइयारी वक़्तु</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>गदि॒यल आलमी वक्तु</standard>
@@ -518,6 +541,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>अटलांटिक दीं॒ह जो वक्त</daylight>
 				</long>
 			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>वक़्तु</generic>
+					<standard>एज़ोर्स मइयारी वक़्तु</standard>
+					<daylight>एज़ोर्स ऊनहारे जो वक़्तु</daylight>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
 					<generic>मरकज़ी यूरोपी वक्त</generic>
@@ -541,20 +571,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>ग्रीनविच मीन वक्तु</standard>
+					<standard>ग्रीनविच मीन वक़्तु</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="shrd">
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
+		<symbols numberSystem="arabext">
+			<decimal>.</decimal>
+		</symbols>
+		<percentFormats numberSystem="arabext">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="deva">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName>ब्राज़ीली रियालु</displayName>

@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,160 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
+          "When at least this much time (measured in ms) has passed "       \
+          "since the acceleration allocation rate was most recently "       \
+          "sampled, capture another allocation rate sample for the purpose "\
+          "of detecting acceleration or momentary spikes in allocation "    \
+          "rate. A smaller value allows quicker response to changes in "    \
+          "allocation rates but is more vulnerable to noise and requires "  \
+          "more monitoring effort.")                                        \
+          range(1, 1000)                                                    \
+                                                                            \
+  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), "                        \
+          "we compute the allocation rate since the previous rate was "     \
+          "sampled.  This many samples are analyzed to determine whether "  \
+          "allocation rates are accelerating.  Acceleration may occur "     \
+          "due to increasing client demand or due to phase changes in "     \
+          "an application.  A larger value reduces sensitivity to "         \
+          "noise and delays recognition of the accelerating trend.  A "     \
+          "larger value may also cause the heuristic to miss detection "    \
+          "of very quick accelerations.  Smaller values may cause random "  \
+          "noise to be perceived as acceleration of allocation rate, "      \
+          "triggering excess collections.  Note that the acceleration "     \
+          "need not last the entire span of the sampled duration to be "    \
+          "detected.  If the last several of all samples are signficantly " \
+          "larger than the other samples, the best fit line through all "   \
+          "sampled values will have an upward slope, manifesting as "       \
+          "acceleration.")                                                  \
+          range(1,64)                                                       \
+                                                                            \
+  product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
+          2, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), we compute "             \
+          "the allocation rate since the previous rate was sampled. "       \
+          "The weighted average of this "                                   \
+          "many most recent momentary allocation rate samples is compared " \
+          "against current allocation runway and anticipated GC time to "   \
+          "determine whether a spike in momentary allocation rate "         \
+          "justifies an early GC trigger.  Momentary allocation spike "     \
+          "detection is in addition to previously implemented "             \
+          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
+          "is more effective at detecting slower spikes.  The latter "      \
+          "spike detection samples at the rate specifieid by "              \
+          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
+          "parameter must be less than the value of "                       \
+          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
+          "momentary spike detection less sensitive.  A smaller value "     \
+          "may result in excessive GC triggers.")                           \
+          range(1,64)                                                       \
+                                                                            \
+  product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
+          "(Generational mode only) What percent of a heap region "         \
+          "should be used before we consider promoting a region in "        \
+          "place?  Regions with less than this amount of used will "        \
+          "promoted by evacuation.  A benefit of promoting in place "       \
+          "is that less work is required by the GC at the time the "        \
+          "region is promoted.  A disadvantage of promoting in place "      \
+          "is that this introduces fragmentation of old-gen memory, "       \
+          "with old-gen regions scattered throughout the heap.  Regions "   \
+          "that have been promoted in place may need to be evacuated at "   \
+          "a later time in order to compact old-gen memory to enable "      \
+          "future humongous allocations.")                                  \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
+          "(Generational mode only) What percent of the heap should be "    \
+          "reserved for humongous objects if possible.  Old-generation "    \
+          "collections will endeavor to evacuate old-gen regions within "   \
+          "this reserved area even if these regions do not contain high "   \
+          "percentage of garbage.  Setting a larger value will cause "      \
+          "more frequent old-gen collections.  A smaller value will "       \
+          "increase the likelihood that humongous object allocations "      \
+          "fail, resulting in stop-the-world full GCs.")                    \
+          range(0,100)                                                      \
+                                                                            \
+  product(double, ShenandoahMinOldGenGrowthPercent, 50, EXPERIMENTAL,       \
+          "(Generational mode only) If the usage within old generation "    \
+          "has grown by at least this percent of its live memory size "     \
+          "at the start of the previous old-generation marking effort, "    \
+          "heuristics may trigger the start of a new old-gen collection.")  \
+          range(0.0,100.0)                                                  \
+                                                                            \
+  product(double, ShenandoahMinOldGenGrowthRemainingHeapPercent,            \
+          35, EXPERIMENTAL,                                                 \
+          "(Generational mode only) If the usage within old generation "    \
+          "has grown to exceed this percent of the remaining heap that "    \
+          "was not marked live within the old generation at the time "      \
+          "of the last old-generation marking effort, heuristics may "      \
+          "trigger the start of a new old-gen collection.  Setting "        \
+          "this value to a smaller value may cause back-to-back old "       \
+          "generation marking triggers, since the typical memory used "     \
+          "by the old generation is about 30% larger than the live "        \
+          "memory contained within the old generation (because default "    \
+          "value of ShenandoahOldGarbageThreshold is 25.")                  \
+          range(0.0,100.0)                                                  \
+                                                                            \
+  product(uintx, ShenandoahIgnoreOldGrowthBelowPercentage,                  \
+          40, EXPERIMENTAL,                                                 \
+          "(Generational mode only) If the total usage of the old "         \
+          "generation is smaller than this percent, we do not trigger "     \
+          "old gen collections even if old has grown, except when "         \
+          "ShenandoahGenerationalDoNotIgnoreGrowthAfterYoungCycles "        \
+          "consecutive cycles have been completed following the "           \
+          "preceding old-gen collection.")                                  \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahDoNotIgnoreGrowthAfterYoungCycles,               \
+          100, EXPERIMENTAL,                                                \
+          "(Generational mode only) Trigger an old-generation mark "        \
+          "if old has grown and this many consecutive young-gen "           \
+          "collections have been completed following the preceding "        \
+          "old-gen collection.  We perform this old-generation mark "       \
+          "evvort even if the usage of old generation is below "            \
+          "ShenandoahIgnoreOldGrowthBelowPercentage.")                      \
+                                                                            \
+  product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
+                                                               EXPERIMENTAL,\
+          "(Generational mode only) Ignore mortality rates older than the " \
+          "oldest cohort under the tenuring age for the last cycle." )      \
+                                                                            \
+  product(uintx, ShenandoahGenerationalMinTenuringAge, 1, EXPERIMENTAL,     \
+          "(Generational mode only) Floor for adaptive tenuring age. "      \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
+                                                                            \
+  product(uintx, ShenandoahGenerationalMaxTenuringAge, 15, EXPERIMENTAL,    \
+          "(Generational mode only) Ceiling for adaptive tenuring age. "    \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
+                                                                            \
+  product(double, ShenandoahGenerationalTenuringMortalityRateThreshold,     \
+                                                         0.1, EXPERIMENTAL, \
+          "(Generational mode only) Cohort mortality rates below this "     \
+          "value will be treated as indicative of longevity, leading to "   \
+          "tenuring. A lower value delays tenuring, a higher value hastens "\
+          "it.")                                                       \
+          range(0.001,0.999)                                                \
+                                                                            \
+  product(size_t, ShenandoahGenerationalTenuringCohortPopulationThreshold,  \
+                                                         4*K, EXPERIMENTAL, \
+          "(Generational mode only) Cohorts whose population is lower than "\
+          "this value in the previous census are ignored wrt tenuring "     \
+          "decisions. Effectively this makes then tenurable as soon as all "\
+          "older cohorts are. Set this value to the largest cohort "        \
+          "population volume that you are comfortable ignoring when making "\
+          "tenuring decisions.")                                            \
+                                                                            \
   product(size_t, ShenandoahRegionSize, 0, EXPERIMENTAL,                    \
           "Static heap region size. Set zero to enable automatic sizing.")  \
                                                                             \
@@ -41,39 +196,36 @@
           "of regions that would be used, within min/max region size "      \
           "limits.")                                                        \
                                                                             \
-  product(size_t, ShenandoahMinRegionSize, 256 * K, EXPERIMENTAL,           \
-          "With automatic region sizing, the regions would be at least "    \
-          "this large.")                                                    \
-                                                                            \
-  product(size_t, ShenandoahMaxRegionSize, 32 * M, EXPERIMENTAL,            \
-          "With automatic region sizing, the regions would be at most "     \
-          "this large.")                                                    \
-                                                                            \
-  product(intx, ShenandoahHumongousThreshold, 100, EXPERIMENTAL,            \
-          "Humongous objects are allocated in separate regions. "           \
-          "This setting defines how large the object should be to be "      \
-          "deemed humongous. Value is in  percents of heap region size. "   \
-          "This also caps the maximum TLAB size.")                          \
-          range(1, 100)                                                     \
-                                                                            \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
-          " iu - incremental-update concurrent GC (three pass mark-evac-update);"  \
-          " passive - stop the world GC only (either degenerated or full)") \
+          " passive - stop the world GC only (either degenerated or full);" \
+          " generational - generational concurrent GC")                     \
                                                                             \
   product(ccstr, ShenandoahGCHeuristics, "adaptive",                        \
           "GC heuristics to use. This fine-tunes the GC mode selected, "    \
           "by choosing when to start the GC, how much to process on each "  \
           "cycle, and what other features to automatically enable. "        \
-          "Possible values are:"                                            \
+          "When -XX:ShenandoahGCMode is generational, the only supported "  \
+          "option is the default, adaptive. Possible values are:"           \
           " adaptive - adapt to maintain the given amount of free heap "    \
           "at all times, even during the GC cycle;"                         \
-          " static -  trigger GC when free heap falls below the threshold;" \
+          " static - trigger GC when free heap falls below a specified "    \
+          "threshold;"                                                      \
           " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
+                                                                            \
+  product(uintx, ShenandoahExpeditePromotionsThreshold, 5, EXPERIMENTAL,    \
+          "When Shenandoah expects to promote at least this percentage "    \
+          "of the young generation, trigger a young collection to "         \
+          "expedite these promotions.")                                     \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahExpediteMixedThreshold, 10, EXPERIMENTAL,        \
+          "When there are this many old regions waiting to be collected, "  \
+          "trigger a mixed collection immediately.")                        \
                                                                             \
   product(uintx, ShenandoahGarbageThreshold, 25, EXPERIMENTAL,              \
           "How much garbage a region has to contain before it would be "    \
@@ -83,17 +235,35 @@
           "collector accepts. In percents of heap region size.")            \
           range(0,100)                                                      \
                                                                             \
+  product(uintx, ShenandoahOldGarbageThreshold, 25, EXPERIMENTAL,           \
+          "How much garbage an old region has to contain before it would "  \
+          "be taken for collection.")                                       \
+          range(0,100)                                                      \
+                                                                            \
+  product(uintx, ShenandoahIgnoreGarbageThreshold, 5, EXPERIMENTAL,         \
+          "When less than this amount of garbage (as a percentage of "      \
+          "region size) exists within a region, the region will not be "    \
+          "added to the collection set, even when the heuristic has "       \
+          "chosen to aggressively add regions with less than "              \
+          "ShenandoahGarbageThreshold amount of garbage into the "          \
+          "collection set.")                                                \
+          range(0,100)                                                      \
+                                                                            \
   product(uintx, ShenandoahInitFreeThreshold, 70, EXPERIMENTAL,             \
-          "How much heap should be free before some heuristics trigger the "\
-          "initial (learning) cycles. Affects cycle frequency on startup "  \
-          "and after drastic state changes, e.g. after degenerated/full "   \
-          "GC cycles. In percents of (soft) max heap size.")                \
+          "When less than this amount of memory is free within the "        \
+          "heap or generation, trigger a learning cycle if we are "         \
+          "in learning mode.  Learning mode happens during initialization " \
+          "and following a drastic state change, such as following a "      \
+          "degenerated or Full GC cycle.  In percents of soft max "         \
+          "heap size.")                                                     \
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahMinFreeThreshold, 10, EXPERIMENTAL,              \
-          "How much heap should be free before most heuristics trigger the "\
-          "collection, even without other triggers. Provides the safety "   \
-          "margin for many heuristics. In percents of (soft) max heap size.")\
+          "Percentage of free heap memory (or young generation, in "        \
+          "generational mode) below which most heuristics trigger "         \
+          "collection independent of other triggers. Provides a safety "    \
+          "margin for many heuristics. In percents of (soft) max heap "     \
+          "size.")                                                          \
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahAllocationThreshold, 0, EXPERIMENTAL,            \
@@ -156,6 +326,16 @@
           "time from active application. Time is in milliseconds. "         \
           "Setting this to 0 disables the feature.")                        \
                                                                             \
+  product(uintx, ShenandoahGuaranteedOldGCInterval, 10*60*1000, EXPERIMENTAL, \
+          "Run a collection of the old generation at least this often. "    \
+          "Heuristics may trigger collections more frequently. Time is in " \
+          "milliseconds. Setting this to 0 disables the feature.")          \
+                                                                            \
+  product(uintx, ShenandoahGuaranteedYoungGCInterval, 5*60*1000,  EXPERIMENTAL,  \
+          "Run a collection of the young generation at least this often. "  \
+          "Heuristics may trigger collections more frequently. Time is in " \
+          "milliseconds. Setting this to 0 disables the feature.")          \
+                                                                            \
   product(bool, ShenandoahAlwaysClearSoftRefs, false, EXPERIMENTAL,         \
           "Unconditionally clear soft references, instead of using any "    \
           "other cleanup policy. This minimizes footprint at expense of"    \
@@ -188,12 +368,14 @@
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalMax, 10, EXPERIMENTAL,            \
           "The maximum sleep interval for control loop that drives "        \
           "the cycles. Lower values would increase GC responsiveness "      \
           "to changing heap conditions, at the expense of higher perf "     \
           "overhead. Time is in milliseconds.")                             \
+          range(1, 999)                                                     \
                                                                             \
   product(uintx, ShenandoahControlIntervalAdjustPeriod, 1000, EXPERIMENTAL, \
           "The time period for one step in control loop interval "          \
@@ -215,17 +397,42 @@
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
-          "How much of heap to reserve for evacuations. Larger values make "\
-          "GC evacuate more live objects on every cycle, while leaving "    \
-          "less headroom for application to allocate in. In percents of "   \
-          "total heap size.")                                               \
+          "How much of (young-generation) heap to reserve for "             \
+          "(young-generation) evacuations.  Larger values allow GC to "     \
+          "evacuate more live objects on every cycle, while leaving "       \
+          "less headroom for application to allocate while GC is "          \
+          "evacuating and updating references. This parameter is "          \
+          "consulted at the end of marking, before selecting the "          \
+          "collection set.  If available memory at this time is smaller "   \
+          "than the indicated reserve, the bound on collection set size is "\
+          "adjusted downward.  The size of a generational mixed "           \
+          "evacuation collection set (comprised of both young and old "     \
+          "regions) is also bounded by this parameter.  In percents of "    \
+          "total (young-generation) heap size.")                            \
           range(1,100)                                                      \
                                                                             \
   product(double, ShenandoahEvacWaste, 1.2, EXPERIMENTAL,                   \
           "How much waste evacuations produce within the reserved space. "  \
           "Larger values make evacuations more resilient against "          \
           "evacuation conflicts, at expense of evacuating less on each "    \
-          "GC cycle.")                                                      \
+          "GC cycle.  Smaller values increase the risk of evacuation "      \
+          "failures, which will trigger stop-the-world Full GC passes.")    \
+          range(1.0,100.0)                                                  \
+                                                                            \
+  product(double, ShenandoahOldEvacWaste, 1.4, EXPERIMENTAL,                \
+          "How much waste evacuations produce within the reserved space. "  \
+          "Larger values make evacuations more resilient against "          \
+          "evacuation conflicts, at expense of evacuating less on each "    \
+          "GC cycle.  Smaller values increase the risk of evacuation "      \
+          "failures, which will trigger stop-the-world Full GC passes.")    \
+          range(1.0,100.0)                                                  \
+                                                                            \
+  product(double, ShenandoahPromoEvacWaste, 1.2, EXPERIMENTAL,              \
+          "How much waste promotions produce within the reserved space. "   \
+          "Larger values make evacuations more resilient against "          \
+          "evacuation conflicts, at expense of promoting less on each "     \
+          "GC cycle.  Smaller values increase the risk of evacuation "      \
+          "failures, which will trigger stop-the-world Full GC passes.")    \
           range(1.0,100.0)                                                  \
                                                                             \
   product(bool, ShenandoahEvacReserveOverflow, true, EXPERIMENTAL,          \
@@ -234,39 +441,28 @@
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
                                                                             \
-  product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \
-          "Pace application allocations to give GC chance to start "        \
-          "and complete before allocation failure is reached.")             \
+  product(uintx, ShenandoahOldEvacPercent, 75, EXPERIMENTAL,                \
+          "The maximum evacuation to old-gen expressed as a percent of "    \
+          "the total live memory within the collection set.  With the "     \
+          "default setting, if collection set evacuates X, no more than "   \
+          "75% of X may hold objects evacuated from old or promoted to "    \
+          "old from young.  A value of 100 allows the entire collection "   \
+          "set to be comprised of old-gen regions and young regions that "  \
+          "have reached the tenure age.  Larger values allow fewer mixed "  \
+          "evacuations to reclaim all the garbage from old.  Smaller "      \
+          "values result in less variation in GC cycle times between "      \
+          "young vs. mixed cycles.  A value of 0 prevents mixed "           \
+          "evacations from running and blocks promotion of aged regions "   \
+          "by evacuation.  Setting the value to 0 does not prevent "        \
+          "regions from being promoted in place.")                          \
+          range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahPacingMaxDelay, 10, EXPERIMENTAL,                \
-          "Max delay for pacing application allocations. Larger values "    \
-          "provide more resilience against out of memory, at expense at "   \
-          "hiding the GC latencies in the allocation path. Time is in "     \
-          "milliseconds. Setting it to arbitrarily large value makes "      \
-          "GC effectively stall the threads indefinitely instead of going " \
-          "to degenerated or Full GC.")                                     \
-                                                                            \
-  product(uintx, ShenandoahPacingIdleSlack, 2, EXPERIMENTAL,                \
-          "How much of heap counted as non-taxable allocations during idle "\
-          "phases. Larger value makes the pacing milder when collector is " \
-          "idle, requiring less rendezvous with control thread. Lower "     \
-          "value makes the pacing control less responsive to out-of-cycle " \
-          "allocs. In percent of total heap size.")                         \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahPacingCycleSlack, 10, EXPERIMENTAL,              \
-          "How much of free space to take as non-taxable allocations "      \
-          "the GC cycle. Larger value makes the pacing milder at the "      \
-          "beginning of the GC cycle. Lower value makes the pacing less "   \
-          "uniform during the cycle. In percent of free space.")            \
-          range(0, 100)                                                     \
-                                                                            \
-  product(double, ShenandoahPacingSurcharge, 1.1, EXPERIMENTAL,             \
-          "Additional pacing tax surcharge to help unclutter the heap. "    \
-          "Larger values makes the pacing more aggressive. Lower values "   \
-          "risk GC cycles finish with less memory than were available at "  \
-          "the beginning of it.")                                           \
-          range(1.0, 100.0)                                                 \
+  product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
+          "Collect additional metrics about evacuations. Enabling this "    \
+          "tracks how many objects and how many bytes were evacuated, and " \
+          "how many were abandoned. The information will be categorized "   \
+          "by thread type (worker or mutator) and evacuation type (young, " \
+          "old, or promotion.")                                             \
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \
@@ -308,6 +504,15 @@
   product(bool, ShenandoahAllocFailureALot, false, DIAGNOSTIC,              \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
+  product(uintx, ShenandoahCoalesceChance, 0, DIAGNOSTIC,                   \
+          "Testing: Abandon remaining mixed collections with this "         \
+          "likelihood. Following each mixed collection, abandon all "       \
+          "remaining mixed collection candidate regions with likelihood "   \
+          "ShenandoahCoalesceChance. Abandoning a mixed collection will "   \
+          "cause the old regions to be made parsable, rather than being "   \
+          "evacuated.")                                                     \
+          range(0, 100)                                                     \
+                                                                            \
   product(intx, ShenandoahMarkScanPrefetch, 32, EXPERIMENTAL,               \
           "How many objects to prefetch ahead when traversing mark bitmaps."\
           "Set to 0 to disable prefetching.")                               \
@@ -318,9 +523,10 @@
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
                                                                             \
-  product(uintx, ShenandoahParallelRegionStride, 1024, EXPERIMENTAL,        \
+  product(uintx, ShenandoahParallelRegionStride, 0, EXPERIMENTAL,           \
           "How many regions to process at once during parallel region "     \
-          "iteration. Affects heaps with lots of regions.")                 \
+          "iteration. Affects heaps with lots of regions. "                 \
+          "Set to 0 to let Shenandoah to decide the best value.")           \
                                                                             \
   product(size_t, ShenandoahSATBBufferSize, 1 * K, EXPERIMENTAL,            \
           "Number of entries in an SATB log buffer.")                       \
@@ -333,8 +539,9 @@
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
+  product(bool, ShenandoahCardBarrier, false, DIAGNOSTIC,                   \
+          "Turn on/off card-marking post-write barrier in Shenandoah: "     \
+          " true when ShenandoahGCMode is generational, false otherwise")   \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \
@@ -345,13 +552,37 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
-          "Turn on/off stack watermark barriers in Shenandoah")             \
-                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \
-
-// end of GC_SHENANDOAH_FLAGS
+  product(uintx, ShenandoahOldCompactionReserve, 8, EXPERIMENTAL,           \
+          "During generational GC, prevent promotions from filling "        \
+          "this number of heap regions.  These regions are reserved "       \
+          "for the purpose of supporting compaction of old-gen "            \
+          "memory.  Otherwise, old-gen memory cannot be compacted.")        \
+          range(0, 128)                                                     \
+                                                                            \
+  product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \
+          "Allow young generation collections to suspend concurrent"        \
+          " marking in the old generation.")                                \
+                                                                            \
+  product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
+          "With generational mode, increment the age of objects and"        \
+          "regions each time this many young-gen GC cycles are completed.") \
+                                                                            \
+  develop(bool, ShenandoahEnableCardStats, false,                           \
+          "Enable statistics collection related to clean & dirty cards")    \
+                                                                            \
+  develop(int, ShenandoahCardStatsLogInterval, 50,                          \
+          "Log cumulative card stats every so many remembered set or "      \
+          "update refs scans")                                              \
+                                                                            \
+  product(uintx, ShenandoahMinimumOldTimeMs, 100, EXPERIMENTAL,             \
+         "Minimum amount of time in milliseconds to run old collections "   \
+         "before a young collection is allowed to run. This is intended "   \
+         "to prevent starvation of the old collector. Setting this to "     \
+         "0 will allow back to back young collections to run during old "   \
+         "collections.")                                                    \
+  // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

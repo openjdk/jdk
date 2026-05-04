@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -80,7 +78,6 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.text.DefaultEditorKit;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
@@ -128,11 +125,6 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
 
     AWTEventHelper invocator = null;
 
-    /*
-     * Listen for our AppContext being disposed
-     */
-    private PropertyChangeListener disposer = null;
-
     /**
      * Constructor for subclasses to call.
      */
@@ -176,54 +168,27 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         if (invocator == null) {
             invocator = new AWTEventHelper();
             needsEventHelper = true;
-
-            // Add a PropertyChangeListener to our AppContext so we're alerted
-            // when the AppContext is disposed(), at which time this laf should
-            // be uninitialize()d.
-            disposer = new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent prpChg) {
-                    uninitialize();
-                }
-            };
-            AppContext.getAppContext().addPropertyChangeListener(
-                                                        AppContext.GUI_DISPOSED,
-                                                        disposer);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("removal")
     public void uninitialize() {
-        AppContext context = AppContext.getAppContext();
-        synchronized (BasicPopupMenuUI.MOUSE_GRABBER_KEY) {
-            Object grabber = context.get(BasicPopupMenuUI.MOUSE_GRABBER_KEY);
-            if (grabber != null) {
-                ((BasicPopupMenuUI.MouseGrabber)grabber).uninstall();
-            }
-        }
-        synchronized (BasicPopupMenuUI.MENU_KEYBOARD_HELPER_KEY) {
-            Object helper =
-                    context.get(BasicPopupMenuUI.MENU_KEYBOARD_HELPER_KEY);
-            if (helper != null) {
-                ((BasicPopupMenuUI.MenuKeyboardHelper)helper).uninstall();
-            }
-        }
+        synchronized (BasicPopupMenuUI.class) {
+            if (BasicPopupMenuUI.mouseGrabber != null) {
+                BasicPopupMenuUI.mouseGrabber.uninstall();
+                BasicPopupMenuUI.mouseGrabber = null;
+             }
+            if (BasicPopupMenuUI.menuKeyboardHelper != null) {
+               BasicPopupMenuUI.menuKeyboardHelper.uninstall();
+               BasicPopupMenuUI.menuKeyboardHelper = null;
+             }
+         }
 
-        if(invocator != null) {
-            AccessController.doPrivileged(invocator);
+        if (invocator != null) {
+            invocator.run();
             invocator = null;
-        }
-
-        if (disposer != null) {
-            // Note that we're likely calling removePropertyChangeListener()
-            // during the course of AppContext.firePropertyChange().
-            // However, EventListenerAggregate has code to safely modify
-            // the list under such circumstances.
-            context.removePropertyChangeListener(AppContext.GUI_DISPOSED,
-                                                 disposer);
-            disposer = null;
         }
     }
 
@@ -727,6 +692,8 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Button.highlight", controlLtHighlight,
             "Button.border", buttonBorder,
             "Button.margin", new InsetsUIResource(2, 14, 2, 14),
+            // The above margin has vastly larger horizontal values when
+            // compared to other look and feels that don't rely on these values
             "Button.textIconGap", 4,
             "Button.textShiftOffset", zero,
             "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
@@ -2080,25 +2047,18 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
          * Class.getResourceAsStream just returns raw
          * bytes, which we can convert to a sound.
          */
-        @SuppressWarnings("removal")
-        byte[] buffer = AccessController.doPrivileged(
-                                                 new PrivilegedAction<byte[]>() {
-                public byte[] run() {
-                    try {
-                        InputStream resource = BasicLookAndFeel.this.
-                            getClass().getResourceAsStream(soundFile);
-                        if (resource == null) {
-                            return null;
-                        }
-                        try (BufferedInputStream in = new BufferedInputStream(resource)) {
-                            return in.readAllBytes();
-                        }
-                    } catch (IOException ioe) {
-                        System.err.println(ioe.toString());
-                        return null;
-                    }
+        byte[] buffer = null;
+        try {
+            InputStream resource = BasicLookAndFeel.this.
+                getClass().getResourceAsStream(soundFile);
+            if (resource != null) {
+                try (BufferedInputStream in = new BufferedInputStream(resource)) {
+                    buffer = in.readAllBytes();
                 }
-            });
+            }
+        } catch (IOException ioe) {
+            System.err.println(ioe.toString());
+        }
         if (buffer == null) {
             System.err.println(getClass().getName() + "/" +
                                soundFile + " not found.");
@@ -2188,11 +2148,10 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * This class contains listener that watches for all the mouse
      * events that can possibly invoke popup on the component
      */
-    class AWTEventHelper implements AWTEventListener,PrivilegedAction<Object> {
-        @SuppressWarnings("removal")
+    class AWTEventHelper implements AWTEventListener {
         AWTEventHelper() {
             super();
-            AccessController.doPrivileged(this);
+            run();
         }
 
         public Object run() {

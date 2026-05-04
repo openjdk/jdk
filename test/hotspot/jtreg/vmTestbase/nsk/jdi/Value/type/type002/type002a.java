@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ public class type002a {
     }
 
     //====================================================== test program
+
+    static Threadtype002a thread2 = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,8 +97,7 @@ public class type002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadtype002a thread2 =
-                             new Threadtype002a("Thread2");
+                         thread2 = new Threadtype002a("Thread2");
                          log1("       thread2 is created");
 
                          label:

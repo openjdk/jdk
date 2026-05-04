@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,14 @@ package sun.util.locale;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
-import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
-import java.util.function.UnaryOperator;
+import java.util.function.Supplier;
 
+@AOTSafeClassInitializer
 public final class BaseLocale {
 
     public static @Stable BaseLocale[] constantBaseLocales;
@@ -64,6 +66,7 @@ public final class BaseLocale {
             CANADA_FRENCH = 18,
             NUM_CONSTANTS = 19;
     static {
+        // Legacy CDS archive support (to be deprecated)
         CDS.initializeFromArchive(BaseLocale.class);
         BaseLocale[] baseLocales = constantBaseLocales;
         if (baseLocales == null) {
@@ -92,8 +95,21 @@ public final class BaseLocale {
     }
 
     // Interned BaseLocale cache
-    private static final ReferencedKeySet<BaseLocale> CACHE =
-            ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+    @Stable private static LazyConstant<ReferencedKeySet<BaseLocale>> CACHE;
+    static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
+        CACHE =
+            LazyConstant.of(new Supplier<>() {
+                @Override
+                public ReferencedKeySet<BaseLocale> get() {
+                    return ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+                }
+            });
+    }
 
     public static final String SEP = "_";
 
@@ -105,12 +121,16 @@ public final class BaseLocale {
     private @Stable int hash;
 
     /**
-     * Boolean for the old ISO language code compatibility.
-     * The system property "java.locale.useOldISOCodes" is not security sensitive,
-     * so no need to ensure privileged access here.
+     * Emit the warning message if the system property "java.locale.useOldISOCodes" is
+     * specified.
      */
-    private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
-            .equalsIgnoreCase("true");
+    static {
+        if (System.getProperty("java.locale.useOldISOCodes") != null) {
+            System.err.println("WARNING: The system property" +
+                " \"java.locale.useOldISOCodes\" is no longer supported." +
+                " Any specified value will be ignored.");
+        }
+    }
 
     private BaseLocale(String language, String script, String region, String variant) {
         this.language = language;
@@ -155,7 +175,8 @@ public final class BaseLocale {
             }
         }
 
-        // JDK uses deprecated ISO639.1 language codes for he, yi and id
+        // Normalize deprecated ISO 639-1 language codes for Hebrew, Yiddish,
+        // and Indonesian to their current standard forms.
         if (!language.isEmpty()) {
             language = convertOldISOCodes(language);
         }
@@ -163,27 +184,18 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return CACHE.intern(new BaseLocale(language, script, region, variant),
-                // Avoid lambdas since this may be on the bootstrap path in many locales
-                INTERNER);
+        return CACHE.get().intern(new BaseLocale(
+                language.intern(), // guaranteed to be lower-case
+                LocaleUtils.toTitleString(script).intern(),
+                region.intern(), // guaranteed to be upper-case
+                variant.intern()));
     }
-
-    public static final UnaryOperator<BaseLocale> INTERNER = new UnaryOperator<>() {
-        @Override
-        public BaseLocale apply(BaseLocale b) {
-            return new BaseLocale(
-                    LocaleUtils.toLowerString(b.language).intern(),
-                    LocaleUtils.toTitleString(b.script).intern(),
-                    LocaleUtils.toUpperString(b.region).intern(),
-                    b.variant.intern());
-        }
-    };
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {
-            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
-            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
-            case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
+            case "iw" -> "he";
+            case "in" -> "id";
+            case "ji" -> "yi";
             default -> language;
         };
     }

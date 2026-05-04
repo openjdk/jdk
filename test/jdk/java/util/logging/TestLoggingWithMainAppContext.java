@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.imageio.ImageIO;
  *          VM mode: it would not test the intended behavior.
  * @modules java.desktop
  *          java.logging
- * @run main/othervm -Djava.security.manager=allow TestLoggingWithMainAppContext
+ * @run main/othervm TestLoggingWithMainAppContext
  */
 public class TestLoggingWithMainAppContext {
 
@@ -47,10 +47,6 @@ public class TestLoggingWithMainAppContext {
             throw new RuntimeException("Parent logger of bar1 "+bar1+" is not "+foo1);
         }
         System.out.println("bar1.getParent() is the same as foo1");
-
-        // Set a security manager
-        System.setSecurityManager(new SecurityManager());
-        System.out.println("Now running with security manager");
 
         // Triggers the creation of the main AppContext
         ByteArrayInputStream is = new ByteArrayInputStream(new byte[] { 0, 1 });

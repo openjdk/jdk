@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,8 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(SnippetTaglet.Diags diags, Optional<SnippetTaglet.Language> language, String source) throws ParseException {
-        SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
-        var p = switch (lang) {
+    public Result parse(SnippetTaglet.Diags diags, SnippetTaglet.Language language, String source) throws ParseException {
+        var p = switch (language) {
             case JAVA -> JAVA_COMMENT;
             case PROPERTIES -> PROPERTIES_COMMENT;
         };

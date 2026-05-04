@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,12 @@ public class InputStreamAdapter extends InputStream {
         this.stream = stream;
     }
 
+    @Override
     public int read() throws IOException {
         return stream.read();
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         return stream.read(b, off, len);
     }

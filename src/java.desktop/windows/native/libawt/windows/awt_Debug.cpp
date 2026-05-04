@@ -141,7 +141,7 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
         msgBuffer = (LPSTR)"<Could not get GetLastError() message text>";
     }
     // format the assertion message
-    _snprintf(assertMsg, ASSERT_MSG_SIZE, AssertFmt, expr, file, line, lastError, msgBuffer);
+    snprintf(assertMsg, ASSERT_MSG_SIZE, AssertFmt, expr, file, line, lastError, msgBuffer);
     if (fret != 0) {
         LocalFree(msgBuffer);
     }
@@ -160,11 +160,7 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
 
     // if clicked Yes, break into the debugger
     if ( ret == IDYES ) {
-        # if defined(_M_IX86)
-            _asm { int 3 };
-        # else
-            DebugBreak();
-        # endif
+        DebugBreak();
     }
     // otherwise, try to continue execution
 }

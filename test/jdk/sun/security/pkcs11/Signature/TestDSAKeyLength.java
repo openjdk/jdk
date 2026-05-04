@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSAKeyLength
- * @run main/othervm -Djava.security.manager=allow TestDSAKeyLength sm
  */
 
 import java.security.InvalidKeyException;
@@ -48,9 +47,15 @@ public class TestDSAKeyLength extends PKCS11Test {
 
     @Override
     protected boolean skipTest(Provider provider) {
-        if (isNSS(provider) && (getNSSVersion() == 0.0 || getNSSVersion() >= 3.14)) {
-            System.out.println("Skip testing NSS " + getNSSVersion());
-            return true;
+        if (isNSS(provider)) {
+            Version version = getNSSVersion();
+            if (version == null) {
+                return true;
+            }
+            if (version.major() >= 3 && version.minor() >= 14){
+                System.out.println("Skip testing NSS " + version);
+                return true;
+            }
         }
 
         return false;
@@ -58,7 +63,8 @@ public class TestDSAKeyLength extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "SUN");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA",
+                System.getProperty("test.provider.name", "SUN"));
         kpg.initialize(2048, new SecureRandom());
         KeyPair pair = kpg.generateKeyPair();
 

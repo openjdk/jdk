@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ public final class EventTypeInfo {
     /**
      * Returns a short sentence or two describing the event type associated with
      * this {@code EventTypeInfo}, for example
-     * {@code "Garbage collection performed by the JVM""}.
+     * {@code "Garbage collection performed by the JVM"}.
      *
      * @return the description, or {@code null} if no description exists
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class TestRecordComponent {
             } else
                 cb.with(ce);
         };
-        ClassModel newModel = cc.parse(cc.transform(cm, xform));
+        ClassModel newModel = cc.parse(cc.transformClass(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
@@ -74,7 +74,7 @@ class TestRecordComponent {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> cb.with(ce);
-        ClassModel newModel = cc.parse(cc.transform(cm, xform));
+        ClassModel newModel = cc.parse(cc.transformClass(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
@@ -92,7 +92,7 @@ class TestRecordComponent {
             else
                 cb.with(ce);
         };
-        ClassModel newModel = cc.parse(cc.transform(cm, xform));
+        ClassModel newModel = cc.parse(cc.transformClass(cm, xform));
         RecordAttribute ra = newModel.findAttribute(Attributes.record()).orElseThrow();
         assertEquals(ra.components().size(), 2, "Should have two components");
         assertEquals(ra.components().get(0).name().stringValue(), "fooXYZ");
@@ -105,7 +105,7 @@ class TestRecordComponent {
     void testOptions() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
         ClassModel cm = ClassFile.of().parse(Files.readAllBytes(testClassPath));
-        cm.forEachElement((ce) -> {
+        cm.forEach((ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 count.addAndGet(rm.components().size());
             }});

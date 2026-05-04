@@ -47,7 +47,6 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = -8727434096241101194L;
 

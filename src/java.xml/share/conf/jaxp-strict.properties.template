@@ -95,16 +95,16 @@ jdk.xml.maxParameterEntitySizeLimit=15000
 # Limits the total number of nodes in all entity references.
 jdk.xml.entityReplacementLimit=100000
 #
-# Limits the number of attributes an element can have. The default value is 10000.
-jdk.xml.elementAttributeLimit=10000
+# Limits the number of attributes an element can have. The default value is 200.
+jdk.xml.elementAttributeLimit=200
 #
 # Limits the number of content model nodes that may be created when building a
 # grammar for a W3C XML Schema that contains maxOccurs attributes with values
 # other than "unbounded". The default value is 5000.
 jdk.xml.maxOccurLimit=5000
 #
-# Limits the maximum element depth. The default value is 0.
-jdk.xml.maxElementDepth=0
+# Limits the maximum element depth. The default value is 100.
+jdk.xml.maxElementDepth=100
 #
 # Limits the maximum size of XML names, including element name, attribute name
 # and namespace prefix and URI. The default value is 1000.

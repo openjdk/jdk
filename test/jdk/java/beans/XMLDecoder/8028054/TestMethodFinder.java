@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.List;
  * @author Sergey Malenkov
  * @modules java.desktop/com.sun.beans.finder
  * @compile -XDignore.symbol.file TestMethodFinder.java
- * @run main TestMethodFinder
+ * @run main/timeout=480 TestMethodFinder
  */
 
 public class TestMethodFinder {

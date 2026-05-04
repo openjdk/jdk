@@ -24,7 +24,7 @@ package org.openjdk.bench.sun.misc;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.AverageTime)

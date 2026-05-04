@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -49,8 +48,9 @@
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -147,7 +147,7 @@ void ZNMethod::log_register(const nmethod* nm) {
     oop* const begin = nm->oops_begin();
     oop* const end = nm->oops_end();
     for (oop* p = begin; p < end; p++) {
-      const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
+      const oop o = AtomicAccess::load(p); // C1 PatchingStub may replace it concurrently.
       const char* const external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
       log_oops.print("           Oop: " PTR_FORMAT " (%s)",
                      p2i(o), external_name);
@@ -242,12 +242,20 @@ void ZNMethod::disarm(nmethod* nm) {
 
 void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  bs->set_guard_value(nm, value);
+  bs->guard_with(nm, value);
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
+  ICacheInvalidationContext icic;
+  nmethod_patch_barriers(nm, &icic);
+}
+
+void ZNMethod::nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic) {
   ZBarrierSetAssembler* const bs_asm = ZBarrierSet::assembler();
   ZArrayIterator<ZNMethodDataBarrier> iter(gc_data(nm)->barriers());
+  if (gc_data(nm)->barriers()->is_nonempty()) {
+    icic->set_has_modified_code();
+  }
   for (ZNMethodDataBarrier barrier; iter.next(&barrier);) {
     bs_asm->patch_barrier_relocation(barrier._reloc_addr, barrier._reloc_format);
   }
@@ -259,6 +267,11 @@ void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
 }
 
 void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
+  ICacheInvalidationContext icic;
+  nmethod_oops_do_inner(nm, cl, &icic);
+}
+
+void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic) {
   // Process oops table
   {
     oop* const begin = nm->oops_begin();
@@ -284,7 +297,7 @@ void ZNMethod::nmethod_oops_do_inner(nmethod* nm, OopClosure* cl) {
 
   // Process non-immediate oops
   if (data->has_non_immediate_oops()) {
-    nm->fix_oop_relocations();
+    nm->fix_oop_relocations(icic);
   }
 }
 
@@ -301,31 +314,36 @@ void ZNMethod::nmethods_do(bool secondary, NMethodClosure* cl) {
 }
 
 uintptr_t ZNMethod::color(nmethod* nm) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  // color is stored at low order bits of int; implicit conversion to uintptr_t is fine
-  return bs_nm->guard_value(nm);
+  ZBarrierSetNMethod* bs_nm = static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod());
+  return bs_nm->color(nm);
 }
 
-oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
-  assert((decorators & ON_WEAK_OOP_REF) == 0,
-         "nmethod oops have phantom strength, not weak");
-  nmethod* const nm = CodeCache::find_nmethod((void*)p);
-  assert(nm != nullptr, "did not find nmethod");
+oop ZNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return oop_load(nm, index, false /* keep_alive */);
+}
+
+oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return oop_load(nm, index, true /* keep_alive */);
+}
+
+oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
+  // The rest of the code is not ready to handle const nmethod, so cast it away
+  // until we are more consistent with our const correctness.
+  nmethod* nm = const_cast<nmethod*>(const_nm);
+
   if (!is_armed(nm)) {
     // If the nmethod entry barrier isn't armed, then it has been applied
     // already. The implication is that the contents of the memory location
     // is already a valid oop, and the barrier would have kept it alive if
     // necessary. Therefore, no action is required, and we are allowed to
     // simply read the oop.
-    return *p;
+    return *nm->oop_addr_at(index);
   }
 
-  const bool keep_alive = (decorators & ON_PHANTOM_OOP_REF) != 0 &&
-                          (decorators & AS_NO_KEEPALIVE) == 0;
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
   // Make a local root
-  zaddress_unsafe obj = *ZUncoloredRoot::cast(p);
+  zaddress_unsafe obj = *ZUncoloredRoot::cast(nm->oop_addr_at(index));
 
   if (keep_alive) {
     ZUncoloredRoot::process(&obj, ZNMethod::color(nm));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,11 @@ private:
   // for all environments, global array indexed by jvmtiEvent
   static JvmtiEventEnabled _universal_global_event_enabled;
 
+  // These fields are used to synchronize stop posting events and
+  // wait until already executing callbacks are finished.
+  volatile static bool  _execution_finished;
+  volatile static int   _in_callback_count;
+
 public:
   static bool is_enabled(jvmtiEvent event_type);
 
@@ -231,6 +236,7 @@ public:
   static void enter_interp_only_mode(JvmtiThreadState* state);
   static void set_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void clear_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
+  static void clear_all_frame_pops(JvmtiEnvThreadState *env_thread);
 
   static void change_field_watch(jvmtiEvent event_type, bool added);
 
@@ -244,6 +250,10 @@ public:
   static void vm_start();
   static void vm_init();
   static void vm_death();
+  static bool is_execution_finished();
+  static void inc_in_callback_count();
+  static void dec_in_callback_count();
+  static int in_callback_count();
 };
 
 #endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP

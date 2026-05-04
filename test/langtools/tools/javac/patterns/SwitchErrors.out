@@ -57,6 +57,8 @@ SwitchErrors.java:276:49: compiler.err.cant.resolve.location.args: kindname.meth
 SwitchErrors.java:278:55: compiler.err.cant.resolve.location.args: kindname.method, length, , , (compiler.misc.location: kindname.class, java.lang.Object, null)
 SwitchErrors.java:284:26: compiler.err.pattern.type.cannot.infer
 SwitchErrors.java:299:21: compiler.err.invalid.case.label.combination
+SwitchErrors.java:314:29: compiler.err.flows.through.from.pattern
+SwitchErrors.java:323:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:10:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:16:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:22:9: compiler.err.not.exhaustive.statement
@@ -69,4 +71,4 @@ SwitchErrors.java:98:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:105:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:153:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:226:9: compiler.err.not.exhaustive.statement
-71 errors
+73 errors

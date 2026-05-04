@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 
 /*
  * @test
- * @bug 6425477 8141039
+ * @bug 6425477 8141039 8324648
+ * @library /test/lib
  * @summary Better support for generation of high entropy random numbers
  * @run main StrongSecureRandom
  */
 import java.security.*;
 import java.util.*;
+
+import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * This test assumes that the standard Sun providers are installed.
@@ -38,7 +41,6 @@ public class StrongSecureRandom {
     private static final String os = System.getProperty("os.name", "unknown");
 
     private static void testDefaultEgd() throws Exception {
-        // No SecurityManager installed.
         String s = Security.getProperty("securerandom.source");
 
         System.out.println("Testing:  default EGD: " + s);
@@ -89,6 +91,27 @@ public class StrongSecureRandom {
         ba = sr.generateSeed(1);
         sr.nextBytes(ba);
         sr.setSeed(ba);
+
+        testParamsUnsupported("NativePRNG");
+        testParamsUnsupported("NativePRNGNonBlocking");
+        testParamsUnsupported("NativePRNGBlocking");
+    }
+
+    private static void testParamsUnsupported(String alg) throws NoSuchAlgorithmException {
+        System.out.println("Testing that " + alg + " does not support params");
+
+        try {
+            SecureRandom.getInstance(alg, new SecureRandomParameters() {});
+            throw new RuntimeException("Params should not be supported");
+        } catch (NoSuchAlgorithmException nsae) {
+            Throwable cause = nsae.getCause();
+            if (cause instanceof IllegalArgumentException) {
+                assertTrue(cause.getMessage().contains("Unsupported params"),
+                        "Unexpected error message: " + cause.getMessage());
+            } else {
+                throw nsae;
+            }
+        }
     }
 
     private static void testStrongInstance(boolean expected) throws Exception {

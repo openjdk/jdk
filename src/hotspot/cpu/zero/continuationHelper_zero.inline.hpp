@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ static inline intptr_t** link_address(const frame& f) {
   return nullptr;
 }
 
+static inline void patch_return_pc_with_preempt_stub(frame& f) {
+  Unimplemented();
+}
+
 inline int ContinuationHelper::frame_align_words(int size) {
   Unimplemented();
   return 0;
@@ -60,11 +64,11 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
   Unimplemented();
 }
 
-#ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   Unimplemented();
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   Unimplemented();
   return false;

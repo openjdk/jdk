@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@ package jdk.vm.ci.hotspot;
 import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
+import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.getFirstAnnotationOrNull;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -234,15 +237,19 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
         if (!hasAnnotations()) {
+            checkIsAnnotation(annotationType);
             return null;
         }
-        return getAnnotationData0(annotationType).get(0);
+        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        checkIsAnnotation(type1);
+        checkIsAnnotation(type2);
+        checkAreAnnotations(types);
         if (!hasAnnotations()) {
-            return Collections.emptyList();
+            return List.of();
         }
         return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
     }

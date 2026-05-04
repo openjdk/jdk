@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,7 @@ class AbstractRegisterImpl {
 
 // Macros to help define all kinds of registers
 
-#ifndef USE_POINTERS_TO_REGISTER_IMPL_ARRAY
-
-#define AS_REGISTER(type,name)         ((type)name##_##type##EnumValue)
-
-#define CONSTANT_REGISTER_DECLARATION(type, name, value)                \
-const type name = ((type)value);                                        \
-enum { name##_##type##EnumValue = (value) }
-
-#else // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+#ifdef USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #define REGISTER_IMPL_DECLARATION(type, impl_type, reg_count)           \
 inline constexpr type as_ ## type(int encoding) {                       \
@@ -69,15 +61,7 @@ inline constexpr type impl_type::first() { return all_ ## type ## s + 1; }
 #define REGISTER_IMPL_DEFINITION(type, impl_type, reg_count)            \
 impl_type all_ ## type ## s[reg_count + 1];
 
-#define CONSTANT_REGISTER_DECLARATION(type, name, value)                \
-constexpr type name = as_ ## type(value);
-
 #endif // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
-
-
-#define REGISTER_DECLARATION(type, name, value) \
-const type name = ((type)value)
-
 
 // For definitions of RegisterImpl* instances. To be redefined in an
 // OS-specific way.
@@ -196,6 +180,12 @@ public:
     return *this;
   }
 
+  RegSetIterator operator++(int) {
+    RegSetIterator r = *this;
+    ++(*this);
+    return r;
+  }
+
   RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
     _regs= mit._regs;
     return *this;
@@ -276,19 +266,23 @@ inline constexpr bool different_registers(R first_register, Rx... more_registers
 }
 
 template<typename R, typename... Rx>
-inline void assert_different_registers(R first_register, Rx... more_registers) {
+inline void assert_different_registers_impl(const char* file, int line, R first_register, Rx... more_registers) {
 #ifdef ASSERT
   if (!different_registers(first_register, more_registers...)) {
     const R regs[] = { first_register, more_registers... };
     // Find a duplicate entry.
     for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
       for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-        assert(!regs[i]->is_valid() || regs[i] != regs[j],
-               "Multiple uses of register: %s", regs[i]->name());
+        if (regs[i]->is_valid()) {
+          assert_with_file_and_line(regs[i] != regs[j], file, line, "regs[%zu] and regs[%zu] are both: %s",
+              i, j, regs[i]->name());
+        }
       }
     }
   }
 #endif
 }
+
+#define assert_different_registers(...) assert_different_registers_impl(__FILE__, __LINE__, __VA_ARGS__)
 
 #endif // SHARE_ASM_REGISTER_HPP

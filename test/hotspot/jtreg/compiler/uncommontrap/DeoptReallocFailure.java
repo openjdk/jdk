@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class DeoptReallocFailure {
         NoEscape[] noEscape = new NoEscape[45];
         noEscape[0] = new NoEscape();
         for (int i=0;i<1024*256;i++) {
-           root.array[i]= new Object[45];
+           root.array[i]= new Object[4500];
         }
         return noEscape[0].f1;
     }

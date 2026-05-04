@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +38,12 @@
     return false;
   }
 
-  // PPC implementation uses VSX load/store instructions (if
-  // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
+  // The PPC implementation uses VSX lxv/stxv instructions (if
+  // SuperwordUseVSX). They do not have alignment requirements.
+  // Some VSX storage access instructions cannot encode arbitrary displacements
+  // (e.g. lxv). We use memoryAlg16 for them.
   static constexpr bool misaligned_vectors_ok() {
-    return false;
+    return true;
   }
 
   // Whether code generation need accurate ConvI2L types.
@@ -62,12 +65,10 @@
     return true;
   }
 
-  // Use conditional move (CMOVL) on Power7.
   static constexpr int long_cmove_cost() { return 0; } // this only makes long cmoves more expensive than int cmoves
 
-  // Suppress CMOVF. Conditional move available (sort of) on PPC64 only from P7 onwards. Not exploited yet.
-  // fsel doesn't accept a condition register as input, so this would be slightly different.
-  static int float_cmove_cost() { return ConditionalMoveLimit; }
+  // Suppress CMOVF for Power8 because there are no fast nodes.
+  static int float_cmove_cost() { return (PowerArchitecturePPC64 >= 9) ? 0 : ConditionalMoveLimit; }
 
   // This affects two different things:
   //  - how Decode nodes are matched
@@ -86,7 +87,6 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
     // TODO: PPC port if (MatchDecodeNodes) return true;
     return false;
   }
@@ -112,9 +112,6 @@
   // piece-by-piece. Only happens when passing doubles into C code as the
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
-
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
 
   // Do floats take an entire double register or just half?
   //
@@ -159,11 +156,10 @@
   }
 
   // true means we have fast l2f conversion
-  // false means that conversion is done by runtime call
-  static bool convL2FSupported(void) {
+  static constexpr bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
-    return VM_Version::has_fcfids();
+    return true;
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only

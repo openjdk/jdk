@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.internal.net.http.common;
 
 import java.time.Instant;
-import java.time.InstantSource;
 
 /**
  * A {@link TimeLine} based on {@link System#nanoTime()} for the
@@ -52,7 +51,7 @@ public final class TimeSource implements TimeLine {
         // The use of Integer.MAX_VALUE is arbitrary.
         // Any value not too close to Long.MAX_VALUE
         // would do.
-        static final int TIME_WINDOW = Integer.MAX_VALUE;
+        static final long TIME_WINDOW = Integer.MAX_VALUE;
 
         final Instant first;
         final long firstNanos;
@@ -69,6 +68,8 @@ public final class TimeSource implements TimeLine {
         }
 
         Deadline instant(long nanos, long delay) {
+            assert firstNanos + delay == nanos :
+                    "%d + %d != %d".formatted(firstNanos, delay, nanos);
             Instant now = first.plusNanos(delay);
             if (!isInWindow(delay)) {
                 // Shifts the time reference (firstNanos) to
@@ -85,18 +86,19 @@ public final class TimeSource implements TimeLine {
         }
 
         boolean isInWindow(long delay) {
-            return delay >= 0 && delay <= TIME_WINDOW;
+            return delay >= -TIME_WINDOW && delay <= TIME_WINDOW;
         }
 
     }
 
     @Override
     public Deadline instant() {
-        long nanos = System.nanoTime();
-        long delay = localSource.delay(nanos);
         // use localSource if possible to avoid a volatile read
-        if (localSource.isInWindow(delay)) {
-            return localSource.instant(nanos, delay);
+        NanoSource source = localSource;
+        long nanos = System.nanoTime();
+        long delay = source.delay(nanos);
+        if (source.isInWindow(delay)) {
+            return source.instant(nanos, delay);
         } else {
             // will cause the time reference to shift forward,
             // at the cost of a volatile write + a volatile read

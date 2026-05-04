@@ -426,8 +426,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             long deadline = (timed) ? System.nanoTime() + ns : 0L;
             boolean upc = isUniprocessor;  // don't spin but later recheck
             Thread w = Thread.currentThread();
-            if (w.isVirtual())             // don't spin
-                spin = false;
+            if (spin && ForkJoinWorkerThread.hasKnownQueuedWork())
+                spin = false;              // don't spin
             int spins = (spin & !upc) ? SPINS : 0; // negative when may park
             while ((m = item) == e) {
                 if (spins >= 0) {
@@ -588,13 +588,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             do {
                 m = p.item;
                 q = p.next;
-                if (p.isData != haveData && haveData != (m != null) &&
-                    p.cmpExItem(m, e) == m) {
-                    Thread w = p.waiter;    // matched complementary node
-                    if (p != h && h == cmpExHead(h, (q == null) ? p : q))
-                        h.next = h;         // advance head; self-link old
-                    LockSupport.unpark(w);
-                    return m;
+                if (p.isData != haveData && haveData != (m != null)) {
+                    if (p.cmpExItem(m, e) == m) {
+                        Thread w = p.waiter; // matched complementary node
+                        if (p != h && h == cmpExHead(h, (q == null) ? p : q))
+                            h.next = h;     // advance head; self-link old
+                        LockSupport.unpark(w);
+                        return m;
+                    }
+                    continue restart;
                 } else if (q == null) {
                     if (ns == 0L)           // try to append unless immediate
                         break restart;

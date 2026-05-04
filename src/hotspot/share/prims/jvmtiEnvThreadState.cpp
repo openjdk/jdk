@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"
@@ -71,6 +70,10 @@ JvmtiFramePops::clear(JvmtiFramePop& fp) {
   _pops->remove(fp.frame_number());
 }
 
+void
+JvmtiFramePops::clear_all() {
+  _pops->clear();
+}
 
 int
 JvmtiFramePops::clear_to(JvmtiFramePop& fp) {
@@ -148,11 +151,6 @@ bool JvmtiEnvThreadState::is_virtual() {
   return _state->is_virtual();
 }
 
-// Use _thread_saved if cthread is detached from JavaThread (_thread == nullptr).
-JavaThread* JvmtiEnvThreadState::get_thread_or_saved() {
-  return _state->get_thread_or_saved();
-}
-
 JavaThread* JvmtiEnvThreadState::get_thread() {
   return _state->get_thread();
 }
@@ -212,10 +210,7 @@ void JvmtiEnvThreadState::compare_and_set_current_location(Method* new_method,
 
 
 JvmtiFramePops* JvmtiEnvThreadState::get_frame_pops() {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   if (_frame_pops == nullptr) {
     _frame_pops = new JvmtiFramePops();
@@ -230,10 +225,7 @@ bool JvmtiEnvThreadState::has_frame_pops() {
 }
 
 void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::set_frame_pop(this, fpop);
@@ -241,21 +233,20 @@ void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
 
 
 void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_frame_pop(this, fpop);
 }
 
+void JvmtiEnvThreadState::clear_all_frame_pops() {
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
+         "frame pop data only accessible from same or detached thread or direct handshake");
+  JvmtiEventController::clear_all_frame_pops(this);
+}
 
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   if (!jvmti_thread_state()->is_interp_only_mode() || _frame_pops == nullptr) {
     return false;
@@ -348,7 +339,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
   if (enabled) {
     // If enabling breakpoint, no need to reset.
     // Can't do anything if empty stack.
-    JavaThread* thread = get_thread_or_saved();
+    JavaThread* thread = get_thread();
 
     if (event_type == JVMTI_EVENT_SINGLE_STEP &&
         ((thread == nullptr && is_virtual()) || thread->has_last_Java_frame())) {

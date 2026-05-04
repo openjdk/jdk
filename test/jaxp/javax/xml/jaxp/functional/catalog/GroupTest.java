@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,36 @@
 
 package catalog;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.catalogResolver;
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkPubIdResolution;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
 
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.GroupTest
- * @run testng/othervm catalog.GroupTest
+ * @run junit/othervm catalog.GroupTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          and some of the entries are enclosed by group entries.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class GroupTest {
 
     private static final String CATALOG_GROUP = "group.xml";
 
-    @Test(dataProvider = "systemId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataMatchSysId")
     public void testMatchOnSysId(String uri, String matchedUri) {
         checkSysIdResolution(createResolver(), uri, matchedUri);
     }
 
-    @DataProvider(name = "systemId-matchedUri")
-    public Object[][] dataOnSysId() {
+    public static Object[][] dataMatchSysId() {
         return new Object[][] {
                 // The matched URI of the specified system id is enclosed by a
                 // group entry.
@@ -75,13 +72,13 @@ public class GroupTest {
                         "http://local/base/dtd/docCarlSys1.dtd" } };
     }
 
-    @Test(dataProvider = "publicId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatchPubId")
     public void testMatchOnPubId(String uri, String matchedUri) {
         checkPubIdResolution(createResolver(), uri, matchedUri);
     }
 
-    @DataProvider(name = "publicId-matchedUri")
-    public Object[][] dataOnPubId() {
+    public static Object[][] dataOnMatchPubId() {
         return new Object[][] {
                 // The matched URI of the specified public id is enclosed by a
                 // group entry.
@@ -101,13 +98,13 @@ public class GroupTest {
                         "http://local/base/dtd/docCarlPub1.dtd" } };
     }
 
-    @Test(dataProvider = "uri-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatchUri")
     public void testMatchOnUri(String uri, String matchedUri) {
         checkUriResolution(catalogUriResolver(CATALOG_GROUP), uri, matchedUri);
     }
 
-    @DataProvider(name = "uri-matchedUri")
-    public Object[][] dataOnUri() {
+    public static Object[][] dataOnMatchUri() {
         return new Object[][] {
                 // The matched URI of the specified URI reference is enclosed by
                 // a group entry.
@@ -127,7 +124,7 @@ public class GroupTest {
                         "http://local/base/dtd/docAliceURI.dtd" } };
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver(CATALOG_GROUP);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -42,12 +43,10 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage test to validate "hostArchitectures" attribute
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile HostArchPkgTest.java
+ * @compile -Xlint:all -Werror HostArchPkgTest.java
  * @requires (os.family == "mac")
- * @key jpackagePlatformPackage
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=HostArchPkgTest
  */
@@ -65,8 +64,7 @@ public class HostArchPkgTest {
         dbf.setFeature("http://apache.org/xml/features/" +
                        "nonvalidating/load-external-dtd", false);
         DocumentBuilder b = dbf.newDocumentBuilder();
-        org.w3c.dom.Document doc
-                = b.parse(Files.newInputStream(distributionFile));
+        org.w3c.dom.Document doc = b.parse(distributionFile.toFile());
 
         XPath xPath = XPathFactory.newInstance().newXPath();
 
@@ -74,7 +72,7 @@ public class HostArchPkgTest {
                     "/installer-gui-script/options/@hostArchitectures",
                     doc, XPathConstants.STRING);
 
-        if ("aarch64".equals(System.getProperty("os.arch"))) {
+        if (Architecture.isAARCH64()) {
             TKit.assertEquals(v, "arm64",
                     "Check value of \"hostArchitectures\" attribute");
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@ package java.awt;
 
 import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 
 /**
  * A {@code TrayIcon} object represents a tray icon that can be
@@ -65,11 +62,6 @@ import java.security.AccessController;
  * <p>A {@code TrayIcon} can generate an {@link ActionEvent
  * ActionEvent}.  On some platforms, this occurs when the user selects
  * the tray icon using either the mouse or keyboard.
- *
- * <p>If a SecurityManager is installed, the AWTPermission
- * {@code accessSystemTray} must be granted in order to create
- * a {@code TrayIcon}. Otherwise the constructor will throw a
- * SecurityException.
  *
  * <p> See the {@link SystemTray} class overview for an example on how
  * to use the {@code TrayIcon} API.
@@ -107,26 +99,6 @@ public class TrayIcon {
     transient MouseMotionListener mouseMotionListener;
     transient ActionListener actionListener;
 
-    /*
-     * The tray icon's AccessControlContext.
-     *
-     * Unlike the acc in Component, this field is made final
-     * because TrayIcon is not serializable.
-     */
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
-
-    /*
-     * Returns the acc this tray icon was constructed with.
-     */
-    @SuppressWarnings("removal")
-    final AccessControlContext getAccessControlContext() {
-        if (acc == null) {
-            throw new SecurityException("TrayIcon is missing AccessControlContext");
-        }
-        return acc;
-    }
-
     static {
         Toolkit.loadLibraries();
         if (!GraphicsEnvironment.isHeadless()) {
@@ -145,16 +117,15 @@ public class TrayIcon {
     }
 
     private TrayIcon()
-      throws UnsupportedOperationException, HeadlessException, SecurityException
+      throws UnsupportedOperationException, HeadlessException
     {
-        SystemTray.checkSystemTrayAllowed();
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
         if (!SystemTray.isSupported()) {
             throw new UnsupportedOperationException();
         }
-        SunToolkit.insertTargetMapping(this, AppContext.getAppContext());
+        SunToolkit.insertTargetMapping(this);
     }
 
     /**
@@ -167,13 +138,9 @@ public class TrayIcon {
      * supported by the current platform
      * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if {@code accessSystemTray} permission
-     * is not granted
      * @see SystemTray#add(TrayIcon)
      * @see TrayIcon#TrayIcon(Image, String, PopupMenu)
      * @see TrayIcon#TrayIcon(Image, String)
-     * @see SecurityManager#checkPermission
-     * @see AWTPermission
      */
     public TrayIcon(Image image) {
         this();
@@ -196,13 +163,9 @@ public class TrayIcon {
      * supported by the current platform
      * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if {@code accessSystemTray} permission
-     * is not granted
      * @see SystemTray#add(TrayIcon)
      * @see TrayIcon#TrayIcon(Image)
      * @see TrayIcon#TrayIcon(Image, String, PopupMenu)
-     * @see SecurityManager#checkPermission
-     * @see AWTPermission
      */
     public TrayIcon(Image image, String tooltip) {
         this(image);
@@ -223,16 +186,12 @@ public class TrayIcon {
      * supported by the current platform
      * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if {@code accessSystemTray} permission
-     * is not granted
      * @see SystemTray#add(TrayIcon)
      * @see TrayIcon#TrayIcon(Image, String)
      * @see TrayIcon#TrayIcon(Image)
      * @see PopupMenu
      * @see MouseListener
      * @see #addMouseListener(MouseListener)
-     * @see SecurityManager#checkPermission
-     * @see AWTPermission
      */
     public TrayIcon(Image image, String tooltip, PopupMenu popup) {
         this(image, tooltip);

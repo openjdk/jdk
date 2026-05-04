@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
- *           8196200 8196202 8223378 8258659 8261976 8320458 8329537
+ *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
+ *           8342705 8371021 8373526
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -70,6 +71,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("pkg/package-summary.html", true,
@@ -81,7 +83,12 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
-                    </ul>""");
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents</div>
+                    """);
 
         checkOutput("pkg/A.html", true,
                 """
@@ -92,7 +99,18 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    </ul>""");
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/C.html", true,
                 """
@@ -103,7 +121,18 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    </ul>""");
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/E.html", true,
                 """
@@ -114,7 +143,18 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    </ul>""");
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """);
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
@@ -180,12 +220,22 @@ public class TestNavigation extends JavadocTester {
         checkOrder("pkg1/A.X.html",
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="package-summary.html">pkg1</a></li>
-                    <li><a href="A.html">A</a></li>
-                    <li><a href="A.X.html" class="current-selection">X</a></li>
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.X.html" title="Class A.X" class="current-selection">X</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
+                """
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
@@ -211,12 +261,22 @@ public class TestNavigation extends JavadocTester {
         checkOrder("pkg1/A.Y.html",
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="package-summary.html">pkg1</a></li>
-                    <li><a href="A.html">A</a></li>
-                    <li><a href="A.Y.html" class="current-selection">Y</a></li>
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.Y.html" title="Class A.Y" class="current-selection">Y</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
+                """
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
@@ -232,13 +292,23 @@ public class TestNavigation extends JavadocTester {
         checkOrder("pkg1/A.X.IC.html",
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="package-summary.html">pkg1</a></li>
-                    <li><a href="A.html">A</a></li>
-                    <li><a href="A.X.html">X</a></li>
-                    <li><a href="A.X.IC.html" class="current-selection">IC</a></li>
+                    <li><a href="package-summary.html" title="Package pkg1">pkg1</a></li>
+                    <li><a href="A.html" title="Class A">A</a></li>
+                    <li><a href="A.X.html" title="Class A.X">X</a></li>
+                    <li><a href="A.X.IC.html" title="Class A.X.IC" class="current-selection">IC</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../resour\
+                    ce-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></butt\
+                    on></div>
+                    """,
+                """
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
@@ -251,7 +321,7 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/C.html",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
@@ -264,7 +334,7 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     </ol>""");
     }
@@ -339,6 +409,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -350,6 +421,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -361,6 +433,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -372,6 +445,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -411,10 +485,11 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#package">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="package-summary.html" class="current-selection">Unnamed Package</a></li>
+                    <li><a href="package-summary.html" title="Unnamed Package" class="current-selection">Unnamed Package</a></li>
                     </ol>""");
 
         checkOutput("C.html", true,
@@ -426,11 +501,12 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#class">Help</a></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="package-summary.html">Unnamed Package</a></li>
-                    <li><a href="C.html" class="current-selection">C</a></li>
+                    <li><a href="package-summary.html" title="Unnamed Package">Unnamed Package</a></li>
+                    <li><a href="C.html" title="Class C" class="current-selection">C</a></li>
                     </ol>""");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
  // key: compiler.misc.feature.module.imports
- // key: compiler.warn.preview.feature.use.plural
- // options: --release ${jdk.version} --enable-preview -Xlint:preview
+ // key: compiler.err.feature.not.supported.in.source.plural
+ // options: --release 24 -Xlint:preview
 
 import module java.base;
 

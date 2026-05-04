@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,9 @@ import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
 
+import jdk.internal.util.Exceptions;
+
 import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
-import sun.net.util.SocketExceptions;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Unix implementation of AsynchronousSocketChannel
@@ -49,7 +48,7 @@ class UnixAsynchronousSocketChannelImpl
 
     private static final boolean disableSynchronousRead;
     static {
-        String propValue = GetPropertyAction.privilegedGetProperty(
+        String propValue = System.getProperty(
             "sun.nio.ch.disableSynchronousRead", "false");
         disableSynchronousRead = propValue.isEmpty() ?
             true : Boolean.parseBoolean(propValue);
@@ -265,7 +264,7 @@ class UnixAsynchronousSocketChannelImpl
         if (e != null) {
             if (e instanceof IOException) {
                 var isa = (InetSocketAddress)pendingRemote;
-                e = SocketExceptions.of((IOException)e, isa);
+                e = Exceptions.ioException((IOException)e, isa);
             }
             // close channel if connection cannot be established
             try {
@@ -309,14 +308,7 @@ class UnixAsynchronousSocketChannelImpl
 
         InetSocketAddress isa = Net.checkAddress(remote);
 
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
-
         // check and set state
-        boolean notifyBeforeTcpConnect;
         synchronized (stateLock) {
             if (state == ST_CONNECTED)
                 throw new AlreadyConnectedException();
@@ -324,15 +316,11 @@ class UnixAsynchronousSocketChannelImpl
                 throw new ConnectionPendingException();
             state = ST_PENDING;
             pendingRemote = remote;
-            notifyBeforeTcpConnect = (localAddress == null);
         }
 
         Throwable e = null;
         try {
             begin();
-            // notify hook if unbound
-            if (notifyBeforeTcpConnect)
-                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             int n = Net.connect(fd, isa.getAddress(), isa.getPort());
             if (n == IOStatus.UNAVAILABLE) {
                 // connection could not be established immediately
@@ -362,7 +350,7 @@ class UnixAsynchronousSocketChannelImpl
         // close channel if connect fails
         if (e != null) {
             if (e instanceof IOException) {
-                e = SocketExceptions.of((IOException)e, isa);
+                e = Exceptions.ioException((IOException)e, isa);
             }
             try {
                 close();

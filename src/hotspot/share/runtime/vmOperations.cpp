@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -32,8 +31,8 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
@@ -52,6 +51,7 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
@@ -275,82 +275,54 @@ void VM_ThreadDump::doit_epilogue() {
   }
 }
 
-// Hash table of void* to a list of ObjectMonitor* owned by the JavaThread.
-// The JavaThread's owner key is either a JavaThread* or a stack lock
-// address in the JavaThread so we use "void*".
-//
+// Hash table of int64_t to a list of ObjectMonitor* owned by the JavaThread.
 class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
  private:
-  static unsigned int ptr_hash(void* const& s1) {
+  static unsigned int ptr_hash(int64_t const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
  private:
-  class ObjectMonitorLinkedList :
-    public LinkedListImpl<ObjectMonitor*,
-                          AnyObj::C_HEAP, mtThread,
-                          AllocFailStrategy::RETURN_NULL> {};
+  using ObjectMonitorList = GrowableArrayCHeap<ObjectMonitor*, mtThread>;
 
-  // ResourceHashtable SIZE is specified at compile time so we
+  // HashTable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void*, ObjectMonitorLinkedList*, 1031, AnyObj::C_HEAP, mtThread,
+  typedef HashTable<int64_t, ObjectMonitorList, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsDump::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
   size_t _om_count;
 
-  void add_list(void* key, ObjectMonitorLinkedList* list) {
-    _ptrs->put(key, list);
-    _key_count++;
-  }
-
-  ObjectMonitorLinkedList* get_list(void* key) {
-    ObjectMonitorLinkedList** listpp = _ptrs->get(key);
-    return (listpp == nullptr) ? nullptr : *listpp;
-  }
-
   void add(ObjectMonitor* monitor) {
-    void* key = monitor->owner();
+    int64_t key = monitor->owner();
 
-    ObjectMonitorLinkedList* list = get_list(key);
-    if (list == nullptr) {
-      // Create new list and add it to the hash table:
-      list = new (mtThread) ObjectMonitorLinkedList;
-      _ptrs->put(key, list);
+    bool created = false;
+    ObjectMonitorList* list = _ptrs->put_if_absent(key, &created);
+    if (created) {
       _key_count++;
     }
 
-    assert(list->find(monitor) == nullptr, "Should not contain duplicates");
-    list->add(monitor);  // Add the ObjectMonitor to the list.
+    assert(list->find(monitor) == -1, "Should not contain duplicates");
+    list->push(monitor);  // Add the ObjectMonitor to the list.
     _om_count++;
   }
 
  public:
-  // ResourceHashtable is passed to various functions and populated in
+  // HashTable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
   ObjectMonitorsDump() : _ptrs(new (mtThread) PtrTable), _key_count(0), _om_count(0) {}
 
   ~ObjectMonitorsDump() {
-    class CleanupObjectMonitorsDump: StackObj {
-     public:
-      bool do_entry(void*& key, ObjectMonitorLinkedList*& list) {
-        list->clear();  // clear the LinkListNodes
-        delete list;    // then delete the LinkedList
-        return true;
-      }
-    } cleanup;
-
-    _ptrs->unlink(&cleanup);  // cleanup the LinkedLists
-    delete _ptrs;             // then delete the hash table
+    delete _ptrs;
   }
 
   // Implements MonitorClosure used to collect all owned monitors in the system
   void do_monitor(ObjectMonitor* monitor) override {
     assert(monitor->has_owner(), "Expects only owned monitors");
 
-    if (monitor->is_owner_anonymous()) {
+    if (monitor->has_anonymous_owner()) {
       // There's no need to collect anonymous owned monitors
       // because the caller of this code is only interested
       // in JNI owned monitors.
@@ -368,11 +340,13 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
-    ObjectMonitorLinkedList* list = get_list(thread);
-    LinkedListIterator<ObjectMonitor*> iter(list != nullptr ? list->head() : nullptr);
-    while (!iter.is_empty()) {
-      ObjectMonitor* monitor = *iter.next();
-      closure->do_monitor(monitor);
+    int64_t key = ObjectMonitor::owner_id_from(thread);
+    ObjectMonitorList* list = _ptrs->get(key);
+    if (list == nullptr) {
+      return;
+    }
+    for (int i = 0; i < list->length(); i++) {
+      closure->do_monitor(list->at(i));
     }
   }
 
@@ -500,7 +474,6 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
   Thread * thr_cur = Thread::current();
-  Monitor timer(Mutex::nosafepoint, "VM_ExitTimer_lock");
 
   // Compiler threads need longer wait because they can access VM data directly
   // while in native. If they are active and some structures being used are
@@ -509,12 +482,23 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   // data, and they will be stopped during state transition. In theory, we
   // don't have to wait for user threads to be quiescent, but it's always
   // better to terminate VM when current thread is the only active thread, so
-  // wait for user threads too. Numbers are in 10 milliseconds.
-  int wait_time_per_attempt = 10;               // in milliseconds
-  int max_wait_attempts_user_thread = UserThreadWaitAttemptsAtExit;
-  int max_wait_attempts_compiler_thread = 1000; // at least 10 seconds
+  // wait for user threads too.
 
-  int attempts = 0;
+  // Time per attempt. It is practical to start waiting with 10us delays
+  // (around scheduling delay / timer slack), and exponentially ramp up
+  // to 10ms if compiler threads are not responding.
+  jlong max_wait_time = millis_to_nanos(10);
+  jlong wait_time = 10000;
+
+  jlong start_time = os::javaTimeNanos();
+
+  // Deadline for user threads in native code.
+  // User-settable flag counts "attempts" in 10ms units, to a maximum of 10s.
+  jlong user_threads_deadline = start_time + (UserThreadWaitAttemptsAtExit * millis_to_nanos(10));
+
+  // Deadline for compiler threads: at least 10 seconds.
+  jlong compiler_threads_deadline = start_time + millis_to_nanos(10000);
+
   JavaThreadIteratorWithHandle jtiwh;
   while (true) {
     int num_active = 0;
@@ -543,19 +527,20 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       }
     }
 
+    jlong time = os::javaTimeNanos();
+
     if (num_active == 0) {
-       return 0;
-    } else if (attempts >= max_wait_attempts_compiler_thread) {
-       return num_active;
-    } else if (num_active_compiler_thread == 0 &&
-               attempts >= max_wait_attempts_user_thread) {
-       return num_active;
+      return 0;
+    }
+    if (time >= compiler_threads_deadline) {
+      return num_active;
+    }
+    if ((num_active_compiler_thread == 0) && (time >= user_threads_deadline)) {
+      return num_active;
     }
 
-    attempts++;
-
-    MonitorLocker ml(&timer, Mutex::_no_safepoint_check_flag);
-    ml.wait(wait_time_per_attempt);
+    os::naked_short_nanosleep(wait_time);
+    wait_time = MIN2(max_wait_time, wait_time * 2);
   }
 }
 
@@ -610,12 +595,16 @@ void VM_Exit::doit() {
 
 
 void VM_Exit::wait_if_vm_exited() {
-  if (_vm_exited &&
-      Thread::current_or_null() != _shutdown_thread) {
-    // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // so we will block here until the process dies.
-    Threads_lock->lock();
-    ShouldNotReachHere();
+  if (_vm_exited) {
+    // Need to check for an unattached thread as only attached threads
+    // can acquire the lock.
+    Thread* current = Thread::current_or_null();
+    if (current != nullptr && current != _shutdown_thread) {
+      // _vm_exited is set at safepoint, and the Threads_lock is never released
+      // so we will block here until the process dies.
+      Threads_lock->lock();
+      ShouldNotReachHere();
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,18 +153,18 @@ class RegisterMap : public StackObj {
   const RegisterMap* as_RegisterMap() const { return this; }
   RegisterMap* as_RegisterMap() { return this; }
 
+#ifndef PRODUCT
   void print_on(outputStream* st) const;
   void print() const;
 
-  void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
-  void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
-
-#ifndef PRODUCT
   bool is_async() const             { return _async; }
   bool should_skip_missing() const  { return _skip_missing; }
 
   VMReg find_register_spilled_here(void* p, intptr_t* sp);
 #endif
+
+  void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
+  void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
 
   // the following contains the definition of pd_xxx methods
 #include CPU_HEADER(registerMap)

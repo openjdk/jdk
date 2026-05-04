@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,10 +191,9 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   }
   jmm_interface_management_ext->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
-      // Ensure capacity for 6 + 3 local refs:
+      // Ensure capacity for 6 local refs:
       //  6 => jname, jdesc, jimpact, cmd, args, obj
-      //  3 => permission class, name, action
-      (*env)->PushLocalFrame(env, 6 + 3);
+      (*env)->PushLocalFrame(env, 6);
 
       cmd = (*env)->GetObjectArrayElement(env, commands, i);
       args = getDiagnosticCommandArgumentInfoArray(env,
@@ -218,11 +217,8 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
 
       obj = JNU_NewObjectByName(env,
                                 "com/sun/management/internal/DiagnosticCommandInfo",
-                                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/List;)V",
+                                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/List;)V",
                                 jname, jdesc, jimpact,
-                                dcmd_info_array[i].permission_class==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_class),
-                                dcmd_info_array[i].permission_name==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_name),
-                                dcmd_info_array[i].permission_action==NULL?NULL:(*env)->NewStringUTF(env,dcmd_info_array[i].permission_action),
                                 dcmd_info_array[i].enabled,
                                 args);
       if (obj == NULL) {

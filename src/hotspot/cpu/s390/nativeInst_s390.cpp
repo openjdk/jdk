@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by JL, LS
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
@@ -59,7 +58,7 @@ void NativeInstruction::verify() {
   //  - any address in first page (0x0000 .. 0x0fff)
   //  - odd address (will cause a "specification exception")
   address addr = addr_at(0);
-  if ((addr == 0) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
+  if ((addr == nullptr) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
     tty->print_cr(INTPTR_FORMAT ": bad instruction address", p2i(addr));
     fatal("not an instruction address");
   }
@@ -166,27 +165,6 @@ bool NativeInstruction::is_illegal() {
   // If this method returns false, then the 2-byte instruction at *-2 is not a 0x00 opcode.
   // If this method returns true, then the 2-byte instruction at *-2 is a 0x00 opcode.
   return halfword_at(-2) == illegal_instruction();
-}
-
-// We use an illtrap for marking a method as not_entrant.
-bool NativeInstruction::is_sigill_not_entrant() {
-  if (!is_illegal()) return false; // Just a quick path.
-
-  // One-sided error of is_illegal tolerable here
-  // (see implementation of is_illegal() for details).
-
-  CodeBlob* cb = CodeCache::find_blob(addr_at(0));
-  if (cb == nullptr || !cb->is_nmethod()) {
-    return false;
-  }
-
-  nmethod *nm = (nmethod *)cb;
-  // This method is not_entrant if the illtrap instruction
-  // is located at the verified entry point.
-  // BE AWARE: the current pc (this) points to the instruction after the
-  // "illtrap" location.
-  address sig_addr = ((address) this) - 2;
-  return nm->verified_entry_point() == sig_addr;
 }
 
 bool NativeInstruction::is_jump() {
@@ -621,19 +599,6 @@ void NativeJump::verify() {
   fatal("this is not a `NativeJump' site");
 }
 
-// Patch atomically with an illtrap.
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  ResourceMark rm;
-  int code_size = 2;
-  CodeBuffer cb(verified_entry, code_size + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-#ifdef COMPILER2
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-#endif
-  a->z_illtrap();
-  ICache::invalidate_range(verified_entry, code_size);
-}
-
 #undef LUCY_DBG
 
 //-------------------------------------
@@ -658,8 +623,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(((intptr_t)instr_addr & (BytesPerWord-1)) == 0, "requirement for mt safe patching");
-  // Bytes_after_jump cannot change, because we own the Patching_lock.
-  assert(Patching_lock->owned_by_self(), "must hold lock to patch instruction");
+  // Bytes_after_jump cannot change, because we own the CodeCache_lock.
+  assert(CodeCache_lock->owned_by_self(), "must hold lock to patch instruction");
   intptr_t bytes_after_jump = (*(intptr_t*)instr_addr)  & 0x000000000000ffffL; // 2 bytes after jump.
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;

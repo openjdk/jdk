@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @summary Test that type annotations are retained after a retransform
  * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineAnnotations buildagent
  * @run main/othervm -javaagent:redefineagent.jar RedefineAnnotations
@@ -46,6 +45,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.FieldModel;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -55,17 +59,10 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Executable;
-import java.lang.reflect.TypeVariable;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.ASM7;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)
@@ -86,53 +83,27 @@ public class RedefineAnnotations {
                 ProtectionDomain protectionDomain, byte[] classfileBuffer)
             throws IllegalClassFormatException {
 
-            ClassWriter cw = new ClassWriter(0);
-            ClassVisitor cv = new ReAddDummyFieldsClassVisitor(ASM7, cw) { };
-            ClassReader cr = new ClassReader(classfileBuffer);
-            cr.accept(cv, 0);
-            return cw.toByteArray();
-        }
+            // Shuffle constant pool
+            ClassFile context = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
+            return context.transformClass(context.parse(classfileBuffer), new ClassTransform() {
+                final List<FieldModel> dummyFields = new ArrayList<>();
 
-        public class ReAddDummyFieldsClassVisitor extends ClassVisitor {
-
-            LinkedList<F> fields = new LinkedList<>();
-
-            public ReAddDummyFieldsClassVisitor(int api, ClassVisitor cv) {
-                super(api, cv);
-            }
-
-            @Override public FieldVisitor visitField(int access, String name,
-                    String desc, String signature, Object value) {
-                if (name.startsWith("dummy")) {
-                    // Remove dummy field
-                    fields.addLast(new F(access, name, desc, signature, value));
-                    return null;
+                @Override
+                public void accept(ClassBuilder builder, ClassElement element) {
+                    if (element instanceof FieldModel field && field.fieldName().stringValue().startsWith("dummy")) {
+                        // Hold on to the associated constant pool entries too
+                        dummyFields.addLast(field);
+                    } else {
+                        builder.with(element);
+                    }
                 }
-                return cv.visitField(access, name, desc, signature, value);
-            }
 
-            @Override public void visitEnd() {
-                F f;
-                while ((f = fields.pollFirst()) != null) {
-                    // Re-add dummy fields
-                    cv.visitField(f.access, f.name, f.desc, f.signature, f.value);
+                @Override
+                public void atEnd(ClassBuilder builder) {
+                    // Add the associated constant pool entries to the end of the CP
+                    dummyFields.forEach(builder);
                 }
-            }
-
-            private class F {
-                private int access;
-                private String name;
-                private String desc;
-                private String signature;
-                private Object value;
-                F(int access, String name, String desc, String signature, Object value) {
-                    this.access = access;
-                    this.name = name;
-                    this.desc = desc;
-                    this.signature = signature;
-                    this.value = value;
-                }
-            }
+            });
         }
 
         @Override public byte[] transform(ClassLoader loader, String className,

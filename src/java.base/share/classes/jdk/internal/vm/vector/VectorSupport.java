@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
 
 import java.util.function.*;
+
+import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
 
 public class VectorSupport {
     static {
@@ -114,6 +116,16 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_MATHLIB_FIRST = VECTOR_OP_TAN;
+    public static final int VECTOR_OP_MATHLIB_LAST  = VECTOR_OP_HYPOT;
+
+    public static final int VECTOR_OP_SADD  = 119;
+    public static final int VECTOR_OP_SSUB  = 120;
+    public static final int VECTOR_OP_SUADD = 121;
+    public static final int VECTOR_OP_SUSUB = 122;
+    public static final int VECTOR_OP_UMIN  = 123;
+    public static final int VECTOR_OP_UMAX  = 124;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -137,22 +149,19 @@ public class VectorSupport {
     public static final int MODE_BROADCAST = 0;
     public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
-    // BasicType codes, for primitives only:
+    // Values correspond to jdk.incubator.vector.LaneType ordinals
     public static final int
-        T_FLOAT   = 6,
-        T_DOUBLE  = 7,
-        T_BYTE    = 8,
-        T_SHORT   = 9,
-        T_INT     = 10,
-        T_LONG    = 11;
+        LT_FLOAT     = 0,
+        LT_DOUBLE    = 1,
+        LT_BYTE      = 2,
+        LT_SHORT     = 3,
+        LT_INT       = 4,
+        LT_LONG      = 5;
 
     /* ============================================================================ */
 
     public static class VectorSpecies<E> {}
 
-    /**
-     * @hidden
-     */
     public static class VectorPayload {
         private final Object payload; // array of primitives
 
@@ -165,26 +174,18 @@ public class VectorSupport {
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
-    /**
-     * @hidden
-     */
     public static class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
-    /**
-     * @hidden
-     */
+
     public static class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
@@ -202,7 +203,7 @@ public class VectorSupport {
     <VM extends VectorPayload,
      S extends VectorSpecies<E>,
      E>
-    VM fromBitsCoerced(Class<? extends VM> vmClass, Class<E> eClass,
+    VM fromBitsCoerced(Class<? extends VM> vmClass, int laneType,
                        int length,
                        long bits, int mode, S s,
                        FromBitsCoercedOperation<VM, S> defaultImpl) {
@@ -220,47 +221,11 @@ public class VectorSupport {
     public static
     <E,
      M extends VectorMask<E>>
-    M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<E> eClass,
+    M indexPartiallyInUpperRange(Class<? extends M> mClass, int laneType,
                                  int length, long offset, long limit,
                                  IndexPartiallyInUpperRangeOperation<E, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(offset, limit);
-    }
-
-    /* ============================================================================ */
-    public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
-                                          SH extends VectorShuffle<?>> {
-        SH apply(int length, int start, int step, S s);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <E,
-     S extends VectorSpecies<E>,
-     SH extends VectorShuffle<E>>
-    SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
-                   int length,
-                   int start, int step, int wrap,
-                   ShuffleIotaOperation<S, SH> defaultImpl) {
-       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(length, start, step, s);
-    }
-
-    public interface ShuffleToVectorOperation<V extends Vector<?>,
-                                              SH extends VectorShuffle<?>> {
-       V apply(SH sh);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <V extends Vector<E>,
-     SH extends VectorShuffle<E>,
-     E>
-    V shuffleToVector(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, SH sh,
-                      int length,
-                      ShuffleToVectorOperation<V, SH> defaultImpl) {
-      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-      return defaultImpl.apply(sh);
     }
 
     /* ============================================================================ */
@@ -274,7 +239,7 @@ public class VectorSupport {
     <V extends Vector<E>,
      E,
      S extends VectorSpecies<E>>
-    V indexVector(Class<? extends V> vClass, Class<E> eClass,
+    V indexVector(Class<? extends V> vClass, int laneType,
                   int length,
                   V v, int step, S s,
                   IndexOperation<V, S> defaultImpl) {
@@ -295,7 +260,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     long reductionCoerced(int oprId,
-                          Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                          Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                           int length,
                           V v, M m,
                           ReductionOperation<V, M> defaultImpl) {
@@ -314,7 +279,7 @@ public class VectorSupport {
     public static
     <VM extends VectorPayload,
      E>
-    long extract(Class<? extends VM> vClass, Class<E> eClass,
+    long extract(Class<? extends VM> vClass, int laneType,
                  int length,
                  VM vm, int i,
                  VecExtractOp<VM> defaultImpl) {
@@ -332,7 +297,7 @@ public class VectorSupport {
     public static
     <V extends Vector<E>,
      E>
-    V insert(Class<? extends V> vClass, Class<E> eClass,
+    V insert(Class<? extends V> vClass, int laneType,
              int length,
              V v, int i, long val,
              VecInsertOp<V> defaultImpl) {
@@ -353,12 +318,29 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V unaryOp(int oprId,
-              Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+              Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
               int length,
               V v, M m,
               UnaryOperation<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, m);
+    }
+
+    /* ============================================================================ */
+
+//    public interface LibraryUnaryOperation<V extends Vector<?>,
+//            M extends VectorMask<?>> {
+//        V apply(MemorySegment entry, V v, M m);
+//    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>, E>
+    V libraryUnaryOp(long addr, Class<? extends V> vClass, int laneType, int length, String debugName,
+                     V v,
+                     UnaryOperation<V,?> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v, null);
     }
 
     /* ============================================================================ */
@@ -374,13 +356,49 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     VM binaryOp(int oprId,
-                Class<? extends VM> vmClass, Class<? extends M> mClass, Class<E> eClass,
+                Class<? extends VM> vmClass, Class<? extends M> mClass, int laneType,
                 int length,
                 VM v1, VM v2, M m,
                 BinaryOperation<VM, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
     }
+
+    /* ============================================================================ */
+
+//    public interface LibraryBinaryOperation<V extends VectorPayload,
+//            M extends VectorMask<?>> {
+//        V apply(MemorySegment entry, V v1, V v2, M m);
+//    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends VectorPayload, E>
+    V libraryBinaryOp(long addr, Class<? extends V> vClass, int laneType, int length, String debugName,
+                      V v1, V v2,
+                      BinaryOperation<V,?> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, null);
+    }
+
+    /* ============================================================================ */
+
+    public interface SelectFromTwoVector<V extends Vector<?>> {
+        V apply(V v1, V v2, V v3);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V selectFromTwoVectorOp(Class<? extends V> vClass, int laneType, int length,
+                            V v1, V v2, V v3,
+                            SelectFromTwoVector<V> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, v3);
+    }
+
+    /* ============================================================================ */
 
     /* ============================================================================ */
 
@@ -395,7 +413,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V ternaryOp(int oprId,
-                Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                 int length,
                 V v1, V v2, V v3, M m,
                 TernaryOperation<V, M> defaultImpl) {
@@ -419,7 +437,7 @@ public class VectorSupport {
      VM extends VectorPayload,
      E,
      S extends VectorSpecies<E>>
-    VM load(Class<? extends VM> vmClass, Class<E> eClass,
+    VM load(Class<? extends VM> vmClass, int laneType,
             int length,
             Object base, long offset, boolean fromSegment,
             C container, long index, S s,
@@ -444,7 +462,7 @@ public class VectorSupport {
      E,
      S extends VectorSpecies<E>,
      M extends VectorMask<E>>
-    V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+    V loadMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
                  int length, Object base, long offset, boolean fromSegment,
                  M m, int offsetInRange,
                  C container, long index, S s,
@@ -470,11 +488,11 @@ public class VectorSupport {
      S extends VectorSpecies<E>,
      M extends VectorMask<E>,
      E>
-    V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+    V loadWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
                   int length,
                   Class<? extends Vector<Integer>> vectorIndexClass,
-                  Object base, long offset,
-                  W index_vector,
+                  int indexLength, Object base, long offset,
+                  W indexVector1, W indexVector2, W indexVector3, W indexVector4,
                   M m, C container, int index, int[] indexMap, int indexM, S s,
                   LoadVectorOperationWithMap<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -492,7 +510,7 @@ public class VectorSupport {
     public static
     <C,
      V extends VectorPayload>
-    void store(Class<?> vClass, Class<?> eClass,
+    void store(Class<?> vClass, int laneType,
                int length,
                Object base, long offset, boolean fromSegment,
                V v, C container, long index,
@@ -513,7 +531,7 @@ public class VectorSupport {
      V extends Vector<E>,
      M extends VectorMask<E>,
      E>
-    void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+    void storeMasked(Class<? extends V> vClass, Class<M> mClass, int laneType,
                      int length,
                      Object base, long offset, boolean fromSegment,
                      V v, M m, C container, long index,
@@ -537,11 +555,11 @@ public class VectorSupport {
      W extends Vector<Integer>,
      M extends VectorMask<E>,
      E>
-    void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+    void storeWithMap(Class<? extends V> vClass, Class<M> mClass, int laneType,
                       int length,
                       Class<? extends Vector<Integer>> vectorIndexClass,
-                      Object base, long offset,
-                      W index_vector,
+                      int indexLength, Object base, long offset,
+                      W indexVector,
                       V v, M m, C container, int index, int[] indexMap, int indexM,
                       StoreVectorOperationWithMap<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -555,7 +573,7 @@ public class VectorSupport {
     <M extends VectorMask<E>,
      E>
     boolean test(int cond,
-                 Class<?> mClass, Class<?> eClass,
+                 Class<?> mClass, int laneType,
                  int length,
                  M m1, M m2,
                  BiFunction<M, M, Boolean> defaultImpl) {
@@ -576,7 +594,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     M compare(int cond,
-              Class<? extends V> vectorClass, Class<M> mClass, Class<E> eClass,
+              Class<? extends V> vectorClass, Class<M> mClass, int laneType,
               int length,
               V v1, V v2, M m,
               VectorCompareOp<V, M> defaultImpl) {
@@ -597,12 +615,29 @@ public class VectorSupport {
      SH extends VectorShuffle<E>,
      M  extends VectorMask<E>,
      E>
-    V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, Class<E> eClass,
+    V rearrangeOp(Class<? extends V> vClass, Class<SH> shClass, Class<M> mClass, int laneType,
                   int length,
                   V v, SH sh, M m,
                   VectorRearrangeOp<V, SH, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, sh, m);
+    }
+
+    public interface VectorSelectFromOp<V extends Vector<?>,
+                                        M extends VectorMask<?>> {
+        V apply(V v1, V v2, M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     M  extends VectorMask<E>,
+     E>
+    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, int laneType,
+                   int length, V v1, V v2, M m,
+                   VectorSelectFromOp<V, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, m);
     }
 
     /* ============================================================================ */
@@ -617,7 +652,7 @@ public class VectorSupport {
     <V extends Vector<E>,
      M extends VectorMask<E>,
      E>
-    V blend(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+    V blend(Class<? extends V> vClass, Class<M> mClass, int laneType,
             int length,
             V v1, V v2, M m,
             VectorBlendOp<V, M> defaultImpl) {
@@ -638,7 +673,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     V broadcastInt(int opr,
-                   Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                   Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                    int length,
                    V v, int n, M m,
                    VectorBroadcastIntOp<V, M> defaultImpl) {
@@ -663,8 +698,8 @@ public class VectorSupport {
                     VIN extends VectorPayload,
                       S extends VectorSpecies<?>>
     VOUT convert(int oprId,
-              Class<?> fromVectorClass, Class<?> fromeClass, int fromVLen,
-              Class<?>   toVectorClass, Class<?>   toeClass, int   toVLen,
+              Class<?> fromVectorClass, int fromLaneType, int fromVLen,
+              Class<?>   toVectorClass, int toLaneType, int   toVLen,
               VIN v, S s,
               VectorConvertOp<VOUT, VIN, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -684,7 +719,7 @@ public class VectorSupport {
      M extends VectorMask<E>,
      E>
     VectorPayload compressExpandOp(int opr,
-                                   Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                                   Class<? extends V> vClass, Class<? extends M> mClass, int laneType,
                                    int length, V v, M m,
                                    CompressExpandOperation<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -713,7 +748,7 @@ public class VectorSupport {
     <M extends VectorMask<E>,
      E>
     long maskReductionCoerced(int oper,
-                              Class<? extends M> mClass, Class<?> eClass,
+                              Class<? extends M> mClass, int laneType,
                               int length,
                               M m,
                               VectorMaskOp<M> defaultImpl) {
@@ -723,13 +758,19 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+    // Returns a string containing a list of CPU features VM detected.
+    public static native String getCPUFeatures();
+
+    /* ============================================================================ */
+
     // query the JVM's supported vector sizes and types
     public static native int getMaxLaneCount(Class<?> etype);
 
     /* ============================================================================ */
 
-    public static boolean isNonCapturingLambda(Object o) {
-        return o.getClass().getDeclaredFields().length == 0;
+    @SuppressWarnings({"restricted"})
+    public static void loadNativeLibrary(String name) {
+        System.loadLibrary(name);
     }
 
     /* ============================================================================ */

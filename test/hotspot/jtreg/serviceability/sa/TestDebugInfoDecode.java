@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,14 @@ import jdk.test.lib.SA.SATestUtils;
  * @bug 8318682
  * @summary Test decoding debug info for all nmethods in the code cache
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.code
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main/othervm/timeout=2400 -Xmx1g -Xcomp TestDebugInfoDecode
+ * @run driver TestDebugInfoDecode
  */
 
 public class TestDebugInfoDecode {
@@ -107,7 +109,7 @@ public class TestDebugInfoDecode {
         if (args == null || args.length == 0) {
             try {
                 theApp = new LingeredApp();
-                LingeredApp.startApp(theApp);
+                LingeredApp.startApp(theApp, "-Xcomp");
                 createAnotherToAttach(theApp.getPid());
             } finally {
                 LingeredApp.stopApp(theApp);

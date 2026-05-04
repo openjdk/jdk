@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,20 +43,13 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
-
 import com.sun.source.doctree.InlineTagTree;
+
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
 import jdk.javadoc.internal.doclets.formats.html.HtmlOptions;
-import jdk.javadoc.internal.doclets.formats.html.IndexWriter;
-import jdk.javadoc.internal.doclets.formats.html.SummaryListWriter;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet.UnsupportedTagletOperationException;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -64,6 +57,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Context and utility methods for taglet classes.
@@ -203,12 +201,10 @@ public class TagletWriter {
     }
 
     /**
-     * Returns the main type element of the current page or null for pages that don't have one.
-     *
-     * @return the type element of the current page or null.
+     * {@return the type element documented by the current {@code HtmlDocletWriter} (may be null)}
      */
-    public TypeElement getCurrentPageElement() {
-        return htmlWriter.getCurrentPageElement();
+    public TypeElement getCurrentTypeElement() {
+        return htmlWriter.getCurrentTypeElement();
     }
 
     /**
@@ -369,23 +365,23 @@ public class TagletWriter {
         return createAnchorAndSearchIndex(element, tagText, Text.of(tagText), desc, tree);
     }
 
-    @SuppressWarnings("preview")
     Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
-        Content result;
-        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)
+        // Only create index item for tags in their native location.
+        if (context.isFirstSentence && context.inSummary
+                || context.inTags.contains(DocTree.Kind.INDEX)
+                || context.inTags.contains(DocTree.Kind.INHERIT_DOC)
+                || isDifferentTypeElement(element)
                 || !htmlWriter.isIndexable()) {
-            result = tagContent;
-        } else {
-            HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
-            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, tagContent);
-            if (options.createIndex() && !tagText.isEmpty()) {
-                String holder = getHolderName(element);
-                IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
-                        new DocLink(htmlWriter.path, id.name()));
-                configuration.indexBuilder.add(item);
-            }
+            return tagContent;
         }
-        return result;
+        HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
+        if (options.createIndex() && !tagText.isEmpty()) {
+            String holder = getHolderName(element);
+            IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
+                    new DocLink(htmlWriter.path, id.name()));
+            configuration.indexBuilder.add(item);
+        }
+        return HtmlTree.SPAN(id, HtmlStyles.searchTagResult, tagContent);
     }
 
     public String getHolderName(Element element) {
@@ -413,7 +409,7 @@ public class TagletWriter {
             public String visitExecutable(ExecutableElement e, Void p) {
                 return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
                         + "." + utils.getSimpleName(e)
-                        + utils.flatSignature(e, htmlWriter.getCurrentPageElement());
+                        + utils.makeSignature(e, htmlWriter.getCurrentTypeElement(), false, true);
             }
 
             @Override
@@ -457,7 +453,7 @@ public class TagletWriter {
     Content tagList(List<Content> items) {
         // Use a different style if any list item is longer than 30 chars or contains commas.
         boolean hasLongLabels = items.stream().anyMatch(this::isLongOrHasComma);
-        var list = HtmlTree.UL(hasLongLabels ? HtmlStyle.tagListLong : HtmlStyle.tagList);
+        var list = HtmlTree.UL(hasLongLabels ? HtmlStyles.tagListLong : HtmlStyles.tagList);
         items.stream()
                 .filter(Predicate.not(Content::isEmpty))
                 .forEach(item -> list.add(HtmlTree.LI(item)));
@@ -473,5 +469,16 @@ public class TagletWriter {
                 .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
                 .replaceAll("\\R", "\n");             // normalize newlines
         return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
+    }
+
+    // Test if element is the same as or belongs to the current page element
+    private boolean isDifferentTypeElement(Element element) {
+        if (element.getKind().isDeclaredType()) {
+            return element != getCurrentTypeElement();
+        } else if (element.getKind() == ElementKind.OTHER) {
+            return false;
+        } else {
+            return utils.getEnclosingTypeElement(element) != getCurrentTypeElement();
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public interface FlightRecorderListener {
     /**
      * Receives notification when Flight Recorder is initialized.
      * <p>
-     * This method is also be invoked when a listener is added to an already
+     * This method is also invoked when a listener is added to an already
      * initialized Flight Recorder.
      * <p>
      * This method allows clients to implement their own initialization mechanism

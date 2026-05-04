@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import java.util.Comparator;
  * @author David Mendenhall
  * @since 1.2
  */
-@SuppressWarnings("serial") // Obsolete class
 public class DefaultFocusManager extends FocusManager {
 
     final FocusTraversalPolicy gluePolicy =

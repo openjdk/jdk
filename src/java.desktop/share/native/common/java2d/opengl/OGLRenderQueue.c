@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     jboolean sync = JNI_FALSE;
     unsigned char *b, *end;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "OGLRenderQueue_flushBuffer: limit=%d", limit);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLRenderQueue_flushBuffer: limit=%d", limit);
 
     b = (unsigned char *)jlong_to_ptr(buf);
     if (b == NULL) {
@@ -89,9 +89,9 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     while (b < end) {
         jint opcode = NEXT_INT(b);
 
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
-                    opcode, (end-b));
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
+                   opcode, (end-b));
 
         switch (opcode) {
 
@@ -433,6 +433,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 jlong pDst = NEXT_LONG(b);
                 if (oglc != NULL) {
                     RESET_PREVIOUS_OP();
+                    OGLSD_Flush(env);
                 }
                 oglc = OGLContext_SetSurfaces(env, pSrc, pDst);
                 dstOps = (OGLSDOps *)jlong_to_ptr(pDst);
@@ -443,6 +444,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 jlong pConfigInfo = NEXT_LONG(b);
                 if (oglc != NULL) {
                     RESET_PREVIOUS_OP();
+                    OGLSD_Flush(env);
                 }
                 oglc = OGLSD_SetScratchSurface(env, pConfigInfo);
                 dstOps = NULL;
@@ -667,8 +669,9 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
             break;
 
         default:
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                "OGLRenderQueue_flushBuffer: invalid opcode=%d", opcode);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "OGLRenderQueue_flushBuffer: invalid opcode=%d",
+                          opcode);
             if (oglc != NULL) {
                 RESET_PREVIOUS_OP();
             }
@@ -756,8 +759,8 @@ OGLRenderQueue_CheckPreviousOp(jint op)
         return;
     }
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE,
-                "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
 
     switch (previousOp) {
     case GL_TEXTURE_2D:

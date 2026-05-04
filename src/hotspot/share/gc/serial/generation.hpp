@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include "memory/virtualspace.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/prefetch.inline.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -54,6 +53,7 @@ class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
 class OopClosure;
+class ReservedSpace;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -96,10 +96,6 @@ class Generation: public CHeapObj<mtGC> {
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
-  // The largest number of contiguous free bytes in the generation,
-  // including expansion  (Assumes called at a safepoint.)
-  virtual size_t contiguous_available() const = 0;
-
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
@@ -107,33 +103,11 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // Allocate and returns a block of the requested size, or returns "null".
-  // Assumes the caller has done any necessary locking.
-  virtual HeapWord* allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Like "allocate", but performs any necessary locking internally.
-  virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Perform a heap collection, attempting to create (at least) enough
-  // space to support an allocation of the given "word_size".  If
-  // successful, perform the allocation and return the resulting
-  // "oop" (initializing the allocated block). If the allocation is
-  // still unsuccessful, return "null".
-  virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Printing
-  virtual const char* name() const = 0;
-  virtual const char* short_name() const = 0;
-
-  virtual void print() const;
-  virtual void print_on(outputStream* st) const;
-
   virtual void verify() = 0;
 
 public:
   // Performance Counter support
-  virtual void update_counters() = 0;
-  virtual CollectorCounters* counters() { return _gc_counters; }
+  CollectorCounters* counters() { return _gc_counters; }
 
   GCMemoryManager* gc_manager() const {
     assert(_gc_manager != nullptr, "not initialized yet");

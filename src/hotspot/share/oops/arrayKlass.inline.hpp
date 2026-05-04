@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
 
 #include "oops/arrayKlass.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline ObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
-  return Atomic::load_acquire(&_higher_dimension);
+  return AtomicAccess::load_acquire(&_higher_dimension);
 }
 
 inline void ArrayKlass::release_set_higher_dimension(ObjArrayKlass* k) {
-  Atomic::release_store(&_higher_dimension, k);
+  AtomicAccess::release_store(&_higher_dimension, k);
 }
 
 #endif // SHARE_OOPS_ARRAYKLASS_INLINE_HPP

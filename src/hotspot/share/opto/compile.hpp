@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,18 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
-#include "compiler/compiler_globals.hpp"
-#include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
+#include "opto/printinlining.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -70,6 +71,7 @@ class Node_List;
 class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
+class OpaqueTemplateAssertionPredicateNode;
 class OptoReg;
 class ParsePredicateNode;
 class PhaseCFG;
@@ -78,6 +80,7 @@ class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
 class PhaseOutput;
+class ReachabilityFenceNode;
 class RootNode;
 class relocInfo;
 class StartNode;
@@ -104,9 +107,9 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
-  LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
-  LoopOptsVerify
+  LoopOptsVerify,
+  PostLoopOptsExpandReachabilityFences
 };
 
 // The type of all node counts and indexes.
@@ -174,7 +177,6 @@ class CloneMap {
 
 class Options {
   friend class Compile;
-  friend class VMStructs;
  private:
   const bool _subsume_loads;         // Load can be matched as part of a larger op.
   const bool _do_escape_analysis;    // Do escape analysis.
@@ -221,7 +223,6 @@ class Options {
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
-  friend class VMStructs;
 
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
@@ -237,13 +238,14 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    _compile;
+    Compile* const _compile;
     CompileLog* _log;
-    const char* _phase_name;
-    bool _dolog;
+    const bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator);
+    TracePhase(PhaseTraceId phaseTraceId);
+    TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
+    const char* phase_name() const { return title(); }
   };
 
   // Information per category of alias (memory slice)
@@ -308,6 +310,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
+  StubId                   _stub_id;               // unique id for stub or NO_STUBID
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -318,9 +321,19 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  int                   _major_progress;        // Count of something big happening
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization.
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop opts phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -344,16 +357,17 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
+  bool                  _print_phase_loop_opts; // True if we should print before and after loop opts phase
 #ifndef PRODUCT
+  uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
   uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
-  // JSR 292
-  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
@@ -369,9 +383,13 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
-  GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
+  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates which can be seen as list
+  // of Template Assertion Predicates themselves.
+  GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
+  GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
@@ -389,6 +407,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
+
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
 
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
@@ -462,33 +482,12 @@ private:
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
-  uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
+  bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
+                                                      // false: there can't be one
+                                                      // true: we've enqueued one at some point so there may still be one
 
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
-
-  // Inlining may not happen in parse order which would make
-  // PrintInlining output confusing. Keep track of PrintInlining
-  // pieces in order.
-  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
-   private:
-    CallGenerator* _cg;
-    stringStream   _ss;
-    static const size_t default_stream_buffer_size = 128;
-
-   public:
-    PrintInliningBuffer()
-      : _cg(nullptr), _ss(default_stream_buffer_size) {}
-
-    stringStream* ss()             { return &_ss; }
-    CallGenerator* cg()            { return _cg; }
-    void set_cg(CallGenerator* cg) { _cg = cg; }
-  };
-
-  stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
-  int _print_inlining_idx;
-  char* _print_inlining_output;
 
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
@@ -501,37 +500,17 @@ private:
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_init();
-  void print_inlining_reinit();
-  void print_inlining_commit();
-  void print_inlining_push();
-  PrintInliningBuffer* print_inlining_current();
-
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
 
   void record_method_not_compilable_oom();
 
- public:
+  InlinePrinter _inline_printer;
 
+public:
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  stringStream* print_inlining_stream() {
-    assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-    return _print_inlining_stream;
-  }
-
-  void print_inlining_update(CallGenerator* cg);
-  void print_inlining_update_delayed(CallGenerator* cg);
-  void print_inlining_move_to(CallGenerator* cg);
-  void print_inlining_assert_ready();
-  void print_inlining_reset();
-
-  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
-    stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
-    print_inlining_stream()->print("%s", ss.freeze());
-  }
+  InlinePrinter* inline_printer() { return &_inline_printer; }
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
@@ -559,6 +538,12 @@ private:
   Arena*                _indexSet_arena;        // control IndexSet allocation within PhaseChaitin
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
   int                   _interpreter_frame_size;
+
+  // Holds dynamically allocated extensions of short-lived register masks. Such
+  // extensions are potentially quite large and need tight resource marks which
+  // may conflict with other allocations in the default resource area.
+  // Therefore, we use a dedicated resource area for register masks.
+  ResourceArea          _regmask_arena;
 
   PhaseOutput*          _output;
 
@@ -606,22 +591,23 @@ private:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
+  StubId            stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
   // Control of this compilation.
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
-  int               major_progress() const      { return _major_progress; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
-  void          set_major_progress()            { _major_progress++; }
-  void          restore_major_progress(int progress) { _major_progress += progress; }
-  void        clear_major_progress()            { _major_progress = 0; }
+  bool              major_progress() const      { return _major_progress; }
+  void          set_major_progress()            { _major_progress = true; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
+  void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
@@ -672,16 +658,19 @@ private:
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
+  bool              has_scoped_access() const    { return _has_scoped_access; }
+  void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(CompileCommandEnum option) {
+  bool          method_has_option(CompileCommandEnum option) const {
     return method() != nullptr && method()->has_option(option);
   }
 
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
-  void          print_ideal_ir(const char* phase_name);
+  void          print_phase(const char* phase_name);
+  void          print_ideal_ir(const char* compile_phase_name) const;
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
@@ -690,46 +679,50 @@ private:
   bool              has_irreducible_loop() const { return _has_irreducible_loop; }
   void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
 
-  // JSR 292
-  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
-
   Ticks _latest_stage_start_counter;
 
   void begin_method();
   void end_method();
-  bool should_print_igv(int level);
-  bool should_print_phase(CompilerPhaseType cpt);
 
-  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  bool should_print_igv(int level);
+  bool should_print_phase(int level) const;
+  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
+  void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_method(graph_name, level);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
 
-  int           macro_count()             const { return _macro_nodes.length(); }
-  int           parse_predicate_count()   const { return _parse_predicates.length(); }
-  int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
-  int           expensive_count()         const { return _expensive_nodes.length(); }
-  int           coarsened_count()         const { return _coarsened_locks.length(); }
-
-  Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  ParsePredicateNode* parse_predicate(int idx) const { return _parse_predicates.at(idx); }
-
-  Node* template_assertion_predicate_opaq_node(int idx) const {
-    return _template_assertion_predicate_opaqs.at(idx);
+  const GrowableArray<ParsePredicateNode*>& parse_predicates() const {
+    return _parse_predicates;
   }
 
+  const GrowableArray<OpaqueTemplateAssertionPredicateNode*>& template_assertion_predicate_opaques() const {
+    return _template_assertion_predicate_opaques;
+  }
+
+  int           macro_count()             const { return _macro_nodes.length(); }
+  int           parse_predicate_count()   const { return _parse_predicates.length(); }
+  int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaques.length(); }
+  int           expensive_count()         const { return _expensive_nodes.length(); }
+  int           coarsened_count()         const { return _coarsened_locks.length(); }
+  Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
+
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
+
+  ReachabilityFenceNode* reachability_fence(int idx) const { return _reachability_fences.at(idx); }
+  int                    reachability_fences_count() const { return _reachability_fences.length(); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
@@ -752,6 +745,14 @@ private:
     _expensive_nodes.remove_if_existing(n);
   }
 
+  void add_reachability_fence(ReachabilityFenceNode* rf) {
+    _reachability_fences.append(rf);
+  }
+
+  void remove_reachability_fence(ReachabilityFenceNode* n) {
+    _reachability_fences.remove_if_existing(n);
+  }
+
   void add_parse_predicate(ParsePredicateNode* n) {
     assert(!_parse_predicates.contains(n), "duplicate entry in Parse Predicate list");
     _parse_predicates.append(n);
@@ -763,15 +764,15 @@ private:
     }
   }
 
-  void add_template_assertion_predicate_opaq(Node* n) {
-    assert(!_template_assertion_predicate_opaqs.contains(n),
-           "duplicate entry in template assertion predicate opaque4 list");
-    _template_assertion_predicate_opaqs.append(n);
+  void add_template_assertion_predicate_opaque(OpaqueTemplateAssertionPredicateNode* n) {
+    assert(!_template_assertion_predicate_opaques.contains(n),
+           "Duplicate entry in Template Assertion Predicate OpaqueTemplateAssertionPredicate list");
+    _template_assertion_predicate_opaques.append(n);
   }
 
-  void remove_template_assertion_predicate_opaq(Node* n) {
+  void remove_template_assertion_predicate_opaque(OpaqueTemplateAssertionPredicateNode* n) {
     if (template_assertion_predicate_count() > 0) {
-      _template_assertion_predicate_opaqs.remove_if_existing(n);
+      _template_assertion_predicate_opaques.remove_if_existing(n);
     }
   }
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
@@ -782,6 +783,12 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
@@ -795,6 +802,13 @@ private:
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
+  bool     merge_stores_phase() { return _merge_stores_phase;  }
+  void set_merge_stores_phase() { _merge_stores_phase = true;  }
+  void record_for_merge_stores_igvn(Node* n);
+  void remove_from_merge_stores_igvn(Node* n);
+  void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
+
+  void shuffle_late_inlines();
   void shuffle_macro_nodes();
   void sort_macro_nodes();
 
@@ -812,7 +826,7 @@ private:
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
 
-  bool        failing() const        {
+  bool        failing_internal() const {
     return _env->failing() ||
            _failure_reason.get() != nullptr;
   }
@@ -824,6 +838,27 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
+  bool failing() {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||
            (r != nullptr &&
@@ -831,11 +866,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {
@@ -861,7 +896,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
-  void         init_start(StartNode* s);
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
@@ -910,19 +945,17 @@ private:
   Node_Notes* default_node_notes() const        { return _default_node_notes; }
   void    set_default_node_notes(Node_Notes* n) { _default_node_notes = n; }
 
-  Node_Notes*       node_notes_at(int idx) {
-    return locate_node_notes(_node_note_array, idx, false);
-  }
-  inline bool   set_node_notes_at(int idx, Node_Notes* value);
+  Node_Notes*       node_notes_at(int idx);
 
+  inline bool   set_node_notes_at(int idx, Node_Notes* value);
   // Copy notes from source to dest, if they exist.
   // Overwrite dest only if source provides something.
   // Return true if information was moved.
   bool copy_node_notes_to(Node* dest, Node* source);
 
   // Workhorse function to sort out the blocked Node_Notes array:
-  inline Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
-                                       int idx, bool can_grow = false);
+  Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
+                                int idx, bool can_grow = false);
 
   void grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by);
 
@@ -966,7 +999,8 @@ private:
                                    JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = nullptr,
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
-    return should_delay_string_inlining(call_method, jvms) ||
+    return C->directive()->should_delay_inline(call_method) ||
+           should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms) ||
            should_delay_vector_inlining(call_method, jvms);
   }
@@ -1032,13 +1066,20 @@ private:
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
+  void disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints = nullptr);
 
   void              remove_useless_node(Node* dead);
 
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
+    if (StressIncrementalInlining) {
+      assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
+      if (_late_inlines.length() - _late_inlines_pos >= 2) {
+        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
+      }
+    }
     _late_inlines_pos++;
   }
 
@@ -1066,7 +1107,6 @@ private:
 
   void remove_useless_coarsened_locks(Unique_Node_List& useful);
 
-  void process_print_inlining();
   void dump_print_inlining();
 
   bool over_inlining_cutoff() const {
@@ -1081,14 +1121,14 @@ private:
     }
   }
 
-  void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
-  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
-  bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
+  void mark_has_mh_late_inlines() { _has_mh_late_inlines = true; }
+  bool has_mh_late_inlines() const { return _has_mh_late_inlines; }
 
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
+  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1107,6 +1147,7 @@ private:
   Matcher*          matcher()                   { return _matcher; }
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
+  ResourceArea*     regmask_arena()             { return &_regmask_arena; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
   DebugInformationRecorder* debug_info()        { return env()->debug_info(); }
@@ -1139,7 +1180,7 @@ private:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int is_fancy_jump, bool pass_tls,
+          StubId stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();
@@ -1212,7 +1253,7 @@ private:
   void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
-  void eliminate_redundant_card_marks(Node* n);
+  void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);
@@ -1240,14 +1281,28 @@ private:
   static void print_intrinsic_statistics() PRODUCT_RETURN;
 
   // Graph verification code
-  // Walk the node list, verifying that there is a one-to-one
-  // correspondence between Use-Def edges and Def-Use edges
-  // The option no_dead_code enables stronger checks that the
-  // graph is strongly connected from root in both directions.
-  void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+  // Walk the node list, verifying that there is a one-to-one correspondence
+  // between Use-Def edges and Def-Use edges. The option no_dead_code enables
+  // stronger checks that the graph is strongly connected from starting points
+  // in both directions.
+  // root_and_safepoints is used to give the starting points for the traversal.
+  // If not supplied, only root is used. When this check is called after CCP,
+  // we need to start traversal from Root and safepoints, just like CCP does its
+  // own traversal (see PhaseCCP::transform for reasons).
+  //
+  // To call this function, there are 2 ways to go:
+  // - give root_and_safepoints to start traversal everywhere needed (like after CCP)
+  // - if the whole graph is assumed to be reachable from Root's input,
+  //   root_and_safepoints is not needed (like in PhaseRemoveUseless).
+  //
+  // Failure to specify root_and_safepoints in case the graph is not fully
+  // reachable from Root's input make this check unsound (can miss inconsistencies)
+  // and even incomplete (can make up non-existing problems) if no_dead_code is
+  // true.
+  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
-  void verify_bidirectional_edges(Unique_Node_List &visited);
+  void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
@@ -1257,6 +1312,9 @@ private:
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  // Materialize reachability fences from reachability edges on safepoints.
+  void expand_reachability_edges(Unique_Node_List& safepoints);
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
@@ -1284,21 +1342,6 @@ private:
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
-#ifdef IA32
- private:
-  bool _select_24_bit_instr;   // We selected an instruction with a 24-bit result
-  bool _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-
-  // Remember if this compilation changes hardware mode to 24-bit precision.
-  void set_24_bit_selection_and_mode(bool selection, bool mode) {
-    _select_24_bit_instr = selection;
-    _in_24_bit_fp_mode   = mode;
-  }
-
- public:
-  bool select_24_bit_instr() const { return _select_24_bit_instr; }
-  bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-#endif // IA32
 #ifdef ASSERT
   VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
@@ -1309,6 +1352,28 @@ private:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+#ifndef PRODUCT
+private:
+  // getting rid of the template makes things easier
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
+                              Node* parm2 = nullptr, Node* parm3 = nullptr,
+                              Node* parm4 = nullptr, Node* parm5 = nullptr,
+                              Node* parm6 = nullptr) const;
+
+public:
+  // Creates a CallLeafNode for a runtime call that prints a static string and the values of the
+  // nodes passed as arguments.
+  // This function also takes care of doing the necessary wiring, including finding a suitable control
+  // based on the nodes that need to be printed. Note that passing nodes that have incompatible controls
+  // is undefined behavior.
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+    return make_debug_print_call(str, call_addr, gvn, in...);
+  }
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

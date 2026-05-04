@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
 - (id)init:(jboolean)isNonPremult factors:(unsigned char *)factors offsets:(unsigned char *)offsets {
     self = [super init];
     if (self) {
-        J2dTraceLn1(J2D_TRACE_INFO,"Created MTLRescaleOp: isNonPremult=%d", isNonPremult);
+        J2dTraceLn(J2D_TRACE_INFO, "Created MTLRescaleOp: isNonPremult=%d", isNonPremult);
 
         _isNonPremult = isNonPremult;
         _normScaleFactors[0] = NEXT_FLOAT(factors);
@@ -82,7 +82,9 @@
                                        device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
-        J2dTraceLn2(J2D_TRACE_INFO,"Created MTLConvolveOp: kernelW=%d kernelH=%d", kernelWidth, kernelHeight);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "Created MTLConvolveOp: kernelW=%d kernelH=%d",
+                   kernelWidth, kernelHeight);
         _isEdgeZeroFill = edgeZeroFill;
 
         _kernelSize = kernelWidth * kernelHeight;
@@ -142,8 +144,9 @@
                                    device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
-        J2dTraceLn4(J2D_TRACE_INFO,"Created MTLLookupOp: short=%d num=%d len=%d off=%d",
-                    shortData, numBands, bandLength, offset);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "Created MTLLookupOp: short=%d num=%d len=%d off=%d",
+                   shortData, numBands, bandLength, offset);
 
         _isUseSrcAlpha = numBands != 4;
         _isNonPremult = nonPremult;

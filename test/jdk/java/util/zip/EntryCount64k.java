@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013 Google Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +48,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class EntryCount64k {
+
+    private static final String MAIN_CLASS_MSG = "foo bar hello world Main";
+
     public static class Main {
         public static void main(String[] args) {
-            System.out.print("Main");
+            System.out.println(MAIN_CLASS_MSG);
         }
     }
 
@@ -162,7 +166,10 @@ public class EntryCount64k {
         // Check java -jar
         OutputAnalyzer a = ProcessTools.executeTestJava("-jar", zipFile.getName());
         a.shouldHaveExitValue(0);
-        a.stdoutShouldMatch("\\AMain\\Z");
+        // expect the message from the application on stdout
+        a.stdoutContains(MAIN_CLASS_MSG);
+        // nothing is expected on stderr (apart from any probable deprecation
+        // warnings from the launcher/JVM)
         a.stderrShouldMatchIgnoreDeprecatedWarnings("\\A\\Z");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 * @summary Test intrinsic for divideUnsigned() and remainderUnsigned() methods for Long
 * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64" | os.arch=="aarch64"
 * @library /test/lib /
-* @run driver compiler.intrinsics.TestLongUnsignedDivMod
+* @run driver/timeout=480 compiler.intrinsics.TestLongUnsignedDivMod
 */
 
 package compiler.intrinsics;

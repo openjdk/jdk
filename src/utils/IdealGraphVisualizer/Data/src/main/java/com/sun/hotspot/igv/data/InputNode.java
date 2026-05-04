@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.data;
 
+import java.awt.Color;
 import java.util.Objects;
 
 /**
@@ -30,6 +31,9 @@ import java.util.Objects;
  * @author Thomas Wuerthinger
  */
 public class InputNode extends Properties.Entity {
+
+    public static final String LABEL_PROPERTY = "label";
+    public static final String COLOR_PROPERTY = "color";
 
     private int id;
 
@@ -50,6 +54,17 @@ public class InputNode extends Properties.Entity {
         return id;
     }
 
+    // Return the node properties that are present in the input graph, excluding
+    // properties computed by IGV itself. This is useful e.g. to produce the
+    // difference view, where nodes should be compared based only on their
+    // intrinsic characteristics.
+    public Properties getPrimaryProperties() {
+        Properties primaryProperties = new Properties(getProperties());
+        primaryProperties.setProperty(LABEL_PROPERTY, null);
+        primaryProperties.setProperty(COLOR_PROPERTY, null);
+        return primaryProperties;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -64,12 +79,30 @@ public class InputNode extends Properties.Entity {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, getProperties());
-    }
-
-    @Override
     public String toString() {
         return "Node " + id + " " + getProperties().toString();
+    }
+
+    public void setCustomColor(Color color) {
+        if (color != null) {
+            String hexColor = String.format("#%08X", color.getRGB());
+            getProperties().setProperty(COLOR_PROPERTY, hexColor);
+        } else {
+            getProperties().setProperty(COLOR_PROPERTY, null);
+        }
+    }
+
+    public Color getCustomColor() {
+        String hexColor = getProperties().get(COLOR_PROPERTY);
+        if (hexColor != null) {
+            try {
+                String hex = hexColor.startsWith("#") ? hexColor.substring(1) : hexColor;
+                int argb = (int) Long.parseLong(hex, 16);
+                return new Color(argb, true);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }

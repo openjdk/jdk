@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,17 @@
  * @run testng/othervm CertChainRemoval
  */
 import jdk.test.lib.SecurityTools;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.nio.file.Path;
-import java.util.*;
 
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.Enumeration;
 
 import jtreg.SkippedException;
 import org.testng.SkipException;
@@ -125,8 +127,7 @@ public class CertChainRemoval extends PKCS11Test {
             p11ks.load(null, PKCS11KS.passwd);
             printKeyStore("Initial PKCS11 KeyStore: ", p11ks);
         } catch (Exception e) {
-            System.out.println("Skip test, due to " + e);
-            return;
+            throw new SkippedException("Skip test, due to " + e, e);
         }
 
         // get the necessary keys from the temp keystore

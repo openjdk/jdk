@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * The test simply opens 1,000 separate connections
@@ -59,13 +60,13 @@ public class B6361557 {
             Headers rmap = t.getResponseHeaders();
             while (is.read () != -1) ;
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }
 
     final static String request = "GET /test/foo.html HTTP/1.1\r\nContent-length: 0\r\n\r\n";
-    final static ByteBuffer requestBuf = ByteBuffer.allocate(64).put(request.getBytes());
+    final static ByteBuffer requestBuf = ByteBuffer.wrap(request.getBytes());
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();

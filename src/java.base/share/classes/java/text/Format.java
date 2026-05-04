@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,19 +148,24 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Formats an object to produce a string. This is equivalent to
+     * Formats an object to produce a string.
+     *
+     * @implSpec This method returns a string that would be equal to the string returned by
      * <blockquote>
      * {@link #format(Object, StringBuffer, FieldPosition) format}<code>(obj,
      *         new StringBuffer(), new FieldPosition(0)).toString();</code>
      * </blockquote>
-     *
      * @param obj    The object to format
      * @return       Formatted string.
      * @throws    IllegalArgumentException if the Format cannot format the given
      *            object
      */
     public final String format (Object obj) {
-        return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(obj, StringBufFactory.of(), new FieldPosition(0)).toString();
+        } else {
+            return format(obj, new StringBuffer(), new FieldPosition(0)).toString();
+        }
     }
 
     /**
@@ -185,6 +190,12 @@ public abstract class Format implements Serializable, Cloneable {
                     StringBuffer toAppendTo,
                     FieldPosition pos);
 
+    StringBuf format(Object obj,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Formats an Object producing an {@code AttributedCharacterIterator}.
      * You can use the returned {@code AttributedCharacterIterator}
@@ -196,11 +207,11 @@ public abstract class Format implements Serializable, Cloneable {
      * to define what the legal values are for each attribute in the
      * {@code AttributedCharacterIterator}, but typically the attribute
      * key is also used as the attribute value.
-     * <p>The default implementation creates an
-     * {@code AttributedCharacterIterator} with no attributes. Subclasses
-     * that support fields should override this and create an
-     * {@code AttributedCharacterIterator} with meaningful attributes.
      *
+     * @apiNote Subclasses that support fields should override this and create an
+     * {@code AttributedCharacterIterator} with meaningful attributes.
+     * @implSpec The default implementation creates an
+     * {@code AttributedCharacterIterator} with no attributes.
      * @throws    NullPointerException if obj is null.
      * @throws    IllegalArgumentException when the Format cannot format the
      *            given object.
@@ -394,7 +405,7 @@ public abstract class Format implements Serializable, Cloneable {
          *        NOT modify it.
          */
         public void formatted(Format.Field attr, Object value, int start,
-                              int end, StringBuffer buffer);
+                              int end, StringBuf buffer);
 
         /**
          * Notified when a particular region of the String is formatted.
@@ -408,6 +419,38 @@ public abstract class Format implements Serializable, Cloneable {
          *        NOT modify it.
          */
         public void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, StringBuffer buffer);
+                              int start, int end, StringBuf buffer);
+    }
+
+    /**
+     * StringBuf is the minimal common interface of {@code StringBuffer} and {@code StringBuilder}.
+     * It is used by the various {@code Format} implementations as the internal string buffer.
+     */
+    sealed interface StringBuf
+            permits StringBufFactory.StringBufferImpl, StringBufFactory.StringBuilderImpl {
+
+        int length();
+
+        String substring(int start, int end);
+
+        String substring(int start);
+
+        StringBuf append(char c);
+
+        StringBuf append(String str);
+
+        StringBuf append(int i);
+
+        StringBuf append(char[] str, int offset, int len);
+
+        StringBuf append(CharSequence s, int start, int end);
+
+        StringBuf append(StringBuffer sb);
+
+        boolean isProxyStringBuilder();
+
+        StringBuffer asStringBuffer();
+
+        StringBuilder asStringBuilder();
     }
 }

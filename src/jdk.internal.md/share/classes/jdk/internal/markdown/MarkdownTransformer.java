@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,10 +358,20 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
         }
 
         private DCTree.DCSee transform(DCTree.DCSee tree) {
-            List<? extends DocTree> ref2 = transform(tree.reference);
-            return (equal(ref2, tree.getReference()))
+            // Some extra work is required to accommodate various forms of @see tags, as a
+            // leading reference affects the position of the label following it (JDK-8356411),
+            var ref = tree.reference;
+            var hasReference = !ref.isEmpty() && ref.getFirst().getKind() == DocTree.Kind.REFERENCE;
+            List<DCTree> transformed = new ArrayList<>();
+            if (hasReference) {
+                transformed.add(ref.getFirst());
+                transformed.addAll(transform(ref.subList(1, ref.size())));
+            } else {
+                transformed.addAll(transform(ref));
+            }
+            return (equal(ref, transformed))
                     ? tree
-                    : m.at(tree.pos).newSeeTree(ref2);
+                    : m.at(tree.pos).newSeeTree(transformed);
         }
 
         private DCTree.DCSerial transform(DCTree.DCSerial tree) {

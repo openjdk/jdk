@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
 #define SHARE_JFR_SUPPORT_JFRDEPRECATIONMANAGER_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/allocation.hpp"
 
 class JavaThread;
 class JfrCheckpointWriter;

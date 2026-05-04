@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
-* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+* Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
+* Copyright (C) 2021, Tencent. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,7 +25,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -166,8 +165,15 @@ ATTRIBUTE_ALIGNED(4) static const juint _INF[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmExp() {
-  StubCodeMark mark(this, "StubRoutines", "libmExp");
-  address start = __ pc();
+  StubId stub_id = StubId::stubgen_dexp_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
@@ -381,7 +387,32 @@ address StubGenerator::generate_libmExp() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  address cv = (address)_cv;
+  ADD(cv);
+  ADD(cv + 16);
+  ADD(cv + 32);
+  ADD(cv + 48);
+  ADD(cv + 64);
+  ADD(cv + 80);
+  ADD(_mmask);
+  ADD(_bias);
+  ADD(_Tbl_addr);
+  ADD(_ALLONES);
+  ADD(_ebias);
+  ADD(_XMAX);
+  ADD(_XMIN);
+  ADD(_INF);
+#undef ADD
+}
+#endif // INCLUDE_CDS

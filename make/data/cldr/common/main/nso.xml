@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -12,55 +12,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="nso" draft="provisional">Sesotho sa Leboa</language>
+			<language type="en">Seisimane</language>
+			<language type="nso">Sesotho sa Leboa</language>
 		</languages>
+		<scripts>
+			<script type="Latn">SeLatina</script>
+		</scripts>
 		<territories>
 			<territory type="ZA">Afrika Borwa</territory>
 		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Metriki</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Polelo: {0}</codePattern>
+			<codePattern type="script">Mongwalo: {0}</codePattern>
+			<codePattern type="territory">Tikologo: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d e ê f g h i j k l m n o ô p r s š t u w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q v z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart draft="unconfirmed">‘</quotationStart>
-		<quotationEnd draft="unconfirmed">’</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">Phere</month>
-							<month type="2">Dibo</month>
-							<month type="3">Hlak</month>
-							<month type="4">Mora</month>
-							<month type="5">Mopi</month>
-							<month type="6">Phupu</month>
-							<month type="7">Mose</month>
-							<month type="8">Phato</month>
-							<month type="9">Lewe</month>
-							<month type="10">Dipha</month>
-							<month type="11">Diba</month>
-							<month type="12">Manth</month>
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mat</month>
+							<month type="4">Apo</month>
+							<month type="5">Mei</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Ago</month>
+							<month type="9">Sep</month>
+							<month type="10">Okt</month>
+							<month type="11">Nof</month>
+							<month type="12">Dis</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Pherekgong</month>
-							<month type="2">Dibokwane</month>
-							<month type="3">Hlakola</month>
-							<month type="4">Moranang</month>
-							<month type="5">Mopitlo</month>
-							<month type="6">Phupu</month>
-							<month type="7">Mosegemanye</month>
-							<month type="8">Phato</month>
-							<month type="9">Lewedi</month>
-							<month type="10">Diphalane</month>
-							<month type="11">Dibatsela</month>
-							<month type="12">Manthole</month>
+							<month type="1">Janeware</month>
+							<month type="2">Febereware</month>
+							<month type="3">Matšhe</month>
+							<month type="4">Aporele</month>
+							<month type="5">Mei</month>
+							<month type="6">June</month>
+							<month type="7">Julae</month>
+							<month type="8">Agosetose</month>
+							<month type="9">Setemere</month>
+							<month type="10">Oktobore</month>
+							<month type="11">Nofemere</month>
+							<month type="12">Disemere</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -93,7 +99,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Lamorena</day>
-							<day type="mon">Musopologo</day>
+							<day type="mon">Mošupologo</day>
 							<day type="tue">Labobedi</day>
 							<day type="wed">Laboraro</day>
 							<day type="thu">Labone</day>
@@ -115,6 +121,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Kotara 1</quarter>
+							<quarter type="2">Kotara 2</quarter>
+							<quarter type="3">Kotara 3</quarter>
+							<quarter type="4">Kotara 4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1st Kotara</quarter>
 							<quarter type="2">2nd Kotara</quarter>
@@ -215,6 +227,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'beke' W 'ya' MMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'beke' 'ya' 'bo' W 'ya' MMM</dateFormatItem>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 					</availableFormats>
@@ -285,11 +299,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">ngwaga wa go feta</relative>
+				<relative type="0">ngwaga wo</relative>
+				<relative type="1">ngwaga wo o tlago</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">kgwedi ye e fetilego</relative>
+				<relative type="0">kgwedi ye</relative>
+				<relative type="1">kgwedi ye e tlago</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">beke ye e fetilego</relative>
+				<relative type="0">beke ye</relative>
+				<relative type="1">beke ye e tlago</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">maabane</relative>
+				<relative type="0">lehono</relative>
+				<relative type="1">gosasa</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">LaMorena le fetilego</relative>
+				<relative type="0">LaMorena le</relative>
+				<relative type="1">LaMorena le latelago</relative>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<metazone type="GMT">
+				<long>
+					<standard>Nako Palogare ya Greenwich</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<group> </group>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">

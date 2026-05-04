@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.security.krb5.RealmException;
 import sun.security.util.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,28 +84,37 @@ import static sun.security.krb5.internal.Krb5.DEBUG;
  * <a href="http://www.ietf.org/rfc/rfc4120.txt">
  * http://www.ietf.org/rfc/rfc4120.txt</a>.
  */
-// The instance fields not statically typed as Serializable are ASN.1
-// encoded and written by the writeObject method.
-@SuppressWarnings("serial")
+
 public class KRBError implements java.io.Serializable {
-    static final long serialVersionUID = 3643809337475284503L;
+    @Serial
+    private static final long serialVersionUID = 3643809337475284503L;
 
-    private int pvno;
-    private int msgType;
-    private KerberosTime cTime; //optional
-    private Integer cuSec; //optional
-    private KerberosTime sTime;
-    private Integer suSec;
-    private int errorCode;
-    private Realm crealm; //optional
-    private PrincipalName cname; //optional
-    private PrincipalName sname;
-    private String eText; //optional
-    private byte[] eData; //optional
-    private Checksum eCksum; //optional
+    private transient int pvno;
+    private transient int msgType;
+    private transient KerberosTime cTime; //optional
+    private transient Integer cuSec; //optional
+    private transient KerberosTime sTime;
+    private transient Integer suSec;
+    private transient int errorCode;
+    private transient Realm crealm; //optional
+    private transient PrincipalName cname; //optional
+    private transient PrincipalName sname;
+    private transient String eText; //optional
+    private transient byte[] eData; //optional
+    private transient Checksum eCksum; //optional
 
-    private PAData[] pa;    // PA-DATA in eData
+    private transient PAData[] pa;    // PA-DATA in eData
 
+
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  is the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @Serial
     private void readObject(ObjectInputStream is)
             throws IOException, ClassNotFoundException {
         try {
@@ -115,6 +125,7 @@ public class KRBError implements java.io.Serializable {
         }
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream os)
             throws IOException {
         try {

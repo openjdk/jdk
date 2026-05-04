@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,27 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 
 class BootstrapInfo;
+class DumpAllocStats;
 class ReservedSpace;
 class VirtualSpace;
+
+template<class E> class Array;
 
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
@@ -99,7 +110,7 @@ public:
 // within the archive (e.g., InstanceKlass::_name points to a Symbol in the archive). During dumping, we
 // built a bitmap that marks the locations of all these pointers (using ArchivePtrMarker, see comments above).
 //
-// The contents of the archive assumes that it’s mapped at the default SharedBaseAddress (e.g. 0x800000000).
+// The contents of the archive assumes that it's mapped at the default SharedBaseAddress (e.g. 0x800000000).
 // If the archive ends up being mapped at a different address (e.g. 0x810000000), SharedDataRelocator
 // is used to shift each marked pointer by a delta (0x10000000 in this example), so that it points to
 // the actually mapped location of the target object.
@@ -129,12 +140,12 @@ class SharedDataRelocator: public BitMapClosure {
     _valid_old_base(valid_old_base), _valid_old_end(valid_old_end),
     _valid_new_base(valid_new_base), _valid_new_end(valid_new_end),
     _delta(delta) {
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
   }
 
   bool do_bit(size_t offset);
@@ -146,7 +157,6 @@ private:
   char* _base;
   char* _top;
   char* _end;
-  uintx _max_delta;
   bool _is_packed;
   ReservedSpace* _rs;
   VirtualSpace* _vs;
@@ -154,12 +164,26 @@ private:
   void commit_to(char* newtop);
 
 public:
-  DumpRegion(const char* name, uintx max_delta = 0)
+  // Allocation gaps (due to Klass alignment)
+  class AllocGapTree;
+  class AllocGap;
+  struct AllocGapCmp;
+
+private:
+  static AllocGapTree _gap_tree;
+  static size_t _total_gap_bytes;
+  static size_t _total_gap_bytes_used;
+  static size_t _total_gap_allocs;
+
+public:
+  DumpRegion(const char* name)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
-      _max_delta(max_delta), _is_packed(false) {}
+      _is_packed(false),
+      _rs(nullptr), _vs(nullptr) {}
 
   char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes);
+  char* allocate(size_t num_bytes, size_t alignment = 0);
+  char* allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
@@ -172,6 +196,7 @@ public:
   bool is_allocatable() const {
     return !is_packed() && _base != nullptr;
   }
+  bool is_empty()   const { return _base == _top; }
 
   void print(size_t total_bytes) const;
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);
@@ -183,6 +208,8 @@ public:
   bool contains(char* p) {
     return base() <= p && p < top();
   }
+
+  static void report_gaps(DumpAllocStats* stats);
 };
 
 // Closure for serializing initialization data out to a data area to be
@@ -228,13 +255,14 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-
+  address _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, address base_address) :
+    _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);
@@ -246,8 +274,167 @@ public:
 };
 
 class ArchiveUtils {
+  template <typename T> static Array<T>* archive_non_ptr_array(GrowableArray<T>* tmp_array);
+  template <typename T> static Array<T>* archive_ptr_array(GrowableArray<T>* tmp_array);
+
 public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+  static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
+
+  template <typename T, ENABLE_IF(!std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_non_ptr_array(tmp_array);
+  }
+
+  template <typename T, ENABLE_IF(std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_ptr_array(tmp_array);
+  }
 };
+
+class HeapRootSegments {
+private:
+  size_t _base_offset;
+  size_t _count;
+  int _roots_count;
+  size_t _max_size_in_bytes;
+  int _max_size_in_elems;
+
+public:
+  size_t base_offset() { return _base_offset; }
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  size_t max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
+
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  size_t segment_offset(size_t seg_idx);
+
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  HeapRootSegments() {
+    memset(this, 0, sizeof(*this));
+  }
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
+    memset(this, 0, sizeof(*this));
+    _base_offset = base_offset;
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  HeapRootSegments(const HeapRootSegments&) = default;
+  HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void configure_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+  void post_run() override;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
+  friend class ArchiveWorkerThread;
+private:
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+  static int max_workers();
+
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _finish_tokens;
+
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
+  volatile State _state;
+
+  ArchiveWorkerTask* _task;
+
+  void run_as_worker();
+  void start_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
+
+public:
+  ArchiveWorkers();
+  ~ArchiveWorkers();
+  void run_task(ArchiveWorkerTask* task);
+};
+
+// A utility class for writing an array of unique items into the
+// AOT cache. For determinism, the order of the array is the same
+// as calls to add(). I.e., if items are added in the order
+// of A, B, A, C, B, D, then the array will be written as {A, B, C, D}
+template <typename T, unsigned SIZE = 15889>
+class ArchivableTable : public AnyObj {
+  using Table = HashTable<T, bool, SIZE, AnyObj::C_HEAP, mtClassShared>;
+  Table* _seen_items;
+  GrowableArray<T>* _ordered_array;
+public:
+  ArchivableTable() {
+    _seen_items = new (mtClassShared)Table();
+     _ordered_array = new (mtClassShared)GrowableArray<T>(128, mtClassShared);
+  }
+
+  ~ArchivableTable() {
+    delete _seen_items;
+    delete _ordered_array;
+  }
+
+  void add(T t) {
+    bool created;
+    _seen_items->put_if_absent(t, &created);
+    if (created) {
+      _ordered_array->append(t);
+    }
+  }
+
+  Array<T>* write_ordered_array() {
+    return ArchiveUtils::archive_array(_ordered_array);
+  }
+};
+
+using ArchivableKlassTable = ArchivableTable<Klass*>;
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.Random;
  */
 public class SeededSecureRandom extends SecureRandom {
 
+    private static final long serialVersionUID = 4657031557630518194L;
+
     private final Random rnd;
 
     public static long seed() {
@@ -63,6 +65,12 @@ public class SeededSecureRandom extends SecureRandom {
     public byte[] generateSeed(int numBytes) {
         var out = new byte[numBytes];
         rnd.nextBytes(out);
+        return out;
+    }
+
+    public byte[] nBytes(int n) {
+        var out = new byte[n];
+        nextBytes(out);
         return out;
     }
 }

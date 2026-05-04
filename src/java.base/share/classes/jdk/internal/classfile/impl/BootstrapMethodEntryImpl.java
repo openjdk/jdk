@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-
-import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
@@ -43,13 +41,13 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     private final List<LoadableConstantEntry> arguments;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
-                                 MethodHandleEntryImpl handle,
-                                 List<LoadableConstantEntry> arguments) {
+                             MethodHandleEntryImpl handle,
+                             List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
         this.hash = hash;
         this.constantPool = constantPool;
         this.handle = handle;
-        this.arguments = List.copyOf(arguments);
+        this.arguments = Util.sanitizeU2List(arguments);
     }
 
     @Override
@@ -76,9 +74,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     static int computeHashCode(MethodHandleEntryImpl handle,
                                List<? extends LoadableConstantEntry> arguments) {
-        int hash = handle.hashCode();
-        hash = 31 * hash + arguments.hashCode();
-        return AbstractPoolEntry.phiMix(hash);
+        return (31 * handle.hashCode() + arguments.hashCode()) | AbstractPoolEntry.NON_ZERO;
     }
 
     @Override
@@ -89,9 +85,8 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
         return hash;
     }
 
-    @Override
-    public void writeTo(BufWriter writer) {
+    void writeTo(BufWriterImpl writer) {
         writer.writeIndex(bootstrapMethod());
-        writer.writeListIndices(arguments());
+        Util.writeListIndices(writer, arguments());
     }
 }

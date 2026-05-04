@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,18 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/verifyOption.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1CSetCandidateGroup;
 class G1Predictions;
-class HeapRegionRemSet;
-class G1HeapRegion;
-class HeapRegionSetBase;
+class G1HeapRegionRemSet;
+class G1HeapRegionSetBase;
 class nmethod;
 
 #define HR_FORMAT "%u:(%s)[" PTR_FORMAT "," PTR_FORMAT "," PTR_FORMAT "]"
@@ -72,7 +74,7 @@ class G1HeapRegion : public CHeapObj<mtGC> {
   HeapWord* const _bottom;
   HeapWord* const _end;
 
-  HeapWord* volatile _top;
+  Atomic<HeapWord*> _top;
 
   G1BlockOffsetTable* _bot;
 
@@ -88,8 +90,8 @@ public:
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
 
-  void set_top(HeapWord* value) { _top = value; }
-  HeapWord* top() const { return _top; }
+  void set_top(HeapWord* value) { _top.store_relaxed(value); }
+  HeapWord* top() const { return _top.load_relaxed(); }
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -127,18 +129,6 @@ private:
 
   void mangle_unused_area() PRODUCT_RETURN;
 
-  // Try to allocate at least min_word_size and up to desired_size from this region.
-  // Returns null if not possible, otherwise sets actual_word_size to the amount of
-  // space allocated.
-  // This version assumes that all allocation requests to this G1HeapRegion are properly
-  // synchronized.
-  inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Try to allocate at least min_word_size and up to desired_size from this G1HeapRegion.
-  // Returns null if not possible, otherwise sets actual_word_size to the amount of
-  // space allocated.
-  // This version synchronizes with other calls to par_allocate_impl().
-  inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-
   inline HeapWord* advance_to_block_containing_addr(const void* addr,
                                                     HeapWord* const pb,
                                                     HeapWord* first_block) const;
@@ -163,8 +153,18 @@ public:
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and
   // this is done by explicit updates when crossing thresholds.
+
+  // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version synchronizes with other calls to par_allocate().
   inline HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* word_size);
   inline HeapWord* allocate(size_t word_size);
+  // Try to allocate at least min_word_size and up to desired_size from this region.
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
+  // space allocated.
+  // This version assumes that all allocation requests to this HeapRegion are properly
+  // synchronized.
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Full GC support methods.
@@ -197,12 +197,12 @@ public:
 
 private:
   // The remembered set for this region.
-  HeapRegionRemSet* _rem_set;
+  G1HeapRegionRemSet* _rem_set;
 
   // Cached index of this region in the heap region sequence.
   const uint _hrm_index;
 
-  HeapRegionType _type;
+  G1HeapRegionType _type;
 
   // For a humongous region, region in which it starts.
   G1HeapRegion* _humongous_start_region;
@@ -213,11 +213,11 @@ private:
   // is considered optional during a mixed collections.
   uint _index_in_opt_cset;
 
-  // Fields used by the HeapRegionSetBase class and subclasses.
+  // Fields used by the G1HeapRegionSetBase class and subclasses.
   G1HeapRegion* _next;
   G1HeapRegion* _prev;
 #ifdef ASSERT
-  HeapRegionSetBase* _containing_set;
+  G1HeapRegionSetBase* _containing_set;
 #endif // ASSERT
 
   // The area above this limit is fully parsable. This limit
@@ -232,10 +232,14 @@ private:
   //
   // Below this limit the marking bitmap must be used to determine size and
   // liveness.
-  HeapWord* volatile _parsable_bottom;
+  Atomic<HeapWord*> _parsable_bottom;
 
   // Amount of dead data in the region.
-  size_t _garbage_bytes;
+  Atomic<size_t> _garbage_bytes;
+
+  // Approximate number of references to this regions at the end of concurrent
+  // marking. We we do not mark through all objects, so this is an estimate.
+  size_t _incoming_refs;
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -246,7 +250,7 @@ private:
   uint _node_index;
 
   // Number of objects in this region that are currently pinned.
-  volatile size_t _pinned_object_count;
+  Atomic<size_t> _pinned_object_count;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -278,7 +282,7 @@ public:
              MemRegion mr,
              G1CardSetConfiguration* config);
 
-  // If this region is a member of a HeapRegionManager, the index in that
+  // If this region is a member of a G1HeapRegionManager, the index in that
   // sequence, otherwise -1.
   uint hrm_index() const { return _hrm_index; }
 
@@ -312,6 +316,7 @@ public:
   }
 
   static size_t max_region_size();
+  static size_t max_ergonomics_size();
   static size_t min_region_size_in_words();
 
   // It sets up the heap region size (GrainBytes / GrainWords), as well as
@@ -327,7 +332,7 @@ public:
   }
 
   // A lower bound on the amount of garbage bytes in the region.
-  size_t garbage_bytes() const { return _garbage_bytes; }
+  size_t garbage_bytes() const { return _garbage_bytes.load_relaxed(); }
 
   // Return the amount of bytes we'll reclaim if we collect this
   // region. This includes not only the known garbage bytes in the
@@ -338,6 +343,8 @@ public:
     assert(known_live_bytes <= capacity(), "sanity %u %zu %zu %zu", hrm_index(), known_live_bytes, used(), garbage_bytes());
     return capacity() - known_live_bytes;
   }
+
+  size_t incoming_refs() { return _incoming_refs; }
 
   inline bool is_collection_set_candidate() const;
 
@@ -351,9 +358,9 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
-  // bytes marked between bottom and TAMS.
-  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
+  // Notify the region that concurrent marking has finished. Passes TAMS, the number of
+  // bytes marked between bottom and TAMS, and the estimate for incoming references.
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();
@@ -387,8 +394,8 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
-  bool has_pinned_objects() const { return pinned_count() > 0; }
+  inline size_t pinned_count() const;
+  inline bool has_pinned_objects() const;
 
   void set_free();
 
@@ -420,9 +427,9 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
-  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
+  void set_rem_set(G1HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
-  HeapRegionRemSet* rem_set() const {
+  G1HeapRegionRemSet* rem_set() const {
     return _rem_set;
   }
 
@@ -430,7 +437,7 @@ public:
 
   void prepare_remset_for_scan();
 
-  // Methods used by the HeapRegionSetBase class and subclasses.
+  // Methods used by the G1HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into
   // linked lists.
@@ -447,7 +454,7 @@ public:
   // the contents of a set are as they should be and it's only
   // available in non-product builds.
 #ifdef ASSERT
-  void set_containing_set(HeapRegionSetBase* containing_set) {
+  void set_containing_set(G1HeapRegionSetBase* containing_set) {
     assert((containing_set != nullptr && _containing_set == nullptr) ||
             containing_set == nullptr,
            "containing_set: " PTR_FORMAT " "
@@ -457,9 +464,9 @@ public:
     _containing_set = containing_set;
   }
 
-  HeapRegionSetBase* containing_set() { return _containing_set; }
+  G1HeapRegionSetBase* containing_set() { return _containing_set; }
 #else // ASSERT
-  void set_containing_set(HeapRegionSetBase* containing_set) { }
+  void set_containing_set(G1HeapRegionSetBase* containing_set) { }
 
   // containing_set() is only used in asserts so there's no reason
   // to provide a dummy version of it.
@@ -471,7 +478,10 @@ public:
   // Callers must ensure this is not called by multiple threads at the same time.
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
-  void clear_cardtable();
+  void clear_card_table();
+  void clear_refinement_table();
+
+  void clear_both_card_tables();
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
@@ -489,12 +499,10 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  double calc_gc_efficiency();
-
-  uint  young_index_in_cset() const { return _young_index_in_cset; }
+  uint young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
   void set_young_index_in_cset(uint index) {
-    assert(index != UINT_MAX, "just checking");
+    assert(index != InvalidCSetIndex, "just checking");
     assert(index != 0, "just checking");
     assert(is_young(), "pre-condition");
     _young_index_in_cset = index;
@@ -509,6 +517,9 @@ public:
 
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
+
+  void install_cset_group(G1CSetCandidateGroup* cset_group);
+  void uninstall_cset_group();
 
   void record_surv_words_in_group(size_t words_survived);
 
@@ -533,7 +544,6 @@ public:
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_code_root(nmethod* nm);
-  void remove_code_root(nmethod* nm);
 
   // Applies blk->do_nmethod() to each of the entries in
   // the code roots list for this region
@@ -554,44 +564,18 @@ public:
   bool verify(VerifyOption vo) const;
 };
 
-// HeapRegionClosure is used for iterating over regions.
+// G1HeapRegionClosure is used for iterating over regions.
 // Terminates the iteration when the "do_heap_region" method returns "true".
-class HeapRegionClosure : public StackObj {
-  friend class HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
+class G1HeapRegionClosure : public StackObj {
 public:
-  HeapRegionClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region(G1HeapRegion* r) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
-class HeapRegionIndexClosure : public StackObj {
-  friend class HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
+class G1HeapRegionIndexClosure : public StackObj {
 public:
-  HeapRegionIndexClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region_index(uint region_index) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGION_HPP

@@ -39,7 +39,7 @@ it sends signal that it is ready for test and waits for signal permitting finish
  */
 public class DummyTargetApplication {
 
-    protected Log log = new Log(System.out, true);
+    protected Log log = new Log(System.out);
 
     protected AODTargetArgParser argParser;
 

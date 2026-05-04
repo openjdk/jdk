@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.ietf.jgss.*;
 import java.io.InputStream;
 import java.io.IOException;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.krb5.*;
 
 class AcceptSecContextToken extends InitialToken {
@@ -44,8 +43,8 @@ class AcceptSecContextToken extends InitialToken {
                                  KrbApReq apReq)
         throws KrbException, IOException, GSSException {
 
-        boolean useSubkey = GetBooleanAction
-                .privilegedGetProperty("sun.security.krb5.acceptor.subkey");
+        boolean useSubkey = Boolean.getBoolean(
+            "sun.security.krb5.acceptor.subkey");
 
         boolean useSequenceNumber = true;
 

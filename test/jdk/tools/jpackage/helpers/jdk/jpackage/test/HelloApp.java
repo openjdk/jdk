@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,8 +31,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -41,9 +43,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class HelloApp {
 
@@ -57,15 +59,10 @@ public final class HelloApp {
 
     private JarBuilder prepareSources(Path srcDir) throws IOException {
         final String srcClassName = appDesc.srcClassName();
-
-        final String qualifiedClassName = appDesc.className();
-
-        final String className = qualifiedClassName.substring(
-                qualifiedClassName.lastIndexOf('.') + 1);
+        final String className = appDesc.shortClassName();
         final String packageName = appDesc.packageName();
 
-        final Path srcFile = srcDir.resolve(Path.of(String.join(
-                File.separator, qualifiedClassName.split("\\.")) + ".java"));
+        final Path srcFile = srcDir.resolve(appDesc.classNameAsPath(".java"));
         Files.createDirectories(srcFile.getParent());
 
         JarBuilder jarBuilder = createJarBuilder().addSourceFile(srcFile);
@@ -129,6 +126,8 @@ public final class HelloApp {
         if (appDesc.isWithMainClass()) {
             builder.setMainClass(appDesc.className());
         }
+        // Use an old release number to make test app classes runnable on older runtimes.
+        builder.setRelease(11);
         return builder;
     }
 
@@ -317,56 +316,43 @@ public final class HelloApp {
 
     public static void executeLauncherAndVerifyOutput(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        assertMainLauncher(cmd, args).ifPresent(av -> {
             av.executeAndVerifyOutput(args);
-        }
+        });
     }
 
     public static Executor.Result executeLauncher(JPackageCommand cmd,
             String... args) {
-        AppOutputVerifier av = assertMainLauncher(cmd, args);
-        if (av != null) {
+        return assertMainLauncher(cmd, args).map(av -> {
             return av.saveOutput(true).execute(args);
-        } else {
-            return null;
-        }
+        }).orElseThrow();
     }
 
-    public static AppOutputVerifier assertMainLauncher(JPackageCommand cmd,
+    public static Optional<AppOutputVerifier> assertMainLauncher(JPackageCommand cmd,
             String... args) {
         final Path launcherPath = cmd.appLauncherPath();
         if (!cmd.canRunLauncher(String.format("Not running [%s] launcher",
                 launcherPath))) {
-            return null;
+            return Optional.empty();
         }
 
-        return assertApp(launcherPath)
+        return Optional.of(assertApp(launcherPath)
         .addDefaultArguments(Optional
                 .ofNullable(cmd.getAllArgumentValues("--arguments"))
                 .orElseGet(() -> new String[0]))
         .addJavaOptions(Optional
                 .ofNullable(cmd.getAllArgumentValues("--java-options"))
-                .orElseGet(() -> new String[0]));
+                .orElseGet(() -> new String[0])));
     }
 
 
-    public final static class AppOutputVerifier {
+    public static final class AppOutputVerifier {
         AppOutputVerifier(Path helloAppLauncher) {
             this.launcherPath = helloAppLauncher;
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
+            this.env = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
-
-            if (TKit.isWindows()) {
-                // When running app launchers on Windows, clear users environment (JDK-8254920)
-                removePath(true);
-            }
-        }
-
-        public AppOutputVerifier removePath(boolean v) {
-            removePath = v;
-            return this;
         }
 
         public AppOutputVerifier saveOutput(boolean v) {
@@ -376,6 +362,16 @@ public final class HelloApp {
 
         public AppOutputVerifier expectedExitCode(int v) {
             expectedExitCode = v;
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironment(Map<String, String> v) {
+            env.putAll(v);
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironmentVar(String name, String value) {
+            env.put(Objects.requireNonNull(name), Objects.requireNonNull(name));
             return this;
         }
 
@@ -409,7 +405,7 @@ public final class HelloApp {
             return addParams(v.entrySet());
         }
 
-        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+        public AppOutputVerifier addParams(Map.Entry<String, String> v) {
             return addParams(List.of(v));
         }
 
@@ -425,6 +421,11 @@ public final class HelloApp {
                 return Map.entry(components[0].substring(2), components[1]);
             })
             .collect(Collectors.toList()));
+        }
+
+        public AppOutputVerifier processListener(Consumer<Process> v) {
+            processListener = v;
+            return this;
         }
 
         public void verifyOutput(String... args) {
@@ -448,10 +449,7 @@ public final class HelloApp {
             if (launcherNoExit) {
                 return getExecutor(args).executeWithoutExitCodeCheck();
             } else {
-                final int attempts = 3;
-                final int waitBetweenAttemptsSeconds = 5;
-                return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
-                        waitBetweenAttemptsSeconds);
+                return HelloApp.execute(expectedExitCode, getExecutor(args));
             }
         }
 
@@ -461,7 +459,7 @@ public final class HelloApp {
             Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
             ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
 
-            final Path executablePath;
+            Path executablePath;
             if (launcherPath.isAbsolute()) {
                 executablePath = launcherPath;
             } else {
@@ -469,37 +467,92 @@ public final class HelloApp {
                 executablePath = Path.of(".").resolve(launcherPath.normalize());
             }
 
-            final List<String> launcherArgs = List.of(args);
-            return new Executor()
+            if (TKit.isWindows()) {
+                var absExecutablePath = executablePath.toAbsolutePath().normalize();
+                var shortPath = WindowsHelper.toShortPath(absExecutablePath);
+                if (shortPath.isPresent()) {
+                    TKit.trace(String.format("Will run [%s] as [%s]", executablePath, shortPath.get()));
+                    executablePath = shortPath.get();
+                }
+            }
+
+            final var executor = new Executor()
                     .setDirectory(outputFile.getParent())
                     .saveOutput(saveOutput)
                     .dumpOutput()
-                    .setRemovePath(removePath)
                     .setExecutable(executablePath)
-                    .addArguments(launcherArgs);
+                    .processListener(processListener)
+                    .addArguments(List.of(args));
+
+            env.forEach((envVarName, envVarValue) -> {
+                executor.setEnvVar(envVarName, envVarValue);
+            });
+
+            return configureEnvironment(executor);
         }
 
         private boolean launcherNoExit;
-        private boolean removePath;
         private boolean saveOutput;
         private final Path launcherPath;
         private Path outputFilePath;
         private int expectedExitCode;
+        private Consumer<Process> processListener;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
+        private final Map<String, String> env;
     }
 
     public static AppOutputVerifier assertApp(Path helloAppLauncher) {
         return new AppOutputVerifier(helloAppLauncher);
     }
 
-    final static String OUTPUT_FILENAME = "appOutput.txt";
+    public static Executor.Result configureAndExecute(int expectedExitCode, Executor executor) {
+        return execute(expectedExitCode, configureEnvironment(executor));
+    }
+
+    private static Executor.Result execute(int expectedExitCode, Executor executor) {
+        if (TKit.isLinux()) {
+            final int attempts = 3;
+            final int waitBetweenAttemptsSeconds = 5;
+            return executor.executeAndRepeatUntilExitCode(expectedExitCode, attempts,
+                    waitBetweenAttemptsSeconds);
+        } else {
+            return executor.execute(expectedExitCode);
+        }
+    }
+
+    static Executor configureEnvironment(Executor executor) {
+        if (CLEAR_JAVA_ENV_VARS) {
+            JAVA_ENV_VARS.forEach(executor::removeEnvVar);
+        }
+        return executor;
+    }
+
+    private static boolean javaEnvVariablesContainsModulePath() {
+        return JAVA_ENV_VARS.stream().map(System::getenv).filter(Objects::nonNull).anyMatch(HelloApp::containsModulePath);
+    }
+
+    private static boolean containsModulePath(String value) {
+        return value.contains("--module-path");
+    }
+
+    static final String OUTPUT_FILENAME = "appOutput.txt";
+
+    private static final Set<String> JAVA_ENV_VARS = Set.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS");
 
     private final JavaAppDesc appDesc;
 
     private static final Path HELLO_JAVA = TKit.TEST_SRC_ROOT.resolve(
             "apps/Hello.java");
 
-    private final static String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
+    private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
+
+    //
+    // Runtime in the app image normally doesn't have .jmod files. Because of this `--module-path`
+    // option will cause failure at app launcher startup.
+    // Java environment variables containing this option should be removed from the
+    // environment in which app launchers are started.
+    //
+    static final boolean CLEAR_JAVA_ENV_VARS = javaEnvVariablesContainsModulePath();
 }

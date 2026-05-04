@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class CompileLog : public xmlStream {
 
   CompileLog*   _next;           // static chain of all logs
 
-  static CompileLog* _first;     // head of static chain
+  static CompileLog* volatile _list_head; // head of static chain
 
   void va_tag(bool push, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
 

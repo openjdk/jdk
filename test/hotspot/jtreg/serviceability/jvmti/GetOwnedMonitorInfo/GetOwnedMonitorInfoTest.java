@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8185164 8320515
+ * @bug 8185164 8320515 8334085
  * @summary Checks that a contended monitor does not show up in the list of owned monitors.
  *          8320515 piggy-backs on this test and injects an owned monitor with a dead object,
             and checks that that monitor isn't exposed to GetOwnedMonitorInfo.
@@ -86,6 +86,9 @@ public class GetOwnedMonitorInfoTest {
                 System.out.println("Thread doing JNI call: "
                                    + Thread.currentThread().getName());
 
+                // Extra unmount helps to reproduce 8334085.
+                // Two sub-sequential thaws are needed in that scenario.
+                Thread.yield();
                 jniMonitorEnterAndLetObjectDie();
             }
 

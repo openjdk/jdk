@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "classfile/javaClasses.hpp"
@@ -140,7 +139,7 @@ LIR_Opr BarrierSetC1::atomic_add_at(LIRAccess& access, LIRItem& value) {
 
 void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
+  bool is_volatile = (decorators & MO_SEQ_CST) != 0;
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   LIRGenerator* gen = access.gen();
@@ -168,10 +167,11 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
 void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIRGenerator *gen = access.gen();
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
+  bool is_volatile = (decorators & MO_SEQ_CST) != 0;
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
+  bool needs_trailing_membar = is_volatile;
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile) {
     __ membar();
@@ -181,12 +181,15 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   if (in_native) {
     __ move_wide(access.resolved_addr()->as_address_ptr(), result);
   } else if (is_volatile && !needs_patching) {
+    // volatile_field_load provides trailing membar semantics.
+    // Hence separate trailing membar is not needed.
+    needs_trailing_membar = false;
     gen->volatile_field_load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info());
   } else {
     __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
   }
 
-  if (is_volatile) {
+  if (needs_trailing_membar) {
     __ membar_acquire();
   }
 

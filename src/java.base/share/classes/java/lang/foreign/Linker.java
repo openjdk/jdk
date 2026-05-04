@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,15 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -241,50 +237,40 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations support a well-defined subset of layouts. More formally,
- * a layout {@code L} is supported by a native linker {@code NL} if:
+ * A native linker only supports function descriptors whose argument/return layouts are
+ * <em>well-formed</em> layouts. More formally, a layout `L` is well-formed if:
  * <ul>
- * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
+ * <li>{@code L} is a value layout and {@code L} is derived from a canonical layout
+ *     {@code C} such that {@code L.byteAlignment() <= C.byteAlignment()}</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code S} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
- * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
+ * <li>{@code L.byteAlignment()} is equal to the sequence layout's <em>natural alignment</em>
+ *     , and</li>
+ * <li>{@code S.elementLayout()} is a well-formed layout.</li>
  * </ol>
  * </li>
  * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code G} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
- * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
- * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or
- *     a layout supported by {@code NL}, and</li>
- * <li>{@code G} does not contain padding other than what is strictly required to align
- *      its non-padding layout elements, or to satisfy (2).</li>
+ * <li>{@code G.byteAlignment()} is equal to the group layout's <em>natural alignment</em></li>
+ * <li>{@code G.byteSize()} is a multiple of {@code G.byteAlignment()}</li>
+ * <li>Each member layout in {@code G.memberLayouts()} is either a padding layout or a
+ *     well-formed layout</li>
+ * <li>Each non-padding member layout {@code E} in {@code G.memberLayouts()} follows an
+ *     optional padding member layout, whose size is the minimum size required to
+ *     align {@code E}</li>
+ * <li>{@code G} contains an optional trailing padding member layout, whose size is the
+ *     minimum size that satisfies (2)</li>
  * </ol>
  * </li>
  * </ul>
- *
- * Linker implementations may optionally support additional layouts, such as
- * <em>packed</em> struct layouts. A packed struct is a struct in which there is
- * at least one member layout {@code L} that has an alignment constraint less strict
- * than its natural alignment. This allows to avoid padding between member layouts,
- * as well as avoiding padding at the end of the struct layout. For example:
-
- * {@snippet lang = java:
- * // No padding between the 2 element layouts:
- * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_INT,
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
- *
- * // No padding at the end of the struct:
- * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
- *         ValueLayout.JAVA_INT);
- * }
  * <p>
- * A native linker only supports function descriptors whose argument/return layouts are
- * layouts supported by that linker and are not sequence layouts.
+ * A function descriptor is well-formed if its argument and return layouts are
+ * well-formed and are not sequence layouts. A native linker is guaranteed to reject
+ * function descriptors that are not well-formed. However, a native linker can still
+ * reject well-formed function descriptors, according to platform-specific rules.
+ * For example, some native linkers may reject <em>packed</em> struct layouts -- struct
+ * layouts whose member layouts feature relaxed alignment constraints, to avoid
+ * the insertion of additional padding.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *
@@ -613,7 +599,7 @@ public sealed interface Linker permits AbstractLinker {
      *         {@code address.equals(MemorySegment.NULL)}
      * @throws IllegalArgumentException if an invalid combination of linker options
      *         is given
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      *
      * @see SymbolLookup
@@ -684,7 +670,7 @@ public sealed interface Linker permits AbstractLinker {
      *         supported by this linker
      * @throws IllegalArgumentException if an invalid combination of linker options
      *         is given
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive
@@ -733,7 +719,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive
@@ -807,7 +793,7 @@ public sealed interface Linker permits AbstractLinker {
          *     arguments</li>
          * <li>{@code N}, none of the arguments passed to the function are passed as
          *     variadic arguments</li>
-         * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed
+         * <li>{@code m}, where {@code 0 < m < N}, the arguments {@code m..N-1} are passed
          *     as variadic arguments</li>
          * </ul>
          * It is important to always use this linker option when linking a
@@ -827,25 +813,28 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return a linker option used to save portions of the execution state
-         *          immediately after calling a foreign function associated with a
-         *          downcall method handle, before it can be overwritten by the Java
-         *          runtime, or read through conventional means}
+         * {@return a linker option used to initialize portions of the execution
+         *          state immediately before, and save portions of the execution
+         *          state immediately after calling a foreign function associated
+         *          with a downcall method handle, before it can be overwritten by the
+         *          Java runtime, or read through conventional means}
          * <p>
-         * Execution state is captured by a downcall method handle on invocation, by
-         * writing it to a native segment provided by the user to the downcall method
-         * handle. For this purpose, a downcall method handle linked with this option
-         * will feature an additional {@link MemorySegment} parameter directly following
-         * the target address, and optional {@link SegmentAllocator} parameters. This
-         * parameter, the <em>capture state segment</em>, represents the native segment
-         * into which the captured state is written.
+         * Execution state is initialized from, or saved to a native segment provided by
+         * the user to the downcall method handle. For this purpose, a downcall method
+         * handle linked with this option will feature an additional {@link MemorySegment}
+         * parameter directly following the target address, and optional {@link SegmentAllocator}
+         * parameters. This parameter, the <em>capture state segment</em>, represents the
+         * native segment from which the capture state is initialized, and into which the
+         * capture state is saved.
          * <p>
          * The capture state segment must have size and alignment compatible with the
          * layout returned by {@linkplain #captureStateLayout}. This layout is a struct
          * layout which has a named field for each captured value.
          * <p>
-         * Captured state can be retrieved from the capture state segment by constructing
-         * var handles from the {@linkplain #captureStateLayout capture state layout}.
+         * Captured state can be stored in, or retrieved from the capture state segment by
+         * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
+         * Some functions require this state to be initialized to a particular value before
+         * invoking the downcall.
          * <p>
          * The following example demonstrates the use of this linker option:
          * {@snippet lang = "java":
@@ -857,13 +846,12 @@ public sealed interface Linker permits AbstractLinker {
          * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
+         *     errnoHandle.set(capturedState, 0L, 0); // set errno to 0
          *     handle.invoke(capturedState);
          *     int errno = (int) errnoHandle.get(capturedState, 0L);
          *     // use errno
          * }
          * }
-         * <p>
-         * This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save
          * @throws IllegalArgumentException if at least one of the provided
@@ -871,11 +859,11 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            Set<CapturableState> set = Stream.of(Objects.requireNonNull(capturedState))
-                    .map(Objects::requireNonNull)
-                    .map(CapturableState::forName)
-                    .collect(Collectors.toSet());
-            return new LinkerOptions.CaptureCallState(set);
+            int mask = 0;
+            for (var state : capturedState) {
+                mask |= CapturableState.maskFromName(state);
+            }
+            return new LinkerOptions.CaptureCallState(mask);
         }
 
          /**

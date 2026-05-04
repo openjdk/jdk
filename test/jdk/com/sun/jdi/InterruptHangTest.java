@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,14 @@
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
+import jdk.test.lib.Utils;
 
 /**
  * @test
  * @bug 6459476
  * @summary Test interrupting debuggee with single stepping enable
  * @author jjh
+ * @library /test/lib
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g InterruptHangTest.java
@@ -101,8 +103,10 @@ class InterruptHangTarg {
         for (int ii = 0; ii < INTERRUPTS_EXPECTED; ii++) {
             boolean wasInterrupted = false;
             try {
-                // Give other thread a chance to interrupt
-                Thread.sleep(100);
+                // Give other thread a chance to interrupt. Normally only a very short
+                // sleep is needed, but we need to account for unexpected delays in
+                // the interrupt due to machine and network hiccups.
+                Thread.sleep(10*1000);
             } catch (InterruptedException ee) {
                 answer++;
                 wasInterrupted = true;
@@ -282,8 +286,7 @@ public class InterruptHangTest extends TestScaffold {
         timerThread = new Thread("test timer") {
                 public void run() {
                     int mySteps = 0;
-                    float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-                    long sleepSeconds = (long)(20 * timeoutFactor);
+                    long sleepSeconds = (long)(20 * Utils.TIMEOUT_FACTOR);
                     println("Timer watching for steps every " + sleepSeconds + " seconds");
                     while (true) {
                         try {

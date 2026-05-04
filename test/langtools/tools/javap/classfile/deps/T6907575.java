@@ -27,7 +27,6 @@
  * @modules jdk.jdeps/com.sun.tools.jdeps
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
- * @enablePreview
  * @build GetDeps p.C1
  * @run main T6907575
  */

@@ -1,3 +1,0 @@
-grant  {
- permission java.lang.RuntimePermission "accessClassInPackage.sun.security.x509";
-};

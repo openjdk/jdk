@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,39 @@
 /*
  * @test id=default
  * @summary Test SuspendAllVirtualThreads/ResumeAllVirtualThreads
+ * @requires vm.debug != true
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      SuspendResume2
  */
 
 /*
- * @test id=no-vmcontinuations
- * @requires vm.continuations
+ * @test id=debug
+ * @requires vm.debug == true
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=700
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
+ *      -agentlib:SuspendResume2
+ *      -XX:-VerifyContinuations
+ *      SuspendResume2
+ */
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @requires test.thread.factory == null
+ * @library /test/lib
+ * @compile SuspendResume2.java
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native/timeout=700
  *      -agentlib:SuspendResume2
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:-VMContinuations
@@ -144,11 +161,11 @@ class TestedThread extends Thread {
         // run in a loop
         threadReady = true;
         int i = 0;
-        int n = 1000;
+        int n = 100;
         while (!shouldFinish) {
             if (n <= 0) {
-                n = 1000;
-                SuspendResume2.sleep(1);
+                n = 100;
+                SuspendResume2.sleep(50);
             }
             if (i > n) {
                 i = 0;
@@ -162,7 +179,7 @@ class TestedThread extends Thread {
     public void ensureReady() {
         try {
             while (!threadReady) {
-                sleep(1);
+                sleep(100);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interruption while preparing tested thread: \n\t" + e);

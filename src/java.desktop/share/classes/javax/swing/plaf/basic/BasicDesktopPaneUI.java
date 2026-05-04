@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.swing.plaf.*;
 
 import java.beans.*;
 
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -374,7 +374,7 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         private static String PREVIOUS_FRAME = "selectPreviousFrame";
         private static String NAVIGATE_NEXT = "navigateNext";
         private static String NAVIGATE_PREVIOUS = "navigatePrevious";
-        private final int MOVE_RESIZE_INCREMENT = 10;
+        private static final int MOVE_RESIZE_INCREMENT = 10;
         private static boolean moving = false;
         private static boolean resizing = false;
         private static JInternalFrame sourceFrame = null;

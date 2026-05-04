@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,6 @@
  */
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessControlException;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -39,19 +32,17 @@ import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
-import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
 
 /**
  * @test
- * @bug     8140364
+ * @bug 8140364
  * @summary JDK implementation specific unit test for JDK internal artifacts.
  *          Tests all bridge methods with a custom backend whose
  *          loggers implement PlatformLogger.Bridge.
@@ -59,10 +50,7 @@ import sun.util.logging.PlatformLogger;
  *          java.base/jdk.internal.logger
  *          java.logging
  * @build CustomSystemClassLoader LogProducerFinder LoggerBridgeTest
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest NOSECURITY
- * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest NOPERMISSIONS
- * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest WITHPERMISSIONS
- * @author danielfuchs
+ * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader LoggerBridgeTest
  */
 public class LoggerBridgeTest {
 
@@ -71,24 +59,6 @@ public class LoggerBridgeTest {
 
     final static AtomicLong sequencer = new AtomicLong();
     final static boolean VERBOSE = false;
-    static final ThreadLocal<AtomicBoolean> allowControl = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
-    static final ThreadLocal<AtomicBoolean> allowAccess = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
-    static final ThreadLocal<AtomicBoolean> allowAll = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
 
     public static final Queue<LogEvent> eventQueue = new ArrayBlockingQueue<>(128);
 
@@ -413,12 +383,7 @@ public class LoggerBridgeTest {
     }
 
     static ClassLoader getClassLoader(Module m) {
-        final boolean before = allowAll.get().getAndSet(true);
-        try {
-            return m.getClassLoader();
-        } finally {
-            allowAll.get().set(before);
-        }
+        return m.getClassLoader();
     }
 
     static final sun.util.logging.PlatformLogger.Level[] julLevels = {
@@ -531,74 +496,16 @@ public class LoggerBridgeTest {
         return PlatformLogger.Bridge.convert(logger);
     }
 
-    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS};
-
-    static void setSecurityManager() {
-        if (System.getSecurityManager() == null) {
-            Policy.setPolicy(new SimplePolicy(allowControl, allowAccess, allowAll));
-            System.setSecurityManager(new SecurityManager());
-        }
-    }
 
     public static void main(String[] args) {
-        if (args.length == 0)
-            args = new String[] {
-                //"NOSECURITY",
-                "NOPERMISSIONS",
-                "WITHPERMISSIONS"
-            };
-
-
-        Stream.of(args).map(TestCases::valueOf).forEach((testCase) -> {
-            LoggerFinder provider;
-            switch (testCase) {
-                case NOSECURITY:
-                    System.out.println("\n*** Without Security Manager\n");
-                    provider = LoggerFinder.getLoggerFinder();
-                    test(provider, true);
-                    System.out.println("Tetscase count: " + sequencer.get());
-                    break;
-                case NOPERMISSIONS:
-                    System.out.println("\n*** With Security Manager, without permissions\n");
-                    setSecurityManager();
-                    try {
-                        provider = LoggerFinder.getLoggerFinder();
-                        throw new RuntimeException("Expected exception not raised");
-                    } catch (AccessControlException x) {
-                        if (!LOGGERFINDER_PERMISSION.equals(x.getPermission())) {
-                            throw new RuntimeException("Unexpected permission check", x);
-                        }
-                        final boolean control = allowControl.get().get();
-                        try {
-                            allowControl.get().set(true);
-                            provider = LoggerFinder.getLoggerFinder();
-                        } finally {
-                            allowControl.get().set(control);
-                        }
-                    }
-                    test(provider, false);
-                    System.out.println("Tetscase count: " + sequencer.get());
-                    break;
-                case WITHPERMISSIONS:
-                    System.out.println("\n*** With Security Manager, with control permission\n");
-                    setSecurityManager();
-                    final boolean control = allowControl.get().get();
-                    try {
-                        allowControl.get().set(true);
-                        provider = LoggerFinder.getLoggerFinder();
-                        test(provider, true);
-                    } finally {
-                        allowControl.get().set(control);
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("Unknown test case: " + testCase);
-            }
-        });
+        System.out.println("\n*** Running test\n");
+        LoggerFinder provider = LoggerFinder.getLoggerFinder();
+        test(provider);
+        System.out.println("Tetscase count: " + sequencer.get());
         System.out.println("\nPASSED: Tested " + sequencer.get() + " cases.");
     }
 
-    public static void test(LoggerFinder provider, boolean hasRequiredPermissions) {
+    public static void test(LoggerFinder provider) {
 
         ResourceBundle loggerBundle = ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<Object, String> loggerDescMap = new HashMap<>();
@@ -607,76 +514,34 @@ public class LoggerBridgeTest {
         Logger appLogger1 = System.getLogger("foo");
         loggerDescMap.put(appLogger1, "System.getLogger(\"foo\")");
 
-        Logger sysLogger1 = null;
-        try {
-            sysLogger1 = getLogger(provider, "foo", Thread.class.getModule());
-            loggerDescMap.put(sysLogger1, "provider.getLogger(\"foo\", Thread.class.getModule())");
-            if (!hasRequiredPermissions) {
-                throw new RuntimeException("Managed to obtain a system logger without permission");
-            }
-        } catch (AccessControlException acx) {
-            if (hasRequiredPermissions) {
-                throw new RuntimeException("Unexpected security exception: ", acx);
-            }
-            if (!acx.getPermission().equals(LOGGERFINDER_PERMISSION)) {
-                throw new RuntimeException("Unexpected permission in exception: " + acx, acx);
-            }
-            System.out.println("Got expected exception for system logger: " + acx);
-        }
+        Logger sysLogger1 = getLogger(provider, "foo", Thread.class.getModule());
+        loggerDescMap.put(sysLogger1, "provider.getLogger(\"foo\", Thread.class.getModule())");
 
-
-        Logger appLogger2 =
-                System.getLogger("foo", loggerBundle);
+        Logger appLogger2 = System.getLogger("foo", loggerBundle);
         loggerDescMap.put(appLogger2, "System.getLogger(\"foo\", loggerBundle)");
 
-        Logger sysLogger2 = null;
-        try {
-            sysLogger2 = getLogger(provider, "foo", loggerBundle, Thread.class.getModule());
-            loggerDescMap.put(sysLogger2, "provider.getLogger(\"foo\", loggerBundle, Thread.class.getModule())");
-            if (!hasRequiredPermissions) {
-                throw new RuntimeException("Managed to obtain a system logger without permission");
-            }
-        } catch (AccessControlException acx) {
-            if (hasRequiredPermissions) {
-                throw new RuntimeException("Unexpected security exception: ", acx);
-            }
-            if (!acx.getPermission().equals(LOGGERFINDER_PERMISSION)) {
-                throw new RuntimeException("Unexpected permission in exception: " + acx, acx);
-            }
-            System.out.println("Got expected exception for localized system logger: " + acx);
-        }
-        if (hasRequiredPermissions && appLogger2 == sysLogger2) {
+        Logger sysLogger2 = getLogger(provider, "foo", loggerBundle, Thread.class.getModule());
+        loggerDescMap.put(sysLogger2, "provider.getLogger(\"foo\", loggerBundle, Thread.class.getModule())");
+        if (appLogger2 == sysLogger2) {
             throw new RuntimeException("identical loggers");
         }
         if (appLogger2 == appLogger1) {
             throw new RuntimeException("identical loggers");
         }
-        if (hasRequiredPermissions && sysLogger2 == sysLogger1) {
+        if (sysLogger2 == sysLogger1) {
             throw new RuntimeException("identical loggers");
         }
 
 
-        final LoggerImpl appSink;
-        final LoggerImpl sysSink;
-        boolean old = allowControl.get().get();
-        allowControl.get().set(true);
-        try {
-           appSink = LoggerImpl.class.cast(
+        final LoggerImpl appSink = LoggerImpl.class.cast(
                    provider.getLogger("foo",  LoggerBridgeTest.class.getModule()));
-           sysSink = LoggerImpl.class.cast(
+        final LoggerImpl sysSink = LoggerImpl.class.cast(
                         provider.getLogger("foo", Thread.class.getModule()));
-        } finally {
-            allowControl.get().set(old);
-        }
 
         testLogger(provider, loggerDescMap, "foo", null, convert(appLogger1), appSink);
-        if (hasRequiredPermissions) {
-            testLogger(provider, loggerDescMap, "foo", null, convert(sysLogger1), sysSink);
-        }
+        testLogger(provider, loggerDescMap, "foo", null, convert(sysLogger1), sysSink);
         testLogger(provider, loggerDescMap, "foo", loggerBundle, convert(appLogger2), appSink);
-        if (hasRequiredPermissions) {
-            testLogger(provider, loggerDescMap, "foo", loggerBundle, convert(sysLogger2), sysSink);
-        }
+        testLogger(provider, loggerDescMap, "foo", loggerBundle, convert(sysLogger2), sysSink);
     }
 
     public static class Foo {
@@ -991,92 +856,6 @@ public class LoggerBridgeTest {
                 logger.logrb(messageLevel, sourceClass, sourceMethod, bundle, fooMsg, thrown);
                 checkLogEvent(provider, desc, expected);
             }
-        }
-    }
-
-    final static class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-        final static RuntimePermission CONTROL = LOGGERFINDER_PERMISSION;
-        final static RuntimePermission ACCESS_LOGGER = new RuntimePermission("accessClassInPackage.jdk.internal.logger");
-        final static RuntimePermission ACCESS_LOGGING = new RuntimePermission("accessClassInPackage.sun.util.logging");
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions permissions;
-        final Permissions allPermissions;
-        final ThreadLocal<AtomicBoolean> allowControl;
-        final ThreadLocal<AtomicBoolean> allowAccess;
-        final ThreadLocal<AtomicBoolean> allowAll;
-        public SimplePolicy(ThreadLocal<AtomicBoolean> allowControl,
-                ThreadLocal<AtomicBoolean> allowAccess,
-                ThreadLocal<AtomicBoolean> allowAll) {
-            this.allowControl = allowControl;
-            this.allowAccess = allowAccess;
-            this.allowAll = allowAll;
-            permissions = new Permissions();
-            allPermissions = new PermissionsBuilder()
-                    .add(new java.security.AllPermission())
-                    .toPermissions();
-        }
-
-        Permissions getPermissions() {
-            if (allowControl.get().get() || allowAccess.get().get() || allowAll.get().get()) {
-                PermissionsBuilder builder =  new PermissionsBuilder()
-                        .addAll(permissions);
-                if (allowControl.get().get()) {
-                    builder.add(CONTROL);
-                }
-                if (allowAccess.get().get()) {
-                    builder.add(ACCESS_LOGGER);
-                    builder.add(ACCESS_LOGGING);
-                }
-                if (allowAll.get().get()) {
-                    builder.addAll(allPermissions);
-                }
-                return builder.toPermissions();
-            }
-            return permissions;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions().implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(getPermissions()).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(getPermissions()).toPermissions();
         }
     }
 }

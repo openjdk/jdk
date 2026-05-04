@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,6 @@ import org.openide.NotifyDescriptor.Message;
  */
 public class NodeQuickSearch implements SearchProvider {
 
-    private static final String DEFAULT_PROPERTY = "label";
-
     /**
      * Method is called by infrastructure when search operation was requested.
      * Implementors should evaluate given request and fill response object with
@@ -72,7 +70,7 @@ public class NodeQuickSearch implements SearchProvider {
         String value;
 
         if (parts.length == 1) {
-            name = DEFAULT_PROPERTY;
+            name = InputNode.LABEL_PROPERTY;
             rawValue = parts[0];
             value = ".*" + Pattern.quote(rawValue) + ".*";
         } else {
@@ -121,7 +119,7 @@ public class NodeQuickSearch implements SearchProvider {
                             if (theGraph != null) {
                                 editor.getModel().selectGraph(theGraph);
                             }
-                            editor.clearSelectedNodes();
+                            editor.clearSelectedElements();
                             editor.addSelectedNodes(nodeSet, true);
                             editor.centerSelectedNodes();
                             editor.requestActive();
@@ -151,7 +149,7 @@ public class NodeQuickSearch implements SearchProvider {
                                 if (theGraph != null) {
                                     editor.getModel().selectGraph(theGraph);
                                 }
-                                editor.clearSelectedNodes();
+                                editor.clearSelectedElements();
                                 editor.addSelectedNodes(tmpSet, true);
                                 editor.centerSelectedNodes();
                                 editor.requestActive();

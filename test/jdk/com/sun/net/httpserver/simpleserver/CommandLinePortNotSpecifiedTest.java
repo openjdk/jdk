@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Tests the java -m jdk.httpserver command with port not specified
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm/manual CommandLinePortNotSpecifiedTest
+ * @run junit/othervm/manual CommandLinePortNotSpecifiedTest
  */
 
 import java.io.IOException;
@@ -39,14 +39,16 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CommandLinePortNotSpecifiedTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String LOCALE_OPT = "-Duser.language=en -Duser.country=US";
     static final String JAVA = getJava(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLinePortNotSpecifiedTest");
@@ -54,8 +56,8 @@ public class CommandLinePortNotSpecifiedTest {
     static final String TEST_DIR_STR = TEST_DIR.toString();
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -84,15 +86,15 @@ public class CommandLinePortNotSpecifiedTest {
     @Test
     public void testPortNotSpecified() throws Throwable {
         out.println("\n--- testPortNotSpecified");
-        simpleserver(JAVA, "-m", "jdk.httpserver")
+        simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

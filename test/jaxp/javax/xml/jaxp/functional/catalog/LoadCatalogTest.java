@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
 
 package catalog;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.CATALOG_PUBLIC;
 import static catalog.CatalogTestUtils.CATALOG_SYSTEM;
 import static catalog.CatalogTestUtils.CATALOG_URI;
@@ -30,25 +36,17 @@ import static catalog.CatalogTestUtils.catalogResolver;
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
-
-import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.LoadCatalogTest
- * @run testng/othervm catalog.LoadCatalogTest
+ * @run junit/othervm catalog.LoadCatalogTest
  * @summary When catalog resolver loads catalog files, the current catalog file
  *          and the catalog files specified by the nextCatalog entries may not
  *          accessible. This case tests how does the resolver handle this issue.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class LoadCatalogTest {
 
     private static final String CATALOG_LOADCATALOGFILES = "loadCatalogFiles.xml";
@@ -58,14 +56,14 @@ public class LoadCatalogTest {
     private static final String ID_ALICE_URI = "http://remote/dtd/uri/alice/docAlice.dtd";
     private static final String ID_DUMMY = "http://remote/dtd/doc.dtd";
 
-    @Test(dataProvider = "entityResolver")
+    @ParameterizedTest
+    @MethodSource("entityResolver")
     public void testMatchOnEntityResolver(CatalogResolver resolver) {
         checkSysIdResolution(resolver, ID_ALICE,
                 "http://local/dtd/docAliceSys.dtd");
     }
 
-    @DataProvider(name = "entityResolver")
-    public Object[][] entityResolver() {
+    public static Object[][] entityResolver() {
         return new Object[][] {
                 // This EntityResolver loads multiple catalog files one by one.
                 // All of the files are available.
@@ -78,14 +76,14 @@ public class LoadCatalogTest {
                         CATALOG_SYSTEM) } };
     }
 
-    @Test(dataProvider = "uriResolver")
+    @ParameterizedTest
+    @MethodSource("uriResolver")
     public void testMatchOnUriResolver(CatalogResolver resolver) {
         checkUriResolution(resolver, ID_ALICE_URI,
                 "http://local/dtd/docAliceURI.dtd");
     }
 
-    @DataProvider(name = "uriResolver")
-    public Object[][] uriResolver() {
+    public static Object[][] uriResolver() {
         return new Object[][] {
                 // This URIResolver loads multiple catalog files one by one.
                 // All of the files are available.
@@ -98,20 +96,21 @@ public class LoadCatalogTest {
                         CATALOG_URI) } };
     }
 
-    @Test(dataProvider = "catalogName",
-            expectedExceptions = CatalogException.class)
-    public void testExceptionOnEntityResolver(String[] catalogName) {
-        catalogResolver(catalogName).resolveEntity(null, ID_DUMMY);
+    @ParameterizedTest
+    @MethodSource("catalogName")
+    public void testException(String[] catalogName) {
+        CatalogResolver resolver = catalogResolver(catalogName);
+        assertThrows(CatalogException.class, () -> resolver.resolveEntity(null, ID_DUMMY));
     }
 
-    @Test(dataProvider = "catalogName",
-            expectedExceptions = CatalogException.class)
+    @ParameterizedTest
+    @MethodSource("catalogName")
     public void testExceptionOnUriResolver(String[] catalogName) {
-        catalogUriResolver(catalogName).resolve(ID_DUMMY, null);
+        CatalogResolver resolver = catalogUriResolver(catalogName);
+        assertThrows(CatalogException.class, () -> resolver.resolve(ID_DUMMY, null));
     }
 
-    @DataProvider(name = "catalogName")
-    public Object[][] catalogName() {
+    public static Object[][] catalogName() {
         return new Object[][] {
                 // This catalog file set includes null catalog files.
                 { (String[]) null },

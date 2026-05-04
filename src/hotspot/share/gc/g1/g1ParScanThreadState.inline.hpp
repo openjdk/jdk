@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ inline void G1ParScanThreadState::remember_root_into_optional_region(T* p) {
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   uint index = _g1h->heap_region_containing(o)->index_in_opt_cset();
   assert(index < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT, index, _max_num_optional_regions);
+         "Trying to access optional region idx %u beyond %zu", index, _max_num_optional_regions);
   _oops_into_optional_regions[index].push_root(p);
 }
 
@@ -84,37 +84,36 @@ inline void G1ParScanThreadState::remember_reference_into_optional_region(T* p) 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   uint index = _g1h->heap_region_containing(o)->index_in_opt_cset();
   assert(index < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT, index, _max_num_optional_regions);
+         "Trying to access optional region idx %u beyond %zu", index, _max_num_optional_regions);
   _oops_into_optional_regions[index].push_oop(p);
   verify_task(p);
 }
 
 G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const G1HeapRegion* hr) {
   assert(hr->index_in_opt_cset() < _max_num_optional_regions,
-         "Trying to access optional region idx %u beyond " SIZE_FORMAT " " HR_FORMAT,
+         "Trying to access optional region idx %u beyond %zu " HR_FORMAT,
          hr->index_in_opt_cset(), _max_num_optional_regions, HR_FORMAT_PARAMS(hr));
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
-template <class T> bool G1ParScanThreadState::enqueue_if_new(T* p) {
-  size_t card_index = ct()->index_for(p);
-  // If the card hasn't been added to the buffer, do it.
-  if (_last_enqueued_card != card_index) {
-    _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
-    _last_enqueued_card = card_index;
+template <class T> bool G1ParScanThreadState::mark_if_new(T* p, bool into_new_survivor) {
+  G1CardTable::CardValue* card = ct()->byte_for(p);
+  G1CardTable::CardValue value = *card;
+  if (value == G1CardTable::clean_card_val()) {
+    *card = into_new_survivor ? G1CardTable::g1_to_cset_card : G1CardTable::g1_dirty_card;
     return true;
   } else {
     return false;
   }
 }
 
-template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region(T* p, oop obj) {
+template <class T> void G1ParScanThreadState::mark_card_into_evac_fail_region(T* p, oop obj) {
   assert(!G1HeapRegion::is_in_same_region(p, obj), "Should have filtered out cross-region references already.");
   assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
   assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
 
-  if (enqueue_if_new(p)) {
-    _evac_failure_enqueued_cards++;
+  if (mark_if_new(p, false /* into_new_survivor */)) { // The reference is never into survivor regions.
+    _num_cards_from_evac_failure++;
   }
 }
 
@@ -137,31 +136,40 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   if (dest_attr.is_in_cset()) {
     assert(obj->is_forwarded(), "evac-failed but not forwarded: " PTR_FORMAT, p2i(obj));
     assert(obj->forwardee() == obj, "evac-failed but not self-forwarded: " PTR_FORMAT, p2i(obj));
-    enqueue_card_into_evac_fail_region(p, obj);
+    mark_card_into_evac_fail_region(p, obj);
     return;
   }
-  enqueue_card_if_tracked(dest_attr, p, obj);
+  mark_card_if_tracked(dest_attr, p, obj);
 }
 
-template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
+template <class T> void G1ParScanThreadState::mark_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o) {
   assert(!G1HeapRegion::is_in_same_region(p, o), "Should have filtered out cross-region references already.");
   assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
   // We relabel all regions that failed evacuation as old gen without remembered,
   // and so pre-filter them out in the caller.
-  assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to enqueue reference into collection set region");
+  assert(!_g1h->heap_region_containing(o)->in_collection_set(), "Should not try to mark reference into collection set region");
 
 #ifdef ASSERT
   G1HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-  assert(region_attr.remset_is_tracked() == hr_obj->rem_set()->is_tracked(),
-         "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-         BOOL_TO_STR(region_attr.remset_is_tracked()),
+  assert((region_attr.is_remset_tracked() == hr_obj->rem_set()->is_tracked()) ||
+         (region_attr.is_new_survivor() && region_attr.is_remset_tracked()),
+         "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u (%s)",
+         BOOL_TO_STR(region_attr.is_remset_tracked()),
          BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
-         hr_obj->hrm_index());
+         hr_obj->hrm_index(),
+         hr_obj->get_type_str());
 #endif
-  if (!region_attr.remset_is_tracked()) {
+  if (!region_attr.is_remset_tracked()) {
     return;
   }
-  enqueue_if_new(p);
+  bool into_survivor = region_attr.is_new_survivor();
+  if (mark_if_new(p, into_survivor)) {
+    if (into_survivor) {
+      _num_cards_marked_to_cset++;
+    } else {
+      _num_cards_marked_dirty++;
+    }
+  }
 }
 
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP

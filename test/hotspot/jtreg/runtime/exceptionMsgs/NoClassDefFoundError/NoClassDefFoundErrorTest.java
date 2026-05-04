@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8056900
+ * @bug 8056900 8338888
  * @summary Verifies message returned with NoClassDefFoundError exception.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
- * @run main/native NoClassDefFoundErrorTest
+ * @run main/native/othervm -Xlog:exceptions=info NoClassDefFoundErrorTest
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
@@ -36,8 +36,14 @@ import jdk.internal.misc.Unsafe;
 
 public class NoClassDefFoundErrorTest {
 
+    // Use the specified name
     static native void callDefineClass(String className);
     static native void callFindClass(String className);
+    // Use a name longer than a Java string - returns false
+    // if native allocation failed.
+    static native boolean tryCallDefineClass();
+    static native boolean tryCallFindClass();
+
     static {
         System.loadLibrary("NoClassDefFoundErrorTest");
     }
@@ -54,7 +60,7 @@ public class NoClassDefFoundErrorTest {
             tooBigClassName = tooBigClassName.append(tooBigClassName);
         }
 
-        // Test JVM_DefineClass() with long name.
+        System.out.println("Test JVM_DefineClass() with long name");
         try {
             unsafe.defineClass(tooBigClassName.toString(), klassbuf, 4, klassbuf.length - 4, null, null);
             throw new RuntimeException("defineClass did not throw expected NoClassDefFoundError");
@@ -64,7 +70,7 @@ public class NoClassDefFoundErrorTest {
             }
         }
 
-        // Test JNI_DefineClass() with long name.
+        System.out.println("Test JNI_DefineClass() with long name");
         try {
             callDefineClass(tooBigClassName.toString());
             throw new RuntimeException("DefineClass did not throw expected NoClassDefFoundError");
@@ -74,22 +80,48 @@ public class NoClassDefFoundErrorTest {
             }
         }
 
-        // Test JNI_FindClass() with long name.
+        System.out.println("Test JNI_FindClass() with long name");
         try {
             callFindClass(tooBigClassName.toString());
-            throw new RuntimeException("DefineClass did not throw expected NoClassDefFoundError");
+            throw new RuntimeException("FindClass did not throw expected NoClassDefFoundError");
         } catch (NoClassDefFoundError e) {
             if (!e.getMessage().contains("Class name exceeds maximum length of ")) {
                 throw new RuntimeException("Wrong NoClassDefFoundError: " + e.getMessage());
             }
         }
 
-        // Test JNI_FindClass() with null name.
+        System.out.println("Test JNI_FindClass() with null name");
         try {
             callFindClass(null);
             throw new RuntimeException("FindClass did not throw expected NoClassDefFoundError");
         } catch (NoClassDefFoundError e) {
             if (!e.getMessage().contains("No class name given")) {
+                throw new RuntimeException("Wrong NoClassDefFoundError: " + e.getMessage());
+            }
+        }
+
+        System.out.println("Test JNI_DefineClass() with giant name");
+        try {
+            if (tryCallDefineClass()) {
+                throw new RuntimeException("DefineClass did not throw expected NoClassDefFoundError");
+            } else {
+                System.out.println("Test skipped due to native allocation failure");
+            }
+        } catch (NoClassDefFoundError e) {
+            if (!e.getMessage().contains("Class name exceeds maximum length of ")) {
+                throw new RuntimeException("Wrong NoClassDefFoundError: " + e.getMessage());
+            }
+        }
+
+        System.out.println("Test JNI_FindClass() with giant name");
+        try {
+            if (tryCallFindClass()) {
+                throw new RuntimeException("FindClass did not throw expected NoClassDefFoundError");
+            } else {
+                System.out.println("Test skipped due to native allocation failure");
+            }
+        } catch (NoClassDefFoundError e) {
+            if (!e.getMessage().contains("Class name exceeds maximum length of ")) {
                 throw new RuntimeException("Wrong NoClassDefFoundError: " + e.getMessage());
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
  * @test
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
- * @requires docker.support
+ * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsCpuTester
@@ -45,9 +46,8 @@ public class TestDockerCpuMetrics {
     private static final String imageName = Common.imageName("metrics-cpu");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
 
         // These tests create a docker image and run this image with
         // varying docker cpu options.  The arguments passed to the docker

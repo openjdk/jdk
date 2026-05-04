@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class SALauncher {
     private static boolean launcherHelp() {
         System.out.println("    clhsdb       \tcommand line debugger");
         System.out.println("    hsdb         \tui debugger");
-        System.out.println("    debugd --help\tto get more information");
+        System.out.println("    debugd --help\tto get more information (deprecated)");
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
         System.out.println("    jinfo  --help\tto get more information");
@@ -71,12 +71,14 @@ public class SALauncher {
             System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
         }
         System.out.println();
+        if (canConnectToRemote) {
+            System.out.println("    The --connect option is deprecated and will be removed in a future release.");
+        }
         System.out.println("    The --core and --exe options must be set together to give the core");
         System.out.println("    file, and associated executable, to operate on. They can use");
         System.out.println("    absolute or relative paths.");
         System.out.println("    The --pid option can be set to operate on a live process.");
         if (canConnectToRemote) {
-            System.out.println("    The --connect option can be set to connect to a debug server (debugd).");
             System.out.println("    --core, --pid, and --connect are mutually exclusive.");
         } else {
             System.out.println("    --core and --pid are mutually exclusive.");
@@ -91,6 +93,7 @@ public class SALauncher {
     }
 
     private static boolean debugdHelp() {
+        System.out.println("WARNING: debugd is deprecated and will be removed in a future release.");
         System.out.println("    --serverid <id>         A unique identifier for this debugd server.");
         System.out.println("    --servername <name>     Instance name of debugd server.");
         System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
@@ -213,6 +216,7 @@ public class SALauncher {
 
             newArgs.add(core);
         } else if (connect != NO_REMOTE) {
+            System.err.println("WARNING: --connect is deprecated and will be removed in a future release.");
             newArgs.add(connect);
         }
 
@@ -361,7 +365,10 @@ public class SALauncher {
         JSnap.main(buildAttachArgs(newArgMap, false));
     }
 
+    @SuppressWarnings("removal")
     private static void runDEBUGD(String[] args) {
+        System.err.println("WARNING: debugd is deprecated and will be removed in a future release.");
+
         // By default SA agent classes prefer Windows process debugger
         // to windbg debugger. SA expects special properties to be set
         // to choose other debuggers. We will set those here before

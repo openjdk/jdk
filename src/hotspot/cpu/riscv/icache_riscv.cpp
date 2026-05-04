@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "riscv_flush_icache.hpp"
 #include "runtime/java.hpp"
@@ -40,7 +39,8 @@ static int icache_flush(address addr, int lines, int magic) {
   // We need to make sure stores happens before the I/D cache synchronization.
   __asm__ volatile("fence rw, rw" : : : "memory");
 
-  RiscvFlushIcache::flush((uintptr_t)addr, ((uintptr_t)lines) << ICache::log2_line_size);
+  uintptr_t end = (uintptr_t)addr + ((uintptr_t)lines << ICache::log2_line_size);
+  RiscvFlushIcache::flush((uintptr_t)addr, end);
 
   return magic;
 }

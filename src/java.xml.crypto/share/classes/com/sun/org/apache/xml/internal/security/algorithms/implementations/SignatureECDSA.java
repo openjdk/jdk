@@ -372,6 +372,110 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
     }
 
     /**
+     * Class SignatureECDSASHA3-224
+     *
+     */
+    public static class SignatureECDSASHA3_224 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSASHA3-224
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSASHA3_224() throws XMLSignatureException {
+            super();
+        }
+
+        public SignatureECDSASHA3_224(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_224;
+        }
+    }
+
+    /**
+     * Class SignatureECDSASHA3-256
+     *
+     */
+    public static class SignatureECDSASHA3_256 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSASHA3-256
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSASHA3_256() throws XMLSignatureException {
+            super();
+        }
+
+        public SignatureECDSASHA3_256(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_256;
+        }
+    }
+
+    /**
+     * Class SignatureECDSASHA3-384
+     *
+     */
+    public static class SignatureECDSASHA3_384 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSASHA3-384
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSASHA3_384() throws XMLSignatureException {
+            super();
+        }
+
+        public SignatureECDSASHA3_384(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_384;
+        }
+    }
+
+    /**
+     * Class SignatureECDSASHA3-512
+     *
+     */
+    public static class SignatureECDSASHA3_512 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSASHA3-512
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSASHA3_512() throws XMLSignatureException {
+            super();
+        }
+
+        public SignatureECDSASHA3_512(Provider provider) throws XMLSignatureException {
+            super(provider);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA3_512;
+        }
+    }
+
+    /**
      * Class SignatureECDSARIPEMD160
      */
     public static class SignatureECDSARIPEMD160 extends SignatureECDSA {

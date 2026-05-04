@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import sun.invoke.util.Wrapper;
 
+import java.lang.foreign.MemoryLayout;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -100,7 +102,7 @@ final class VarHandles {
         else {
             Class<?> decl = f.getDeclaringClass();
             var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
-            return maybeAdapt(UNSAFE.shouldBeInitialized(decl)
+            return maybeAdapt((UNSAFE.shouldBeInitialized(decl) || CDS.needsClassInitBarrier(decl))
                     ? new LazyInitializingVarHandle(vh, decl)
                     : vh);
         }
@@ -164,12 +166,15 @@ final class VarHandles {
     static Field getFieldFromReceiverAndOffset(Class<?> receiverType,
                                                long offset,
                                                Class<?> fieldType) {
-        for (Field f : receiverType.getDeclaredFields()) {
-            if (Modifier.isStatic(f.getModifiers())) continue;
+        // The receiver may be a referenced class different from the declaring class
+        for (var declaringClass = receiverType; declaringClass != null; declaringClass = declaringClass.getSuperclass()) {
+            for (Field f : declaringClass.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) continue;
 
-            if (offset == UNSAFE.objectFieldOffset(f)) {
-                assert f.getType() == fieldType;
-                return f;
+                if (offset == UNSAFE.objectFieldOffset(f)) {
+                    assert f.getType() == fieldType;
+                    return f;
+                }
             }
         }
         throw new InternalError("Field not found at offset");
@@ -196,7 +201,7 @@ final class VarHandles {
 
         Class<?> componentType = arrayClass.getComponentType();
 
-        int aoffset = UNSAFE.arrayBaseOffset(arrayClass);
+        int aoffset = (int) UNSAFE.arrayBaseOffset(arrayClass);
         int ascale = UNSAFE.arrayIndexScale(arrayClass);
         int ashift = 31 - Integer.numberOfLeadingZeros(ascale);
 
@@ -291,44 +296,55 @@ final class VarHandles {
     }
 
     /**
-     * Creates a memory segment view var handle.
-     *
+     * Creates a memory segment view var handle accessing a {@code carrier} element. It has access coordinates
+     * {@code (MS, long)} if {@code constantOffset}, {@code (MS, long, (validated) long)} otherwise.
+     * <p>
      * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
-     * and a {@code long} as second argument (the offset into the segment).
+     * and a {@code long} as second argument (the offset into the segment). Both arguments are checked.
+     * <p>
+     * If {@code constantOffset == false}, the resulting var handle will take a third pre-validated additional
+     * offset instead of the given fixed {@code offset}, and caller must ensure that passed additional offset,
+     * either to the handle (such as computing through method handles) or as fixed {@code offset} here, is valid.
      *
-     * Note: the returned var handle does not perform any size or alignment check. It is up to clients
-     * to adapt the returned var handle and insert the appropriate checks.
-     *
-     * @param carrier the Java carrier type.
-     * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
-     * @param byteOrder the byte order.
-     * @return the created VarHandle.
+     * @param carrier the Java carrier type of the element
+     * @param enclosing the enclosing layout to perform bound and alignment checks against
+     * @param alignmentMask alignment of this accessed element in the enclosing layout
+     * @param constantOffset if access path has a constant offset value, i.e. it has no strides
+     * @param offset the offset value, if the offset is constant
+     * @param byteOrder the byte order
+     * @return the created var handle
      */
-    static VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask,
-                                             ByteOrder byteOrder) {
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
+    static VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask,
+                                             boolean constantOffset, long offset, ByteOrder byteOrder) {
+        if (!carrier.isPrimitive() || carrier == void.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = VAR_HANDLE_SEGMENT_FORCE_EXACT;
 
+        // All carrier types must persist across MethodType erasure
+        VarForm form;
         if (carrier == byte.class) {
-            return maybeAdapt(new VarHandleSegmentAsBytes(be, alignmentMask, exact));
+            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, constantOffset);
         } else if (carrier == char.class) {
-            return maybeAdapt(new VarHandleSegmentAsChars(be, alignmentMask, exact));
+            form = VarHandleSegmentAsChars.selectForm(alignmentMask, constantOffset);
         } else if (carrier == short.class) {
-            return maybeAdapt(new VarHandleSegmentAsShorts(be, alignmentMask, exact));
+            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, constantOffset);
         } else if (carrier == int.class) {
-            return maybeAdapt(new VarHandleSegmentAsInts(be, alignmentMask, exact));
+            form = VarHandleSegmentAsInts.selectForm(alignmentMask, constantOffset);
         } else if (carrier == float.class) {
-            return maybeAdapt(new VarHandleSegmentAsFloats(be, alignmentMask, exact));
+            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, constantOffset);
         } else if (carrier == long.class) {
-            return maybeAdapt(new VarHandleSegmentAsLongs(be, alignmentMask, exact));
+            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, constantOffset);
         } else if (carrier == double.class) {
-            return maybeAdapt(new VarHandleSegmentAsDoubles(be, alignmentMask, exact));
+            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, constantOffset);
+        } else if (carrier == boolean.class) {
+            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, constantOffset);
         } else {
             throw new IllegalStateException("Cannot get here");
         }
+
+        return maybeAdapt(new SegmentVarHandle(form, be, enclosing, offset, exact));
     }
 
     private static VarHandle maybeAdapt(VarHandle target) {
@@ -644,257 +660,4 @@ final class VarHandles {
                 !RuntimeException.class.isAssignableFrom(clazz) &&
                 !Error.class.isAssignableFrom(clazz);
     }
-
-//    /**
-//     * A helper program to generate the VarHandleGuards class with a set of
-//     * static guard methods each of which corresponds to a particular shape and
-//     * performs a type check of the symbolic type descriptor with the VarHandle
-//     * type descriptor before linking/invoking to the underlying operation as
-//     * characterized by the operation member name on the VarForm of the
-//     * VarHandle.
-//     * <p>
-//     * The generated class essentially encapsulates pre-compiled LambdaForms,
-//     * one for each method, for the most set of common method signatures.
-//     * This reduces static initialization costs, footprint costs, and circular
-//     * dependencies that may arise if a class is generated per LambdaForm.
-//     * <p>
-//     * A maximum of L*T*S methods will be generated where L is the number of
-//     * access modes kinds (or unique operation signatures) and T is the number
-//     * of variable types and S is the number of shapes (such as instance field,
-//     * static field, or array access).
-//     * If there are 4 unique operation signatures, 5 basic types (Object, int,
-//     * long, float, double), and 3 shapes then a maximum of 60 methods will be
-//     * generated.  However, the number is likely to be less since there
-//     * be duplicate signatures.
-//     * <p>
-//     * Each method is annotated with @LambdaForm.Compiled to inform the runtime
-//     * that such methods should be treated as if a method of a class that is the
-//     * result of compiling a LambdaForm.  Annotation of such methods is
-//     * important for correct evaluation of certain assertions and method return
-//     * type profiling in HotSpot.
-//     */
-//    public static class GuardMethodGenerator {
-//
-//        static final String GUARD_METHOD_SIG_TEMPLATE = "<RETURN> <NAME>_<SIGNATURE>(<PARAMS>)";
-//
-//        static final String GUARD_METHOD_TEMPLATE =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                static final <METHOD> throws Throwable {
-//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
-//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        static final String GUARD_METHOD_TEMPLATE_V =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                static final <METHOD> throws Throwable {
-//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
-//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        // A template for deriving the operations
-//        // could be supported by annotating VarHandle directly with the
-//        // operation kind and shape
-//        interface VarHandleTemplate {
-//            Object get();
-//
-//            void set(Object value);
-//
-//            boolean compareAndSet(Object actualValue, Object expectedValue);
-//
-//            Object compareAndExchange(Object actualValue, Object expectedValue);
-//
-//            Object getAndUpdate(Object value);
-//        }
-//
-//        record HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//        }
-//
-//        /**
-//         * @param args parameters
-//         */
-//        public static void main(String[] args) {
-//            System.out.println("package java.lang.invoke;");
-//            System.out.println();
-//            System.out.println("import jdk.internal.vm.annotation.ForceInline;");
-//            System.out.println("import jdk.internal.vm.annotation.Hidden;");
-//            System.out.println();
-//            System.out.println("// This class is auto-generated by " +
-//                               GuardMethodGenerator.class.getName() +
-//                               ". Do not edit.");
-//            System.out.println("final class VarHandleGuards {");
-//
-//            System.out.println();
-//
-//            // Declare the stream of shapes
-//            Stream<HandleType> hts = Stream.of(
-//                    // Object->Object
-//                    new HandleType(Object.class, Object.class),
-//                    // Object->int
-//                    new HandleType(Object.class, int.class),
-//                    // Object->long
-//                    new HandleType(Object.class, long.class),
-//                    // Object->float
-//                    new HandleType(Object.class, float.class),
-//                    // Object->double
-//                    new HandleType(Object.class, double.class),
-//
-//                    // <static>->Object
-//                    new HandleType(null, Object.class),
-//                    // <static>->int
-//                    new HandleType(null, int.class),
-//                    // <static>->long
-//                    new HandleType(null, long.class),
-//                    // <static>->float
-//                    new HandleType(null, float.class),
-//                    // <static>->double
-//                    new HandleType(null, double.class),
-//
-//                    // Array[int]->Object
-//                    new HandleType(Object.class, Object.class, int.class),
-//                    // Array[int]->int
-//                    new HandleType(Object.class, int.class, int.class),
-//                    // Array[int]->long
-//                    new HandleType(Object.class, long.class, int.class),
-//                    // Array[int]->float
-//                    new HandleType(Object.class, float.class, int.class),
-//                    // Array[int]->double
-//                    new HandleType(Object.class, double.class, int.class),
-//
-//                    // Array[long]->int
-//                    new HandleType(Object.class, int.class, long.class),
-//                    // Array[long]->long
-//                    new HandleType(Object.class, long.class, long.class)
-//            );
-//
-//            hts.flatMap(ht -> Stream.of(VarHandleTemplate.class.getMethods()).
-//                    map(m -> generateMethodType(m, ht.receiver, ht.value, ht.intermediates))).
-//                    distinct().
-//                    map(GuardMethodGenerator::generateMethod).
-//                    forEach(System.out::println);
-//
-//            System.out.println("}");
-//        }
-//
-//        static MethodType generateMethodType(Method m, Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//            Class<?> returnType = m.getReturnType() == Object.class
-//                                  ? value : m.getReturnType();
-//
-//            List<Class<?>> params = new ArrayList<>();
-//            if (receiver != null)
-//                params.add(receiver);
-//            java.util.Collections.addAll(params, intermediates);
-//            for (var p : m.getParameters()) {
-//                params.add(value);
-//            }
-//            return MethodType.methodType(returnType, params);
-//        }
-//
-//        static String generateMethod(MethodType mt) {
-//            Class<?> returnType = mt.returnType();
-//
-//            var params = new java.util.LinkedHashMap<String, Class<?>>();
-//            params.put("handle", VarHandle.class);
-//            for (int i = 0; i < mt.parameterCount(); i++) {
-//                params.put("arg" + i, mt.parameterType(i));
-//            }
-//            params.put("ad", VarHandle.AccessDescriptor.class);
-//
-//            // Generate method signature line
-//            String RETURN = className(returnType);
-//            String NAME = "guard";
-//            String SIGNATURE = getSignature(mt);
-//            String PARAMS = params.entrySet().stream().
-//                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(java.util.stream.Collectors.joining(", "));
-//            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
-//                    replace("<RETURN>", RETURN).
-//                    replace("<NAME>", NAME).
-//                    replace("<SIGNATURE>", SIGNATURE).
-//                    replace("<PARAMS>", PARAMS);
-//
-//            // Generate method
-//            params.remove("ad");
-//
-//            List<String> LINK_TO_STATIC_ARGS = new ArrayList<>(params.keySet());
-//            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
-//
-//            List<String> LINK_TO_INVOKER_ARGS = new ArrayList<>(params.keySet());
-//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
-//
-//            RETURN = returnType == void.class
-//                     ? ""
-//                     : returnType == Object.class
-//                       ? "return "
-//                       : "return (" + returnType.getName() + ") ";
-//
-//            String RESULT_ERASED = returnType == void.class
-//                                   ? ""
-//                                   : returnType != Object.class
-//                                     ? "return (" + returnType.getName() + ") "
-//                                     : "Object r = ";
-//
-//            String RETURN_ERASED = returnType != Object.class
-//                                   ? ""
-//                                   : "\n        return ad.returnType.cast(r);";
-//
-//            String template = returnType == void.class
-//                              ? GUARD_METHOD_TEMPLATE_V
-//                              : GUARD_METHOD_TEMPLATE;
-//            return template.
-//                    replace("<METHOD>", METHOD).
-//                    replace("<NAME>", NAME).
-//                    replaceAll("<RETURN>", RETURN).
-//                    replace("<RESULT_ERASED>", RESULT_ERASED).
-//                    replace("<RETURN_ERASED>", RETURN_ERASED).
-//                    replaceAll("<LINK_TO_STATIC_ARGS>", String.join(", ", LINK_TO_STATIC_ARGS)).
-//                    replace("<LINK_TO_INVOKER_ARGS>", String.join(", ", LINK_TO_INVOKER_ARGS))
-//                    .indent(4);
-//        }
-//
-//        static String className(Class<?> c) {
-//            String n = c.getName();
-//            if (n.startsWith("java.lang.")) {
-//                n = n.replace("java.lang.", "");
-//                if (n.startsWith("invoke.")) {
-//                    n = n.replace("invoke.", "");
-//                }
-//            }
-//            return n.replace('$', '.');
-//        }
-//
-//        static String getSignature(MethodType m) {
-//            StringBuilder sb = new StringBuilder(m.parameterCount() + 1);
-//
-//            for (int i = 0; i < m.parameterCount(); i++) {
-//                Class<?> pt = m.parameterType(i);
-//                sb.append(getCharType(pt));
-//            }
-//
-//            sb.append('_').append(getCharType(m.returnType()));
-//
-//            return sb.toString();
-//        }
-//
-//        static char getCharType(Class<?> pt) {
-//            return Wrapper.forBasicType(pt).basicTypeChar();
-//        }
-//    }
 }

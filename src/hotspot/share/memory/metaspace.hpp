@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
-class MetaspaceShared;
+class AOTMetaspace;
 class MetaspaceTracer;
 class Mutex;
 class outputStream;
@@ -43,7 +43,7 @@ class ReservedSpace;
 // (auxiliary stuff goes into MetaspaceUtils)
 class Metaspace : public AllStatic {
 
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
 
 public:
   enum MetadataType {
@@ -56,13 +56,16 @@ public:
     StandardMetaspaceType = ZeroMetaspaceType,
     BootMetaspaceType = StandardMetaspaceType + 1,
     ClassMirrorHolderMetaspaceType = BootMetaspaceType + 1,
-    ReflectionMetaspaceType = ClassMirrorHolderMetaspaceType + 1,
     MetaspaceTypeCount
   };
 
 private:
 
   static const MetaspaceTracer* _tracer;
+
+  // For quick pointer testing: extent of class space; nullptr if no class space.
+  static const void* _class_space_start;
+  static const void* _class_space_end;
 
   static bool _initialized;
 
@@ -105,6 +108,17 @@ public:
   // The largest possible single allocation
   static size_t max_allocation_word_size();
 
+  // Minimum allocation alignment, in bytes. All MetaData shall be aligned correctly
+  // to be able to hold 64-bit data types. Unlike malloc, we don't care for larger
+  // data types.
+  static constexpr size_t min_allocation_alignment_bytes = sizeof(uint64_t);
+
+  // Minimum allocation alignment, in words, Metaspace observes.
+  static constexpr size_t min_allocation_alignment_words = min_allocation_alignment_bytes / BytesPerWord;
+
+  // Every allocation will get rounded up to the minimum word size.
+  static constexpr size_t min_allocation_word_size = min_allocation_alignment_words;
+
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
 
@@ -113,8 +127,32 @@ public:
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type);
 
-  static bool contains(const void* ptr);
-  static bool contains_non_shared(const void* ptr);
+  // Returns true if the pointer points into class space, non-class metaspace, or the
+  // metadata portion of the CDS archive.
+  static bool contains(const void* ptr) {
+    return in_aot_cache(ptr) || // in cds
+           is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if the pointer points into class space or into non-class metaspace
+  static bool contains_non_shared(const void* ptr) {
+    return is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if pointer points into the CDS klass region.
+  static bool in_aot_cache(const void* ptr);
+
+  // Returns true if pointer points into one of the non-class-space metaspace regions.
+  static bool is_in_nonclass_metaspace(const void* ptr);
+
+  // Returns true if pointer points into class space, false if it doesn't or if
+  // there is no class space. Class space is a contiguous region, which is why
+  // two address comparisons are enough.
+  static inline bool is_in_class_space(const void* ptr) {
+    return ptr < _class_space_end && ptr >= _class_space_start;
+  }
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);
@@ -126,18 +164,12 @@ public:
 
   static void print_compressed_class_space(outputStream* st) NOT_LP64({});
 
-  // Return TRUE only if UseCompressedClassPointers is True.
-  static bool using_class_space() {
-    return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers);
-  }
-
   static bool is_class_space_allocation(MetadataType mdType) {
-    return mdType == ClassType && using_class_space();
+    return CLASS_SPACE_ONLY(mdType == ClassType) NOT_CLASS_SPACE(false);
   }
 
   static bool initialized();
 
 };
-
 
 #endif // SHARE_MEMORY_METASPACE_HPP

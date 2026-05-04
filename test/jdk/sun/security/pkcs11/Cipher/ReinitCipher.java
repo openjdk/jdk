@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReinitCipher
- * @run main/othervm -Djava.security.manager=allow ReinitCipher sm
  */
+
+import jtreg.SkippedException;
 
 import java.security.Provider;
 import java.util.Random;
@@ -47,8 +48,7 @@ public class ReinitCipher extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Cipher", "ARCFOUR") == null) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Algorithm ARCFOUR is not supported by provider, skipping");
         }
         Random random = new Random();
         byte[] data1 = new byte[10 * 1024];

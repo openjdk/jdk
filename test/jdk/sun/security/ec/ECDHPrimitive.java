@@ -118,7 +118,7 @@ public class ECDHPrimitive {
         byte[] secret = ka.generateSecret();
 
         byte[] expectedSecret = values.get("ZIUT");
-        Asserts.assertEqualsByteArray(secret, expectedSecret, "Incorrect secret value");
+        Asserts.assertEqualsByteArray(expectedSecret, secret, "Incorrect secret value");
         int testIndex = values.get("COUNT")[0];
         System.out.println("Test " + testIndex + " passed.");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,31 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"
-#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
-#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/vmThread.hpp"
+
+bool LeakProfiler::is_supported() {
+  if (UseShenandoahGC || UseZGC) {
+    // Leak Profiler uses mark words in the ways that might interfere
+    // with concurrent GC uses of them. This affects Shenandoah.
+    //
+    // Generational ZGC only does weak reference processing in the old generation.
+    // All objects that would usually die, because we are sampling stuff
+    // that immediately becomes garbage, will be artificially kept alive
+    // until an old-generation collection. This incurs a significant
+    // performance hit by causing allocation stalls.
+    return false;
+  }
+  return true;
+}
 
 bool LeakProfiler::is_running() {
   return ObjectSampler::is_created();
@@ -45,6 +59,13 @@ bool LeakProfiler::start(int sample_count) {
 
   // Allows user to disable leak profiler on command line by setting queue size to zero.
   if (sample_count == 0) {
+    return false;
+  }
+
+  // Exit cleanly if not supported
+  if (!is_supported()) {
+    log_info(jfr, system)("jdk.OldObjectSample event is currently not supported for %s.",
+      UseShenandoahGC ? "ShenandoahGC" : "ZGC");
     return false;
   }
 

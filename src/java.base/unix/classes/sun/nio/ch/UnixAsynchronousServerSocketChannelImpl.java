@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,6 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Unix implementation of AsynchronousServerSocketChannel
@@ -63,11 +60,6 @@ class UnixAsynchronousServerSocketChannelImpl
     private CompletionHandler<AsynchronousSocketChannel,Object> acceptHandler;
     private Object acceptAttachment;
     private PendingFuture<AsynchronousSocketChannel,Object> acceptFuture;
-
-    // context for permission check when security manager set
-    @SuppressWarnings("removal")
-    private AccessControlContext acceptAcc;
-
 
     UnixAsynchronousServerSocketChannelImpl(Port port)
         throws IOException
@@ -165,9 +157,9 @@ class UnixAsynchronousServerSocketChannelImpl
         AsynchronousSocketChannel child = null;
         if (exc == null) {
             try {
-                child = finishAccept(newfd, isaa[0], acceptAcc);
+                child = finishAccept(newfd, isaa[0]);
             } catch (Throwable x) {
-                if (!(x instanceof IOException) && !(x instanceof SecurityException))
+                if (!(x instanceof IOException))
                     x = new IOException(x);
                 exc = x;
             }
@@ -198,14 +190,12 @@ class UnixAsynchronousServerSocketChannelImpl
     /**
      * Completes the accept by creating the AsynchronousSocketChannel for
      * the given file descriptor and remote address. If this method completes
-     * with an IOException or SecurityException then the channel/file descriptor
+     * with an IOException then the channel/file descriptor
      * will be closed.
      */
-    @SuppressWarnings("removal")
     private AsynchronousSocketChannel finishAccept(FileDescriptor newfd,
-                                                   final InetSocketAddress remote,
-                                                   AccessControlContext acc)
-        throws IOException, SecurityException
+                                                   final InetSocketAddress remote)
+        throws IOException
     {
         AsynchronousSocketChannel ch = null;
         try {
@@ -215,38 +205,9 @@ class UnixAsynchronousServerSocketChannelImpl
             throw x;
         }
 
-        // permission check must always be in initiator's context
-        try {
-            if (acc != null) {
-                AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        SecurityManager sm = System.getSecurityManager();
-                        if (sm != null) {
-                            sm.checkAccept(remote.getAddress().getHostAddress(),
-                                    remote.getPort());
-                        }
-                        return null;
-                    }
-                }, acc);
-            } else {
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    sm.checkAccept(remote.getAddress().getHostAddress(),
-                            remote.getPort());
-                }
-            }
-        } catch (SecurityException x) {
-            try {
-                ch.close();
-            } catch (Throwable suppressed) {
-                x.addSuppressed(suppressed);
-            }
-            throw x;
-        }
         return ch;
     }
 
-    @SuppressWarnings("removal")
     @Override
     Future<AsynchronousSocketChannel> implAccept(Object att,
         CompletionHandler<AsynchronousSocketChannel,Object> handler)
@@ -283,9 +244,6 @@ class UnixAsynchronousServerSocketChannelImpl
             int n = Net.accept(this.fd, newfd, isaa);
             if (n == IOStatus.UNAVAILABLE) {
 
-                // need calling context when there is security manager as
-                // permission check may be done in a different thread without
-                // any application call frames on the stack
                 PendingFuture<AsynchronousSocketChannel,Object> result = null;
                 synchronized (updateLock) {
                     if (handler == null) {
@@ -296,8 +254,6 @@ class UnixAsynchronousServerSocketChannelImpl
                         this.acceptHandler = handler;
                         this.acceptAttachment = att;
                     }
-                    this.acceptAcc = (System.getSecurityManager() == null) ?
-                            null : AccessController.getContext();
                     this.acceptPending = true;
                 }
 
@@ -318,7 +274,7 @@ class UnixAsynchronousServerSocketChannelImpl
         if (exc == null) {
             // connection accepted immediately
             try {
-                child = finishAccept(newfd, isaa[0], null);
+                child = finishAccept(newfd, isaa[0]);
             } catch (Throwable x) {
                 exc = x;
             }

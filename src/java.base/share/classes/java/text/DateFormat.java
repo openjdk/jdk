@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </blockquote>
  *
  * <p>If the specified locale contains "ca" (calendar), "rg" (region override),
- * and/or "tz" (timezone) <a href="../util/Locale.html#def_locale_extension">Unicode
- * extensions</a>, the calendar, the country and/or the time zone for formatting
+ * and/or "tz" (timezone) {@linkplain Locale##def_locale_extension Unicode
+ * extensions}, the calendar, the country and/or the time zone for formatting
  * are overridden. If both "ca" and "rg" are specified, the calendar from the "ca"
  * extension supersedes the implicit one from the "rg" extension.
  *
@@ -346,6 +346,19 @@ public abstract class DateFormat extends Format {
             throw new IllegalArgumentException("Cannot format given Object as a Date");
     }
 
+    @Override
+    final StringBuf format(Object obj, StringBuf toAppendTo,
+                           FieldPosition fieldPosition) {
+        if (obj instanceof Date) {
+            return format((Date) obj, toAppendTo, fieldPosition);
+        } else if (obj instanceof Number) {
+            return format(new Date(((Number) obj).longValue()),
+                    toAppendTo, fieldPosition);
+        } else {
+            throw new IllegalArgumentException("Cannot format given Object as a Date");
+        }
+    }
+
     /**
      * Formats a {@link Date} into a date-time string. The formatted
      * string is appended to the given {@code StringBuffer}.
@@ -371,6 +384,11 @@ public abstract class DateFormat extends Format {
     public abstract StringBuffer format(Date date, StringBuffer toAppendTo,
                                         FieldPosition fieldPosition);
 
+    StringBuf format(Date date, StringBuf toAppendTo,
+                     FieldPosition fieldPosition) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Formats a {@link Date} into a date-time string.
      *
@@ -379,8 +397,14 @@ public abstract class DateFormat extends Format {
      */
     public final String format(Date date)
     {
-        return format(date, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if ("java.text".equals(getClass().getPackageName())
+                    && "java.text".equals(numberFormat.getClass().getPackageName())) {
+            return format(date, StringBufFactory.of(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(date, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /**
@@ -929,7 +953,7 @@ public abstract class DateFormat extends Format {
         private static final Field[] calendarToFieldMapping =
                                              new Field[Calendar.FIELD_COUNT];
 
-        /** Calendar field. */
+        /** @serial Calendar field. */
         private int calendarField;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 4742177
- * @library /test/lib
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
+ * @requires os.family != "windows"
+ * @library /test/lib
  */
 import java.util.*;
 import java.net.*;
@@ -33,20 +34,10 @@ import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
 
 public class NoLoopbackPackets {
-    private static String osname;
-
-    static boolean isWindows() {
-        if (osname == null)
-            osname = System.getProperty("os.name");
-        return osname.contains("Windows");
-    }
 
     private static final String MESSAGE = "hello world (" + System.nanoTime() + ")";
+
     public static void main(String[] args) throws Exception {
-        if (isWindows()) {
-            System.out.println("The test only run on non-Windows OS. Bye.");
-            return;
-        }
 
         MulticastSocket msock = null;
         List<SocketAddress> failedGroups = new ArrayList<SocketAddress>();

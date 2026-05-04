@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279
+ * @bug 6251738 8226279 8352249
  * @summary javadoc should support a new at-spec tag
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -41,16 +41,16 @@ class SpecTest {
      */
     void block() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Spec[SPEC, pos:7
+    Spec[SPEC, pos:5
       url:
-        Text[TEXT, pos:13, http://example.com]
+        Text[TEXT, pos:11, http://example.com]
       title: 1
-        Text[TEXT, pos:32, title]
+        Text[TEXT, pos:30, title]
     ]
 ]
 */
@@ -61,12 +61,12 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_no_url() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7, prefPos:11
+    Erroneous[ERRONEOUS, pos:5, prefPos:9
       code: compiler.err.dc.no.url
       body: @spec
     ]
@@ -79,12 +79,12 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_no_label() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7, prefPos:30
+    Erroneous[ERRONEOUS, pos:5, prefPos:28
       code: compiler.err.dc.no.title
       body: @spec_http://example.com
     ]

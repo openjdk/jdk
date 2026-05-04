@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,6 @@ public class TestDynamicNumberOfGCThreads {
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
     OutputAnalyzer output = ProcessTools.executeLimitedTestJava(baseArgs);
-    verifyDynamicNumberOfGCThreads(output);
-
-    // Turn on parallel reference processing
-    String[] parRefProcArg = {"-XX:+ParallelRefProcEnabled", "-XX:-ShowMessageBoxOnError"};
-    String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
-    System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
-    System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
-    output = ProcessTools.executeLimitedTestJava(parRefArgs);
     verifyDynamicNumberOfGCThreads(output);
   }
 

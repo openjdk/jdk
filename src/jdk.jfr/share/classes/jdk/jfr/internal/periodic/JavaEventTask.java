@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PrivateAccess;
 /**
- * Base class for periodic Java events.
+ * Class for periodic Java events.
  */
-abstract class JavaEventTask extends EventTask {
+final class JavaEventTask extends EventTask {
     private final Runnable runnable;
 
     public JavaEventTask(Class<? extends Event> eventClass, Runnable runnable) {
@@ -48,7 +48,8 @@ abstract class JavaEventTask extends EventTask {
         return PrivateAccess.getInstance().getPlatformEventType(eventType);
     }
 
-    protected final Runnable getRunnable() {
-        return runnable;
+    @Override
+    public void execute(long timestamp, PeriodicType periodicType) {
+        runnable.run();
     }
 }

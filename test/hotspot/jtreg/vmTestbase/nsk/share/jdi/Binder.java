@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,29 +123,29 @@ public class Binder extends DebugeeBinder {
     // -------------------------------------------------- //
 
     /**
-     * Make initial <code>Debugee</code> object for local debuggee process
+     * Make initial <code>Debugee</code> object for debuggee process
      * started with launching connector.
      */
-    public Debugee makeLocalDebugee(Process process) {
+    public Debugee makeDebugee(Process process) {
         return new Debugee(process, this);
     }
 
     /**
-     * Launch local debuggee process with specified command line
+     * Launch debuggee process with specified command line
      * and make initial <code>Debugee</code> object.
      */
-    public Debugee startLocalDebugee(String cmd) {
+    public Debugee startDebugee(String cmd) {
         Process process = null;
 
         try {
             process = launchProcess(cmd);
         } catch (IOException e) {
             e.printStackTrace(log.getOutStream());
-            throw new Failure("Caught exception while launching local debuggee VM process:\n\t"
+            throw new Failure("Caught exception while launching debuggee VM process:\n\t"
                             + e);
         }
 
-        return makeLocalDebugee(process);
+        return makeDebugee(process);
     }
 
     /**
@@ -154,7 +154,7 @@ public class Binder extends DebugeeBinder {
      * VMStartEvent is received and debuggee is initialized.
      */
     public Debugee enwrapDebugee(VirtualMachine vm, Process proc) {
-        Debugee debugee = makeLocalDebugee(proc);
+        Debugee debugee = makeDebugee(proc);
 
         display("Redirecting VM output");
         debugee.redirectOutput(log);
@@ -189,17 +189,17 @@ public class Binder extends DebugeeBinder {
         prepareForPipeConnection(argumentHandler);
 
         if (argumentHandler.isDefaultConnector()) {
-            debugee = localDefaultLaunchDebugee(vmm, classToExecute, classPath);
+            debugee = defaultLaunchDebugee(vmm, classToExecute, classPath);
         } else if (argumentHandler.isRawLaunchingConnector()) {
-            debugee = localRawLaunchDebugee(vmm, classToExecute, classPath);
+            debugee = rawLaunchDebugee(vmm, classToExecute, classPath);
         } else if (argumentHandler.isLaunchingConnector()) {
-            debugee = localLaunchDebugee(vmm, classToExecute, classPath);
+            debugee = launchDebugee(vmm, classToExecute, classPath);
         } else if (argumentHandler.isAttachingConnector()) {
-            debugee = localLaunchAndAttachDebugee(vmm, classToExecute, classPath);
+            debugee = launchAndAttachDebugee(vmm, classToExecute, classPath);
         } else if (argumentHandler.isListeningConnector()) {
-            debugee = localLaunchAndListenDebugee(vmm, classToExecute, classPath);
+            debugee = launchAndListenDebugee(vmm, classToExecute, classPath);
         } else {
-            throw new TestBug("Unexpected connector type for local debugee launch mode"
+            throw new TestBug("Unexpected connector type for debugee: "
                               + argumentHandler.getConnectorType());
         }
 
@@ -231,9 +231,9 @@ public class Binder extends DebugeeBinder {
     // -------------------------------------------------- //
 
     /**
-     * Launch debugee locally via the default LaunchingConnector.
+     * Launch debugee via the default LaunchingConnector.
      */
-    private Debugee localDefaultLaunchDebugee (VirtualMachineManager vmm,
+    private Debugee defaultLaunchDebugee (VirtualMachineManager vmm,
                                                 String classToExecute,
                                                 String classPath) {
         display("Finding connector: " + "default" );
@@ -257,7 +257,7 @@ public class Binder extends DebugeeBinder {
         };
 
         Process process = vm.process();
-        Debugee debugee = makeLocalDebugee(process);
+        Debugee debugee = makeDebugee(process);
         debugee.redirectOutput(log);
         debugee.setupVM(vm);
 
@@ -266,9 +266,9 @@ public class Binder extends DebugeeBinder {
 
 
     /**
-     * Launch debugee locally via the default LaunchingConnector.
+     * Launch debugee via the default LaunchingConnector.
      */
-    private Debugee localLaunchDebugee (VirtualMachineManager vmm,
+    private Debugee launchDebugee (VirtualMachineManager vmm,
                                             String classToExecute,
                                             String classPath) {
 
@@ -295,7 +295,7 @@ public class Binder extends DebugeeBinder {
         };
 
         Process process = vm.process();
-        Debugee debugee = makeLocalDebugee(process);
+        Debugee debugee = makeDebugee(process);
         debugee.redirectOutput(log);
         debugee.setupVM(vm);
 
@@ -303,9 +303,9 @@ public class Binder extends DebugeeBinder {
     }
 
     /**
-     * Launch debugee locally via the RawLaunchingConnector.
+     * Launch debugee via the RawLaunchingConnector.
      */
-    private Debugee localRawLaunchDebugee (VirtualMachineManager vmm,
+    private Debugee rawLaunchDebugee (VirtualMachineManager vmm,
                                             String classToExecute,
                                             String classPath) {
         display("Finding connector: " + argumentHandler.getConnectorName() );
@@ -331,7 +331,7 @@ public class Binder extends DebugeeBinder {
         };
 
         Process process = vm.process();
-        Debugee debugee = makeLocalDebugee(process);
+        Debugee debugee = makeDebugee(process);
         debugee.redirectOutput(log);
         debugee.setupVM(vm);
 
@@ -339,10 +339,9 @@ public class Binder extends DebugeeBinder {
     }
 
     /**
-     * Launch debugee VM locally as a local process and connect to it using
-     * <code>AttachingConnector</code>.
+     * Launch debugee VM and connect to it using <code>AttachingConnector</code>.
      */
-    private Debugee localLaunchAndAttachDebugee (VirtualMachineManager vmm,
+    private Debugee launchAndAttachDebugee (VirtualMachineManager vmm,
                                                     String classToExecute,
                                                     String classPath) {
         display("FindingConnector: " + argumentHandler.getConnectorName() );
@@ -356,7 +355,7 @@ public class Binder extends DebugeeBinder {
         String javaCmdLine = makeCommandLineString(classToExecute, address, "\"");
 
         display("Starting java process:\n\t" + javaCmdLine);
-        Debugee debugee = startLocalDebugee(cmdLineArgs);
+        Debugee debugee = startDebugee(cmdLineArgs);
         debugee.redirectOutput(log);
 
         display("Attaching to debugee");
@@ -391,10 +390,9 @@ public class Binder extends DebugeeBinder {
     }
 
     /**
-     * Launch debugee VM locally as a local process and connect to it using
-     * <code>ListeningConnector</code>.
+     * Launch debugee VM and connect to it using <code>ListeningConnector</code>.
      */
-    private Debugee localLaunchAndListenDebugee (VirtualMachineManager vmm,
+    private Debugee launchAndListenDebugee (VirtualMachineManager vmm,
                                                     String classToExecute,
                                                     String classPath) {
         display("Finding connector: " + argumentHandler.getConnectorName() );
@@ -419,7 +417,7 @@ public class Binder extends DebugeeBinder {
         String javaCmdLine = makeCommandLineString(classToExecute, address, "\"");
 
         display("Starting java process:\n\t" + javaCmdLine);
-        Debugee debugee = startLocalDebugee(cmdLineArgs);
+        Debugee debugee = startDebugee(cmdLineArgs);
         debugee.redirectOutput(log);
 
         display("Waiting for connection from debugee");
@@ -518,7 +516,7 @@ public class Binder extends DebugeeBinder {
 
         // This flag is needed so VirtualMachine.allThreads() includes known vthreads.
         arg = (Connector.StringArgument) arguments.get("includevirtualthreads");
-        arg.setValue("y");
+        arg.setValue(argumentHandler.isIncludeVirtualThreads() ? "y" : "n");
 
         String vmArgs = "";
 
@@ -685,21 +683,21 @@ public class Binder extends DebugeeBinder {
     // -------------------------------------------------- //
 
     /**
-     * Launch local debuggee process with specified command line arguments
+     * Launch debuggee process with specified command line arguments
      * and make initial <code>Debugee</code> mirror.
      */
-    protected Debugee startLocalDebugee(String[] cmdArgs) {
+    protected Debugee startDebugee(String[] cmdArgs) {
         Process process = null;
 
         try {
             process = launchProcess(cmdArgs);
         } catch (IOException e) {
             e.printStackTrace(log.getOutStream());
-            throw new Failure("Caught exception while launching local debuggee VM process:\n\t"
+            throw new Failure("Caught exception while launching debuggee VM process:\n\t"
                             + e);
         }
 
-        return makeLocalDebugee(process);
+        return makeDebugee(process);
     }
 
     public static String readVMStartExceptionOutput(VMStartException e, PrintStream log) {

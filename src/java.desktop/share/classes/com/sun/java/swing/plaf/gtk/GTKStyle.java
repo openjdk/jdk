@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,11 @@ package com.sun.java.swing.plaf.gtk;
 
 import java.awt.*;
 import java.lang.reflect.*;
-import java.security.*;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.synth.*;
 
-import sun.awt.AppContext;
 import sun.awt.UNIXToolkit;
 import sun.swing.SwingUtilities2;
 import javax.swing.plaf.synth.SynthIcon;
@@ -143,6 +141,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return GTKPainter.INSTANCE;
     }
 
+    @Override
     protected Color getColorForState(SynthContext context, ColorType type) {
         if (type == ColorType.FOCUS || type == GTKColorType.BLACK) {
             return BLACK_COLOR;
@@ -293,6 +292,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return font;
     }
 
+    @Override
     protected Font getFontForState(SynthContext context) {
         Font propFont = UIManager
                               .getFont(context.getRegion().getName() + ".font");
@@ -751,14 +751,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.EDITOR_PANE) {
             return true;
         }
-        if (!GTKLookAndFeel.is3()) {
-            if (region == Region.FORMATTED_TEXT_FIELD ||
-                  region == Region.PASSWORD_FIELD ||
-                  region == Region.SPINNER ||
-                  region == Region.TEXT_FIELD) {
-                return true;
-            }
-        }
+
         Component c = context.getComponent();
         String name = c.getName();
         if (name == "ComboBox.renderer" || name == "ComboBox.listRenderer") {
@@ -884,7 +877,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             int focusPad =
                 getClassSpecificIntValue(context, "focus-padding", 1);
             return indicatorSpacing + focusSize + focusPad;
-        } else if (GTKLookAndFeel.is3() && "ComboBox.forceOpaque".equals(key)) {
+        } else if ("ComboBox.forceOpaque".equals(key)) {
             return true;
         } else if ("Tree.expanderSize".equals(key)) {
             Object value = getClassSpecificValue("expander-size");
@@ -895,11 +888,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         }
 
         // Is it a stock icon ?
-        GTKStockIcon stockIcon = null;
-        synchronized (ICONS_MAP) {
-            stockIcon = ICONS_MAP.get(key);
-        }
-
+        GTKStockIcon stockIcon = ICONS_MAP.get(key);
         if (stockIcon != null) {
             return stockIcon;
         }
@@ -971,11 +960,11 @@ class GTKStyle extends SynthStyle implements GTKConstants {
 
     static class GTKStockIconInfo {
         private static Map<String,Integer> ICON_TYPE_MAP;
-        private static final Object ICON_SIZE_KEY = new StringBuffer("IconSize");
+
+        private static Dimension[] iconSizesMap;
 
         private static Dimension[] getIconSizesMap() {
-            AppContext appContext = AppContext.getAppContext();
-            Dimension[] iconSizes = (Dimension[])appContext.get(ICON_SIZE_KEY);
+            Dimension[] iconSizes = iconSizesMap;
 
             if (iconSizes == null) {
                 iconSizes = new Dimension[7];
@@ -986,7 +975,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 iconSizes[4] = new Dimension(20, 20); // GTK_ICON_SIZE_BUTTON
                 iconSizes[5] = new Dimension(32, 32); // GTK_ICON_SIZE_DND
                 iconSizes[6] = new Dimension(48, 48); // GTK_ICON_SIZE_DIALOG
-                appContext.put(ICON_SIZE_KEY, iconSizes);
+                iconSizesMap = iconSizes;
             }
             return iconSizes;
         }
@@ -1065,6 +1054,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.size = size;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x,
                               int y, int w, int h) {
             Icon icon = getIcon(context);
@@ -1079,6 +1069,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
+        @Override
         public int getIconWidth(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1088,6 +1079,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             return 0;
         }
 
+        @Override
         public int getIconHeight(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1147,6 +1139,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.methodName = methodName;
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public Object createValue(UIDefaults table) {
             try {
@@ -1186,27 +1179,28 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         CLASS_SPECIFIC_MAP.put("EditorPane.caretForeground", "cursor-color");
         CLASS_SPECIFIC_MAP.put("EditorPane.caretAspectRatio", "cursor-aspect-ratio");
 
-        ICONS_MAP = new HashMap<String, GTKStockIcon>();
-        ICONS_MAP.put("FileChooser.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
-        ICONS_MAP.put("FileChooser.okIcon",     new GTKStockIcon("gtk-ok",     4));
-        ICONS_MAP.put("OptionPane.yesIcon", new GTKStockIcon("gtk-yes", 4));
-        ICONS_MAP.put("OptionPane.noIcon", new GTKStockIcon("gtk-no", 4));
-        ICONS_MAP.put("OptionPane.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
-        ICONS_MAP.put("OptionPane.okIcon", new GTKStockIcon("gtk-ok", 4));
+        Map<String,GTKStockIcon> iconsMap = new HashMap<>();
+        iconsMap.put("FileChooser.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
+        iconsMap.put("FileChooser.okIcon",     new GTKStockIcon("gtk-ok",     4));
+        iconsMap.put("OptionPane.yesIcon", new GTKStockIcon("gtk-yes", 4));
+        iconsMap.put("OptionPane.noIcon", new GTKStockIcon("gtk-no", 4));
+        iconsMap.put("OptionPane.cancelIcon", new GTKStockIcon("gtk-cancel", 4));
+        iconsMap.put("OptionPane.okIcon", new GTKStockIcon("gtk-ok", 4));
 
         //check whether the gtk version is >= 3.10 as the Icon names were
         //changed from this version
         UNIXToolkit tk = (UNIXToolkit)Toolkit.getDefaultToolkit();
         if (tk.checkGtkVersion(3, 10, 0)) {
-            ICONS_MAP.put("OptionPane.errorIcon", new GTKStockIcon("dialog-error", 6));
-            ICONS_MAP.put("OptionPane.informationIcon", new GTKStockIcon("dialog-information", 6));
-            ICONS_MAP.put("OptionPane.warningIcon", new GTKStockIcon("dialog-warning", 6));
-            ICONS_MAP.put("OptionPane.questionIcon", new GTKStockIcon("dialog-question", 6));
+            iconsMap.put("OptionPane.errorIcon", new GTKStockIcon("dialog-error", 6));
+            iconsMap.put("OptionPane.informationIcon", new GTKStockIcon("dialog-information", 6));
+            iconsMap.put("OptionPane.warningIcon", new GTKStockIcon("dialog-warning", 6));
+            iconsMap.put("OptionPane.questionIcon", new GTKStockIcon("dialog-question", 6));
         } else {
-            ICONS_MAP.put("OptionPane.errorIcon", new GTKStockIcon("gtk-dialog-error", 6));
-            ICONS_MAP.put("OptionPane.informationIcon", new GTKStockIcon("gtk-dialog-info", 6));
-            ICONS_MAP.put("OptionPane.warningIcon", new GTKStockIcon("gtk-dialog-warning", 6));
-            ICONS_MAP.put("OptionPane.questionIcon", new GTKStockIcon("gtk-dialog-question", 6));
+            iconsMap.put("OptionPane.errorIcon", new GTKStockIcon("gtk-dialog-error", 6));
+            iconsMap.put("OptionPane.informationIcon", new GTKStockIcon("gtk-dialog-info", 6));
+            iconsMap.put("OptionPane.warningIcon", new GTKStockIcon("gtk-dialog-warning", 6));
+            iconsMap.put("OptionPane.questionIcon", new GTKStockIcon("gtk-dialog-question", 6));
         }
+        ICONS_MAP = Collections.unmodifiableMap(iconsMap);
     }
 }

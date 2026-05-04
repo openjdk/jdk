@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
 #include "compiler/compilerDefinitions.hpp"
 
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 
 inline bool CompilerConfig::is_interpreter_only() {
   return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
@@ -130,6 +130,19 @@ inline bool CompilerConfig::is_c1_profiling() {
 
 inline bool CompilerConfig::is_c2_or_jvmci_compiler_enabled() {
   return is_c2_enabled() || is_jvmci_compiler_enabled();
+}
+
+// Return type of most optimizing compiler which is used
+inline CompilerType CompilerConfig::compiler_type() {
+  CompilerType compiler_type = CompilerType::compiler_none; // Interpreter only
+  if (CompilerConfig::is_c2_enabled()) {
+    compiler_type = CompilerType::compiler_c2;
+  } else if (CompilerConfig::is_jvmci_compiler_enabled()) {
+    compiler_type = CompilerType::compiler_jvmci;
+  } else if (CompilerConfig::is_c1_enabled()) {
+    compiler_type = CompilerType::compiler_c1;
+  }
+  return compiler_type;
 }
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP

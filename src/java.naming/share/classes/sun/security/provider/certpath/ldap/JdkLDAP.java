@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,25 +69,20 @@ public final class JdkLDAP extends Provider {
         }
     }
 
-    @SuppressWarnings("removal")
     public JdkLDAP() {
         super("JdkLDAP", PROVIDER_VER, "JdkLDAP Provider (implements LDAP CertStore)");
 
         final Provider p = this;
-        PrivilegedAction<Void> pa = () -> {
-            HashMap<String, String> attrs = new HashMap<>(2);
-            attrs.put("LDAPSchema", "RFC2587");
-            attrs.put("ImplementedIn", "Software");
+        HashMap<String, String> attrs = new HashMap<>(2);
+        attrs.put("LDAPSchema", "RFC2587");
+        attrs.put("ImplementedIn", "Software");
 
-            /*
-             * CertStore
-             * attrs: LDAPSchema, ImplementedIn
-             */
-            putService(new ProviderService(p, "CertStore",
-                       "LDAP", "sun.security.provider.certpath.ldap.LDAPCertStore",
-                       null, attrs));
-            return null;
-        };
-        AccessController.doPrivileged(pa);
+        /*
+         * CertStore
+         * attrs: LDAPSchema, ImplementedIn
+         */
+        putService(new ProviderService(p, "CertStore",
+                "LDAP", "sun.security.provider.certpath.ldap.LDAPCertStore",
+                null, attrs));
     }
 }

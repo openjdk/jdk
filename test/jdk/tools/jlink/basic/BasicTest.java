@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Basic test of jlink to create jmods and images
- * @author Andrei Eremeev
- * @library /test/lib
- * @modules java.base/jdk.internal.module
- *          jdk.jlink
- *          jdk.compiler
- * @build jdk.test.lib.process.ProcessTools
- *        jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.compiler.CompilerUtils
- *        jdk.test.lib.util.JarUtils
- * @run main BasicTest
- */
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -50,7 +35,22 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
+/*
+ * @test
+ * @summary Basic test of jlink to create jmods and images
+ * @author Andrei Eremeev
+ * @library /test/lib
+ * @modules java.base/jdk.internal.module
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.compiler
+ * @build jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.JarUtils
+ * @run main/othervm BasicTest
+ */
 public class BasicTest {
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
         .orElseThrow(() ->
@@ -62,21 +62,31 @@ public class BasicTest {
             new RuntimeException("jlink tool not found")
         );
 
-    private final String TEST_MODULE = "test";
-    private final Path jdkHome = Paths.get(System.getProperty("test.jdk"));
-    private final Path jdkMods = jdkHome.resolve("jmods");
-    private final Path testSrc = Paths.get(System.getProperty("test.src"));
-    private final Path src = testSrc.resolve("src").resolve(TEST_MODULE);
-    private final Path classes = Paths.get("classes");
-    private final Path jmods = Paths.get("jmods");
-    private final Path jars = Paths.get("jars");
+    private static final String TEST_MODULE = "test";
+    private static final Path jdkHome = Paths.get(System.getProperty("test.jdk"));
+    private static final Path jdkMods = jdkHome.resolve("jmods");
+    private static final boolean JMODS_EXIST = Files.exists(jdkMods);
+    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final Path testSrc = Paths.get(System.getProperty("test.src"));
+    private static final Path src = testSrc.resolve("src").resolve(TEST_MODULE);
+    private static final Path classes = Paths.get("classes");
+    private static final Path jmods = Paths.get("jmods");
+    private static final Path jars = Paths.get("jars");
 
     public static void main(String[] args) throws Throwable {
         new BasicTest().run();
     }
 
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
+        }
+        return false;
+    }
+
     public void run() throws Throwable {
-        if (Files.notExists(jdkMods)) {
+        if (isExplodedJDKImage()) {
             return;
         }
 
@@ -146,8 +156,10 @@ public class BasicTest {
 
     private void runJlink(Path image, String modName, String... options) {
         List<String> args = new ArrayList<>();
+        String modPathArg = (JMODS_EXIST ? jdkMods + File.pathSeparator : "") +
+                                jmods;
         Collections.addAll(args,
-                "--module-path", jdkMods + File.pathSeparator + jmods,
+                "--module-path", modPathArg,
                 "--add-modules", modName,
                 "--output", image.toString());
         Collections.addAll(args, options);

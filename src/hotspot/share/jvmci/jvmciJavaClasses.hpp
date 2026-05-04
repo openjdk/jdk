@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,11 @@
   end_class                                                                                                   \
   start_class(HotSpotNmethod, jdk_vm_ci_hotspot_HotSpotNmethod)                                               \
     boolean_field(HotSpotNmethod, isDefault)                                                                  \
+    boolean_field(HotSpotNmethod, profileDeopt)                                                               \
     long_field(HotSpotNmethod, compileIdSnapshot)                                                             \
     object_field(HotSpotNmethod, method, "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;")                 \
-    jvmci_constructor(HotSpotNmethod, "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
+    int_field(HotSpotNmethod, invalidationReason)                                                             \
+    jvmci_constructor(HotSpotNmethod, "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZZJ)V") \
   end_class                                                                                                   \
   start_class(HotSpotCompiledCode, jdk_vm_ci_hotspot_HotSpotCompiledCode)                                     \
     primarray_field(HotSpotCompiledCode, targetCode, "[B")                                                    \

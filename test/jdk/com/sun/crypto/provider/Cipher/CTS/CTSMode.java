@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class CTSMode {
             }
             System.out.println("Running test1_" + i +  " (" + algo + ")");
             Cipher cipher = Cipher.getInstance(algo+ "/CTS/NoPadding",
-                                               "SunJCE");
+                    System.getProperty("test.provider.name", "SunJCE"));
             byte[] plainText = PLAIN1[i];
             byte[] cipherText = CIPHER1[i];
             cipher.init(Cipher.ENCRYPT_MODE, KEY1, IV1);
@@ -194,7 +194,8 @@ public class CTSMode {
                 continue;
             }
             Cipher cipher =
-                Cipher.getInstance(algo+"/CTS/NoPadding", "SunJCE");
+                Cipher.getInstance(algo+"/CTS/NoPadding",
+                        System.getProperty("test.provider.name", "SunJCE"));
             int blockSize = cipher.getBlockSize();
             SecretKeySpec key = new SecretKeySpec(new byte[keySize], algo);
             // Make sure encryption works for inputs with valid length
@@ -226,7 +227,8 @@ public class CTSMode {
             IvParameterSpec iv2 = new IvParameterSpec(IV2_SRC, 0, blockSize);
             cipher.init(Cipher.ENCRYPT_MODE, key, iv2);
             Cipher cipher2 =
-                Cipher.getInstance(algo+"/CBC/NoPadding", "SunJCE");
+                Cipher.getInstance(algo+"/CBC/NoPadding",
+                        System.getProperty("test.provider.name", "SunJCE"));
             cipher2.init(Cipher.ENCRYPT_MODE, key, iv2);
 
             byte[] eout = cipher.doFinal(IV2_SRC, 0, blockSize);
@@ -294,7 +296,8 @@ public class CTSMode {
                 continue;
             }
             Cipher cipher =
-                Cipher.getInstance(algo+ "/CTS/NoPadding", "SunJCE");
+                Cipher.getInstance(algo+ "/CTS/NoPadding",
+                        System.getProperty("test.provider.name", "SunJCE"));
             byte[] plainText = PLAIN1[i];
             byte[] cipherText = CIPHER1[i];
             byte[] enc = new byte[plainText.length];

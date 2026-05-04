@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,40 +35,27 @@
  *        jdk.test.lib.util.JarUtils
  *        FooCharset FooProvider CharsetTest
  * @run driver SetupJar
- * @run testng CharsetProviderBasicTest
+ * @run junit CharsetProviderBasicTest
  */
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.Arrays.asList;
 
 public class CharsetProviderBasicTest {
 
-    private static final String TEST_SRC = System.getProperty("test.src");
-
     private static final List DEFAULT_CSS = List.of(
         "US-ASCII", "8859_1", "iso-ir-6", "UTF-16", "windows-1252", "!BAR", "cp1252"
-    );
-
-    private static final List MINIMAL_POLICY = List.of(
-        "-Djava.security.manager",
-        "-Djava.security.policy=" + TEST_SRC + File.separator + "default-pol"
-    );
-
-    private static final List CP_POLICY = List.of(
-        "-Djava.security.manager",
-        "-Djava.security.policy=" + TEST_SRC + File.separator + "charsetProvider.sp"
     );
 
     private static boolean checkSupports(String locale) throws Throwable {
@@ -79,19 +66,16 @@ public class CharsetProviderBasicTest {
                            .equals(locale);
     }
 
-    @DataProvider
-    public static Iterator<Object[]> testCases() {
-        return Stream.of("", "ja_JP.eucJP", "tr_TR")
-                     .flatMap(locale -> Stream.of(
-                             new Object[]{locale, List.of(""), "FOO"},
-                             new Object[]{locale, MINIMAL_POLICY, "!FOO"},
-                             new Object[]{locale, CP_POLICY, "FOO"}
-                     ))
-                     .iterator();
+    public static Stream<Arguments> testCases() {
+        return Stream.of("",
+                        "ja_JP.eucJP",
+                        "tr_TR")
+                .map(locale -> Arguments.of(locale, "FOO"));
     }
 
-    @Test(dataProvider = "testCases")
-    public void testDefaultCharset(String locale, List opts, String css) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("testCases")
+    public void testDefaultCharset(String locale, String css) throws Throwable {
         if ((System.getProperty("os.name").startsWith("Windows") || !checkSupports(locale))
                 && (!locale.isEmpty())) {
             System.out.println(locale + ": Locale not supported, skipping...");
@@ -103,7 +87,6 @@ public class CharsetProviderBasicTest {
         args.addAll(asList(Utils.getTestJavaOpts()));
         args.add("-cp");
         args.add(System.getProperty("test.class.path") + File.pathSeparator + "test.jar");
-        args.addAll(opts);
         args.add(CharsetTest.class.getName());
         args.addAll(DEFAULT_CSS);
         args.add(css);

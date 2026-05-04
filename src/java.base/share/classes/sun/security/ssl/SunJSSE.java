@@ -25,7 +25,7 @@
 
 package sun.security.ssl;
 
-import java.security.*;
+import java.security.Provider;
 import java.util.*;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
@@ -46,20 +46,12 @@ public class SunJSSE extends java.security.Provider {
         registerAlgorithms();
     }
 
-    @SuppressWarnings("removal")
-    private void registerAlgorithms() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            doRegister();
-            return null;
-        });
-    }
-
     private void ps(String type, String algo, String cn,
             List<String> a, HashMap<String, String> attrs) {
         putService(new Provider.Service(this, type, algo, cn, a, attrs));
     }
 
-    private void doRegister() {
+    private void registerAlgorithms() {
         ps("Signature", "MD5andSHA1withRSA",
             "sun.security.ssl.RSASignature", null, null);
 

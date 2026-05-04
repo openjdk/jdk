@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,31 @@
 /* @test
    @bug 4759207 4403166 4165006 4403166 6182812 6274272 7160013
    @summary Test to see if win32 path length can be greater than 260
+   @library .. /test/lib
  */
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.DirectoryNotEmptyException;
+import jdk.test.lib.Platform;
 
 public class MaxPathLength {
     private static String sep = File.separator;
     private static String pathComponent = sep +
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static String fileName =
-                 "areallylongfilenamethatsforsur";
-    private static boolean isWindows = false;
+            "areallylongfilenamethatsforsur";
 
     private static final int MAX_LENGTH = 256;
+
+    private static final int FILE_EXISTS_SLEEP = 100;
+
+    private static final int MAX_PATH_COMPONENTS_WINDOWS = 20;
 
     private static int counter = 0;
 
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows")) {
-            isWindows = true;
-        }
 
         for (int i = 4; i < 7; i++) {
             String name = fileName;
@@ -59,14 +60,9 @@ public class MaxPathLength {
         }
 
         // test long paths on windows
-        // And these long pathes cannot be handled on Solaris and Mac platforms
-        if (isWindows) {
-            String name = fileName;
-            while (name.length() < MAX_LENGTH) {
-                testLongPath (20, name, false);
-                testLongPath (20, name, true);
-                name = getNextName(name);
-            }
+        // And these long paths cannot be handled on Linux and Mac platforms
+        if (Platform.isWindows()) {
+            testLongPath();
         }
     }
 
@@ -146,7 +142,7 @@ public class MaxPathLength {
             if (flist == null || !fn.equals(flist[0].getName()))
                 throw new RuntimeException ("File.listFiles() failed");
 
-            if (isWindows &&
+            if (Platform.isWindows() &&
                 !fu.getCanonicalPath().equals(f.getCanonicalPath()))
                 throw new RuntimeException ("getCanonicalPath() failed");
 
@@ -162,7 +158,7 @@ public class MaxPathLength {
                 String abPath = f.getAbsolutePath();
                 if (!abPath.startsWith("\\\\") ||
                     abPath.length() < 1093) {
-                    throw new RuntimeException ("File.renameTo() failed for lenth="
+                    throw new RuntimeException ("File.renameTo() failed for length="
                                                 + abPath.length());
                 }
             } else {
@@ -189,7 +185,7 @@ public class MaxPathLength {
                     Files.deleteIfExists(p);
                     // Test if the file is really deleted and wait for 1 second at most
                     for (int j = 0; j < 10 && Files.exists(p); j++) {
-                        Thread.sleep(100);
+                        Thread.sleep(FILE_EXISTS_SLEEP);
                     }
                 } catch (DirectoryNotEmptyException ex) {
                     // Give up the clean-up, let jtreg handle it.
@@ -197,6 +193,15 @@ public class MaxPathLength {
                     break;
                 }
             }
+        }
+    }
+
+    private static void testLongPath () throws Exception {
+        String name = fileName;
+        while (name.length() < MAX_LENGTH) {
+            testLongPath(MAX_PATH_COMPONENTS_WINDOWS, name, false);
+            testLongPath(MAX_PATH_COMPONENTS_WINDOWS, name, true);
+            name = getNextName(name);
         }
     }
 }

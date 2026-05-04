@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests SynchronizedCollection encoding
- * @run main/othervm -Djava.security.manager=allow java_util_Collections_SynchronizedCollection
+ * @run main/othervm java_util_Collections_SynchronizedCollection
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import java.util.List;
 
 public final class java_util_Collections_SynchronizedCollection extends AbstractTest<Collection<String>> {
     public static void main(String[] args) {
-        new java_util_Collections_SynchronizedCollection().test(true);
+        new java_util_Collections_SynchronizedCollection().test();
     }
 
     protected Collection<String> getObject() {

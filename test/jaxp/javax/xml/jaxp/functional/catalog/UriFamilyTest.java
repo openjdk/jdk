@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,37 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkNoUriMatch;
 import static catalog.ResolutionChecker.checkUriResolution;
-
-import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogException;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UriFamilyTest
- * @run testng/othervm catalog.UriFamilyTest
+ * @run junit/othervm catalog.UriFamilyTest
  * @summary Get matched URIs from uri, rewriteURI, uriSuffix and delegateURI
  *          entries. It tests the resolution priorities among the uri family
  *          entries. The test rule is based on OASIS Standard V1.1 section
  *          7.2.2. "Resolution of External Identifiers".
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class UriFamilyTest {
 
-    @Test(dataProvider = "uri-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatch")
     public void testMatch(String systemId, String matchedUri) {
         checkUriResolution(createResolver(), systemId, matchedUri);
     }
 
-    @DataProvider(name = "uri-matchedUri")
-    public Object[][] dataOnMatch() {
+    public static Object[][] dataOnMatch() {
         return new Object[][] {
                 // The matched URI of the specified URI reference is defined in
                 // a uri entry.
@@ -75,12 +74,12 @@ public class UriFamilyTest {
     /*
      * If no match is found, a CatalogException should be thrown.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testNoMatch() {
-        checkNoUriMatch(createResolver());
+        assertThrows(CatalogException.class, () -> checkNoUriMatch(createResolver()));
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogUriResolver("uriFamily.xml");
     }
 }

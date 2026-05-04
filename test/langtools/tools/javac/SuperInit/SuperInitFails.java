@@ -3,7 +3,6 @@
  * @bug 8194743
  * @summary Permit additional statements before this/super in constructors
  * @compile/fail/ref=SuperInitFails.out -XDrawDiagnostics SuperInitFails.java
- * @enablePreview
  */
 import java.util.concurrent.atomic.AtomicReference;
 public class SuperInitFails extends AtomicReference<Object> implements Iterable<Object> {
@@ -185,5 +184,28 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
     public SuperInitFails(double[][] x) {
         Runnable r = () -> this.x = 7;  // this should FAIL
         super();
+    }
+
+    public static class Inner4 {
+        Inner4() {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;         // this should FAIL
+                        super();
+                    }
+                    A(int x) {
+                        {
+                            this();     // this should FAIL
+                        }
+                    }
+                    A(char x) {
+                        super();
+                        this();         // this should FAIL
+                    }
+                }
+            };
+            super();
+        };
     }
 }

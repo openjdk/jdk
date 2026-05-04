@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -228,19 +228,19 @@ AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
   if test "x$CONFIGURE_PRINT_ADDITIONAL_HELP" != x; then
 
     # Print available toolchains
-    $PRINTF "The following toolchains are valid as arguments to --with-toolchain-type.\n"
-    $PRINTF "Which are available to use depends on the build platform.\n"
+    $ECHO "The following toolchains are valid as arguments to --with-toolchain-type."
+    $ECHO "Which are available to use depends on the build platform."
     for toolchain in $VALID_TOOLCHAINS_all; do
       # Use indirect variable referencing
       toolchain_var_name=TOOLCHAIN_DESCRIPTION_$toolchain
       TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
       $PRINTF "  %-22s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
     done
-    $PRINTF "\n"
+    $ECHO ""
 
     # Print available JVM features
-    $PRINTF "The following JVM features are valid as arguments to --with-jvm-features.\n"
-    $PRINTF "Which are available to use depends on the environment and JVM variant.\n"
+    $ECHO "The following JVM features are valid as arguments to --with-jvm-features."
+    $ECHO "Which are available to use depends on the environment and JVM variant."
     m4_foreach(FEATURE, m4_split(jvm_features_valid), [
       # Create an m4 variable containing the description for FEATURE.
       m4_define(FEATURE_DESCRIPTION, [jvm_feature_desc_]m4_translit(FEATURE, -, _))
@@ -257,123 +257,117 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 [
   # Finally output some useful information to the user
 
-  printf "\n"
-  printf "====================================================\n"
+  $ECHO ""
+  $ECHO "===================================================="
   if test "x$no_create" != "xyes"; then
     if test "x$IS_RECONFIGURE" != "xyes"; then
-      printf "A new configuration has been successfully created in\n%s\n" "$OUTPUTDIR"
+      $ECHO "A new configuration has been successfully created in"
+      $ECHO "$OUTPUTDIR"
     else
-      printf "The existing configuration has been successfully updated in\n%s\n" "$OUTPUTDIR"
+      $ECHO "The existing configuration has been successfully updated in"
+      $ECHO "$OUTPUTDIR"
     fi
   else
     if test "x$IS_RECONFIGURE" != "xyes"; then
-      printf "A configuration has been successfully checked but not created\n"
+      $ECHO "A configuration has been successfully checked but not created"
     else
-      printf "The existing configuration has been successfully checked in\n%s\n" "$OUTPUTDIR"
+      $ECHO "The existing configuration has been successfully checked in"
+      $ECHO "$OUTPUTDIR"
     fi
   fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
-    printf "using configure arguments '$CONFIGURE_COMMAND_LINE'.\n"
+    $ECHO "using configure arguments '$CONFIGURE_COMMAND_LINE'."
   else
-    printf "using default settings.\n"
+    $ECHO "using default settings."
   fi
 
   if test "x$REAL_CONFIGURE_COMMAND_EXEC_FULL" != x; then
-    printf "\n"
-    printf "The original configure invocation was '$REAL_CONFIGURE_COMMAND_EXEC_SHORT $REAL_CONFIGURE_COMMAND_LINE'.\n"
+    $ECHO ""
+    $ECHO "The original configure invocation was '$REAL_CONFIGURE_COMMAND_EXEC_SHORT $REAL_CONFIGURE_COMMAND_LINE'."
   fi
 
-  printf "\n"
-  printf "Configuration summary:\n"
-  printf "* Name:           $CONF_NAME\n"
-  printf "* Debug level:    $DEBUG_LEVEL\n"
-  printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
-  printf "* JVM variants:   $JVM_VARIANTS\n"
-  printf "* JVM features:   "
+  $ECHO ""
+  $ECHO "Configuration summary:"
+  $ECHO "* Name:           $CONF_NAME"
+  $ECHO "* Debug level:    $DEBUG_LEVEL"
+  $ECHO "* HS debug level: $HOTSPOT_DEBUG_LEVEL"
+  $ECHO "* JVM variants:   $JVM_VARIANTS"
+  $PRINTF "* JVM features:   "
 
   for variant in $JVM_VARIANTS; do
     features_var_name=JVM_FEATURES_$variant
     JVM_FEATURES_FOR_VARIANT=${!features_var_name}
-    printf "$variant: \'$JVM_FEATURES_FOR_VARIANT\' "
+    $PRINTF "%s: \'%s\' " "$variant" "$JVM_FEATURES_FOR_VARIANT"
   done
-  printf "\n"
+  $ECHO ""
 
-  printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
-  printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
+  $ECHO "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS"
+  $ECHO "* Version string: $VERSION_STRING ($VERSION_SHORT)"
 
   if test "x$SOURCE_DATE" != xupdated; then
     source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601)"
   else
     source_date_info="Determined at build time"
   fi
-  printf "* Source date:    $source_date_info\n"
+  $ECHO "* Source date:    $source_date_info"
 
-  printf "\n"
-  printf "Tools summary:\n"
+  $ECHO ""
+  $ECHO "Tools summary:"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    printf "* Environment:    %s version %s; windows version %s; prefix \"%s\"; root \"%s\"\n" \
-        "$WINENV_VENDOR" "$WINENV_VERSION" "$WINDOWS_VERSION" "$WINENV_PREFIX" "$WINENV_ROOT"
+    $ECHO "* Environment:    $WINENV_VENDOR version $WINENV_VERSION; windows version $WINDOWS_VERSION; prefix \"$WINENV_PREFIX\"; root \"$WINENV_ROOT\""
   fi
-  printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  $ECHO "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)"
+  $ECHO "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)"
   if test "x$DEVKIT_NAME" != x; then
-    printf "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)\n"
+    $ECHO "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)"
   elif test "x$DEVKIT_ROOT" != x; then
-    printf "* Devkit:         $DEVKIT_ROOT\n"
+    $ECHO "* Devkit:         $DEVKIT_ROOT"
   elif test "x$SYSROOT" != x; then
-    printf "* Sysroot:        $SYSROOT\n"
+    $ECHO "* Sysroot:        $SYSROOT"
   fi
-  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
-  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
+  $ECHO "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})"
+  $ECHO "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})"
 
-  printf "\n"
-  printf "Build performance summary:\n"
-  printf "* Build jobs:     $JOBS\n"
-  printf "* Memory limit:   $MEMORY_SIZE MB\n"
+  $ECHO ""
+  $ECHO "Build performance summary:"
+  $ECHO "* Build jobs:     $JOBS"
+  $ECHO "* Memory limit:   $MEMORY_SIZE MB"
   if test "x$CCACHE_STATUS" != "x"; then
-    printf "* ccache status:  $CCACHE_STATUS\n"
+    $ECHO "* ccache status:  $CCACHE_STATUS"
   fi
-  printf "\n"
+  $ECHO ""
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
-    printf "NOTE: You have requested to build more than one version of the JVM, which\n"
-    printf "will result in longer build times.\n"
-    printf "\n"
-  fi
-
-  if test "x$FOUND_ALT_VARIABLES" != "x"; then
-    printf "WARNING: You have old-style ALT_ environment variables set.\n"
-    printf "These are not respected, and will be ignored. It is recommended\n"
-    printf "that you clean your environment. The following variables are set:\n"
-    printf "$FOUND_ALT_VARIABLES\n"
-    printf "\n"
+    $ECHO "NOTE: You have requested to build more than one version of the JVM, which"
+    $ECHO "will result in longer build times."
+    $ECHO ""
   fi
 
   if test "x$OUTPUT_DIR_IS_LOCAL" != "xyes"; then
-    printf "WARNING: Your build output directory is not on a local disk.\n"
-    printf "This will severely degrade build performance!\n"
-    printf "It is recommended that you create an output directory on a local disk,\n"
-    printf "and run the configure script again from that directory.\n"
-    printf "\n"
+    $ECHO "WARNING: Your build output directory is not on a local disk."
+    $ECHO "This will severely degrade build performance!"
+    $ECHO "It is recommended that you create an output directory on a local disk,"
+    $ECHO "and run the configure script again from that directory."
+    $ECHO ""
   fi
 
   if test "x$IS_RECONFIGURE" = "xyes" && test "x$no_create" != "xyes"; then
-    printf "WARNING: The result of this configuration has overridden an older\n"
-    printf "configuration. You *should* run 'make clean' to make sure you get a\n"
-    printf "proper build. Failure to do so might result in strange build problems.\n"
-    printf "\n"
+    $ECHO "WARNING: The result of this configuration has overridden an older"
+    $ECHO "configuration. You *should* run 'make clean' to make sure you get a"
+    $ECHO "proper build. Failure to do so might result in strange build problems."
+    $ECHO ""
   fi
 
   if test "x$IS_RECONFIGURE" != "xyes" && test "x$no_create" = "xyes"; then
-    printf "WARNING: The result of this configuration was not saved.\n"
-    printf "You should run without '--no-create | -n' to create the configuration.\n"
-    printf "\n"
+    $ECHO "WARNING: The result of this configuration was not saved."
+    $ECHO "You should run without '--no-create | -n' to create the configuration."
+    $ECHO ""
   fi
 
   if test "x$UNSUPPORTED_TOOLCHAIN_VERSION" = "xyes"; then
-    printf "WARNING: The toolchain version used is known to have issues. Please\n"
-    printf "consider using a supported version unless you know what you are doing.\n"
-    printf "\n"
+    $ECHO "WARNING: The toolchain version used is known to have issues. Please"
+    $ECHO "consider using a supported version unless you know what you are doing."
+    $ECHO ""
   fi
 ])
 
@@ -389,10 +383,10 @@ AC_DEFUN_ONCE([HELP_REPEAT_WARNINGS],
   if test -e "$CONFIG_LOG_PATH/config.log"; then
     $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" > /dev/null 2>&1
     if test $? -eq 0; then
-      printf "The following warnings were produced. Repeated here for convenience:\n"
+      $ECHO "The following warnings were produced. Repeated here for convenience:"
       # We must quote sed expression (using []) to stop m4 from eating the [].
       $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" | $SED -e [ 's/^configure:[0-9]*: //' ]
-      printf "\n"
+      $ECHO ""
     fi
   fi
 ])

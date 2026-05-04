@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package java.lang.foreign;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
-import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}.
@@ -112,7 +111,8 @@ public interface SegmentAllocator {
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link MemorySegment#getString(long, Charset, long)}.
      *
      * @param str     the Java string to be converted into a C string
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
@@ -138,10 +138,10 @@ public interface SegmentAllocator {
         int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
         MemorySegment segment;
         int length;
-        if (StringSupport.bytesCompatible(str, charset)) {
+        if (StringSupport.bytesCompatible(str, charset, 0, str.length())) {
             length = str.length();
             segment = allocateNoInit((long) length + termCharSize);
-            StringSupport.copyToSegmentRaw(str, segment, 0);
+            StringSupport.copyToSegmentRaw(str, segment, 0, 0, str.length());
         } else {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
@@ -150,6 +150,54 @@ public interface SegmentAllocator {
         }
         for (int i = 0 ; i < termCharSize ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, length + i, (byte)0);
+        }
+        return segment;
+    }
+
+    /**
+     * Encodes a Java string using the provided charset and stores the resulting
+     * byte array into a memory segment.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement byte array. The
+     * {@link java.nio.charset.CharsetEncoder} class should be used when more
+     * control over the encoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getString(long)}, the string
+     * will appear truncated when read again. The string can be read without
+     * truncation using {@link MemorySegment#getString(long, Charset, long)}.
+     *
+     * @param str      the Java string to be encoded
+     * @param charset  the charset used to {@linkplain Charset#newEncoder() encode} the
+     *                 string bytes
+     * @param srcIndex the starting index of the source string
+     * @param numChars the number of characters to be copied
+     * @return a new native segment containing the encoded string
+     * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code srcIndex > str.length() - numChars}
+     *
+     * @implSpec The default implementation for this method copies the contents of the
+     *           provided Java string into a new memory segment obtained by calling
+     *           {@code this.allocate(B)}, where {@code B} is the size, in bytes, of
+     *           the string encoded using the provided charset
+     *           (e.g. {@code str.getBytes(charset).length});
+     * @since 27
+     */
+    @ForceInline
+    default MemorySegment allocateFrom(String str, Charset charset, int srcIndex, int numChars) {
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(str);
+        Objects.checkFromIndexSize(srcIndex, numChars, str.length());
+        MemorySegment segment;
+        if (StringSupport.bytesCompatible(str, charset, srcIndex, numChars)) {
+            segment = allocateNoInit(numChars);
+            StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
+        } else {
+            byte[] bytes = str.substring(srcIndex, srcIndex + numChars).getBytes(charset);
+            segment = allocateNoInit(bytes.length);
+            MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
         }
         return segment;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.lang.model.element;
-
-import jdk.internal.javac.PreviewFeature;
 
 import java.util.List;
 import javax.lang.model.type.*;
@@ -60,14 +58,14 @@ import javax.lang.model.util.*;
  * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
  * representation} (either source code or executable output). Multiple
  * classes and interfaces can share the same reference representation
- * backing construct. For example, multiple classes and interface can
- * be declared in the same source file, including, but are not limited
+ * backing construct. For example, multiple classes and interfaces can
+ * be declared in the same source file, including, but not limited
  * to:
  * <ul>
  * <li> a {@linkplain NestingKind#TOP_LEVEL top-level} class or
  * interface and auxiliary classes and interfaces
  * <li>a top-level class or interface and {@linkplain
- * NestingKind#isNested() nested class and interfaces} within it
+ * NestingKind#isNested() nested classes and interfaces} within it
  * </ul>
  * <p>In the context of annotation processing, a type element can
  * be:
@@ -82,7 +80,16 @@ import javax.lang.model.util.*;
  * javax.lang.model.util.Elements#getAllTypeElements(CharSequence)
  * queried for} in the configured environment
  * </ul>
+ *
  * @see DeclaredType
+ * @jls 8.1 Class Declarations
+ * @jls 8.5 Member Class and Interface Declarations
+ * @jls 8.9 Enum Classes
+ * @jls 8.10 Record Classes
+ * @jls 9.1 Interface Declarations
+ * @jls 9.5 Member Class and Interface Declarations
+ * @jls 9.6 Annotation Interfaces
+ *
  * @since 1.6
  */
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {

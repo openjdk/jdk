@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class SinkChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static final NativeDispatcher nd = new FileDispatcherImpl();
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // The file descriptor associated with this channel
     private final FileDescriptor fd;
@@ -63,8 +63,8 @@ class SinkChannelImpl
     private static final int ST_CLOSED = 2;
     private int state;
 
-    // ID of native thread doing write, for signalling
-    private long thread;
+    // Thread doing write, for signalling
+    private Thread writerThread;
 
     // True if the channel's socket has been forced into non-blocking mode
     // by a virtual thread. It cannot be reset. When the channel is in
@@ -120,7 +120,7 @@ class SinkChannelImpl
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
-        if (thread == 0 && !isRegistered()) {
+        if (writerThread == null && !isRegistered()) {
             state = ST_CLOSED;
             nd.close(fd);
             return true;
@@ -152,15 +152,7 @@ class SinkChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    if (NativeThread.isVirtualThread(th)) {
-                        Poller.stopPoll(fdVal);
-                    } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
-                    }
-                }
+                nd.preClose(fd, null, writerThread);
             }
         }
     }
@@ -201,6 +193,9 @@ class SinkChannelImpl
 
     @Override
     public void kill() {
+        // wait for any write operation to complete before trying to close
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
@@ -275,7 +270,7 @@ class SinkChannelImpl
         synchronized (stateLock) {
             ensureOpen();
             if (blocking)
-                thread = NativeThread.current();
+                writerThread = NativeThread.threadToSignal();
         }
     }
 
@@ -290,7 +285,7 @@ class SinkChannelImpl
     {
         if (blocking) {
             synchronized (stateLock) {
-                thread = 0;
+                writerThread = null;
                 if (state == ST_CLOSING) {
                     tryFinishClose();
                 }

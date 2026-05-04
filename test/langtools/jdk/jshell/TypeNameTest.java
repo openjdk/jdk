@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,12 @@
  * @bug 8144903 8171981 8191802 8191842
  * @summary Tests for determining the type from the expression
  * @build KullaTesting TestingInputStream
- * @run testng TypeNameTest
+ * @run junit TypeNameTest
  */
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
 public class TypeNameTest extends KullaTesting {
 
 
@@ -42,10 +40,11 @@ public class TypeNameTest extends KullaTesting {
     }
 
     private void assertType(String expr, String type, String inferType) {
-        assertEquals(varKey(assertEval(expr)).typeName(), type);
+        assertEquals(type, varKey(assertEval(expr)).typeName());
         assertInferredType(expr, inferType);
     }
 
+    @Test
     public void testTypeInference() {
         assertEval("import java.util.List;");
         assertEval("import java.util.ArrayList;");
@@ -75,6 +74,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("(P<?>) null", "P<?>");
     }
 
+    @Test
     public void testConditionals() {
         assertEval("import java.util.List;");
         assertEval("import java.util.ArrayList;");
@@ -95,6 +95,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("b? new B() : new C()", "X");
     }
 
+    @Test
     public void testJEP286NonDenotable() {
         assertEval("import java.util.List;");
         assertEval("import java.util.Arrays;");
@@ -144,6 +145,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("unbStringIter().iterator().next().get(0)", "Object");
     }
 
+    @Test
     public void testJEP286NonDenotable2() {
         assertEval("import java.util.List;");
         assertEval("import java.util.Arrays;");
@@ -197,6 +199,7 @@ public class TypeNameTest extends KullaTesting {
                 "Number");
     }
 
+    @Test
     public void testVariableTypeName() {
         assertType("\"x\"", "String");
 
@@ -213,30 +216,36 @@ public class TypeNameTest extends KullaTesting {
         assertType("java.util.Locale.Category.FORMAT", "Category");
     }
 
+    @Test
     public void testReplNestedClassName() {
         assertEval("class D { static class E {} }");
         assertType("new D.E();", "D.E");
     }
 
+    @Test
     public void testAnonymousClassName() {
         assertEval("class C {}");
         assertType("new C();", "C");
         assertType("new C() { int x; };", "<anonymous class extending C>", "C");
     }
 
+    @Test
     public void testCapturedTypeName() {
         assertType("\"\".getClass();", "Class<? extends String>");
         assertType("\"\".getClass().getEnumConstants();", "String[]");
     }
 
+    @Test
     public void testJavaLang() {
         assertType("\"\";", "String");
     }
 
+    @Test
     public void testNotOverEagerPackageEating() {
         assertType("\"\".getClass().getDeclaredMethod(\"hashCode\");", "java.lang.reflect.Method");
     }
 
+    @Test
     public void testBounds() {
         assertEval("java.util.List<? extends String> list1 = java.util.Arrays.asList(\"\");");
         assertType("list1.iterator().next()", "String");

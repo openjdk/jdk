@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code exp}, {@code log}, {@code log10},
  * {@code cbrt}, {@code atan2}, {@code pow},
  * {@code sinh}, {@code cosh}, {@code tanh},
+ * {@code asinh}, {@code acosh},{@code atanh},
  * {@code hypot}, {@code expm1}, and {@code log1p}.
  *
  * <p>
@@ -98,10 +99,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * href="Math.html#Ieee754RecommendedOps">relate to the IEEE 754
  * recommended operations</a>.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Joseph D. Darcy
  * @since   1.3
  */
 public final class StrictMath {
@@ -181,7 +181,7 @@ public final class StrictMath {
 
     /**
      * Returns the arc sine of a value; the returned angle is in the
-     * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
+     * range &minus;<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN or its absolute value is greater
      * than 1, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
@@ -211,7 +211,7 @@ public final class StrictMath {
 
     /**
      * Returns the arc tangent of a value; the returned angle is in the
-     * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
+     * range &minus;<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.
@@ -493,7 +493,6 @@ public final class StrictMath {
      * @param   a   a value.
      * @return  the closest floating-point value to {@code a} that is
      *          equal to a mathematical integer.
-     * @author Joseph D. Darcy
      */
     public static double rint(double a) {
         /*
@@ -524,7 +523,7 @@ public final class StrictMath {
      * coordinates ({@code x},&nbsp;{@code y}) to polar
      * coordinates (r,&nbsp;<i>theta</i>).
      * This method computes the phase <i>theta</i> by computing an arc tangent
-     * of {@code y/x} in the range of -<i>pi</i> to <i>pi</i>. Special
+     * of {@code y/x} in the range of &minus;<i>pi</i> to <i>pi</i>. Special
      * cases:
      * <ul><li>If either argument is NaN, then the result is NaN.
      * <li>If the first argument is positive zero and the second argument
@@ -2014,7 +2013,6 @@ public final class StrictMath {
      *
      * @param d the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static double ulp(double d) {
@@ -2041,7 +2039,6 @@ public final class StrictMath {
      *
      * @param f the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static float ulp(float f) {
@@ -2062,7 +2059,6 @@ public final class StrictMath {
      *
      * @param d the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static double signum(double d) {
@@ -2083,7 +2079,6 @@ public final class StrictMath {
      *
      * @param f the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static float signum(float f) {
@@ -2093,7 +2088,7 @@ public final class StrictMath {
     /**
      * Returns the hyperbolic sine of a {@code double} value.
      * The hyperbolic sine of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;-&nbsp;e<sup>-x</sup></i>)/2
+     * (<i>e<sup>x</sup>&nbsp;&minus;&nbsp;e<sup>&minus;x</sup></i>)/2
      * where <i>e</i> is {@linkplain Math#E Euler's number}.
      *
      * <p>Special cases:
@@ -2120,7 +2115,7 @@ public final class StrictMath {
     /**
      * Returns the hyperbolic cosine of a {@code double} value.
      * The hyperbolic cosine of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>-x</sup></i>)/2
+     * (<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>&minus;x</sup></i>)/2
      * where <i>e</i> is {@linkplain Math#E Euler's number}.
      *
      * <p>Special cases:
@@ -2146,7 +2141,7 @@ public final class StrictMath {
     /**
      * Returns the hyperbolic tangent of a {@code double} value.
      * The hyperbolic tangent of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;-&nbsp;e<sup>-x</sup></i>)/(<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>-x</sup></i>),
+     * (<i>e<sup>x</sup>&nbsp;&minus;&nbsp;e<sup>&minus;x</sup></i>)/(<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>&minus;x</sup></i>),
      * in other words, {@linkplain Math#sinh
      * sinh(<i>x</i>)}/{@linkplain Math#cosh cosh(<i>x</i>)}.  Note
      * that the absolute value of the exact tanh is always less than
@@ -2177,6 +2172,89 @@ public final class StrictMath {
     }
 
     /**
+     * Returns the inverse hyperbolic sine of a {@code double} value.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be the function such that
+     * asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that both domain and range of the exact asinh are unrestricted.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is infinity, then the result is
+     * infinity with the same sign as the argument.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * </ul>
+     * @param   x The number whose inverse hyperbolic sine is to be returned.
+     * @return  The inverse hyperbolic sine of {@code x}.
+     * @since 27
+     */
+    public static double asinh(double x) {
+        return FdLibm.Asinh.compute(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic cosine of a {@code double} value.
+     * The inverse hyperbolic cosine of <i>x</i> is defined to be the function such that
+     *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i> >= 0.
+     *  Note that range of the exact acosh(x) is >= 0.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is positive infinity, then the result is
+     * positive infinity
+     *
+     * <li>If the argument less than {@code 1.0}, then the result is NaN.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
+     *
+     * </ul>
+     * @param   x The number whose inverse hyperbolic cosine is to be returned.
+     * @return  The inverse hyperbolic cosine of {@code x}.
+     * @since 27
+     */
+    public static double acosh(double x) {
+        return FdLibm.Acosh.compute(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic tangent of a {@code double} value.
+     * The inverse hyperbolic tangent of <i>x</i> is defined to be the function such that
+     * atanh({@linkplain Math#tanh tanh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that the domain of the exact atanh is (-1; 1), the range is unrestricted.
+     *
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is {@code +1.0}, then the result is
+     * positive infinity.
+     *
+     * <li>If the argument is {@code -1.0}, then the result is
+     * negative infinity.
+     *
+     * <li>If the argument is greater than {@code 1.0} in magnitude, then the result is NaN.
+     *
+     * </ul>
+     *
+     * @param   x The number whose inverse hyperbolic tangent is to be returned.
+     * @return  The inverse hyperbolic tangent of {@code x}.
+     * @since 27
+     */
+    public static double atanh(double x) {
+        return FdLibm.Atanh.compute(x);
+    }
+
+    /**
      * Returns sqrt(<i>x</i><sup>2</sup>&nbsp;+<i>y</i><sup>2</sup>)
      * without intermediate overflow or underflow.
      *
@@ -2203,7 +2281,7 @@ public final class StrictMath {
     }
 
     /**
-     * Returns <i>e</i><sup>x</sup>&nbsp;-1.  Note that for values of
+     * Returns <i>e</i><sup>x</sup>&nbsp;&minus;1.  Note that for values of
      * <i>x</i> near 0, the exact sum of
      * {@code expm1(x)}&nbsp;+&nbsp;1 is much closer to the true
      * result of <i>e</i><sup>x</sup> than {@code exp(x)}.
@@ -2224,7 +2302,7 @@ public final class StrictMath {
      * </ul>
      *
      * @param   x   the exponent to raise <i>e</i> to in the computation of
-     *              <i>e</i><sup>{@code x}</sup>&nbsp;-1.
+     *              <i>e</i><sup>{@code x}</sup>&nbsp;&minus;1.
      * @return  the value <i>e</i><sup>{@code x}</sup>&nbsp;-&nbsp;1.
      * @since 1.5
      */
@@ -2594,4 +2672,111 @@ public final class StrictMath {
     public static float scalb(float f, int scaleFactor) {
         return Math.scalb(f, scaleFactor);
     }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned int
+     * @since 25
+     */
+    public static int unsignedMultiplyExact(int x, int y) {
+        return Math.unsignedMultiplyExact(x, y);
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, int y) {
+        return Math.unsignedMultiplyExact(x, y);
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, long y) {
+        return Math.unsignedMultiplyExact(x, y);
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an int.
+     * @since 25
+     */
+    public static int powExact(int x, int n) {
+        return Math.powExact(x, n);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned int.
+     * @since 25
+     */
+    public static int unsignedPowExact(int x, int n) {
+        return Math.unsignedPowExact(x, n);
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows a {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows a long.
+     * @since 25
+     */
+    public static long powExact(long x, int n) {
+        return Math.powExact(x, n);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned long.
+     * @since 25
+     */
+    public static long unsignedPowExact(long x, int n) {
+        return Math.unsignedPowExact(x, n);
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+/*
+ * This test is launched via a ProcessBuilder in the main test MacPath which
+ * includes a @requires (os.family == "mac") tag so no operating system
+ * conditional is applied here.
+ */
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -29,10 +34,6 @@ import java.text.Normalizer;
 public class MacPathTest {
 
     public static void main(String args[]) throws Throwable {
-        String osname = System.getProperty("os.name");
-        if (!osname.contains("OS X") && !osname.contains("Darwin"))
-            return;
-
         // English
         test("TestDir_apple",                                    // test dir
              "dir_macosx",                                       // dir

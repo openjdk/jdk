@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -49,6 +51,7 @@
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
+#include "klass.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -59,8 +62,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -76,8 +79,8 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -94,8 +97,8 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/stringUtils.hpp"
-#include "utilities/pair.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -148,6 +151,7 @@
 #endif //  ndef DTRACE_ENABLED
 
 bool InstanceKlass::_finalization_enabled = true;
+static int call_class_initializer_counter = 0;   // for debugging
 
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
@@ -157,7 +161,7 @@ static inline bool is_class_loader(const Symbol* class_name,
     return true;
   }
 
-  if (vmClasses::ClassLoader_klass_loaded()) {
+  if (vmClasses::ClassLoader_klass_is_loaded()) {
     const Klass* const super_klass = parser.super_klass();
     if (super_klass != nullptr) {
       if (super_klass->is_subtype_of(vmClasses::ClassLoader_klass())) {
@@ -208,8 +212,10 @@ bool InstanceKlass::has_nest_member(JavaThread* current, InstanceKlass* k) const
   return false;
 }
 
-// Called to verify that k is a permitted subclass of this class
-bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
+// Called to verify that k is a permitted subclass of this class.
+// The incoming stringStream is used to format the messages for error logging and for the caller
+// to use for exception throwing.
+bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const {
   Thread* current = Thread::current();
   assert(k != nullptr, "sanity check");
   assert(_permitted_subclasses != nullptr && _permitted_subclasses != Universe::the_empty_short_array(),
@@ -217,22 +223,34 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
 
   if (log_is_enabled(Trace, class, sealed)) {
     ResourceMark rm(current);
-    log_trace(class, sealed)("Checking for permitted subclass of %s in %s",
+    log_trace(class, sealed)("Checking for permitted subclass %s in %s",
                              k->external_name(), this->external_name());
   }
 
   // Check that the class and its super are in the same module.
   if (k->module() != this->module()) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed for same module of permitted subclass %s and sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same module check: subclass %s is in module '%s' with loader %s, "
+             "and sealed class %s is in module '%s' with loader %s",
+             k->external_name(),
+             k->module()->name_as_C_string(),
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->module()->name_as_C_string(),
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
   if (!k->is_public() && !is_same_class_package(k)) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed, subclass %s not public and not in the same package as sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same package check: non-public subclass %s is in package '%s' with classloader %s, "
+             "and sealed class %s is in package '%s' with classloader %s",
+             k->external_name(),
+             k->package() != nullptr ? k->package()->name()->as_C_string() : "unnamed",
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->package() != nullptr ? this->package()->name()->as_C_string() : "unnamed",
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
@@ -244,7 +262,10 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
       return true;
     }
   }
-  log_trace(class, sealed)("- class is NOT a permitted subclass!");
+
+  ss.print("Failed listed permitted subclass check: class %s is not a permitted subclass of %s",
+           k->external_name(), this->external_name());
+  log_trace(class, sealed)(" - %s", ss.as_string());
   return false;
 }
 
@@ -293,12 +314,11 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
       ss.print("Nest host resolution of %s with host %s failed: ",
                this->external_name(), target_host_class);
       java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
-      const char* msg = ss.as_string(true /* on C-heap */);
       constantPoolHandle cph(THREAD, constants());
-      SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
+      SystemDictionary::add_nest_host_error(cph, _nest_host_index, ss);
       CLEAR_PENDING_EXCEPTION;
 
-      log_trace(class, nestmates)("%s", msg);
+      log_trace(class, nestmates)("%s", ss.base());
     } else {
       // A valid nest-host is an instance class in the current package that lists this
       // class as a nest member. If any of these conditions are not met the class is
@@ -337,10 +357,9 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
                  k->external_name(),
                  k->class_loader_data()->loader_name_and_id(),
                  error);
-        const char* msg = ss.as_string(true /* on C-heap */);
         constantPoolHandle cph(THREAD, constants());
-        SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
-        log_trace(class, nestmates)("%s", msg);
+        SystemDictionary::add_nest_host_error(cph, _nest_host_index, ss);
+        log_trace(class, nestmates)("%s", ss.base());
       }
     }
   } else {
@@ -467,6 +486,9 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
+  assert(ik == nullptr || CompressedKlassPointers::is_encodable(ik),
+         "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
+
   // Check for pending exception before adding to the loader data and incrementing
   // class count.  Can get OOM here.
   if (HAS_PENDING_EXCEPTION) {
@@ -528,10 +550,21 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 }
 
+void InstanceKlass::set_is_cloneable() {
+  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
+    assert(is_final(), "no subclasses allowed");
+    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
+  } else if (reference_type() != REF_NONE) {
+    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
+  } else {
+    set_is_cloneable_fast();
+  }
+}
+
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
   if (methods != nullptr && methods != Universe::the_empty_method_array() &&
-      !methods->is_shared()) {
+      !methods->in_aot_cache()) {
     for (int i = 0; i < methods->length(); i++) {
       Method* method = methods->at(i);
       if (method == nullptr) continue;  // maybe null if error processing
@@ -545,7 +578,7 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
 }
 
 void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
-                                          const Klass* super_klass,
+                                          const InstanceKlass* super_klass,
                                           Array<InstanceKlass*>* local_interfaces,
                                           Array<InstanceKlass*>* transitive_interfaces) {
   // Only deallocate transitive interfaces if not empty, same as super class
@@ -554,22 +587,22 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
   if (ti != Universe::the_empty_instance_klass_array() && ti != local_interfaces) {
     // check that the interfaces don't come from super class
     Array<InstanceKlass*>* sti = (super_klass == nullptr) ? nullptr :
-                    InstanceKlass::cast(super_klass)->transitive_interfaces();
-    if (ti != sti && ti != nullptr && !ti->is_shared()) {
+                    super_klass->transitive_interfaces();
+    if (ti != sti && ti != nullptr && !ti->in_aot_cache()) {
       MetadataFactory::free_array<InstanceKlass*>(loader_data, ti);
     }
   }
 
   // local interfaces can be empty
   if (local_interfaces != Universe::the_empty_instance_klass_array() &&
-      local_interfaces != nullptr && !local_interfaces->is_shared()) {
+      local_interfaces != nullptr && !local_interfaces->in_aot_cache()) {
     MetadataFactory::free_array<InstanceKlass*>(loader_data, local_interfaces);
   }
 }
 
 void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
                                                  Array<RecordComponent*>* record_components) {
-  if (record_components != nullptr && !record_components->is_shared()) {
+  if (record_components != nullptr && !record_components->in_aot_cache()) {
     for (int i = 0; i < record_components->length(); i++) {
       RecordComponent* record_component = record_components->at(i);
       MetadataFactory::free_metadata(loader_data, record_component);
@@ -613,7 +646,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   if (method_ordering() != nullptr &&
       method_ordering() != Universe::the_empty_int_array() &&
-      !method_ordering()->is_shared()) {
+      !method_ordering()->in_aot_cache()) {
     MetadataFactory::free_array<int>(loader_data, method_ordering());
   }
   set_method_ordering(nullptr);
@@ -621,7 +654,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // default methods can be empty
   if (default_methods() != nullptr &&
       default_methods() != Universe::the_empty_method_array() &&
-      !default_methods()->is_shared()) {
+      !default_methods()->in_aot_cache()) {
     MetadataFactory::free_array<Method*>(loader_data, default_methods());
   }
   // Do NOT deallocate the default methods, they are owned by superinterfaces.
@@ -629,7 +662,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // default methods vtable indices can be empty
   if (default_vtable_indices() != nullptr &&
-      !default_vtable_indices()->is_shared()) {
+      !default_vtable_indices()->in_aot_cache()) {
     MetadataFactory::free_array<int>(loader_data, default_vtable_indices());
   }
   set_default_vtable_indices(nullptr);
@@ -642,21 +675,26 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
       secondary_supers() != Universe::the_empty_klass_array() &&
       // see comments in compute_secondary_supers about the following cast
       (address)(secondary_supers()) != (address)(transitive_interfaces()) &&
-      !secondary_supers()->is_shared()) {
+      !secondary_supers()->in_aot_cache()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
-  set_secondary_supers(nullptr);
+  set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
   deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
-  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->is_shared()) {
+  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->in_aot_cache()) {
     MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
   set_fieldinfo_stream(nullptr);
 
-  if (fields_status() != nullptr && !fields_status()->is_shared()) {
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->in_aot_cache()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
+  }
+  set_fieldinfo_search_table(nullptr);
+
+  if (fields_status() != nullptr && !fields_status()->in_aot_cache()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
   }
   set_fields_status(nullptr);
@@ -665,7 +703,8 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // delete it, yet.  The new class's previous version will point to this.
   if (constants() != nullptr) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
-    if (!constants()->is_shared()) {
+    if (!constants()->in_aot_cache()) {
+      HeapShared::remove_scratch_resolved_references(constants());
       MetadataFactory::free_metadata(loader_data, constants());
     }
     // Delete any cached resolution errors for the constant pool
@@ -676,27 +715,27 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   if (inner_classes() != nullptr &&
       inner_classes() != Universe::the_empty_short_array() &&
-      !inner_classes()->is_shared()) {
+      !inner_classes()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
   }
   set_inner_classes(nullptr);
 
   if (nest_members() != nullptr &&
       nest_members() != Universe::the_empty_short_array() &&
-      !nest_members()->is_shared()) {
+      !nest_members()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, nest_members());
   }
   set_nest_members(nullptr);
 
   if (permitted_subclasses() != nullptr &&
       permitted_subclasses() != Universe::the_empty_short_array() &&
-      !permitted_subclasses()->is_shared()) {
+      !permitted_subclasses()->in_aot_cache()) {
     MetadataFactory::free_array<jushort>(loader_data, permitted_subclasses());
   }
   set_permitted_subclasses(nullptr);
 
   // We should deallocate the Annotations instance if it's not in shared spaces.
-  if (annotations() != nullptr && !annotations()->is_shared()) {
+  if (annotations() != nullptr && !annotations()->in_aot_cache()) {
     MetadataFactory::free_metadata(loader_data, annotations());
   }
   set_annotations(nullptr);
@@ -713,12 +752,24 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 bool InstanceKlass::is_record() const {
   return _record_components != nullptr &&
          is_final() &&
-         java_super() == vmClasses::Record_klass();
+         super() == vmClasses::Record_klass();
 }
 
 bool InstanceKlass::is_sealed() const {
   return _permitted_subclasses != nullptr &&
          _permitted_subclasses != Universe::the_empty_short_array();
+}
+
+// JLS 8.9: An enum class is either implicitly final and derives
+// from java.lang.Enum, or else is implicitly sealed to its
+// anonymous subclasses. This query detects both kinds.
+// It does not validate the finality or
+// sealing conditions: it merely checks for a super of Enum.
+// This is sufficient for recognizing well-formed enums.
+bool InstanceKlass::is_enum_subclass() const {
+  InstanceKlass* s = super();
+  return (s == vmClasses::Enum_klass() ||
+          (s != nullptr && s->super() == vmClasses::Enum_klass()));
 }
 
 bool InstanceKlass::should_be_initialized() const {
@@ -752,10 +803,11 @@ oop InstanceKlass::init_lock() const {
   return lock;
 }
 
-// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// Set the initialization lock to null so the object can be GC'ed. Any racing
 // threads to get this lock will see a null lock and will not lock.
 // That's okay because they all check for initialized state after getting
-// the lock and return.
+// the lock and return. For preempted vthreads we keep the oop protected
+// in the ObjectMonitor (see ObjectMonitor::set_object_strong()).
 void InstanceKlass::fence_and_clear_init_lock() {
   // make sure previous stores are all done, notably the init_state.
   OrderAccess::storestore();
@@ -763,6 +815,31 @@ void InstanceKlass::fence_and_clear_init_lock() {
   assert(!is_not_initialized(), "class must be initialized now");
 }
 
+class PreemptableInitCall {
+  JavaThread* _thread;
+  bool _previous;
+  DEBUG_ONLY(InstanceKlass* _previous_klass;)
+ public:
+  PreemptableInitCall(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _previous = thread->at_preemptable_init();
+    _thread->set_at_preemptable_init(true);
+    DEBUG_ONLY(_previous_klass = _thread->preempt_init_klass();)
+    DEBUG_ONLY(_thread->set_preempt_init_klass(ik));
+  }
+  ~PreemptableInitCall() {
+    _thread->set_at_preemptable_init(_previous);
+    DEBUG_ONLY(_thread->set_preempt_init_klass(_previous_klass));
+  }
+};
+
+void InstanceKlass::initialize_preemptable(TRAPS) {
+  if (this->should_be_initialized()) {
+    PreemptableInitCall pic(THREAD, this);
+    initialize_impl(THREAD);
+  } else {
+    assert(is_initialized(), "sanity check");
+  }
+}
 
 // See "The Virtual Machine Specification" section 2.16.5 for a detailed explanation of the class initialization
 // process. The step comments refers to the procedure described in that section.
@@ -778,6 +855,96 @@ void InstanceKlass::initialize(TRAPS) {
   }
 }
 
+#ifdef ASSERT
+void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const {
+  assert(has_aot_initialized_mirror(), "must be");
+
+  InstanceKlass* s = super();
+  if (s != nullptr) {
+    DEBUG_ONLY(ResourceMark rm);
+    assert(s->is_initialized(), "super class %s of aot-inited class %s must have been initialized",
+           s->external_name(), external_name());
+    s->assert_no_clinit_will_run_for_aot_initialized_class();
+  }
+
+  Array<InstanceKlass*>* interfaces = local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    InstanceKlass* intf = interfaces->at(i);
+    if (!intf->is_initialized()) {
+      ResourceMark rm;
+      // Note: an interface needs to be marked as is_initialized() only if
+      // - it has a <clinit>
+      // - it has declared a default method.
+      assert(!intf->interface_needs_clinit_execution_as_super(/*also_check_supers*/false),
+             "uninitialized super interface %s of aot-inited class %s must not have <clinit>",
+             intf->external_name(), external_name());
+    }
+  }
+}
+#endif
+
+#if INCLUDE_CDS
+// early_init -- we are moving this class into the fully_initialized state before the
+// JVM is able to execute any bytecodes. See AOTLinkedClassBulkLoader::is_initializing_classes_early().
+void InstanceKlass::initialize_with_aot_initialized_mirror(bool early_init, TRAPS) {
+  assert(has_aot_initialized_mirror(), "must be");
+  assert(CDSConfig::is_loading_heap(), "must be");
+  assert(CDSConfig::is_using_aot_linked_classes(), "must be");
+  assert_no_clinit_will_run_for_aot_initialized_class();
+
+  if (is_initialized()) {
+    return;
+  }
+
+  if (log_is_enabled(Info, aot, init)) {
+    ResourceMark rm;
+    log_info(aot, init)("%s (aot-inited%s)", external_name(), early_init ? ", early" : "");
+  }
+
+  if (is_runtime_setup_required()) {
+    assert(!early_init, "must not call");
+    // Need to take the slow path, which will call the runtimeSetup() function instead
+    // of <clinit>
+    initialize(CHECK);
+    return;
+  }
+
+  LogTarget(Info, class, init) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm(THREAD);
+    LogStream ls(lt);
+    ls.print("%d Initializing ", call_class_initializer_counter++);
+    name()->print_value_on(&ls);
+    ls.print_cr("(aot-inited) (" PTR_FORMAT ") by thread \"%s\"",
+                p2i(this), THREAD->name());
+  }
+
+  if (early_init) {
+    precond(AOTLinkedClassBulkLoader::is_initializing_classes_early());
+    precond(is_linked());
+    precond(init_thread() == nullptr);
+    set_init_state(fully_initialized);
+    fence_and_clear_init_lock();
+    return;
+  }
+
+  link_class(CHECK);
+
+#ifdef ASSERT
+  {
+    Handle h_init_lock(THREAD, init_lock());
+    ObjectLocker ol(h_init_lock, THREAD);
+    assert(!is_initialized(), "sanity");
+    assert(!is_being_initialized(), "sanity");
+    assert(!is_in_error_state(), "sanity");
+  }
+#endif
+
+  set_init_thread(THREAD);
+  set_initialization_state_and_notify(fully_initialized, CHECK);
+}
+#endif
 
 bool InstanceKlass::verify_code(TRAPS) {
   // 1) Verify the bytecodes
@@ -811,6 +978,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
     // if we are executing Java code. This is not a problem for CDS dumping phase since
     // it doesn't execute any Java code.
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_NoClassDefFoundError(),
                        "Class %s, or one of its supertypes, failed class initialization",
@@ -827,10 +995,11 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   JavaThread* jt = THREAD;
 
   // link super class before linking this class
-  Klass* super_klass = super();
+  InstanceKlass* super_klass = super();
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -841,8 +1010,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       return false;
     }
 
-    InstanceKlass* ik_super = InstanceKlass::cast(super_klass);
-    ik_super->link_class_impl(CHECK_false);
+    super_klass->link_class_impl(CHECK_false);
   }
 
   // link all interfaces implemented by this class before linking this class
@@ -871,7 +1039,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   {
     HandleMark hm(THREAD);
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE_false);
+    // Don't allow preemption if we link/initialize classes below,
+    // since that would release this monitor while we are in the
+    // middle of linking this class.
+    NoPreemptMark npm(THREAD);
+
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -879,7 +1052,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
     if (!is_linked()) {
       if (!is_rewritten()) {
-        if (is_shared()) {
+        if (in_aot_cache()) {
           assert(!verified_at_dump_time(), "must be");
         }
         {
@@ -898,7 +1071,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
         // also sets rewritten
         rewrite_class(CHECK_false);
-      } else if (is_shared()) {
+      } else if (in_aot_cache()) {
         SystemDictionaryShared::check_verification_constraints(this, CHECK_false);
       }
 
@@ -916,7 +1089,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // 2) the class is loaded by built-in class loader but failed to add archived loader constraints or
       // 3) the class was not verified during dump time
       bool need_init_table = true;
-      if (is_shared() && verified_at_dump_time() &&
+      if (in_aot_cache() && verified_at_dump_time() &&
           SystemDictionaryShared::check_linking_constraints(THREAD, this)) {
         need_init_table = false;
       }
@@ -929,7 +1102,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // In case itable verification is ever added.
       // itable().verify(tty, true);
 #endif
-      if (UseVtableBasedCHA && Universe::is_fully_initialized()) {
+      if (Universe::is_fully_initialized()) {
         DeoptimizationScope deopt_scope;
         {
           // Now mark all code that assumes the class is not linked.
@@ -949,6 +1122,12 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       }
     }
   }
+
+  if (log_is_enabled(Info, class, link))  {
+    ResourceMark rm(THREAD);
+    log_info(class, link)("Linked class %s", external_name());
+  }
+
   return true;
 }
 
@@ -958,7 +1137,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 void InstanceKlass::rewrite_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (is_rewritten()) {
-    assert(is_shared(), "rewriting an unshared class?");
+    assert(in_aot_cache(), "rewriting an unshared class?");
     return;
   }
   Rewriter::rewrite(this, CHECK);
@@ -1000,7 +1179,7 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+using InitializationErrorTable = HashTable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
 static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
@@ -1065,6 +1244,17 @@ void InstanceKlass::clean_initialization_error_table() {
   }
 }
 
+class ThreadWaitingForClassInit : public StackObj {
+  JavaThread* _thread;
+ public:
+  ThreadWaitingForClassInit(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _thread->set_class_to_be_initialized(ik);
+  }
+  ~ThreadWaitingForClassInit() {
+    _thread->set_class_to_be_initialized(nullptr);
+  }
+};
+
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);
 
@@ -1084,7 +1274,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 1
   {
     Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE);
 
     // Step 2
     // If we were to use wait() instead of waitInterruptibly() then
@@ -1097,9 +1287,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
                                jt->name(), external_name(), init_thread_name());
       }
       wait = true;
-      jt->set_class_to_be_initialized(this);
-      ol.wait_uninterruptibly(jt);
-      jt->set_class_to_be_initialized(nullptr);
+      ThreadWaitingForClassInit twcl(THREAD, this);
+      ol.wait_uninterruptibly(CHECK_PREEMPTABLE);
     }
 
     // Step 3
@@ -1156,6 +1345,10 @@ void InstanceKlass::initialize_impl(TRAPS) {
       }
     }
   }
+
+  // Block preemption once we are the initializer thread. Unmounting now
+  // would complicate the reentrant case (identity is platform thread).
+  NoPreemptMark npm(THREAD);
 
   // Step 7
   // Next, if C is a class rather than an interface, initialize it's super class and super
@@ -1215,7 +1408,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
-    debug_only(vtable().verify(tty, true);)
+    DEBUG_ONLY(vtable().verify(tty, true);)
+    CompilationPolicy::replay_training_at_init(this, THREAD);
   }
   else {
     // Step 10 and 11
@@ -1264,7 +1458,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
 // is grabbed, to ensure that the compiler is not using the class hierarchy.
-void InstanceKlass::add_to_hierarchy_impl(JavaThread* current) {
+void InstanceKlass::add_to_hierarchy(JavaThread* current) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
 
   DeoptimizationScope deopt_scope;
@@ -1290,23 +1484,6 @@ void InstanceKlass::add_to_hierarchy_impl(JavaThread* current) {
   deopt_scope.deoptimize_marked();
 }
 
-void InstanceKlass::add_to_hierarchy(JavaThread* current) {
-
-  if (UseVtableBasedCHA || !Universe::is_fully_initialized()) {
-    add_to_hierarchy_impl(current);
-  } else {
-    // In case we are not using CHA based vtables we need to make sure the loaded
-    // deopt is completed before anyone links this class.
-    // Linking is done with init_lock held, by loading and deopting with it
-    // held we make sure the deopt is completed before linking.
-    Handle h_init_lock(current, init_lock());
-    ObjectLocker ol(h_init_lock, current);
-    add_to_hierarchy_impl(current);
-
-    // This doesn't need a notify because the wait is only on the class initialization path.
-  }
-}
-
 
 InstanceKlass* InstanceKlass::implementor() const {
   InstanceKlass* volatile* ik = adr_implementor();
@@ -1314,7 +1491,7 @@ InstanceKlass* InstanceKlass::implementor() const {
     return nullptr;
   } else {
     // This load races with inserts, and therefore needs acquire.
-    InstanceKlass* ikls = Atomic::load_acquire(ik);
+    InstanceKlass* ikls = AtomicAccess::load_acquire(ik);
     if (ikls != nullptr && !ikls->is_loader_alive()) {
       return nullptr;  // don't return unloaded class
     } else {
@@ -1330,7 +1507,7 @@ void InstanceKlass::set_implementor(InstanceKlass* ik) {
   InstanceKlass* volatile* addr = adr_implementor();
   assert(addr != nullptr, "null addr");
   if (addr != nullptr) {
-    Atomic::release_store(addr, ik);
+    AtomicAccess::release_store(addr, ik);
   }
 }
 
@@ -1366,7 +1543,7 @@ void InstanceKlass::add_implementor(InstanceKlass* ik) {
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  InstanceKlass* super_ik = ik->java_super();
+  InstanceKlass* super_ik = ik->super();
   if (super_ik != nullptr && super_ik->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
@@ -1423,21 +1600,12 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
     return nullptr;
-  } else if (num_extra_slots == 0) {
-    // The secondary super list is exactly the same as the transitive interfaces, so
-    // let's use it instead of making a copy.
-    // Redefine classes has to be careful not to delete this!
-    if (!UseSecondarySupersTable) {
-      set_secondary_supers(interfaces);
-      return nullptr;
-    } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
-      // We will reuse the transitive interfaces list if we're certain
-      // it's in hash order.
-      uintx bitmap = compute_secondary_supers_bitmap(interfaces);
-      set_secondary_supers(interfaces, bitmap);
-      return nullptr;
-    }
-    // ... fall through if that didn't work.
+  } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
+    // We will reuse the transitive interfaces list if we're certain
+    // it's in hash order.
+    uintx bitmap = compute_secondary_supers_bitmap(interfaces);
+    set_secondary_supers(interfaces, bitmap);
+    return nullptr;
   }
   // Copy transitive interfaces to a temporary growable array to be constructed
   // into the secondary super list with extra slots.
@@ -1469,15 +1637,6 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
     }
   }
   return false;
-}
-
-objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n, CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  return o;
 }
 
 instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
@@ -1570,8 +1729,6 @@ ArrayKlass* InstanceKlass::array_klass_or_null() {
   return array_klass_or_null(1);
 }
 
-static int call_class_initializer_counter = 0;   // for debugging
-
 Method* InstanceKlass::class_initializer() const {
   Method* clinit = find_method(
       vmSymbols::class_initializer_name(), vmSymbols::void_method_signature());
@@ -1591,9 +1748,12 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
-  if (has_archived_enum_objs()) {
-    assert(is_shared(), "must be");
-    bool initialized = HeapShared::initialize_enum_klass(this, CHECK);
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
+    AOTClassInitializer::call_runtime_setup(THREAD, this);
+    return;
+  } else if (has_archived_enum_objs()) {
+    assert(in_aot_cache(), "must be");
+    bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
       return;
     }
@@ -1613,22 +1773,64 @@ void InstanceKlass::call_class_initializer(TRAPS) {
                 THREAD->name());
   }
   if (h_method() != nullptr) {
+    ThreadInClassInitializer ticl(THREAD, this); // Track class being initialized
     JavaCallArguments args; // No arguments
     JavaValue result(T_VOID);
     JavaCalls::call(&result, h_method, &args, CHECK); // Static call (no args)
   }
 }
 
+// If a class that implements this interface is initialized, is the JVM required
+// to first execute a <clinit> method declared in this interface,
+// or (if also_check_supers==true) any of the super types of this interface?
+//
+// JVMS 5.5. Initialization, step 7: Next, if C is a class rather than
+// an interface, then let SC be its superclass and let SI1, ..., SIn
+// be all superinterfaces of C (whether direct or indirect) that
+// declare at least one non-abstract, non-static method.
+//
+// So when an interface is initialized, it does not look at its
+// supers. But a proper class will ensure that all of its supers have
+// run their <clinit> methods, except that it disregards interfaces
+// that lack a non-static concrete method (i.e., a default method).
+// Therefore, you should probably call this method only when the
+// current class is a super of some proper class, not an interface.
+bool InstanceKlass::interface_needs_clinit_execution_as_super(bool also_check_supers) const {
+  assert(is_interface(), "must be");
+
+  if (!has_nonstatic_concrete_methods()) {
+    // quick check: no nonstatic concrete methods are declared by this or any super interfaces
+    return false;
+  }
+
+  // JVMS 5.5. Initialization
+  // ...If C is an interface that declares a non-abstract,
+  // non-static method, the initialization of a class that
+  // implements C directly or indirectly.
+  if (declares_nonstatic_concrete_methods() && class_initializer() != nullptr) {
+    return true;
+  }
+  if (also_check_supers) {
+    Array<InstanceKlass*>* all_ifs = transitive_interfaces();
+    for (int i = 0; i < all_ifs->length(); ++i) {
+      InstanceKlass* super_intf = all_ifs->at(i);
+      if (super_intf->declares_nonstatic_concrete_methods() && super_intf->class_initializer() != nullptr) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Lazily create the _oop_map_cache at first request.
   // Load_acquire is needed to safely get instance published with CAS by another thread.
-  OopMapCache* oop_map_cache = Atomic::load_acquire(&_oop_map_cache);
+  OopMapCache* oop_map_cache = AtomicAccess::load_acquire(&_oop_map_cache);
   if (oop_map_cache == nullptr) {
     // Try to install new instance atomically.
     oop_map_cache = new OopMapCache();
-    OopMapCache* other = Atomic::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
+    OopMapCache* other = AtomicAccess::cmpxchg(&_oop_map_cache, (OopMapCache*)nullptr, oop_map_cache);
     if (other != nullptr) {
       // Someone else managed to install before us, ditch local copy and use the existing one.
       delete oop_map_cache;
@@ -1655,13 +1857,12 @@ FieldInfo InstanceKlass::field(int index) const {
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
-    Symbol* f_name = fs.name();
-    Symbol* f_sig  = fs.signature();
-    if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
-      return true;
-    }
+  JavaFieldStream fs(this);
+  if (fs.lookup(name, sig)) {
+    assert(fs.name() == name, "name must match");
+    assert(fs.signature() == sig, "signature must match");
+    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    return true;
   }
   return false;
 }
@@ -1670,15 +1871,15 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
 Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();
   for (int i = 0; i < n; i++) {
-    Klass* intf1 = local_interfaces()->at(i);
+    InstanceKlass* intf1 = local_interfaces()->at(i);
     assert(intf1->is_interface(), "just checking type");
     // search for field in current interface
-    if (InstanceKlass::cast(intf1)->find_local_field(name, sig, fd)) {
+    if (intf1->find_local_field(name, sig, fd)) {
       assert(fd->is_static(), "interface field must be static");
       return intf1;
     }
     // search for field in direct superinterfaces
-    Klass* intf2 = InstanceKlass::cast(intf1)->find_interface_field(name, sig, fd);
+    Klass* intf2 = intf1->find_interface_field(name, sig, fd);
     if (intf2 != nullptr) return intf2;
   }
   // otherwise field lookup fails
@@ -1697,8 +1898,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd)
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, fd);
+  { InstanceKlass* supr = super();
+    if (supr != nullptr) return supr->find_field(name, sig, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1717,8 +1918,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
     if (intf != nullptr) return intf;
   }
   // 3) apply field lookup recursively if superclass exists
-  { Klass* supr = super();
-    if (supr != nullptr) return InstanceKlass::cast(supr)->find_field(name, sig, is_static, fd);
+  { InstanceKlass* supr = super();
+    if (supr != nullptr) return supr->find_field(name, sig, is_static, fd);
   }
   // 4) otherwise field lookup fails
   return nullptr;
@@ -1728,7 +1929,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.offset() == offset) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -1737,9 +1938,9 @@ bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fie
 
 
 bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
-  Klass* klass = const_cast<InstanceKlass*>(this);
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->find_local_field_from_offset(offset, is_static, fd)) {
+    if (klass->find_local_field_from_offset(offset, is_static, fd)) {
       return true;
     }
     klass = klass->super();
@@ -1785,50 +1986,42 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 }
 
 void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
-  fieldDescriptor fd;
-  int length = java_fields_count();
-  for (int i = 0; i < length; i += 1) {
-    fd.reinitialize(this, i);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    fieldDescriptor& fd = fs.field_descriptor();
     if (!fd.is_static()) {
       cl->do_field(&fd);
     }
   }
 }
 
-// first in Pair is offset, second is index.
-static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
-  return a->first - b->first;
+static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
+  return a->offset() - b->offset();
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
-  InstanceKlass* super = superklass();
+  InstanceKlass* super = this->super();
   if (super != nullptr) {
     super->print_nonstatic_fields(cl);
   }
   ResourceMark rm;
-  fieldDescriptor fd;
   // In DebugInfo nonstatic fields are sorted by offset.
-  GrowableArray<Pair<int,int> > fields_sorted;
-  int i = 0;
+  GrowableArray<FieldInfo> fields_sorted;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
-      fd = fs.field_descriptor();
-      Pair<int,int> f(fs.offset(), fs.index());
-      fields_sorted.push(f);
-      i++;
+      fields_sorted.push(fs.to_FieldInfo());
     }
   }
-  if (i > 0) {
-    int length = i;
-    assert(length == fields_sorted.length(), "duh");
+  int length = fields_sorted.length();
+  if (length > 0) {
     fields_sorted.sort(compare_fields_by_offset);
+    fieldDescriptor fd;
     for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i).second);
-      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      fd.reinitialize(this, fields_sorted.at(i));
+      assert(!fd.is_static() && fd.offset() == checked_cast<int>(fields_sorted.at(i).offset()), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
@@ -2105,13 +2298,13 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
                                               OverpassLookupMode overpass_mode,
                                               PrivateLookupMode private_mode) const {
   OverpassLookupMode overpass_local_mode = overpass_mode;
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    Method* const method = InstanceKlass::cast(klass)->find_method_impl(name,
-                                                                        signature,
-                                                                        overpass_local_mode,
-                                                                        StaticLookupMode::find,
-                                                                        private_mode);
+    Method* const method = klass->find_method_impl(name,
+                                                   signature,
+                                                   overpass_local_mode,
+                                                   StaticLookupMode::find,
+                                                   private_mode);
     if (method != nullptr) {
       return method;
     }
@@ -2125,9 +2318,9 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
 bool InstanceKlass::has_redefined_this_or_super() const {
-  const Klass* klass = this;
+  const InstanceKlass* klass = this;
   while (klass != nullptr) {
-    if (InstanceKlass::cast(klass)->has_been_redefined()) {
+    if (klass->has_been_redefined()) {
       return true;
     }
     klass = klass->super();
@@ -2204,7 +2397,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
-    if (ik->is_shared()) buf[i++] = 'S';
+    if (ik->in_aot_cache()) buf[i++] = 'S';
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);
@@ -2264,17 +2457,30 @@ jmethodID InstanceKlass::update_jmethod_id(jmethodID* jmeths, Method* method, in
     assert(method != nullptr, "old and but not obsolete, so should exist");
   }
   jmethodID new_id = Method::make_jmethod_id(class_loader_data(), method);
-  Atomic::release_store(&jmeths[idnum + 1], new_id);
+  AtomicAccess::release_store(&jmeths[idnum + 1], new_id);
   return new_id;
 }
 
+// Allocate the jmethodID cache.
+static jmethodID* create_jmethod_id_cache(size_t size) {
+  jmethodID* jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
+  memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
+  // cache size is stored in element[0], other elements offset by one
+  jmeths[0] = (jmethodID)size;
+  return jmeths;
+}
+
+// When reading outside a lock, use this.
+jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
+  return AtomicAccess::load_acquire(&_methods_jmethod_ids);
+}
+
+void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
+  AtomicAccess::release_store(&_methods_jmethod_ids, jmeths);
+}
+
 // Lookup or create a jmethodID.
-// This code is called by the VMThread and JavaThreads so the
-// locking has to be done very carefully to avoid deadlocks
-// and/or other cache consistency problems.
-//
-jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
-  Method* method = method_h();
+jmethodID InstanceKlass::get_jmethod_id(Method* method) {
   int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
 
@@ -2295,15 +2501,12 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
 
   if (jmeths == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-    jmeths = methods_jmethod_ids_acquire();
+    jmeths = _methods_jmethod_ids;
     // Still null?
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
-      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
-      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      jmeths[0] = (jmethodID)size;
+      jmeths = create_jmethod_id_cache(size);
       jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
 
       // publish jmeths
@@ -2312,7 +2515,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     }
   }
 
-  jmethodID id = Atomic::load_acquire(&jmeths[idnum + 1]);
+  jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
   if (id == nullptr) {
     MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
     id = jmeths[idnum + 1];
@@ -2333,37 +2536,40 @@ void InstanceKlass::update_methods_jmethod_cache() {
     if (old_size < size + 1) {
       // Allocate a larger one and copy entries to the new one.
       // They've already been updated to point to new methods where applicable (i.e., not obsolete).
-      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
-      memset(new_cache, 0, (size + 1) * sizeof(jmethodID));
-      // The cache size is stored in element[0]; the other elements are offset by one.
-      new_cache[0] = (jmethodID)size;
+      jmethodID* new_cache = create_jmethod_id_cache(size);
 
       for (int i = 1; i <= (int)old_size; i++) {
         new_cache[i] = cache[i];
       }
       _methods_jmethod_ids = new_cache;
-      FREE_C_HEAP_ARRAY(jmethodID, cache);
+      FREE_C_HEAP_ARRAY(cache);
     }
   }
 }
 
-// Figure out how many jmethodIDs haven't been allocated, and make
-// sure space for them is pre-allocated.  This makes getting all
-// method ids much, much faster with classes with more than 8
+// Make a jmethodID for all methods in this class.  This makes getting all method
+// ids much, much faster with classes with more than 8
 // methods, and has a *substantial* effect on performance with jvmti
 // code that loads all jmethodIDs for all classes.
-void InstanceKlass::ensure_space_for_methodids(int start_offset) {
-  int new_jmeths = 0;
-  int length = methods()->length();
-  for (int index = start_offset; index < length; index++) {
-    Method* m = methods()->at(index);
-    jmethodID id = m->find_jmethod_id_or_null();
-    if (id == nullptr) {
-      new_jmeths++;
-    }
+void InstanceKlass::make_methods_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  jmethodID* jmeths = _methods_jmethod_ids;
+  if (jmeths == nullptr) {
+    jmeths = create_jmethod_id_cache(idnum_allocated_count());
+    release_set_methods_jmethod_ids(jmeths);
   }
-  if (new_jmeths != 0) {
-    Method::ensure_jmethod_ids(class_loader_data(), new_jmeths);
+
+  int length = methods()->length();
+  for (int index = 0; index < length; index++) {
+    Method* m = methods()->at(index);
+    int idnum = m->method_idnum();
+    assert(!m->is_old(), "should not have old methods or I'm confused");
+    jmethodID id = AtomicAccess::load_acquire(&jmeths[idnum + 1]);
+    if (!m->is_overpass() &&  // skip overpasses
+        id == nullptr) {
+      id = Method::make_jmethod_id(class_loader_data(), m);
+      AtomicAccess::release_store(&jmeths[idnum + 1], id);
+    }
   }
 }
 
@@ -2384,6 +2590,7 @@ void InstanceKlass::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Kl
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
+  assert_lock_strong(CodeCache_lock);
   dependencies().add_dependent_nmethod(nm);
 }
 
@@ -2414,10 +2621,10 @@ void InstanceKlass::clean_implementors_list() {
       // Use load_acquire due to competing with inserts
       InstanceKlass* volatile* iklass = adr_implementor();
       assert(iklass != nullptr, "Klass must not be null");
-      InstanceKlass* impl = Atomic::load_acquire(iklass);
+      InstanceKlass* impl = AtomicAccess::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
+        if (AtomicAccess::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
             ResourceMark rm;
@@ -2444,9 +2651,9 @@ void InstanceKlass::clean_method_data() {
 void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass::metaspace_pointers_do(it);
 
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(InstanceKlass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(InstanceKlass): %p (%s)", this, external_name());
   }
 
   it->push(&_annotations);
@@ -2462,11 +2669,11 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 #endif
 #if INCLUDE_CDS
   // For "old" classes with methods containing the jsr bytecode, the _methods array will
-  // be rewritten during runtime (see Rewriter::rewrite_jsrs()). So setting the _methods to
-  // be writable. The length check on the _methods is necessary because classes which
-  // don't have any methods share the Universe::_the_empty_method_array which is in the RO region.
-  if (_methods != nullptr && _methods->length() > 0 &&
-      !can_be_verified_at_dumptime() && methods_contain_jsr_bytecode()) {
+  // be rewritten during runtime (see Rewriter::rewrite_jsrs()) but they cannot be safely
+  // checked here with ByteCodeStream. All methods that can't be verified are made writable.
+  // The length check on the _methods is necessary because classes which don't have any
+  // methods share the Universe::_the_empty_method_array which is in the RO region.
+  if (_methods != nullptr && _methods->length() > 0 && !can_be_verified_at_dumptime()) {
     // To handle jsr bytecode, new Method* maybe stored into _methods
     it->push(&_methods, MetaspaceClosure::_writable);
   } else {
@@ -2486,6 +2693,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_fieldinfo_stream);
+  it->push(&_fieldinfo_search_table);
   // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 
@@ -2509,9 +2717,14 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     }
   }
 
+  it->push(&_nest_host);
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
+
+  if (CDSConfig::is_dumping_full_module_graph() && !defined_by_other_loaders()) {
+    it->push(&_package_entry);
+  }
 }
 
 #if INCLUDE_CDS
@@ -2522,6 +2735,8 @@ void InstanceKlass::remove_unshareable_info() {
     // Remember this so we can avoid walking the hierarchy at runtime.
     set_verified_at_dump_time();
   }
+
+  _misc_flags.set_has_init_deps_processed(false);
 
   Klass::remove_unshareable_info();
 
@@ -2572,12 +2787,19 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  // clear _nest_host to ensure re-load at runtime
-  _nest_host = nullptr;
+  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
+    // keep _nest_host
+  } else {
+    // clear _nest_host to ensure re-load at runtime
+    _nest_host = nullptr;
+  }
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
+  DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 void InstanceKlass::remove_unshareable_flags() {
@@ -2601,24 +2823,9 @@ void InstanceKlass::remove_java_mirror() {
 
 void InstanceKlass::init_shared_package_entry() {
   assert(CDSConfig::is_dumping_archive(), "must be");
-#if !INCLUDE_CDS_JAVA_HEAP
-  _package_entry = nullptr;
-#else
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    if (is_shared_unregistered_class()) {
-      _package_entry = nullptr;
-    } else {
-      _package_entry = PackageEntry::get_archived_entry(_package_entry);
-    }
-  } else if (CDSConfig::is_dumping_dynamic_archive() &&
-             CDSConfig::is_using_full_module_graph() &&
-             MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
-    // _package_entry is an archived package in the base archive. Leave it as is.
-  } else {
+  if (!CDSConfig::is_dumping_full_module_graph() || defined_by_other_loaders()) {
     _package_entry = nullptr;
   }
-  ArchivePtrMarker::mark_pointer((address**)&_package_entry);
-#endif
 }
 
 void InstanceKlass::compute_has_loops_flag_for_methods() {
@@ -2657,10 +2864,15 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // have been redefined.
     bool trace_name_printed = false;
     adjust_default_methods(&trace_name_printed);
-    vtable().initialize_vtable();
-    itable().initialize_itable();
+    if (verified_at_dump_time()) {
+      // Initialize vtable and itable for classes which can be verified at dump time.
+      // Unlinked classes such as old classes with major version < 50 cannot be verified
+      // at dump time.
+      vtable().initialize_vtable();
+      itable().initialize_itable();
+    }
   }
-#endif
+#endif // INCLUDE_JVMTI
 
   // restore constant pool resolved references
   constants()->restore_unshareable_info(CHECK);
@@ -2675,27 +2887,31 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
-  // Initialize @ValueBased class annotation
-  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+  // Initialize @ValueBased class annotation if not already set in the archived klass.
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
-// Check if a class or any of its supertypes has a version older than 50.
-// CDS will not perform verification of old classes during dump time because
-// without changing the old verifier, the verification constraint cannot be
-// retrieved during dump time.
-// Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
   }
-  if (major_version() < 50 /*JAVA_6_VERSION*/) {
+
+  if (CDSConfig::is_preserving_verification_constraints()) {
+    return true;
+  }
+
+  if (CDSConfig::is_old_class_for_verifier(this)) {
+    // The old verifier does not save verification constraints, so at run time
+    // SystemDictionaryShared::check_verification_constraints() will not work for this class.
     return false;
   }
-  if (java_super() != nullptr && !java_super()->can_be_verified_at_dumptime()) {
+  if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
     return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
@@ -2708,20 +2924,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   return true;
 }
 
-bool InstanceKlass::methods_contain_jsr_bytecode() const {
-  Thread* thread = Thread::current();
-  for (int i = 0; i < _methods->length(); i++) {
-    methodHandle m(thread, _methods->at(i));
-    BytecodeStream bcs(m);
-    while (!bcs.is_last_bytecode()) {
-      Bytecodes::Code opcode = bcs.next();
-      if (opcode == Bytecodes::_jsr || opcode == Bytecodes::_jsr_w) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
@@ -2731,6 +2933,13 @@ static void clear_all_breakpoints(Method* m) {
 #endif
 
 void InstanceKlass::unload_class(InstanceKlass* ik) {
+
+  if (ik->is_scratch_class()) {
+    assert(ik->dependencies().is_empty(), "dependencies should be empty for scratch classes");
+    return;
+  }
+  assert(ik->is_loaded(), "class should be loaded " PTR_FORMAT, p2i(ik));
+
   // Release dependencies.
   ik->dependencies().remove_all_dependents();
 
@@ -2784,7 +2993,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   JNIid::deallocate(jni_ids());
   set_jni_ids(nullptr);
 
-  jmethodID* jmeths = methods_jmethod_ids_acquire();
+  jmethodID* jmeths = _methods_jmethod_ids;
   if (jmeths != nullptr) {
     release_set_methods_jmethod_ids(nullptr);
     FreeHeap(jmeths);
@@ -2795,9 +3004,9 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records
-  if (breakpoints() != 0x0) {
+  if (breakpoints() != nullptr) {
     methods_do(clear_all_breakpoints);
-    assert(breakpoints() == 0x0, "should have cleared breakpoints");
+    assert(breakpoints() == nullptr, "should have cleared breakpoints");
   }
 
   // deallocate the cached class file
@@ -2807,7 +3016,7 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 #endif
 
-  FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+  FREE_C_HEAP_ARRAY(_source_debug_extension);
 
   if (release_sub_metadata) {
     constants()->release_C_heap_structures();
@@ -2830,8 +3039,8 @@ void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_
 u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
 void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
 
-InstanceKlass* InstanceKlass::get_klass_version(int version) {
-  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+const InstanceKlass* InstanceKlass::get_klass_version(int version) const {
+  for (const InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
     if (ik->constants()->version() == version) {
       return ik;
     }
@@ -2922,18 +3131,22 @@ ModuleEntry* InstanceKlass::module() const {
   return class_loader_data()->unnamed_module();
 }
 
+bool InstanceKlass::in_javabase_module() const {
+  return module()->name() == vmSymbols::java_base();
+}
+
 void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS) {
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
   // not needed for shared class since CDS does not archive prohibited classes.
-  if (!is_shared()) {
+  if (!in_aot_cache()) {
     check_prohibited_package(name(), loader_data, CHECK);
   }
 
-  if (is_shared() && _package_entry != nullptr) {
+  if (in_aot_cache() && _package_entry != nullptr) {
     if (CDSConfig::is_using_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
-      assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
+      assert(AOTMetaspace::in_aot_cache(_package_entry), "must be");
       return;
     } else {
       _package_entry = nullptr;
@@ -3161,6 +3374,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
         // If the outer class is not an instance klass then it cannot have
         // declared any inner classes.
         ResourceMark rm(THREAD);
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
           vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -3193,8 +3407,8 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   return outer_klass;
 }
 
-jint InstanceKlass::compute_modifier_flags() const {
-  jint access = access_flags().as_int();
+u2 InstanceKlass::compute_modifier_flags() const {
+  u2 access = access_flags().as_unsigned_short();
 
   // But check if it happens to be member class.
   InnerClassesIterator iter(this);
@@ -3214,7 +3428,7 @@ jint InstanceKlass::compute_modifier_flags() const {
     }
   }
   // Remember to strip ACC_SUPER bit
-  return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
+  return (access & (~JVM_ACC_SUPER));
 }
 
 jint InstanceKlass::jvmti_class_status() const {
@@ -3357,7 +3571,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
     nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
     if (inv != nullptr && inv->is_in_use()) {
-      inv->make_not_entrant();
+      inv->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL);
     }
   }
 }
@@ -3488,13 +3702,27 @@ const char* InstanceKlass::init_state_name() const {
   return state_names[init_state()];
 }
 
+void InstanceKlass::print_class_flags(outputStream* st) const {
+  AccessFlags flags(compute_modifier_flags());
+  if (flags.is_public    ()) st->print("public ");
+  if (flags.is_private   ()) st->print("private ");
+  if (flags.is_protected ()) st->print("protected ");
+  if (flags.is_static    ()) st->print("static ");
+  if (flags.is_final     ()) st->print("final ");
+  if (flags.is_interface ()) st->print("interface ");
+  if (flags.is_abstract  ()) st->print("abstract ");
+  if (flags.is_annotation()) st->print("annotation ");
+  if (flags.is_enum      ()) st->print("enum ");
+  if (flags.is_synthetic ()) st->print("synthetic ");
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
 
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
-  st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
+  st->print(BULLET"access:            "); print_class_flags(st);                  st->cr();
   st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
@@ -3508,7 +3736,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       st->print("   ");
     }
   }
-  if (n >= MaxSubklassPrintSize) st->print("(" INTX_FORMAT " more klasses...)", n - MaxSubklassPrintSize);
+  if (n >= MaxSubklassPrintSize) st->print("(%zd more klasses...)", n - MaxSubklassPrintSize);
   st->cr();
 
   if (is_interface()) {
@@ -3539,27 +3767,25 @@ void InstanceKlass::print_on(outputStream* st) const {
       }
     }
   }
-  if (default_vtable_indices() != nullptr) {
-    st->print(BULLET"default vtable indices:   "); default_vtable_indices()->print_value_on(st);       st->cr();
-  }
+  print_on_maybe_null(st, BULLET"default vtable indices:   ", default_vtable_indices());
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
   st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
-  if (UseSecondarySupersTable) {
-    st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
-    st->print(BULLET"bitmap:            " UINTX_FORMAT_X_0, _bitmap); st->cr();
-  }
+
+  st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
+  st->print(BULLET"secondary bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
+
   if (secondary_supers() != nullptr) {
     if (Verbose) {
-      bool is_hashed = UseSecondarySupersTable && (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
+      bool is_hashed = (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
       st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
       for (int i = 0; i < _secondary_supers->length(); i++) {
         ResourceMark rm; // for external_name()
         Klass* secondary_super = _secondary_supers->at(i);
         st->print(BULLET"%2d:", i);
         if (is_hashed) {
-          int home_slot = compute_home_slot(secondary_super, _bitmap);
+          int home_slot = compute_home_slot(secondary_super, _secondary_supers_bitmap);
           int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
           st->print(" dist:%02d:", distance);
         }
@@ -3568,25 +3794,18 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
-  if (class_loader_data() != nullptr) {
-    st->print(BULLET"class loader data:  ");
-    class_loader_data()->print_value_on(st);
-    st->cr();
-  }
-  if (source_file_name() != nullptr) {
-    st->print(BULLET"source file:       ");
-    source_file_name()->print_value_on(st);
-    st->cr();
-  }
+
+  print_on_maybe_null(st, BULLET"class loader data:  ", class_loader_data());
+  print_on_maybe_null(st, BULLET"source file:       ", source_file_name());
   if (source_debug_extension() != nullptr) {
     st->print(BULLET"source debug extension:       ");
     st->print("%s", source_debug_extension());
     st->cr();
   }
-  st->print(BULLET"class annotations:       "); class_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"class type annotations:  "); class_type_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
-  st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
+  print_on_maybe_null(st, BULLET"class annotations:       ", class_annotations());
+  print_on_maybe_null(st, BULLET"class type annotations:  ", class_type_annotations());
+  print_on_maybe_null(st, BULLET"field annotations:       ", fields_annotations());
+  print_on_maybe_null(st, BULLET"field type annotations:  ", fields_type_annotations());
   {
     bool have_pv = false;
     // previous versions are linked together through the InstanceKlass
@@ -3601,16 +3820,10 @@ void InstanceKlass::print_on(outputStream* st) const {
     if (have_pv) st->cr();
   }
 
-  if (generic_signature() != nullptr) {
-    st->print(BULLET"generic signature: ");
-    generic_signature()->print_value_on(st);
-    st->cr();
-  }
+  print_on_maybe_null(st, BULLET"generic signature: ", generic_signature());
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
   st->print(BULLET"nest members:     "); nest_members()->print_value_on(st);     st->cr();
-  if (record_components() != nullptr) {
-    st->print(BULLET"record components:     "); record_components()->print_value_on(st);     st->cr();
-  }
+  print_on_maybe_null(st, BULLET"record components:     ", record_components());
   st->print(BULLET"permitted subclasses:     "); permitted_subclasses()->print_value_on(st);     st->cr();
   if (java_mirror() != nullptr) {
     st->print(BULLET"java mirror:       ");
@@ -3632,7 +3845,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   ik->print_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"non-static oop maps: ");
+  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
@@ -3640,11 +3853,16 @@ void InstanceKlass::print_on(outputStream* st) const {
     map++;
   }
   st->cr();
+
+  if (fieldinfo_search_table() != nullptr) {
+    st->print_cr(BULLET"---- field info search table:");
+    FieldInfoStream::print_search_table(st, _constants, _fieldinfo_stream, _fieldinfo_search_table);
+  }
 }
 
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
-  if (Verbose || WizardMode)  access_flags().print_on(st);
+  if (Verbose || WizardMode)  print_class_flags(st);
   name()->print_value_on(st);
 }
 
@@ -3675,7 +3893,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     }
   }
 
-  st->print_cr(BULLET"---- fields (total size " SIZE_FORMAT " words):", oop_size(obj));
+  st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj));
   FieldPrinter print_field(st, obj);
   print_nonstatic_fields(&print_field);
 
@@ -3824,8 +4042,8 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       info_stream.print(" source: %s", class_loader->klass()->external_name());
     }
   } else {
-    assert(this->is_shared(), "must be");
-    if (MetaspaceShared::is_shared_dynamic((void*)this)) {
+    assert(this->in_aot_cache(), "must be");
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)this)) {
       info_stream.print(" source: shared objects file (top)");
     } else {
       info_stream.print(" source: shared objects file");
@@ -3839,7 +4057,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(superklass()));
+                       p2i(this),  p2i(super()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -3847,7 +4065,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
         debug_stream.print(" " PTR_FORMAT,
-                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+                           p2i(local_interfaces()->at(i)));
       }
     }
 
@@ -3896,14 +4114,9 @@ void InstanceKlass::print_class_load_cause_logging() const {
       stringStream stack_stream;
       char buf[O_BUFLEN];
       address lastpc = nullptr;
-      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
-        // We have printed the native stack in platform-specific code,
-        // so nothing else to do in this case.
-      } else {
-        frame f = os::current_frame();
-        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
-                                    -1 /* max stack_stream */, buf, O_BUFLEN);
-      }
+      NativeStackPrinter nsp(current);
+      nsp.print_stack(&stack_stream, buf, sizeof(buf), lastpc,
+                      true /* print_source_info */, -1 /* max stack */);
 
       LogMessage(class, load, cause, native) msg;
       NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
@@ -4065,18 +4278,16 @@ void InstanceKlass::oop_verify_on(oop obj, outputStream* st) {
   obj->oop_iterate(&blk);
 }
 
-
 // JNIid class for jfieldIDs only
 // Note to reviewers:
 // These JNI functions are just moved over to column 1 and not changed
 // in the compressed oops workspace.
-JNIid::JNIid(Klass* holder, int offset, JNIid* next) {
+JNIid::JNIid(InstanceKlass* holder, int offset, JNIid* next) {
   _holder = holder;
   _offset = offset;
   _next = next;
-  debug_only(_is_static_field_id = false;)
+  DEBUG_ONLY(_is_static_field_id = false;)
 }
-
 
 JNIid* JNIid::find(int offset) {
   JNIid* current = this;
@@ -4095,11 +4306,10 @@ void JNIid::deallocate(JNIid* current) {
   }
 }
 
-
-void JNIid::verify(Klass* holder) {
+void JNIid::verify(InstanceKlass* holder) {
   int first_field_offset  = InstanceMirrorKlass::offset_of_static_fields();
   int end_field_offset;
-  end_field_offset = first_field_offset + (InstanceKlass::cast(holder)->static_field_size() * wordSize);
+  end_field_offset = first_field_offset + (holder->static_field_size() * wordSize);
 
   JNIid* current = this;
   while (current != nullptr) {
@@ -4116,12 +4326,12 @@ void JNIid::verify(Klass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
-  bool good_state = is_shared() ? (_init_state <= state)
+  bool good_state = in_aot_cache() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  _init_state = state;
+  AtomicAccess::release_store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI
@@ -4146,17 +4356,14 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
-// This nulls out jmethodIDs for all methods in 'klass'
-// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
-// during class unloading.
-// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
-// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
-// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
-// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
-void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+// This nulls out the jmethodID for all obsolete methods in the previous version of the 'klass'.
+// These obsolete methods only exist in the previous version and we're about to delete the memory for them.
+// The jmethodID for these are deallocated when we unload the class, so this doesn't remove them from the table.
+void InstanceKlass::clear_obsolete_jmethod_ids(InstanceKlass* klass) {
   Array<Method*>* method_refs = klass->methods();
   for (int k = 0; k < method_refs->length(); k++) {
     Method* method = method_refs->at(k);
+    // Only need to clear obsolete methods.
     if (method != nullptr && method->is_obsolete()) {
       method->clear_jmethod_id();
     }
@@ -4206,7 +4413,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
-      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
+      clear_obsolete_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(nullptr);   // point next to null
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't
@@ -4220,7 +4427,7 @@ void InstanceKlass::purge_previous_version_list() {
       assert(pvcp->pool_holder() != nullptr, "Constant pool with no holder");
       guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
       live_count++;
-      if (pvcp->is_shared()) {
+      if (pvcp->in_aot_cache()) {
         // Shared previous versions can never be removed so no cleaning is needed.
         log_trace(redefine, class, iklass, purge)("previous version " PTR_FORMAT " is shared", p2i(pv_node));
       } else {
@@ -4332,7 +4539,7 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
   assert(scratch_class->previous_versions() == nullptr, "shouldn't have a previous version");
   scratch_class->link_previous_versions(previous_versions());
   link_previous_versions(scratch_class);
-  if (cp_ref->is_shared()) {
+  if (cp_ref->in_aot_cache()) {
     log_trace(redefine, class, iklass, add) ("scratch class added; class is shared");
   } else {
     //  We only set clean_previous_versions flag for processing during class
@@ -4344,7 +4551,7 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
 
 #endif // INCLUDE_JVMTI
 
-Method* InstanceKlass::method_with_idnum(int idnum) {
+Method* InstanceKlass::method_with_idnum(int idnum) const {
   Method* m = nullptr;
   if (idnum < methods()->length()) {
     m = methods()->at(idnum);
@@ -4363,7 +4570,7 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
 }
 
 
-Method* InstanceKlass::method_with_orig_idnum(int idnum) {
+Method* InstanceKlass::method_with_orig_idnum(int idnum) const {
   if (idnum >= methods()->length()) {
     return nullptr;
   }
@@ -4383,13 +4590,12 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum) {
 }
 
 
-Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
-  InstanceKlass* holder = get_klass_version(version);
+Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) const {
+  const InstanceKlass* holder = get_klass_version(version);
   if (holder == nullptr) {
     return nullptr; // The version of klass is gone, no method is found
   }
-  Method* method = holder->method_with_orig_idnum(idnum);
-  return method;
+  return holder->method_with_orig_idnum(idnum);
 }
 
 #if INCLUDE_JVMTI
@@ -4416,7 +4622,7 @@ void ClassHierarchyIterator::next() {
   }
   _visit_subclasses = true; // reset
   while (_current->next_sibling() == nullptr && _current != _root) {
-    _current = _current->superklass(); // backtrack; no more sibling subclasses left
+    _current = _current->java_super(); // backtrack; no more sibling subclasses left
   }
   if (_current == _root) {
     // Iteration is over (back at root after backtracking). Invalidate the iterator.

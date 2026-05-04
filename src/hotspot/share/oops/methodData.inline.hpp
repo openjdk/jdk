@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 
 #include "oops/methodData.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 inline void DataLayout::release_set_cell_at(int index, intptr_t value) {
-  Atomic::release_store(&_cells[index], value);
+  AtomicAccess::release_store(&_cells[index], value);
 }
 
 inline void ProfileData::release_set_intptr_at(int index, intptr_t value) {
@@ -59,7 +59,7 @@ inline uint MethodData::arg_modified(int a) {
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
   ArgInfoData* aid = arg_info();
   assert(aid != nullptr, "arg_info must be not null");
-  assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+  assert(a >= 0 && a < aid->size_of_args(), "valid argument number");
   return aid->arg_modified(a);
 }
 
@@ -68,7 +68,7 @@ inline void MethodData::set_arg_modified(int a, uint v) {
   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
   ArgInfoData* aid = arg_info();
   assert(aid != nullptr, "arg_info must be not null");
-  assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
+  assert(a >= 0 && a < aid->size_of_args(), "valid argument number");
   aid->set_arg_modified(a, v);
 }
 

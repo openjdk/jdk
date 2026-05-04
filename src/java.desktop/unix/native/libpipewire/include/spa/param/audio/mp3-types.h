@@ -12,6 +12,11 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/audio/mp3.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 #define SPA_TYPE_INFO_AudioMP3ChannelMode        SPA_TYPE_INFO_ENUM_BASE "AudioMP3ChannelMode"
 #define SPA_TYPE_INFO_AUDIO_MP3_CHANNEL_MODE_BASE    SPA_TYPE_INFO_AudioMP3ChannelMode ":"
 

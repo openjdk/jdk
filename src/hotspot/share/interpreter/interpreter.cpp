@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -63,10 +61,10 @@ void InterpreterCodelet::initialize(const char* description, Bytecodes::Code byt
 
 void InterpreterCodelet::verify() {}
 
-void InterpreterCodelet::print_on(outputStream* st) const {
+void InterpreterCodelet::print_on(outputStream* st, bool print_code) const {
   ttyLocker ttyl;
 
-  if (PrintInterpreter) {
+  if (print_code) {
     st->cr();
     st->print_cr("----------------------------------------------------------------------");
   }
@@ -76,10 +74,14 @@ void InterpreterCodelet::print_on(outputStream* st) const {
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 p2i(code_begin()), p2i(code_end()), code_size());
 
-  if (PrintInterpreter) {
+  if (print_code) {
     st->cr();
     Disassembler::decode(code_begin(), code_end(), st NOT_PRODUCT(COMMA &_asm_remarks));
   }
+}
+
+void InterpreterCodelet::print_on(outputStream* st) const {
+  print_on(st, AbstractInterpreter::should_print_instructions());
 }
 
 void InterpreterCodelet::print() const { print_on(tty); }

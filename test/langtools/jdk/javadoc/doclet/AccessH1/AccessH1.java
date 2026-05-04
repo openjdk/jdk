@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4636667 7052425 8016549 8196202
+ * @bug 4636667 7052425 8016549 8196202 8344301
  * @summary  Use <H1, <H2>, and <H3> in proper sequence for accessibility
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -53,7 +53,7 @@ public class AccessH1 extends JavadocTester {
         checkOutput("resource-files/stylesheet.css", true,
                 """
                     h1 {
-                        font-size:1.428em;
+                        font-size:1.425em;
                     }""");
 
         // Test the doc title in the overview page

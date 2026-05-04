@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1099,6 +1099,10 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             e.setCompileKind(compileKind);
             String level = atts.getValue("level");
             e.setLevel(level);
+            String reason = atts.getValue("reason");
+            if (reason != null) {
+              e.setReason(reason);
+            }
             events.add(e);
         } else if (qname.equals("uncommon_trap")) {
             String id = atts.getValue("compile_id");

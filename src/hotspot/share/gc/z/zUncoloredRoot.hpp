@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 // The zaddress_unsafe type is used to hold uncolored oops that the GC needs
 // to process before it is safe to use. E.g. the original object might have
 // been relocated and the address needs to be updated. The zaddress type
-// denotes that this pointer refers the the correct address of the object.
+// denotes that this pointer refers to the correct address of the object.
 
 class ZUncoloredRoot : public AllStatic {
 private:

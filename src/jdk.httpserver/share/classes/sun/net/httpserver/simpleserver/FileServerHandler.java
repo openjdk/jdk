@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.net.httpserver.simpleserver;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,6 +43,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpHandlers;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * A basic HTTP file server handler for static content.
@@ -67,12 +67,6 @@ public final class FileServerHandler implements HttpHandler {
 
     private FileServerHandler(Path root, UnaryOperator<String> mimeTable) {
         root = root.normalize();
-
-        @SuppressWarnings("removal")
-        var securityManager = System.getSecurityManager();
-        if (securityManager != null)
-            securityManager.checkRead(pathForSecurityCheck(root.toString()));
-
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
         if (!root.isAbsolute())
@@ -84,11 +78,6 @@ public final class FileServerHandler implements HttpHandler {
         this.root = root;
         this.mimeTable = mimeTable;
         this.logger = System.getLogger("com.sun.net.httpserver");
-    }
-
-    private static String pathForSecurityCheck(String path) {
-        var separator = String.valueOf(File.separatorChar);
-        return path.endsWith(separator) ? (path + "-") : (path + separator + "-");
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =
@@ -134,11 +123,11 @@ public final class FileServerHandler implements HttpHandler {
 
     private void handleMovedPermanently(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Location", getRedirectURI(exchange.getRequestURI()));
-        exchange.sendResponseHeaders(301, -1);
+        exchange.sendResponseHeaders(301, RSPBODY_EMPTY);
     }
 
     private void handleForbidden(HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(403, -1);
+        exchange.sendResponseHeaders(403, RSPBODY_EMPTY);
     }
 
     private void handleNotFound(HttpExchange exchange) throws IOException {
@@ -151,7 +140,7 @@ public final class FileServerHandler implements HttpHandler {
 
         if (exchange.getRequestMethod().equals("HEAD")) {
             exchange.getResponseHeaders().set("Content-Length", Integer.toString(bytes.length));
-            exchange.sendResponseHeaders(404, -1);
+            exchange.sendResponseHeaders(404, RSPBODY_EMPTY);
         } else {
             exchange.sendResponseHeaders(404, bytes.length);
             try (OutputStream os = exchange.getResponseBody()) {
@@ -272,7 +261,7 @@ public final class FileServerHandler implements HttpHandler {
                 }
             } else {
                 respHdrs.set("Content-Length", Integer.toString(bytes.length));
-                exchange.sendResponseHeaders(200, -1);
+                exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
             }
         }
     }
@@ -292,7 +281,7 @@ public final class FileServerHandler implements HttpHandler {
             }
         } else {
             respHdrs.set("Content-Length", Long.toString(Files.size(path)));
-            exchange.sendResponseHeaders(200, -1);
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
     }
 
@@ -310,7 +299,7 @@ public final class FileServerHandler implements HttpHandler {
             }
         } else {
             respHdrs.set("Content-Length", Integer.toString(bodyBytes.length));
-            exchange.sendResponseHeaders(200, -1);
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
     }
 
@@ -378,7 +367,7 @@ public final class FileServerHandler implements HttpHandler {
 
     // A non-exhaustive map of reserved-HTML and special characters to their
     // equivalent entity.
-    private static final Map<Integer,String> RESERVED_CHARS = Map.of(
+    private static final Map<Integer, String> RESERVED_CHARS = Map.of(
             (int) '&'  , "&amp;"   ,
             (int) '<'  , "&lt;"    ,
             (int) '>'  , "&gt;"    ,

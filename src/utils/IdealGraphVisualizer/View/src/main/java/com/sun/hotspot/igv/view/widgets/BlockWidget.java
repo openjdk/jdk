@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -30,6 +31,7 @@ import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.util.List;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
@@ -44,14 +46,26 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
     private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
-    private final InputBlock blockNode;
+    private final Block block;
+    private static final Font LIVE_RANGE_FONT = new Font("Arial", Font.BOLD, 12);
+    public static final Color LIVE_RANGE_COLOR = Color.BLACK;
+    private int nodeWidth;
+    private List<Integer> liveRangeIds;
 
-    public BlockWidget(Scene scene, InputBlock blockNode) {
+    public BlockWidget(Scene scene, Block block) {
         super(scene);
-        this.blockNode = blockNode;
+        this.block = block;
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
         this.setCheckClipping(true);
+    }
+
+    public void setLiveRangeIds(List<Integer> liveRangeIds) {
+        this.liveRangeIds = liveRangeIds;
+    }
+
+    public void setNodeWidth(int nodeWidth) {
+        this.nodeWidth = nodeWidth;
     }
 
     @Override
@@ -71,9 +85,22 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         g.setColor(TITLE_COLOR);
         g.setFont(TITLE_FONT);
 
-        String s = "B" + blockNode.getName();
+        String s = "B" + getBlockNode().getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);
         g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
+
+        g.setColor(LIVE_RANGE_COLOR);
+        g.setFont(LIVE_RANGE_FONT);
+        if (liveRangeIds != null) {
+            int x = nodeWidth + block.getLiveRangeSeparation();
+            for (int liveRangeId : liveRangeIds) {
+                String ls = "L" + String.valueOf(liveRangeId);
+                Rectangle2D lr = g.getFontMetrics().getStringBounds(ls, g);
+                g.drawString(ls, r.x + x, r.y + (int) lr.getHeight() + 2);
+                x += block.getLiveRangeSeparation();
+            }
+        }
+
         g.setStroke(old);
     }
 
@@ -81,10 +108,18 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         InputGraphProvider graphProvider = LookupHistory.getLast(InputGraphProvider.class);
         if (graphProvider != null) {
             if (!additiveSelection) {
-                graphProvider.clearSelectedNodes();
+                graphProvider.clearSelectedElements();
             }
-            graphProvider.addSelectedNodes(blockWidget.blockNode.getNodes(), false);
+            graphProvider.addSelectedNodes(blockWidget.getBlockNode().getNodes(), false);
         }
+    }
+
+    public void updatePosition() {
+        setPreferredLocation(block.getPosition());
+    }
+
+    public InputBlock getBlockNode() {
+        return block.getInputBlock();
     }
 
     private int getModifierMask () {

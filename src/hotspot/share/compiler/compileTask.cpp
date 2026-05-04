@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,129 +22,99 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 
-CompileTask*  CompileTask::_task_free_list = nullptr;
+int CompileTask::_active_tasks = 0;
 
-/**
- * Allocate a CompileTask, from the free list if possible.
- */
-CompileTask* CompileTask::allocate() {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  CompileTask* task = nullptr;
-
-  if (_task_free_list != nullptr) {
-    task = _task_free_list;
-    _task_free_list = task->next();
-    task->set_next(nullptr);
-  } else {
-    task = new CompileTask();
-    task->set_next(nullptr);
-    task->set_is_free(true);
-  }
-  assert(task->is_free(), "Task must be free.");
-  task->set_is_free(false);
-  return task;
-}
-
-/**
-* Add a task to the free list.
-*/
-void CompileTask::free(CompileTask* task) {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  if (!task->is_free()) {
-    assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
-        (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
-      JNIHandles::destroy_weak_global(task->_method_holder);
-      JNIHandles::destroy_weak_global(task->_hot_method_holder);
-    } else {
-      JNIHandles::destroy_global(task->_method_holder);
-      JNIHandles::destroy_global(task->_hot_method_holder);
-    }
-    if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
-      os::free((void*) task->_failure_reason);
-    }
-    task->_failure_reason = nullptr;
-    task->_failure_reason_on_C_heap = false;
-
-    task->set_is_free(true);
-    task->set_next(_task_free_list);
-    _task_free_list = task;
-  }
-}
-
-void CompileTask::initialize(int compile_id,
-                             const methodHandle& method,
-                             int osr_bci,
-                             int comp_level,
-                             const methodHandle& hot_method,
-                             int hot_count,
-                             CompileTask::CompileReason compile_reason,
-                             bool is_blocking) {
-  assert(!_lock->is_locked(), "bad locking");
-
+CompileTask::CompileTask(int compile_id,
+                         const methodHandle& method,
+                         int osr_bci,
+                         int comp_level,
+                         int hot_count,
+                         CompileReason compile_reason,
+                         bool is_blocking) {
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
   _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
-  JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
-  JVMCI_ONLY(_blocking_jvmci_compile_state = nullptr;)
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
   _is_complete = false;
   _is_success = false;
 
-  _hot_method = nullptr;
-  _hot_method_holder = nullptr;
   _hot_count = hot_count;
-  _time_queued = os::elapsed_counter();
+  _time_created = os::elapsed_counter();
+  _time_queued = 0;
   _time_started = 0;
+  _time_finished = 0;
   _compile_reason = compile_reason;
   _nm_content_size = 0;
-  AbstractCompiler* comp = compiler();
-  _directive = DirectivesStack::getMatchingDirective(method, comp);
   _nm_insts_size = 0;
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _training_data = nullptr;
+
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
+  _compiler = comp;
+  _directive = DirectivesStack::getMatchingDirective(method, comp);
+
+  JVMCI_ONLY(_has_waiter = comp->is_jvmci();)
+  JVMCI_ONLY(_blocking_jvmci_compile_state = nullptr;)
   _arena_bytes = 0;
 
-  if (LogCompilation) {
-    if (hot_method.not_null()) {
-      if (hot_method == method) {
-        _hot_method = _method;
-      } else {
-        _hot_method = hot_method();
-        // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_weak_global(Handle(thread, hot_method->method_holder()->klass_holder()));
-      }
-    }
+  _next = nullptr;
+  _prev = nullptr;
+
+  AtomicAccess::add(&_active_tasks, 1, memory_order_relaxed);
+}
+
+CompileTask::~CompileTask() {
+  if (_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder)) {
+    JNIHandles::destroy_weak_global(_method_holder);
+  } else {
+    JNIHandles::destroy_global(_method_holder);
+  }
+  if (_failure_reason_on_C_heap && _failure_reason != nullptr) {
+    os::free((void*) _failure_reason);
+    _failure_reason = nullptr;
+    _failure_reason_on_C_heap = false;
   }
 
-  _next = nullptr;
+  if (AtomicAccess::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
+    MonitorLocker wait_ml(CompileTaskWait_lock);
+    wait_ml.notify_all();
+  }
+}
+
+void CompileTask::wait_for_no_active_tasks() {
+  MonitorLocker locker(CompileTaskWait_lock);
+  while (AtomicAccess::load(&_active_tasks) > 0) {
+    locker.wait();
+  }
 }
 
 /**
  * Returns the compiler for this task.
  */
 AbstractCompiler* CompileTask::compiler() const {
-  return CompileBroker::compiler(_comp_level);
+  assert(_compiler != nullptr, "should be set");
+  return _compiler;
 }
 
 // Replace weak handles by strong handles to avoid unloading during compilation.
@@ -157,11 +127,7 @@ CompileTask* CompileTask::select_for_compilation() {
   assert(_method->method_holder()->is_loader_alive(), "should be alive");
   Handle method_holder(thread, _method->method_holder()->klass_holder());
   JNIHandles::destroy_weak_global(_method_holder);
-  JNIHandles::destroy_weak_global(_hot_method_holder);
   _method_holder = JNIHandles::make_global(method_holder);
-  if (_hot_method != nullptr) {
-    _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
-  }
   return this;
 }
 
@@ -171,9 +137,6 @@ void CompileTask::mark_on_stack() {
   }
   // Mark these methods as something redefine classes cannot remove.
   _method->set_on_stack(true);
-  if (_hot_method != nullptr) {
-    _hot_method->set_on_stack(true);
-  }
 }
 
 bool CompileTask::is_unloaded() const {
@@ -186,9 +149,6 @@ void CompileTask::metadata_do(MetadataClosure* f) {
     return;
   }
   f->do_metadata(method());
-  if (hot_method() != nullptr && hot_method() != method()) {
-    f->do_metadata(hot_method());
-  }
 }
 
 // ------------------------------------------------------------------
@@ -203,7 +163,7 @@ void CompileTask::metadata_do(MetadataClosure* f) {
 //
 void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
   // print compiler name
-  st->print("%s:", CompileBroker::compiler_name(comp_level()));
+  st->print("%s:", compiler()->name());
   print(st);
 }
 
@@ -214,29 +174,71 @@ void CompileTask::print_tty() {
   print(tty);
 }
 
+void CompileTask::print_post(outputStream* st) {
+  bool is_osr_method = osr_bci() != InvocationEntryBci;
+  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
+             is_osr_method, osr_bci(), is_blocking(),
+             compiler()->name(), nullptr, false /* short_form */, true /* cr */,
+             true /* after_compile_details */,
+             _num_inlined_bytecodes, _nm_total_size, _nm_insts_size,
+             _time_created, _time_queued, _time_started, _time_finished);
+}
+
 // ------------------------------------------------------------------
 // CompileTask::print_impl
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
-                             const char* msg, bool short_form, bool cr,
-                             jlong time_queued, jlong time_started) {
-  if (!short_form) {
+                             const char* compiler_name,
+                             const char* msg, bool short_form, bool cr, bool after_compile_details,
+                             int inlined_bytecodes, int nm_total_size, int nm_insts_size,
+                             jlong time_created, jlong time_queued, jlong time_started, jlong time_finished) {
+  // Use stringStream to avoid breaking the line
+  stringStream sst;
+  if (after_compile_details) {
+    { // Print current time
+      stringStream ss;
+      ss.print(UINT64_FORMAT, (uint64_t) tty->time_stamp().milliseconds());
+      sst.print("%7s ", ss.freeze());
+    }
+    { // Time waiting to be put on queue
+      stringStream ss;
+      if (time_created != 0 && time_queued != 0) {
+        ss.print("W%.1f", TimeHelper::counter_to_millis(time_queued - time_created));
+      }
+      sst.print("%7s ", ss.freeze());
+    }
+    { // Time in queue
+      stringStream ss;
+      if (time_queued != 0 && time_started != 0) {
+        ss.print("Q%.1f", TimeHelper::counter_to_millis(time_started - time_queued));
+      }
+      sst.print("%7s ", ss.freeze());
+    }
+    { // Time in compilation
+      stringStream ss;
+      if (time_started != 0 && time_finished != 0) {
+        ss.print("C%.1f", TimeHelper::counter_to_millis(time_finished - time_started));
+      }
+      sst.print("%7s ", ss.freeze());
+    }
+  } else if (!short_form) {
     // Print current time
-    st->print(UINT64_FORMAT " ", (uint64_t) tty->time_stamp().milliseconds());
+    sst.print(UINT64_FORMAT " ", (uint64_t) tty->time_stamp().milliseconds());
     if (Verbose && time_queued != 0) {
       // Print time in queue and time being processed by compiler thread
       jlong now = os::elapsed_counter();
-      st->print("%.0f ", TimeHelper::counter_to_millis(now-time_queued));
+      sst.print("%.0f ", TimeHelper::counter_to_millis(now-time_queued));
       if (time_started != 0) {
-        st->print("%.0f ", TimeHelper::counter_to_millis(now-time_started));
+        sst.print("%.0f ", TimeHelper::counter_to_millis(now-time_started));
       }
     }
   }
+
   // print compiler name if requested
   if (CIPrintCompilerName) {
-    st->print("%s:", CompileBroker::compiler_name(comp_level));
+    sst.print("%s:", compiler_name);
   }
-  st->print("%4d ", compile_id);    // print compilation number
+  sst.print("%4d ", compile_id);    // print compilation number
 
   bool is_synchronized = false;
   bool has_exception_handler = false;
@@ -254,55 +256,52 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   const char native_char    = is_native                       ? 'n' : ' ';
 
   // print method attributes
-  st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
+  sst.print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
 
   if (TieredCompilation) {
-    if (comp_level != -1)  st->print("%d ", comp_level);
-    else                   st->print("- ");
+    if (comp_level != -1)  sst.print("%d ", comp_level);
+    else                   sst.print("- ");
   }
-  st->print("     ");  // more indent
+  sst.print("     ");  // more indent
 
   if (method == nullptr) {
-    st->print("(method)");
+    sst.print("(method)");
   } else {
-    method->print_short_name(st);
-    if (is_osr_method) {
-      st->print(" @ %d", osr_bci);
+    if (after_compile_details) {
+      sst.print("%s", method->name_and_sig_as_C_string(true /* use_double_colon */));
+    } else {
+      method->print_short_name(&sst);
     }
-    if (method->is_native())
-      st->print(" (native)");
-    else
-      st->print(" (%d bytes)", method->code_size());
+    if (is_osr_method) {
+      sst.print(" @ %d", osr_bci);
+    }
+    if (method->is_native()) {
+      sst.print(" (native)");
+    } else {
+      sst.print(" (%d bytes)", method->code_size());
+    }
+  }
+  if (after_compile_details) {
+    sst.print(" (inlined %d)", inlined_bytecodes);
+    sst.print(" (size %d/%d)", nm_total_size, nm_insts_size);
   }
 
   if (msg != nullptr) {
-    st->print("   %s", msg);
+    sst.print("   %s", msg);
   }
   if (cr) {
-    st->cr();
+    sst.cr();
   }
-}
-
-void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
-  //         1234567
-  st->print("        ");     // print timestamp
-  //         1234
-  st->print("     ");        // print compilation number
-  //         %s!bn
-  st->print("      ");       // print method attributes
-  if (TieredCompilation) {
-    st->print("  ");
-  }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
+  st->print("%s",sst.freeze());
 }
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
+             is_osr_method, osr_bci(), is_blocking(),
+             compiler()->name(), msg, short_form, cr);
 }
 
 // ------------------------------------------------------------------
@@ -342,9 +341,6 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method != nullptr && _hot_method != _method) {
-    xtty->method(_hot_method);
-  }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);
   }
@@ -411,49 +407,80 @@ bool CompileTask::check_break_at_flags() {
 // ------------------------------------------------------------------
 // CompileTask::print_inlining
 void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
+  print_inlining_header(st, method, inline_level, bci);
+  print_inlining_inner_message(st, result, msg);
+  st->cr();
+}
+
+void CompileTask::print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci) {
   //         1234567
-  st->print("        ");     // print timestamp
+  st->print("        "); // print timestamp
   //         1234
-  st->print("     ");        // print compilation number
+  st->print("     "); // print compilation number
 
   // method attributes
   if (method->is_loaded()) {
-    const char sync_char      = method->is_synchronized()        ? 's' : ' ';
+    const char sync_char = method->is_synchronized() ? 's' : ' ';
     const char exception_char = method->has_exception_handlers() ? '!' : ' ';
-    const char monitors_char  = method->has_monitor_bytecodes()  ? 'm' : ' ';
+    const char monitors_char = method->has_monitor_bytecodes() ? 'm' : ' ';
 
     // print method attributes
     st->print(" %c%c%c  ", sync_char, exception_char, monitors_char);
   } else {
     //         %s!bn
-    st->print("      ");     // print method attributes
+    st->print("      "); // print method attributes
   }
 
   if (TieredCompilation) {
     st->print("  ");
   }
-  st->print("     ");        // more indent
-  st->print("    ");         // initial inlining indent
+  st->print("     "); // more indent
+  st->print("    ");  // initial inlining indent
 
-  for (int i = 0; i < inline_level; i++)  st->print("  ");
+  for (int i = 0; i < inline_level; i++) {
+    st->print("  ");
+  }
 
-  st->print("@ %d  ", bci);  // print bci
+  st->print("@ %d  ", bci); // print bci
+  print_inline_inner_method_info(st, method);
+}
+
+void CompileTask::print_inline_inner_method_info(outputStream* st, ciMethod* method) {
   method->print_short_name(st);
-  if (method->is_loaded())
+  if (method->is_loaded()) {
     st->print(" (%d bytes)", method->code_size());
-  else
+  } else {
     st->print(" (not loaded)");
+  }
+}
 
+void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
+  //         1234567
+  st->print("        "); // print timestamp
+  //         1234
+  st->print("     "); // print compilation number
+  //         %s!bn
+  st->print("      "); // print method attributes
+  if (TieredCompilation) {
+    st->print("  ");
+  }
+  st->print("     "); // more indent
+  st->print("    ");  // initial inlining indent
+  for (int i = 0; i < inline_level; i++) {
+    st->print("  ");
+  }
+}
+
+void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg) {
   if (msg != nullptr) {
     st->print("   %s%s", result == InliningResult::SUCCESS ? "" : "failed to inline: ", msg);
   } else if (result == InliningResult::FAILURE) {
     st->print("   %s", "failed to inline");
   }
-  st->cr();
 }
 
 void CompileTask::print_ul(const char* msg){
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print(&ls, msg, /* short form */ true, /* cr */ true);
@@ -461,13 +488,14 @@ void CompileTask::print_ul(const char* msg){
 }
 
 void CompileTask::print_ul(const nmethod* nm, const char* msg) {
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_impl(&ls, nm->method(), nm->compile_id(),
                nm->comp_level(), nm->is_osr_method(),
                nm->is_osr_method() ? nm->osr_entry_bci() : -1,
                /*is_blocking*/ false,
+               nm->compiler_name(),
                msg, /* short form */ true, /* cr */ true);
   }
 }

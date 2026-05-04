@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciMethod.hpp"
@@ -38,7 +37,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "opto/compile.hpp"
-#include "opto/node.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -502,8 +500,8 @@ bool ciTypeFlow::StateVector::meet_exception(ciInstanceKlass* exc,
   bool different = false;
 
   // Meet locals from incoming array.
-  Cell limit = local(_outer->max_locals()-1);
-  for (Cell c = start_cell(); c <= limit; c = next_cell(c)) {
+  Cell limit = local_limit_cell();
+  for (Cell c = start_cell(); c < limit; c = next_cell(c)) {
     ciType* t1 = type_at(c);
     ciType* t2 = incoming->type_at(c);
     if (!t1->equals(t2)) {
@@ -720,12 +718,18 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   if (str->is_in_error()) {
     trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                      Deoptimization::Action_none));
+                                                         Deoptimization::Action_none));
     return;
   }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
     int cp_index = str->get_constant_pool_index();
+    if (!con.is_loaded()) {
+      trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                           Deoptimization::Action_reinterpret,
+                                                           cp_index));
+      return;
+    }
     BasicType basic_type = str->get_basic_type_for_constant_at(cp_index);
     if (is_reference_type(basic_type)) {
       ciObject* obj = con.as_object();
@@ -2207,11 +2211,10 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
   if (!Bytecodes::can_trap(str.cur_bc()))  return false;
 
   switch (str.cur_bc()) {
-    // %%% FIXME: ldc of Class can generate an exception
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      return str.is_in_error();
+      return str.is_in_error() || !str.get_constant().is_loaded();
 
     case Bytecodes::_aload_0:
       // These bytecodes can trap for rewriting.  We need to assume that
@@ -2921,7 +2924,7 @@ void ciTypeFlow::flow_types() {
 
   // Continue flow analysis until fixed point reached
 
-  debug_only(int max_block = _next_pre_order;)
+  DEBUG_ONLY(int max_block = _next_pre_order;)
 
   while (!work_list_empty()) {
     Block* blk = work_list_next();

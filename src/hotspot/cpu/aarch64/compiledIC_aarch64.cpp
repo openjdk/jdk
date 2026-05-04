@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -90,14 +89,21 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
 
+  // In AOT "production" run we have mixture of AOTed and normal JITed code.
+  // Static call stub in AOTed nmethod always has far jump.
+  // Normal JITed nmethod may have short or far jump depending on distance.
+  // Determine actual jump instruction we have in code.
+  address next_instr = method_holder->next_instruction_address();
+  bool is_general_jump = nativeInstruction_at(next_instr)->is_general_jump();
+
 #ifdef ASSERT
-  NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
+  NativeJump* jump = is_general_jump ? nativeGeneralJump_at(next_instr) : nativeJump_at(next_instr);
   verify_mt_safe(callee, entry, method_holder, jump);
 #endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
-  NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
+  MacroAssembler::pd_patch_instruction(next_instr, entry);
   ICache::invalidate_range(stub, to_interp_stub_size());
   // Update jump to call.
   set_destination_mt_safe(stub);

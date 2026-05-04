@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,24 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <elf.h>
 #include <link.h>
+#include <errno.h>
+#include <sys/sendfile.h>
+#include <sys/utsname.h>
 #include "libproc_impl.h"
 #include "ps_core_common.h"
 #include "proc_service.h"
 #include "salibelf.h"
+
+// HWCAP_PACA was introduced in glibc 2.30
+// https://sourceware.org/git/?p=glibc.git;a=commit;h=a2e57f89a35e6056c9488428e68c4889e114ef71
+#if defined(__aarch64__) && !defined(HWCAP_PACA)
+#define HWCAP_PACA (1 << 30)
+#endif
 
 // This file has the libproc implementation to read core files.
 // For live processes, refer to ps_proc.c. Portions of this is adapted
@@ -67,7 +77,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
   // allocate map_array
   map_info** array;
   if ( (array = (map_info**) malloc(sizeof(map_info*) * num_maps)) == NULL) {
-    print_debug("can't allocate memory for map array\n");
+    print_error("can't allocate memory for map array\n");
     return false;
   }
 
@@ -189,26 +199,16 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
    prstatus_t* prstat = (prstatus_t*) buf;
    thread_info* newthr;
    print_debug("got integer regset for lwp %d\n", prstat->pr_pid);
-   if((newthr = add_thread_info(ph, prstat->pr_pid)) == NULL)
+   if((newthr = add_thread_info(ph, prstat->pr_pid)) == NULL) {
+      print_error("failed to add thread info\n");
       return false;
+   }
 
    // copy regs
    memcpy(&newthr->regs, prstat->pr_reg, sizeof(struct user_regs_struct));
 
    if (is_debug()) {
       print_debug("integer regset\n");
-#ifdef i386
-      // print the regset
-      print_debug("\teax = 0x%x\n", newthr->regs.eax);
-      print_debug("\tebx = 0x%x\n", newthr->regs.ebx);
-      print_debug("\tecx = 0x%x\n", newthr->regs.ecx);
-      print_debug("\tedx = 0x%x\n", newthr->regs.edx);
-      print_debug("\tesp = 0x%x\n", newthr->regs.esp);
-      print_debug("\tebp = 0x%x\n", newthr->regs.ebp);
-      print_debug("\tesi = 0x%x\n", newthr->regs.esi);
-      print_debug("\tedi = 0x%x\n", newthr->regs.edi);
-      print_debug("\teip = 0x%x\n", newthr->regs.eip);
-#endif
 
 #if defined(amd64) || defined(x86_64)
       // print the regset
@@ -256,20 +256,20 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
    // we are interested in just prstatus entries. we will ignore the rest.
    // Advance the seek pointer to the start of the PT_NOTE data
    if (lseek(ph->core->core_fd, note_phdr->p_offset, SEEK_SET) == (off_t)-1) {
-      print_debug("failed to lseek to PT_NOTE data\n");
+      print_error("failed to lseek to PT_NOTE data\n");
       return false;
    }
 
    // Now process the PT_NOTE structures.  Each one is preceded by
    // an Elf{32/64}_Nhdr structure describing its type and size.
    if ( (buf = (char*) malloc(size)) == NULL) {
-      print_debug("can't allocate memory for reading core notes\n");
+      print_error("can't allocate memory for reading core notes\n");
       goto err;
    }
 
    // read notes into buffer
    if (read(ph->core->core_fd, buf, size) != size) {
-      print_debug("failed to read notes, core file must have been truncated\n");
+      print_error("failed to read notes, core file must have been truncated\n");
       goto err;
    }
 
@@ -282,7 +282,8 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
 
       if (notep->n_type == NT_PRSTATUS) {
         if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
-          return false;
+          print_error("failed to handle NT_PRSTATUS note\n");
+          goto err;
         }
       } else if (notep->n_type == NT_AUXV) {
         // Get first segment from entry point
@@ -293,6 +294,12 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
             // We will adjust it in read_exec_segments().
             ph->core->dynamic_addr = auxv->a_un.a_val;
             break;
+          } else if (auxv->a_type == AT_SYSINFO_EHDR) {
+            ph->core->vdso_addr = auxv->a_un.a_val;
+#ifdef __aarch64__
+          } else if (auxv->a_type == AT_HWCAP) {
+            ph->pac_enabled = auxv->a_un.a_val & HWCAP_PACA;
+#endif
           }
           auxv++;
         }
@@ -314,8 +321,10 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
    ELF_PHDR* phbuf = NULL;
    ELF_PHDR* core_php = NULL;
 
-   if ((phbuf =  read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL)
+   if ((phbuf = read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL) {
+      print_error("failed to read program header table\n");
       return false;
+   }
 
    /*
     * Now iterate through the program headers in the core file.
@@ -344,6 +353,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
       switch (core_php->p_type) {
          case PT_NOTE:
             if (core_handle_note(ph, core_php) != true) {
+              print_error("failed to read note segment\n");
               goto err;
             }
             break;
@@ -351,7 +361,14 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
          case PT_LOAD: {
             if (core_php->p_filesz != 0) {
                if (add_map_info(ph, ph->core->core_fd, core_php->p_offset,
-                  core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) goto err;
+                     core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) {
+                  print_error("failed to add map info\n");
+                  goto err;
+               }
+               if (core_php->p_vaddr == ph->core->vdso_addr) {
+                  ph->core->vdso_offset = core_php->p_offset;
+                  ph->core->vdso_size = core_php->p_memsz;
+               }
             }
             break;
          }
@@ -376,6 +393,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
   int page_size = sysconf(_SC_PAGE_SIZE);
 
   if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL) {
+    print_error("failed to read program header table\n");
     return false;
   }
 
@@ -391,6 +409,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
       if (existing_map == NULL){
         if (add_map_info(ph, lib_fd, lib_php->p_offset,
                          target_vaddr, lib_php->p_memsz, lib_php->p_flags) == NULL) {
+          print_error("failed to add map info\n");
           goto err;
         }
       } else if (lib_php->p_flags != existing_map->flags) {
@@ -408,22 +427,36 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
         // Coredump stores value of p_memsz elf field
         // rounded up to page boundary.
 
+        // Account for the PH being at some vaddr offset from mapping in core file.
+        uint64_t lib_memsz = lib_php->p_memsz;
+        if (target_vaddr > existing_map->vaddr) {
+            lib_memsz += target_vaddr - existing_map->vaddr;
+        }
+        uint64_t aligned_lib_memsz = ROUNDUP(lib_memsz, page_size);
+        size_t aligned_segment_sz = ROUNDUP(lib_php->p_memsz, page_size);
+
+        if (target_vaddr == ph->core->vdso_addr) {
+          // We can overwrite with entire vDSO because vDSO on memory is
+          // entire ELF binary.
+          aligned_lib_memsz = ROUNDUP(existing_map->memsz, page_size);
+          aligned_segment_sz = aligned_lib_memsz;
+        }
         if ((existing_map->memsz != page_size) &&
             (existing_map->fd != lib_fd) &&
-            (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
+            (ROUNDUP(existing_map->memsz, page_size) != aligned_lib_memsz)) {
 
-          print_debug("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
+          print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
           goto err;
         }
 
         /* replace PT_LOAD segment with library segment */
         print_debug("overwrote with new address mapping (memsz %ld -> %ld)\n",
-                     existing_map->memsz, ROUNDUP(lib_php->p_memsz, page_size));
+                     existing_map->memsz, aligned_segment_sz);
 
         existing_map->fd = lib_fd;
         existing_map->offset = lib_php->p_offset;
-        existing_map->memsz = ROUNDUP(lib_php->p_memsz, page_size);
+        existing_map->memsz = aligned_segment_sz;
       }
     }
 
@@ -442,12 +475,12 @@ static bool read_interp_segments(struct ps_prochandle* ph) {
   ELF_EHDR interp_ehdr;
 
   if (read_elf_header(ph->core->interp_fd, &interp_ehdr) != true) {
-    print_debug("interpreter is not a valid ELF file\n");
+    print_error("interpreter is not a valid ELF file\n");
     return false;
   }
 
   if (read_lib_segments(ph, ph->core->interp_fd, &interp_ehdr, ph->core->ld_base_addr) != true) {
-    print_debug("can't read segments of interpreter\n");
+    print_error("can't read segments of interpreter\n");
     return false;
   }
 
@@ -463,6 +496,7 @@ static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehd
   uintptr_t result = 0L;
 
   if ((phbuf = read_program_header_table(ph->core->exec_fd, exec_ehdr)) == NULL) {
+    print_error("failed to read program header table\n");
     return 0L;
   }
 
@@ -473,7 +507,10 @@ static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehd
     case PT_LOAD: {
       // add only non-writable segments of non-zero filesz
       if (!(exec_php->p_flags & PF_W) && exec_php->p_filesz != 0) {
-        if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz, exec_php->p_flags) == NULL) goto err;
+        if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz, exec_php->p_flags) == NULL) {
+          print_error("failed to add map info\n");
+          goto err;
+        }
       }
       break;
     }
@@ -484,18 +521,19 @@ static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehd
 
       // BUF_SIZE is PATH_MAX + NAME_MAX + 1.
       if (exec_php->p_filesz > BUF_SIZE) {
+        print_error("Invalid ELF interpreter info\n");
         goto err;
       }
       if (pread(ph->core->exec_fd, interp_name,
                 exec_php->p_filesz, exec_php->p_offset) != exec_php->p_filesz) {
-        print_debug("Unable to read in the ELF interpreter\n");
+        print_error("Unable to read in the ELF interpreter\n");
         goto err;
       }
       interp_name[exec_php->p_filesz] = '\0';
       print_debug("ELF interpreter %s\n", interp_name);
       // read interpreter segments as well
       if ((ph->core->interp_fd = pathmap_open(interp_name)) < 0) {
-        print_debug("can't open runtime loader\n");
+        print_error("can't open runtime loader\n");
         goto err;
       }
       break;
@@ -555,7 +593,7 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
 
   phbuf = read_program_header_table(lib_fd, elf_ehdr);
   if (phbuf == NULL) {
-    print_debug("can't read program header of shared object\n");
+    print_error("can't read program header of shared object\n");
     return INVALID_LOAD_ADDRESS;
   }
 
@@ -571,7 +609,7 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
 
   if (ps_pdread(ph, (psaddr_t)link_map_addr + LINK_MAP_LD_OFFSET,
                &lib_ld, sizeof(uintptr_t)) != PS_OK) {
-    print_debug("can't read address of dynamic section in shared object\n");
+    print_error("can't read address of dynamic section in shared object\n");
     return INVALID_LOAD_ADDRESS;
   }
 
@@ -580,6 +618,58 @@ static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_f
   load_addr = lib_ld - lib_dyn_addr;
   print_debug("lib_ld = 0x%lx, lib_dyn_addr = 0x%lx -> lib_base_diff = 0x%lx\n", lib_ld, lib_dyn_addr, load_addr);
   return load_addr;
+}
+
+static int handle_vdso_internal(struct ps_prochandle* ph, char* vdso_name, char* lib_name, size_t lib_name_len) {
+  int lib_fd;
+  struct utsname uts;
+  uname(&uts);
+
+  char *vdso_path = (char*)malloc(lib_name_len);
+  snprintf(vdso_path, lib_name_len, "/lib/modules/%s/vdso/%s", uts.release, vdso_name);
+  print_debug("Try to open vDSO: %s\n", vdso_path);
+  lib_fd = pathmap_open(vdso_path);
+  if (lib_fd != -1) {
+    print_debug("replace vDSO: %s -> %s\n", lib_name, vdso_path);
+    strncpy(lib_name, vdso_path, lib_name_len);
+  }
+
+  free(vdso_path);
+  return lib_fd;
+}
+
+// Check for vDSO binary in kernel directory (/lib/modules/<version>/vdso),
+// rewrite the given lib_name string if found.
+// Otherwise copy vDSO memory in coredump to temporal file generated by tmpfile().
+// Returns FD for vDSO (should be closed by caller), or -1 on error.
+static int handle_vdso(struct ps_prochandle* ph, char* lib_name, size_t lib_name_len) {
+  int lib_fd;
+
+  // Check vDSO binary first (for referring debuginfo if possible).
+  lib_fd = handle_vdso_internal(ph, "vdso64.so", lib_name, lib_name_len);
+  if (lib_fd == -1) {
+    // Try again with vdso.so
+    lib_fd = handle_vdso_internal(ph, "vdso.so", lib_name, lib_name_len);
+  }
+  if (lib_fd == -1) {
+    // Copy vDSO memory segment from core to temporal memory
+    // if vDSO binary is not available.
+    FILE* tmpf = tmpfile();
+    if (tmpf == NULL) {
+      print_debug("can't create tmpfile for vDSO (%d)\n", errno);
+      lib_fd = -1;
+    } else {
+      lib_fd = fileno(tmpf);
+      off_t ofs = ph->core->vdso_offset;
+      if (sendfile(lib_fd, ph->core->core_fd, &ofs, ph->core->vdso_size) == -1) {
+        print_debug("can't copy vDSO (%d)\n", errno);
+        fclose(tmpf);
+        lib_fd = -1;
+      }
+    }
+  }
+
+  return lib_fd;
 }
 
 // read shared library info from runtime linker's data structures.
@@ -607,7 +697,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
   dyn.d_tag = DT_NULL;
   while (dyn.d_tag != DT_DEBUG) {
     if (ps_pdread(ph, (psaddr_t) addr, &dyn, sizeof(ELF_DYN)) != PS_OK) {
-      print_debug("can't read debug info from _DYNAMIC\n");
+      print_error("can't read debug info from _DYNAMIC\n");
       return false;
     }
     addr += sizeof(ELF_DYN);
@@ -618,14 +708,14 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
   // at debug_base we have struct r_debug. This has first link map in r_map field
   if (ps_pdread(ph, (psaddr_t) debug_base + FIRST_LINK_MAP_OFFSET,
                  &first_link_map_addr, sizeof(uintptr_t)) != PS_OK) {
-    print_debug("can't read first link map address\n");
+    print_error("can't read first link map address\n");
     return false;
   }
 
   // read ld_base address from struct r_debug
   if (ps_pdread(ph, (psaddr_t) debug_base + LD_BASE_OFFSET, &ld_base_addr,
                  sizeof(uintptr_t)) != PS_OK) {
-    print_debug("can't read ld base address\n");
+    print_error("can't read ld base address\n");
     return false;
   }
   ph->core->ld_base_addr = ld_base_addr;
@@ -634,11 +724,13 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
 
   // now read segments from interp (i.e ld.so or ld-linux.so or ld-elf.so)
   if (read_interp_segments(ph) != true) {
+      print_error("failed to read interp segments\n");
       return false;
   }
 
   // after adding interpreter (ld.so) mappings sort again
   if (sort_map_array(ph) != true) {
+    print_error("failed to sort segment map array\n");
     return false;
   }
 
@@ -654,14 +746,14 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
 
       if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_ADDR_OFFSET,
                    &lib_base_diff, sizeof(uintptr_t)) != PS_OK) {
-         print_debug("can't read shared object base address diff\n");
+         print_error("can't read shared object base address diff\n");
          return false;
       }
 
       // read address of the name
       if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NAME_OFFSET,
                     &lib_name_addr, sizeof(uintptr_t)) != PS_OK) {
-         print_debug("can't read address of shared object name\n");
+         print_error("can't read address of shared object name\n");
          return false;
       }
 
@@ -674,9 +766,14 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
          // it will fail later.
       }
 
-      if (lib_name[0] != '\0') {
-         // ignore empty lib names
-         lib_fd = pathmap_open(lib_name);
+      if (lib_name[0] != '\0') { // ignore empty lib names
+         // We can use lib_base_diff to compare with vdso_addr
+         // because base address of vDSO should be 0.
+         if (lib_base_diff == ph->core->vdso_addr) {
+           lib_fd = handle_vdso(ph, lib_name, sizeof(lib_name));
+         } else {
+           lib_fd = pathmap_open(lib_name);
+         }
 
          if (lib_fd < 0) {
             print_debug("can't open shared object %s\n", lib_name);
@@ -687,6 +784,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
                  lib_base_diff = calc_prelinked_load_address(ph, lib_fd, &elf_ehdr, link_map_addr);
                  if (lib_base_diff == INVALID_LOAD_ADDRESS) {
                    close(lib_fd);
+                   print_error("failed to calculate load address\n");
                    return false;
                  }
                }
@@ -696,15 +794,17 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
                            lib_name, lib_base, lib_base_diff);
                // while adding library mappings we need to use "base difference".
                if (! read_lib_segments(ph, lib_fd, &elf_ehdr, lib_base_diff)) {
-                  print_debug("can't read shared object's segments\n");
+                  print_error("can't read shared object's segments\n");
                   close(lib_fd);
                   return false;
                }
                add_lib_info_fd(ph, lib_name, lib_fd, lib_base);
                // Map info is added for the library (lib_name) so
                // we need to re-sort it before calling the p_pdread.
-               if (sort_map_array(ph) != true)
+               if (sort_map_array(ph) != true) {
+                  print_error("failed to sort segment map array\n");
                   return false;
+               }
             } else {
                print_debug("can't read ELF header for shared object %s\n", lib_name);
                close(lib_fd);
@@ -716,7 +816,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
     // read next link_map address
     if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
                    &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
-      print_debug("can't read next link in link_map\n");
+      print_error("can't read next link in link_map\n");
       return false;
     }
   }
@@ -732,13 +832,13 @@ Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
   if ((ph->core = (struct core_data*) calloc(1, sizeof(struct core_data))) == NULL) {
     free(ph);
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -750,39 +850,42 @@ Pgrab_core(const char* exec_file, const char* core_file) {
 
   // open the core file
   if ((ph->core->core_fd = open(core_file, O_RDONLY)) < 0) {
-    print_debug("can't open core file\n");
+    print_error("can't open core file: %s\n", strerror(errno));
     goto err;
   }
 
   // read core file ELF header
   if (read_elf_header(ph->core->core_fd, &core_ehdr) != true || core_ehdr.e_type != ET_CORE) {
-    print_debug("core file is not a valid ELF ET_CORE file\n");
+    print_error("core file is not a valid ELF ET_CORE file\n");
     goto err;
   }
 
   if ((ph->core->exec_fd = open(exec_file, O_RDONLY)) < 0) {
-    print_debug("can't open executable file\n");
+    print_error("can't open executable file: %s\n", strerror(errno));
     goto err;
   }
 
   if (read_elf_header(ph->core->exec_fd, &exec_ehdr) != true ||
       ((exec_ehdr.e_type != ET_EXEC) && (exec_ehdr.e_type != ET_DYN))) {
-    print_debug("executable file is not a valid ELF file\n");
+    print_error("executable file is not a valid ELF file\n");
     goto err;
   }
 
   // process core file segments
   if (read_core_segments(ph, &core_ehdr) != true) {
+    print_error("failed to read core segments\n");
     goto err;
   }
 
   // process exec file segments
   uintptr_t exec_base_addr = read_exec_segments(ph, &exec_ehdr);
   if (exec_base_addr == 0L) {
+    print_error("failed to read exec segments\n");
     goto err;
   }
   print_debug("exec_base_addr = 0x%lx\n", exec_base_addr);
   if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd, exec_base_addr) == NULL) {
+    print_error("failed to add lib info\n");
     goto err;
   }
 
@@ -790,19 +893,23 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   // here because read_shared_lib_info needs to read from debuggee
   // address space
   if (sort_map_array(ph) != true) {
+    print_error("failed to sort segment map array\n");
     goto err;
   }
 
   if (read_shared_lib_info(ph) != true) {
+    print_error("failed to read libraries\n");
     goto err;
   }
 
   // sort again because we have added more mappings from shared objects
   if (sort_map_array(ph) != true) {
+    print_error("failed to sort segment map array\n");
     goto err;
   }
 
   if (init_classsharing_workaround(ph) != true) {
+    print_error("failed to workaround class sharing\n");
     goto err;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.swing.text.DefaultEditorKit.DefaultKeyTypedAction;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaKeyBindings {
+public final class AquaKeyBindings {
     private static final RecyclableSingleton<AquaKeyBindings> instance = new RecyclableSingletonFromDefaultConstructor<AquaKeyBindings>(AquaKeyBindings.class);
     static AquaKeyBindings instance() {
         return instance.get();
@@ -157,6 +157,9 @@ public class AquaKeyBindings {
                         "shift alt KP_LEFT", null,
                         "shift alt RIGHT", null,
                         "shift alt KP_RIGHT", null,
+                        "alt BACK_SPACE", null,
+                        "ctrl W", null,
+                        "alt DELETE", null,
                 }));
     }
 
@@ -388,7 +391,9 @@ public class AquaKeyBindings {
             "alt shift TAB", "focusHeader",
             "F8", "focusHeader",
             "ctrl shift UP", "selectFirstRowExtendSelection",
-            "ctrl shift DOWN", "selectLastRowExtendSelection"
+            "ctrl shift DOWN", "selectLastRowExtendSelection",
+            "ctrl shift RIGHT", "selectLastColumnExtendSelection",
+            "ctrl shift LEFT", "selectFirstColumnExtendSelection"
         }));
     }
 
@@ -421,10 +426,14 @@ public class AquaKeyBindings {
             "KP_UP", "selectPrevious",
             "shift UP", "selectPreviousExtendSelection",
             "shift KP_UP", "selectPreviousExtendSelection",
+            "shift ctrl UP", "selectPreviousExtendSelection",
+            "shift ctrl KP_UP", "selectPreviousExtendSelection",
             "DOWN", "selectNext",
             "KP_DOWN", "selectNext",
             "shift DOWN", "selectNextExtendSelection",
             "shift KP_DOWN", "selectNextExtendSelection",
+            "shift ctrl DOWN", "selectNextExtendSelection",
+            "shift ctrl KP_DOWN", "selectNextExtendSelection",
             "RIGHT", "aquaExpandNode",
             "KP_RIGHT", "aquaExpandNode",
             "LEFT", "aquaCollapseNode",
@@ -469,14 +478,15 @@ public class AquaKeyBindings {
     }
 
     // wraps basic string arrays
-    static class SimpleBinding implements BindingsProvider {
+    static final class SimpleBinding implements BindingsProvider {
         final String[] bindings;
         public SimpleBinding(final String[] bindings) { this.bindings = bindings; }
+        @Override
         public String[] getBindings() { return bindings; }
     }
 
     // patches all providers together at the moment the UIManager needs the real InputMap
-    static class LateBoundInputMap implements LazyValue, BindingsProvider {
+    static final class LateBoundInputMap implements LazyValue, BindingsProvider {
         private final BindingsProvider[] providerList;
         private String[] mergedBindings;
 
@@ -484,10 +494,12 @@ public class AquaKeyBindings {
             this.providerList = providerList;
         }
 
+        @Override
         public Object createValue(final UIDefaults table) {
             return LookAndFeel.makeInputMap(getBindings());
         }
 
+        @Override
         public String[] getBindings() {
             if (mergedBindings != null) return mergedBindings;
 
@@ -542,6 +554,7 @@ public class AquaKeyBindings {
     abstract static class DeleteWordAction extends TextAction {
         public DeleteWordAction(final String name) { super(name); }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             if (e == null) return;
 
@@ -577,7 +590,7 @@ public class AquaKeyBindings {
     final TextAction pageDownMultilineAction = new AquaMultilineAction(pageDownMultiline, DefaultEditorKit.pageDownAction, DefaultEditorKit.endAction);
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class AquaMultilineAction extends TextAction {
+    static final class AquaMultilineAction extends TextAction {
         final String targetActionName;
         final String proxyActionName;
 
@@ -587,6 +600,7 @@ public class AquaKeyBindings {
             this.proxyActionName = proxyActionName;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JTextComponent c = getTextComponent(e);
             final ActionMap actionMap = c.getActionMap();

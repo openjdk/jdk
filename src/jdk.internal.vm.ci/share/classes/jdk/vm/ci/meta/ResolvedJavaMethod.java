@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,12 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *         Specification.
      */
     boolean isDefault();
+
+    /**
+     * Returns {@code true} if this method is contained in the array returned by
+     * {@code getDeclaringClass().getDeclaredMethods()}
+     */
+    boolean isDeclared();
 
     /**
      * Checks whether this method is a class initializer.
@@ -299,9 +305,9 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 typename = typename.replaceFirst("\\[\\]$", "...");
             }
 
-            final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
-            if (sb.length() != 0) {
-                sb.append(' ');
+            final StringBuilder sb = new StringBuilder();
+            if (Modifier.isFinal(getModifiers())) {
+                sb.append("final ");
             }
             return sb.append(typename).append(' ').append(getName()).toString();
         }
@@ -461,6 +467,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      */
     default boolean isJavaLangObjectInit() {
         return getDeclaringClass().isJavaLangObject() && getName().equals("<init>");
+    }
+
+    /**
+     * Returns true if this method has a
+     * {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise.
+     */
+    default boolean isScoped() {
+        throw new UnsupportedOperationException();
     }
 
     /**

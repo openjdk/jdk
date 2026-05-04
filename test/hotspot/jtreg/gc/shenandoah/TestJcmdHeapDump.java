@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +74,18 @@
  */
 
 /*
+ * @test id=generational
+ * @library /test/lib
+ * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -Dtarget=10000
+ *      TestJcmdHeapDump
+ */
+
+/*
  * @test id=static
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach
@@ -92,38 +105,6 @@
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *     TestJcmdHeapDump
- */
-
-/*
- * @test id=iu-aggressive
- * @library /test/lib
- * @modules jdk.attach/com.sun.tools.attach
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestJcmdHeapDump
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestJcmdHeapDump
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestJcmdHeapDump
- */
-
-/*
- * @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @modules jdk.attach/com.sun.tools.attach
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestJcmdHeapDump
  */
 
 import jdk.test.lib.JDKToolLauncher;

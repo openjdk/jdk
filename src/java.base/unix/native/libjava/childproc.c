@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,56 @@
  * questions.
  */
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 
 #include "childproc.h"
+#include "childproc_errorcodes.h"
 #include "jni_util.h"
 
 const char * const *parentPathv;
 
+#ifdef DEBUG
+bool fdIsValid(int fd) {
+    return fcntl(fd, F_GETFD) != -1;
+}
+bool fdIsPipe(int fd) {
+    struct stat buf;
+    errno = 0;
+    return fstat(fd, &buf) != -1 && S_ISFIFO(buf.st_mode);
+}
+bool fdIsCloexec(int fd) {
+    errno = 0;
+    const int flags = fcntl(fd, F_GETFD);
+    return flags != -1 && (flags & FD_CLOEXEC);
+}
+#endif // DEBUG
+
 static int
-restartableDup2(int fd_from, int fd_to)
+restartableDup2(int fd_from, int fd_to, errcode_t* errcode)
+/* All functions taking an errcode_t* as output behave the same: upon error, they populate
+ * errcode_t::hint and errcode_t::errno, but leave errcode_t::step as ESTEP_UNKNOWN since
+ * this information will be provided by the outer caller */
 {
     int err;
     RESTARTABLE(dup2(fd_from, fd_to), err);
-    return err;
+    if (err == -1) {
+        /* use fd_to (the destination descriptor) as hint: it is a bit more telling
+         * than fd_from in our case */
+        buildErrorCode(errcode, ESTEP_UNKNOWN, fd_to, errno);
+        return false;
+    }
+    return true;
 }
 
 int
@@ -51,68 +81,105 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
+/* Like closeSafely, but sets errcode (hint = fd, errno) on error and returns false */
+static bool
+closeSafely2(int fd, errcode_t* errcode) {
+    if (closeSafely(fd) == -1) {
+        buildErrorCode(errcode, ESTEP_UNKNOWN, fd, errno);
+        return false;
+    }
+    return true;
+}
+
+int
+markCloseOnExec(int fd)
+{
+    const int flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+    if ((flags & FD_CLOEXEC) == 0) {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+#if !defined(_AIX)
+  /* The /proc file system on AIX does not contain open system files
+   * like /dev/random. Therefore we use a different approach and do
+   * not need isAsciiDigit() or FD_DIR */
 static int
 isAsciiDigit(char c)
 {
   return c >= '0' && c <= '9';
 }
 
-#if defined(_AIX)
-  /* AIX does not understand '/proc/self' - it requires the real process ID */
-  #define FD_DIR aix_fd_dir
-#elif defined(_ALLBSD_SOURCE)
-  #define FD_DIR "/dev/fd"
-#else
-  #define FD_DIR "/proc/self/fd"
+  #if defined(_ALLBSD_SOURCE)
+    #define FD_DIR "/dev/fd"
+  #else
+    #define FD_DIR "/proc/self/fd"
+  #endif
 #endif
 
 static int
-closeDescriptors(void)
+markDescriptorsCloseOnExec(void)
 {
+#if defined(_AIX)
+    /* On AIX, we cannot rely on proc file system iteration to find all open files. Since
+     * iteration over all possible file descriptors, and subsequently closing them, can
+     * take a very long time, we use a bulk close via `ioctl` that is available on AIX.
+     * Since we hard-close, we need to make sure to keep the fail pipe file descriptor
+     * alive until the exec call. Therefore we mark the fail pipe fd with close on exec
+     * like the other OSes do, but then proceed to hard-close file descriptors beyond that.
+     */
+    if (fcntl(FAIL_FILENO + 1, F_CLOSEM, 0) == -1 ||
+        (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF)) {
+        return -1;
+    }
+#else
     DIR *dp;
     struct dirent *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    close(from_fd);          /* for possible use by opendir() */
-    close(from_fd + 1);      /* another one for good luck */
-
-#if defined(_AIX)
-    /* AIX does not understand '/proc/self' - it requires the real process ID */
-    char aix_fd_dir[32];     /* the pid has at most 19 digits */
-    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
-#endif
+    /* This function marks all file descriptors beyond stderr as CLOEXEC.
+     * That includes the file descriptor used for the fail pipe: we want that
+     * one to stay open up until the execve, but it should be closed with the
+     * execve. */
+    const int fd_from = STDERR_FILENO + 1;
 
     if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
+        return -1;
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
+            if (markCloseOnExec(fd) == -1) {
+                closedir(dp);
+                return -1;
+            }
+        }
     }
 
     closedir(dp);
+#endif
 
-    return 1;
+    return 0;
 }
 
-static int
-moveDescriptor(int fd_from, int fd_to)
+static bool
+moveDescriptor(int fd_from, int fd_to, errcode_t* errcode)
 {
     if (fd_from != fd_to) {
-        if ((restartableDup2(fd_from, fd_to) == -1) ||
-            (close(fd_from) == -1))
-            return -1;
+        if (!restartableDup2(fd_from, fd_to, errcode)) {
+            return false;
+        }
+        if (close(fd_from) == -1) {
+            buildErrorCode(errcode, ESTEP_UNKNOWN, fd_from, errno);
+            return false;
+        }
     }
-    return 0;
+    return true;
 }
 
 int
@@ -144,7 +211,7 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
         } else {
             return -1;
         }
@@ -205,31 +272,6 @@ initVectorFromBlock(const char**vector, const char* block, int count)
 }
 
 /**
- * Exec FILE as a traditional Bourne shell script (i.e. one without #!).
- * If we could do it over again, we would probably not support such an ancient
- * misfeature, but compatibility wins over sanity.  The original support for
- * this was imported accidentally from execvp().
- */
-static void
-execve_as_traditional_shell_script(const char *file,
-                                   const char *argv[],
-                                   const char *const envp[])
-{
-    /* Use the extra word of space provided for us in argv by caller. */
-    const char *argv0 = argv[0];
-    const char *const *end = argv;
-    while (*end != NULL)
-        ++end;
-    memmove(argv+2, argv+1, (end-argv) * sizeof(*end));
-    argv[0] = "/bin/sh";
-    argv[1] = file;
-    execve(argv[0], (char **) argv, (char **) envp);
-    /* Can't even exec /bin/sh?  Big trouble, but let's soldier on... */
-    memmove(argv+1, argv+2, (end-argv) * sizeof(*end));
-    argv[0] = argv0;
-}
-
-/**
  * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
  * be a shell script and the system default shell is invoked to run it.
  */
@@ -238,16 +280,9 @@ execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-    if (mode == MODE_VFORK) {
-        /* shared address space; be very careful. */
-        execve(file, (char **) argv, (char **) envp);
-        if (errno == ENOEXEC)
-            execve_as_traditional_shell_script(file, argv, envp);
-    } else {
-        /* unshared address space; we can mutate environ. */
-        environ = (char **) envp;
-        execvp(file, (char **) argv);
-    }
+    /* unshared address space; we can mutate environ. */
+    environ = (char **) envp;
+    execvp(file, (char **) argv);
 }
 
 /**
@@ -343,72 +378,119 @@ int
 childProcess(void *arg)
 {
     const ChildStuff* p = (const ChildStuff*) arg;
-    int fail_pipe_fd = p->fail[1];
 
-    if (p->sendAlivePing) {
-        /* Child shall signal aliveness to parent at the very first
-         * moment. */
-        int code = CHILD_IS_ALIVE;
-        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
-            goto WhyCantJohnnyExec;
-        }
+    int fail_pipe_fd = (p->mode == MODE_POSIX_SPAWN) ?
+        FAIL_FILENO : /* file descriptors already set up by posix_spawn(). */
+        p->fail[1];
+
+    /* error information for WhyCantJohnnyExec */
+    errcode_t errcode;
+
+    /* Child shall signal aliveness to parent at the very first
+     * moment. */
+    if (p->sendAlivePing && !sendAlivePing(fail_pipe_fd)) {
+        buildErrorCode(&errcode, ESTEP_SENDALIVE_FAIL, fail_pipe_fd, errno);
+        goto WhyCantJohnnyExec;
     }
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 6);
 #endif
-    /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
-       would do it anyways, but a little paranoia is a good thing. */
-    if ((closeSafely(p->in[1])   == -1) ||
-        (closeSafely(p->out[0])  == -1) ||
-        (closeSafely(p->err[0])  == -1) ||
-        (closeSafely(p->childenv[0])  == -1) ||
-        (closeSafely(p->childenv[1])  == -1) ||
-        (closeSafely(p->fail[0]) == -1))
-        goto WhyCantJohnnyExec;
 
-    /* Give the child sides of the pipes the right fileno's. */
-    /* Note: it is possible for in[0] == 0 */
-    if ((moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
-                        STDIN_FILENO) == -1) ||
-        (moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1],
-                        STDOUT_FILENO) == -1))
-        goto WhyCantJohnnyExec;
+    /* File descriptor setup for non-Posix-spawn mode */
+    if (p->mode == MODE_FORK) {
 
-    if (p->redirectErrorStream) {
-        if ((closeSafely(p->err[1]) == -1) ||
-            (restartableDup2(STDOUT_FILENO, STDERR_FILENO) == -1))
+        /* Close the parent sides of the pipes.
+           Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
+           would do it anyways, but a little paranoia is a good thing. */
+        if (!closeSafely2(p->in[1], &errcode)  ||
+            !closeSafely2(p->out[0], &errcode) ||
+            !closeSafely2(p->err[0], &errcode) ||
+            !closeSafely2(p->childenv[0], &errcode) ||
+            !closeSafely2(p->childenv[1], &errcode) ||
+            !closeSafely2(p->fail[0], &errcode))
+        {
+            errcode.step = ESTEP_PIPECLOSE_FAIL;
             goto WhyCantJohnnyExec;
-    } else {
-        if (moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
-                           STDERR_FILENO) == -1)
+        }
+
+        /* Give the child sides of the pipes the right fileno's. */
+        /* Note: it is possible for in[0] == 0 */
+        if (!moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
+                                    STDIN_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_STDIN_FAIL;
             goto WhyCantJohnnyExec;
-    }
+        }
 
-    if (moveDescriptor(fail_pipe_fd, FAIL_FILENO) == -1)
-        goto WhyCantJohnnyExec;
+        if (!moveDescriptor(p->out[1] != -1 ?  p->out[1] : p->fds[1],
+                                    STDOUT_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_STDOUT_FAIL;
+            goto WhyCantJohnnyExec;
+        }
 
-    /* We moved the fail pipe fd */
-    fail_pipe_fd = FAIL_FILENO;
+        if (p->redirectErrorStream) {
+            if (!closeSafely2(p->err[1], &errcode) ||
+                !restartableDup2(STDOUT_FILENO, STDERR_FILENO, &errcode)) {
+                errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+                goto WhyCantJohnnyExec;
+            }
+        } else {
+            if (!moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
+                                        STDERR_FILENO, &errcode)) {
+                errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+                goto WhyCantJohnnyExec;
+            }
+        }
+
+        if (!moveDescriptor(fail_pipe_fd, FAIL_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_FAILPIPE_FAIL;
+            goto WhyCantJohnnyExec;
+        }
+
+        /* We moved the fail pipe fd */
+        fail_pipe_fd = FAIL_FILENO;
+
+    } /* end: FORK mode */
+
+    assert(fail_pipe_fd == FAIL_FILENO);
+
+    /* For AIX: The code in markDescriptorsCloseOnExec() relies on the current
+     * semantic of this function. When this point here is reached only the
+     * FDs 0,1,2 and 3 are further used until the exec() or the exit(-1). */
 
     /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
+    if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
         int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (close(fd) == -1 && errno != EBADF)
+        for (fd = STDERR_FILENO + 1; fd < max_fd; fd++) {
+            if (markCloseOnExec(fd) == -1 && errno != EBADF) {
+                buildErrorCode(&errcode, ESTEP_CLOEXEC_FAIL, fd, errno);
                 goto WhyCantJohnnyExec;
+            }
+        }
     }
 
     /* change to the new working directory */
-    if (p->pdir != NULL && chdir(p->pdir) < 0)
+    if (p->pdir != NULL && chdir(p->pdir) < 0) {
+        buildErrorCode(&errcode, ESTEP_CHDIR_FAIL, 0, errno);
         goto WhyCantJohnnyExec;
+    }
 
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
+    // Reset any mask signals from parent
+    sigset_t unblock_signals;
+    sigemptyset(&unblock_signals);
+    sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+
+    // Children should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
+        buildErrorCode(&errcode, ESTEP_SET_SIGPIPE, 0, errno);
         goto WhyCantJohnnyExec;
+    }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
+
+    /* Still here. Hmm. */
+    buildErrorCode(&errcode, ESTEP_EXEC_FAIL, 0, errno);
 
  WhyCantJohnnyExec:
     /* We used to go to an awful lot of trouble to predict whether the
@@ -416,17 +498,17 @@ childProcess(void *arg)
      * success of an operation without *trying* it, and there's no way
      * to try a chdir or exec in the parent.  Instead, all we need is a
      * way to communicate any failure back to the parent.  Easy; we just
-     * send the errno back to the parent over a pipe in case of failure.
+     * send the errorcode back to the parent over a pipe in case of failure.
      * The tricky thing is, how do we communicate the *success* of exec?
      * We use FD_CLOEXEC together with the fact that a read() on a pipe
      * yields EOF when the write ends (we have two of them!) are closed.
      */
-    {
-        int errnum = errno;
-        writeFully(fail_pipe_fd, &errnum, sizeof(errnum));
+    if (!sendErrorCode(fail_pipe_fd, errcode)) {
+        printf("childproc fail: " ERRCODE_FORMAT "\n", ERRCODE_FORMAT_ARGS(errcode));
     }
+    int exitcode = exitCodeFromErrorCode(errcode);
     close(fail_pipe_fd);
-    _exit(-1);
+    _exit(exitcode);
     return 0;  /* Suppress warning "no return value from function" */
 }
 

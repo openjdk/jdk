@@ -24,41 +24,20 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.AccessFlags;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassFileVersion;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.Interfaces;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.Superclass;
-import java.lang.classfile.attribute.InnerClassesAttribute;
-import java.lang.classfile.attribute.ModuleAttribute;
-import java.lang.classfile.attribute.ModuleHashesAttribute;
-import java.lang.classfile.attribute.ModuleMainClassAttribute;
-import java.lang.classfile.attribute.ModulePackagesAttribute;
-import java.lang.classfile.attribute.ModuleResolutionAttribute;
-import java.lang.classfile.attribute.ModuleTargetAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
-import java.lang.classfile.attribute.SourceFileAttribute;
+
 import jdk.internal.access.SharedSecrets;
 
 public final class ClassImpl
         extends AbstractElement
         implements ClassModel {
-
     final ClassReaderImpl reader;
     private final int attributesPos;
     private final List<MethodModel> methods;
@@ -101,7 +80,7 @@ public final class ClassImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofClass(reader.flags());
+        return new AccessFlagsImpl(AccessFlag.Location.CLASS, reader.flags());
     }
 
     @Override
@@ -137,7 +116,7 @@ public final class ClassImpl
             pos += 2;
             var arr = new Object[cnt];
             for (int i = 0; i < cnt; ++i) {
-                arr[i] = reader.readClassEntry(pos);
+                arr[i] = reader.readEntry(pos, ClassEntry.class);
                 pos += 2;
             }
             this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(arr);
@@ -156,7 +135,7 @@ public final class ClassImpl
     // ClassModel
 
     @Override
-    public void forEachElement(Consumer<ClassElement> consumer) {
+    public void forEach(Consumer<? super ClassElement> consumer) {
         consumer.accept(flags());
         consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {

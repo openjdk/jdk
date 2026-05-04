@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,6 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
 import com.sun.org.apache.xerces.internal.util.URI;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -50,20 +49,20 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
-import jdk.xml.internal.JdkCatalog;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLLimitAnalyzer;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.InputSource;
 
 
@@ -94,7 +93,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Feb 2024
+ * @LastModified: May 2025
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -436,7 +435,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * If this constructor is used to create the object, reset() should be invoked on this object
      */
     public XMLEntityManager() {
-        this(null, new XMLSecurityManager(true));
+        this(null, JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
     }
 
     public XMLEntityManager(XMLSecurityPropertyManager securityPropertyMgr, XMLSecurityManager securityManager) {
@@ -1055,7 +1054,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();
 
-            staxInputSource = resolveWithCatalogStAX(fDefCR, JdkCatalog.JDKCATALOG, publicId, literalSystemId);
+            staxInputSource = resolveWithCatalogStAX(fDefCR, JdkXmlConfig.JDKCATALOG_FILE, publicId, literalSystemId);
         }
 
         // Step 4: default resolution if not resolved by a resolver and the RESOLVE
@@ -1209,11 +1208,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // Step 1: custom Entity resolver
         XMLInputSource xmlInputSource = null;
-
+        boolean resolveByResolver = false;
         if (fEntityResolver != null) {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
+            resolveByResolver = xmlInputSource != null;
         }
 
         // Step 2: custom catalog if specified
@@ -1229,7 +1229,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
-        if (xmlInputSource == null
+        if ((xmlInputSource == null || (!resolveByResolver && xmlInputSource.getSystemId() != null
+                && xmlInputSource.getSystemId().equals(literalSystemId)))
                 && (publicId != null || literalSystemId != null)
                 && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();
@@ -1462,7 +1463,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if( fSecurityManager != null && fSecurityManager.isOverLimit(entityExpansionIndex, fLimitAnalyzer)){
             fSecurityManager.debugPrint(fLimitAnalyzer);
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"EntityExpansionLimit",
-                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex)},
+                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex),
+                    Limit.ENTITY_EXPANSION_LIMIT.systemProperty()},
                     XMLErrorReporter.SEVERITY_FATAL_ERROR );
             // is there anything better to do than reset the counter?
             // at least one can envision debugging applications where this might
@@ -1694,7 +1696,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         // JAXP 1.5 feature
         XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager) componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER, null);
         if (spm == null) {
-            spm = new XMLSecurityPropertyManager();
+            spm = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false);
         }
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
@@ -2010,12 +2012,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     // which encoding to use. Leave them for now.
     private static synchronized URI getUserDir() throws URI.MalformedURIException {
         // get the user.dir property
-        String userDir = "";
-        try {
-            userDir = SecuritySupport.getSystemProperty("user.dir");
-        }
-        catch (SecurityException se) {
-        }
+        String userDir = System.getProperty("user.dir");
 
         // return empty string if property value is empty string.
         if (userDir.length() == 0)

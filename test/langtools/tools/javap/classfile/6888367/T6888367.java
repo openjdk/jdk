@@ -35,8 +35,6 @@ import java.lang.classfile.constantpool.*;
  * @test
  * @bug 6888367
  * @summary classfile library parses signature attributes incorrectly
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 /*

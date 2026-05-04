@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ static void throwOutOfMemoryError(JNIEnv *env, const char *msg)
         c = exceptionClass;
     } else {
         c = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
-        if ((*env)->ExceptionOccurred(env)) return;
+        if ((*env)->ExceptionCheck(env)) return;
         exceptionClass = (*env)->NewGlobalRef(env, c);
     }
 
@@ -211,7 +211,7 @@ static jarray createJavaStringArray(JNIEnv *env, CFIndex count)
         c = stringClass;
     } else {
         c = (*env)->FindClass(env, "java/lang/String");
-        if ((*env)->ExceptionOccurred(env)) return NULL;
+        if ((*env)->ExceptionCheck(env)) return NULL;
         stringClass = (*env)->NewGlobalRef(env, c);
     }
 
@@ -892,7 +892,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_getKeyFromNode
             result = NULL;
         } else {
             CFStringRef cfString = copyToCFString(env, value);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 // memory error in copyToCFString
                 result = NULL;
             } else if (cfString == NULL) {
@@ -940,10 +940,10 @@ static void BuildJavaArrayFn(const void *key, const void *value, void *context)
     CFStringRef cfString = NULL;
     JNIEnv *env = args->env;
 
-    if ((*env)->ExceptionOccurred(env)) return; // already failed
+    if ((*env)->ExceptionCheck(env)) return; // already failed
 
     cfString = copyToCFString(env, propkey);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         // memory error in copyToCFString
     } else if (!cfString) {
         // bogus value type in prefs file - no Java errors available
@@ -960,9 +960,9 @@ static void BuildJavaArrayFn(const void *key, const void *value, void *context)
         }
         if (CFStringGetLength(cfString) <= 0) goto bad; // ignore empty
         javaString = toJavaString(env, cfString);
-        if ((*env)->ExceptionOccurred(env)) goto bad;
+        if ((*env)->ExceptionCheck(env)) goto bad;
         (*env)->SetObjectArrayElement(env, args->result,args->used,javaString);
-        if ((*env)->ExceptionOccurred(env)) goto bad;
+        if ((*env)->ExceptionCheck(env)) goto bad;
         args->used++;
     }
 
@@ -1003,7 +1003,7 @@ static jarray getStringsForNode(JNIEnv *env, jobject klass, jobject jpath,
             args.used = 0;
             args.allowSlash = allowSlash;
             CFDictionaryApplyFunction(node, BuildJavaArrayFn, &args);
-            if (!(*env)->ExceptionOccurred(env)) {
+            if (!(*env)->ExceptionCheck(env)) {
                 // array construction succeeded
                 if (args.used < count) {
                     // finished array is smaller than expected.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,13 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test system and offset clocks serialization.
  */
-@Test
 public class TCKClockSerialization extends AbstractTCKTest {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
@@ -87,6 +86,7 @@ public class TCKClockSerialization extends AbstractTCKTest {
     private static final Instant INSTANT = ZDT.toInstant();
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_systemClockSerializable() throws IOException, ClassNotFoundException {
         assertSerializable(Clock.systemUTC());
         assertSerializable(Clock.systemDefaultZone());
@@ -94,11 +94,13 @@ public class TCKClockSerialization extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_offsetClockSerializable() throws IOException, ClassNotFoundException {
         assertSerializable(Clock.offset(Clock.system(PARIS), AMOUNT));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_tickClockSerializable() throws IOException, ClassNotFoundException {
         assertSerializable(Clock.tickSeconds(PARIS));
         assertSerializable(Clock.tickMinutes(MOSCOW));
@@ -106,6 +108,7 @@ public class TCKClockSerialization extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_fixedClockSerializable() throws IOException, ClassNotFoundException {
         assertSerializable(Clock.fixed(INSTANT, ZoneOffset.UTC));
         assertSerializable(Clock.fixed(INSTANT, PARIS));
