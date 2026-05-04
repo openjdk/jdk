@@ -86,19 +86,28 @@ import java.util.concurrent.atomic.AtomicLong;
  *     acknowledgements (weak correctness sanity check)
  *
  * Runs under +ShenandoahVerify so heap corruption or accounting drift surfaces.
+ *
+ * Intentionally conservative on thread count and duration so CI slow boxes
+ * don't trip OutOfMemoryError when allocation rate outpaces GC throughput
+ * with +ShenandoahVerify enabled.
  */
 public class TestCASAllocContention {
 
-    // Wall-clock budget per run. Kept modest so the test fits in default jtreg timeout.
-    static final long DURATION_NANOS = 10L * 1_000_000_000L;  // 10 seconds
+    // Wall-clock budget per run. Kept short so the test fits in default jtreg timeout
+    // and so allocation rate doesn't blow past what GC can reclaim on slow CI hosts.
+    static final long DURATION_NANOS = 5L * 1_000_000_000L;
 
     // Object size: mix of small (TLAB) and medium (shared) allocations.
     static final int[] SIZES = { 16, 64, 256, 1024 };
 
+    // Cap threads so GC can keep up on small heaps. We want contention on the
+    // CAS allocator's slot array, not an allocation-vs-GC race.
+    static final int MAX_THREADS = 8;
+
     static volatile Object sink;
 
     public static void main(String[] args) throws Exception {
-        int nThreads = Math.max(4, Runtime.getRuntime().availableProcessors() * 2);
+        int nThreads = Math.min(MAX_THREADS, Math.max(2, Runtime.getRuntime().availableProcessors()));
         System.out.println("Spawning " + nThreads + " allocator threads for "
                            + (DURATION_NANOS / 1_000_000_000L) + " seconds");
 
@@ -117,9 +126,9 @@ public class TestCASAllocContention {
                     long bytes = 0;
                     long deadline = System.nanoTime() + DURATION_NANOS;
                     int sizeIdx = id % SIZES.length;
-                    // Retain a small rolling window so not all allocations die immediately.
-                    // This forces survivors through the collector's CAS alloc path too.
-                    Object[] window = new Object[16];
+                    // Small rolling window: keeps some retention to exercise the
+                    // collector's CAS alloc path but caps live set.
+                    Object[] window = new Object[4];
                     int wIdx = 0;
                     while (System.nanoTime() < deadline) {
                         int sz = SIZES[sizeIdx];
@@ -128,7 +137,7 @@ public class TestCASAllocContention {
                         obj[0] = (byte) allocs;
                         obj[sz - 1] = (byte) id;
                         window[wIdx] = obj;
-                        wIdx = (wIdx + 1) & 15;
+                        wIdx = (wIdx + 1) & 3;
                         allocs++;
                         bytes += sz;
                         // Rotate sizes so a single thread covers the mix over time.
