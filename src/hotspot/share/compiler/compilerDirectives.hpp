@@ -103,14 +103,12 @@ NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 
 class AbstractCompiler;
 class CompilerDirectives;
-class CompilerDirectiveMatcher;
 class DirectiveSet;
-class DirectiveSetPtr;
 
 class DirectivesStack : AllStatic {
   // To allow access to private methods
-  friend CompilerDirectiveMatcher;
-  friend DirectiveSetPtr;
+  friend class CompilerDirectiveMatcher;
+  friend class DirectiveSetPtr;
 private:
   static CompilerDirectives* _top;
   static CompilerDirectives* _bottom;
