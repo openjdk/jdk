@@ -55,7 +55,6 @@ public class LMS_Test {
             System.out.println(">> " + t.get("lmsMode").asString()
                     + " " + t.get("lmOtsMode").asString() + " verify");
 
-            //for (var c : t.get("tests").elements()) {
             for (JSONValue c : t.get("tests").elements()) {
                 System.out.print(c.get("tcId").asInt() + " ");
                 var expected = c.get("testPassed").asBoolean();
