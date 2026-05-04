@@ -92,8 +92,8 @@ public:
   }
 
   ~ShenandoahAllocRate() {
-    FREE_C_HEAP_ARRAY(double, _rate_samples);
-    FREE_C_HEAP_ARRAY(double, _rate_timestamps);
+    FREE_C_HEAP_ARRAY(_rate_samples);
+    FREE_C_HEAP_ARRAY(_rate_timestamps);
   }
 
   void set_minimum_sample_size(const size_t minimum_sample_size) {

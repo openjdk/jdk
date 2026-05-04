@@ -66,13 +66,6 @@ TEST_VM_F(ShenandoahAllocationRateTest, ignore_too_small_sample) {
   EXPECT_EQ(rate.average(), 0);
 }
 
-TEST_VM_F(ShenandoahAllocationRateTest, DISABLED_ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
-  allocate(rate, 2048);
-  allocate(rate, 2048);
-  EXPECT_EQ(rate.average(), 0);
-}
-
 TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   allocate(rate, 2048); // t = 1
@@ -82,6 +75,7 @@ TEST_VM_F(ShenandoahAllocationRateTest, two_second_average) {
   EXPECT_EQ(rate.average(), 2048.0);
 }
 
+// disabled because the current implementation needs at least two samples to compute rates
 TEST_VM_F(ShenandoahAllocationRateTest, DISABLED_accelerated_consumption_small_number_of_samples) {
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
   allocate(rate, 1024);

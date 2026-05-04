@@ -95,10 +95,10 @@ ShenandoahCycleDuration::ShenandoahCycleDuration()
 }
 
 ShenandoahCycleDuration::~ShenandoahCycleDuration() {
-  FREE_C_HEAP_ARRAY(double, _gc_time_timestamps);
-  FREE_C_HEAP_ARRAY(double, _gc_time_samples);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xy);
-  FREE_C_HEAP_ARRAY(double, _gc_time_xx);
+  FREE_C_HEAP_ARRAY(_gc_time_timestamps);
+  FREE_C_HEAP_ARRAY(_gc_time_samples);
+  FREE_C_HEAP_ARRAY(_gc_time_xy);
+  FREE_C_HEAP_ARRAY(_gc_time_xx);
 }
 
 void ShenandoahCycleDuration::record_duration(double time_at_start, double gc_time) {
